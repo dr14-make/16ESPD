@@ -109,7 +109,7 @@ and the Leaf's curb mass, 100 kilograms more than Lecture 2's car.
 |---|---|---|---|
 | <Link to="why-electric">01</Link> | Why electric | the case, the market and the rules, the energy model, the chain both ways, the Leaf-class car | |
 | <Link to="dc-machine">02</Link> | The DC machine | F = BIL to T = KΦI and E = KΦω, losses, efficiency, control | 01 the machine, on a dyno |
-| <Link to="machines">03</Link> | Machines in real EVs | brushless, PMSM under field-oriented control, induction, SRM | |
+| <Link to="machines">03</Link> | Machines in real EVs | brushless, PMSM under field-oriented control, the other machines in one slide | |
 | <Link to="envelope">04</Link> | The envelope | base speed, field weakening, the efficiency map, WLTC on it | 02 the converter |
 | <Link to="power-electronics">05</Link> | Power electronics | choppers, H-bridge, PWM and harmonics, three-phase bridge, DC-DC, charger | demo only |
 | <Link to="batteries">06</Link> | Batteries, simply | V = E − IR, A·h and W·h, specific energy and power, today's cells and prices | 03 the battery |
@@ -127,8 +127,7 @@ both directions, with the Leaf-class car we build. Section 02 is the DC machine:
 wire to T equals K Phi I and E equals K Phi omega, with its losses, its efficiency and its control.
 You build the machine, build 01, and test it on a dyno. Section 03 looks at the machines in real
 electric cars: brushless machines, the permanent-magnet synchronous machine under field-oriented
-control, the induction machine and the switched-reluctance machine, and it explains why build 01's
-machine stands in for them. Section 04 is the envelope: base speed, field weakening, the efficiency
+control, and why build 01's machine stands in for it; the other machines get one slide. Section 04 is the envelope: base speed, field weakening, the efficiency
 map, and where the WLTC drives on it. You build the converter, build 02. Section 05 is power
 electronics: choppers, the H-bridge, pulse-width modulation and its harmonics, the three-phase
 bridge, the 12 volt DC-DC converter and the charger. There is no build there, only a demonstration

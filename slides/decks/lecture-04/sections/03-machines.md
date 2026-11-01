@@ -8,14 +8,14 @@ layout: section
 # Machines in real EVs
 
 Brushless machines, why field-oriented control makes a permanent-magnet machine behave like step
-01's, the induction machine and the switched-reluctance machine.
+01's, and the other machines in one slide.
 
 <!--
 Section 03, machines in real electric cars. There is no build in this section. We look at brushless
-machines, at why field-oriented control makes a permanent-magnet machine behave like build 01's, and
-at the two machines without magnets, the induction machine and the switched-reluctance machine. We
-stay with concepts and one animation: the transforms that field-oriented control computes, and a
-model of the machine in its rotating frame, are in the extra pack.
+machines and at why field-oriented control makes a permanent-magnet machine behave like build 01's,
+because that is the machine we build. The other machines get one slide that names them. We stay
+with concepts and one animation: the transforms that field-oriented control computes, a model of
+the machine in its rotating frame, and the other machines in depth are in the extra session.
 -->
 
 ---
@@ -126,7 +126,7 @@ rotor iron, which is called interior permanent magnet, 48 stator slots, and abou
 Buried magnets add a second kind of torque, reluctance torque, which our model leaves out.
 
 Synchronous means that the rotor turns with the stator's rotating field and never slips behind it.
-The induction machine, two slides on, is the one that slips.
+The induction machine, three slides on, is the one that slips.
 
 To make smooth torque from three sinusoidal currents, the inverter must place those currents right
 relative to the magnets, at every instant. That is field-oriented control, the next slide.
@@ -255,166 +255,71 @@ their own dynamics. A model of the machine in d and q is in the extra pack.
 -->
 
 ---
-routeAlias: induction
+routeAlias: other-machines
 ---
 
-## The induction machine
+## The other machines, in one slide
 
-<div class="grid grid-cols-2 gap-8">
-<div>
-
-**Build** (deck): three stator windings make a **rotating field**; the rotor is a cage of copper or
-aluminum bars, short-circuited at the ends.
-
-**How it pulls:** the field sweeps across the bars, induces currents in them, and the force on
-those currents drags the rotor after the field.
-
-**Slip:** at the field's speed nothing would be induced and there would be no torque. So the
-rotor always runs a little slower: the slip grows with the torque.
-
-</div>
-<div>
-
-**Control** (deck): the supply frequency sets the field's speed; the slip means it does not set
-the rotor's exactly, so the speed is measured and fed back.
-
-With field-oriented control an induction machine too behaves like a DC machine; but its field is
-not free. The inverter must **magnetize the rotor with a d current**, and that current costs copper
-loss at every operating point.
-
-**No magnets:** no rare earths, and with the inverter off there is no field at all.
-
-</div>
-</div>
-
-<!--
-The induction machine, from the deck. On the left, how it is built: three stator windings, as in the
-PMSM, make a rotating field. The rotor is a cage: bars of copper or aluminum, short-circuited at
-both ends.
-
-How it pulls: the field sweeps across the bars and induces currents in them, and the force of the
-field on those currents drags the rotor along after the field.
-
-Slip: if the rotor turned exactly at the field's speed, the bars would see no change of flux,
-nothing would be induced, and there would be no torque. So the rotor always runs a little slower
-than the field, and that difference, the slip, grows with the torque.
-
-On the right, control. The supply frequency sets the speed of the field. Because of the slip, it
-does not set the speed of the rotor exactly, so the speed is measured and fed back.
-
-With field-oriented control an induction machine also behaves like a DC machine from the outside.
-But its field is not free. It has no magnets, so the inverter must magnetize the rotor itself, with
-a d current, and that current flows at every operating point and costs copper loss there.
-
-And the last line, the other side of the coin: no magnets. No rare-earth materials, and when the
-inverter is off there is no field at all.
--->
-
----
-routeAlias: srm
----
-
-## The switched-reluctance machine
-
-<div class="grid grid-cols-2 gap-8">
-<div>
-
-**Reluctance** (deck): a magnetic field is "reluctant" to cross an air gap. A rotor of soft iron,
-out of line with the field, is pulled into line to shorten the gap.
-
-The SRM's rotor is **only laminated iron**: no magnets, no windings, no cage. The stator poles are
-switched on one after another, and the rotor follows them.
-
-</div>
-<div>
-
-**For it** (deck)
-
-- very simple, potentially cheap, robust;
-- high speeds: no back-EMF from magnets to limit it;
-- the current need not alternate.
-
-**Against it** (deck)
-
-- the switching must be timed precisely to the rotor position;
-- the torque pulses: **noisy**, with vibration.
-
-Used in industry and appliances; in cars it has stayed rare.
-
-</div>
-</div>
-
-<!--
-The switched-reluctance machine. The left column explains the name. Reluctance is the magnetic
-counterpart of resistance: a magnetic field is reluctant to cross an air gap and prefers iron. So a
-rotor of soft iron that is out of line with a field is pulled into line, to shorten the gap, as a
-compass needle turns into line, but without being a magnet itself.
-
-The SRM uses only that. Its rotor is just laminated iron: no magnets, no windings, no cage. The
-stator poles are switched on one after another, each pulling the rotor into line with it, and the
-rotor follows them around.
-
-The deck's case for it, top right. It is very simple, potentially cheap, and robust. It can run at
-high speed, because there is no back-EMF from magnets to limit it. And the current in each coil need
-not alternate: it only has to flow one way.
-
-The case against it: the switching has to be timed precisely to the rotor's position, and the torque
-comes in pulses, so the machine is noisy and vibrates. That is why it is used in industry and in
-appliances, but has stayed rare in cars.
--->
-
----
-routeAlias: pmsm-vs-induction
----
-
-## PMSM or induction?
-
-<div class="grid grid-cols-[1.2fr_1fr] gap-8">
+<div class="grid grid-cols-[1.25fr_1fr] gap-8">
 <div class="tight">
 
-| | PMSM | Induction |
+| Machine | Where its field comes from | In one line |
 |---|---|---|
-| field | free, from the magnets | made by a d current, costs copper loss |
-| rotor losses | small | currents in the cage |
-| efficiency at light load | higher | lower |
-| magnets | rare earths: cost, supply | none |
-| unpowered, coasting | magnets still spin: iron loss, back-EMF | no field, no drag |
-| at high speed | field weakening needed | field simply reduced |
+| **PMSM** (this lecture) | magnets on the rotor, free | the traction machine of most EVs; step 01's machine under FOC |
+| brushed DC (deck) | a field winding or magnets | step 01's equations; brushes and commutator wear |
+| induction (deck) | a d current the inverter drives into a cage rotor | no magnets; the rotor slips behind the field |
+| wound-rotor synchronous | a rotor winding, fed through slip rings | no magnets; the field is a second current to control |
+| switched reluctance (deck) | none: an iron rotor pulled into line | simplest rotor; torque pulses, noisy |
 
 </div>
 <div>
 
-**Why some all-wheel-drive cars pair one of each** (Audi, Q4 e-tron quattro): the PMSM on the rear
-axle drives alone in moderate driving, for efficiency; the induction machine on the front axle
-switches in when the driver asks for more power, and has minimal drag losses when inactive.
+**What the build needs from this:** a magnet's field costs nothing, so a PMSM loses least at
+**light load**, where the WLTC drives (section 04). A machine without magnets pays a current for
+its field at every point, but drags nothing when it is switched off: Audi's Q4 e-tron quattro
+drives on its rear PMSM and adds a front induction machine only for more power (Audi).
 
-**Machines for hybrids** (deck): a short, wide machine on the crankshaft (Honda Insight), and
-the same "inside-out" layout in wheel-hub motors: Lecture 5.
+The extra session takes these machines one by one: how each makes torque, how it is controlled,
+and the d-q model.
 
 </div>
 </div>
 
 <!--
-So, PMSM or induction? The table on the left compares them row by row.
+The other machines, all on one slide. We build one machine today, and this table says where it
+sits among the others. The first column names the machine, the second says where its magnetic field
+comes from, and the third gives it one line.
 
-The field: the PMSM's comes free, from its magnets; the induction machine makes it with a d current,
-which costs copper loss. Rotor losses: small in the PMSM; in the induction machine, currents flow in
-the cage. So the efficiency at light load is higher for the PMSM and lower for the induction
-machine, and light load is where most of the WLTC is driven, as section 04 shows. Magnets: the PMSM
-needs rare earths, with their cost and their supply risk; the induction machine needs none.
-Unpowered and coasting: the PMSM's magnets still spin past the stator, so it still has iron loss and
-a back-EMF; the induction machine has no field and no drag. And at high speed the PMSM needs field
-weakening, to hold its back-EMF below the pack voltage, while the induction machine's field is
-simply made smaller.
+The first row is the one we build: the permanent-magnet synchronous machine. Its field comes from
+magnets on the rotor, so it is free. It is the traction machine of most electric cars, and under
+field-oriented control it is build 01's machine, as the last slide showed.
 
-On the right, why some all-wheel-drive cars pair one of each. Audi's press kit for the Q4 e-tron
-describes it. A permanent-magnet synchronous machine drives the rear axle, and in moderate driving
-it drives the car alone, for efficiency. The quattro models add an induction machine on the front
-axle, which switches in when the driver asks for more power than the rear can give; while it is
-inactive, its drag losses are minimal, because it has no magnets.
+The brushed DC machine, from the course's deck: its field comes from a field winding or from
+magnets. It gave us build 01's two equations, but its brushes and commutator wear, which is why
+cars left it.
 
-And the deck's machines for hybrids: a short, wide machine sitting directly on the crankshaft, as in
-the Honda Insight, and the same inside-out layout in wheel-hub motors. The hybrids are next lecture.
+The induction machine, also in the deck. It has no magnets: the inverter drives a d current that
+magnetizes the rotor, a cage of short-circuited bars, and the rotor always turns a little slower
+than the field. That difference is called slip.
+
+The wound-rotor synchronous machine: no magnets either. Its rotor carries a winding, fed through
+slip rings, and that winding makes the field. So the field is a second current the controller can
+set, at the price of the copper loss in that winding.
+
+And the switched-reluctance machine, the last one in the deck. Its rotor is just laminated iron,
+pulled into line with whichever stator pole is switched on. It has the simplest rotor of all, but
+its torque comes in pulses, so it is noisy, and it has stayed rare in cars.
+
+On the right, what the build needs from all this. A magnet's field costs nothing, so a PMSM loses
+least at light load, and light load is where the WLTC drives, as section 04 shows on the efficiency
+map. A machine without magnets pays a current for its field at every operating point, but when it
+is switched off it has no field and drags nothing. That is why Audi's Q4 e-tron quattro, in Audi's
+own press kit, drives on a permanent-magnet machine on the rear axle in moderate driving, and
+switches in an induction machine on the front axle only when the driver asks for more power; while
+it is off, its drag losses are minimal.
+
+How each of these machines makes torque, how it is controlled, and the model of a machine in d and
+q, are the extra session's topics. Today we stay with the one we build.
 -->
 
 ---
@@ -427,7 +332,8 @@ the Honda Insight, and the same inside-out layout in wheel-hub motors. The hybri
   *i*<sub>d</sub> for the field.
 - From outside, that is **step 01's machine**: *T* ∝ *i*<sub>q</sub>, *E* ∝ ω, field weakening
   by a negative *i*<sub>d</sub>.
-- Induction machines need no magnets but pay for their field; SRMs need neither but pulse.
+- Machines without magnets (induction, wound rotor, SRM) pay for their field or pulse; the
+  extra session covers them.
 
 ### Next: what the converter does to that machine. <Link to="envelope">→ 04, the envelope</Link>
 
@@ -436,8 +342,9 @@ Section 03 in four lines. Brushless machines move the windings into the stator a
 into an inverter. A PMSM under field-oriented control keeps its stator current a quarter turn ahead
 of the magnets, so in the rotor's frame there are two steady currents: i q for torque, and i d for
 the field. From the outside, that is build 01's machine: torque proportional to i q, back-EMF
-proportional to omega, and field weakening by a negative i d. Induction machines need no magnets but
-pay for their field; switched-reluctance machines need neither, but their torque pulses.
+proportional to omega, and field weakening by a negative i d. The machines without magnets, the
+induction machine, the wound-rotor machine and the switched-reluctance machine, either pay a
+current for their field or deliver their torque in pulses; the extra session covers them.
 
 The inverter that does field-oriented control is, averaged over a switching period, a converter with
 a duty and a field. That converter is the next build.
