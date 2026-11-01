@@ -36,6 +36,7 @@ The conventions for a re-capture:
 
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
+| `step01-machine.png` | `HandsOn04.DCMachine` with `field` absent (the step 01 version, `RotationalEMF`), or a student's `DCMachine` built from the guide | The machine's internal diagram: `p` and `n` on the left edge, `resistor` → `inductor` → `emf` along the top and back to `n`; `emf.rotor` → `rotor` → `spline` on the right; `friction`, `iron`, `windage` and `constant_loss` in a row below, each on the rotor node and on `support` at the bottom. Not captured yet: the 2026-11 rehearsal had no browser. Until it exists, build 01a and guide step 01 show the circuit diagram `02-dc-machine.svg` (in `slides/images/lecture-04/`) instead. |
 | `step01-dyno.png` | `HandsOn04.DCMachineDyno` | `voltage` (k = V) into the top of `supply`, `ground` under `supply`; `machine` at the top right with its machine icon, `p` and `n` on its left edge wired to `supply`; `speed` into `dyno`, `machine.spline` to `dyno`, both supports down to `mounts`. |
 
 ## Step 02 — the converter
