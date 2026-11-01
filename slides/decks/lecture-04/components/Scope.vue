@@ -1,7 +1,10 @@
 <script setup lang="ts">
 // A digital storage oscilloscope that replays traces exported from a simulated Dyad model. Each
 // channel gets its own band of the 10 × 8 graticule; the scales are fixed across the variants, so
-// switching the duty or the modulation moves the trace and never the axes.
+// switching the duty or the modulation moves the trace and never the axes. A channel listed in
+// `offset` is shown like a scope with its vertical offset set: the band is centered on a round value
+// near that variant's mean, written on screen, so a small ripple on a large level fills the band. A
+// channel listed in `average` shows its measured mean, like a scope's measurement readout.
 import { useSlideContext } from "@slidev/client"
 import { computed, onMounted, onUnmounted, ref, useId, watch } from "vue"
 
@@ -10,7 +13,14 @@ interface Variant { label: string; t: number[]; channels: Channel[] }
 interface Traces { title: string; source: string; variants: Variant[] }
 
 const props = withDefaults(
-  defineProps<{ src: string; channels?: string[]; variant?: number; vdiv?: Record<string, number> }>(),
+  defineProps<{
+    src: string
+    channels?: string[]
+    variant?: number
+    vdiv?: Record<string, number>
+    offset?: string[]
+    average?: string[]
+  }>(),
   { variant: 0 },
 )
 
@@ -87,33 +97,58 @@ function si(value: number, unit: string) {
   return unit ? `${number} ${prefix}${unit}` : `${number * scale}`
 }
 
-// Scales come from every variant at once, DC-coupled: zero is always inside the band.
+const mean = (y: number[]) => y.reduce((a, b) => a + b, 0) / Math.max(y.length, 1)
+
+// One scale per channel across all variants. Without an offset the band is DC-referenced: zero is
+// always inside it. With one, the scale fits the widest swing of any variant around its own mean.
 const scales = computed(() => {
   const variants = data.value?.variants ?? []
   const n = Math.max(shown.value.length, 1)
   const bandDivs = 8 / n
   return shown.value.map((name, k) => {
-    let lo = 0
-    let hi = 0
-    let unit = ""
-    let label = name
-    for (const v of variants) {
-      const ch = v.channels.find((c) => c.name === name)
-      if (!ch) continue
-      unit = ch.unit
-      label = ch.label
-      for (const y of ch.y) {
-        if (y < lo) lo = y
-        if (y > hi) hi = y
-      }
-    }
-    const perDiv = props.vdiv?.[name] ?? nice125((hi - lo || 1) / bandDivs)
+    const offset = !!props.offset?.includes(name)
+    const traces = variants.map((v) => v.channels.find((c) => c.name === name))
+    const ranges = traces.map((ch) => (ch ? [Math.min(...ch.y), Math.max(...ch.y)] : [0, 0]))
+    const lo = Math.min(0, ...ranges.map((r) => r[0]))
+    const hi = Math.max(0, ...ranges.map((r) => r[1]))
+    const swing = offset ? Math.max(...ranges.map((r) => r[1] - r[0])) : hi - lo
+    const perDiv = props.vdiv?.[name] ?? nice125((swing || 1) / bandDivs)
+    const step = perDiv / 5
+    const mids = ranges.map((r) => (offset ? Math.round((r[0] + r[1]) / 2 / step) * step : (lo + hi) / 2))
+    const averages = traces.map((ch) => (ch && props.average?.includes(name) ? mean(ch.y) : null))
+    const first = traces.find(Boolean)
     const center = Y0 + ((k + 0.5) * H) / n
-    const mid = (lo + hi) / 2
-    return { name, label, unit, perDiv, color: COLORS[k % COLORS.length], top: Y0 + (k * H) / n,
-      y: (v: number) => center - ((v - mid) / perDiv) * DIV, mid }
+    return { name, label: first?.label ?? name, unit: first?.unit ?? "", perDiv, offset, mids, averages,
+      center, color: COLORS[k % COLORS.length], top: Y0 + (k * H) / n, bottom: Y0 + ((k + 1) * H) / n,
+      y: (v: number, vi: number) => center - ((v - mids[vi]) / perDiv) * DIV }
   })
 })
+
+// Readouts are drawn on an opaque box so a trace running under them stays legible; the font is
+// monospaced, so the width follows from the character count.
+const CHAR = 7.3
+function labelWidth(label: string, note: string) {
+  return (label.length + (note ? note.length + 1.5 : 0)) * CHAR + 8
+}
+
+function readout(value: number, unit: string) {
+  return `${Number(value.toPrecision(3))} ${unit}`.trim()
+}
+
+// What the current variant puts on screen per band: where the ground marker sits and the offset or
+// average readout.
+const bands = computed(() =>
+  scales.value.map((s) => {
+    const vi = current.value
+    const zero = s.y(0, vi)
+    const inBand = zero >= s.top && zero <= s.bottom
+    const notes = []
+    if (s.offset) notes.push(`offset ${readout(s.mids[vi], s.unit)}`)
+    const avg = s.averages[vi]
+    if (avg !== null) notes.push(`avg ${`${avg.toPrecision(3)} ${s.unit}`.trim()}`)
+    return { zero, inBand, marker: inBand ? zero : s.center, note: notes.join("  ") }
+  }),
+)
 
 const timebase = computed(() => {
   const variants = data.value?.variants ?? []
@@ -133,7 +168,7 @@ function pathOf(variant: Variant, name: string, y: (v: number) => number) {
 }
 
 const paths = computed(() =>
-  (data.value?.variants ?? []).map((v) => scales.value.map((s) => pathOf(v, s.name, s.y))),
+  (data.value?.variants ?? []).map((v, vi) => scales.value.map((s) => pathOf(v, s.name, (y) => s.y(y, vi)))),
 )
 
 // Normal trigger on the first channel shown: its first rising crossing of the middle of its range.
@@ -142,9 +177,10 @@ const trigger = computed(() => {
   const s = scales.value[0]
   const ch = v?.channels.find((c) => c.name === s?.name)
   if (!v || !s || !ch) return null
-  let k = ch.y.findIndex((y, i) => i > 0 && ch.y[i - 1] < s.mid && y >= s.mid)
+  const level = s.mids[current.value]
+  let k = ch.y.findIndex((y, i) => i > 0 && ch.y[i - 1] < level && y >= level)
   if (k < 0) k = 0
-  return { x: timebase.value.x(v.t[k]), y: s.y(s.mid), color: s.color }
+  return { x: timebase.value.x(v.t[k]), y: s.y(level, current.value), color: s.color }
 })
 
 const heads = computed(() => {
@@ -156,7 +192,7 @@ const heads = computed(() => {
   if (k < 0 || k >= v.t.length || head.value > W) return []
   return scales.value.flatMap((s) => {
     const ch = v.channels.find((c) => c.name === s.name)
-    return ch ? [{ x: X0 + head.value, y: s.y(ch.y[k]), color: s.color }] : []
+    return ch ? [{ x: X0 + head.value, y: s.y(ch.y[k], current.value), color: s.color }] : []
   })
 })
 
@@ -229,15 +265,19 @@ const minorTicks = computed(() => {
 
       <template v-if="status === 'ready' && data">
         <g v-for="(s, k) in scales" :key="s.name">
-          <line :x1="X0" :y1="s.y(0)" :x2="X0 + W" :y2="s.y(0)" :stroke="s.color" class="ground" />
-          <path :d="`M${X0 - 12} ${s.y(0) - 6} h7 l5 6 l-5 6 h-7 z`" :fill="s.color" />
-          <text :x="X0 - 8.5" :y="s.y(0) + 4" text-anchor="middle" class="marker-num">{{ k + 1 }}</text>
+          <line v-if="bands[k].inBand" :x1="X0" :y1="bands[k].zero" :x2="X0 + W" :y2="bands[k].zero" :stroke="s.color" class="ground" />
+          <path :d="`M${X0 - 12} ${bands[k].marker - 6} h7 l5 6 l-5 6 h-7 z`" :fill="s.color" />
+          <text :x="X0 - 8.5" :y="bands[k].marker + 4" text-anchor="middle" class="marker-num">{{ k + 1 }}</text>
           <path v-if="sweeping" :d="paths[previous][k]" :stroke="s.color" :stroke-opacity="FLOOR"
             :clip-path="`url(#${uid}-old)`" class="trace" />
           <path :d="paths[current][k]" :stroke="sweeping ? `url(#${uid}-g${k})` : s.color"
             :clip-path="`url(#${uid}-now)`" class="trace" />
         </g>
-        <text v-for="s in scales" :key="`l${s.name}`" :x="X0 + 6" :y="s.top + 14" :fill="s.color" class="band-label">{{ s.label }}</text>
+        <rect v-for="(s, k) in scales" :key="`b${s.name}`" :x="X0 + 2" :y="s.top + 2" height="16"
+          :width="labelWidth(s.label, bands[k].note)" class="label-box" />
+        <text v-for="(s, k) in scales" :key="`l${s.name}`" :x="X0 + 6" :y="s.top + 14" :fill="s.color" class="band-label">
+          {{ s.label }}<tspan v-if="bands[k].note" class="band-note" dx="10">{{ bands[k].note }}</tspan>
+        </text>
         <g v-for="(p, k) in heads" :key="`head${k}`">
           <circle :cx="p.x" :cy="p.y" r="6" :fill="p.color" opacity="0.25" />
           <circle :cx="p.x" :cy="p.y" r="2.4" fill="#fff" />
@@ -247,6 +287,8 @@ const minorTicks = computed(() => {
           <text :x="trigger.x + 8" :y="Y0 - 2" class="trig-t">T</text>
           <path :d="`M${X0 + W + 1} ${trigger.y} l8 -6 v12 z`" :fill="trigger.color" />
         </g>
+        <rect :x="X0 + W - 10 - labelWidth(data.variants[current].label, '')" :y="Y0 + 2" height="16"
+          :width="labelWidth(data.variants[current].label, '') + 8" class="label-box" />
         <text :x="X0 + W - 6" :y="Y0 + 14" text-anchor="end" class="status">{{ data.variants[current].label }}</text>
       </template>
 
@@ -297,6 +339,8 @@ const minorTicks = computed(() => {
 .scope .marker-num { font-size: 10px; font-weight: 700; fill: #070c0a; }
 .scope .band-label, .scope .status, .scope .message { paint-order: stroke; stroke: #070c0a; stroke-width: 4px; }
 .scope .band-label { font-size: 12px; }
+.scope .band-note { fill: #e8edf2; }
+.scope .label-box { fill: #070c0a; fill-opacity: 0.85; }
 .scope .trace { fill: none; stroke-width: 1.8; stroke-linejoin: round; }
 .scope .trig { fill: #ff9a3c; }
 .scope .trig-t { font-size: 9px; font-weight: 700; fill: #ff9a3c; }

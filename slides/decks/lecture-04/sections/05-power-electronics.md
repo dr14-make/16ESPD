@@ -183,7 +183,7 @@ routeAlias: buck
 </div>
 <div>
 
-<Scope src="/scope/buck.json" />
+<Scope src="/scope/buck.json" :offset="['i_L']" :average="['v_out']" />
 
 </div>
 </div>
@@ -201,23 +201,28 @@ The average output is d times V in.
 
 On the right, an oscilloscope. Its traces are not drawn by hand: they are a run of the library's
 `BuckChopper` model, exported and replayed; the line under the screen names the model and the
-script. Each period at 20 kilohertz is 50 microseconds, and the screen shows a few of them. Four
-channels, one per band, each with its own scale at the bottom of the screen. Channel 1, yellow, is
-the gate: high while the switch is on. Channel 2, cyan, is the switch node, the top of the diode.
-While the switch is on it sits at the supply, 48 volts; while it is off it drops just below zero,
-by the diode's forward drop, because the diode now carries the current. Channel 3, magenta, is the
-inductor current. Watch it ramp up while the gate is high and ramp down while it is low: it never
-stops, it only changes slope. Channel 4, green, is the output voltage across the load, the inductor
-current times 0.7 ohms, so it has the same small ripple.
+script. Each period at 20 kilohertz is 50 microseconds, 2 and a half divisions at 20 microseconds
+per division, so the screen shows four periods. Four channels, one per band, each with its own scale
+at the bottom of the screen. Channel 1, yellow, is the gate: high while the switch is on. Channel 2,
+cyan, is the switch node, the top of the diode. While the switch is on it sits at the supply, 48
+volts; while it is off it drops just below zero, by the diode's forward drop, because the diode now
+carries the current. Channel 3, magenta, is the inductor current. This channel has its offset set,
+as you would on a real scope: the middle of its band is the value written next to its name, so a
+ripple of a few amperes on top of tens of amperes fills the band. Watch it ramp up while the gate
+is high and ramp down while it is low: it never stops, it only changes slope. Channel 4, green, is
+the output voltage across the load. There is no output capacitor, so it is the inductor current
+times 0.7 ohms, with the same ripple; its band starts at zero, and the readout gives its average.
 
-The buttons under the screen switch the duty. The scales stay fixed, so you can see the output
-move: it follows d times V in, a little below it. A larger duty keeps the gate high longer, holds
-the switch node at 48 volts longer, and lifts the inductor current and the output with it.
+The buttons under the screen switch the duty between a quarter, a half and three quarters. The
+scales stay fixed, so you can see the output move: it follows d times V in, a little below it. At d
+equal to one half the readout says 22.8 volts, against 24 for the ideal chopper. A larger duty
+keeps the gate high longer, holds the switch node at 48 volts longer, and lifts the inductor current
+and the output with it; the offset next to the inductor current moves up with each step.
 
-The line under the figures gives the design point: 48 volts down to 13 at 20 kilohertz, about 250
+The line under the scope gives the design point: 48 volts down to 13 at 20 kilohertz, about 250
 watts. That is the kind of converter that feeds a 12 volt bus from a 48 volt mild-hybrid battery.
-The design point is assumed, not taken from a product. The duty is 0.3, so the textbook output would
-be 14.4 volts; the simulated output sits lower, at about 13, because of the diode's drop during the
+The design point is assumed, not taken from a product, and it sits between the scope's first two
+duties. Its duty is 0.3, so the textbook output would be 14.4 volts; the simulated output sits lower, at about 13, because of the diode's drop during the
 off time and the resistive drops. The diode is the library's exponential diode, 0.6 volts at 3.3
 amperes and 0.8 volts at 20 amperes, the deck's 0.6 volt diode.
 -->
@@ -327,7 +332,7 @@ $$
 </div>
 <div>
 
-<Scope src="/scope/boost.json" />
+<Scope src="/scope/boost.json" :offset="['i_L']" :average="['v_out']" />
 
 </div>
 </div>
@@ -348,18 +353,25 @@ the output sits above the supply. Averaged, the output voltage is V in divided b
 of one half doubles the voltage, and the closer d gets to 1, the higher the output.
 
 On the right, the oscilloscope, replaying a run of the library's switched `BoostChopper` model; the
-line under the screen names the model and the script. Channel 1, yellow, is the gate. Channel 2,
-cyan, is the switch node, the point between the inductor, the switch and the diode. While the
-switch is on it is held at ground; while it is off it jumps up to the output, plus the diode's
-drop, because the inductor is now pushing its current through the diode. Channel 3, magenta, is the
-inductor current. It ramps up while the gate is high, the whole supply voltage across the
+line under the screen names the model and the script; the supply is 48 volts. Channel 1, yellow,
+is the gate. Channel 2, cyan, is the switch node, the point between the inductor, the switch and
+the diode. While the switch is on it is held at ground; while it is off it jumps up to the output,
+plus the diode's drop, because the inductor is now pushing its current through the diode. Channel
+3, magenta, is the inductor current, with its offset set, so the band is centered on the value
+written next to its name. It ramps up while the gate is high, the whole supply voltage across the
 inductor, and ramps down while the gate is low, when the inductor gives its energy to the output.
-Channel 4, green, is the output voltage: steady, held up by the capacitor, and above the supply.
+Channel 4, green, is the output voltage, with its band starting at zero and its average in the
+readout. It sits well above the supply, with a ripple: it sags while the switch is on, because then
+the capacitor alone feeds the load, and climbs back while the switch is off, when the inductor
+recharges it through the diode.
 
-Switch the duty with the buttons under the screen. The scales stay fixed. A larger duty keeps the
-switch node at ground longer, the inductor current climbs higher, and the output rises: it follows
-V in over 1 minus d, a little below it because of the losses, and it climbs faster the closer d
-comes to 1.
+Switch the duty with the buttons under the screen: a quarter, a half, three quarters. The scales
+stay fixed. A larger duty keeps the switch node at ground longer, the inductor current climbs
+higher, and the output rises: it follows V in over 1 minus d, a little below it because of the
+losses. At d equal to one half the readout says 93.1 volts, against 96 for the ideal converter. At
+three quarters the ideal would be 192 volts; the readout is lower, 181, because the losses grow
+with the current, and the inductor current is now around 70 amperes. The closer d comes to 1, the
+faster the output climbs, and the further the real converter falls short of the formula.
 
 Run it backwards, with the energy flowing from the high side to the low side, and a boost is a buck.
 So one bidirectional converter can do both.
@@ -404,7 +416,8 @@ voltage between a and b. In square-wave operation it jumps between plus and minu
 cycle: plus while A and D are on, minus while B and C are on. Channel 2, cyan, is the load current.
 In each half cycle it climbs toward 350 volts over 10 ohms, 35 amperes, with the load's time
 constant, L over R, 1 millisecond, so it rises and falls in exponential curves, and it changes sign
-later than the voltage does: the inductance holds it back.
+later than the voltage does: the inductance holds it back. The run starts from rest, so the first
+half cycle climbs from zero; after that the current swings between about plus and minus 35.
 
 The second button switches the same bridge to sine pulse-width modulation, with m equal to 0.8 and
 a 1 kilohertz carrier, on the same scales. Now the voltage is a train of pulses, between 0 and plus
