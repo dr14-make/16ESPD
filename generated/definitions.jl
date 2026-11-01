@@ -229,5 +229,7 @@ component.
 end
 
 
+include("DriverCommands_definition.jl")
 include("Hello_definition.jl")
+include("SignalGain_definition.jl")
 include("World_definition.jl")

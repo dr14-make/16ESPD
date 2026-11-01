@@ -1,0 +1,33 @@
+"Driver commands held between frames, with recorded discrete parameter history."
+external component DriverCommands
+  "Throttle command"
+  throttle_signal = RealOutput()
+  "Brake command"
+  brake_signal = RealOutput()
+  "Steering command"
+  steer_signal = RealOutput()
+  "ESP enable command"
+  esp_signal = RealOutput()
+  "ABS enable command"
+  abs_signal = RealOutput()
+  "Front-left friction multiplier"
+  mu_fl_signal = RealOutput()
+  "Front-right friction multiplier"
+  mu_fr_signal = RealOutput()
+  "Rear-left friction multiplier"
+  mu_rl_signal = RealOutput()
+  "Rear-right friction multiplier"
+  mu_rr_signal = RealOutput()
+end
+
+"Signal gain with a causal multiplier."
+component SignalGain
+  "Signal to scale"
+  u = RealInput()
+  "Multiplier"
+  k = RealInput()
+  "Scaled signal"
+  y = RealOutput()
+relations
+  y = k * u
+end

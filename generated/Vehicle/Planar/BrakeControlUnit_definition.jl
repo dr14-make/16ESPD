@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   BrakeControlUnit(; name, dt, esp_on, abs_on, L, K_us, i_s, mu_est, g, k_lim, v_floor, Kp, Ki, deadband, v_on, Mz_max, tw, radius, T_max, T_build, R_build, select_low, T_p, lambda_1_f, lambda_1_r, lambda_lock, alpha_rel, beta_reapply, l_rec, T_hold_max, k_dec, k_inc_fast, k_inc_slow, v_min, __overrides)
+   BrakeControlUnit(; name, use_signals, dt, esp_on, abs_on, L, K_us, i_s, mu_est, g, k_lim, v_floor, Kp, Ki, deadband, v_on, Mz_max, tw, radius, T_max, T_build, R_build, select_low, T_p, lambda_1_f, lambda_1_r, lambda_lock, alpha_rel, beta_reapply, l_rec, T_hold_max, k_dec, k_inc_fast, k_inc_slow, v_min, __overrides)
 
 Electronic brake control unit combining continuous ESP and sampled four-channel ABS.
 
@@ -13,6 +13,7 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `use_signals`         | Use causal enable commands                         | --  |   false |
 | `dt`         |                          | s  |   0.005 |
 | `esp_on`         |                          | --  |   1.0 |
 | `abs_on`         |                          | --  |   1.0 |
@@ -61,8 +62,10 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
  * `tau_fr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `tau_rl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `tau_rr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `esp_enable` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `abs_enable` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function BrakeControlUnit(; name = nothing, var"dt"=0.005, var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"L"=2.7, var"K_us"=0.0020387, var"i_s"=Float64(16.0), var"mu_est"=Float64(1.0), var"g"=9.81, var"k_lim"=0.85, var"v_floor"=Float64(1.0), var"Kp"=Float64(40000.0), var"Ki"=Float64(0.0), var"deadband"=0.03, var"v_on"=Float64(5.0), var"Mz_max"=Float64(10000.0), var"tw"=1.55, var"radius"=0.31, var"T_max"=Float64(2500.0), var"T_build"=0.1, var"R_build"=Float64(1000000000.0), var"select_low"=Float64(1.0), var"T_p"=0.03, var"lambda_1_f"=0.08, var"lambda_1_r"=0.06, var"lambda_lock"=0.2, var"alpha_rel"=0.6, var"beta_reapply"=0.85, var"l_rec"=0.03, var"T_hold_max"=0.06, var"k_dec"=Float64(40000.0), var"k_inc_fast"=Float64(160000.0), var"k_inc_slow"=Float64(16000.0), var"v_min"=1.5, __overrides = Dict{String, Any}())
+@component function BrakeControlUnit(; name = nothing, var"use_signals"=false, var"dt"=0.005, var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"L"=2.7, var"K_us"=0.0020387, var"i_s"=Float64(16.0), var"mu_est"=Float64(1.0), var"g"=9.81, var"k_lim"=0.85, var"v_floor"=Float64(1.0), var"Kp"=Float64(40000.0), var"Ki"=Float64(0.0), var"deadband"=0.03, var"v_on"=Float64(5.0), var"Mz_max"=Float64(10000.0), var"tw"=1.55, var"radius"=0.31, var"T_max"=Float64(2500.0), var"T_build"=0.1, var"R_build"=Float64(1000000000.0), var"select_low"=Float64(1.0), var"T_p"=0.03, var"lambda_1_f"=0.08, var"lambda_1_r"=0.06, var"lambda_lock"=0.2, var"alpha_rel"=0.6, var"beta_reapply"=0.85, var"l_rec"=0.03, var"T_hold_max"=0.06, var"k_dec"=Float64(40000.0), var"k_inc_fast"=Float64(160000.0), var"k_inc_slow"=Float64(16000.0), var"v_min"=1.5, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -81,6 +84,7 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "use_signals") && (use_signals = pop!(__overrides, "use_signals"))
   haskey(__overrides, "dt") && (dt = pop!(__overrides, "dt"))
   haskey(__overrides, "esp_on") && (esp_on = pop!(__overrides, "esp_on"))
   haskey(__overrides, "abs_on") && (abs_on = pop!(__overrides, "abs_on"))
@@ -240,6 +244,8 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
   append!(__vars, @variables (tau_fr(t)::Real), [output = true])
   append!(__vars, @variables (tau_rl(t)::Real), [output = true])
   append!(__vars, @variables (tau_rr(t)::Real), [output = true])
+  append!(__vars, @variables (esp_enable(t)::Real), [input = true])
+  append!(__vars, @variables (abs_enable(t)::Real), [input = true])
 
   ### Variables (declarations)
 
@@ -251,10 +257,10 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
   ### Components
   # Subcomponent esp of type VehicleSystemsComponents.Vehicle.Planar.ESPController
   esp_overrides = __pop_subcomponent_overrides!(__overrides, "esp")
-  push!(__systems, @named esp = VehicleSystemsComponents.Vehicle.Planar.ESPController(; esp_on=esp_on, L=L, K_us=K_us, i_s=i_s, mu_est=mu_est, g=g, k_lim=k_lim, v_floor=v_floor, Kp=Kp, Ki=Ki, deadband=deadband, v_on=v_on, Mz_max=Mz_max, tw=tw, radius=radius, T_max=T_max, T_build=T_build, R_build=R_build, __overrides = esp_overrides))
+  push!(__systems, @named esp = VehicleSystemsComponents.Vehicle.Planar.ESPController(; use_signals=use_signals, esp_on=esp_on, L=L, K_us=K_us, i_s=i_s, mu_est=mu_est, g=g, k_lim=k_lim, v_floor=v_floor, Kp=Kp, Ki=Ki, deadband=deadband, v_on=v_on, Mz_max=Mz_max, tw=tw, radius=radius, T_max=T_max, T_build=T_build, R_build=R_build, __overrides = esp_overrides))
   # Subcomponent abs of type VehicleSystemsComponents.Vehicle.Planar.ABSUnit
   abs_overrides = __pop_subcomponent_overrides!(__overrides, "abs")
-  push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(; abs_on=abs_on, dt=dt, select_low=select_low, T_p=T_p, lambda_1_f=lambda_1_f, lambda_1_r=lambda_1_r, lambda_lock=lambda_lock, alpha_rel=alpha_rel, beta_reapply=beta_reapply, l_rec=l_rec, T_hold_max=T_hold_max, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, v_min=v_min, __overrides = abs_overrides))
+  push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(; use_signals=use_signals, abs_on=abs_on, dt=dt, select_low=select_low, T_p=T_p, lambda_1_f=lambda_1_f, lambda_1_r=lambda_1_r, lambda_lock=lambda_lock, alpha_rel=alpha_rel, beta_reapply=beta_reapply, l_rec=l_rec, T_hold_max=T_hold_max, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, v_min=v_min, __overrides = abs_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -283,6 +289,13 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
   push!(__eqs, connect(abs.tau_fr, tau_fr))
   push!(__eqs, connect(abs.tau_rl, tau_rl))
   push!(__eqs, connect(abs.tau_rr, tau_rr))
+
+  ### Control Structures
+  if use_signals
+    push!(__eqs, connect(esp_enable, esp.esp_enable))
+    push!(__eqs, connect(abs_enable, abs.abs_enable))
+  else
+  end
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   PlanarBrakedWheel(; name, radius, J, mu_A, mu_S, mu_scale, sAdhesion, sSlide, vAdhesion_min, vSlide_min, T_brake, tau_max, w0, __overrides)
+   PlanarBrakedWheel(; name, use_signals, radius, J, mu_A, mu_S, mu_scale, sAdhesion, sSlide, vAdhesion_min, vSlide_min, T_brake, tau_max, w0, __overrides)
 
 Planar road wheel combining tire contact, spin inertia, and an in-line brake.
 
@@ -17,6 +17,7 @@ All plant interfaces are physical except the brake actuator command. Normal load
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `use_signals`         | Use causal road friction rather than the multiplier parameter                         | --  |   false |
 | `radius`         | Wheel rolling radius (repository default)                         | m  |   0.31 |
 | `J`         | One-wheel spin inertia (assumed)                         | kg.m2  |   1.0 |
 | `mu_A`         | Peak adhesion coefficient (probe)                         | --  |   1.0 |
@@ -32,6 +33,7 @@ All plant interfaces are physical except the brake actuator command. Normal load
 
 ## Connectors
 
+ * `mu_input` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `frame_a` - Coordinate system (2-dim.) fixed to the component with one cut-force and cut-torque.
 All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
  * `spin` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
@@ -46,7 +48,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
 | `F_y`         | Lateral tire force on the vehicle                         | N  |
 | `F_z`         | Normal tire load                         | N  |
 """
-@component function PlanarBrakedWheel(; name = nothing, var"radius"=0.31, var"J"=Float64(1.0), var"mu_A"=Float64(1.0), var"mu_S"=0.8, var"mu_scale"=Float64(1.0), var"sAdhesion"=0.12, var"vAdhesion_min"=0.05, var"vSlide_min"=0.15, var"T_brake"=0.03, var"tau_max"=Float64(2500.0), var"w0"=Float64(1.0), var"sSlide"=nothing, __overrides = Dict{String, Any}())
+@component function PlanarBrakedWheel(; name = nothing, var"use_signals"=false, var"radius"=0.31, var"J"=Float64(1.0), var"mu_A"=Float64(1.0), var"mu_S"=0.8, var"mu_scale"=Float64(1.0), var"sAdhesion"=0.12, var"vAdhesion_min"=0.05, var"vSlide_min"=0.15, var"T_brake"=0.03, var"tau_max"=Float64(2500.0), var"w0"=Float64(1.0), var"sSlide"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -65,6 +67,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "use_signals") && (use_signals = pop!(__overrides, "use_signals"))
   haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
   haskey(__overrides, "J") && (J = pop!(__overrides, "J"))
   haskey(__overrides, "mu_A") && (mu_A = pop!(__overrides, "mu_A"))
@@ -134,6 +137,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
+  append!(__vars, @variables (mu_input(t)::Real), [input = true])
   append!(__vars, @variables (tau_cmd(t)::Real), [input = true])
 
   ### Variables (declarations)
@@ -161,7 +165,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   push!(__systems, @named load = __Dyad__Flange())
   # Subcomponent joint of type MultibodyComponents.PlanarMechanics.SlipBasedWheelJoint
   joint_overrides = __pop_subcomponent_overrides!(__overrides, "joint")
-  push!(__systems, @named joint = MultibodyComponents.PlanarMechanics.SlipBasedWheelJoint(; N=Float64(0.0), mu_A=mu_scale * mu_A, mu_S=mu_scale * mu_S, r=[Float64(1), Float64(0)], render=false, radius=radius, sAdhesion=sAdhesion, sSlide=sSlide, vAdhesion_min=vAdhesion_min, vSlide_min=vSlide_min, __overrides = joint_overrides))
+  push!(__systems, @named joint = MultibodyComponents.PlanarMechanics.SlipBasedWheelJoint(; N=Float64(0.0), mu_A=ifelse(use_signals, mu_A, mu_scale * mu_A), mu_S=ifelse(use_signals, mu_S, mu_scale * mu_S), r=[Float64(1), Float64(0)], render=false, radius=radius, sAdhesion=sAdhesion, sSlide=sSlide, vAdhesion_min=vAdhesion_min, vSlide_min=vSlide_min, __overrides = joint_overrides))
   # Subcomponent inertia of type RotationalComponents.Components.Inertia
   inertia_overrides = __pop_subcomponent_overrides!(__overrides, "inertia")
   push!(__systems, @named inertia = RotationalComponents.Components.Inertia(; J=J, __overrides = inertia_overrides))
@@ -186,7 +190,6 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   __assertions = []
 
   ### Equations
-  push!(__eqs, joint.dynamicLoad ~ load.f)
   push!(__eqs, load.s ~ 0.0)
   push!(__eqs, F_x ~ -joint.f_long)
   push!(__eqs, F_y ~ -joint.f_lat)
@@ -197,6 +200,13 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   push!(__eqs, connect(brake.spline_b, spin))
   push!(__eqs, connect(brake.support, housing.spline))
   push!(__eqs, connect(tau_cmd, brake.tau_cmd))
+
+  ### Control Structures
+  if use_signals
+    push!(__eqs, joint.dynamicLoad ~ mu_input * load.f)
+  else
+    push!(__eqs, joint.dynamicLoad ~ load.f)
+  end
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

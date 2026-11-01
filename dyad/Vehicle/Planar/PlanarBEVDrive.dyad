@@ -1,6 +1,6 @@
 """
 The battery-electric planar car, driven by a person: the throttle, brake pedal and steering wheel
-are parameters a real-time loop sets between solver steps, and the car answers through the same
+are causal signals from a held driver source updated between solver steps, and the car answers through the same
 chain the WLTC and hard-stop benches use.
 
 The throttle asks the machine for up to `tau_max`; the brake pedal asks for up to `T_full` at
@@ -15,16 +15,8 @@ takes to move. Besides being physical, it keeps a parameter change from stepping
 torque, which would make an algebraic variable jump at an instant the solver has no event for.
 """
 component PlanarBEVDrive
-  "Throttle pedal, 0 released to 1 floored"
-  parameter throttle::Real = 0.0
-  "Brake pedal, 0 released to 1 floored"
-  parameter brake::Real = 0.0
-  "Steering-wheel angle, positive turning left"
-  parameter steer::Angle = 0.0
-  "ESP: 1 active, 0 off"
-  parameter esp_on::Real = 1.0
-  "ABS: 1 active, 0 off"
-  parameter abs_on::Real = 1.0
+  "Held driver command source"
+  driver = VehicleSystemsComponents.DriverCommands()
   "Time the driver takes to move a pedal or the wheel (assumed)"
   parameter T_driver::Time = 0.05
   "Vehicle mass (probe)"
@@ -45,9 +37,6 @@ component PlanarBEVDrive
   parameter ratio::Real = 8.193
   "Initial wheel surface speed above the body's, keeps the start off zero slip (assumed)"
   parameter dv_wheel::Velocity = 0.01
-  throttle_pedal = BlockComponents.Sources.Constant(k = throttle) {^throttle_pedal}
-  brake_pedal = BlockComponents.Sources.Constant(k = brake) {^brake_pedal}
-  steering_wheel = BlockComponents.Sources.Constant(k = steer) {^steering_wheel}
   "Machine-shaft torque the pedals ask for: throttle drives, brake brakes"
   pedals = BlockComponents.Math.Add(k1 = tau_max, k2 = -4.0 * T_full / ratio) {^pedals}
   foot = BlockComponents.Continuous.FirstOrder(T = T_driver) {^foot}
@@ -58,19 +47,25 @@ component PlanarBEVDrive
   drive = VehicleSystemsComponents.Vehicle.Electric.ElectricDrive(ratio = ratio, P_aux = P_aux) {^drive}
   differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
   mount = RotationalComponents.Components.Fixed() {^mount}
-  ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(esp_on = esp_on, abs_on = abs_on, radius = radius, T_max = T_full) {^ecu}
-  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius, tau_max = T_full) {^car}
+  ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(use_signals = true, radius = radius, T_max = T_full) {^ecu}
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(use_signals = true, m = m, radius = radius, tau_max = T_full) {^car}
   roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
   flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
   motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
   slips = VehicleSystemsComponents.Vehicle.Planar.BusSlip() {^slips}
 relations
+  connect(driver.esp_signal, ecu.esp_enable)
+  connect(driver.abs_signal, ecu.abs_enable)
+  connect(driver.mu_fl_signal, car.mu_fl)
+  connect(driver.mu_fr_signal, car.mu_fr)
+  connect(driver.mu_rl_signal, car.mu_rl)
+  connect(driver.mu_rr_signal, car.mu_rr)
   connect(car.bus, motion.bus, slips.bus) {^wbus}
-  connect(throttle_pedal.y, pedals.u1) {^w1}
-  connect(brake_pedal.y, pedals.u2) {^w2}
+  connect(driver.throttle_signal, pedals.u1) {^w1}
+  connect(driver.brake_signal, pedals.u2) {^w2}
   connect(pedals.y, foot.u) {^w3}
   connect(foot.y, blend.tau_ref) {^w4}
-  connect(steering_wheel.y, hands.u) {^w5}
+  connect(driver.steer_signal, hands.u) {^w5}
   connect(hands.y, robot.delta_sw_ref) {^w6}
   connect(robot.steering, car.steering) {^w7}
   connect(motion.vx, kmh.u, ecu.vx) {^w8}

@@ -5,10 +5,10 @@
 
 
 @doc Markdown.doc"""
-   PlanarBEVDrive(; name, throttle, brake, steer, esp_on, abs_on, T_driver, m, radius, T_full, tau_max, P_charge, v_fade, P_aux, ratio, dv_wheel, __overrides)
+   PlanarBEVDrive(; name, T_driver, m, radius, T_full, tau_max, P_charge, v_fade, P_aux, ratio, dv_wheel, __overrides)
 
 The battery-electric planar car, driven by a person: the throttle, brake pedal and steering wheel
-are parameters a real-time loop sets between solver steps, and the car answers through the same
+are causal signals from a held driver source updated between solver steps, and the car answers through the same
 chain the WLTC and hard-stop benches use.
 
 The throttle asks the machine for up to `tau_max`; the brake pedal asks for up to `T_full` at
@@ -26,11 +26,6 @@ torque, which would make an algebraic variable jump at an instant the solver has
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `throttle`         | Throttle pedal, 0 released to 1 floored                         | --  |   0.0 |
-| `brake`         | Brake pedal, 0 released to 1 floored                         | --  |   0.0 |
-| `steer`         | Steering-wheel angle, positive turning left                         | rad  |   0.0 |
-| `esp_on`         | ESP: 1 active, 0 off                         | --  |   1.0 |
-| `abs_on`         | ABS: 1 active, 0 off                         | --  |   1.0 |
 | `T_driver`         | Time the driver takes to move a pedal or the wheel (assumed)                         | s  |   0.05 |
 | `m`         | Vehicle mass (probe)                         | kg  |   1500.0 |
 | `radius`         | Wheel radius (repository default)                         | m  |   0.31 |
@@ -42,7 +37,7 @@ torque, which would make an algebraic variable jump at an instant the solver has
 | `ratio`         | Single-speed reduction (Nissan)                         | --  |   8.193 |
 | `dv_wheel`         | Initial wheel surface speed above the body's, keeps the start off zero slip (assumed)                         | m/s  |   0.01 |
 """
-@component function PlanarBEVDrive(; name = nothing, var"throttle"=Float64(0.0), var"brake"=Float64(0.0), var"steer"=Float64(0.0), var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"T_driver"=0.05, var"m"=Float64(1500.0), var"radius"=0.31, var"T_full"=Float64(2500.0), var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"dv_wheel"=0.01, __overrides = Dict{String, Any}())
+@component function PlanarBEVDrive(; name = nothing, var"T_driver"=0.05, var"m"=Float64(1500.0), var"radius"=0.31, var"T_full"=Float64(2500.0), var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"dv_wheel"=0.01, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -61,11 +56,6 @@ torque, which would make an algebraic variable jump at an instant the solver has
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
-  haskey(__overrides, "throttle") && (throttle = pop!(__overrides, "throttle"))
-  haskey(__overrides, "brake") && (brake = pop!(__overrides, "brake"))
-  haskey(__overrides, "steer") && (steer = pop!(__overrides, "steer"))
-  haskey(__overrides, "esp_on") && (esp_on = pop!(__overrides, "esp_on"))
-  haskey(__overrides, "abs_on") && (abs_on = pop!(__overrides, "abs_on"))
   haskey(__overrides, "T_driver") && (T_driver = pop!(__overrides, "T_driver"))
   haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
   haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
@@ -90,21 +80,6 @@ torque, which would make an algebraic variable jump at an instant the solver has
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
-  __local__throttle = throttle
-  append!(__params, @parameters (throttle::Real), [description = "Throttle pedal, 0 released to 1 floored"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, throttle, __local__throttle)
-  __local__brake = brake
-  append!(__params, @parameters (brake::Real), [description = "Brake pedal, 0 released to 1 floored"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, brake, __local__brake)
-  __local__steer = steer
-  append!(__params, @parameters (steer::Real), [description = "Steering-wheel angle, positive turning left"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, steer, __local__steer)
-  __local__esp_on = esp_on
-  append!(__params, @parameters (esp_on::Real), [description = "ESP: 1 active, 0 off"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, esp_on, __local__esp_on)
-  __local__abs_on = abs_on
-  append!(__params, @parameters (abs_on::Real), [description = "ABS: 1 active, 0 off"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, abs_on, __local__abs_on)
   __local__T_driver = T_driver
   append!(__params, @parameters (T_driver::Real), [description = "Time the driver takes to move a pedal or the wheel (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, T_driver, __local__T_driver)
@@ -148,15 +123,9 @@ torque, which would make an algebraic variable jump at an instant the solver has
   __constants = Any[]
 
   ### Components
-  # Subcomponent throttle_pedal of type BlockComponents.Sources.Constant
-  throttle_pedal_overrides = __pop_subcomponent_overrides!(__overrides, "throttle_pedal")
-  push!(__systems, @named throttle_pedal = BlockComponents.Sources.Constant(; k=throttle, __overrides = throttle_pedal_overrides))
-  # Subcomponent brake_pedal of type BlockComponents.Sources.Constant
-  brake_pedal_overrides = __pop_subcomponent_overrides!(__overrides, "brake_pedal")
-  push!(__systems, @named brake_pedal = BlockComponents.Sources.Constant(; k=brake, __overrides = brake_pedal_overrides))
-  # Subcomponent steering_wheel of type BlockComponents.Sources.Constant
-  steering_wheel_overrides = __pop_subcomponent_overrides!(__overrides, "steering_wheel")
-  push!(__systems, @named steering_wheel = BlockComponents.Sources.Constant(; k=steer, __overrides = steering_wheel_overrides))
+  # Subcomponent driver of type VehicleSystemsComponents.DriverCommands
+  driver_overrides = __pop_subcomponent_overrides!(__overrides, "driver")
+  push!(__systems, @named driver = VehicleSystemsComponents.DriverCommands(; __symbol_overrides(driver_overrides)...))
   # Subcomponent pedals of type BlockComponents.Math.Add
   pedals_overrides = __pop_subcomponent_overrides!(__overrides, "pedals")
   push!(__systems, @named pedals = BlockComponents.Math.Add(; k1=tau_max, k2=-4.0 * T_full / ratio, __overrides = pedals_overrides))
@@ -186,10 +155,10 @@ torque, which would make an algebraic variable jump at an instant the solver has
   push!(__systems, @named mount = RotationalComponents.Components.Fixed(; __overrides = mount_overrides))
   # Subcomponent ecu of type VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit
   ecu_overrides = __pop_subcomponent_overrides!(__overrides, "ecu")
-  push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(; esp_on=esp_on, abs_on=abs_on, radius=radius, T_max=T_full, __overrides = ecu_overrides))
+  push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(; use_signals=true, radius=radius, T_max=T_full, __overrides = ecu_overrides))
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
-  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; m=m, radius=radius, tau_max=T_full, __overrides = car_overrides))
+  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; use_signals=true, m=m, radius=radius, tau_max=T_full, __overrides = car_overrides))
   # Subcomponent roadload of type VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad
   roadload_overrides = __pop_subcomponent_overrides!(__overrides, "roadload")
   push!(__systems, @named roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(; m=m, __overrides = roadload_overrides))
@@ -233,12 +202,18 @@ torque, which would make an algebraic variable jump at an instant the solver has
   __assertions = []
 
   ### Equations
+  push!(__eqs, connect(driver.esp_signal, ecu.esp_enable))
+  push!(__eqs, connect(driver.abs_signal, ecu.abs_enable))
+  push!(__eqs, connect(driver.mu_fl_signal, car.mu_fl))
+  push!(__eqs, connect(driver.mu_fr_signal, car.mu_fr))
+  push!(__eqs, connect(driver.mu_rl_signal, car.mu_rl))
+  push!(__eqs, connect(driver.mu_rr_signal, car.mu_rr))
   push!(__eqs, connect(car.bus, motion.bus, slips.bus))
-  push!(__eqs, connect(throttle_pedal.y, pedals.u1))
-  push!(__eqs, connect(brake_pedal.y, pedals.u2))
+  push!(__eqs, connect(driver.throttle_signal, pedals.u1))
+  push!(__eqs, connect(driver.brake_signal, pedals.u2))
   push!(__eqs, connect(pedals.y, foot.u))
   push!(__eqs, connect(foot.y, blend.tau_ref))
-  push!(__eqs, connect(steering_wheel.y, hands.u))
+  push!(__eqs, connect(driver.steer_signal, hands.u))
   push!(__eqs, connect(hands.y, robot.delta_sw_ref))
   push!(__eqs, connect(robot.steering, car.steering))
   push!(__eqs, connect(motion.vx, kmh.u, ecu.vx))

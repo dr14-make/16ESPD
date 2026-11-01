@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   PlanarCar(; name, load_transfer, m, Iz, a, b, tw, radius, J, mu_A, mu_S, sAdhesion_f, sAdhesion_r, mu_scale_fl, mu_scale_fr, mu_scale_rl, mu_scale_rr, T_brake, tau_max, i_s, t_k, ackermann, h_cg, T_lt, __overrides)
+   PlanarCar(; name, use_signals, load_transfer, m, Iz, a, b, tw, radius, J, mu_A, mu_S, sAdhesion_f, sAdhesion_r, mu_scale_fl, mu_scale_fr, mu_scale_rl, mu_scale_rr, T_brake, tau_max, i_s, t_k, ackermann, h_cg, T_lt, __overrides)
 
 Four-wheel planar vehicle with physical steering, wheel, spin, and load paths.
 
@@ -16,6 +16,7 @@ steering column and each wheel, and the car sends every reading on its `bus` por
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `use_signals`         | Use causal road friction commands                         | --  |   false |
 | `load_transfer`         | Enable acceleration filtering and load transfer (derived)                         | --  |   false |
 | `m`         | Vehicle mass (probe)                         | kg  |   1500.0 |
 | `Iz`         | Yaw inertia (probe)                         | kg.m2  |   2500.0 |
@@ -42,6 +43,10 @@ steering column and each wheel, and the car sends every reading on its `bus` por
 
 ## Connectors
 
+ * `mu_fl` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `mu_fr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `mu_rl` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `mu_rr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `steering` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `chassis` - Coordinate system (2-dim.) fixed to the component with one cut-force and cut-torque.
 All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
@@ -69,7 +74,7 @@ A `CarBus` connects to a `CarBusIn`, field by field. Two `CarBus` ports would bo
 same signals, and the compiler does not reject that wiring, so connect a `CarBus` only to
 `CarBusIn` ports. ([`CarBus`](@ref))
 """
-@component function PlanarCar(; name = nothing, var"load_transfer"=false, var"m"=Float64(1500.0), var"Iz"=Float64(2500.0), var"a"=1.2, var"b"=1.5, var"tw"=1.55, var"radius"=0.31, var"J"=Float64(1.0), var"mu_A"=Float64(1.0), var"mu_S"=0.8, var"sAdhesion_f"=0.12, var"sAdhesion_r"=0.09, var"mu_scale_fl"=Float64(1.0), var"mu_scale_fr"=Float64(1.0), var"mu_scale_rl"=Float64(1.0), var"mu_scale_rr"=Float64(1.0), var"T_brake"=0.03, var"tau_max"=Float64(2500.0), var"i_s"=Float64(16.0), var"ackermann"=Float64(1.0), var"h_cg"=Float64(0.0), var"T_lt"=0.05, var"t_k"=nothing, __overrides = Dict{String, Any}())
+@component function PlanarCar(; name = nothing, var"use_signals"=false, var"load_transfer"=false, var"m"=Float64(1500.0), var"Iz"=Float64(2500.0), var"a"=1.2, var"b"=1.5, var"tw"=1.55, var"radius"=0.31, var"J"=Float64(1.0), var"mu_A"=Float64(1.0), var"mu_S"=0.8, var"sAdhesion_f"=0.12, var"sAdhesion_r"=0.09, var"mu_scale_fl"=Float64(1.0), var"mu_scale_fr"=Float64(1.0), var"mu_scale_rl"=Float64(1.0), var"mu_scale_rr"=Float64(1.0), var"T_brake"=0.03, var"tau_max"=Float64(2500.0), var"i_s"=Float64(16.0), var"ackermann"=Float64(1.0), var"h_cg"=Float64(0.0), var"T_lt"=0.05, var"t_k"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -88,6 +93,7 @@ same signals, and the compiler does not reject that wiring, so connect a `CarBus
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "use_signals") && (use_signals = pop!(__overrides, "use_signals"))
   haskey(__overrides, "load_transfer") && (load_transfer = pop!(__overrides, "load_transfer"))
   haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
   haskey(__overrides, "Iz") && (Iz = pop!(__overrides, "Iz"))
@@ -198,6 +204,10 @@ same signals, and the compiler does not reject that wiring, so connect a `CarBus
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
+  append!(__vars, @variables (mu_fl(t)::Real), [input = true])
+  append!(__vars, @variables (mu_fr(t)::Real), [input = true])
+  append!(__vars, @variables (mu_rl(t)::Real), [input = true])
+  append!(__vars, @variables (mu_rr(t)::Real), [input = true])
   append!(__vars, @variables (tau_fl(t)::Real), [input = true])
   append!(__vars, @variables (tau_fr(t)::Real), [input = true])
   append!(__vars, @variables (tau_rl(t)::Real), [input = true])
@@ -266,19 +276,19 @@ same signals, and the compiler does not reject that wiring, so connect a `CarBus
   push!(__systems, @named loads = VehicleSystemsComponents.Vehicle.Planar.QuasiStaticLoads(; m=m, a=a, b=b, tw=tw, h=h_cg, load_transfer=load_transfer, T_lt=T_lt, __overrides = loads_overrides))
   # Subcomponent fl of type VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel
   fl_overrides = __pop_subcomponent_overrides!(__overrides, "fl")
-  push!(__systems, @named fl = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(; radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_fl, sAdhesion=sAdhesion_f, sSlide=3 * sAdhesion_f, T_brake=T_brake, tau_max=tau_max, __overrides = fl_overrides))
+  push!(__systems, @named fl = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(; use_signals=use_signals, radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_fl, sAdhesion=sAdhesion_f, sSlide=3 * sAdhesion_f, T_brake=T_brake, tau_max=tau_max, __overrides = fl_overrides))
   # Subcomponent fr of type VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel
   fr_overrides = __pop_subcomponent_overrides!(__overrides, "fr")
-  push!(__systems, @named fr = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(; radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_fr, sAdhesion=sAdhesion_f, sSlide=3 * sAdhesion_f, T_brake=T_brake, tau_max=tau_max, __overrides = fr_overrides))
+  push!(__systems, @named fr = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(; use_signals=use_signals, radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_fr, sAdhesion=sAdhesion_f, sSlide=3 * sAdhesion_f, T_brake=T_brake, tau_max=tau_max, __overrides = fr_overrides))
   # Subcomponent rl of type VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel
   rl_overrides = __pop_subcomponent_overrides!(__overrides, "rl")
-  push!(__systems, @named rl = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(; radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_rl, sAdhesion=sAdhesion_r, sSlide=3 * sAdhesion_r, T_brake=T_brake, tau_max=tau_max, __overrides = rl_overrides))
+  push!(__systems, @named rl = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(; use_signals=use_signals, radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_rl, sAdhesion=sAdhesion_r, sSlide=3 * sAdhesion_r, T_brake=T_brake, tau_max=tau_max, __overrides = rl_overrides))
   # Subcomponent sensors of type VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors
   sensors_overrides = __pop_subcomponent_overrides!(__overrides, "sensors")
   push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, __overrides = sensors_overrides))
   # Subcomponent rr of type VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel
   rr_overrides = __pop_subcomponent_overrides!(__overrides, "rr")
-  push!(__systems, @named rr = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(; radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_rr, sAdhesion=sAdhesion_r, sSlide=3 * sAdhesion_r, T_brake=T_brake, tau_max=tau_max, __overrides = rr_overrides))
+  push!(__systems, @named rr = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(; use_signals=use_signals, radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_rr, sAdhesion=sAdhesion_r, sSlide=3 * sAdhesion_r, T_brake=T_brake, tau_max=tau_max, __overrides = rr_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -339,6 +349,15 @@ same signals, and the compiler does not reject that wiring, so connect a `CarBus
   push!(__eqs, connect(tau_fr, fr.tau_cmd))
   push!(__eqs, connect(tau_rl, rl.tau_cmd))
   push!(__eqs, connect(tau_rr, rr.tau_cmd))
+
+  ### Control Structures
+  if use_signals
+    push!(__eqs, connect(mu_fl, fl.mu_input))
+    push!(__eqs, connect(mu_fr, fr.mu_input))
+    push!(__eqs, connect(mu_rl, rl.mu_input))
+    push!(__eqs, connect(mu_rr, rr.mu_input))
+  else
+  end
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
