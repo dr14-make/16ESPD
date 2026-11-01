@@ -1349,7 +1349,12 @@ New component `ElectricDrive` in `MyCar`:
 | `ground` | ElectricalComponents › Analog › Basic › Ground | — |
 | `reduction` | RotationalComponents › Components › IdealGear | `ratio = ratio` |
 
-New component `BEVWLTC` in `MyCar`: paste the code below. It is the course library's planar WLTC bench with your drive on the front axle.
+New component `BEVWLTC` in `MyCar`: paste the car bench below, then put your drive on its front axle with these two parts:
+
+| Name | Library path | Set |
+| --- | --- | --- |
+| `drive` | your `ElectricDrive` | `ratio = ratio`, `P_aux = P_aux` |
+| `split` | VehicleSystemsComponents › Vehicle › Electric › TorqueSplit | `ratio = ratio`, `v_fade = v_fade` |
 
 :::: info Given parts: the reduction, the differential and the auxiliaries
 
@@ -1359,13 +1364,13 @@ New component `BEVWLTC` in `MyCar`: paste the code below. It is the course libra
 
 **`AuxLoad`** (`aux`): draws the current that makes *v*·*i* = `P_aux` from the pins it sits across, following the voltage within 10 ms. It stands for the DC-DC converter and everything on the 12 V network: control units, pumps, fans, lights.
 
-**`TorqueSplit`** (`split`, in the bench): VehicleSystemsComponents › Vehicle › Electric. Takes the driver's torque `tau_ref` and the speed `v` in km/h. Gives `tau_motor`, all of a positive `tau_ref` and the share `fade = clamp(v / v_fade, 0, 1)` of a negative one, and `tau_brake`, the rest of a negative one as a torque for each front brake: `-(1 - fade) min(tau_ref, 0) ratio / 2`.
+**`TorqueSplit`** (`split`): VehicleSystemsComponents › Vehicle › Electric. Takes the driver's torque `tau_ref` and the speed `v` in km/h. Gives `tau_motor`, all of a positive `tau_ref` and the share `fade = clamp(v / v_fade, 0, 1)` of a negative one, and `tau_brake`, the rest of a negative one as a torque for each front brake: `-(1 - fade) min(tau_ref, 0) ratio / 2`.
 
 ::::
 
 ::: warning Use these names
 
-The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, `drive.aux` and `drive.SoC`. Keep the names, and either your drive or the course library's `Vehicle.Electric.ElectricDrive` fits.
+Step 06 reads `drive.battery`, `drive.converter`, `drive.machine`, `drive.aux` and `drive.SoC`, and step 7 of **Do this** names `drive.converter`. Name the placed parts `drive` and `split`, keep the names inside the drive, and either your drive or the course library's `Vehicle.Electric.ElectricDrive` fits.
 
 :::
 
@@ -1416,7 +1421,6 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
      driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_max) {^driver}
      no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
      kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
-     drive = ElectricDrive(ratio = ratio, P_aux = P_aux) {^drive}
      differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
      mount = RotationalComponents.Components.Fixed() {^mount}
      straight = RotationalComponents.Components.Fixed() {^straight}
@@ -1424,23 +1428,17 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
      car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius) {^car}
      motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
      roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
-     split = VehicleSystemsComponents.Vehicle.Electric.TorqueSplit(ratio = ratio, v_fade = v_fade) {^split}
    relations
      connect(car.bus, motion.bus) {^wbus}
      connect(trace.y, driver.u_s) {^w1}
      connect(motion.vx, kmh.u) {^w2}
-     connect(kmh.y, driver.u_m, split.v) {^w3}
+     connect(kmh.y, driver.u_m) {^w3}
      connect(no_ff.y, driver.u_ff) {^w4}
-     connect(drive.spline, differential.flange_b) {^w5}
      connect(differential.flange_left, car.spin_fl) {^w6}
      connect(differential.flange_right, car.spin_fr) {^w7}
-     connect(drive.support, mount.spline) {^w8}
      connect(car.steering, straight.spline) {^w9}
      connect(flat.y, roadload.grade) {^w10}
      connect(car.chassis, roadload.chassis) {^w11}
-     connect(driver.y, split.tau_ref) {^w21}
-     connect(split.tau_motor, drive.tau_ref) {^w23}
-     connect(split.tau_brake, car.tau_fl, car.tau_fr) {^w24}
      car.tau_rl = 0.0
      car.tau_rr = 0.0
      initial car.body.r = [0, 0]
@@ -1459,7 +1457,6 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
      initial car.fr.brake.tau_actual = 0.0
      initial car.rl.brake.tau_actual = 0.0
      initial car.rr.brake.tau_actual = 0.0
-     initial drive.converter.i_out = 0.0
    metadata {
      "_links": {
        "wbus": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
@@ -1467,7 +1464,6 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
        "driver": {"Dyad": {"placement": {"diagram": {"x1": 140, "y1": 70, "x2": 240, "y2": 170}}}},
        "no_ff": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 10, "x2": 140, "y2": 50}}}},
        "kmh": {"Dyad": {"placement": {"diagram": {"x1": 40, "y1": 190, "x2": 110, "y2": 260}}}},
-       "drive": {"Dyad": {"placement": {"diagram": {"x1": 430, "y1": 50, "x2": 530, "y2": 150}}}},
        "differential": {"Dyad": {"placement": {"diagram": {"x1": 560, "y1": 260, "x2": 640, "y2": 340}}}},
        "mount": {"Dyad": {"placement": {"diagram": {"x1": 485, "y1": 190, "x2": 545, "y2": 240}}}},
        "straight": {"Dyad": {"placement": {"diagram": {"x1": 605, "y1": 500, "x2": 655, "y2": 550, "rot": 180}}}},
@@ -1475,21 +1471,15 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
        "car": {"Dyad": {"placement": {"diagram": {"x1": 520, "y1": 600, "x2": 740, "y2": 820}}}},
        "motion": {"Dyad": {"placement": {"diagram": {"x1": 775, "y1": 610, "x2": 975, "y2": 810}}}},
        "roadload": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 865, "x2": 570, "y2": 935}}}},
-       "split": {"Dyad": {"placement": {"diagram": {"x1": 290, "y1": 70, "x2": 390, "y2": 170}}}},
        "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
        "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 990, "y": 662.0}, {"x": 990, "y": 980}, {"x": 20, "y": 980}, {"x": 20, "y": 225}], "E": 2}]}},
-       "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 125, "y": 143}], "E": 2}, {"S": -1, "M": [{"x": 270, "y": 225}, {"x": 270, "y": 140}], "E": 3}], "junctions": [{"x": 125, "y": 225}]}},
+       "w3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 125, "y": 225}, {"x": 125, "y": 143}], "E": 2}]}},
        "w4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 190, "y": 30}], "E": 2}]}},
-       "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 100}, {"x": 550, "y": 344}], "E": 2}]}},
        "w6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 480, "y": 300}, {"x": 480, "y": 655}], "E": 2}]}},
        "w7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 765, "y": 300}, {"x": 765, "y": 655}], "E": 2}]}},
-       "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 515, "y": 150}], "E": 2}]}},
        "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
        "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-       "w11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 680, "y": 820}, {"x": 680, "y": 900}], "E": 2}]}},
-       "w21": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 265, "y": 120}, {"x": 265, "y": 100}], "E": 2}]}},
-       "w23": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-       "w24": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 410, "y": 140}, {"x": 410, "y": 633}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 500, "y": 470}, {"x": 750, "y": 470}, {"x": 750, "y": 633}], "E": 3}], "junctions": [{"x": 500, "y": 633}]}}
+       "w11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 680, "y": 820}, {"x": 680, "y": 900}], "E": 2}]}}
      }
    }
    end
@@ -1506,8 +1496,28 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
 
    :::
 
-   The last three `connect` lines are the driver's output split: the driver's torque goes into `split`, which also gets the car's speed from `kmh.y`, `split.tau_motor` drives your `ElectricDrive`, and `split.tau_brake` goes to both front brakes. The `initial` lines are the library bench's: the car starts at rest with its wheels turning 0.01 m/s ahead of it, because the tire model cannot start from exact zero slip.
-5. Click ▷ **Run Analysis → BEVWLTCTransient** once, then plot the speed against the trace, the battery and the machine:
+   This is the course library's planar WLTC bench with the front axle empty: the driver following the trace, the car with its road load, the differential already on the front wheels, and `mount`, a fixed spline waiting for the drive's housing. `v_fade`, `P_aux` and `ratio` are for the two parts you place next, and `BEVWLTCTransient` sets two of them. The `initial` lines are the library bench's: the car starts at rest with its wheels turning 0.01 m/s ahead of it, because the tire model cannot start from exact zero slip. It does not run yet: nothing turns the differential, and nothing drives the car's front brake inputs.
+5. Toggle back to the diagram. Place the two parts from the second table, rename them `drive` and `split`, and set the values in the **Set** column. Searching **+** for `ElectricDrive` lists the course library's `HandsOn04` and `Vehicle › Electric` drives first: drag the one under `MyCar`. The paste leaves room along the top: `split` right of `driver`, `drive` right of `split`, above `mount`.
+6. Wire:
+   1. `kmh.y → split.v`
+   2. `driver.y → split.tau_ref`
+   3. `split.tau_motor → drive.tau_ref`
+   4. `split.tau_brake → car.tau_fl`
+   5. `split.tau_brake → car.tau_fr`
+   6. `drive.spline → differential.flange_b`
+   7. `drive.support → mount.spline`
+
+   Wires 1–2 give the split what it decides on: the torque the driver asks for, and the car's speed in km/h. `kmh.y` already feeds `driver.u_m`; draw a second wire from the same port. Wires 3–5 hand the request on: driving, all of it to the machine; braking, to the machine above 10 km/h, fading to none at standstill, and the rest to the two front friction brakes. Wire 6 is the torque path, drive → differential → front wheels; the paste already wires `flange_left` and `flange_right` to the car's front spins. Wire 7 takes the reaction: the machine and the gear case push on their mounts as hard as they turn the shaft, and `mount` holds them.
+
+   Hover the ports before you wire them: on `split`, `tau_ref` and `v` are on the left edge, top and bottom, and `tau_motor` and `tau_brake` on the right edge, top and bottom; on `car`, `tau_fl` is on the left edge and `tau_fr` on the right edge, each just above the front spin's wire; your `drive`'s ports sit where you dragged them onto its outline. Count the `connect` lines in code view: seventeen, the ten of the paste and your seven. The reference `HandsOn04.BEVWLTC` has fifteen, because it writes `kmh.y → driver.u_m` and wire 1 as one `connect(kmh.y, driver.u_m, split.v)`, and wires 4–5 as one `connect(split.tau_brake, car.tau_fl, car.tau_fr)`. Studio writes one `connect` per wire; three ports in one `connect` are the same node as two `connect`s that share a port, so both are the same circuit.
+7. Toggle to code and add one line at the end of `relations`, above the `metadata` block, then save:
+
+   ```txt
+   initial drive.converter.i_out = 0.0
+   ```
+
+   The converter's current loop from step 02 has a state, its output current; at the start the car stands still and the machine carries no current. The line names a part inside `drive`, so it goes in only once `drive` is placed.
+8. Click ▷ **Run Analysis → BEVWLTCTransient** once, then plot the speed against the trace, the battery and the machine:
 
    ```julia
    using Plots; plotly()
@@ -1533,7 +1543,7 @@ Commit: **Source Control** → message `Step 04: the car` → **Commit** → **S
 
 :::: warning Fell behind?
 
-Paste `BEVWLTC` from step 4 of **Do this** above. Then right-click `MyCar` → **Add Component**, name it `ElectricDrive`, toggle to code (⇄) and paste this over its contents.
+Right-click `MyCar` → **Add Component**, name it `ElectricDrive`, toggle to code (⇄) and paste the first block over its contents. Then do the same for `BEVWLTC` with the second block: the whole bench, with `drive` and `split` placed and wired. If you already pasted the car bench of step 4, paste this one over it.
 
 ::: code-group
 
@@ -1590,6 +1600,118 @@ metadata {
     "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 185, "y": 450}], "E": 2}]}}
   }
 }
+end
+```
+
+```txt [BEVWLTC]
+component BEVWLTC
+  "Vehicle mass, shared by the car and its road load (probe)"
+  parameter m::Mass = 1500.0
+  "Wheel radius (repository default)"
+  parameter radius::Length = 0.31
+  "Driver gain, machine torque per km/h of speed error (assumed)"
+  parameter k::Real = 50.0
+  "Driver integral time (assumed)"
+  parameter Ti::Time = 2.0
+  "Driver torque limit, the machine's peak torque (Nissan)"
+  parameter tau_max::Torque = 320.0
+  "Speed below which the machine's braking share fades to zero, km/h (assumed)"
+  parameter v_fade::Real = 10.0
+  "Power drawn by the 12 V network (assumed)"
+  parameter P_aux::Power = 300.0
+  "Single-speed reduction (Nissan)"
+  parameter ratio::Real = 8.193
+  "Initial wheel surface speed above the body's, keeps the start off zero slip (assumed)"
+  parameter dv_wheel::Velocity = 0.01
+  trace = VehicleSystemsComponents.Vehicle.DriveCycle() {^trace}
+  driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_max) {^driver}
+  no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
+  kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
+  drive = ElectricDrive(ratio = ratio, P_aux = P_aux) {^drive}
+  differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
+  mount = RotationalComponents.Components.Fixed() {^mount}
+  straight = RotationalComponents.Components.Fixed() {^straight}
+  flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius) {^car}
+  motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
+  roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
+  split = VehicleSystemsComponents.Vehicle.Electric.TorqueSplit(ratio = ratio, v_fade = v_fade) {^split}
+relations
+  connect(car.bus, motion.bus) {^wbus}
+  connect(trace.y, driver.u_s) {^w1}
+  connect(motion.vx, kmh.u) {^w2}
+  connect(kmh.y, driver.u_m, split.v) {^w3}
+  connect(no_ff.y, driver.u_ff) {^w4}
+  connect(drive.spline, differential.flange_b) {^w5}
+  connect(differential.flange_left, car.spin_fl) {^w6}
+  connect(differential.flange_right, car.spin_fr) {^w7}
+  connect(drive.support, mount.spline) {^w8}
+  connect(car.steering, straight.spline) {^w9}
+  connect(flat.y, roadload.grade) {^w10}
+  connect(car.chassis, roadload.chassis) {^w11}
+  connect(driver.y, split.tau_ref) {^w21}
+  connect(split.tau_motor, drive.tau_ref) {^w23}
+  connect(split.tau_brake, car.tau_fl, car.tau_fr) {^w24}
+  car.tau_rl = 0.0
+  car.tau_rr = 0.0
+  initial car.body.r = [0, 0]
+  initial car.body.v = [0, 0]
+  initial car.body.phi = 0.0
+  initial car.body.w = 0.0
+  initial car.fl.inertia.w = dv_wheel / radius
+  initial car.fr.inertia.w = dv_wheel / radius
+  initial car.rl.inertia.w = dv_wheel / radius
+  initial car.rr.inertia.w = dv_wheel / radius
+  initial car.fl.inertia.phi = 0.0
+  initial car.fr.inertia.phi = 0.0
+  initial car.rl.inertia.phi = 0.0
+  initial car.rr.inertia.phi = 0.0
+  initial car.fl.brake.tau_actual = 0.0
+  initial car.fr.brake.tau_actual = 0.0
+  initial car.rl.brake.tau_actual = 0.0
+  initial car.rr.brake.tau_actual = 0.0
+  initial drive.converter.i_out = 0.0
+metadata {
+  "_links": {
+    "wbus": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "trace": {"Dyad": {"placement": {"diagram": {"x1": 20, "y1": 57, "x2": 100, "y2": 137}}}},
+    "driver": {"Dyad": {"placement": {"diagram": {"x1": 140, "y1": 70, "x2": 240, "y2": 170}}}},
+    "no_ff": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 10, "x2": 140, "y2": 50}}}},
+    "kmh": {"Dyad": {"placement": {"diagram": {"x1": 40, "y1": 190, "x2": 110, "y2": 260}}}},
+    "drive": {"Dyad": {"placement": {"diagram": {"x1": 430, "y1": 50, "x2": 530, "y2": 150}}}},
+    "differential": {"Dyad": {"placement": {"diagram": {"x1": 560, "y1": 260, "x2": 640, "y2": 340}}}},
+    "mount": {"Dyad": {"placement": {"diagram": {"x1": 485, "y1": 190, "x2": 545, "y2": 240}}}},
+    "straight": {"Dyad": {"placement": {"diagram": {"x1": 605, "y1": 500, "x2": 655, "y2": 550, "rot": 180}}}},
+    "flat": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 880, "x2": 480, "y2": 920}}}},
+    "car": {"Dyad": {"placement": {"diagram": {"x1": 520, "y1": 600, "x2": 740, "y2": 820}}}},
+    "motion": {"Dyad": {"placement": {"diagram": {"x1": 775, "y1": 610, "x2": 975, "y2": 810}}}},
+    "roadload": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 865, "x2": 570, "y2": 935}}}},
+    "split": {"Dyad": {"placement": {"diagram": {"x1": 290, "y1": 70, "x2": 390, "y2": 170}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 990, "y": 662.0}, {"x": 990, "y": 980}, {"x": 20, "y": 980}, {"x": 20, "y": 225}], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 125, "y": 143}], "E": 2}, {"S": -1, "M": [{"x": 270, "y": 225}, {"x": 270, "y": 140}], "E": 3}], "junctions": [{"x": 125, "y": 225}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 190, "y": 30}], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 100}, {"x": 550, "y": 344}], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 480, "y": 300}, {"x": 480, "y": 655}], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 765, "y": 300}, {"x": 765, "y": 655}], "E": 2}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 515, "y": 150}], "E": 2}]}},
+    "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 680, "y": 820}, {"x": 680, "y": 900}], "E": 2}]}},
+    "w21": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 265, "y": 120}, {"x": 265, "y": 100}], "E": 2}]}},
+    "w23": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w24": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 410, "y": 140}, {"x": 410, "y": 633}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 500, "y": 470}, {"x": 750, "y": 470}, {"x": 750, "y": 633}], "E": 3}], "junctions": [{"x": 500, "y": 633}]}}
+  }
+}
+end
+
+analysis BEVWLTCTransient
+  extends TransientAnalysis(stop = 1800.0, alg = ODEAlg.Rodas5P(), dtmax = 1.0, optimize = OptimizationLevel.None())
+  parameter k::Real = 50.0
+  parameter Ti::Time = 2.0
+  parameter v_fade::Real = 10.0
+  parameter P_aux::Power = 300.0
+  model = BEVWLTC(k = k, Ti = Ti, v_fade = v_fade, P_aux = P_aux)
 end
 ```
 

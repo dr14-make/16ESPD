@@ -56,6 +56,7 @@ The conventions for a re-capture:
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
 | `step04-electric-drive.png` | `HandsOn04.ElectricDrive` | `battery` and `aux` across one positive and one negative rail, `converter` fed from the positive rail, `p_out` and Φ into `machine`, `machine.n` and `ground` on the negative rail; `machine` into `reduction` into the `spline` port; `battery.SoC` up to the `SoC` port, `tau_ref` top left, `support` at the bottom. Stitched from two captures, 970 × 996. |
+| `step04-bevwltc.png` | `HandsOn04.BEVWLTC`, or a student's `BEVWLTC` built from guide step 04 | Not captured yet, and not referenced from the guide or the deck. The whole bench: `trace` and `no_ff` into `driver`, `kmh.y` into `driver.u_m` and `split.v`; `driver.y` into `split.tau_ref`; `split.tau_motor` into `drive.tau_ref`, `split.tau_brake` to both `car.tau_fl` and `car.tau_fr`; `drive.spline` into `differential.flange_b`, `drive.support` down to `mount`; the differential's two outputs to the car's front spins; `motion` on the car's bus, `roadload` on its chassis with `flat` as the grade, `straight` on the steering. The seven wires of **Do this** step 6 are the point: none may be hidden behind a part. |
 
 ## Step 05 — regen blending
 

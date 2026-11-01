@@ -105,8 +105,9 @@ routeAlias: build-car
 
 *New `ElectricDrive`: parameters `ratio` 8.193, `P_aux` 300 · `battery`, `aux` AuxLoad,
 `converter`, `machine` (`field_weakening = true`), `reduction` IdealGear, `ground` · one line:
-`converter.i_ref = tau_ref / (converter.field * machine.k)` · new `BEVWLTC`: paste from the
-guide · ▷ once, then plot*
+`converter.i_ref = tau_ref / (converter.field * machine.k)` · new `BEVWLTC`: paste the car bench,
+place `drive` (your `ElectricDrive`) and `split` (TorqueSplit) · wire · one line:
+`initial drive.converter.i_out = 0.0` · ▷ once, then plot*
 
 **Given:** the planar car and road load, `DifferentialGear`, `AuxLoad`, `TorqueSplit`, the WLTC
 bench
@@ -115,6 +116,16 @@ bench
 
 </div>
 <div class="stack">
+
+```txt
+# BEVWLTC: the seven wires that put the drive in the car
+kmh.y           → split.v
+driver.y        → split.tau_ref
+split.tau_motor → drive.tau_ref
+split.tau_brake → car.tau_fl, car.tau_fr     # two wires
+drive.spline    → differential.flange_b
+drive.support   → mount.spline
+```
 
 ```julia
 r = MyCar.BEVWLTCTransient();
@@ -154,12 +165,21 @@ the reduction to the drive's spline, the housings to the support, and SoC out. T
 code, the torque-to-current conversion of the last slide: the converter's i ref equals tau ref over
 `converter.field` times `machine.k`.
 
-Then a new component `BEVWLTC`: paste it from the guide. It is the course library's planar WLTC
-bench, with your drive on the front axle through the differential and a `TorqueSplit` between the
-driver and the drive. Driving, the machine takes all of the driver's torque. Braking, the machine
-takes it above 10 kilometers per hour and fades linearly to none at standstill, and the front
-friction brakes take the rest, so that the car stops and is held at every stop without rolling back.
-A machine asked to brake at standstill would drive the car backwards. Run Analysis once; the run
+Then a new component `BEVWLTC`. Paste the car bench from the guide: the course library's planar
+WLTC bench with the front axle empty. The driver follows the trace, the car has its road load, and
+the differential already sits on the front wheels, but nothing turns it yet. Now you connect the
+drive to the car. Place two parts: `drive`, your `ElectricDrive` from `MyCar`, and `split`, the
+library's `TorqueSplit`, which sits between the driver and the drive. Then seven wires, in the box
+at the top right. The car's speed in kilometers per hour and the driver's torque request go into the
+split. The split's motor torque goes to the drive, and its brake torque to both front brakes, two
+wires. The drive's spline turns the differential, which turns the front wheels. And the drive's
+support goes to the mount, which takes the reaction of the machine and the gear case. Last, one
+line in code: the converter's current starts at zero.
+
+Driving, the machine takes all of the driver's torque. Braking, the machine takes it above 10
+kilometers per hour and fades linearly to none at standstill, and the front friction brakes take
+the rest, so that the car stops and is held at every stop without rolling back. A machine asked to
+brake at standstill would drive the car backwards. Run Analysis once; the run
 takes about 7 seconds once compiled.
 
 The snippet plots the car's speed on the trace, then the battery current, the state of charge and
