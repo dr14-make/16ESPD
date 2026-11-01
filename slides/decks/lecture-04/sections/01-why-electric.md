@@ -16,6 +16,87 @@ wheels and, when the car brakes, takes it back.
 -->
 
 ---
+routeAlias: history
+---
+
+## A short history, corrected
+
+<div class="grid grid-cols-[1.35fr_1fr] gap-8">
+<div class="tight">
+
+| Year | What | Source |
+|---|---|---|
+| 1828 | Jedlik's electromagnetic rotor | Linda Hall Library |
+| 1837 | Davenport's motor: the first US motor patent | Smithsonian |
+| 1859 | Planté's lead-acid cell: the **first rechargeable** battery; Faure's pasted plates 1881 | MagLab |
+| 1881 | Trouvé's electric tricycle, Paris | Guinness |
+| ≈ 1890 | Morrison's electric carriage, Des Moines: 14 mph, 50 miles a charge | Iowa |
+| 1899 | Jenatzy's *La Jamais Contente*: first car over **100 km/h**, 105.88 | Goodwood |
+| 1900 | US production: **1575** electric of 4192 cars, 38 % | US Census |
+| 1908, 1912 | Ford's Model T; Kettering's electric starter on the Cadillac | The Henry Ford |
+| 1996 | GM's EV1, leased; withdrawn | DOE |
+| 2009, 2010 | Mitsubishi i-MiEV; Nissan Leaf | Mitsubishi, Nissan |
+
+</div>
+<div class="text-[0.95rem]">
+
+**What the deck had wrong**
+
+- Grove, "1841, first rechargeable EV": Grove built no car. His 1842 gas battery was the first
+  **fuel cell** (APS).
+- Morrison "1981": about **1890**.
+- 100 km/h "in 1900": **1899**.
+- "A third of the cars on the road" in 1900 (DOE): the census counted **production**, not the fleet.
+
+**Why the first EVs faded:** cheap mass-produced petrol cars, and the starter that ended the crank.
+
+</div>
+</div>
+
+<!--
+The course's deck opened with a history slide, and parts of it were wrong. Here is a short version,
+checked against primary or reputable sources. The table on the left runs down the years, with the
+source of each line in the last column.
+
+1828: Anyos Jedlik in Hungary built an electromagnetic rotor, one of the first electric motors; the
+Linda Hall Library dates the rotor to 1828. 1837: Thomas Davenport in Vermont received the first
+United States patent for an electric motor, patent 132, of the 25th of February 1837, in the
+Smithsonian's record. 1859: Gaston Plante invented the lead-acid cell, the first rechargeable
+battery, as the US National High Magnetic Field Laboratory puts it; in 1881 Camille Faure spread a
+lead paste on grids and made it practical. Every early electric car ran on lead acid. 1881: Gustave
+Trouve fitted an electric motor and lead-acid batteries to a tricycle in Paris, which Guinness
+World Records lists as the first electric road vehicle. About 1890: William Morrison of Des Moines,
+Iowa, built an electric carriage that carried up to 12 people at 14 miles per hour and needed a
+charge every 50 miles, in the State Historical Society of Iowa's account. 1899: Camille Jenatzy's
+electric car, La Jamais Contente, the never-satisfied, was the first road vehicle over 100
+kilometers per hour: a kilometer in 34 seconds, 105.88 kilometers per hour, near Paris on the 29th
+of April 1899. That one rests on a motorsport historian, Doug Nye, a secondary source.
+
+1900: the United States census of manufactures counted 4192 motor vehicles built that year: 1681
+steam, 1575 electric and 936 petrol. Electric was 38 percent of production. Then 1908, Ford's Model
+T, a cheap mass-produced petrol car, and 1912, Charles Kettering's electric starter on the Cadillac,
+which ended the hand crank, the petrol car's worst chore. Both are from The Henry Ford museum. The
+electric car faded for most of a century. 1996: General Motors leased its EV1 and later withdrew it,
+in the US Department of Energy's history. And 2009 and 2010: Mitsubishi launched the i-MiEV in Japan
+in July 2009, and Nissan delivered the first Leaf in December 2010. The Leaf's descendant is the car
+we model today.
+
+On the right, what the old slide had wrong. It said William Grove made the first rechargeable
+electric vehicle in 1841. Grove built no vehicle; his famous cell of 1839 was not rechargeable, and
+his gas voltaic battery, described in a letter to Faraday in October 1842, was the first fuel cell,
+as the American Physical Society's history column tells it. The first rechargeable battery is
+Plante's, 1859. The slide put Morrison in 1981: that is a typo for about 1890. It put the first
+vehicle over 100 kilometers per hour in 1900: it was 1899, and electric. And the line you will often
+read, that a third of the cars on American roads in 1900 were electric, which the Department of
+Energy's history also uses, comes from the census's production count, not from a count of the cars
+on the road. The census has no such count.
+
+Why did the first electric cars fade? The last line: cheap, mass-produced petrol cars, and the
+electric starter that removed the crank. Petrol stored far more energy per kilogram than lead acid,
+and the battery that changed that, lithium-ion, is section 06.
+-->
+
+---
 routeAlias: why-evs
 ---
 
@@ -95,6 +176,83 @@ zero, but far less, and falling as the grid gets cleaner.
 The box at the bottom right is today's question: where does an electric car's energy go on the WLTC,
 and how much of it comes back? Section 08 answers it in kilowatt-hours per 100 kilometers, link by
 link. Instead of taking an efficiency from a brochure, we measure it on the model we build.
+-->
+
+---
+routeAlias: why-not-yet
+---
+
+## Why aren't all cars electric yet?
+
+<div class="grid grid-cols-2 gap-8 text-[0.92rem]">
+<div>
+
+**Price.** In Europe a BEV cost about **20 %** more than a comparable combustion car in 2025
+(IEA). Parity is reached in the medium, upper-medium and luxury segments, not the small ones; a
+BEV is **33 %** cheaper to run than a petrol car (ICCT).
+
+**Range and charging.** The average BEV range is almost **380 km**, flat in recent years; the EU
+has **11 EVs per public charger** (IEA). 10 → 80 % takes **18–38 min** on a fast charger (ADAC tests).
+
+**Cold.** At −7 °C, five EVs lost **41 %** of their range with the heater on (AAA). Section 08
+puts a heater on our car.
+
+</div>
+<div>
+
+**The grid.** EVs used about **1 %** of the world's electricity in 2025, about **5 %** in 2035
+(IEA, stated policies). The EU needs **€584 bn** of grid investment by 2030 (EC).
+
+**Materials.** China made over **80 %** of the battery cells, about 85 % of the cathode and over
+90 % of the anode material in 2025 (IEA); the DR Congo mined **73 %** of the cobalt (USGS).
+
+**Used cars.** EVs were about **4 %** of used-car sales in Europe's five largest markets in 2025;
+a used BEV kept about **35 %** of its value, against about 50 % for the market (IEA).
+
+</div>
+</div>
+
+<!--
+If the case is so good, why are three quarters of new cars still not electric? Six reasons, each with
+one current number and its source.
+
+Top left, price. The International Energy Agency's Global EV Outlook 2026 says that in Europe in
+2025 the average battery-electric car cost about 20 percent more than a comparable combustion car;
+that premium fell for the first time since 2021. The International Council on Clean Transportation,
+the ICCT, in its EV Transition Check of September 2026, finds that battery-electric cars have
+reached purchase-price parity in the three largest segments, medium, upper-medium and luxury, but
+not yet in the mini, small and lower-medium segments. Once bought,
+they are cheaper to run: 33 percent cheaper than a petrol car in 2025, in the same ICCT brief. So
+the gap is in the purchase price, and it is closing.
+
+Range and charging. The IEA puts the average range of a battery-electric car at almost 380
+kilometers, and says it has plateaued in recent years. The European Union has on average 11 electric vehicles per public charging
+point, the IEA's count for the end of 2025. And a fast charge from 10 to 80 percent takes 18 minutes
+in ADAC's test of a Hyundai Ioniq 6, an 800 volt car, and 38 minutes for a Mercedes EQV van on 400
+volts: about 20 to 40 minutes for today's cars, against a few minutes at a petrol pump. A cold
+battery that has not been warmed up takes about 70 percent longer, ADAC found this autumn.
+
+The cold. AAA, the American automobile club, tested five electric cars at minus 7 degrees Celsius in
+2019: they lost 12 percent of their combined range with the climate control off and 41 percent with
+the heater on. The heater is the big part, and in section 08 we put one on our car.
+
+Top right, the grid. Electric vehicles used about 250 terawatt-hours in 2025, about 1 percent of the
+world's final electricity demand; in the IEA's stated-policies scenario that becomes about 1700
+terawatt-hours, about 5 percent, in 2035. The European Commission's grid action plan of November 2023 puts the grid
+investment the EU needs by 2030 at 584 billion euros, with 40 percent of its distribution grids
+over 40 years old.
+
+Materials. In 2025 China made over 80 percent of the world's battery cells, about 85 percent of the
+cathode active material and more than 90 percent of the anode active material, the IEA says. And
+the US Geological Survey puts the Democratic Republic of the Congo at 73 percent of the cobalt mined
+in 2025. The supply is concentrated, which is a risk for anyone building cars elsewhere, and one
+reason the cobalt-free LFP cell of section 06 spread.
+
+Used cars. Most people buy a used car. In the five largest European markets electric cars were
+about 4 percent of used-car sales in 2025, up from 1 percent in 2021. And a used battery-electric
+car kept about 35 percent of its value in 2025, down from about 50 percent in 2022, against about 50
+percent for the used market as a whole; the IEA does not say at what age. A car that loses value
+fast costs its first owner more, whatever it saves in running costs.
 -->
 
 ---
@@ -286,10 +444,16 @@ F = \underbrace{\tfrac12 \rho\, C_d A\, v^2}_{O_v,\ \text{drag}}
   + \underbrace{m g \sin\alpha}_{O_s,\ \text{slope}}
 $$
 
-plus $O_{aux}$, the auxiliaries, drawn from the battery.
+At the battery, through the chain's efficiency η (deck):
 
-It is Lecture 2's `RoadLoad`, now a part of its own: the same law drives the engine car and the
-planar car.
+$$
+O_{total} = \frac{O_v + O_f + O_z + O_s}{\eta} + O_{aux}
+$$
+
+η is the chain we build, measured link by link in section 08; braking, the wheel terms are
+multiplied by η instead. $O_{aux}$: climate, battery management, lights, audio (deck).
+
+It is Lecture 2's `RoadLoad`, now a part of its own, for both cars.
 
 </div>
 <div class="tight">
@@ -317,9 +481,19 @@ A, in square meters, times the speed v squared, in meters per second. The second
 resistance, O f: the rolling coefficient f r, which has no unit, times the mass m in kilograms,
 times g, 9.81 meters per second squared. The third is the force that accelerates the car, O z: mass
 times acceleration a. The fourth is the slope, O s: m g times the sine of the road's angle alpha.
-These four are forces at the wheel. The deck adds a fifth term, O aux, the auxiliaries: everything
-electrical that is not propulsion. That one is not a force at the wheel but a power drawn from the
-battery.
+These four are forces at the wheel; times the speed, they are the power at the wheel.
+
+The second formula is the deck's energy model at the battery. O total, what the battery must give,
+is the sum of the four wheel terms, as powers, divided by eta, plus O aux. Eta is the efficiency of
+the whole chain between the battery and the wheel: the battery's own resistance, the converter, the
+machine and the gear, multiplied together, a number below 1, so dividing by it makes the battery pay
+more than the wheel gets. That eta is this lecture: we build the chain link by link, and section 08
+measures each link's loss on the WLTC. When the car brakes, the energy flows the other way, and the
+wheel terms are negative: then they are multiplied by eta, not divided, because the battery gets
+back less than the wheel gives up. O aux, the auxiliaries, is everything electrical that is not
+propulsion, drawn straight from the battery without passing the chain. The deck lists its parts:
+the climate control, heating and air conditioning; the battery management; the lights; and the
+audio. In winter the first one dominates, and section 08 comes back to it.
 
 This is exactly the road load of Lecture 2's notebook 01. What is new is that the course library has
 taken it out into a part of its own, `RoadLoad`, with no mass in it, so that the planar car can use
@@ -458,6 +632,8 @@ The hybrid layouts, series and parallel, are next lecture, on the same car.
 
 ## Summary of section 01
 
+- The first electric cars came before 1900 and lost to cheap petrol cars; today price,
+  charging, the cold, the grid, materials and used values hold EVs back.
 - A quarter of new cars sold worldwide in 2025 were electric (IEA); the EU's CO₂ limit is
   93.6 g/km now and zero from 2035 in law (EU), with a 90 % cut proposed.
 - An electric car is a chain of reversible links: battery, converter, machine, gear, wheel.
@@ -469,7 +645,8 @@ The hybrid layouts, series and parallel, are next lecture, on the same car.
 ### Next: the first link, the machine. <Link to="dc-machine">→ 02, the DC machine</Link>
 
 <!--
-To sum up section 01. A quarter of the new cars sold worldwide in 2025 were electric, by the IEA's
+To sum up section 01. The first electric cars came before 1900 and lost to cheap petrol cars. Today
+price, charging, the cold, the grid, materials and used-car values still hold them back. A quarter of the new cars sold worldwide in 2025 were electric, by the IEA's
 count, and the EU's limit for new cars is 93.6 grams of CO2 per kilometer now and zero from 2035 in
 the law as it stands, with a 90 percent cut on the table. An electric car is a chain of reversible links: battery, converter, machine,
 gear, wheel. It needs the same road load as the engine car: on the WLTC, 139 watt-hours per

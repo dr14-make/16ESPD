@@ -113,7 +113,8 @@ exact zero until a fixed release ships. FBDF reports success on a frozen car; be
 and check that the distance driven matches the cycle.
 
 **S10 — Numbers carry their provenance**, as in Lecture 2's S10: `(Nissan)`, `(ORNL)`, `(INL)`,
-`(EPA)`, `(EEA)`, `(EU)`, `(Audi)`, `(IEA)`, `(BNEF)`, `(ACEA)`, `(Toyota)`, `(deck)`, `(textbook)`,
+`(EPA)`, `(EEA)`, `(EU)`, `(Audi)`, `(IEA)`, `(BNEF)`, `(ACEA)`, `(Toyota)`, `(ICCT)`, `(ADAC)`,
+`(AAA)`, `(ANL)`, `(EC)`, `(USGS)`, `(RDW)`, device makers' datasheets, `(deck)`, `(textbook)`,
 `(derived)`, `(assumed)`, matching the research note's labels. Market and regulatory figures are
 plotted by `scripts/export_lecture04_context_figures.jl` from `data/ev_context/`, whose README
 cites each value's source.
@@ -165,28 +166,36 @@ notebook. Reference solutions live in `dyad/HandsOn04/`.
 A Slidev deck in `slides/decks/lecture-04/`, in the Lecture 3 layout, with the build slides
 interleaved. Figures the models can produce are regenerated from them, not copied from the pptx.
 
-1. Why electric, condensed (deck 7: 3–7): the case; the market (IEA EV shares), the EU car CO₂
-   limits against the fleet (EEA), and the rules on one time line (car CO₂, Euro 7, batteries,
-   AFIR, US); the energy chain both ways.
+1. Why electric, condensed (deck 7: 3–7): a short, corrected history; the case, and why not all
+   cars are electric yet; the market (IEA EV shares), the EU car CO₂ limits against the fleet
+   (EEA), and the rules on one time line (car CO₂, Euro 7, batteries, AFIR, US); the energy model
+   with the chain's η and O_aux's parts; the energy chain both ways.
 2. The DC machine (7: 22–26): F = BIL to T = KΦI and E = KΦω; losses and efficiency. → step 1
 3. Machines in real EVs (7: 34–39, extended): BLDC and PMSM, why FOC makes a PMSM look like step
-   1's machine (animation), induction, SRM. PMSM versus induction; why AWD cars pair one of each.
+   1's machine (animation); the other machines (induction, wound rotor, SRM) on one slide, with
+   the PMSM's light-load advantage and the Audi pairing. The extra session goes deeper.
 4. The envelope (new): constant torque, field weakening, constant power; the efficiency map and
-   where WLTC operating points land. → step 2
-5. Power electronics (7: 27–33): DC regulation, buck and boost, H-bridge, PWM and harmonics,
+   where WLTC operating points land; constant-power lines on the map (why a fast machine behind a
+   reduction) and peak versus continuous rating. → step 2
+5. Power electronics (7: 27–33): DC regulation, today's switches (Si MOSFET, IGBT, SiC, GaN)
+   from datasheets, buck and boost, a faster switch on the buck, H-bridge, PWM and harmonics,
    three-phase bridge; demo on the switching models. The DC-DC for 12 V. The charger.
 6. Batteries, simply (8: 3–6, 14–16): V = E − IR, Ah and Wh, specific energy and power, the
-   summary table labeled as dated beside today's cells, and the BNEF pack price. → step 3
-7. The car and regen (7: 6, 33): regen limits, series versus parallel blending. → steps 4–5
-8. The energy bill: WLTC results, the engine comparison. → step 6
+   pack's own Ragone curve (η = 1 − R₀i/E), the summary table labeled as dated beside today's
+   cells, and the BNEF pack price. → step 3
+7. The car and regen (7: 6, 33): the hard stop's ½mv² against its measured friction energy,
+   regen limits, series versus parallel blending. → steps 4–5
+8. The energy bill: WLTC results, a cold-weather bill with a cabin heater for O_aux, the engine
+   comparison. → step 6
 
 ## Notebooks
 
 | Notebook | Shows |
 |---|---|
-| efficiency map | sweep of the step 1–2 machine; contours next to ORNL's Leaf map; WLTC operating points on top |
-| switching | buck chopper ripple and losses; H-bridge PWM spectrum (deck slides 28–32) |
-| energy bill | WLTC energy flows as a Sankey or stacked bar: road load, losses per link, regen, aux |
+| efficiency map | sweep of the step 1–2 machine; contours next to ORNL's Leaf map; WLTC operating points on top; constant-power lines |
+| switching | buck chopper ripple and losses, and with a five times faster edge; H-bridge PWM spectrum (deck slides 28–32) |
+| energy bill | WLTC energy flows as a Sankey or stacked bar: road load, losses per link, regen, aux; the bill with a cabin heater |
+| machine, battery, regen | the step 01 dyno, the battery under load and its power–efficiency (Ragone) sweep, regen on the hard stop |
 
 ## Prerequisites
 

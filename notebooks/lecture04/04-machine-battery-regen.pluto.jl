@@ -207,6 +207,82 @@ battery_plot = let
     p
 end
 
+# ╔═╡ 8e6a94b1-3c0e-4580-82a2-4c95ede53ad9
+md"""
+### Power costs efficiency
+
+Every ampere the pack delivers costs `R₀ i` of its voltage, so the share of the cells' energy
+that reaches the terminals is `η = v/E = 1 − R₀ i / E`, and the terminal power is
+`P = E i − R₀ i²`. Both are read below from the same bench, held at one current after another.
+The power peaks where `i = E / 2R₀`, at `E²/4R₀`, with half of the cells' energy lost in the
+pack: past that point more current gives less power. On a Ragone chart (specific energy against
+specific power) the same sweep is the pack's own trade-off: the faster it is emptied, the less
+of its energy arrives. The pack mass is the Leaf ZE1's 303 kg (Nissan).
+"""
+
+# ╔═╡ 1fc9b799-840d-4df7-be5c-a3a2fdc535e0
+ragone = let
+    probe = E4.BatteryTransient(I_load = 100.0)
+    ps, mp = probe.sol.ps, symbolic_container(probe)
+    E, R0, Q = ps[mp.battery.E], ps[mp.battery.R0], ps[mp.battery.Q_nom]
+    current(P) = (E - sqrt(E^2 - 4R0 * P)) / 2R0
+    named = [current(10e3), current(117.25e3), E / 2R0]
+    I = sort(vcat(collect(range(5.0, E / 2R0; length = 40)), named))
+    pts = map(I) do i
+        r = E4.BatteryTransient(I_load = i)
+        s, m = r.sol, symbolic_container(r)
+        v = s[m.battery.v][end]
+        (; i, v, P = v * i, eta = v / E)
+    end
+    (; E, R0, Q, mass = 303.0, pts, named = [pts[findfirst(p -> p.i == i, pts)] for i in named])
+end;
+
+# ╔═╡ 6ab11e61-b97d-4872-917b-8fedab02f964
+ragone_plot = let
+    (; E, Q, mass, pts, named) = ragone
+    P = [p.P for p in pts] ./ 1e3
+    eta = [100 * p.eta for p in pts]
+    p = plot(layout = (1, 2), size = (960, 440), legend = false)
+    plot!(p[1], P, eta; color = 1, lw = 2.5, xlabel = "terminal power [kW]",
+        ylabel = "energy efficiency v / E [%]", ylims = (45, 102), xlims = (0, 330),
+        title = "η = 1 − R₀ i / E")
+    scatter!(p[1], [n.P for n in named] ./ 1e3, [100 * n.eta for n in named]; color = 2, ms = 5)
+    annotate!(p[1], [(n.P / 1e3 + (k == 3 ? -6 : 6), 100 * n.eta + (k == 3 ? 3 : 0),
+        text("$(round(n.P / 1e3; digits = 1)) kW: $(round(100 * n.eta; digits = 1)) %", 10,
+            k == 3 ? :right : :left)) for (k, n) in enumerate(named)])
+    # Specific energy: the charge Q delivered at the terminal voltage, per kilogram of pack.
+    Wh_kg = [p.v * Q / 3600 / mass for p in pts]
+    W_kg = [p.P / mass for p in pts]
+    plot!(p[2], W_kg, Wh_kg; color = 1, lw = 2.5, xscale = :log10, yscale = :log10,
+        xlabel = "specific power [W/kg]", ylabel = "specific energy [Wh/kg]",
+        title = "Ragone: the pack's own trade-off ($(round(Int, mass)) kg)",
+        xticks = ([10, 30, 100, 300, 1000], ["10", "30", "100", "300", "1000"]),
+        yticks = ([60, 80, 100, 120, 140], ["60", "80", "100", "120", "140"]),
+        ylims = (60, 145))
+    scatter!(p[2], [n.P / mass for n in named], [n.v * Q / 3600 / mass for n in named];
+        color = 2, ms = 5)
+    p
+end
+
+# ╔═╡ 9b9bff5f-8326-458a-ae99-ad3e0acb6ffe
+let
+    (; E, R0, named) = ragone
+    r1(x) = round(x; digits = 1)
+    rows = join(["| $(r1(n.P / 1e3)) | $(r1(n.i)) | $(r1(n.v)) | $(r1(100 * (1 - n.eta))) |"
+                 for n in named], "\n")
+    Markdown.parse("""
+    | terminal power [kW] | current [A] | terminal voltage [V] | lost in R₀ [%] |
+    |---:|---:|---:|---:|
+    $rows
+
+    A WLTC-like 10 kW costs the pack under 1 % of its energy; the machine's full input,
+    117.25 kW (notebook 01's converter at the corner), costs about a tenth; and the most the
+    pack can deliver, `E²/4R₀` = $(r1(E^2 / 4R0 / 1e3)) kW, costs half. A real pack's BMS stops
+    far below that peak: INL measured a 30 s discharge capability of 103.3 kW at 80 % depth
+    of discharge on a 2013 Leaf pack.
+    """)
+end
+
 # ╔═╡ 7c8f87f4-00d0-40a9-b06c-6a9661ea1006
 md"""
 ## 4. Regen on a hard stop
@@ -319,6 +395,10 @@ end
 # ╟─f1508342-69b2-4bf5-9cc0-764009078ed2
 # ╠═611c1b72-0377-41ce-9476-6dd3d9f96b83
 # ╟─4e9ef33b-325f-4971-b2e8-86cad3875f70
+# ╟─8e6a94b1-3c0e-4580-82a2-4c95ede53ad9
+# ╠═1fc9b799-840d-4df7-be5c-a3a2fdc535e0
+# ╟─6ab11e61-b97d-4872-917b-8fedab02f964
+# ╟─9b9bff5f-8326-458a-ae99-ad3e0acb6ffe
 # ╟─7c8f87f4-00d0-40a9-b06c-6a9661ea1006
 # ╠═43682d73-077d-446a-9d02-3f704293fd1e
 # ╠═7e8d1c4b-a689-45c1-b6f1-9e840a99baaf

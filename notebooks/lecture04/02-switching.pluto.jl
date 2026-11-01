@@ -390,6 +390,65 @@ let s = buck_sweep
     """)
 end
 
+# ╔═╡ 8244054c-9765-4b5d-b8df-c94ea2e5c113
+md"""
+### A faster switch
+
+The switching loss is a fixed energy per edge, proportional to the edge time `t_sw`. A faster
+device, a wide-bandgap (SiC or GaN) transistor in place of a silicon one, shortens the edge. The
+same sweep is rerun below with the edge five times shorter, `t_sw` = 0.1 µs instead of the
+default 0.5 µs, everything else unchanged; the run overrides only that one parameter of the
+chopper.
+"""
+
+# ╔═╡ 444749ed-79f5-45c7-8e46-497f62f60600
+T_SW_FAST = 0.1e-6;
+
+# ╔═╡ c79e229c-f9d5-4172-aad9-56d860629df5
+buck_sweep_fast = let
+    spec = E4.BuckChopperTransient__Spec()
+    t_sw = ModelingToolkit.toggle_namespacing(spec.model, false).chopper.t_sw
+    [run_buck(d = duty, f_s = b.f_s, __overrides = Dict(t_sw => T_SW_FAST)) for b in buck_sweep]
+end;
+
+# ╔═╡ b9e88eeb-b18d-4697-8ac1-a2c2682b01c4
+faster_switch_plot = let
+    f = [b.f_s for b in buck_sweep] ./ 1e3
+    ticks = (f, string.(round.(Int, f)))
+    p = plot(layout = (1, 2), size = (960, 440), legend = false)
+    for (sweep, lbl, c) in ((buck_sweep, "t_sw = 0.5 µs", :darkorange), (buck_sweep_fast, "t_sw = 0.1 µs", :seagreen))
+        psw = [b.P_switching for b in sweep]
+        eta = [100 * b.P_out / b.P_in for b in sweep]
+        plot!(p[1], f, psw; marker = :circle, lw = 2.5, color = c)
+        plot!(p[2], f, eta; marker = :circle, lw = 2.5, color = c)
+        # Plotly places annotations on a log axis by the exponent.
+        annotate!(p[1], [(log10(f[end - 1]), psw[end - 1], text(lbl * "  ", 10, c, :right, :bottom))])
+        annotate!(p[2], [(log10(f[end - 1]), eta[end - 1], text(lbl * "  ", 10, c, :right, :top))])
+    end
+    plot!(p[1]; xscale = :log10, xticks = ticks, xlabel = "switching frequency [kHz]",
+        ylabel = "switching loss [W]", title = "Switching loss: a fifth of the edge, a fifth of the loss")
+    plot!(p[2]; xscale = :log10, xticks = ticks, xlabel = "switching frequency [kHz]",
+        ylabel = "efficiency [%]", title = "Efficiency: the faster switch can switch faster")
+    p
+end
+
+# ╔═╡ 4cf9f054-7c10-458b-b291-441fcc83720f
+let
+    r1(x) = round(x; digits = 1)
+    r2(x) = round(x; digits = 2)
+    rows = join(("| $(round(Int, a.f_s / 1e3)) | $(r2(a.P_switching)) | $(r2(b.P_switching)) | $(r1(100a.P_out / a.P_in)) | $(r1(100b.P_out / b.P_in)) |"
+                 for (a, b) in zip(buck_sweep, buck_sweep_fast)), "\n")
+    Markdown.parse("""
+    | f_s [kHz] | switching loss, 0.5 µs [W] | switching loss, 0.1 µs [W] | η, 0.5 µs [%] | η, 0.1 µs [%] |
+    |---:|---:|---:|---:|---:|
+    $rows
+
+    The switching loss scales with the edge time. With the faster switch the chopper can run
+    at a higher frequency, with a smaller inductor and less ripple, for the efficiency the slow
+    switch had at a low one. The diode's loss does not change: it is the same diode.
+    """)
+end
+
 # ╔═╡ 4810296a-23f7-4bb4-89e1-e4941891fdb2
 md"""
 ## 2. The H-bridge (slide 30)
@@ -667,6 +726,11 @@ a drive cycle lasts half an hour.
 # ╠═7433ba23-7db5-4f72-93bc-244e9c56b511
 # ╠═c5856c79-e759-4edf-b042-7e85adcee5fa
 # ╟─c4e0960a-9cea-4dba-91e3-b43595774bf1
+# ╟─8244054c-9765-4b5d-b8df-c94ea2e5c113
+# ╠═444749ed-79f5-45c7-8e46-497f62f60600
+# ╟─c79e229c-f9d5-4172-aad9-56d860629df5
+# ╟─b9e88eeb-b18d-4697-8ac1-a2c2682b01c4
+# ╟─4cf9f054-7c10-458b-b291-441fcc83720f
 # ╟─4810296a-23f7-4bb4-89e1-e4941891fdb2
 # ╟─d5786319-b328-45cb-a85b-a4b3e6587ed3
 # ╠═3c6d67ba-e58b-4080-9b3a-f48e5d2e6747

@@ -228,6 +228,10 @@ routeAlias: motor-as-brake
 
 Step 01 already did it: past *V*/*K*Φ, −304 N·m and −312 A back into the supply.
 
+**What there is to take back:** at 80 km/h, ½*mv*² = **370 kJ = 0.10 kWh** (derived), about
+**0.8 km** of WLTC. Step 05's hard stop burns **384 kJ** in brakes and tire slip, regen takes
+**3 kJ**: under ABS, friction does the stop.
+
 </div>
 <div>
 
@@ -252,6 +256,21 @@ for a negative current, reverses the power flow.
 
 And build 01 already did it: past V over K Phi, the machine gave minus 304 newton meters and sent
 312 amperes back into the supply.
+
+How much energy is there to take back? The deck's formula: the kinetic energy is one half m v
+squared. For our 1500 kilogram car at 80 kilometers per hour, which is 22.2 meters per second, that
+is one half times 1500 times 22.2 squared, 370 kilojoules, or 0.10 kilowatt-hours; my arithmetic.
+At the 131 watt-hours per kilometer the car takes on the WLTC, which section 08 measures, that is
+enough to drive about 0.8 kilometers. Small for one stop, but the WLTC stops many times.
+
+Now set it against what build 05's hard stop measured, the full ABS stop from 80 kilometers per
+hour. The model's meter for the kinetic energy starts at 380.7 kilojoules: the body's 370 plus the
+spinning wheels. The friction brakes burn 348.9 kilojoules of it and the tires' slip another 35.3,
+384 together, a little more than there was, because the machine also pushed 3.5 kilojoules net into
+the wheels during the stop. The machine took back only about 3 kilojoules. On a stop at the limit
+of grip the ABS acts almost all the way down, the controller withdraws regen while it does, and so
+the friction brakes do the stop. Regen recovers its energy in the gentle braking of everyday
+driving, which is the WLTC at the end of this section.
 
 On the right, what limits regen. Speed: at standstill there is no back-EMF to brake with, and a
 machine asked to brake there drives the car backwards. Build 02 showed the other side: braking at
