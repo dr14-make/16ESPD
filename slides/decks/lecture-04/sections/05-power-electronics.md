@@ -85,6 +85,90 @@ capacitance so that the solver can follow the switching node.
 -->
 
 ---
+routeAlias: switches
+---
+
+## Which switch: MOSFET, IGBT, SiC
+
+<div class="tight text-[0.95rem]">
+
+| Device, datasheet (Infineon, ABB) | Blocks | Current | Drop when on | Edge, rise / fall | Where |
+|---|---:|---:|---|---|---|
+| Si MOSFET, IAUT300N10S5N015 | 100 V | 300 A | 1.3 mΩ: **0.13 V** at 100 A | 15 / 48 ns | 12 V and 48 V converters |
+| Si IGBT module, FS820R08A6P2B | 750 V | 450 A | **1.15 V** at 450 A, 150 °C | 80 / 50 ns | 400 V traction inverters |
+| SiC MOSFET module, FS03MR12A6MA1B | 1200 V | 400 A | 4.55 mΩ: **1.82 V** at 400 A, 150 °C | 69 / 65 ns | 800 V traction inverters |
+| GaN transistor, IGOT65R055D2 | 650 V | 29 A | 55 mΩ: 0.4 V at 7.9 A | 8 / 14 ns | on-board chargers |
+| thyristor, 5STP 45Y8500 | 8500 V | 4450 A | 1.78 V at 5000 A | turns off in 950 µs | grid, never a car |
+
+</div>
+
+<div class="grid grid-cols-2 gap-8 mt-3 text-[0.9rem]">
+<div>
+
+**IGBT:** a near-fixed drop of about a volt, good at high current. The 2012 **Leaf**: 18 IGBTs,
+3 per switch, at **5 kHz** (ORNL). Silicon IGBT inverters switch at **5–20 kHz**.
+
+</div>
+<div>
+
+**SiC MOSFET:** a resistance, small at part load, and **about 40 % less energy per edge** for the
+volts and amperes switched (derived). Hyundai's 800 V cars: **over 5 %** more range (Hyundai, via
+Infineon).
+
+</div>
+</div>
+
+<!--
+The deck's table of switches is from the early 2000s, and it has no silicon carbide in it. Here is
+the same comparison from current datasheets. Each row is one device; the columns are the voltage
+it blocks when off, the current it is rated for, the voltage drop across it when on, how long its
+edges take, and where such devices are used.
+
+First row: a silicon power MOSFET, Infineon's IAUT300N10S5N015, an automotive part. It blocks 100
+volts and carries 300 amperes. When on, it is a resistance, 1.3 milliohms, so at 100 amperes it
+drops 0.13 volts. Its current rises in 15 nanoseconds and falls in 48. That is the switch of 12 and
+48 volt converters, and of the synchronous rectifier the buck slides mention.
+
+Second row: a silicon IGBT module, Infineon's HybridPACK Drive FS820R08A6P2B, a six-switch module,
+the whole three-phase bridge, for 400 volt cars. It blocks 750 volts and carries 450 amperes
+continuously; the part number's 820 is the chips' implemented rating. An IGBT does not behave as a
+resistance: it has a drop that is nearly fixed, 1.15 volts at 450 amperes and 150 degrees Celsius
+in the datasheet. Its edges: 80 nanoseconds rise, 50 fall.
+
+Third row: a silicon carbide MOSFET module in the same package, the FS03MR12A6MA1B, for 800 volt
+cars. It blocks 1200 volts and carries 400 amperes. It is a resistance again: 4.55 milliohms hot,
+at 150 degrees, so 1.82 volts at its full 400 amperes. Rise 69, fall 65 nanoseconds.
+
+Fourth row: a gallium nitride transistor, the IGOT65R055D2: 650 volts, 29 amperes, 55 milliohms, so
+about 0.4 volts at the 7.9 amperes the datasheet quotes it at, and edges of 8 and 14 nanoseconds.
+Small, very fast devices like this go into on-board chargers. And last, for contrast, the deck's
+thyristor: ABB's 5STP 45Y8500 blocks 8500 volts and carries 4450 amperes on average, but once on it
+can only be turned off by reversing its current, and it then needs 950 microseconds. That is a grid
+device, never a car one. Every number in the table is read from the manufacturer's datasheet; the
+volts in the drop column are the datasheet's resistance times the current, my arithmetic.
+
+Bottom left, the IGBT. Its nearly fixed drop of about a volt makes it good at high current, where a
+resistance would drop more. The 2012 Leaf's inverter, which Oak Ridge took apart, uses IGBTs: 18 of
+them, three in parallel per switch, run at 5 kilohertz. A review in the journal Energies, by Abbas
+and Nee in 2024, gives 5 to 20 kilohertz as typical for silicon IGBT inverters: their switching
+losses limit them.
+
+Bottom right, silicon carbide. A MOSFET's drop is a resistance, so at part load, which is where the
+WLTC drives, it drops much less than an IGBT's fixed volt. And it switches with less energy. The
+datasheets give the energy of one turn-on plus one turn-off: 46.5 millijoules for the IGBT module
+at 400 volts and 450 amperes, 38.4 millijoules for the silicon carbide module at 600 volts and 400
+amperes, both at 150 degrees. Divided by the volts times amperes switched, that is 0.26 against
+0.16 microjoules per volt-ampere, about 40 percent less for silicon carbide. That division is mine,
+and the two datasheets use different gate resistors, so take it as an illustration. In a car it is
+worth a few percent of range: Hyundai's engineers said silicon carbide inverters gave their 800 volt
+platform more than 5 percent more range than silicon ones. That quote is from an Infineon press
+release of 2021, as reprinted in the trade press, so it is a secondary source.
+
+This is the f s times t sw term of section 04's converter loss: a faster switch makes a shorter t
+sw. The next slides show it on the chopper.
+-->
+
+---
 routeAlias: buck
 ---
 
@@ -174,6 +258,43 @@ the losses in watts. The switching loss, in orange, is a fixed energy per edge, 
 frequency. The other three together, in gray, fall a little. The efficiency falls from 94.5 percent
 at 5 kilohertz to 90.3 percent at 100. That is the designer's trade-off: a faster switch shrinks the
 ripple and the inductor, and costs switching loss.
+-->
+
+---
+routeAlias: faster-switch
+class: big-figure
+---
+
+## A faster switch
+
+![Buck chopper at 5 to 100 kHz with two edge times. Left: the switching loss, 0.5 µs edges in orange rising to 9.8 W at 100 kHz, 0.1 µs edges in green rising to 2.1 W. Right: the efficiency, from 94.5 to 90.3 % with the slow switch and from 94.6 to 93.6 % with the fast one.](/figures/05-faster-switch.svg)
+
+Same chopper, edges five times shorter (0.5 → 0.1 µs): a fifth of the switching loss. At
+**100 kHz** the fast switch is as efficient (**93.6 %**) as the slow one at 20 kHz, with **a fifth
+of the ripple** (5.0 → 1.0 A).
+
+<!--
+What does a faster switch buy? Notebook 02 reruns the step-down chopper's frequency sweep with one
+parameter changed: the edge time t sw, from the default 0.5 microseconds to 0.1, five times faster,
+the step from a slow silicon switch toward a wide-bandgap one. Everything else is the same circuit,
+48 volts down to about 13 at a duty of 0.3.
+
+Both panels have the switching frequency across, 5 to 100 kilohertz on a logarithmic axis. Orange is
+the slow switch, green the fast one. Left: the switching loss in watts. Each edge costs a fixed
+energy, so the loss grows in proportion to the frequency: the orange line goes from 0.55 watts at 5
+kilohertz to 9.8 at 100. The green line is a fifth of it everywhere, 0.11 to 2.1 watts, because a
+fifth of the edge time costs a fifth of the energy.
+
+Right: the efficiency in percent. The slow switch falls from 94.5 percent at 5 kilohertz to 90.3 at
+100. The fast one falls only from 94.6 to 93.6: what is left is mostly the diode, which did not
+change.
+
+The sentence under the figure is the point. At 100 kilohertz the fast switch is as efficient, 93.6
+percent, as the slow one was at 20 kilohertz, and five times the frequency gives a fifth of the
+current ripple, 5.0 amperes peak to peak down to 1.0, so the inductor could be five times smaller.
+That is what silicon carbide and gallium nitride buy: faster switching at the same loss, and smaller
+passive parts. In a traction inverter the same gain shows up as lower loss at the same 5 to 20
+kilohertz.
 -->
 
 ---
@@ -537,6 +658,7 @@ battery.
 - A switch is ideally lossless; averaged, **v = d · V<sub>in</sub>**. The buck steps down, the
   boost steps up, both with a switch, a diode and an inductor.
 - Real switches lose at every edge and while conducting; a buck's diode can be the largest loss.
+  Cars use IGBTs at 400 V, SiC MOSFETs at 800 V: a faster edge, less switching loss.
 - The H-bridge makes AC; **PWM** shapes it into a sine and pushes the harmonics up to the carrier,
   where the winding's inductance blocks them.
 - Three legs make the three-phase inverter: **section 04's converter**, averaged.
@@ -547,7 +669,9 @@ battery.
 <!--
 Section 05 in five lines. A switch is ideally lossless, and averaged, v equals d times V in. The
 buck steps down and the boost steps up, both with a switch, a diode and an inductor. Real switches
-lose at every edge and while conducting, and in a buck the diode can be the largest loss. The
+lose at every edge and while conducting, and in a buck the diode can be the largest loss. Cars use
+silicon IGBTs at 400 volts and silicon carbide MOSFETs at 800 volts, whose faster edges lose less.
+The
 H-bridge makes AC, and pulse-width modulation shapes it into a sine and pushes the harmonics up to
 the carrier, where the winding's inductance blocks them. Three legs make the three-phase inverter,
 which, averaged, is section 04's converter. And the 12 volt network is a 300 watt draw on the pack,

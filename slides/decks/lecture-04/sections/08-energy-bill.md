@@ -134,6 +134,68 @@ largest loss, at light load, where the fixed losses count.
 -->
 
 ---
+routeAlias: cold-bill
+class: big-figure
+---
+
+## The same bill in winter
+
+<div class="grid grid-cols-[1.6fr_1fr] gap-6 items-center">
+<div>
+
+![The WLTC bill at the battery terminals with three auxiliary loads: 131.2 Wh/km at 300 W, the test cycle with the climate control off; 167.8 Wh/km at 2000 W, a warm cabin at about −7 °C; 232.2 Wh/km at 5000 W, a resistive heater warming a cold cabin.](/figures/08-cold-bill.svg)
+
+</div>
+<div class="text-[0.95rem]">
+
+$O_{aux}$ at a heater's power, nothing else changed:
+
+- **2 kW**, warm cabin, −7 to −10 °C (ADAC; AAA, derived): **+28&nbsp;%**;
+- **5 kW**, resistive heater warming up (ANL, 2012 Leaf): **+77 %**.
+
+Each kW is **21 Wh/km** on the WLTC: a heater costs per **hour**, not per km.
+
+AAA, five EVs at −7 °C: **−41 %** range with the heater on.
+
+</div>
+</div>
+
+<!--
+The bill we just read is for a car on a test cycle with the climate control off: 300 watts of
+auxiliaries. Section 01's energy model listed climate control as the first part of O aux, and in
+winter it dominates. The figure is notebook 03, section 5: the same car on the same WLTC, with only
+the auxiliary power, P aux, raised to a measured cabin-heater power. No model changes, one
+parameter.
+
+The figure has three bars, the consumption at the battery terminals in watt-hours per kilometer.
+Blue, 300 watts, the bill of the last slide: 131.2. Orange, 2000 watts: 167.8. Red, 5000 watts:
+232.2.
+
+Where do 2 and 5 kilowatts come from? The right column. 2 kilowatts is a warm cabin in frost.
+ADAC put seven electric cars in a cold chamber at minus 10 degrees in 2022 and measured 1.5 to 2
+kilowatts to hold the cabin at plus 20. And AAA, the American automobile club, tested five electric
+cars at minus 7 degrees in 2019; for its 2018 Leaf, the extra energy per mile with the heater on,
+times each cycle's average speed, gives 1.6 to 2.8 kilowatts at the battery. That multiplication is
+mine, so that number is derived. 5 kilowatts is a resistive heater warming a cold cabin: Argonne
+National Laboratory measured 2.5 to 5.2 kilowatts for the heater of a 2011 or 2012 Leaf on a city
+cycle at minus 7 degrees, high during warm-up and lower once the cabin is warm. That Leaf's heater
+was a resistive one. A heat pump needs less for the same heat, and in ADAC's winter test of 2026
+every competitive car had one.
+
+So 2 kilowatts raises the bill by 28 percent, and 5 kilowatts by 77 percent.
+
+Why so much? Because a heater's power is drawn per hour, not per kilometer. The WLTC covers 23.3
+kilometers in half an hour, so every kilowatt of heater adds half a kilowatt-hour over 23.3
+kilometers, about 21 watt-hours per kilometer, against 131 for everything else. In a traffic jam,
+at walking pace, the heater can cost more energy per kilometer than the driving.
+
+And only the heater changed here. In real cold the battery's resistance rises, the air is denser,
+and the tires are stiffer. None of that is in our model, which runs at a warm operating
+temperature. Measured on real cars, that all adds up: AAA's five cars at minus 7 degrees lost 12
+percent of their combined range with the heater off, and 41 percent with it on.
+-->
+
+---
 routeAlias: braking-back
 ---
 
@@ -317,6 +379,7 @@ kilometers, is 4.3 watt-hours per kilometer.
 - The road takes **103.1**, the machine **17.6**, the auxiliaries 6.4; the rest of the chain a few
   Wh/km each.
 - Braking gave back **24 %** of the traction energy.
+- In winter a 2 kW heater adds **28 %**: each kW is 21 Wh/km on the WLTC.
 - **47.2 MJ/100 km**, against **168.8** for Lecture 2's engine car: 3.6 times less.
 
 ### Next: the whole lecture on one page. <Link to="wrap-up">→ 09, wrap-up</Link>
@@ -326,7 +389,8 @@ Section 08 in five lines. Every link has its own meter, and their sum closes on 
 10 to the minus 9. On the WLTC the car takes 131.2 watt-hours per kilometer at the battery, 13.12
 kilowatt-hours per 100 kilometers, inside the plan's band of 120 to 155. The road takes 103.1, the
 machine 17.6, the auxiliaries 6.4, and the rest of the chain a few watt-hours per kilometer each.
-Braking gave back 24 percent of the traction energy. And 47.2 megajoules per 100 kilometers, against
+Braking gave back 24 percent of the traction energy. In winter a 2 kilowatt heater adds 28 percent,
+because each kilowatt costs 21 watt-hours per kilometer on the WLTC. And 47.2 megajoules per 100 kilometers, against
 168.8 for Lecture 2's engine car: 3.6 times less.
 
 That is the headline: the same car on the same cycle needs a bit over a quarter of the energy with

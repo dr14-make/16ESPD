@@ -200,6 +200,70 @@ round trip at 95 to 98 percent.
 -->
 
 ---
+routeAlias: battery-ragone
+class: big-figure
+---
+
+## Power costs efficiency: the pack's own Ragone curve
+
+<div class="grid grid-cols-[1.6fr_1fr] gap-6 items-center">
+<div>
+
+![Left: energy efficiency v/E of the 350 V, 0.1 Ω pack against terminal power: 99.2 % at 10 kW, 89.3 % at 117.2 kW, 50 % at the maximum 306.2 kW. Right: the same sweep as specific energy against specific power for a 303 kg pack, log-log: about 131 Wh/kg at 33 W/kg, 118 Wh/kg at 387 W/kg, 66 Wh/kg at 1010 W/kg.](/figures/06-battery-ragone.svg)
+
+</div>
+<div class="text-[0.95rem]">
+
+$$
+\eta = \frac{v}{E} = 1 - \frac{R_0\, i}{E} \qquad P = E\,i - R_0\, i^2
+$$
+
+- **10 kW**, cruising at 90 km/h: **0.8 %** lost (derived);
+- the machine's full input, **117 kW**: **10.7 %**;
+- the most it can give, $E^2/4R_0$ = **306 kW**: **50 %**.
+
+Every link costs more at high power; the battery too.
+
+</div>
+</div>
+
+<!--
+The deck's Ragone plot set lead acid against nickel-cadmium: energy against power. Our own pack
+draws a better one. The figure is notebook 04: the bench of build 03, held at one constant current
+after another, from 5 amperes up to 1750, and read at each.
+
+The formulas first. The cells make E times i; the terminals deliver v times i, with v equal to E
+minus R0 i. So the share of the cells' energy that reaches the terminals is eta equals v over E, 1
+minus R0 i over E: E is the open-circuit voltage, 350 volts, R0 the internal resistance, 0.1 ohm, i
+the current in amperes. And the power at the terminals is P equals E i minus R0 i squared, in watts.
+P grows with the current until R0 i reaches half of E, at i equals E over 2 R0, 1750 amperes; there
+P is at its maximum, E squared over 4 R0, and eta is exactly one half. Past that point more current
+gives less power.
+
+Left panel: the efficiency v over E in percent, against the terminal power in kilowatts. It starts
+near 100 at no load and falls ever faster. The three orange dots are the three lines on the right.
+At 10 kilowatts, about what the course car's road load takes at a steady 90 kilometers per hour,
+my arithmetic from section 01's numbers, the pack loses 0.8 percent: 99.2 percent reaches the
+terminals. At 117 kilowatts, the full input of the machine and converter at the
+corner from section 04, it loses 10.7 percent, about a tenth. And at its theoretical maximum, 306
+kilowatts, half. These are derived from the model's parameters and read off the bench in the
+notebook.
+
+Right panel: the same sweep as a Ragone chart, both axes logarithmic. Across is specific power,
+watts per kilogram of pack; up is specific energy, the watt-hours per kilogram the pack delivers
+if it is emptied at that power. The pack mass is the Leaf ZE1's 303 kilograms, from Nissan. At 33
+watts per kilogram, the 10 kilowatt point, the pack delivers about 131 watt-hours per kilogram, close
+to the 132 it stores. At 387 watts per kilogram, the machine's full input, 118. At the peak, 1010
+watts per kilogram, only 66: half is lost in the pack. The faster you empty a battery, the less of
+its energy arrives. A real pack's battery management never lets it near that peak: Idaho National
+Laboratory measured the 2013 Leaf pack's 30 second discharge capability at 103.3 kilowatts, at 80
+percent depth of discharge.
+
+The last line is the lecture's thesis applied to the battery: every link costs a few percent, and
+more at high power.
+-->
+
+---
 routeAlias: battery-table
 ---
 
@@ -409,6 +473,7 @@ nothing in the model knows that the pack is empty.
 - A pack is cells in series and parallel: **v = E − R₀ i**. The sag is lost as heat.
 - Capacity is charge, A·h; energy is charge times voltage: **40 kWh at 350 V is 114.3 A·h**.
 - SoC is counted from the current: coulomb counting.
+- Power costs efficiency: **0.8 %** lost at 10 kW, **50 %** at the pack's 306 kW peak.
 - Specific energy and specific power trade against each other; lithium-ion made the
   battery-electric car practical: best cells 265 Wh/kg (IEA), packs **$108/kWh** in 2025 (BNEF).
 - On your bench: **10 V** of sag at 100 A, SoC **0.9 → 0.4625** in half an hour.
@@ -419,7 +484,8 @@ nothing in the model knows that the pack is empty.
 Section 06 in five lines. A pack is cells in series and in parallel, and its terminal voltage is v
 equals E minus R0 i; the sag is lost as heat. Capacity is charge, in ampere-hours, and energy is
 charge times voltage: 40 kilowatt-hours at 350 volts is 114.3 ampere-hours. The state of charge is
-counted from the current, by coulomb counting. Specific energy and specific power trade against each
+counted from the current, by coulomb counting. Power costs efficiency: the pack loses 0.8 percent at
+10 kilowatts and half at its 306 kilowatt peak. Specific energy and specific power trade against each
 other, and lithium-ion made the battery-electric car practical: the best cells of 2025 store 265
 watt-hours per kilogram, by the IEA's count, and a pack cost 108 dollars per kilowatt-hour in
 BloombergNEF's 2025 survey. And on your bench: a 10 volt sag at
