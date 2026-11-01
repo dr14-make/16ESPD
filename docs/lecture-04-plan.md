@@ -113,8 +113,10 @@ exact zero until a fixed release ships. FBDF reports success on a frozen car; be
 and check that the distance driven matches the cycle.
 
 **S10 — Numbers carry their provenance**, as in Lecture 2's S10: `(Nissan)`, `(ORNL)`, `(INL)`,
-`(EPA)`, `(EEA)`, `(EU)`, `(Audi)`, `(deck)`, `(textbook)`, `(derived)`, `(assumed)`, matching the
-research note's labels.
+`(EPA)`, `(EEA)`, `(EU)`, `(Audi)`, `(IEA)`, `(BNEF)`, `(ACEA)`, `(Toyota)`, `(deck)`, `(textbook)`,
+`(derived)`, `(assumed)`, matching the research note's labels. Market and regulatory figures are
+plotted by `scripts/export_lecture04_context_figures.jl` from `data/ev_context/`, whose README
+cites each value's source.
 
 ## Reality anchors
 
@@ -163,7 +165,9 @@ notebook. Reference solutions live in `dyad/HandsOn04/`.
 A Slidev deck in `slides/decks/lecture-04/`, in the Lecture 3 layout, with the build slides
 interleaved. Figures the models can produce are regenerated from them, not copied from the pptx.
 
-1. Why electric, condensed (deck 7: 3–7) and the energy chain both ways.
+1. Why electric, condensed (deck 7: 3–7): the case; the market (IEA EV shares), the EU car CO₂
+   limits against the fleet (EEA), and the rules on one time line (car CO₂, Euro 7, batteries,
+   AFIR, US); the energy chain both ways.
 2. The DC machine (7: 22–26): F = BIL to T = KΦI and E = KΦω; losses and efficiency. → step 1
 3. Machines in real EVs (7: 34–39, extended): BLDC and PMSM, why FOC makes a PMSM look like step
    1's machine (animation), induction, SRM. PMSM versus induction; why AWD cars pair one of each.
@@ -172,7 +176,7 @@ interleaved. Figures the models can produce are regenerated from them, not copie
 5. Power electronics (7: 27–33): DC regulation, buck and boost, H-bridge, PWM and harmonics,
    three-phase bridge; demo on the switching models. The DC-DC for 12 V. The charger.
 6. Batteries, simply (8: 3–6, 14–16): V = E − IR, Ah and Wh, specific energy and power, the
-   summary table. → step 3
+   summary table labeled as dated beside today's cells, and the BNEF pack price. → step 3
 7. The car and regen (7: 6, 33): regen limits, series versus parallel blending. → steps 4–5
 8. The energy bill: WLTC results, the engine comparison. → step 6
 

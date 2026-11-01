@@ -494,6 +494,9 @@ station for DC fast charging.
 **In the model:** one efficiency. ANL measured **86–87 %** for the 2013 Leaf's on-board charger;
 the bill counts **13 %** lost on the way in.
 
+**On the road** (EU): from the end of 2025, a pool of at least 400 kW, with a 150 kW point, every
+60 km of the EU's core roads; 600 kW by the end of 2027.
+
 </div>
 </div>
 
@@ -514,6 +517,12 @@ AC charging it sits on board; for DC fast charging it sits in the charging stati
 is a single efficiency. Argonne National Laboratory measured the 2013 Leaf's on-board charger at 86
 to 87 percent, and the whole chain, from the AC plug to the DC energy out of the battery, at 82 to
 85 percent. The energy bill counts 13 percent lost on the way in.
+
+The last lines on the right are the road. The EU's Alternative Fuels Infrastructure Regulation,
+2023/1804, requires along the core trans-European roads a charging pool every 60 kilometers in each
+direction: from the end of 2025 at least 400 kilowatts in total with at least one 150 kilowatt
+point, and from the end of 2027 600 kilowatts with two such points. Those are DC chargers, with the
+rectifier and the converter in the station, feeding the pack directly.
 
 The green box points ahead: section 08 uses that efficiency to put the bill at the wall, 54.3
 megajoules per 100 kilometers against 47.2 at the battery. It is also why official consumption
