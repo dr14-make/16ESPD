@@ -222,7 +222,19 @@ class: big-figure
 
 ## Losses and efficiency
 
-<div class="grid grid-cols-[1.6fr_1fr] gap-6 items-center">
+<div class="tight">
+
+| Loss | Power | Grows with | Cause | At 3283 rpm |
+|---|---|---|---|---|
+| **copper** | *R i*² | current², so torque² | current heating the armature resistance | 5.52 kW at 332 A |
+| **friction** | *T*<sub>f</sub> ω | ω: a constant torque | bearings and seals rubbing | 172 W |
+| **iron** | *K*<sub>i</sub> ω | ω: a constant torque | hysteresis and eddy currents in the iron | 344 W |
+| **windage** | *k*<sub>w</sub> ω³ | ω³ | air drag on the spinning rotor | 10 W |
+| **constant** | *C* | nothing: the same at every speed | an assumed allowance for what scales with neither | 200 W |
+
+</div>
+
+<div class="grid grid-cols-[1.5fr_1fr] gap-6 items-center mt-2">
 <div>
 
 ![Machine losses against speed on a log scale, at the converter's current limit of 332.2 A from standstill to 10 000 rpm: copper constant at 5.52 kW; iron and friction rising in proportion to speed, to about 1 kW and 0.5 kW; the constant loss flat at 200 W; windage rising as the cube of speed to about 300 W. Base speed 3283 rpm dashed.](/figures/02-losses.svg)
@@ -230,10 +242,8 @@ class: big-figure
 </div>
 <div class="text-[0.95rem]">
 
-The deck's loss formula, each term a part:
-
 $$
-P_{loss} = \underbrace{R\, i^2}_{\text{copper} \,\propto\, T^2} + \underbrace{T_f\,\omega}_{\text{friction}} + \underbrace{K_i\,\omega}_{\text{iron}} + \underbrace{k_w\,\omega^3}_{\text{windage}} + C
+P_{loss} = R\, i^2 + T_f\,\omega + K_i\,\omega + k_w\,\omega^3 + C
 $$
 
 $$
@@ -246,32 +256,48 @@ At 320 N·m and 3283 rpm: copper **5.52 kW**, shaft losses **0.73 kW**, **94.6 %
 </div>
 
 <!--
-Where does the machine lose energy? On the right is the deck's loss formula, and in our model each
-term is a part with its own power. Copper loss, R i squared: the resistance in ohms times the
-current squared, in watts. The current is proportional to the torque, so this loss goes with the
-torque squared. Friction in the bearings, T f omega: a constant torque times the speed. Iron loss, K
-i omega: hysteresis and eddy currents in the iron, which the deck also takes proportional to the
-speed. Windage, k w omega cubed: the air drag on the spinning rotor, growing with the cube of the
-speed. And a constant, C, lost at any speed.
+Where does the machine lose energy? The table at the top names the five losses of our model, one
+per row, and in the model each one is its own part on the circuit or the shaft, with its own power
+to read. The columns give the loss, its power, what it grows with, where it comes from, and its
+value at base speed, 3283 rpm, with the full current of 332 amperes.
 
-The efficiency, the second formula, is the mechanical power out, T omega, over the power in, which
-is T omega plus all the losses.
+Copper first. The armature resistance R, 0.05 ohms, heats up with the square of the current i: R
+times i squared, in watts. The current is proportional to the torque, so this loss goes with the
+square of the torque too. At 332 amperes it is 5.52 kilowatts, by far the largest entry.
+
+The next two rows are constant torques that brake the shaft. A constant torque T at a speed omega,
+in radians per second, costs the power T times omega, so both grow in proportion to the speed.
+Friction is T f, half a newton meter, from the bearings and the shaft seals: 172 watts at base
+speed. Iron loss is K i, one newton meter: every turn the rotor's field sweeps through the iron,
+which flips its magnetization, that is hysteresis, and drives currents around inside it, those are
+eddy currents. That gives 344 watts at base speed.
+
+Windage is the air the rotor drags around with it. Its torque grows with the square of the speed,
+so its power, k w times omega cubed, grows with the cube. The coefficient k w is chosen so that the
+loss is 300 watts at the motor's top speed of 10 100 rpm, and at base speed it is only 10 watts.
+
+The last row, the constant C, is 200 watts at every speed. The model does not attribute it to one
+physical mechanism. It is an allowance the course assumes, so that the motor-only efficiency lands
+near ORNL's measured map of the 2012 Leaf. The inverter's own losses are not in it: they belong to
+the converter. In the model it is a torque C over omega, which keeps the power at C, and it fades
+to zero below 95 rpm, so that the machine has no infinite drag at standstill.
+
+Beside the figure, the first formula adds the five rows into P loss. The second is the efficiency,
+eta: the mechanical power out, T omega, over the power in, which is T omega plus all the losses.
 
 The figure is notebook 04, section 2. The machine runs along its whole envelope at the converter's
 current limit, 332.2 amperes, from standstill to 10 000 rpm, on build 02's converter bench, and each
 loss is read from its own part. The horizontal axis is the machine speed in rpm. The vertical axis
 is the loss in watts, on a logarithmic scale: each grid line is ten times the one below it. The gray
-dashed vertical line is base speed, 3283 rpm. The legend names the five curves. Copper, at the top,
-is flat at 5.52 kilowatts at every speed, because the current is the same everywhere. Iron and
-friction rise in proportion to speed, to about 1 kilowatt and half a kilowatt at the right edge. The
-constant loss is flat at 200 watts. Windage starts tiny and rises with the cube of the speed, to
-about 300 watts at 10 000 rpm.
+dashed vertical line is base speed. Copper sits at the top, flat at 5.52 kilowatts at every speed,
+because the current is the same everywhere. Iron and friction rise in proportion to the speed, to
+about 1 kilowatt and half a kilowatt at the right edge. The constant loss is flat at 200 watts.
+Windage starts tiny and climbs with the cube of the speed, to about 300 watts at 10 000 rpm.
 
-So at full current the copper loss dominates at every speed. At base speed the others are iron 344
-watts, friction 172, the constant 200 and windage 10: together 0.73 kilowatts of shaft losses,
-against 5.52 of copper. At the Leaf's corner point, 320 newton meters at 3283 rpm, the shaft gives
-110.0 kilowatts and the electrical input is 116.3 kilowatts: 94.6 percent, the number at the bottom
-of the slide.
+So at full current the copper loss dominates at every speed. The four shaft losses together are
+0.73 kilowatts at base speed, against 5.52 kilowatts of copper. At the Leaf's corner point, 320
+newton meters at 3283 rpm, the shaft gives 110.0 kilowatts and the electrical input is 116.3
+kilowatts: 94.6 percent, the line under the two formulas.
 
 At part load the picture changes. The current falls with the torque, and the copper loss with its
 square: halve the torque and the copper loss drops to a quarter, while the speed terms stay where
