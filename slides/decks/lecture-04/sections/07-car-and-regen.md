@@ -96,25 +96,92 @@ with its driver, the auxiliary load and the torque split.
 routeAlias: build-car
 ---
 
-## Build 04: the car
+## Build 04a: the electric drive
 
-<div class="grid grid-cols-[1fr_1.15fr] gap-8 items-start">
+<div class="grid grid-cols-[1.1fr_1fr] gap-8 items-start">
 <div>
 
-<img src="/img/lecture-04/step04-electric-drive.png" class="mx-auto" style="max-height: 16rem" alt="The finished ElectricDrive in Studio: battery and aux across one positive and one negative rail; converter from the positive rail into machine.p, its field into machine.field; machine into reduction into the spline port; battery.SoC up to the SoC port, tau_ref at the top left, support at the bottom."/>
+<img src="/img/lecture-04/step04-electric-drive.png" class="mx-auto" style="max-height: 26rem" alt="The finished ElectricDrive in Studio: battery and aux across one positive and one negative rail; converter from the positive rail into machine.p, its field into machine.field; machine into reduction into the spline port; battery.SoC up to the SoC port, tau_ref at the top left, support at the bottom."/>
 
-*New `ElectricDrive`: parameters `ratio` 8.193, `P_aux` 300 · `battery`, `aux` AuxLoad,
-`converter`, `machine` (`field_weakening = true`), `reduction` IdealGear, `ground` · one line:
-`converter.i_ref = tau_ref / (converter.field * machine.k)` · new `BEVWLTC`: paste from the
-guide · ▷ once, then plot*
+**Given:** `AuxLoad`, the 12 V network; `IdealGear`, the reduction
 
-**Given:** the planar car and road load, `DifferentialGear`, `AuxLoad`, `TorqueSplit`, the WLTC
-bench
+[page: step 04](../lecture/lecture-04/#step-04) · reference `dyad/HandsOn04/ElectricDrive.dyad`
 
+</div>
+<div class="stack">
+
+*New `ElectricDrive` · parameters `ratio` 8.193, `P_aux` 300 · ports from `Dyad`: `tau_ref`
+RealInput, `spline` and `support` Spline, `SoC` RealOutput · parts: `battery`, `aux` AuxLoad,
+`converter`, `machine` (`field_weakening = true`), `reduction` IdealGear, `ground` · wires: the
+DC side to one positive and one negative rail, machine → reduction → `spline`, housings to
+`support`, SoC out · then one line in code:*
+
+```txt
+converter.i_ref = tau_ref / (converter.field * machine.k)
+```
+
+<div class="handson">✓ the names the car reads: <code>battery</code>, <code>aux</code>,
+<code>converter</code>, <code>machine</code>, <code>SoC</code> · the torque asked for becomes a
+current at the present field</div>
+
+</div>
+</div>
+
+<!--
+Build 04a: the electric drive. On the left, the finished `ElectricDrive` in Studio. The battery and the
+auxiliary load sit across one positive and one negative rail. The converter takes the positive rail
+into the machine's p, and its field output goes into the machine's field input. The machine turns
+the reduction, and the reduction ends at the drive's spline port. The battery's SoC goes up to the
+SoC output port, the torque request, tau ref, comes in at the top left, and the support is at the
+bottom.
+
+The steps, in the italic line on the right. A new component `ElectricDrive`, with two parameters: ratio, 8.193,
+and P aux, 300 watts. It has four ports: the torque request, the output spline, the support, and the
+SoC output. Then six parts from the guide's table, renamed: your battery; aux, the library's
+`AuxLoad`, which draws whatever current makes 300 watts; your converter; your machine, with field
+weakening set to true; a ground; and the reduction, an `IdealGear`, lossless, with the machine on
+its fast side. Wire the DC side: the battery to the converter and the auxiliaries, all negative pins
+to ground. The converter's output to the machine, the field across. The machine to the reduction,
+the reduction to the drive's spline, the housings to the support, and SoC out. Then one line of
+code, the torque-to-current conversion of the last slide: the converter's i ref equals tau ref over
+`converter.field` times `machine.k`.
+
+The green box: keep the part names. The car bench and the energy bill of build 06 read the
+battery, the auxiliaries, the converter, the machine and the SoC by name. And the drive takes a
+torque, not a current: it turns the torque asked for into a current at the present field. Next
+slide: the drive goes into the car.
+-->
+
+---
+routeAlias: build-car-bench
+---
+
+## Build 04b: the drive in the car
+
+<div class="grid grid-cols-[1.15fr_1fr] gap-6 items-start">
+<div>
+
+<img src="/img/lecture-04/step04-bevwltc.png" class="mx-auto" style="max-height: 29rem" alt="The finished BEVWLTC in Studio: trace, no_ff and kmh into driver at the top left; split right of driver and drive right of split along the top; split's motor output into drive, its brake output down to the front brake inputs on both sides of car; drive.spline down to differential, whose outputs go to the car's front wheels; drive.support down to mount; motion on the car's bus, flat and roadload below."/>
+
+**Given:** the planar car and road load, `DifferentialGear`, `TorqueSplit`, the WLTC bench ·
 [page: step 04](../lecture/lecture-04/#step-04) · reference `dyad/HandsOn04/BEVWLTC.dyad`
 
 </div>
 <div class="stack">
+
+*New `BEVWLTC`: paste the car bench · place `drive` (your `ElectricDrive`) and `split`
+(TorqueSplit) · seven wires · one line: `initial drive.converter.i_out = 0.0` · ▷ once, then
+plot*
+
+```txt
+# BEVWLTC: the seven wires that put the drive in the car
+kmh.y           → split.v
+driver.y        → split.tau_ref
+split.tau_motor → drive.tau_ref
+split.tau_brake → car.tau_fl, car.tau_fr     # two wires
+drive.spline    → differential.flange_b
+drive.support   → mount.spline
+```
 
 ```julia
 r = MyCar.BEVWLTCTransient();
@@ -136,30 +203,29 @@ r.sol[r."car.bus.x"][end], r.sol[r."drive.SoC"][end]
 </div>
 
 <!--
-Build 04: the car. On the left, the finished `ElectricDrive` in Studio. The battery and the
-auxiliary load sit across one positive and one negative rail. The converter takes the positive rail
-into the machine's p, and its field output goes into the machine's field input. The machine turns
-the reduction, and the reduction ends at the drive's spline port. The battery's SoC goes up to the
-SoC output port, the torque request, tau ref, comes in at the top left, and the support is at the
-bottom.
+Build 04b: the drive in the car. On the left, the finished `BEVWLTC` in Studio. Along the top, from
+the left: the trace and the speed in kilometers per hour go into the driver, then the split, then
+your drive. The car is the large part at the bottom, with the motion readout on its right and the
+road load below it. The differential sits between the drive and the car.
 
-The steps, in the italic line. A new component `ElectricDrive`, with two parameters: ratio, 8.193,
-and P aux, 300 watts. It has four ports: the torque request, the output spline, the support, and the
-SoC output. Then six parts from the guide's table, renamed: your battery; aux, the library's
-`AuxLoad`, which draws whatever current makes 300 watts; your converter; your machine, with field
-weakening set to true; a ground; and the reduction, an `IdealGear`, lossless, with the machine on
-its fast side. Wire the DC side: the battery to the converter and the auxiliaries, all negative pins
-to ground. The converter's output to the machine, the field across. The machine to the reduction,
-the reduction to the drive's spline, the housings to the support, and SoC out. Then one line of
-code, the torque-to-current conversion of the last slide: the converter's i ref equals tau ref over
-`converter.field` times `machine.k`.
+The steps, in the italic line. A new component `BEVWLTC`. Paste the car bench from the guide: the
+course library's planar WLTC bench with the front axle empty. The driver follows the trace, the car
+has its road load, and the differential already sits on the front wheels, but nothing turns it yet.
+Now you connect the drive to the car. Place two parts: `drive`, your `ElectricDrive` from `MyCar`,
+and `split`, the library's `TorqueSplit`, which sits between the driver and the drive.
 
-Then a new component `BEVWLTC`: paste it from the guide. It is the course library's planar WLTC
-bench, with your drive on the front axle through the differential and a `TorqueSplit` between the
-driver and the drive. Driving, the machine takes all of the driver's torque. Braking, the machine
-takes it above 10 kilometers per hour and fades linearly to none at standstill, and the front
-friction brakes take the rest, so that the car stops and is held at every stop without rolling back.
-A machine asked to brake at standstill would drive the car backwards. Run Analysis once; the run
+Then the seven wires, in the box at the top right, and in the picture all of them touch the split
+or the drive. The car's speed in kilometers per hour and the driver's torque request go into the
+split, on its left. From its right, the motor torque goes into the drive, and the brake torque runs
+down to both front brakes, one wire to each side of the car. Below the drive, its spline goes down
+to the differential, which turns the front wheels. And the drive's support goes to the mount, which
+takes the reaction of the machine and the gear case. Code view then shows seventeen connect lines.
+Last, one line in code: the converter's current starts at zero.
+
+Driving, the machine takes all of the driver's torque. Braking, the machine takes it above 10
+kilometers per hour and fades linearly to none at standstill, and the front friction brakes take
+the rest, so that the car stops and is held at every stop without rolling back. A machine asked to
+brake at standstill would drive the car backwards. Run Analysis once; the run
 takes about 7 seconds once compiled.
 
 The snippet plots the car's speed on the trace, then the battery current, the state of charge and

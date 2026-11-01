@@ -56,6 +56,7 @@ The conventions for a re-capture:
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
 | `step04-electric-drive.png` | `HandsOn04.ElectricDrive` | `battery` and `aux` across one positive and one negative rail, `converter` fed from the positive rail, `p_out` and Φ into `machine`, `machine.n` and `ground` on the negative rail; `machine` into `reduction` into the `spline` port; `battery.SoC` up to the `SoC` port, `tau_ref` top left, `support` at the bottom. Stitched from two captures, 970 × 996. |
+| `step04-bevwltc.png` | a student's `BEVWLTC` built from guide step 04 | The car bench with `drive` and `split` placed: `split` between `driver` and `drive` along the top, `kmh.y` into both `driver` and `split`; `split.tau_motor` into `drive.tau_ref`, `split.tau_brake` down to the two front brake inputs `car.tau_fl` and `car.tau_fr`; `drive.spline` down to `differential`, whose outputs go to the car's front spins; `drive.support` to `mount`; `motion` on the car's bus, `roadload` on its chassis with `flat` as the grade, `straight` on the steering. Built from guide step 04 in Studio web 3.5.1 (17 `connect` lines), with the reference `ElectricDrive` as the student's drive, so `drive` shows the course icon. Reset view; the canvas toolbar overlapped `no_ff`, so two captures one 39 px canvas scroll apart are stitched. The rehearsal run reproduced the checkpoint: retcode Success, worst gap 1.634 km/h, `car.bus.x` 23 266.9 m, SoC 0.8219, battery current 137.7 A / −86.2 A. 880 × 869. |
 
 ## Step 05 — regen blending
 
