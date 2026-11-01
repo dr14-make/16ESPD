@@ -99,7 +99,7 @@ routeAlias: machine-as-a-circuit
 
 <div class="diagram-wide">
 
-![The DCMachine component: from terminal p, the armature resistance R 0.05 Ω (copper loss), the inductance L 0.5 mH and the back-EMF source E = KΦω, T = KΦi, a RotationalEMF, back to terminal n. The EMF drives the shaft: the rotor inertia J, then four loss torques on the housing (friction T_f, iron K_i, windage k_w ω², constant C/ω), out to the spline.](/diagrams/02-dc-machine.svg)
+![The DCMachine component: from terminal p, the armature resistance R 0.05 Ω (copper loss), the inductance L 0.5 mH and the back-EMF source E = KΦω, T = KΦi, a RotationalEMF, back to terminal n. The EMF drives the shaft: the rotor inertia J, then four loss torques on the housing (friction T_f, iron K_i, windage k_w ω², constant C/ω), out to the spline.](/img/lecture-04/02-dc-machine.svg)
 
 </div>
 
@@ -121,7 +121,7 @@ $$
 </div>
 
 <!--
-This is the machine you paste in build 01, the `DCMachine` component, drawn as a circuit. Read the
+This is the machine you build in build 01a, the `DCMachine` component, drawn as a circuit. Read the
 top from left to right, starting at the terminal p. First the armature resistance R, 0.05 ohm, where
 the copper loss, R i squared, is made. Then the armature inductance L, 0.5 millihenry. Then the
 back-EMF source: E equals K Phi omega, and T equals K Phi i. In the standard library that source is
@@ -347,20 +347,105 @@ field input, the flux as a fraction of full, and the converter sets it.
 routeAlias: build-machine
 ---
 
-## Build 01: the machine, on a dyno
+## Build 01a: the machine
+
+<img src="/img/lecture-04/02-dc-machine.svg" class="mx-auto" style="max-height: 12rem; width: auto" alt="The DCMachine you build: from p, the resistor R and the inductor L into the RotationalEMF, back to n; the EMF drives the shaft through the rotor inertia J to the spline; friction T_f, iron K_i, windage k_w ω² and the constant loss C/ω brake the shaft against the housing."/>
+
+<div class="grid grid-cols-[1.15fr_1fr] gap-6 items-start">
+<div>
+
+*New `DCMachine` · ports from `Dyad`: `p`, `n` Pin on the left, `spline` right, `support`
+bottom · 13 parameters from the guide, `k` as its formula · parts: `resistor`, `inductor`, `emf`
+RotationalEMF, `rotor` Inertia, `friction` and `iron` SignTorque, `windage`
+QuadraticSpeedDependentTorque, `constant_loss` InverseSpeedDependentTorque · 15 wires: p → R → L →
+E → n, the rotor to `spline`, every loss on the rotor and on `support` · then in code: the
+variables and the loss powers*
+
+**Given:** the stdlib's `RotationalEMF`, `Resistor`, `Inductor`, `Inertia` and the
+speed-dependent loss torques
+
+[page: step 01](../lecture/lecture-04/#step-01) · reference: the guide's **Fell behind?** code
+
+</div>
+<div class="stack">
+
+```txt
+  P_cu = resistor.v * resistor.i
+  P_fric = -friction.tau * w
+  P_iron = -iron.tau * w
+  P_wind = -windage.tau * w
+  P_const = -constant_loss.tau * w
+  P_loss = P_cu + P_fric + P_iron + P_wind + P_const
+```
+
+<div class="handson">✓ one part per term of <i>P</i><sub>loss</sub> · <b>15</b>
+<code>connect</code> lines · compiles before the dyno is built</div>
+
+</div>
+</div>
+
+<!--
+Build 01a: the machine. You build it yourself, part by part, in Studio. The picture at the top is
+the circuit from the machine-as-a-circuit slide, and it is exactly what goes into your component.
+Along the top, from the terminal p: the resistor, the inductor, and the RotationalEMF, then back
+down to the terminal n. To the right of the EMF, the shaft: the rotor inertia J, then out to the
+spline. The four orange boxes are the shaft losses, each one a braking torque between the shaft and
+the gray housing below it, which is the support port. The picture draws them after the rotor; in
+your component you wire them to the EMF's rotor, before the inertia. The shaft is rigid, so it is
+the same shaft and the same numbers.
+
+The steps are in the italic line. First, a new component `DCMachine`: right-click `MyCar`, Add
+Component. Ports are parts too: from the Dyad library, two pins, renamed p and n, on the left edge,
+and two splines, renamed spline and support, on the right edge and the bottom edge. Second, the
+thirteen parameters from the guide's table, with Add parameter, each a Real with its unit. Most are
+the numbers of the machine slide. Two are formulas, and you type them in as formulas: the losses at
+base speed, tau loss base, and K Phi, which is k. Written that way, k still puts the machine on 320
+newton meters at 3283 rpm if you later change R or a loss.
+
+Third, the eight parts, renamed and set. Each one is there for one term of the voltage equation or
+the loss formula. The resistor is the armature's copper: R i squared is the copper loss. The
+inductor is the L di by dt: the current follows the voltage with a 10 millisecond time constant.
+The RotationalEMF is the machine itself, E equals K Phi omega and T equals K Phi i, with the
+constant k, and it loses nothing: every loss must be a part of its own. The inertia is the rotor.
+Then the losses. Friction and iron are each a SignTorque: a constant torque against the rotation,
+so a power that grows with omega. Windage is a quadratic speed-dependent torque, a torque in omega
+squared and a power in omega cubed. The constant loss is an inverse speed-dependent torque: C over
+omega as a torque, so C, 200 watts, as a power at every speed. Below about 95 rpm the loss torques
+fade to zero, so the machine has no infinite drag at standstill.
+
+Fourth, fifteen wires. Four for the armature, p to R to L to E to n. Two for the shaft, the EMF's
+rotor to the inertia and the inertia to the spline. Four that put every loss on the EMF's rotor, and
+five that send the EMF's and every loss's reaction to the support. Count fifteen connect lines in
+the code view.
+
+Last, in code, only what the GUI cannot draw: the variables a later step reads, and the equations
+that compute them. On the right are the loss lines. The copper loss is the resistor's voltage times
+its current. Each shaft loss is its torque times the speed, with a minus sign because the torque
+brakes. They add up to P loss, so in steady state the electrical power in is the mechanical power
+out plus P loss. That is the deck's loss formula, read off the parts rather than computed beside
+them.
+
+The green box: one part for each term of P loss, fifteen connect lines, and the component compiles
+on its own, before you build the dyno on the next slide. If you fall behind, the guide's Fell
+behind block has the whole machine as code.
+-->
+
+---
+routeAlias: build-dyno
+---
+
+## Build 01b: the machine, on a dyno
 
 <div class="grid grid-cols-[1fr_1.15fr] gap-8 items-start">
 <div>
 
 <img src="/img/lecture-04/step01-dyno.png" class="mx-auto" style="max-height: 21rem" alt="The finished DCMachineDyno in Studio: voltage into supply on the left with ground below it; machine at the top right, p and n on its left edge, its shaft wired to dyno; speed into dyno below; both supports to mounts."/>
 
-*New `DCMachine`: paste the code from the guide · new `DCMachineDyno`: parameters `V` 350,
-`rpm_start` 3283, `rpm_end` 3600 · `voltage` Constant → `supply` VoltageSource → `machine` →
+*New `DCMachineDyno`: parameters `V` 350, `rpm_start` 3283, `rpm_end` 3600 · `voltage` Constant → `supply` VoltageSource → `machine` →
 `ground` · `speed` Ramp → `dyno` VelocitySource · `mounts` Fixed · two `initial` lines and
 `DCMachineDynoTransient` in code · ▷ once, then plot*
 
-**Given:** the stdlib's `RotationalEMF`, `Resistor`, `Inductor` and the speed-dependent loss
-torques
+**Given:** the stdlib's `VoltageSource`, `VelocitySource` and `Ramp`
 
 [page: step 01](../lecture/lecture-04/#step-01) · reference `dyad/HandsOn04/DCMachineDyno.dyad`
 
@@ -388,27 +473,22 @@ r = MyCar.DCMachineDynoTransient(V = 200.0,
 </div>
 
 <!--
-Build 01: the machine, on a dyno. On the left is the finished bench in Studio. A constant block
+Build 01b: the machine you just built, on a dyno. On the left is the finished bench in Studio. A constant block
 named voltage feeds an ideal voltage source named supply, with the ground below it. The machine sits
 at the top right, with its two electrical pins, p and n, on its left edge, and its shaft wired to
 the dyno. Below, a ramp block named speed sets the dyno's speed. Both housings, the machine's and
 the dyno's, go to the fixed mounts.
 
-The steps are in the italic line. First, a new component `DCMachine`: right-click `MyCar`, Add
-Component, toggle to code, select everything, and paste the code from the guide. It is the circuit
-from two slides back: the resistor, the inductor and the EMF in the armature, the rotor inertia and
-the four loss parts on the shaft. Keep its names: step 02 adds a field input to this machine, and
-step 04 reads `machine.k`.
-
-Second, a new component `DCMachineDyno`, with three parameters: V, 350; rpm start, 3283; rpm end,
+The steps are in the italic line. A new component `DCMachineDyno`, with three parameters: V, 350; rpm start, 3283; rpm end,
 3600. Place the seven blocks from the guide's table and rename each one: voltage, a `Constant`, into
 supply, a `VoltageSource`; the machine; ground; speed, a `Ramp`, into dyno, a `VelocitySource`; and
-mounts, a `Fixed`. The voltage source stands in for the pack: a stiff supply with nothing in
+mounts, a `Fixed`. Search the plus panel for your machine under `MyCar`: the course library's
+machines are listed first. The voltage source stands in for the pack: a stiff supply with nothing in
 between. The velocity source is the dynamometer: it forces the shaft to the speed it is asked for,
 and absorbs or supplies whatever torque that takes. Wire them as in the picture; the code view
 should show eight connect lines.
 
-Third, in code: two initial lines, so that the dyno's angle and the armature current start at zero,
+Then, in code: two initial lines, so that the dyno's angle and the armature current start at zero,
 and the analysis `DCMachineDynoTransient`: 12 seconds, the Rodas5P solver, and tstops at 1 and 11
 seconds so that the solver lands on the corners of the ramp. The speed ramp holds 3283 rpm for a
 second, ramps to 3600 over ten seconds, and holds again. Then click Run Analysis once, and paste the
@@ -434,7 +514,9 @@ because the inductance holds the current 0.64 amperes behind the falling back-EM
 1500 rpm: 922 newton meters for 953 amperes, and the line crosses zero at 1968 rpm.
 
 If your torque starts at zero and climbs for the first second, that is not a bug, it is the
-inductance: plot from point 101. And a compile error at k usually means a parameter was renamed.
+inductance: plot from point 101. And a compile error at k usually means a parameter of your machine
+was renamed or typed with another name than the guide's: the bench and the later steps read
+`machine.k`, `machine.tau`, `machine.i` and the `P_` losses by name.
 -->
 
 ---
