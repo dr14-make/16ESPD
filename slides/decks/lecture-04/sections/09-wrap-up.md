@@ -112,7 +112,7 @@ routeAlias: what-you-measured
 | 02 | the converter, the envelope | duty 1 at 3283 rpm · field 0.328 at 10 000 rpm · 110.75 kW · 99.2 % |
 | 03 | the battery | 10 V sag at 100 A · SoC 0.9 → 0.4625 in 30 min · 17.0 of 17.5 kWh delivered |
 | 04 | the car on WLTC | within 1.63 km/h · 23 267 m · SoC 0.9 → 0.822 |
-| 05 | regen | hard stop 33.0 m, machine 45 % · WLTC 23.85 % back |
+| 05 | regen | hard stop 59.41 m, machine 0.99 % · WLTC 23.85 % back |
 | 06 | the bill | 131.2 Wh/km · 47.2 MJ/100 km against 168.8 |
 
 </div>
@@ -136,8 +136,8 @@ envelope: the duty reaches 1 at 3283 rpm, the field is down to 0.328 at 10 000 r
 power holds at 110.75 kilowatts, and the converter is 99.2 percent efficient. Build 03, the battery:
 a 10 volt sag at 100 amperes, the state of charge from 0.9 to 0.4625 in 30 minutes, and 17.0 of the
 17.5 kilowatt-hours delivered. Build 04, the car on the WLTC: within 1.63 kilometers per hour of the
-trace, 23 267 meters, the state of charge from 0.9 to 0.822. Build 05, regen: a 33.0 meter hard stop
-with the machine taking 49 percent of the braking, and 23.85 percent of the traction back on the
+trace, 23 267 meters, the state of charge from 0.9 to 0.822. Build 05, regen: a 59.41 meter hard stop
+with the machine taking 0.99 percent of the braking under ABS withdrawal, and 23.85 percent of the traction back on the
 WLTC. Build 06, the bill: 131.2 watt-hours per kilometer, and 47.2 megajoules per 100 kilometers
 against 168.8.
 

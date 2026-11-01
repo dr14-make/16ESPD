@@ -51,8 +51,8 @@ function _rg_stops(t, ref; min_len = 2.0)
     return windows
 end
 
-const _rg_stop_run = _RG_PL.PlanarBEVHardStopTransient()
-const _rg_abs_run = _RG_PL.PlanarBEVHardStopTransient(withdraw = 1.0)
+const _rg_stop_run = _RG_PL.PlanarBEVHardStopTransient(withdraw = 0.0)
+const _rg_abs_run = _RG_PL.PlanarBEVHardStopTransient()
 const _rg_wltc_run = _RG_PL.PlanarBEVRegenWLTCTransient()
 
 @testset "Lecture 4 step 05: the regenerative envelope on the hard stop" begin
@@ -123,14 +123,14 @@ end
     @test maximum(abs, s[m.car.bus.r]) < 1e-8
 end
 
-@testset "Lecture 4 step 05: stopping distance and the regen-under-ABS deficit" begin
-    with = _rg_stop(_rg_stop_run)
+@testset "Lecture 4 step 05: stopping distance with ABS withdrawal" begin
+    with = _rg_stop(_rg_abs_run)
     friction_only = _RG_PL.PlanarBEVHardStopTransient(P_charge = 0.0)
     without = _rg_stop(friction_only)
-    # The improved friction ABS exposes the uncoordinated regen deficit: 33.04 vs 26.94 m.
-    @test with.d ≈ 33.04 atol = 0.1
+    # Withdrawal exposes a zero-pressure memory trap; it does not yet remove the penalty.
+    @test with.d ≈ 59.41 atol = 0.1
     @test without.d ≈ 26.94 atol = 0.1
-    # Known regen-under-ABS deficit (#140); do not conceal it by retuning the friction ABS.
+    # Withdrawal leaves zero lock-pressure memory; do not conceal this by retuning friction ABS.
     @test_broken with.d <= without.d
     s0 = friction_only.sol
     m0 = symbolic_container(friction_only)
@@ -205,7 +205,7 @@ end
 end
 
 @testset "Lecture 4 step 05: the hands-on reference is the library car" begin
-    lib_stop, lib_wltc = _rg_stop_run, _rg_wltc_run
+    lib_stop, lib_wltc = _rg_abs_run, _rg_wltc_run
     h4_stop = _RG_H4.BEVHardStopTransient()
     h4_wltc = _RG_H4.BEVRegenWLTCTransient()
     @test string(h4_stop.sol.retcode) == "Success"
@@ -242,12 +242,12 @@ end
     run = _rg_abs_run
     s, m = run.sol, symbolic_container(run)
     @test string(s.retcode) == "Success"
-    @test _rg_stop(run).d ≈ 38.836 atol = 0.1
+    @test _rg_stop(run).d ≈ 59.409 atol = 0.1
     @test _rg_stop(run).d > _rg_stop(_rg_stop_run).d
     motor, friction = s[m.E_shaft_in][end], s[m.E_brake][end]
-    @test motor ≈ 5930 rtol = 0.01
-    @test friction ≈ 360743 rtol = 0.01
-    @test motor / (motor + friction) ≈ 0.01617 atol = 0.001
+    @test motor ≈ 3502 rtol = 0.01
+    @test friction ≈ 350708 rtol = 0.01
+    @test motor / (motor + friction) ≈ 0.009887 atol = 0.001
     E0 = s[m.E_kin][1]
     @test abs(E0 - s[m.E_kin][end] - motor + s[m.E_shaft_out][end] - friction - s[m.E_tire][end]) / E0 < 1e-6
     tg = 0.8:0.005:3.4
@@ -256,14 +256,14 @@ end
 end
 
 @testset "ABS rule: low-grip front wheels no longer lock" begin
-    with = _RG_PL.PlanarBEVLowGripStopTransient()
-    # End the counterfactual after its stop, before the known exact-rest tire Jacobian singularity.
+    with = _RG_PL.PlanarBEVLowGripStopTransient(stop = 20.0)
+    # Bound both runs after their stops, before prolonged parking hits the exact-rest tire singularity.
     without = _RG_PL.PlanarBEVLowGripStopTransient(withdraw = 0.0, stop = 12.0)
     for run in (with, without)
         @test string(run.sol.retcode) == "Success"
     end
-    @test _rg_stop(with).d ≈ 275.02 atol = 0.5
-    @test _rg_stop(without).d ≈ 112.35 atol = 0.5
+    @test _rg_stop(with).d ≈ 190.45 atol = 0.5
+    @test _rg_stop(without).d ≈ 95.10 atol = 0.5
     for (run, controlled) in ((with, true), (without, false))
         s, m = run.sol, symbolic_container(run)
         tg = collect(0.5:0.005:run.sol.t[end])
@@ -274,9 +274,9 @@ end
             println("Low-grip slip: ", (; controlled, wheel = string(k), minimum_slip = minimum(slip)))
         end
     end
-    hands_on = _RG_H4.BEVLowGripStopTransient()
+    hands_on = _RG_H4.BEVLowGripStopTransient(stop = 20.0)
     @test string(hands_on.sol.retcode) == "Success"
-    # Different meter states perturb the adaptive integration of the sampled ABS (0.025 %).
+    # Different meter states perturb the adaptive integration of the sampled ABS (0.014 %).
     @test _rg_stop(hands_on).d ≈ _rg_stop(with).d atol = 0.1
     sh, mh = hands_on.sol, symbolic_container(hands_on)
     th = collect(0.5:0.005:sh.t[end])

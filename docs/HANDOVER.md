@@ -411,35 +411,24 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   `converter.field`) with or without a `tstops` entry on the step. Ask for torque continuously:
   the hard stops ramp the pedal over 0.1 s (`Ramp`, with `tstops` on both corners); the WLTC
   driver's PI output is continuous already.
-- **Regen outside the ABS loop keeps the ABS from reapplying (the dry default, `withdraw = 0`).** `ABSModulatorDiscrete` reapplies
-  only once a released wheel's predicted slip is back above `-l_rec` (−0.03). On the BEV hard stop
-  the machine's regenerative torque alone holds the front slip at −0.04 to −0.06 from 62 km/h
-  (phase alternating hold/release), so the front friction brakes stay at zero and the front tires
-  work at about 65 % of their grip until the machine's 320 N·m reaches it below 34 km/h. The stop
-  is still shorter than on friction alone (36.2 m against 38.8 m), but a regen strategy that kept
-  more torque on the front would lock it. Issue #140 adds an opt-in `RegenBlend` ABS rule:
-  sampled `front_active` means either front command is below demand; regen's ceiling decays in
-  30 ms and returns in 0.5 s, with the remainder handed to hydraulics. The dry references default
-  to `withdraw = 0`: 36.22 m, 49.32 % motor, 176.9 kJ motor / 181.8 kJ friction. The inherited
-  gentle ABS keeps withdrawal active almost throughout the dry stop; leave the rule opt-in
-  pending ABS calibration #156. Demonstrate on `Vehicle.Planar.PlanarBEVLowGripStopTransient()`
-  or `HandsOn04.BEVLowGripStopTransient()` (default `withdraw = 1`, `stop = 28`). Verified grip ×0.3
-  measurements: minimum front slip −0.04931 while moving above 3 m/s, stop 275.02 m enabled;
-  `withdraw = 0, stop = 12` locks and reverses the wheels, so its 112.35 m is not a physical
-  benchmark. Long parking disabled reaches the known tire NaN. WLTC is unchanged; the blending rule is structural, default off.
-  `regen` passes 98/98 and `abs` 84/84 on dyad-3.5.0. No ABS retuning is part of this follow-up.
+- **Regen withdrawal after #156 rebases #140.** `RegenBlend(abs_rule = true)` uses sampled
+  `front_active` (either front command below demand); `allow` decays in 30 ms and returns in
+  0.5 s. The hard-stop rule remains ON by default (`withdraw = 1`) at the user's request,
+  not because it improves distance: the required-runtime dry run is 59.409 m versus 26.938 m
+  friction-only, a 32.47 m penalty. Keep the broken no-distance-penalty assertion visible.
+  Rule OFF is an explicit diagnostic comparison (33.038 m), not the default recommendation.
+  WLTC does not use the rule; its equations and results are unchanged. Current evidence,
+  low-grip caveats and the measured pressure-memory trace are recorded below.
 
 - **Planar ABS calibration (#156).** The old 0.08/0.06 release and 0.03 recovery window
   held slip below the tires' 0.12/0.09 peaks. Peak-centered prediction (0.14/0.11),
   80 ms look-ahead, 90% pressure retention, 10 ms hold and 40 kN.m/s initial build give
   9.74 m/s² during established braking: 26.52 m from 80 km/h, 41.03 m from 100 km/h.
   No tire or load-transfer defaults changed. At h=0 the load-transfer flag has no effect.
-- **Regen outside ABS still prevents front reapplication (#140).** The unchanged blend now
-  stops from 80 km/h in 33.04 m versus 26.94 m on friction alone. Machine share 45.3%,
-  shaft recovery 160.1 kJ, friction 193.2 kJ, tire slip 27.3 kJ, battery recovery 154.8 kJ.
-  `regen` explicitly retains a broken no-distance-penalty test for #140. Do not retune
-  the friction ABS to hide this. At 100 km/h the uncoordinated blend can reverse front
-  wheel rotation; coordination remains necessary. `RegenBlend` was not edited.
+- **Historical #156 rule-OFF comparison (#140).** The 33.04 m / 45.3% machine-share
+  result below is the uncoordinated blend, not today's rule-ON default. Do not retune
+  the friction ABS to hide the coordination defect. Historical 100 km/h runs could reverse
+  front wheel rotation; those are not physical locked-wheel benchmarks.
 - **`r."path"` takes a literal only.** On an analysis result, `r."E_dc"` works but `r."$x"`
   with `x = "E_dc"` throws a `MethodError`, and `getproperty(r, :E_dc)` a `FieldError`. A snippet
   that loops over signals collects the literals first: `links = ["road" => r."E_road", ...]`.
@@ -483,7 +472,11 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
 - Comments explain why — a constraint, an invariant, a gotcha. Not what the code says, and not
   the history of how it got there.
 
-### Issue #156 — planar ABS evidence and moved-number ledger
+### Issue #156 — historical planar ABS evidence and moved-number ledger
+
+This ledger records #156 before the #140 rebase follow-up; its BEV blend rows are rule OFF.
+Its test counts and figure-export status are historical, not validation of the rebased default.
+For current required-runtime measurements and pending work, see the follow-up below.
 
 Distances start at the pedal (0.5 s), stop at vx < 0.5 m/s unless noted. No reaction distance.
 Dry source anchors: [auto motor und sport Leaf ZE1, 39 m from 100 km/h](https://www.auto-motor-und-sport.de/)
@@ -546,3 +539,61 @@ ESP and steer exporters needed stale `.sensors` paths changed to `.car.bus`; mis
 The Lecture 4 figure task completed. Legacy Lecture 3 notebook export is blocked by missing
 GR; build export by a Plotly/JSON serialization error. Their unrelated/partial SVG changes
 were restored, as were unrelated Lecture 4 id churn. Changed planar and BEV figures retained.
+
+### Follow-up #156 — rebase #140: current required-runtime evidence
+
+Rebased `41ef17a` as `7bac0b4` on `878ce03` (`origin/main`). Actual conflicts were
+`docs/HANDOVER.md`, `PlanarBEVHardStop.dyad`, `regen_plausibility.jl`, the Lecture 4 guide
+and three generated `.jl` files. `ABSUnit` auto-merged, retaining calibration and the reporting
+signal. HandsOn and plan/deck auto-merged with stale text that needed correction. Compiler
+3.5.0 generates the Julia output; generated files are not hand-edited.
+
+Rule ON remains the hard-stop default (`withdraw = 1`) per user request. Distances and times
+below start at the pedal (0.5 s) and end at vx < 0.5 m/s; no reaction distance. Energies are J;
+`shaft_in` and `shaft_out` are reported separately, not silently netted.
+
+| Dry 80 km/h case | Distance (m) | Time after pedal (s) | shaft_in | shaft_out | Friction | Tire | Battery recovered | Machine share |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Rule ON (default) | 59.409163717 | 5.100 | 3501.911496 | 5010.979664 | 350708.377370 | 31457.672893 | 2979.353015 | 0.98865324% |
+| Friction only | 26.937898732 | 2.335 | 853.747 | 7484.425 | 352732.323 | 34555.337 | 0 | — |
+| Rule OFF (diagnostic) | 33.037836314 | 2.705 | 160119.109 | 0.217 | 193237.591 | 27300.500 | 154840.805 | 45.3137% |
+
+Rule ON minimum slip above 3 m/s is −0.0243273 front / −0.0935963 rear. The broken
+no-distance-penalty assertion must remain: the penalty worsens to 32.47 m against friction only.
+
+**Pressure-memory trace:** rule-ON front friction torque is
+exactly zero at t = 0.55, 0.6, 0.65, 0.8, 1, 1.5, 2, 2.5 and 3 s. `allow` is 0.3114,
+0.05882, 0.011109 and 7.485e-5 at the first four times. At 0.515 s predicted slip is
+−0.151742 (< −0.14), entering release with
+`p = tau_lock = 0`. At 0.525 s phase returns to increase, but rate remains zero:
+both `15*tau_lock` and `1.5*tau_lock` are zero. At 1 s predicted slip is +0.001823
+and phase is increase, yet pressure and rate remain zero. This traces the missing front
+recovery to zero lock-pressure memory, rather than insufficient grip.
+
+**Low grip (road grip ×0.3):** rule ON reaches vx < 0.5 m/s 16.4 s after the pedal at
+190.445049116 m; minimum slip above 3 m/s is −0.0493111 front / −0.105156 rear. The default
+`stop = 28` run fails `Unstable` at 24.565 s during prolonged parking, consistent with the
+known tire singularity; the `stop = 20` rerun succeeds with the same stopping distance.
+HandsOn agrees at 190.472 m. Rule OFF with `stop = 12` succeeds
+numerically at 95.098241553 m, but minimum front slip −17.35917766 indicates reversed wheels:
+this is NOT a physical stopping-distance benchmark.
+
+| Moved-number ledger | Before → after |
+|---|---|
+| Dry calibrated rule OFF → rule ON default | 33.037836314 → 59.409163717 m; 45.3137 → 0.98865324% machine |
+| Dry enabled, old calibration → rebased calibration | 38.836 → 59.409163717 m; old motor 5930 J / friction 360743 J / share 1.617% |
+| Dry shaft / friction / tire / battery, rule OFF → default ON | 160.119 / 193.238 / 27.301 / 154.841 → 3.502 / 350.708 / 31.458 / 2.979 kJ |
+| Dry time after pedal / recovered Wh / equivalent WLTC distance | 2.705 / 43.01 / 320 → 5.100 s / 0.828 Wh / 6.16 m |
+| Dry penalty over friction-only | 6.100 → 32.471 m |
+| Low grip minimum front slip, enabled / disabled | −0.04931 / reversed → −0.04931 / −17.35918 (above 3 m/s) |
+| Low grip rule ON, old → rebased | 275.02 → 190.445049116 m |
+| Low grip rule OFF, old → rebased (reversed wheels; nonphysical) | 112.35 → 95.098241553 m |
+| Old dry rule OFF before recalibration, regen / friction only | 36.22 / 38.82 m (historical only) |
+
+WLTC is untouched: 23.85% recovered share, 34.25 Wh/km recovered, 131.15 Wh/km consumption.
+Current tests: `regen` 97 pass / 1 broken; `abs` 84 pass; `esp` 159 pass;
+`planar_wltc` 36 pass / 1 pre-existing broken initialization case. Groups run separately in the required Julia runtime.
+No figure export in this follow-up. Lecture 4 data changed for `07-regen-hard-stop.svg` and
+`07-hard-stop-split.svg`; notebook source now uses the coordinated default. Lecture 3
+carry-forward changed figures are `03-brake-steer-path`, `03-brake-steer-forces`, `05-esp-abs`
+and `05-split-mu`; all SWD plots also depend on the calibration.

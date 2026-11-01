@@ -215,18 +215,18 @@ Build step 05's car on Lecture 3's straight ABS stop from 80 km/h: the driver as
 braking than the tires carry, and `RegenBlend` gives the machine as much of it as the smallest of
 three ceilings allows: its 320 N·m, the pack's 80.5 kW charge limit over the machine speed, and a
 linear fade below 10 km/h. The rest goes to Lecture 3's friction brakes through the ABS. The same
-stop with `P_charge = 0` brakes on friction alone. The dry default is `withdraw = 0`:
-36.22 m, 49.32 % motor braking (176.9 kJ motor, 181.8 kJ friction), about half the stop.
-ABS withdrawal remains opt-in pending the gentle ABS calibration #156. The guide demonstrates
-`Vehicle.Planar.PlanarBEVLowGripStopTransient()` / `HandsOn04.BEVLowGripStopTransient()`
-(default `withdraw = 1`, `stop = 28`), compared with `withdraw = 0, stop = 12`. Low-grip bench
-measurements: 275.02 m enabled, minimum front slip −0.04931 above 3 m/s; 112.35 m disabled with
-locked/reversing wheels, not a physical benchmark. WLTC is unchanged.
+stop with `P_charge = 0` brakes on friction alone: 26.94 m. The dry default enables withdrawal
+(`withdraw = 1`): 59.41 m, machine/friction 3.50/350.71 kJ (0.99 % motor), battery 2.98 kJ.
+Withdrawal suppresses regen but exposes zero-pressure ABS memory; the no-penalty test stays broken.
+With `withdraw = 0`: 33.04 m and 45.3 % motor. Low grip with withdrawal (`stop = 20`):
+190.45 m, minimum front slip −0.04931 above 3 m/s; off (`stop = 12`): 95.10 m and reversed
+wheels (minimum slip −17.36), not a physical benchmark. The inherited 28 s enabled run fails
+during prolonged parking at 24.565 s; use 20 s to measure the stop. WLTC is unchanged.
 """
 
 # ╔═╡ 43682d73-077d-446a-9d02-3f704293fd1e
-# Keep the dry envelope/deck figure explicit; the guide demonstrates withdrawal on low grip.
-stop = (; on = PL.PlanarBEVHardStopTransient(withdraw = 0.0), off = PL.PlanarBEVHardStopTransient(P_charge = 0.0));
+# Use the coordinated dry default; the hardware envelope remains visible as reference curves.
+stop = (; on = PL.PlanarBEVHardStopTransient(), off = PL.PlanarBEVHardStopTransient(P_charge = 0.0));
 
 # ╔═╡ 7e8d1c4b-a689-45c1-b6f1-9e840a99baaf
 "Speed against distance from the brake application at 0.5 s, and the distance to the first sample under 0.5 m/s."
@@ -261,14 +261,14 @@ regen_stop_plot = let
         (v_corner - 1.0, 305.0, text("corner, $(round(v_corner; digits = 1)) km/h", 10, :right, :top))])
     plot!(p[1]; xlabel = "car speed [km/h]", ylabel = "braking torque at the machine [N·m]",
         ylims = (0, 480), xlims = (0, 82), legend = false,
-        title = "The machine takes the smallest ceiling")
+        title = "ABS withdrawal scales the hardware envelope")
     a, b = stop_trace(stop.on), stop_trace(stop.off)
     plot!(p[2], b.x, b.kmh; color = 2, lw = 2.5, label = "")
     plot!(p[2], a.x, a.kmh; color = 1, lw = 2.5, label = "")
-    annotate!(p[2], [(33.0, 4.0, text("regen + friction: $(round(a.d; digits = 1)) m", 10, :right, palette(:default)[1])),
-        (33.0, 12.0, text("friction only: $(round(b.d; digits = 1)) m", 10, :right, palette(:default)[2]))])
+    annotate!(p[2], [(61.0, 4.0, text("regen + friction: $(round(a.d; digits = 1)) m", 10, :right, palette(:default)[1])),
+        (61.0, 12.0, text("friction only: $(round(b.d; digits = 1)) m", 10, :right, palette(:default)[2]))])
     plot!(p[2]; xlabel = "distance from the pedal [m]", ylabel = "car speed [km/h]",
-        legend = false, ylims = (0, 85), xlims = (0, 42), title = "Hard stop from 80 km/h")
+        legend = false, ylims = (0, 85), xlims = (0, 65), title = "Hard stop from 80 km/h")
     p
 end
 
