@@ -15,7 +15,7 @@ sampled modulator while retaining the nonnegative ESP brake increments.
 With `report_front = true` the unit also reports, on `front_active`, whether it is acting on a
 front wheel: 1 while it holds either front brake below what is asked of that brake (the driver's
 demand plus any positive ESP increment), else 0. That covers an ABS release, hold or slow reapply,
-and an ESP cut. On a first application the channel builds up at `k_inc_fast`, 800 N.m a sample at
+and an ESP cut. On a first application the channel builds up at `k_inc_fast`, 200 N.m a sample at
 the defaults, so a demand that rises more slowly than that does not set it; a step demand sets it
 for the few samples the build-up takes. It is sampled and held like the brake commands, and it is
 0 with `abs_on` below 0.5. A regenerative blend reads it to withdraw regen from the front axle
