@@ -326,8 +326,8 @@ HandsOn low-grip: 87.604052512 m (Success, `stop = 12`); library 87.594615426 m.
 
 ABS-alone dry is unchanged: 26.517044326 m at 80 km/h and 41.028141818 m at 100 km/h.
 WLTC is untouched: 23.85 %, 34.25 Wh/km recovered, 131.15 Wh/km consumption.
-No figure export: Lecture 4 `07-regen-hard-stop.svg` and `07-hard-stop-split.svg` remain
-historical images pending re-export; notebook source and teaching text carry current evidence.
+Lecture 4 `07-regen-hard-stop.svg` and `07-hard-stop-split.svg` are re-exported from this
+calibration with `mise run figures:lecture-04`.
 
 
 Limit trace (rule ON): demand binds at 0.505 s (61.03 N·m), charge power by 0.515 s

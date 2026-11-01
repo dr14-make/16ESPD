@@ -1782,7 +1782,7 @@ rate: 0.2 degrees per second. Then the blue line: ABS holds the front slip above
 the obstacle, 20.8 degrees per second of yaw at the peak.
 
 Why: a locked tire spends its whole friction budget on sliding, along the path. The front axle's
-lateral force is 0.65 kilonewtons locked, against 3.37 kilonewtons on average with ABS, 6.5 at the
+lateral force is 0.65 kilonewtons locked, against 3.37 kilonewtons on average with ABS, 5.0 at the
 peak. That is the second figure, `03-brake-steer-forces.svg`, if a question needs it.
 
 The revised ABS also shortens this stop: 28.3 m along the curved path versus 31.6 m locked.

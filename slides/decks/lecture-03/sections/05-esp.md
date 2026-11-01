@@ -1052,7 +1052,7 @@ instants, and the lateral displacement is 2.74 to 3.24 meters from 97 degrees up
 This is why the wrap-up says ESP is impossible without four-channel ABS: the modulator that lets
 ESP build pressure at one wheel is the same one that keeps that wheel from locking.
 
-Figure and numbers: `scripts/export_lecture03_esp_figures.jl` at 23bd4bb; notebook 03, section 5,
+Figure and numbers: `scripts/export_lecture03_esp_figures.jl`; notebook 03, section 5,
 shows the four wheels' slip separately.
 -->
 
@@ -1100,8 +1100,9 @@ no one steering against it the car turns 101.4 degrees, past broadside, before i
 53 meters.
 
 Rear select-low: both rear wheels get the smaller of their two ABS torques, so the rear axle
-brakes evenly and adds no yaw moment. The heading falls to 21 degrees, and the car is still
-rolling at 6 seconds: the dry rear wheel gave up braking force.
+brakes evenly and adds no yaw moment. The heading falls to 21 degrees, and the car takes 62
+meters instead of 53, and 1.5 seconds longer, to slow below 3 meters per second: the dry rear wheel
+gave up braking force.
 
 ESP, proportional: almost no change, 20 degrees. It reacts to the yaw rate, and the yaw rate here
 is small; the heading lost is the integral of the yaw-rate error, and a P controller does not see
@@ -1112,7 +1113,7 @@ Every ESP calibration makes this trade between heading and distance. Production 
 delay the pressure build-up on the high-µ front wheel, the yaw-moment build-up delay, to give the
 driver time to countersteer; I know it from the Bosch handbook and did not model it.
 
-Figure and numbers: `scripts/export_lecture03_esp_figures.jl` at 23bd4bb, read when the car falls
+Figure and numbers: `scripts/export_lecture03_esp_figures.jl`, read when the car falls
 below 3 meters per second or at 6 seconds; notebook 03, section 6.
 -->
 
