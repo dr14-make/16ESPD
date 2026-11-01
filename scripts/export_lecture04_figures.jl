@@ -5,9 +5,10 @@ Writes the Lecture 4 deck's notebook figures into `slides/decks/lecture-04/publi
 
 Runs each notebook in `FIGURES` from `notebooks/lecture04/` top to bottom with its controls at
 their defaults, and saves the plots the deck shows as SVG; then the real-world context figures
-of `export_lecture04_context_figures.jl`, which need no notebook. Figure names as arguments
+of `export_lecture04_context_figures.jl` and the machine figures of
+`export_lecture04_machine_figures.jl`, which need no notebook. Figure names as arguments
 (e.g. `06-battery-ragone`) export only those, running only the notebooks that draw them, and
-skip the context figures. Each notebook
+skip the context and machine figures. Each notebook
 runs in a module of its own: it assigns the global `VehicleSystemsComponents`, which would
 collide with the package `setup()` loads into `Main`.
 
@@ -91,4 +92,7 @@ for (notebook, all_figures) in sort!(collect(FIGURES))
     Base.invokelatest(PlotlyKaleido.kill_kaleido)
 end
 
-isempty(WANTED) && include(joinpath(@__DIR__, "export_lecture04_context_figures.jl"))
+if isempty(WANTED)
+    include(joinpath(@__DIR__, "export_lecture04_context_figures.jl"))
+    include(joinpath(@__DIR__, "export_lecture04_machine_figures.jl"))
+end

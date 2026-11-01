@@ -13,12 +13,73 @@ drives on it.
 `notebooks/lecture04/01-efficiency-map.pluto.jl`
 
 <!--
-Section 04, the envelope. Every electric car's spec sheet shows the same shape: constant torque up
-to a base speed, then constant power, with the torque falling as the speed rises. In this section we
+Section 04, the envelope. The envelope is the boundary of the most torque, and so the most power,
+the machine can give at each speed: every point the machine can reach lies on it or under it. Every
+electric car's spec sheet shows the same shape: constant torque up to a base speed, then constant
+power, with the torque falling as the speed rises. In this section we
 see where that shape comes from: the converter's current limit, its voltage limit, and field
 weakening. Then we compute the efficiency map of our machine, compare it with a measured Leaf, and
 see where the WLTC drives on it. The figures come from notebook 01, the efficiency-map notebook, and
 you build the converter at the end.
+-->
+
+---
+routeAlias: what-envelope
+---
+
+## What the envelope is
+
+![Schematic torque and power against machine speed for the course machine. Top: the envelope, flat at 320 N·m from standstill to the base speed of 3283 rpm, then falling as 1/ω to the maximum speed of 10 100 rpm; the region under it is shaded and labeled reachable, with green operating points scattered inside and a red cross above the curve labeled out of reach. The flat part is labeled constant torque, current limit; the falling part constant power, torque proportional to 1/ω, voltage limit: field weakening. Bottom: the power rising linearly to 110 kW at base speed and flat after it.](/figures/04-what-envelope.svg)
+
+<div class="grid grid-cols-2 gap-8 text-sm">
+<div>
+
+The **envelope** is the boundary of the most torque, and so the most power, the machine can give
+at each speed. Every operating point lies **on or under** it, as in an aircraft's flight envelope.
+Also called the operating envelope, the capability curve or the full-load curve; spec sheets show
+it as the torque and power curves.
+
+</div>
+<div>
+
+- **Up to base speed:** constant torque, set by the **current** limit.
+- **Above it:** constant power, torque ≈ 1/ω, set by the **voltage** limit, through <Link to="field-weakening">field weakening</Link>;
+  the corner is <Link to="base-speed">base speed</Link>.
+- The <Link to="efficiency-map">efficiency map</Link> fills the region under it; a drive cycle is a <Link to="wltc-on-the-map">cloud of points</Link>
+  inside it.
+
+</div>
+</div>
+
+<!--
+Before we compute anything, what does the word in the section title mean? The envelope is the
+boundary of the most torque the machine can give at each speed, and since power is torque times
+speed, also the most power. Every operating point the machine can reach lies on that boundary or
+under it. The word is used as in an aircraft's flight envelope, the region of speeds and altitudes
+the plane can fly in. It is a common engineering term rather than one fixed by a standard, and you
+will also meet it as the operating envelope, the capability curve, or the full-load or maximum-
+torque curve. On a spec sheet it is the pair of curves labeled torque and power.
+
+The figure is a sketch of our machine's envelope at its corner numbers: 320 newton meters up to a
+base speed of 3283 rpm, and about 110 kilowatts above it, up to the top speed of 10 100 rpm. It
+leaves out the machine's small losses; the computed envelope is two slides on. The top panel is
+torque against machine speed. The black line is the envelope. The shaded region under it is
+labeled reachable, and the green dots are operating points: whatever the driver asks for, at
+whatever speed, lands somewhere in there. The red cross above the line is a point the machine
+cannot reach, however the inverter drives it: at that speed it simply has no more torque.
+
+The envelope has two parts, and each has its own limit. Up to base speed, on the left, the torque is
+flat: the converter gives its maximum current, and the torque is proportional to the current. That
+part is set by the current limit. Right of the dashed line, the torque falls as 1 over omega, and
+the bottom panel shows why that is called constant power: the power rises in proportion to the
+speed up to base speed and then stays flat at about 110 kilowatts. That part is set by the voltage
+limit. The back-EMF has used up the battery's voltage, and the machine can only go faster by
+weakening its field, which is the field-weakening slide in section 03. The base-speed slide, next
+but one, computes where that corner falls.
+
+Two more things live in this picture. The efficiency map, later in this section, colors the region
+under the envelope by how efficient the machine is at each point. And a drive cycle, the WLTC, is a
+cloud of such operating points inside the envelope, which we will see on the map at the end.
 -->
 
 ---

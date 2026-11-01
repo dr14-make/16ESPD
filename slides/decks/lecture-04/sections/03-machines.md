@@ -153,8 +153,7 @@ rotor (interior PM), 48 slots (ORNL, first-generation motor).
 
 **Synchronous:** the rotor turns with the stator's rotating field, never slipping behind it.
 
-To make smooth torque from three sinusoidal currents, the inverter must place them right
-relative to the magnets, at every instant. That is **field-oriented control**, next.
+What *trapezoidal* and *sinusoidal* mean, and why the currents follow: next slide.
 
 </div>
 </div>
@@ -176,10 +175,88 @@ rotor iron, which is called interior permanent magnet, 48 stator slots, and abou
 Buried magnets add a second kind of torque, reluctance torque, which our model leaves out.
 
 Synchronous means that the rotor turns with the stator's rotating field and never slips behind it.
-The induction machine, three slides on, is the one that slips.
+The induction machine, further on, is the one that slips.
 
-To make smooth torque from three sinusoidal currents, the inverter must place those currents right
-relative to the magnets, at every instant. That is field-oriented control, the next slide.
+The two words in the back-EMF row, trapezoidal and sinusoidal, carry the whole difference, and the
+next slide shows what they mean.
+-->
+
+---
+routeAlias: trap-vs-sine
+---
+
+## Trapezoidal or sinusoidal: the back-EMF sets the current
+
+![Two columns over one electrical revolution, 0 to 360 degrees. Left, the BLDC: the three back-EMFs A, B and C are trapezoids, flat at plus or minus 1 for 120 degrees and sloping in between, 120 degrees apart; the currents are blocks of plus or minus 1, each 120 degrees long under a flat top, so two phases conduct at a time, in six 60-degree steps labeled A+ B−, A+ C−, B+ C−, B+ A−, C+ A−, C+ B−; the torque of ideal blocks is flat at 1, and with winding inductance it dips to about 0.55 at each of the six steps and recovers within about 20 degrees. Right, the PMSM: the back-EMFs are three sines 120 degrees apart, the currents three sines in phase with them, and the torque is flat at 1.](/figures/03-bldc-pmsm-waveforms.svg)
+
+<div class="grid grid-cols-3 gap-6 text-sm">
+<div>
+
+**The shape is built in.** Trapezoidal and sinusoidal name how a phase's back-EMF varies with rotor
+angle. The layout of magnets and windings sets it: wide magnets and concentrated coils give flat
+tops, distributed windings a sine.
+
+</div>
+<div>
+
+**The current must match it.** Each phase gives torque e·i/ω. For a steady total, a flat-topped EMF
+needs a constant current while it is flat: 120° blocks, two phases at a time. A sine EMF needs a
+sine current in phase with it.
+
+</div>
+<div>
+
+**What follows.** Blocks switch at six angles per electrical turn, which three Hall sensors mark.
+Sines need the angle at every instant. A block cannot jump through the winding's inductance, so the
+BLDC's torque dips at each step; the sines' is smooth.
+
+</div>
+</div>
+
+<!--
+This slide answers what trapezoidal and sinusoidal actually mean. Both columns cover one electrical
+revolution of the rotor, from 0 to 360 electrical degrees, and every value is in per unit of its
+peak. The left column is the BLDC, the right column the PMSM. The phases have the colors of the
+animation on the next slide: A blue, B orange, C green.
+
+Start at the top row. If you turn either machine at a constant speed with nothing connected and
+measure the voltage of each phase, you get its back-EMF. In the BLDC each phase gives a trapezoid:
+it rises, stays flat for 120 electrical degrees, falls, stays flat at the negative value for
+another 120 degrees, and rises again. In the PMSM each phase gives a sine. The three phases are the
+same curve shifted by 120 degrees. That shape is not chosen by the controller. It is built into the
+machine, by how the magnets and the windings are laid out. Wide magnets with concentrated coils give
+the flat tops; windings distributed over many slots, and magnets shaped to match, give a sine.
+
+The middle row is the current the drive puts in, and the reason it has to look like this is in one
+formula. The power a phase converts is its back-EMF times its current, so its torque is e times i
+over omega, and the machine's torque is the sum over the three phases. For the BLDC, look at any
+60-degree step: exactly two phases sit on a flat top, one at plus 1 and one at minus 1. Drive a
+constant current into the first and out of the second, and the sum, e times i plus e times i, is
+constant. So the BLDC's currents are blocks 120 degrees long, lined up with the flat tops, and only
+two phases conduct at any time. The labels along the top give the pair: A plus B minus, then A plus
+C minus, and so on, six steps per electrical turn. For the PMSM, put a sine current in each phase,
+in phase with its back-EMF. Each phase's torque is then a sine squared, which pulses, but three sine
+squares 120 degrees apart add up to exactly one and a half, a constant.
+
+The bottom row is that torque, scaled so its mean is 1. On the right it is flat. On the left the
+dashed line is the ideal block currents, also flat. The solid line is what a real winding does. A
+winding has inductance, so its current cannot jump: at every step the outgoing phase's current needs
+time to fall to zero and the incoming one needs time to build up, and the torque dips. That is a
+dip every 60 electrical degrees, and it is the torque ripple in the table. The solid line is
+computed, not drawn by hand: a six-step drive with the winding's resistance and inductance, the
+inverter's pulse-width modulation averaged out, at a speed where the back-EMF uses up most of the
+battery voltage. How deep the dip is depends on the speed and the inductance; the commutation
+torque ripple was analyzed by Carlson, Lajoie-Mazenc and Fagundes in 1992. The trapezoids with
+exactly flat tops and the perfect sines are the textbook idealization; a real machine's back-EMF is
+rounded at the corners and carries some harmonics, and Krishnan's book on permanent-magnet drives
+treats both machines this way.
+
+The consequences are on the right of the slide. The block currents change only at six angles per
+electrical turn, at the dotted lines. Three Hall sensors, each changing state every 180 degrees and
+offset by 120, mark exactly those six instants, as Microchip's application note AN885 shows. That is
+cheap and enough for a BLDC. Sine currents need the rotor angle at every instant, so a PMSM carries
+a resolver or an encoder. To make smooth torque from three sine currents, the inverter must place
+them right relative to the magnets at every instant. That is field-oriented control, the next slide.
 -->
 
 ---
@@ -209,7 +286,7 @@ numbers**:
 - *i*<sub>d</sub>, along the magnets: zero, until the voltage runs out
 
 **Field weakening on:** part of the current turns against the magnets and weakens their field;
-less is left for torque.
+less is left for torque. Why and how: next slide.
 
 </div>
 </div>
@@ -245,7 +322,90 @@ The i d bar goes negative, and that negative d current opposes the magnets' flux
 field. The length of the vector stays the same, at the inverter's current limit, so what is left for
 the q part, and for the torque, shrinks: in the animation i d is minus 0.6 of the limit, and i q
 drops to 0.8. That is the last paragraph of the slide, and it is what the Leaf's inverter does above
-base speed, and what our converter does with its field input.
+base speed, and what our converter does with its field input. Why it is needed, and how far it
+goes, is the next slide.
+-->
+
+---
+routeAlias: field-weakening
+---
+
+## Field weakening: why, and how
+
+![Left: the i_d–i_q plane of an illustrative per-unit PMSM. The current limit is a black circle of radius 1 around the origin. The voltage limit is a circle centered at minus psi_PM over L_d, about −1.11, drawn for base speed, 1.5, 2.5 and 4 times base speed; it shrinks as the speed rises. The operating point sits at i_d = 0, i_q = 1 at base speed and slides along the current circle toward negative i_d, a red arc: about (−0.56, 0.83) at 1.5 times, (−0.85, 0.54) at 2.5 times and (−0.94, 0.33) at 4 times base speed. Right: torque, proportional to i_q, flat at 1 up to base speed and then falling, close to a 1/ω curve; power, proportional to ω times i_q, rising to 1 at base speed and then staying near 1.25 to 1.35.](/figures/03-field-weakening.svg)
+
+<div class="grid grid-cols-2 gap-8 text-sm">
+<div>
+
+**Why.** The back-EMF grows with speed, *E* = ω ψ<sub>PM</sub>, and magnets cannot be switched
+off. The inverter's voltage is capped by the battery. At **base speed** *E* plus the winding's drop
+reaches the cap; faster, the inverter can no longer push *i*<sub>q</sub> in, and the torque
+collapses.
+
+In our model: the DC machine's field Φ turned down (step 02).
+
+</div>
+<div>
+
+**How.** Drive a **negative *i*<sub>d</sub>**: its flux *L*<sub>d</sub>*i*<sub>d</sub> opposes the
+magnets', so the voltage needed stays at the cap:
+$v \approx \omega\sqrt{(\psi_\mathrm{PM} + L_d i_d)^2 + (L_q i_q)^2}$.
+The current is capped too, $i_d^2 + i_q^2 \le I_\mathrm{max}^2$: what goes into −*i*<sub>d</sub>
+is lost to *i*<sub>q</sub>. Torque falls about as 1/ω, power stays roughly level: the
+envelope's <Link to="base-speed">constant-power part</Link>. The price: *i*<sub>d</sub> makes
+copper loss, no torque.
+
+</div>
+</div>
+
+<!--
+The last slide switched field weakening on with a button. This one says why a permanent-magnet
+machine needs it, and how the inverter does it.
+
+Why first, in the left column. The magnets' flux, psi PM, is fixed, so the back-EMF grows in
+proportion to the speed: E equals omega times psi PM, with omega the electrical speed. The inverter
+can only make a voltage up to a limit set by the battery: with space-vector modulation, the peak
+phase voltage is at most the DC voltage over the square root of three. Below base speed the inverter
+has voltage to spare, and it drives the full current into the q axis, where every ampere makes
+torque. At base speed the back-EMF plus the drop across the winding reaches the limit. Go faster,
+and the inverter has no voltage left to push the q current against the back-EMF, so without doing
+anything the current and the torque collapse. And the magnets cannot be switched off.
+
+Now the picture, the left panel. It is a generic machine in per unit, not the Leaf: the axes are the
+d and q currents as fractions of the current limit, i d horizontal, negative meaning against the
+magnets, and i q vertical. The black circle is the current limit: the inverter and the winding allow
+any current inside it, i d squared plus i q squared at most I max squared. The colored circles are
+the voltage limit. Neglecting the resistance, the voltage the machine needs is omega times the
+length of the flux vector: the magnets' flux plus L d times i d along d, and L q times i q along q.
+That is the formula on the right. So at a given speed the allowed currents lie inside a circle
+centered at minus psi PM over L d, the point marked with a cross, where the stator flux would cancel
+the magnets' exactly. I take L d equal to L q here, as our model does; with buried magnets, as in
+the Leaf, L q is larger and the circle becomes an ellipse. The radius is the voltage limit over omega
+L, so the circle shrinks as the speed rises: blue at base speed, then orange at one and a half
+times, green at two and a half times and purple at four times base speed. The machine must sit
+inside both circles.
+
+At base speed the blue circle passes exactly through the top of the current circle, the blue dot:
+full current, all of it on q. Faster, that point falls outside the shrinking voltage circle, and the
+best the inverter can do is the crossing of the two circles. That is the red arc: the operating
+point slides along the current limit toward negative i d. At one and a half times base speed it
+sits at minus 0.56 on d and 0.83 on q; at two and a half times at minus 0.85 and 0.54, which is the
+red arrow; at four times at minus 0.94 and 0.33. That is how field weakening is done: a negative d
+current, whose flux L d times i d opposes the magnets' flux, so that the flux the winding sees,
+psi PM plus L d i d, is smaller, and the voltage the machine needs stays at the limit.
+
+The right panel is what that costs. The current's length stays at the limit, so whatever goes into
+minus i d is lost to i q, and the torque is proportional to i q. The solid line is the torque: flat
+at 1 up to base speed, then falling to 0.83, 0.54 and 0.33 at the three marked speeds, close to the
+dotted 1 over omega curve. The dashed line is the power, omega times i q: it rises with the speed up
+to base speed and then stays roughly level, between about 1.25 and 1.35 of its base-speed value in
+this machine. That is the constant-power region of section 04's envelope. It is not exactly flat in
+a real machine; the course model makes it exactly flat.
+
+The price is in the last line: the d current flows in the winding, so it makes copper loss, R i
+squared, but no torque. Our model leaves that loss out, as the next slide says. And the tie to our
+model is the line on the left: in step 02, the DC machine's field Phi is simply turned down above
+base speed. Negative i d is how a PMSM turns its field down.
 -->
 
 ---
