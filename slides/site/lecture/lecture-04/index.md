@@ -216,9 +216,9 @@ New component `DCMachineDyno` in `MyCar`:
 
 #### Do this
 
-[![The DCMachine you build in steps 1–5: from p, the resistor R and the inductor L into the RotationalEMF, back to n; the EMF drives the shaft through the rotor inertia J to the spline; friction T_f, iron K_i, windage k_w ω² and the constant loss C/ω brake the shaft against the housing, the support port.](/lecture/lecture-04/img/02-dc-machine.svg)](/lecture/lecture-04/img/02-dc-machine.svg)
+[![The finished DCMachine in Studio: p and n on the left edge; from p, resistor and inductor along the top into emf, and emf.n back down to n; emf.rotor through rotor to spline on the right; friction, iron, windage and constant_loss in a row below, their splines joined on one line up to the shaft, every support down to the support port at the bottom; the emf housing returns down the left side to support.](/lecture/lecture-04/img/step01-machine.png)](/lecture/lecture-04/img/step01-machine.png)
 
-The machine of steps 1–5, as the deck draws it: the armature along the top, the shaft to the right of the `emf`, the four losses braking it against the housing. The drawing puts the losses after the rotor; wires 7–10 put them on the `emf`'s rotor, which on a rigid shaft is the same. Below it, the bench of steps 6–10.
+The machine of steps 1–5 in Studio: the armature along the top, the shaft to the right of the `emf`, the four losses in a row below, braking it against the housing. Their wires join the shaft at the rotor's left flange, the same node as the `emf`'s rotor on a rigid shaft. Below it, the bench of steps 6–10.
 
 [![The finished DCMachineDyno in Studio: voltage into supply on the left with ground below it; machine at the top right, p and n on its left edge, its shaft wired to dyno; speed into dyno below; the machine's and the dyno's supports to mounts.](/lecture/lecture-04/img/step01-dyno.png)](/lecture/lecture-04/img/step01-dyno.png)
 
@@ -242,7 +242,7 @@ The machine of steps 1–5, as the deck draws it: the armature along the top, th
    14. `windage.support → support`
    15. `constant_loss.support → support`
 
-   Wires 1–4 are the armature, *v* = *R i* + *L di/dt* + *E*. Wires 5–6 carry the air-gap torque through the rotor to the shaft. Wires 7–10 put every loss on the same shaft as the `emf`, and 11–15 send every reaction to the housing: the `emf` and the losses push on the stator as hard as on the rotor, and `support` is how the machine's mounts take that. Hover the ports before you wire them: on `emf`, `p` is at the top, `n` at the bottom, `rotor` on the right and `housing` on the left; on each loss part, `spline` is on the right and `support` at the bottom. Count the `connect` lines in code view: fifteen.
+   Wires 1–4 are the armature, *v* = *R i* + *L di/dt* + *E*. Wires 5–6 carry the air-gap torque through the rotor to the shaft. Wires 7–10 put every loss on the same shaft as the `emf`, and 11–15 send every reaction to the housing: the `emf` and the losses push on the stator as hard as on the rotor, and `support` is how the machine's mounts take that. Hover the ports before you wire them: on `emf`, `p` is at the top, `n` at the bottom, `rotor` on the right and `housing` on the left; on each loss part, `spline` is on the right and `support` at the bottom. Count the `connect` lines in code view: fifteen. Studio routes each wire itself and can run one straight through a part; drag that wire's segment aside to move it, then save with <kbd>Ctrl</kbd>+<kbd>S</kbd>.
 5. Toggle to code (⇄). The GUI has placed the ports, parts, parameters and wires; what it cannot draw are the variables a later step reads and the equations that compute them. Paste the variables among the declarations, just above `relations`, and the relations at the end of `relations`, above the `metadata` block. Save.
 
    ::: code-group

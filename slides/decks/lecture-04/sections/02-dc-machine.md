@@ -391,17 +391,10 @@ routeAlias: build-machine
 
 ## Build 01a: the machine
 
-<img src="/img/lecture-04/02-dc-machine.svg" class="mx-auto" style="max-height: 12rem; width: auto" alt="The DCMachine you build: from p, the resistor R and the inductor L into the RotationalEMF, back to n; the EMF drives the shaft through the rotor inertia J to the spline; friction T_f, iron K_i, windage k_w ω² and the constant loss C/ω brake the shaft against the housing."/>
-
-<div class="grid grid-cols-[1.15fr_1fr] gap-6 items-start">
+<div class="grid grid-cols-[1.1fr_1fr] gap-8 items-start">
 <div>
 
-*New `DCMachine` · ports from `Dyad`: `p`, `n` Pin on the left, `spline` right, `support`
-bottom · 13 parameters from the guide, `k` as its formula · parts: `resistor`, `inductor`, `emf`
-RotationalEMF, `rotor` Inertia, `friction` and `iron` SignTorque, `windage`
-QuadraticSpeedDependentTorque, `constant_loss` InverseSpeedDependentTorque · 15 wires: p → R → L →
-E → n, the rotor to `spline`, every loss on the rotor and on `support` · then in code: the
-variables and the loss powers*
+<img src="/img/lecture-04/step01-machine.png" class="mx-auto" style="max-height: 27rem" alt="The finished DCMachine in Studio: p and n on the left edge; from p, resistor and inductor along the top into emf, and emf.n back down to n; emf.rotor through rotor to spline on the right; friction, iron, windage and constant_loss in a row below, their splines joined on one line up to the shaft, every support down to the support port at the bottom; the emf housing returns down the left side to support."/>
 
 **Given:** the stdlib's `RotationalEMF`, `Resistor`, `Inductor`, `Inertia` and the
 speed-dependent loss torques
@@ -410,6 +403,13 @@ speed-dependent loss torques
 
 </div>
 <div class="stack">
+
+*New `DCMachine` · ports from `Dyad`: `p`, `n` Pin on the left, `spline` right, `support`
+bottom · 13 parameters from the guide, `k` as its formula · parts: `resistor`, `inductor`, `emf`
+RotationalEMF, `rotor` Inertia, `friction` and `iron` SignTorque, `windage`
+QuadraticSpeedDependentTorque, `constant_loss` InverseSpeedDependentTorque · 15 wires: p → R → L →
+E → n, the rotor to `spline`, every loss on the rotor and on `support` · then in code: the
+variables and the loss powers*
 
 ```txt
   P_cu = resistor.v * resistor.i
@@ -427,14 +427,16 @@ speed-dependent loss torques
 </div>
 
 <!--
-Build 01a: the machine. You build it yourself, part by part, in Studio. The picture at the top is
-the circuit from the machine-as-a-circuit slide, and it is exactly what goes into your component.
-Along the top, from the terminal p: the resistor, the inductor, and the RotationalEMF, then back
-down to the terminal n. To the right of the EMF, the shaft: the rotor inertia J, then out to the
-spline. The four orange boxes are the shaft losses, each one a braking torque between the shaft and
-the gray housing below it, which is the support port. The picture draws them after the rotor; in
-your component you wire them to the EMF's rotor, before the inertia. The shaft is rigid, so it is
-the same shaft and the same numbers.
+Build 01a: the machine. You build it yourself, part by part, in Studio, and on the left is the
+finished component as Studio draws it. The two terminals, p and n, sit on the left edge. Along the
+top, from p: the resistor, the inductor, and into the RotationalEMF in the middle; from the EMF's
+bottom pin, the blue wire runs back down to n. To the right of the EMF, the shaft: the rotor
+inertia, then out to the spline port on the right edge. In the row below are the four shaft
+losses: friction, iron, windage and the constant loss. Their shafts join on one line that rises to
+the shaft at the rotor's left flange, and that is the same point as the EMF's rotor: the shaft is
+rigid, so it is one node and the same numbers. Every loss pushes back on the housing, so each one
+has a wire down to the support port at the bottom, and the EMF's own housing comes down the left
+side to the same port.
 
 The steps are in the italic line. First, a new component `DCMachine`: right-click `MyCar`, Add
 Component. Ports are parts too: from the Dyad library, two pins, renamed p and n, on the left edge,
