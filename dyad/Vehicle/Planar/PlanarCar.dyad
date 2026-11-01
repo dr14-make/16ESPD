@@ -5,16 +5,6 @@ The car measures itself: an ideal `PlanarCarSensors` cluster inside it reads the
 steering column and each wheel, and the car sends every reading on its `bus` port.
 """
 component PlanarCar
-  "Use causal road friction commands"
-  structural parameter use_signals::Boolean = false
-  "Runtime fl road friction multiplier"
-  mu_fl = RealInput() if use_signals
-  "Runtime fr road friction multiplier"
-  mu_fr = RealInput() if use_signals
-  "Runtime rl road friction multiplier"
-  mu_rl = RealInput() if use_signals
-  "Runtime rr road friction multiplier"
-  mu_rr = RealInput() if use_signals
   steering = Spline() {^steering}
   chassis = Frame2D() {^chassis}
   wheel_fl = Frame2D() {^wheel_fl}
@@ -91,18 +81,12 @@ component PlanarCar
   linkage = VehicleSystemsComponents.Vehicle.Planar.AckermannSteering(L = a + b, t_k = t_k, ackermann = ackermann) {^linkage}
   housing = RotationalComponents.Components.Fixed() {^housing}
   loads = VehicleSystemsComponents.Vehicle.Planar.QuasiStaticLoads(m = m, a = a, b = b, tw = tw, h = h_cg, load_transfer = load_transfer, T_lt = T_lt) {^loads}
-  fl = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(use_signals = use_signals, radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_fl, sAdhesion = sAdhesion_f, sSlide = 3 * sAdhesion_f, T_brake = T_brake, tau_max = tau_max) {^fl}
-  fr = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(use_signals = use_signals, radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_fr, sAdhesion = sAdhesion_f, sSlide = 3 * sAdhesion_f, T_brake = T_brake, tau_max = tau_max) {^fr}
-  rl = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(use_signals = use_signals, radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_rl, sAdhesion = sAdhesion_r, sSlide = 3 * sAdhesion_r, T_brake = T_brake, tau_max = tau_max) {^rl}
+  fl = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_fl, sAdhesion = sAdhesion_f, sSlide = 3 * sAdhesion_f, T_brake = T_brake, tau_max = tau_max) {^fl}
+  fr = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_fr, sAdhesion = sAdhesion_f, sSlide = 3 * sAdhesion_f, T_brake = T_brake, tau_max = tau_max) {^fr}
+  rl = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_rl, sAdhesion = sAdhesion_r, sSlide = 3 * sAdhesion_r, T_brake = T_brake, tau_max = tau_max) {^rl}
   sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius) {^sensors}
-  rr = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(use_signals = use_signals, radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_rr, sAdhesion = sAdhesion_r, sSlide = 3 * sAdhesion_r, T_brake = T_brake, tau_max = tau_max) {^rr}
+  rr = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_rr, sAdhesion = sAdhesion_r, sSlide = 3 * sAdhesion_r, T_brake = T_brake, tau_max = tau_max) {^rr}
 relations
-  if use_signals
-    connect(mu_fl, fl.mu_input)
-    connect(mu_fr, fr.mu_input)
-    connect(mu_rl, rl.mu_input)
-    connect(mu_rr, rr.mu_input)
-  end
   connect(body.frame_a, tf.frame_a, tr.frame_a, loads.chassis, chassis, sensors.chassis) {^w1}
   connect(tf.frame_b, fl_arm.frame_a, fr_arm.frame_a) {^w2}
   connect(tr.frame_b, rl_arm.frame_a, rr_arm.frame_a) {^w3}

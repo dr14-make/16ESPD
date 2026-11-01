@@ -20,14 +20,3 @@ external component DriverCommands
   mu_rr_signal = RealOutput()
 end
 
-"Signal gain with a causal multiplier."
-component SignalGain
-  "Signal to scale"
-  u = RealInput()
-  "Multiplier"
-  k = RealInput()
-  "Scaled signal"
-  y = RealOutput()
-relations
-  y = k * u
-end

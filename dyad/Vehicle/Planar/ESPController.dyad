@@ -26,28 +26,17 @@ component ESPController
   parameter R_build::Real = 1.0e9
   "ESP enable; outputs are zero below 0.5"
   parameter esp_on::Real = 1.0
-  "Use a causal enable command instead of the parameter default"
-  structural parameter use_signals::Boolean = false
-  "Runtime enable command"
-  esp_enable = RealInput() if use_signals
-  "Effective enable command"
-  variable enable_value::Real
   variable Mz::Torque
   variable r_ref::AngularVelocity
   variable oversteer::Real
   reference = VehicleSystemsComponents.Vehicle.Planar.YawReference(L = L, K_us = K_us, i_s = i_s, mu_est = mu_est, g = g, k_lim = k_lim, v_floor = v_floor) {^reference}
   yaw = VehicleSystemsComponents.Vehicle.Planar.YawMomentController(Kp = Kp, Ki = Ki, deadband = deadband, v_on = v_on, Mz_max = Mz_max) {^yaw}
   allocator = VehicleSystemsComponents.Vehicle.Planar.BrakeAllocator(tw = tw, radius = radius, T_max = T_max, T_build = T_build, R_build = R_build) {^allocator}
-  enable_fl = VehicleSystemsComponents.SignalGain() {^enable_fl}
-  enable_fr = VehicleSystemsComponents.SignalGain() {^enable_fr}
-  enable_rl = VehicleSystemsComponents.SignalGain() {^enable_rl}
-  enable_rr = VehicleSystemsComponents.SignalGain() {^enable_rr}
+  enable_fl = BlockComponents.Math.Gain(k = esp_on) {^enable_fl}
+  enable_fr = BlockComponents.Math.Gain(k = esp_on) {^enable_fr}
+  enable_rl = BlockComponents.Math.Gain(k = esp_on) {^enable_rl}
+  enable_rr = BlockComponents.Math.Gain(k = esp_on) {^enable_rr}
 relations
-  if use_signals
-    enable_value = esp_enable
-  else
-    enable_value = esp_on
-  end
   connect(delta_sw, reference.delta_sw) {^w1}
   connect(vx, reference.vx) {^w2}
   connect(r, yaw.r) {^w3}
@@ -63,10 +52,6 @@ relations
   connect(enable_fr.y, dT_fr) {^w13}
   connect(enable_rl.y, dT_rl) {^w14}
   connect(enable_rr.y, dT_rr) {^w15}
-  enable_fl.k = enable_value
-  enable_fr.k = enable_value
-  enable_rl.k = enable_value
-  enable_rr.k = enable_value
   Mz = yaw.Mz
   r_ref = reference.r_ref
   oversteer = yaw.oversteer

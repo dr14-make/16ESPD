@@ -34,12 +34,6 @@ component ABSUnit
   "Add the front_active output, which tells a regenerative blend when the ABS acts on a front wheel"
   structural parameter report_front::Boolean = false
   parameter abs_on::Real = 1.0
-  "Use a causal enable command instead of the parameter default"
-  structural parameter use_signals::Boolean = false
-  "Runtime enable command"
-  abs_enable = RealInput() if use_signals
-  "Effective enable command"
-  variable enable_value::Real
   parameter select_low::Real = 1.0
   parameter T_p::Time = 0.03
   parameter lambda_1_f::Real = 0.08
@@ -71,11 +65,6 @@ component ABSUnit
   hold_rr = DiscreteComponents.ZeroOrderHold() {^hold_rr}
   hold_front = DiscreteComponents.ZeroOrderHold() if report_front {^hold_front}
 relations
-  if use_signals
-    enable_value = abs_enable
-  else
-    enable_value = abs_on
-  end
   connect(demand, demand_sampler.u) {^w1}
   connect(vx, speed_sampler.u) {^w2}
   connect(dT_fl, dT_fl_sampler.u) {^w3}
@@ -100,15 +89,15 @@ relations
   connect(abs.tau_fr, hold_fr.u) {^w22}
   connect(abs.tau_rl, hold_rl.u) {^w23}
   connect(abs.tau_rr, hold_rr.u) {^w24}
-  tau_fl = ifelse(enable_value > 0.5, hold_fl.y, demand + max(0.0, dT_fl))
-  tau_fr = ifelse(enable_value > 0.5, hold_fr.y, demand + max(0.0, dT_fr))
-  tau_rl = ifelse(enable_value > 0.5, hold_rl.y, demand + max(0.0, dT_rl))
-  tau_rr = ifelse(enable_value > 0.5, hold_rr.y, demand + max(0.0, dT_rr))
+  tau_fl = ifelse(abs_on > 0.5, hold_fl.y, demand + max(0.0, dT_fl))
+  tau_fr = ifelse(abs_on > 0.5, hold_fr.y, demand + max(0.0, dT_fr))
+  tau_rl = ifelse(abs_on > 0.5, hold_rl.y, demand + max(0.0, dT_rl))
+  tau_rr = ifelse(abs_on > 0.5, hold_rr.y, demand + max(0.0, dT_rr))
   if report_front
     # A channel's command never exceeds what it is asked for, so `<` is exactly "held below";
     # the comparison runs on the same samples the channels used.
     hold_front.u = ifelse(abs.tau_fl < demand_sampler.y + max(dT_fl_sampler.y, 0.0) or abs.tau_fr < demand_sampler.y + max(dT_fr_sampler.y, 0.0), 1.0, 0.0)
-    front_active = ifelse(enable_value > 0.5, hold_front.y, 0.0)
+    front_active = ifelse(abs_on > 0.5, hold_front.y, 0.0)
   end
 metadata {
   "Dyad": {"icons": {"default": "dyad://MultibodyComponents/CascadeServoController.svg"}},

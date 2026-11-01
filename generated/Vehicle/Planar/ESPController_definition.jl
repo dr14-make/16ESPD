@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ESPController(; name, use_signals, L, K_us, i_s, mu_est, g, k_lim, v_floor, Kp, Ki, deadband, v_on, Mz_max, tw, radius, T_max, T_build, R_build, esp_on, __overrides)
+   ESPController(; name, L, K_us, i_s, mu_est, g, k_lim, v_floor, Kp, Ki, deadband, v_on, Mz_max, tw, radius, T_max, T_build, R_build, esp_on, __overrides)
 
 Continuous ESP composed from yaw reference, yaw control, and brake allocation.
 
@@ -13,7 +13,6 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `use_signals`         | Use a causal enable command instead of the parameter default                         | --  |   false |
 | `L`         |                          | m  |   2.7 |
 | `K_us`         |                          | --  |   2.0387e-3 |
 | `i_s`         |                          | --  |   16.0 |
@@ -42,18 +41,16 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
  * `dT_fr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `dT_rl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `dT_rr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
- * `esp_enable` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 
 ## Variables
 
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
-| `enable_value`         | Effective enable command                         | --  |
 | `Mz`         |                          | N.m  |
 | `r_ref`         |                          | rad/s  |
 | `oversteer`         |                          | --  |
 """
-@component function ESPController(; name = nothing, var"use_signals"=false, var"L"=2.7, var"K_us"=0.0020387, var"i_s"=Float64(16.0), var"mu_est"=Float64(1.0), var"g"=9.81, var"k_lim"=0.85, var"v_floor"=Float64(1.0), var"Kp"=Float64(40000.0), var"Ki"=Float64(0.0), var"deadband"=0.03, var"v_on"=Float64(5.0), var"Mz_max"=Float64(10000.0), var"tw"=1.55, var"radius"=0.31, var"T_max"=Float64(2500.0), var"T_build"=0.1, var"R_build"=Float64(1000000000.0), var"esp_on"=Float64(1.0), __overrides = Dict{String, Any}())
+@component function ESPController(; name = nothing, var"L"=2.7, var"K_us"=0.0020387, var"i_s"=Float64(16.0), var"mu_est"=Float64(1.0), var"g"=9.81, var"k_lim"=0.85, var"v_floor"=Float64(1.0), var"Kp"=Float64(40000.0), var"Ki"=Float64(0.0), var"deadband"=0.03, var"v_on"=Float64(5.0), var"Mz_max"=Float64(10000.0), var"tw"=1.55, var"radius"=0.31, var"T_max"=Float64(2500.0), var"T_build"=0.1, var"R_build"=Float64(1000000000.0), var"esp_on"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -72,7 +69,6 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
-  haskey(__overrides, "use_signals") && (use_signals = pop!(__overrides, "use_signals"))
   haskey(__overrides, "L") && (L = pop!(__overrides, "L"))
   haskey(__overrides, "K_us") && (K_us = pop!(__overrides, "K_us"))
   haskey(__overrides, "i_s") && (i_s = pop!(__overrides, "i_s"))
@@ -170,18 +166,13 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
   append!(__vars, @variables (dT_fr(t)::Real), [output = true])
   append!(__vars, @variables (dT_rl(t)::Real), [output = true])
   append!(__vars, @variables (dT_rr(t)::Real), [output = true])
-  append!(__vars, @variables (esp_enable(t)::Real), [input = true])
 
   ### Variables (declarations)
-  append!(__vars, @variables (enable_value(t)::Real), [description = "Effective enable command"])
   append!(__vars, @variables (Mz(t)::Real))
   append!(__vars, @variables (r_ref(t)::Real))
   append!(__vars, @variables (oversteer(t)::Real))
 
   ### Variables (assignments)
-  __ovr_enable_value = pop!(__overrides, "enable_value", nothing); isnothing(__ovr_enable_value) || push!(__eqs, enable_value ~ __ovr_enable_value)
-  __ovr_enable_value__initial = pop!(__overrides, "enable_value.initial", nothing); isnothing(__ovr_enable_value__initial) || (__initial_conditions[enable_value] = __ovr_enable_value__initial)
-  __ovr_enable_value__guess = pop!(__overrides, "enable_value.guess", nothing)
   __ovr_Mz = pop!(__overrides, "Mz", nothing); isnothing(__ovr_Mz) || push!(__eqs, Mz ~ __ovr_Mz)
   __ovr_Mz__initial = pop!(__overrides, "Mz.initial", nothing); isnothing(__ovr_Mz__initial) || (__initial_conditions[Mz] = __ovr_Mz__initial)
   __ovr_Mz__guess = pop!(__overrides, "Mz.guess", nothing)
@@ -205,24 +196,23 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
   # Subcomponent allocator of type VehicleSystemsComponents.Vehicle.Planar.BrakeAllocator
   allocator_overrides = __pop_subcomponent_overrides!(__overrides, "allocator")
   push!(__systems, @named allocator = VehicleSystemsComponents.Vehicle.Planar.BrakeAllocator(; tw=tw, radius=radius, T_max=T_max, T_build=T_build, R_build=R_build, __overrides = allocator_overrides))
-  # Subcomponent enable_fl of type VehicleSystemsComponents.SignalGain
+  # Subcomponent enable_fl of type BlockComponents.Math.Gain
   enable_fl_overrides = __pop_subcomponent_overrides!(__overrides, "enable_fl")
-  push!(__systems, @named enable_fl = VehicleSystemsComponents.SignalGain(; __overrides = enable_fl_overrides))
-  # Subcomponent enable_fr of type VehicleSystemsComponents.SignalGain
+  push!(__systems, @named enable_fl = BlockComponents.Math.Gain(; k=esp_on, __overrides = enable_fl_overrides))
+  # Subcomponent enable_fr of type BlockComponents.Math.Gain
   enable_fr_overrides = __pop_subcomponent_overrides!(__overrides, "enable_fr")
-  push!(__systems, @named enable_fr = VehicleSystemsComponents.SignalGain(; __overrides = enable_fr_overrides))
-  # Subcomponent enable_rl of type VehicleSystemsComponents.SignalGain
+  push!(__systems, @named enable_fr = BlockComponents.Math.Gain(; k=esp_on, __overrides = enable_fr_overrides))
+  # Subcomponent enable_rl of type BlockComponents.Math.Gain
   enable_rl_overrides = __pop_subcomponent_overrides!(__overrides, "enable_rl")
-  push!(__systems, @named enable_rl = VehicleSystemsComponents.SignalGain(; __overrides = enable_rl_overrides))
-  # Subcomponent enable_rr of type VehicleSystemsComponents.SignalGain
+  push!(__systems, @named enable_rl = BlockComponents.Math.Gain(; k=esp_on, __overrides = enable_rl_overrides))
+  # Subcomponent enable_rr of type BlockComponents.Math.Gain
   enable_rr_overrides = __pop_subcomponent_overrides!(__overrides, "enable_rr")
-  push!(__systems, @named enable_rr = VehicleSystemsComponents.SignalGain(; __overrides = enable_rr_overrides))
+  push!(__systems, @named enable_rr = BlockComponents.Math.Gain(; k=esp_on, __overrides = enable_rr_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
-  isnothing(__ovr_enable_value__guess) || (__guesses[enable_value] = __ovr_enable_value__guess)
   isnothing(__ovr_Mz__guess) || (__guesses[Mz] = __ovr_Mz__guess)
   isnothing(__ovr_r_ref__guess) || (__guesses[r_ref] = __ovr_r_ref__guess)
   isnothing(__ovr_oversteer__guess) || (__guesses[oversteer] = __ovr_oversteer__guess)
@@ -233,10 +223,6 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
   __assertions = []
 
   ### Equations
-  push!(__eqs, enable_fl.k ~ enable_value)
-  push!(__eqs, enable_fr.k ~ enable_value)
-  push!(__eqs, enable_rl.k ~ enable_value)
-  push!(__eqs, enable_rr.k ~ enable_value)
   push!(__eqs, Mz ~ yaw.Mz)
   push!(__eqs, r_ref ~ reference.r_ref)
   push!(__eqs, oversteer ~ yaw.oversteer)
@@ -255,13 +241,6 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
   push!(__eqs, connect(enable_fr.y, dT_fr))
   push!(__eqs, connect(enable_rl.y, dT_rl))
   push!(__eqs, connect(enable_rr.y, dT_rr))
-
-  ### Control Structures
-  if use_signals
-    push!(__eqs, enable_value ~ esp_enable)
-  else
-    push!(__eqs, enable_value ~ esp_on)
-  end
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

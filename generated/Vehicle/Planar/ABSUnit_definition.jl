@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ABSUnit(; name, dt, report_front, use_signals, abs_on, select_low, T_p, lambda_1_f, lambda_1_r, lambda_lock, alpha_rel, beta_reapply, l_rec, T_hold_max, k_dec, k_inc_fast, k_inc_slow, v_min, __overrides)
+   ABSUnit(; name, dt, report_front, abs_on, select_low, T_p, lambda_1_f, lambda_1_r, lambda_lock, alpha_rel, beta_reapply, l_rec, T_hold_max, k_dec, k_inc_fast, k_inc_slow, v_min, __overrides)
 
 Sampled four-channel ABS with continuous sensor and brake-command ports.
 
@@ -27,7 +27,6 @@ for the few samples the build-up takes. It is sampled and held like the brake co
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `dt`         |                          | s  |   0.005 |
 | `report_front`         | Add the front_active output, which tells a regenerative blend when the ABS acts on a front wheel                         | --  |   false |
-| `use_signals`         | Use a causal enable command instead of the parameter default                         | --  |   false |
 | `abs_on`         |                          | --  |   1.0 |
 | `select_low`         |                          | --  |   1.0 |
 | `T_p`         |                          | s  |   0.03 |
@@ -60,15 +59,8 @@ for the few samples the build-up takes. It is sampled and held like the brake co
  * `tau_rl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `tau_rr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `front_active` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
- * `abs_enable` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
-
-## Variables
-
-| Name         | Description                         | Units  | 
-| ------------ | ----------------------------------- | ------ |
-| `enable_value`         | Effective enable command                         | --  |
 """
-@component function ABSUnit(; name = nothing, var"dt"=0.005, var"report_front"=false, var"use_signals"=false, var"abs_on"=Float64(1.0), var"select_low"=Float64(1.0), var"T_p"=0.03, var"lambda_1_f"=0.08, var"lambda_1_r"=0.06, var"lambda_lock"=0.2, var"alpha_rel"=0.6, var"beta_reapply"=0.85, var"l_rec"=0.03, var"T_hold_max"=0.06, var"k_dec"=Float64(40000.0), var"k_inc_fast"=Float64(160000.0), var"k_inc_slow"=Float64(16000.0), var"v_min"=1.5, __overrides = Dict{String, Any}())
+@component function ABSUnit(; name = nothing, var"dt"=0.005, var"report_front"=false, var"abs_on"=Float64(1.0), var"select_low"=Float64(1.0), var"T_p"=0.03, var"lambda_1_f"=0.08, var"lambda_1_r"=0.06, var"lambda_lock"=0.2, var"alpha_rel"=0.6, var"beta_reapply"=0.85, var"l_rec"=0.03, var"T_hold_max"=0.06, var"k_dec"=Float64(40000.0), var"k_inc_fast"=Float64(160000.0), var"k_inc_slow"=Float64(16000.0), var"v_min"=1.5, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -89,7 +81,6 @@ for the few samples the build-up takes. It is sampled and held like the brake co
   ### Keyword argument overrides
   haskey(__overrides, "dt") && (dt = pop!(__overrides, "dt"))
   haskey(__overrides, "report_front") && (report_front = pop!(__overrides, "report_front"))
-  haskey(__overrides, "use_signals") && (use_signals = pop!(__overrides, "use_signals"))
   haskey(__overrides, "abs_on") && (abs_on = pop!(__overrides, "abs_on"))
   haskey(__overrides, "select_low") && (select_low = pop!(__overrides, "select_low"))
   haskey(__overrides, "T_p") && (T_p = pop!(__overrides, "T_p"))
@@ -179,15 +170,10 @@ for the few samples the build-up takes. It is sampled and held like the brake co
   append!(__vars, @variables (tau_rl(t)::Real), [output = true])
   append!(__vars, @variables (tau_rr(t)::Real), [output = true])
   append!(__vars, @variables (front_active(t)::Real), [output = true])
-  append!(__vars, @variables (abs_enable(t)::Real), [input = true])
 
   ### Variables (declarations)
-  append!(__vars, @variables (enable_value(t)::Real), [description = "Effective enable command"])
 
   ### Variables (assignments)
-  __ovr_enable_value = pop!(__overrides, "enable_value", nothing); isnothing(__ovr_enable_value) || push!(__eqs, enable_value ~ __ovr_enable_value)
-  __ovr_enable_value__initial = pop!(__overrides, "enable_value.initial", nothing); isnothing(__ovr_enable_value__initial) || (__initial_conditions[enable_value] = __ovr_enable_value__initial)
-  __ovr_enable_value__guess = pop!(__overrides, "enable_value.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -251,7 +237,6 @@ for the few samples the build-up takes. It is sampled and held like the brake co
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
-  isnothing(__ovr_enable_value__guess) || (__guesses[enable_value] = __ovr_enable_value__guess)
 
   ### Initialization Equations
 
@@ -259,10 +244,10 @@ for the few samples the build-up takes. It is sampled and held like the brake co
   __assertions = []
 
   ### Equations
-  push!(__eqs, tau_fl ~ ifelse(enable_value > 0.5, hold_fl.y, demand + max(0.0, dT_fl)))
-  push!(__eqs, tau_fr ~ ifelse(enable_value > 0.5, hold_fr.y, demand + max(0.0, dT_fr)))
-  push!(__eqs, tau_rl ~ ifelse(enable_value > 0.5, hold_rl.y, demand + max(0.0, dT_rl)))
-  push!(__eqs, tau_rr ~ ifelse(enable_value > 0.5, hold_rr.y, demand + max(0.0, dT_rr)))
+  push!(__eqs, tau_fl ~ ifelse(abs_on > 0.5, hold_fl.y, demand + max(0.0, dT_fl)))
+  push!(__eqs, tau_fr ~ ifelse(abs_on > 0.5, hold_fr.y, demand + max(0.0, dT_fr)))
+  push!(__eqs, tau_rl ~ ifelse(abs_on > 0.5, hold_rl.y, demand + max(0.0, dT_rl)))
+  push!(__eqs, tau_rr ~ ifelse(abs_on > 0.5, hold_rr.y, demand + max(0.0, dT_rr)))
   push!(__eqs, connect(demand, demand_sampler.u))
   push!(__eqs, connect(vx, speed_sampler.u))
   push!(__eqs, connect(dT_fl, dT_fl_sampler.u))
@@ -289,14 +274,9 @@ for the few samples the build-up takes. It is sampled and held like the brake co
   push!(__eqs, connect(abs.tau_rr, hold_rr.u))
 
   ### Control Structures
-  if use_signals
-    push!(__eqs, enable_value ~ abs_enable)
-  else
-    push!(__eqs, enable_value ~ abs_on)
-  end
   if report_front
     push!(__eqs, hold_front.u ~ ifelse((abs.tau_fl < demand_sampler.y + max(dT_fl_sampler.y, 0.0)) | (abs.tau_fr < demand_sampler.y + max(dT_fr_sampler.y, 0.0)), 1.0, 0.0))
-    push!(__eqs, front_active ~ ifelse(enable_value > 0.5, hold_front.y, 0.0))
+    push!(__eqs, front_active ~ ifelse(abs_on > 0.5, hold_front.y, 0.0))
   else
   end
 
