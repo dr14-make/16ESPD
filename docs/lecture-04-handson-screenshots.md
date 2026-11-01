@@ -60,4 +60,4 @@ The conventions for a re-capture:
 
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
-| `step05-regen-blend.png` | `HandsOn04.BEVHardStop` | `pedal` and `kmh` into `blend`; `blend.tau_motor` into `drive`, `blend.tau_brake` into the ABS; `drive` through `differential` to the car's front spins; `zero` and `slips` into the ABS, its four outputs into the car's brakes; `motion` reading the bus. `RegenBlend`'s own diagram holds only its four ports, so the bench shows it in place. |
+| `step05-regen-blend.png` | `HandsOn04.BEVHardStop` | `pedal` and `kmh` into `blend`; `blend.tau_motor` into `drive`, `blend.tau_brake` into the ABS; `drive` through `differential` to the car's front spins; `zero` and `slips` into the ABS, its four outputs into the car's brakes; `abs.front_active` into `blend.abs_active`, the ABS rule; `motion` reading the bus. `RegenBlend`'s own diagram holds only its ports, so the bench shows it in place. The committed capture predates the ABS rule: it has no `front_active` → `abs_active` wire and needs retaking. |

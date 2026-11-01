@@ -15,7 +15,9 @@ summary or an abstract; full text not read), and **(assumed)** where nothing was
 were read on 31 October 2026.
 
 Model values come from `origin/main` at b4b9e34, computed from the parameters by hand, by integrating
-the road-load law (`scripts` below), or from one simulation of `PlanarBEVHardStop`.
+the road-load law (`scripts` below), or from one simulation of `PlanarBEVHardStop`. Items 7 and 8
+were re-run after the planar ABS recalibration, which also turned the ABS rule on in the hard
+stops (PR #162); their model values are from that run.
 
 ---
 
@@ -29,8 +31,8 @@ the road-load law (`scripts` below), or from one simulation of `PlanarBEVHardSto
 | 4 | Coast-down times | 100 → 60 km/h **agrees** (−1 to −3 %); 100 → 20 km/h **disagrees** (−13 to −15 %; −28 % with the drivable model's machine drag) |
 | 5 | Mass 1500 kg, wheel inertia 1 kg·m² | **agree** (Japanese curb mass 1490–1520 kg; measured 15″ wheel 0.77 kg·m²) |
 | 6 | Lift-off regeneration | **disagrees**: the model has none; Nissan gives up to 0.2 g in e-Pedal, and the 2013 Leaf coasts in D about 2.8× faster than its coast-down alone |
-| 7 | Blending strategy | series blending **agrees** with the Leaf's cooperative brake; **disagrees** on two points: regen is not withdrawn under ABS, and the friction remainder ignores which axle regen acts on |
-| 8 | 100 → 0 km/h dry stopping distance | **disagrees**: model 61.5 m (59.1 m friction only) vs 39 m measured on the ZE1 |
+| 7 | Blending strategy | series blending **agrees** with the Leaf's cooperative brake, and the hard stops withdraw regen while the ABS acts on a front wheel, as production does; **disagrees** on one point: the friction remainder ignores which axle regen acts on |
+| 8 | 100 → 0 km/h dry stopping distance | **agrees within 7 %**: model 41.5 m (41.6 m friction only) vs 39 m measured on the ZE1 |
 
 ---
 
@@ -121,7 +123,7 @@ the road-load law (`scripts` below), or from one simulation of `PlanarBEVHardSto
   and coast-down integration is RK4 at 1 ms on `F(v)/M`; the stopping distance is
   `PlanarBEVHardStop` with `v0` and `P_charge` overridden, measured as `test/regen_plausibility.jl`'s
   `_rg_stop` does (from 0.5 s to the first sample under 0.5 m/s). The same script reproduces the
-  test's 36.22 m and 38.82 m at 80 km/h.
+  test's 27.10 m and 26.94 m at 80 km/h.
 
 ---
 
@@ -263,13 +265,14 @@ load. No ZE1 D or B-mode number was found from a primary source.
 |---|---|---|---|---|
 | Blending type | series: the machine takes the demand first, friction the remainder | series (cooperative) regen through an electrically driven brake that meters the hydraulic pressure against the regen | [N-JP-ZE1] verified; [FUJIKI-2011] verified abstract; [GAO-EHSANI-2001] search summary | agrees |
 | Friction remainder per axle | `(tau_demand − tau_regen) · ratio / 4` to each wheel: the front axle, which already carries all the regen, gets the same friction share as the rear | friction is distributed per axle so the total front/rear force stays near the ideal (load-proportional) distribution; regen counts against the driven axle's share | [GAO-EHSANI-2001] search summary (series braking for "optimal energy recovery" maximizes regen within front/rear distribution limits); the Leaf's own front/rear balance was **not found** (assumed) | disagrees |
-| Regen during an ABS event on the regen axle | held: the machine is outside the ABS loop, the ABS can only release friction | withdrawn: regen is disabled when the ABS acts on a driven wheel and kept when it acts on the non-driven axle | [FORD-770] verified; [FORD-358] background verified ("during an ABS event regenerative braking is disabled") | disagrees |
-| Regen in a full (panic) stop | the machine takes 45–49 % of the braking energy | the 2013 Leaf charged its battery in almost none of its 60 → 0 mph stops: "the friction brakes are predominantly used" | [ANL-2013] note 7 verified | disagrees |
+| Regen during an ABS event on the regen axle | withdrawn on the hard stops (`RegenBlend(abs_rule = true)`, `withdraw = 1`): the ceiling decays with 30 ms while `ABSUnit.front_active` reports a front brake held below its demand, and returns with 0.5 s; the rear axle does not trigger it. The drivable `PlanarBEVDrive` does not use the rule and holds regen | withdrawn: regen is disabled when the ABS acts on a driven wheel and kept when it acts on the non-driven axle | [FORD-770] verified; [FORD-358] background verified ("during an ABS event regenerative braking is disabled") | agrees on the hard stops |
+| Regen in a full (panic) stop | the machine takes 0.84 % of the braking energy on the 80 km/h hard stop, 1.0 % from 100 km/h (28.7 % with `withdraw = 0`, whose front wheels turn backward) | the 2013 Leaf charged its battery in almost none of its 60 → 0 mph stops: "the friction brakes are predominantly used" | [ANL-2013] note 7 verified | agrees |
 
-`RegenBlend` + `ABSUnit` is the textbook series strategy without its two production safeguards: no
-per-axle distribution of the remainder, and no regen–ABS coordination. On the hard stop this is what
-the observations report saw: regen alone drives the front slip past the ABS threshold, the ABS holds
-the front friction brakes off, and the front tires work below their grip.
+`RegenBlend` + `ABSUnit` is the textbook series strategy; with `abs_rule` it has the regen–ABS
+coordination, and it still lacks the per-axle distribution of the remainder. Without the rule
+(`withdraw = 0`, and the drivable `PlanarBEVDrive`) regen alone drives the front slip past the ABS
+threshold, the ABS releases the front friction brakes, and on the hard stop the front wheels end up
+turning backward.
 
 ## 8. Stopping distance, 100 → 0 km/h, dry
 
@@ -278,24 +281,23 @@ Model values from `PlanarBEVHardStop` (μ_A = 1.0, pedal at 0.5 s with a 0.1 s r
 
 | Run | Distance | Mean deceleration v₀²/2d | Machine's share of braking energy |
 |---|---|---|---|
-| 80 km/h, regen (`P_charge` = 80.5 kW) | 36.22 m | 6.82 m/s² | 0.493 |
-| 80 km/h, friction only (`P_charge` = 0) | 38.82 m | 6.36 m/s² | 0.002 |
-| 100 km/h, regen | 61.51 m | 6.27 m/s² | 0.448 |
-| 100 km/h, friction only | 59.12 m | 6.53 m/s² | 0.003 |
+| 80 km/h, regen (`P_charge` = 80.5 kW, `withdraw` = 1) | 27.10 m | 9.11 m/s² | 0.008 |
+| 80 km/h, friction only (`P_charge` = 0) | 26.94 m | 9.17 m/s² | 0.002 |
+| 100 km/h, regen | 41.48 m | 9.30 m/s² | 0.010 |
+| 100 km/h, friction only | 41.57 m | 9.28 m/s² | 0.002 |
 
 | Quantity | Model | Published | Source | Ratio | Verdict |
 |---|---|---|---|---|---|
-| 100 → 0 km/h, ZE1 | 61.5 m (regen) / 59.1 m (friction) | 39 m (39.0 and 39.5 m, 9.8–9.9 m/s²) | [AMS-2018] magazine instrumented test; 39 m verified, the two runs search summary | 1.58 / 1.52 | disagrees |
+| 100 → 0 km/h, ZE1 | 41.5 m (regen) / 41.6 m (friction) | 39 m (39.0 and 39.5 m, 9.8–9.9 m/s²) | [AMS-2018] magazine instrumented test; 39 m verified, the two runs search summary | 1.06 / 1.07 | agrees within 7 % |
 | 60 → 0 mph (96.6 km/h), 2013 Leaf | — | 36.9 m at 50 % SoC, 35.1 m at 100 % SoC (9.75 / 10.2 m/s²) | [ANL-2013] verified (national-lab track test) | — | — |
-| Same, scaled to 80 km/h at equal mean deceleration | 36.2 / 38.8 m | 25.3 m | derived | 1.43 / 1.53 | disagrees |
-| Same, scaled to 100 km/h | 61.5 / 59.1 m | 39.6 m | derived | 1.55 / 1.49 | disagrees |
+| Same, scaled to 80 km/h at equal mean deceleration | 27.1 / 26.9 m | 25.3 m | derived | 1.07 / 1.06 | agrees within 7 % |
+| Same, scaled to 100 km/h | 41.5 / 41.6 m | 39.6 m | derived | 1.05 / 1.05 | agrees within 5 % |
 
-The model stops at 0.64–0.70 g where the Leaf stops at about 1.0 g. Regen shortens the 80 km/h stop
-by 2.6 m but lengthens the 100 km/h stop by 2.4 m, so the blend's cost depends on speed; either way
-it is small against the 20 m gap to the real car. Most of the gap is not regen: friction alone stops
-the model in 59 m from 100 km/h. Lecture 3's own straight ABS stop already carries this as a known
-failure (`test/esp_plausibility.jl`: `@test_broken stop_distance <= 32.0`), and the regen test notes
-that on friction alone the front ABS works the front tires at about 62 % of their grip.
+The model stops at 0.93–0.95 g where the Leaf stops at about 1.0 g. With regen withdrawn under ABS
+the blend is nearly neutral: 0.16 m longer than friction alone from 80 km/h, 0.09 m shorter from
+100 km/h. The remaining 2–3 m to the real car includes the 0.1 s pedal ramp and the sampled pressure
+build-up. Lecture 3's own straight ABS stop, 26.5 m from 80 km/h, now passes its distance check in
+`test/esp_plausibility.jl` (25–27 m).
 
 ---
 
@@ -362,6 +364,10 @@ machine share, 176.9 / 181.8 kJ, front friction held under 5 N·m, 36.22 m vs 38
 model, and the Lecture 4 deck's motor-versus-friction hard-stop figures. `PlanarBEVRegenWLTC` barely
 moves: WLTC never triggers the ABS and friction carries 0.004 % of its braking.
 
+Status: change 2 is `RegenBlend(abs_rule = true)`, on by default in `PlanarBEVHardStop`,
+`PlanarBEVLowGripStop` and their hands-on copies, not in the drivable `PlanarBEVDrive`. Change 1 is
+not made.
+
 ### R4. Stopping distance (item 8)
 
 The 1.5× gap sits mostly in Lecture 3's friction braking and ABS, not in regen: friction alone stops
@@ -374,6 +380,10 @@ axle); this note does not establish the cause. R3 should be redone against the c
 What it moves: `Lecture3.ABSStraightStop` and its `@test_broken` in `test/esp_plausibility.jl`, the
 ABS tests (`abs_full_car.jl`, `abs_handson_plausibility.jl`), the Lecture 3 deck's stop figures, and
 through them `PlanarBEVHardStop`, `test/regen_plausibility.jl` and the Lecture 4 hard-stop figures.
+
+Status: done by the planar ABS recalibration (release at the tire peaks, 80 ms prediction, 90 %
+pressure retention): 26.5 m from 80 km/h for the ABS alone, 41.5 m from 100 km/h for the
+battery-electric car, item 8 above.
 
 ---
 

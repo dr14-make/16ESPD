@@ -345,4 +345,4 @@ metrics; Lecture 3 figure data have no new changes from this follow-up.
 
 Final validation: `abs` 84 pass; `esp` 159 pass; `regen` 102 pass (formerly 97 pass /
 1 broken); `planar_wltc` 36 pass / 1 pre-existing broken. Groups ran separately with
-Julia +dyad-3.5.0, compiler 3.5.0; no figure exports.
+Julia +dyad-3.5.0, compiler 3.5.0.

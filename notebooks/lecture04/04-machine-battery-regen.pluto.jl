@@ -231,7 +231,7 @@ front/rear slip −0.187106/−0.104377 above 3 m/s. Off: 95.098241553 m and rev
 (minimum front slip −17.35918), not a physical benchmark. Use 12 s for both low-grip benches:
 20 s fails during parking at 15.835 s, after stopping at 8.165 s absolute. HandsOn
 low-grip is 87.604052512 m (Success, `stop = 12`). WLTC is unchanged (23.85 %,
-34.25 Wh/km recovered, 131.15 Wh/km consumption). Figures have not been re-exported.
+34.25 Wh/km recovered, 131.15 Wh/km consumption).
 """
 
 # ╔═╡ 43682d73-077d-446a-9d02-3f704293fd1e
