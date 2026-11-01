@@ -276,8 +276,9 @@ regen_stop_plot = let
     plot!(p[2], b.x, b.kmh; color = 2, lw = 2.5, label = "")
     plot!(p[2], a.x, a.kmh; color = 1, lw = 2.5, label = "")
     xmax = 1.15 * max(a.d, b.d)
-    annotate!(p[2], [(0.98xmax, 4.0, text("regen + friction: $(round(a.d; digits = 1)) m", 10, :right, palette(:default)[1])),
-        (0.98xmax, 12.0, text("friction only: $(round(b.d; digits = 1)) m", 10, :right, palette(:default)[2]))])
+    x_label = min(a.d, b.d) - 1.5
+    annotate!(p[2], [(x_label, 4.0, text("regen + friction: $(round(a.d; digits = 1)) m", 10, :right, palette(:default)[1])),
+        (x_label, 12.0, text("friction only: $(round(b.d; digits = 1)) m", 10, :right, palette(:default)[2]))])
     plot!(p[2]; xlabel = "distance from the pedal [m]", ylabel = "car speed [km/h]",
         legend = false, ylims = (0, 85), xlims = (0, xmax), title = "Hard stop from 80 km/h")
     p

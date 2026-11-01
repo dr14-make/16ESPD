@@ -377,8 +377,14 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   comes out 700 × 500 whatever `size` says (the script converts the plot itself and passes its
   size); plotly's default line simplification draws smooth curves as visible polygons (the script
   sets `line.simplify = false`); and `vspan!` writes infinite bounds that the JSON writer rejects
-  (`-Inf not allowed`), so shade with a finite `Shape`. The Lecture 3 export still asks for GR and
-  needs the 3.4 kernel or the same change.
+  (`-Inf not allowed`), so shade with a finite `Shape`. A fourth: Plots gives the figure one
+  legend, placed on the whole figure by the last subplot's `legend` setting, so a last panel with
+  `legend = false` hides every legend and `:topleft` lands on the title.
+  `scripts/plotly_svg.jl` handles all of this except `vspan!` and draws each panel's legend inside
+  its axes; the Lecture 3 steer and ESP exporters use it. `link = :x` also drops the upper
+  panel's tick labels on plotly; give the panels the same `xlims` instead. The Lecture 3 notebook
+  and build exports (`figures:lecture-03`, `figures:lecture-03-build`) still ask for GR and need
+  the 3.4 kernel or the same change.
 - **A plotly heatmap from Plots comes out transposed on the dyad-3.5 kernel.** Plots'
   `handle_surface` transposes a heatmap's matrix for a JSON writer that wrote matrices column by
   column; the kernel's JSON 1.10 writes them row by row, so the two transposes cancel and plotly

@@ -21,7 +21,7 @@ minimum front/rear slip **−0.187106/−0.104377** above 3 m/s. Rule OFF: **95.
 front slip **−17.36**, reversed wheels. Use `stop = 12` for both low-grip benches;
 20 s now fails during parking at 15.835 s (stopped at 8.165 s absolute).
 Exact `HandsOn04.BEVLowGripStopTransient` remeasurement and test-group results are pending.
-WLTC is unchanged. Figures have not been re-exported.
+WLTC is unchanged.
 
 `notebooks/lecture04/04-machine-battery-regen.pluto.jl`
 
@@ -458,9 +458,9 @@ class: big-figure
 
 ## The hard stop: ABS withdrawal binds
 
-![Historical pre-memory-fix figure, not re-exported: hardware ceilings and ABS withdrawal; distance curves are superseded by the current 27.10 m ON / 26.94 m friction-only measurements.](/figures/07-regen-hard-stop.svg)
+![Left: hardware ceilings (charge power, 320 N·m torque limit, fade below 10 km/h) and the machine torque, which ABS withdrawal holds near zero. Right: speed over distance from the pedal, regen + friction 27.1 m against friction only 26.9 m.](/figures/07-regen-hard-stop.svg)
 
-Figure pending re-export; current ON stop is **27.10 m**, within 1 % of friction-only.
+The coordinated stop takes **27.10 m**, within 1 % of friction-only (**26.94 m**).
 
 <div class="handson">✓ hardware envelope: charge power above 34.3 km/h, torque down to 10, fade below · actual torque: withdrawal scales the envelope toward zero</div>
 
@@ -477,7 +477,7 @@ at 0.6 p = 1400; later valid lock memory is about 1.25 kN m.
 ON is 27.102036224 meters against 26.937898732 friction-only. OFF is 27.238292677 meters,
 but front slip minus 5.893705 indicates reversed wheels, not a physical regen benchmark.
 ON front/rear slip minima above 3 m/s are minus 0.126072 / minus 0.090554.
-Keep ON: shorter and keeps slip above −0.2 while vx > 3 m/s. Do not detune friction-only ABS. The figure is not re-exported.
+Keep ON: shorter and keeps slip above −0.2 while vx > 3 m/s. Do not detune friction-only ABS.
 -->
 
 ---
@@ -489,9 +489,7 @@ routeAlias: hard-stop-split
 <div class="grid grid-cols-[1.6fr_1fr] gap-6 items-center">
 <div>
 
-![Historical pre-memory-fix energy figure, not re-exported. Current ON: shaft recovery 2.951 kJ, friction 348.908 kJ, tire 35.277 kJ; 0.839 percent gross machine share.](/figures/07-hard-stop-split.svg)
-
-Figure pending re-export; use the current measured values at right.
+![Energy over the hard stop, regen + friction against friction only: machine 3.0 against 0.9 kJ, friction brakes 348.9 against 352.7 kJ, tire slip 35.3 against 34.6 kJ; the machine takes 0.8 % of the braking.](/figures/07-hard-stop-split.svg)
 
 </div>
 <div class="text-[0.95rem]">

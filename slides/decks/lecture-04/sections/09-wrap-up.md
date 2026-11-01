@@ -143,7 +143,7 @@ ON: OFF is longer and reverses wheels, not a physical regen benchmark. Gross mac
 is only 0.839 percent: blanket front-active withdrawal suppresses regen almost throughout,
 so the meaningful-share goal is NOT met. Low-grip ON is 87.594615426 meters in 7.665 seconds;
 use stop 12 for both benches (HandsOn 87.604052512 m, Success).
-Figures are not re-exported. WLTC remains 23.85 percent of traction back on the
+WLTC remains 23.85 percent of traction back on the
 WLTC. Build 06, the bill: 131.2 watt-hours per kilometer, and 47.2 megajoules per 100 kilometers
 against 168.8.
 
