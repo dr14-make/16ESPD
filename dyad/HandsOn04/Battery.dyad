@@ -9,7 +9,16 @@ charge counted from the current.
 as the library's `Vehicle.Electric.Battery`, so either one drops into the car.
 """
 component Battery
-  extends ElectricalComponents.Analog.Interfaces.TwoPin
+  "Positive electrical pin."
+  p = Pin() {^p}
+  "Negative electrical pin."
+  n = Pin() {^n}
+  ocv = BlockComponents.Sources.Constant(k = E) {^ocv}
+  cell = ElectricalComponents.Analog.Sources.VoltageSource() {^cell}
+  resistor = ElectricalComponents.Analog.Basic.Resistor(R = R0) {^resistor}
+  meter = ElectricalComponents.Analog.Sensors.CurrentSensor() {^meter}
+  "Voltage across the component (between pin p and pin n)."
+  variable v::Voltage
   "State of charge: 1 full, 0 empty"
   SoC = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}, "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}}}}
   "Open-circuit voltage, Leaf ZE1 nominal"
@@ -22,13 +31,34 @@ component Battery
   parameter SoC0::Real = 0.9
   "Discharge current, out of p through the load and back into n"
   variable i::Current
+  counter = BlockComponents.Continuous.Integrator(k = -1 / Q_nom, x0 = SoC0) {^counter}
 relations
-  initial SoC = SoC0
-  p.i + n.i = 0
-  i = n.i
-  v = E - R0 * i
-  der(SoC) = -i / Q_nom
+  connect(ocv.y, cell.V) {^w1}
+  connect(n, cell.n) {^w2}
+  connect(cell.p, resistor.p) {^w3}
+  connect(resistor.n, meter.p) {^w4}
+  connect(meter.n, p) {^w5}
+  connect(meter.i, counter.u) {^w6}
+  connect(counter.y, SoC) {^w7}
+  v = p.v - n.v
+  i = meter.i
 metadata {
-  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/Battery.svg"}}
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/Battery.svg"}},
+  "_links": {
+    "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"iconName": "pos", "x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"iconName": "neg", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "ocv": {"Dyad": {"placement": {"diagram": {"x1": 340, "y1": 330, "x2": 460, "y2": 450, "rot": 180}}}},
+    "cell": {"Dyad": {"placement": {"diagram": {"x1": 140, "y1": 330, "x2": 260, "y2": 450, "rot": 90}}}},
+    "resistor": {"Dyad": {"placement": {"diagram": {"x1": 340, "y1": 140, "x2": 460, "y2": 260}}}},
+    "meter": {"Dyad": {"placement": {"diagram": {"x1": 590, "y1": 140, "x2": 710, "y2": 260}}}},
+    "counter": {"Dyad": {"placement": {"diagram": {"x1": 740, "y1": 330, "x2": 860, "y2": 450, "rot": 180}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1000, "y": 800}, {"x": 200, "y": 800}], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 200}], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 950, "y": 200}, {"x": 950, "y": 650}, {"x": 50, "y": 650}, {"x": 50, "y": 500}], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 650, "y": 300}, {"x": 900, "y": 300}, {"x": 900, "y": 390}], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 720, "y": 390}, {"x": 720, "y": 80}, {"x": 500, "y": 80}], "E": 2}]}}
+  }
 }
 end

@@ -398,16 +398,83 @@ the all-segment 108 about 4300; in 2013 money it would have been over 30 000.
 routeAlias: build-battery
 ---
 
-## Build 03: the battery
+## Build 03a: the battery
+
+<div class="grid grid-cols-[1.5fr_1fr] gap-8 items-start">
+<div>
+
+<img src="/img/lecture-04/step03-battery.png" class="mx-auto" style="max-height: 26rem" alt="The finished Battery in Studio: p on the left edge, n on the right, SoC on top; resistor and meter along the top, meter.i down into counter and counter.y up to SoC; ocv into the top of cell on the bottom row, cell.p back up to resistor.p, cell.n out to n, and meter.n round to p."/>
+
+[page: step 03](../lecture/lecture-04/#step-03) · reference: the guide's **Fell behind?** code
+
+</div>
+<div class="stack">
+
+*New `Battery` · ports from `Dyad`: `p`, `n` Pin on the left and right, `SoC` RealOutput on
+top · 4 parameters `E`, `R0`, `Q_nom`, `SoC0`, `Q_nom` as its formula · 5 parts: `ocv`
+Constant → `cell` VoltageSource → `resistor` → `meter` CurrentSensor, `counter` Integrator ·
+7 wires: n → cell → R → meter → p, meter → counter → SoC · then in code: `v`, `i` and two
+relations*
+
+```txt
+  v = p.v - n.v
+  i = meter.i
+```
+
+<div class="handson">✓ one part per term of <i>v</i> = <i>E</i> − <i>R</i>₀<i>i</i> and
+d<i>SoC</i>/d<i>t</i> = −<i>i</i>/<i>Q</i><sub>nom</sub> · <b>7</b> <code>connect</code> lines ·
+no <code>initial</code> line</div>
+
+</div>
+</div>
+
+<!--
+Build 03a: the battery. You build it in Studio, part by part, like the machine, and on the left is
+the finished component as Studio draws it. The positive pin p sits on the left edge, the negative
+pin n on the right, and the state of charge SoC is an output on top. On the bottom row is the cell,
+a voltage source, with a constant block, ocv, feeding its input from above. From the cell's plus
+pin the wire goes up to the resistor along the top, then into the current sensor, meter, and from
+the meter round the outside to p. The cell's minus pin goes straight out to n. Below the meter, the
+integrator, counter: the meter's reading goes in on the left, and its output goes up to SoC.
+
+The steps are in the italic line. First, a new component `Battery`, and its ports from the Dyad
+library: two pins, p on the left and n on the right, and a real output, SoC, on top. Second, four
+parameters with Add parameter: E, 350 volts; R0, 0.1 ohm; Q nom, typed as the formula 40
+kilowatt-hours over 350 volts, in coulombs; and SoC0, 0.9. They are named that way on purpose: the
+extra session's more detailed cell keeps those names and replaces this one without rewiring.
+
+Third, five parts, one per term of the two equations of the last slides. A constant block, ocv,
+holds the number E, and a voltage source, cell, turns it into E volts. A resistor, R equals R0,
+takes R0 i off. A current sensor, meter, reads the current. And an integrator, counter, with gain
+minus one over Q nom and initial value SoC0, is the coulomb counter: the derivative of SoC equals
+minus i over Q nom.
+
+Fourth, seven wires. Five make the circuit, from n through the cell, the resistor and the meter out
+to p. Watch the sign on the last of those: the sensor measures the current from its p to its n, and
+its n is on the battery's p, so it reads the current leaving the battery into the load, the
+discharge current. That is why the counter's gain is negative. The other two wires feed the meter
+into the counter, and the counter out to SoC. Studio routes the wires itself and can run one through
+a part; drag that segment aside.
+
+Then toggle to code and type what the diagram cannot draw: two variables, v and i, and the two
+relations on the right, v equals p dot v minus n dot v, and i equals meter dot i. No initial line:
+the integrator starts at SoC0 by itself.
+-->
+
+---
+routeAlias: build-battery-bench
+---
+
+## Build 03b: the discharge bench
 
 <div class="grid grid-cols-[1fr_1.15fr] gap-8 items-start">
 <div>
 
 <img src="/img/lecture-04/step03-battery-discharge.png" class="mx-auto" style="max-height: 21rem" alt="The finished BatteryDischarge in Studio: load_profile into the top of load; load across battery, p to p on the left and n to n on the right; battery.n to ground."/>
 
-*New `Battery`: paste from the guide · new `BatteryDischarge`: parameter `I_load` 100 ·
-`load_profile` Step at 60 s → `load` CurrentSource across `battery` · `ground` ·
-`BatteryDischargeTransient`, 1860 s, tstops at 60 · ▷ once, then plot*
+*New `BatteryDischarge`: parameter `I_load` 100 · `load_profile` Step at 60 s → `load`
+CurrentSource across `battery` · `ground` · `BatteryDischargeTransient`, 1860 s, tstops at 60 ·
+▷ once, then plot*
 
 [page: step 03](../lecture/lecture-04/#step-03) · reference `dyad/HandsOn04/BatteryDischarge.dyad`
 
@@ -433,22 +500,18 @@ from 60 s: a sag of <b>10 V</b> · <code>battery.SoC</code> <b>0.9</b> → <b>0.
 </div>
 
 <!--
-Build 03: the battery. On the left, the finished bench in Studio. A step block named load profile
-feeds the top of a current source named load. The load sits across the battery, p to p on the left
-and n to n on the right, and the battery's n goes to ground.
+Build 03b: the discharge bench. On the left, the finished bench in Studio. A step block named load
+profile feeds the top of a current source named load. The load sits across the battery, p to p on
+the left and n to n on the right, and the battery's n goes to ground.
 
-The steps, in the italic line. First, a new component `Battery`: paste the code from the guide. It
-has two pins, p and n, and one output, SoC. Inside are the two equations of the last slides: v
-equals E minus R0 i, and the coulomb counter, the derivative of SoC equals minus i over Q nom. Its
-parameters are named E, R0, Q nom and SoC0 on purpose: the extra session's more detailed cell keeps
-those names and replaces this one without rewiring. Second, a new component `BatteryDischarge`, with
-one parameter, I load, 100 amperes. The load profile is a `Step` block that switches I load on at 60
-seconds. The load is an ideal current source: it forces exactly that current out of the battery's
-positive terminal, whatever the voltage, as a motor drive does when it is asked for a fixed torque.
-Add the ground. Third, the analysis `BatteryDischargeTransient`, 1860 seconds long, with a tstop at
-60 so that the solver lands exactly on the load step; without it the solver strides across the
-switch-on, misses about half a second of current, and the final state of charge comes out slightly
-off. Then click Run Analysis once and plot.
+The steps, in the italic line. A new component `BatteryDischarge`, with one parameter, I load, 100
+amperes. The load profile is a `Step` block that switches I load on at 60 seconds. The load is an
+ideal current source: it forces exactly that current out of the battery's positive terminal,
+whatever the voltage, as a motor drive does when it is asked for a fixed torque. Add the ground.
+Then the analysis `BatteryDischargeTransient`, 1860 seconds long, with a tstop at 60 so that the
+solver lands exactly on the load step; without it the solver strides across the switch-on, misses
+about half a second of current, and the final state of charge comes out slightly off. Then click
+Run Analysis once and plot.
 
 The snippet plots the terminal voltage, the current and the state of charge in three panels, and
 reads the final state of charge. The last line runs the full-power case, 330 amperes.

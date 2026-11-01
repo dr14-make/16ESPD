@@ -1136,7 +1136,48 @@ Here *E* is constant: an empty pack shows the same 350 V as a full one. The extr
 
 #### Parts
 
-New component `Battery` in `MyCar`: paste the code below.
+New component `Battery` in `MyCar`. Its ports:
+
+| Name | Library path | Set |
+| --- | --- | --- |
+| `p` | Dyad › Pin | port, left edge: the positive terminal |
+| `n` | Dyad › Pin | port, right edge: the negative terminal |
+| `SoC` | Dyad › RealOutput | port, top edge: the state of charge |
+
+Its parameters, the numbers under **Given**:
+
+| Name | Type, unit | Value |
+| --- | --- | --- |
+| `E` | `Voltage`, `V` | `350.0`: open-circuit voltage, Leaf ZE1 nominal |
+| `R0` | `Resistance`, `Ω` | `0.1`: series resistance |
+| `Q_nom` | `ElectricCharge`, `C` | `40.0e3 * 3600.0 / 350.0`: charge capacity, 40 kWh / 350 V = 114.3 A·h |
+| `SoC0` | `Real` | `0.9`: state of charge at *t* = 0 |
+
+Its parts:
+
+| Name | Library path | Set |
+| --- | --- | --- |
+| `ocv` | BlockComponents › Sources › Constant | `k = E` |
+| `cell` | ElectricalComponents › Analog › Sources › VoltageSource | — |
+| `resistor` | ElectricalComponents › Analog › Basic › Resistor | `R = R0` |
+| `meter` | ElectricalComponents › Analog › Sensors › CurrentSensor | — |
+| `counter` | BlockComponents › Continuous › Integrator | `k = -1 / Q_nom`, `x0 = SoC0` |
+
+In one line: `cell`, `resistor` and `meter` in a row from `n` to `p` are *v* = *E* − *R*<sub>0</sub>*i*, and `counter` integrates what `meter` reads, which is d*SoC*/d*t* = −*i*/*Q*<sub>nom</sub>. The box below says what each part is and why it is there.
+
+:::: info Given parts: the battery's insides, one part per term
+
+**`Constant`** (`ocv`): a signal that is always `k`, here `E`, 350. It is the open-circuit voltage as a number, before anything turns it into volts.
+
+**`VoltageSource`** (`cell`): an ideal voltage source, holding its `p` `V` volts above its `n` whatever current flows. Fed from `ocv`, it is the cells' chemistry, the *E* of *v* = *E* − *R*<sub>0</sub>*i*. It loses nothing, so the sag has to be a part of its own.
+
+**`Resistor`** (`resistor`): *v* = *R i*, with `R = R0`. It is the electrolyte, the electrodes and the busbars, the − *R*<sub>0</sub>*i* term: in series with `cell`, it takes *R*<sub>0</sub>*i* off the terminal voltage and burns *R*<sub>0</sub>*i*² as heat.
+
+**`CurrentSensor`** (`meter`): an ammeter. It adds no voltage and passes the current through, from its `p` to its `n`, and puts that current out as the signal `i`. Its `n` is wired to the battery's `p`, so what it measures is the current leaving the battery at `p` into the load: the discharge current *i*, positive while the battery drives the load and negative while it charges.
+
+**`Integrator`** (`counter`): the coulomb counter. Its output is `x0` plus the integral of `k` times its input: with `u = meter.i`, `k = -1 / Q_nom` and `x0 = SoC0` that is d*SoC*/d*t* = −*i*/*Q*<sub>nom</sub>, starting at 0.9. The minus sign is there because *i* counts discharge as positive, and discharge empties the pack. Its output is the `SoC` port.
+
+::::
 
 New component `BatteryDischarge` in `MyCar`:
 
@@ -1166,51 +1207,55 @@ New component `BatteryDischarge` in `MyCar`:
 
 [![The finished BatteryDischarge in Studio: load_profile into the top of load; load's p wired to battery's p on the left, load's n to battery's n on the right, and battery.n to ground.](/lecture/lecture-04/img/step03-battery-discharge.png)](/lecture/lecture-04/img/step03-battery-discharge.png)
 
-1. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `Battery`. Toggle to code (⇄), select everything with <kbd>Ctrl</kbd>+<kbd>A</kbd>, paste the block below and save.
+1. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `Battery`. Click **+**, open `Dyad`, place two `Pin`s and one `RealOutput`, and rename them `p`, `n` and `SoC`: select each → **Edit Parameters** → the pencil next to its name. Drag them onto the thin blue outline: `p` on the left edge, `n` on the right edge, `SoC` in the middle of the top edge. On the bench the load wires to `p` on the left and `n` on the right, and step 04 reads `SoC` from above.
+2. With nothing selected, click **Edit Parameters** → **Add parameter** for each of the four parameters in the table, with the type `Real` and the unit from the table. Type `Q_nom` into **Value** as the formula: it is in coulombs, so 114.3 A·h is 40 kWh × 3600 s/h over 350 V.
+3. Place the five parts from the table, rename each to its **Name**, and set the values in its **Set** column. Lay them out as in the picture below: `resistor` and `meter` along the top, `counter` beside `meter`, `cell` on a bottom row with `ocv` above-left of it.
+4. Wire:
+   1. `ocv.y → cell.V`
+   2. `n → cell.n`
+   3. `cell.p → resistor.p`
+   4. `resistor.n → meter.p`
+   5. `meter.n → p`
+   6. `meter.i → counter.u`
+   7. `counter.y → SoC`
+
+   [![The finished Battery in Studio: p on the left edge, n on the right, SoC on top; resistor and meter along the top, meter.i down into counter and counter.y up to SoC; ocv into the top of cell on the bottom row, cell.p back up to resistor.p, cell.n out to n, and meter.n round the outside to p.](/lecture/lecture-04/img/step03-battery.png)](/lecture/lecture-04/img/step03-battery.png)
+
+   The battery in Studio after the seven wires: the circuit runs from `n` along the bottom through `cell`, up to `resistor` and `meter`, and round the outside to `p`; the counter hangs below `meter` and feeds `SoC`.
+
+   Wires 1–5 are the circuit, *v* = *E* − *R*<sub>0</sub>*i*: from `n` up through `cell`, which adds *E*, through `resistor`, which takes *R*<sub>0</sub>*i* off, and through `meter` out to `p`. Wire 5 sets the sign: the current `meter` measures from its `p` to its `n` is the current that leaves the battery at `p`, the discharge current. Wires 6–7 are the coulomb counter, d*SoC*/d*t* = −*i*/*Q*<sub>nom</sub>. Hover the ports before you wire them: on `cell` and `meter`, `p` is the left pin and `n` the right one; `cell`'s input `V` is on top and `meter`'s output `i` at the bottom; `ocv.y` and `counter.y` are on the right, `counter.u` on the left. Count the `connect` lines in code view: seven. Studio routes each wire itself and can run one straight through a part; drag that wire's segment aside to move it, then save with <kbd>Ctrl</kbd>+<kbd>S</kbd>.
+5. Toggle to code (⇄). The GUI has placed the ports, parts, parameters and wires; what it cannot draw are the two variables a later step reads and the equations that compute them. Paste the variables among the declarations, just above `relations`, and the relations at the end of `relations`, above the `metadata` block. Save.
 
    ::: code-group
 
-   ```txt [Battery]
-   component Battery
-     extends ElectricalComponents.Analog.Interfaces.TwoPin
-     "State of charge: 1 full, 0 empty"
-     SoC = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}, "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}}}}
-     "Open-circuit voltage, Leaf ZE1 nominal"
-     parameter E::Voltage = 350.0
-     "Series resistance"
-     parameter R0::Resistance = 0.1
-     "Charge capacity, 40 kWh / 350 V = 114.3 A.h [C]"
-     parameter Q_nom::ElectricCharge = 40.0e3 * 3600.0 / 350.0
-     "State of charge at t = 0"
-     parameter SoC0::Real = 0.9
+   ```txt [Variables]
+     "Voltage across the component (between pin p and pin n)."
+     variable v::Voltage
      "Discharge current, out of p through the load and back into n"
      variable i::Current
-   relations
-     initial SoC = SoC0
-     p.i + n.i = 0
-     i = n.i
-     v = E - R0 * i
-     der(SoC) = -i / Q_nom
-   metadata {
-     "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/Battery.svg"}}
-   }
-   end
+   ```
+
+   ```txt [Relations]
+     v = p.v - n.v
+     i = meter.i
    ```
 
    :::
 
-   `extends … TwoPin` gives the battery its two pins, `p` on the left and `n` on the right, and the terminal voltage `v = p.v - n.v`. A pin's current counts positive *into* the component, so the current that comes back into `n` is the one that left `p` through the load: `i = n.i`, and `p.i + n.i = 0` says the battery stores no charge on its terminals. The last two lines are the two equations above; `Q_nom` is in coulombs, so 114.3 A·h is written as 40 kWh × 3600 s/h over 350 V.
+   The two lines name what the parts already compute: the terminal voltage, and the discharge current `meter` reads. There is no `initial` line: `counter` starts at its `x0`, so `SoC` starts at `SoC0`.
+
+   Your battery shows as a plain box on the bench, not with the course library's battery icon as in the picture: the icon comes with the **Fell behind?** code only.
 
    If the compile flags `ElectricalComponents` as `missing-direct-dependency`, run the `Pkg.add` lines of [step 00](#step-00), then <kbd>F1</kbd> → **Dyad: Restart Language Server** and compile again.
 
-2. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `BatteryDischarge`. With nothing selected, click **Edit Parameters** → **Add parameter**: `I_load`, type `Current`, value `100.0`. Place the four blocks from the table and rename each to its **Name**: select it → **Edit Parameters** → the pencil next to its name. Set `load_profile`'s `height` to `I_load` and its `start_time` to `60.0`.
-3. Wire:
+6. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `BatteryDischarge`. With nothing selected, click **Edit Parameters** → **Add parameter**: `I_load`, type `Current`, value `100.0`. Place the four blocks from the table and rename each to its **Name**: select it → **Edit Parameters** → the pencil next to its name. Set `load_profile`'s `height` to `I_load` and its `start_time` to `60.0`.
+7. Wire:
    - `load_profile.y → load.I`
    - `battery.p → load.p`
    - `load.n → battery.n`, and `battery.n → ground.g`
 
    Hover a pin to read its name before you wire it: on both `battery` and `load`, `p` is the left pin and `n` the right one.
-4. <Badge type="tip" text="New analysis" /> Toggle to code and add the analysis below the component, so it passes `I_load` through:
+8. <Badge type="tip" text="New analysis" /> Toggle to code and add the analysis below the component, so it passes `I_load` through:
 
    ```txt
    analysis BatteryDischargeTransient
@@ -1221,7 +1266,7 @@ New component `BatteryDischarge` in `MyCar`:
    ```
 
    `tstops = [60.0]` makes the solver land exactly on the load step. Without it the solver strides across the switch-on, misses about half a second of the current, and SoC ends at 0.46237 instead of 0.4625.
-5. Click ▷ **Run Analysis → BatteryDischargeTransient** once, then plot the terminal voltage, the current and the state of charge, and read the final SoC:
+9. Click ▷ **Run Analysis → BatteryDischargeTransient** once, then plot the terminal voltage, the current and the state of charge, and read the final SoC:
 
    ```julia
    using Plots; plotly()
@@ -1230,7 +1275,7 @@ New component `BatteryDischarge` in `MyCar`:
    r.sol[r."battery.SoC"][end]
    ```
 
-6. Charge the battery instead, then pull the motor's full power from it:
+10. Charge the battery instead, then pull the motor's full power from it:
 
    ```julia
    r = MyCar.BatteryDischargeTransient(I_load = -20.0);
@@ -1255,9 +1300,66 @@ Commit: **Source Control** → message `Step 03: battery` → **Commit** → **S
 
 :::: warning Fell behind?
 
-Paste `Battery` from step 1 of **Do this** above. Then right-click `MyCar` → **Add Component**, name it `BatteryDischarge`, toggle to code (⇄) and paste this over its contents.
+Right-click `MyCar` → **Add Component** twice, naming them `Battery` and `BatteryDischarge`; toggle each to code (⇄) and paste its tab below over its contents. The `{^…}` tags and the `metadata` blocks lay out both diagrams and give the battery the course library's icon.
 
 ::: code-group
+
+```txt [Battery]
+component Battery
+  "Positive electrical pin."
+  p = Pin() {^p}
+  "Negative electrical pin."
+  n = Pin() {^n}
+  ocv = BlockComponents.Sources.Constant(k = E) {^ocv}
+  cell = ElectricalComponents.Analog.Sources.VoltageSource() {^cell}
+  resistor = ElectricalComponents.Analog.Basic.Resistor(R = R0) {^resistor}
+  meter = ElectricalComponents.Analog.Sensors.CurrentSensor() {^meter}
+  "Voltage across the component (between pin p and pin n)."
+  variable v::Voltage
+  "State of charge: 1 full, 0 empty"
+  SoC = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}, "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}}}}
+  "Open-circuit voltage, Leaf ZE1 nominal"
+  parameter E::Voltage = 350.0
+  "Series resistance"
+  parameter R0::Resistance = 0.1
+  "Charge capacity, 40 kWh / 350 V = 114.3 A.h [C]"
+  parameter Q_nom::ElectricCharge = 40.0e3 * 3600.0 / 350.0
+  "State of charge at t = 0"
+  parameter SoC0::Real = 0.9
+  "Discharge current, out of p through the load and back into n"
+  variable i::Current
+  counter = BlockComponents.Continuous.Integrator(k = -1 / Q_nom, x0 = SoC0) {^counter}
+relations
+  connect(ocv.y, cell.V) {^w1}
+  connect(n, cell.n) {^w2}
+  connect(cell.p, resistor.p) {^w3}
+  connect(resistor.n, meter.p) {^w4}
+  connect(meter.n, p) {^w5}
+  connect(meter.i, counter.u) {^w6}
+  connect(counter.y, SoC) {^w7}
+  v = p.v - n.v
+  i = meter.i
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/Battery.svg"}},
+  "_links": {
+    "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"iconName": "pos", "x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"iconName": "neg", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "ocv": {"Dyad": {"placement": {"diagram": {"x1": 340, "y1": 330, "x2": 460, "y2": 450, "rot": 180}}}},
+    "cell": {"Dyad": {"placement": {"diagram": {"x1": 140, "y1": 330, "x2": 260, "y2": 450, "rot": 90}}}},
+    "resistor": {"Dyad": {"placement": {"diagram": {"x1": 340, "y1": 140, "x2": 460, "y2": 260}}}},
+    "meter": {"Dyad": {"placement": {"diagram": {"x1": 590, "y1": 140, "x2": 710, "y2": 260}}}},
+    "counter": {"Dyad": {"placement": {"diagram": {"x1": 740, "y1": 330, "x2": 860, "y2": 450, "rot": 180}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1000, "y": 800}, {"x": 200, "y": 800}], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 200}], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 950, "y": 200}, {"x": 950, "y": 650}, {"x": 50, "y": 650}, {"x": 50, "y": 500}], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 650, "y": 300}, {"x": 900, "y": 300}, {"x": 900, "y": 390}], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 720, "y": 390}, {"x": 720, "y": 80}, {"x": 500, "y": 80}], "E": 2}]}}
+  }
+}
+end
+```
 
 ```txt [BatteryDischarge]
 component BatteryDischarge
