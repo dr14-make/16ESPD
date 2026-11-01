@@ -579,7 +579,7 @@ $$
 | *d*<sub>max</sub> | 1 | the inverter cannot give the machine more than the pack's voltage |
 | *T*<sub>i</sub> | 1 ms | how fast the inverter's current loop follows its command |
 | *V*<sub>on</sub> | 1.2 V | two devices carry the current at any instant; calibrated so the inverter reaches ORNL's > 99 % at high speed (derived; the datasheet comparison is in the lecture plan's Known limits) |
-| *f*<sub>s</sub>, *t*<sub>sw</sub> | 5 kHz, 1 µs | ORNL ran the Leaf inverter at 5 kHz; 1 µs edges land the efficiency in ORNL's 96–99 % |
+| *f*<sub>s</sub>, *t*<sub>sw</sub> | 5 kHz, 1 µs | ORNL ran the Leaf inverter at 5 kHz; the 1 µs edge is the course's choice (assumed). With *V*<sub>on</sub> it gives 99.2 % at 350 V out and 97.5 % at 113 V, where ORNL's inverter falls into the 80s: a loss proportional to the current cannot match both ends (the lecture plan's Known limits) |
 
 ::: info Why the torque falls as 1/ω
 
