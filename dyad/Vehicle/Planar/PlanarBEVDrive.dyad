@@ -8,7 +8,8 @@ each wheel, through `Vehicle.Electric.RegenBlend`, so the machine regenerates fi
 friction brakes take the rest. The friction share passes through `BrakeControlUnit`, Lecture 3's
 ESP and four-channel ABS, both switchable at run time with `esp_on` and `abs_on`. The drive turns
 the front axle through the planar `DifferentialGear`; `PlanarRoadLoad` adds drag and rolling
-resistance.
+resistance. Regen withdraws while the ECU acts on either front brake, returning the demand
+ to friction under ABS control.
 
 Each command reaches the car through a first-order lag of `T_driver`, the time a foot or hand
 takes to move. Besides being physical, it keeps a parameter change from stepping the converter's
@@ -54,11 +55,11 @@ component PlanarBEVDrive
   hands = BlockComponents.Continuous.FirstOrder(T = T_driver) {^hands}
   robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot() {^robot}
   kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
-  blend = VehicleSystemsComponents.Vehicle.Electric.RegenBlend(ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade) {^blend}
+  blend = VehicleSystemsComponents.Vehicle.Electric.RegenBlend(abs_rule = true, ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade) {^blend}
   drive = VehicleSystemsComponents.Vehicle.Electric.ElectricDrive(ratio = ratio, P_aux = P_aux) {^drive}
   differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
   mount = RotationalComponents.Components.Fixed() {^mount}
-  ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(esp_on = esp_on, abs_on = abs_on, radius = radius, T_max = T_full) {^ecu}
+  ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(report_front = true, esp_on = esp_on, abs_on = abs_on, radius = radius, T_max = T_full) {^ecu}
   car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius, tau_max = T_full) {^car}
   roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
   flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
@@ -77,6 +78,7 @@ relations
   connect(kmh.y, blend.v) {^w9}
   connect(blend.tau_motor, drive.tau_ref) {^w10}
   connect(blend.tau_brake, ecu.demand) {^w11}
+  connect(ecu.front_active, blend.abs_active) {^w28}
   connect(drive.spline, differential.flange_b) {^w12}
   connect(differential.flange_left, car.spin_fl) {^w13}
   connect(differential.flange_right, car.spin_fr) {^w14}
@@ -112,4 +114,55 @@ relations
   initial drive.converter.i_out = 0.0
   initial foot.x = 0.0
   initial hands.x = 0.0
+metadata {
+  "_links": {
+    "throttle_pedal": {"Dyad": {"placement": {"diagram": {"x1": 20, "x2": 100, "y1": 30, "y2": 110}}}},
+    "brake_pedal": {"Dyad": {"placement": {"diagram": {"x1": 20, "x2": 100, "y1": 160, "y2": 240}}}},
+    "pedals": {"Dyad": {"placement": {"diagram": {"x1": 155, "x2": 235, "y1": 95, "y2": 175}}}},
+    "foot": {"Dyad": {"placement": {"diagram": {"x1": 275, "x2": 355, "y1": 95, "y2": 175}}}},
+    "blend": {"Dyad": {"placement": {"diagram": {"x1": 410, "x2": 510, "y1": 105, "y2": 205}}}},
+    "drive": {"Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 85, "y2": 185}}}},
+    "mount": {"Dyad": {"placement": {"diagram": {"x1": 620, "x2": 680, "y1": 225, "y2": 285}}}},
+    "differential": {"Dyad": {"placement": {"diagram": {"x1": 700, "x2": 780, "y1": 260, "y2": 340}}}},
+    "steering_wheel": {"Dyad": {"placement": {"diagram": {"x1": 220, "x2": 300, "y1": 340, "y2": 420}}}},
+    "hands": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 380, "y1": 340, "y2": 420}}}},
+    "robot": {"Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 400, "y2": 500}}}},
+    "kmh": {"Dyad": {"placement": {"diagram": {"x1": 40, "x2": 110, "y1": 500, "y2": 570}}}},
+    "ecu": {"Dyad": {"placement": {"diagram": {"x1": 220, "x2": 420, "y1": 593, "y2": 793}}}},
+    "car": {"Dyad": {"placement": {"diagram": {"x1": 520, "x2": 740, "y1": 600, "y2": 820}}}},
+    "motion": {"Dyad": {"placement": {"diagram": {"x1": 775, "x2": 975, "y1": 610, "y2": 810}}}},
+    "slips": {"Dyad": {"placement": {"diagram": {"x1": 40, "x2": 140, "y1": 740, "y2": 840}}}},
+    "roadload": {"Dyad": {"placement": {"diagram": {"x1": 680, "x2": 720, "y1": 870, "y2": 910}}}},
+    "flat": {"Dyad": {"placement": {"diagram": {"x1": 520, "x2": 560, "y1": 870, "y2": 910}}}},
+    "wbus": {"Dyad": {"edges": [{"E": -1, "M": [], "S": 1}, {"E": 2, "M": [], "S": -1}, {"E": 3, "M": [{"x": 760, "y": 950}, {"x": 30, "y": 950}, {"x": 30, "y": 790}], "S": -1}], "junctions": [{"x": 760, "y": 710}]}},
+    "w1": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 125, "y": 70}, {"x": 125, "y": 111}], "S": 1}]}},
+    "w2": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 135, "y": 200}, {"x": 135, "y": 159}], "S": 1}]}},
+    "w3": {"Dyad": {"edges": [{"E": 2, "M": [], "S": 1}]}},
+    "w4": {"Dyad": {"edges": [{"E": 2, "M": [], "S": 1}]}},
+    "w5": {"Dyad": {"edges": [{"E": 2, "M": [], "S": 1}]}},
+    "w6": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 390, "y": 380}, {"x": 390, "y": 450}], "S": 1}]}},
+    "w7": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 665, "y": 450}, {"x": 665, "y": 570}, {"x": 630, "y": 570}], "S": 1}]}},
+    "w9": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 140, "y": 535}, {"x": 140, "y": 220}, {"x": 390, "y": 220}, {"x": 390, "y": 175}], "S": 1}]}},
+    "w10": {"Dyad": {"edges": [{"E": 2, "M": [], "S": 1}]}},
+    "w11": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 520, "y": 175}, {"x": 520, "y": 240}, {"x": 150, "y": 240}, {"x": 150, "y": 613}], "S": 1}]}},
+    "w28": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 320, "y": 520}, {"x": 400, "y": 520}, {"x": 400, "y": 205}, {"x": 440, "y": 205}], "S": 1}]}},
+    "w12": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 680, "y": 135}, {"x": 680, "y": 344}], "S": 1}]}},
+    "w13": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 470, "y": 300}, {"x": 470, "y": 655}], "S": 1}]}},
+    "w14": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 810, "y": 300}, {"x": 810, "y": 570}, {"x": 765, "y": 570}, {"x": 765, "y": 655}], "S": 1}]}},
+    "w15": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 635, "y": 185}, {"x": 650, "y": 185}], "S": 1}]}},
+    "w16": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 995, "y": 630}, {"x": 995, "y": 995}, {"x": 5, "y": 995}, {"x": 5, "y": 643}], "S": 1}]}},
+    "w17": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 985, "y": 646}, {"x": 985, "y": 980}, {"x": 15, "y": 980}, {"x": 15, "y": 673}], "S": 1}]}},
+    "w18": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 180, "y": 760}, {"x": 180, "y": 733}], "S": 1}]}},
+    "w19": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 190, "y": 780}, {"x": 190, "y": 763}], "S": 1}]}},
+    "w20": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 170, "y": 800}, {"x": 170, "y": 860}, {"x": 260, "y": 860}], "S": 1}]}},
+    "w21": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 160, "y": 820}, {"x": 160, "y": 880}, {"x": 380, "y": 880}, {"x": 380, "y": 793}], "S": 1}]}},
+    "w22": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 470, "y": 633}], "S": 1}]}},
+    "w23": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 490, "y": 673}, {"x": 490, "y": 550}, {"x": 745, "y": 550}, {"x": 745, "y": 633}], "S": 1}]}},
+    "w24": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 450, "y": 713}, {"x": 450, "y": 743}], "S": 1}]}},
+    "w25": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 440, "y": 753}, {"x": 440, "y": 930}, {"x": 750, "y": 930}, {"x": 750, "y": 743}], "S": 1}]}},
+    "w26": {"Dyad": {"edges": [{"E": 2, "M": [], "S": 1}]}},
+    "w27": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 735, "y": 820}, {"x": 735, "y": 890}], "S": 1}]}},
+    "w8": {"Dyad": {"edges": [{"E": -1, "M": [{"x": 980, "y": 662}, {"x": 980, "y": 965}, {"x": 25, "y": 965}], "S": 1}, {"E": 2, "M": [{"x": 25, "y": 535}], "S": -1}, {"E": 3, "M": [], "S": -1}], "junctions": [{"x": 25, "y": 703}]}}
+  }
+}
 end

@@ -38,7 +38,17 @@ From full throttle to 105.6 km/h, then throttle released at t = 9 s:
 To verify: whether `CdA = 0.63` m² and `f_r = 0.012` are the intended values, and whether lift-off
 regeneration belongs in the drivable model (pedal map) or in `RegenBlend`.
 
-## 2. Braking: the ABS works the front brakes until regen reaches its torque limit, then the motor alone turns the front wheels backward
+## 2. Braking: front ABS now withdraws regen
+
+The follow-up enables `RegenBlend(abs_rule = true)` in `PlanarBEVDrive` and routes the opt-in
+`BrakeControlUnit.front_active` output to `blend.abs_active`. Running
+`julia +dyad-3.5.0 --project=. sim/check_coast_brake.jl` completes without front-wheel reversal.
+On the same pedal sequence (9 s full throttle, 10 s coast, full brake at 19 s), sampled every
+5 ms to the first speed below 0.5 m/s, stopping distance is **36.492357 → 36.231404 m**.
+Minimum front slip above 3 m/s is **−5.917799 → −0.127072**; minimum front angular speed in
+that range is **−47.6110 → +8.8282 rad/s**. Coast behavior and brake calibration are unchanged.
+
+### Historical check before the follow-up
 
 Full brake pedal (`brake_pedal.k = 1`) from 94.5 km/h, ABS and ESP on, dry road:
 

@@ -262,11 +262,14 @@ end
 end
 
 @testset "ABS rule: low-grip front wheels no longer lock" begin
-    with = _RG_PL.PlanarBEVLowGripStopTransient(stop = 12.0)
+    with = _RG_PL.PlanarBEVLowGripStopTransient()
     # Bound both runs after their stops, before prolonged parking hits the exact-rest tire singularity.
-    without = _RG_PL.PlanarBEVLowGripStopTransient(withdraw = 0.0, stop = 12.0)
+    without = _RG_PL.PlanarBEVLowGripStopTransient(withdraw = 0.0)
     for run in (with, without)
         @test string(run.sol.retcode) == "Success"
+        @test run.sol.t[end] == 12.0
+        @test _rg_stop(run).t < 12.0
+        println("Low-grip default: ", (; horizon = run.sol.t[end], _rg_stop(run)...))
     end
     @test _rg_stop(with).d ≈ 87.59 atol = 0.5
     @test _rg_stop(without).d ≈ 95.10 atol = 0.5
@@ -280,8 +283,9 @@ end
             println("Low-grip slip: ", (; controlled, wheel = string(k), minimum_slip = minimum(slip)))
         end
     end
-    hands_on = _RG_H4.BEVLowGripStopTransient(stop = 12.0)
+    hands_on = _RG_H4.BEVLowGripStopTransient()
     @test string(hands_on.sol.retcode) == "Success"
+    @test hands_on.sol.t[end] == 12.0
     # Different meter states perturb adaptive integration of the sampled ABS.
     @test _rg_stop(hands_on).d ≈ _rg_stop(with).d atol = 0.1
     sh, mh = hands_on.sol, symbolic_container(hands_on)
@@ -290,5 +294,53 @@ end
     for k in (mh.car.bus.kappa_fl, mh.car.bus.kappa_fr)
         @test minimum(sh(th[moving_h]; idxs = k).u) > -0.2
     end
+    hands_off = _RG_H4.BEVLowGripStopTransient(withdraw = 0.0)
+    @test string(hands_off.sol.retcode) == "Success"
+    @test hands_off.sol.t[end] == 12.0
+    @test _rg_stop(hands_off).t < 12.0
+    @test _rg_stop(hands_off).d ≈ _rg_stop(without).d atol = 0.1
+    println("HandsOn low-grip defaults: ", (; on = _rg_stop(hands_on), off = _rg_stop(hands_off)))
     println("ABS regen comparison: ", (; dry_before = _rg_stop(_rg_stop_run).d, dry_after = _rg_stop(_rg_abs_run).d, low_with = _rg_stop(with).d, low_without = _rg_stop(without).d, hands_on = _rg_stop(hands_on).d))
+end
+
+
+# Drive-simulator pedal sequence, matching sim/check_coast_brake.jl; do not alter that check.
+using ModelingToolkit
+using DyadInterface: simplify_model
+using OrdinaryDiffEqDefault: Rodas5P, init, step!
+using SymbolicIndexingInterface: setp, getu
+
+@testset "Drivable BEV withdraws regen under front ABS" begin
+    @named model = _RG_PL.PlanarBEVDrive()
+    sys = simplify_model(model)
+    integ = init(ODEProblem(sys, [], (0.0, 25.0)), Rodas5P();
+        dtmax = 0.005, save_everystep = false)
+    throttle = setp(integ, sys.throttle)
+    brake = setp(integ, sys.brake)
+    readout = getu(integ, [sys.motion.vx, sys.car.bus.x, sys.slips.kappa_fl,
+        sys.slips.kappa_fr, sys.car.fl.inertia.w, sys.car.fr.inertia.w])
+    throttle(integ, 1.0)
+    step!(integ, 9.0, true)
+    throttle(integ, 0.0)
+    for _ in 1:5
+        step!(integ, 2.0, true)
+    end
+    x0 = readout(integ)[2]
+    brake(integ, 1.0)
+    minimum_slip, minimum_w = 0.0, Inf
+    while integ.t < 25.0
+        step!(integ, 0.005, true)
+        v, x, fl, fr, wl, wr = readout(integ)
+        if v > 3.0
+            minimum_slip = min(minimum_slip, fl, fr)
+            minimum_w = min(minimum_w, wl, wr)
+        end
+        v < 0.5 && break
+    end
+    @test integ.t < 25.0
+    @test readout(integ)[1] < 0.5
+    @test minimum_slip > -0.2
+    @test minimum_w > 0.0
+    println("Drivable BEV hard stop: ", (; distance = readout(integ)[2] - x0,
+        stop_time = integ.t, minimum_slip, minimum_w))
 end
