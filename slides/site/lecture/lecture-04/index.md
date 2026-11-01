@@ -123,7 +123,67 @@ On a fixed supply the current is whatever the gap *V* − *E* drives through *R*
 
 #### Parts
 
-New component `DCMachine` in `MyCar`: paste the code below.
+New component `DCMachine` in `MyCar`. Its ports:
+
+| Name | Library path | Set |
+| --- | --- | --- |
+| `p` | Dyad › Pin | port, left edge, upper: the positive terminal |
+| `n` | Dyad › Pin | port, left edge, lower: the negative terminal |
+| `spline` | Dyad › Spline | port, right edge: the rotor shaft |
+| `support` | Dyad › Spline | port, bottom edge: the housing |
+
+Its parameters, the table under **Given** in the order the machine needs them:
+
+| Name | Type, unit | Value |
+| --- | --- | --- |
+| `T_max` | `Torque`, `N.m` | `320.0`: peak shaft torque |
+| `w_base` | `AngularVelocity`, `rad/s` | `3283.0 * pi / 30.0`: base speed, 3283 rpm |
+| `V_nom` | `Voltage`, `V` | `350.0`: the supply at which it meets base speed at full torque |
+| `R` | `Resistance`, `Ω` | `0.05` |
+| `L` | `Inductance`, `H` | `0.5e-3` |
+| `J` | `Inertia`, `kg.m2` | `0.05`: rotor inertia |
+| `T_f` | `Torque`, `N.m` | `0.5`: friction |
+| `K_i` | `Torque`, `N.m` | `1.0`: iron loss |
+| `k_w` | `Real` | `300.0 / (10100.0 * pi / 30.0) ^ 3`: windage, 300 W at 10 100 rpm |
+| `C` | `Power`, `W` | `200.0`: constant loss |
+| `w_reg` | `AngularVelocity`, `rad/s` | `10.0`: below this speed the loss torques fade to zero |
+| `tau_loss_base` | `Torque`, `N.m` | `T_f + K_i + k_w * w_base ^ 2 + C / w_base`: the losses at base speed |
+| `k` | `ElectricalTorqueConstant`, `N.m/A` | `(V_nom + sqrt(V_nom ^ 2 - 4.0 * w_base * R * (T_max + tau_loss_base))) / (2.0 * w_base)`: *K*Φ |
+
+Its parts:
+
+| Name | Library path | Set |
+| --- | --- | --- |
+| `resistor` | ElectricalComponents › Analog › Basic › Resistor | `R = R` |
+| `inductor` | ElectricalComponents › Analog › Basic › Inductor | `L = L` |
+| `emf` | ElectricalComponents › Analog › Basic › RotationalEMF | `k = k` |
+| `rotor` | RotationalComponents › Components › Inertia | `J = J` |
+| `friction` | RotationalComponents › Sources › SignTorque | `tau_nominal = -T_f`, `reg = RotationalComponents.Sources.Regularization.Linear()`, `w0 = w_reg` |
+| `iron` | RotationalComponents › Sources › SignTorque | `tau_nominal = -K_i`, `reg = RotationalComponents.Sources.Regularization.Linear()`, `w0 = w_reg` |
+| `windage` | RotationalComponents › Sources › QuadraticSpeedDependentTorque | `tau_nominal = -k_w * w_base ^ 2`, `w_nominal = w_base`, `TorqueDirection = false` |
+| `constant_loss` | RotationalComponents › Sources › InverseSpeedDependentTorque | `tau_nominal = -C / w_reg`, `w_nominal = w_reg`, `w0 = w_reg`, `TorqueDirection = false` |
+
+In one line: the armature is `resistor`, `inductor` and `emf` in a row between `p` and `n`, which is *v* = *R i* + *L di/dt* + *E*; the `emf` turns the current into torque on the shaft; and each of the four loss parts is one term of *P*<sub>loss</sub> after the copper loss, a braking torque between the shaft and the housing. The box below says what each part is and why it is there.
+
+:::: info Given parts: the machine's insides, one part per term
+
+**`Resistor`** (`resistor`): *v* = *R i*. It is the armature's copper, and the first term of *P*<sub>loss</sub>: the power it turns into heat, *v*·*i* = *R i*², is the copper loss `P_cu`.
+
+**`Inductor`** (`inductor`): *v* = *L di/dt*. The armature's inductance, the *L di/dt* of the voltage equation: the current cannot jump, it follows the voltage with the time constant *L*/*R* = 10 ms. It stores energy and loses none.
+
+**`RotationalEMF`** (`emf`): the machine itself, the two equations of the lecture with one constant `k`, *K*Φ. Across its pins it shows the back-EMF *E* = *k ω*; on its `rotor` it puts the torque *T*<sub>em</sub> = *k i*, and the same torque pushes back on its `housing`. Everything *E*·*i* it takes from the circuit comes out as *T*<sub>em</sub>·*ω* on the shaft: it is lossless, so every loss has to be a part of its own.
+
+**`Inertia`** (`rotor`): the rotor's mass, *J*. It sits between the `emf` and the output `spline`, so the shaft torque `tau` is the air-gap torque less the losses and less what it takes to speed the rotor up.
+
+**`SignTorque`** (`friction`, `iron`): a constant torque against the direction of rotation, `tau_nominal` with a minus sign so that it brakes. A constant torque *T* costs the power *T ω*: *T*<sub>f</sub>ω is the bearings' friction, *K*<sub>i</sub>ω the iron loss, the second and third terms. `reg = Linear()` with `w0 = w_reg` fades the torque linearly to zero below 10 rad/s, 95 rpm, so the sign flip at standstill is smooth for the solver.
+
+**`QuadraticSpeedDependentTorque`** (`windage`): a torque in ω², here −*k*<sub>w</sub>ω·|ω|, so a power *k*<sub>w</sub>ω³: the air drag on the spinning rotor, the fourth term. `tau_nominal` is the torque at `w_nominal`; `TorqueDirection = false` makes it oppose the rotation in both directions.
+
+**`InverseSpeedDependentTorque`** (`constant_loss`): a torque in 1/ω, here −*C*/ω, so a power *C* at every speed, the last term. With `TorqueDirection = false` it opposes the rotation, and below `w0` it fades linearly to zero instead of growing without bound; `w0 = w_nominal = w_reg` keeps it continuous at 95 rpm.
+
+**`k`**: not chosen, derived. At base speed the shaft must give `T_max` after the losses take `tau_loss_base`, and the supply `V_nom` must equal *E* + *R i*: `k w_base + R (T_max + tau_loss_base) / k = V_nom`. `k` is the larger root of that quadratic, written as the formula, so if you change `R` or a loss, the machine still meets 320 N·m at 3283 rpm on 350 V.
+
+::::
 
 New component `DCMachineDyno` in `MyCar`:
 
@@ -140,111 +200,72 @@ New component `DCMachineDyno` in `MyCar`:
 | `dyno` | RotationalComponents › Sources › VelocitySource | — |
 | `mounts` | RotationalComponents › Components › Fixed | — |
 
-:::: info Given parts: the supply, the dyno and the loss torques
+:::: info Given parts: the supply and the dyno
 
 **`VoltageSource`** (`supply`): an ideal voltage source. It holds its pins `V` volts apart, whatever current flows, in either direction. Fed from a constant 350 V it stands in for the pack: a stiff supply with no converter between it and the machine, which is what step 02 adds.
 
 **`VelocitySource`** (`dyno`): the dynamometer. It forces its `spline` to the speed its input `w_ref` asks for, in rad/s, and absorbs or supplies whatever torque that takes. The `speed` ramp holds 3283 rpm for a second, ramps to 3600 rpm over ten and holds again.
 
-**`SignTorque`**, **`QuadraticSpeedDependentTorque`**, **`InverseSpeedDependentTorque`** (inside the machine): torques that depend only on the shaft speed, with a negative `tau_nominal` so they brake. Friction and iron loss are a constant torque, so their power grows as ω; windage is a torque in ω², a power in ω³; the constant loss is a torque *C*/ω, so its power is *C* at every speed. Below `w_reg`, 95 rpm, the constant-torque terms fade to zero, so a machine at standstill has no infinite drag.
-
 ::::
 
 ::: warning Use these names
 
-`p`, `n`, `spline`, `support`, `i`, `E`, `tau_em`, `tau`, `w`, `k`, `R`, `P_cu` and the other `P_` losses are the names the course library's `Vehicle.Electric.DCMachine` uses. Keep them: step 02 gives this machine a field input and drives it from the converter, and in step 04 the car takes either machine.
+`p`, `n`, `spline`, `support`, `i`, `E`, `tau_em`, `tau`, `w`, `k`, `R`, `P_cu` and the other `P_` losses are the names the course library's `Vehicle.Electric.DCMachine` uses, and the part names `resistor`, `inductor`, `emf` and the four losses are the ones the next steps reach into. Keep them: step 02 gives this machine a field input and drives it from the converter, and in step 04 the car takes either machine.
 
 :::
 
 #### Do this
 
+[![The DCMachine you build in steps 1–5: from p, the resistor R and the inductor L into the RotationalEMF, back to n; the EMF drives the shaft through the rotor inertia J to the spline; friction T_f, iron K_i, windage k_w ω² and the constant loss C/ω brake the shaft against the housing, the support port.](/lecture/lecture-04/img/02-dc-machine.svg)](/lecture/lecture-04/img/02-dc-machine.svg)
+
+The machine of steps 1–5, as the deck draws it: the armature along the top, the shaft to the right of the `emf`, the four losses braking it against the housing. The drawing puts the losses after the rotor; wires 7–10 put them on the `emf`'s rotor, which on a rigid shaft is the same. Below it, the bench of steps 6–10.
+
 [![The finished DCMachineDyno in Studio: voltage into supply on the left with ground below it; machine at the top right, p and n on its left edge, its shaft wired to dyno; speed into dyno below; the machine's and the dyno's supports to mounts.](/lecture/lecture-04/img/step01-dyno.png)](/lecture/lecture-04/img/step01-dyno.png)
 
-1. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `DCMachine`. Toggle to code (⇄), select everything with <kbd>Ctrl</kbd>+<kbd>A</kbd>, paste the block below and save.
+1. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `DCMachine`. **Ports are parts too:** click **+**, open `Dyad`, place two `Pin`s and two `Spline`s, and rename them `p`, `n`, `spline` and `support`: select each → **Edit Parameters** → the pencil next to its name. Drag them onto the thin blue outline: `p` high on the left edge, `n` low on the left edge, `spline` on the right edge, `support` on the bottom edge. On the dyno the supply wires to both pins on the machine's left.
+2. With nothing selected, click **Edit Parameters** → **Add parameter** for each of the thirteen parameters in the table, in that order, with the type `Real` and the unit from the table. Type the formulas into **Value** as they stand: `tau_loss_base` and `k` are computed from the parameters above them.
+3. Place the eight parts from the table, rename each to its **Name**, and set the values in its **Set** column. Search **+** for `RotationalEMF`, `SignTorque` (twice: `friction` and `iron`), `QuadraticSpeedDependentTorque` and `InverseSpeedDependentTorque`, and check the library path in each row. Lay them out as the circuit on the deck: the armature along the top, `emf` in the middle, `rotor` to its right toward `spline`, the four losses in a row below.
+4. Wire:
+   1. `p → resistor.p`
+   2. `resistor.n → inductor.p`
+   3. `inductor.n → emf.p`
+   4. `emf.n → n`
+   5. `emf.rotor → rotor.spline_a`
+   6. `rotor.spline_b → spline`
+   7. `friction.spline → emf.rotor`
+   8. `iron.spline → emf.rotor`
+   9. `windage.spline → emf.rotor`
+   10. `constant_loss.spline → emf.rotor`
+   11. `emf.housing → support`
+   12. `friction.support → support`
+   13. `iron.support → support`
+   14. `windage.support → support`
+   15. `constant_loss.support → support`
+
+   Wires 1–4 are the armature, *v* = *R i* + *L di/dt* + *E*. Wires 5–6 carry the air-gap torque through the rotor to the shaft. Wires 7–10 put every loss on the same shaft as the `emf`, and 11–15 send every reaction to the housing: the `emf` and the losses push on the stator as hard as on the rotor, and `support` is how the machine's mounts take that. Hover the ports before you wire them: on `emf`, `p` is at the top, `n` at the bottom, `rotor` on the right and `housing` on the left; on each loss part, `spline` is on the right and `support` at the bottom. Count the `connect` lines in code view: fifteen.
+5. Toggle to code (⇄). The GUI has placed the ports, parts, parameters and wires; what it cannot draw are the variables a later step reads and the equations that compute them. Paste the variables among the declarations, just above `relations`, and the relations at the end of `relations`, above the `metadata` block. Save.
 
    ::: code-group
 
-   ```txt [DCMachine]
-   component DCMachine
-     "Positive electrical pin."
-     p = Pin() {^p}
-     "Negative electrical pin."
-     n = Pin() {^n}
-     "Rotor shaft"
-     spline = Spline() {^spline}
-     "Housing"
-     support = Spline() {^support}
-     resistor = ElectricalComponents.Analog.Basic.Resistor(R = R) {^resistor}
-     inductor = ElectricalComponents.Analog.Basic.Inductor(L = L) {^inductor}
-     emf = ElectricalComponents.Analog.Basic.RotationalEMF(k = k) {^emf}
-     rotor = RotationalComponents.Components.Inertia(J = J) {^rotor}
-     friction = RotationalComponents.Sources.SignTorque(tau_nominal = -T_f, reg = RotationalComponents.Sources.Regularization.Linear(), w0 = w_reg) {^friction}
-     iron = RotationalComponents.Sources.SignTorque(tau_nominal = -K_i, reg = RotationalComponents.Sources.Regularization.Linear(), w0 = w_reg) {^iron}
-     windage = RotationalComponents.Sources.QuadraticSpeedDependentTorque(tau_nominal = -k_w * w_base ^ 2, w_nominal = w_base, TorqueDirection = false) {^windage}
-     constant_loss = RotationalComponents.Sources.InverseSpeedDependentTorque(tau_nominal = -C / w_reg, w_nominal = w_reg, w0 = w_reg, TorqueDirection = false) {^constant_loss}
-     "Peak shaft torque, Leaf ZE1"
-     parameter T_max::Torque = 320.0
-     "Base speed, 3283 rpm"
-     parameter w_base::AngularVelocity = 3283.0 * pi / 30.0
-     "Supply voltage at which the machine reaches base speed at full torque"
-     parameter V_nom::Voltage = 350.0
-     "Armature resistance"
-     parameter R::Resistance = 0.05
-     "Armature inductance, L/R = 10 ms"
-     parameter L::Inductance = 0.5e-3
-     "Rotor inertia"
-     parameter J::Inertia = 0.05
-     "Friction torque T_f; loss T_f w"
-     parameter T_f::Torque = 0.5
-     "Iron loss coefficient K_i; loss K_i w"
-     parameter K_i::Torque = 1.0
-     "Windage coefficient k_w; loss k_w w^3, 300 W at 10100 rpm [N.m.s2]"
-     parameter k_w::Real = 300.0 / (10100.0 * pi / 30.0) ^ 3
-     "Constant loss C"
-     parameter C::Power = 200.0
-     "Speed below which the speed-independent loss torques fade to zero"
-     parameter w_reg::AngularVelocity = 10.0
-     "Torque the losses take at base speed"
-     parameter tau_loss_base::Torque = T_f + K_i + k_w * w_base ^ 2 + C / w_base
-     "Torque and back-EMF constant KΦ, from k w_base + R (T_max + tau_loss_base) / k = V_nom"
-     parameter k::ElectricalTorqueConstant = (V_nom + sqrt(V_nom ^ 2 - 4.0 * w_base * R * (T_max + tau_loss_base))) / (2.0 * w_base)
-     "Voltage across the component (between pin p and pin n)."
+   ```txt [Variables]
      variable v::Voltage
-     "Armature current, into p"
      variable i::Current
-     "Back-EMF, E = k w"
      variable E::Voltage
-     "Electromagnetic torque, tau_em = k i"
      variable tau_em::Torque
-     "Shaft speed relative to the housing"
      variable w::AngularVelocity
-     "Torque delivered at the shaft"
      variable tau::Torque
-     "Electrical power into the terminals"
      variable P_elec::Power
-     "Mechanical power out of the shaft"
      variable P_mech::Power
-     "Copper loss, R i^2"
      variable P_cu::Power
-     "Friction loss"
      variable P_fric::Power
-     "Iron loss"
      variable P_iron::Power
-     "Windage loss"
      variable P_wind::Power
-     "Constant loss"
      variable P_const::Power
-     "Sum of the losses"
      variable P_loss::Power
-   relations
+   ```
+
+   ```txt [Relations]
      v = p.v - n.v
-     connect(p, resistor.p) {^id1}
-     connect(resistor.n, inductor.p) {^id2}
-     connect(inductor.n, emf.p) {^id3}
-     connect(emf.n, n) {^id4}
-     connect(emf.rotor, rotor.spline_a, friction.spline, iron.spline, windage.spline, constant_loss.spline) {^id5}
-     connect(rotor.spline_b, spline) {^id6}
-     connect(emf.housing, friction.support, iron.support, windage.support, constant_loss.support, support) {^id7}
      i = p.i
      E = emf.v
      tau_em = -emf.tau
@@ -258,39 +279,16 @@ New component `DCMachineDyno` in `MyCar`:
      P_wind = -windage.tau * w
      P_const = -constant_loss.tau * w
      P_loss = P_cu + P_fric + P_iron + P_wind + P_const
-   metadata {
-     "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/DCMachine.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1150, "rot": 0}]},
-     "_links": {
-       "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 120, "y": 450}], "E": -1}, {"S": 2, "M": [], "E": -1}, {"S": -1, "M": [{"x": 120, "y": 880}], "E": -2}, {"S": 3, "M": [{"x": 360, "y": 800}], "E": -2}, {"S": -2, "M": [], "E": -3}, {"S": -3, "M": [], "E": 6}, {"S": -3, "M": [], "E": -4}, {"S": 4, "M": [{"x": 545, "y": 800}], "E": -4}, {"S": 5, "M": [{"x": 720, "y": 800}, {"x": 720, "y": 880}], "E": -4}], "junctions": [{"x": 120, "y": 800}, {"x": 360, "y": 880}, {"x": 500, "y": 880}, {"x": 545, "y": 880}]}},
-       "id6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-       "id5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": -3}, {"S": -2, "M": [], "E": -4}, {"S": -3, "M": [{"x": 490, "y": 750}], "E": 4}, {"S": -3, "M": [{"x": 290, "y": 630}, {"x": 290, "y": 750}], "E": 3}, {"S": -4, "M": [{"x": 690, "y": 750}], "E": 5}, {"S": -4, "M": [{"x": 890, "y": 630}, {"x": 890, "y": 750}], "E": 6}], "junctions": [{"x": 620, "y": 450}, {"x": 620, "y": 630}, {"x": 490, "y": 630}, {"x": 690, "y": 630}]}},
-       "id4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 470, "y": 500}, {"x": 470, "y": 560}, {"x": 60, "y": 560}, {"x": 60, "y": 800}], "E": 2}]}},
-       "id3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 200}], "E": 2}]}},
-       "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-       "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-       "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 400, "x2": 1050, "y2": 500}}}},
-       "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
-       "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}, "diagram": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
-       "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": -50, "y1": 750, "x2": 50, "y2": 850}, "diagram": {"iconName": "neg", "x1": -50, "y1": 750, "x2": 50, "y2": 850}}}},
-       "resistor": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 150, "x2": 200, "y2": 250}}}},
-       "inductor": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 150, "x2": 350, "y2": 250}}}},
-       "emf": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 400, "x2": 550, "y2": 500}}}},
-       "rotor": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 400, "x2": 800, "y2": 500}}}},
-       "friction": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 700, "x2": 250, "y2": 800}}}},
-       "iron": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 700, "x2": 450, "y2": 800}}}},
-       "windage": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 700, "x2": 650, "y2": 800}}}},
-       "constant_loss": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 700, "x2": 850, "y2": 800}}}}
-     }
-   }
-   end
    ```
 
    :::
 
-   `p` and `n` are the electrical pins, both on the machine's left edge, and `v = p.v - n.v` is its terminal voltage. The armature is the chain `p → resistor → inductor → emf → n`. The `emf` turns current into torque on its `rotor` and speed into voltage, both through `k`. The rotor inertia and the four loss parts all sit on the `emf`'s rotor and push back against the `support`, the housing. `k` is written as the formula it comes from, so if you change `R` or a loss, the machine still meets 320 N·m at 3283 rpm on 350 V.
+   The first six lines name what the parts already compute: the terminal voltage, the current into `p`, the back-EMF, the air-gap torque, the shaft speed and the torque the shaft delivers. A pin's or a spline's flow counts positive *into* the part, so the torque the machine gives at `spline` is `-spline.tau`, and the torque the `emf` puts on the rotor is `-emf.tau`. The last lines are the deck's loss formula, one term per part: the resistor's *v*·*i* is the copper loss, and each loss torque times the speed is its power, with a minus sign because the torque brakes. Their sum `P_loss` closes the balance: in steady state `P_elec = P_mech + P_loss`.
 
-2. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `DCMachineDyno`. With nothing selected, click **Edit Parameters** → **Add parameter** three times for `V`, `rpm_start` and `rpm_end`. Place the seven blocks from the table, rename each to its **Name** and set the values in its **Set** column. Searching **+** for `DCMachine` lists the course library's `HandsOn04` and `Vehicle › Electric` machines first: drag the one under `MyCar`. Each block lands with a default name (`constant1`, `voltagesource`, `dcmachine`, …), so rename all seven.
-3. Wire:
+   Your machine shows as a plain box on the dyno, not with the course library's machine icon as in the picture: the icon comes with the **Fell behind?** code only.
+
+6. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `DCMachineDyno`. With nothing selected, click **Edit Parameters** → **Add parameter** three times for `V`, `rpm_start` and `rpm_end`. Place the seven blocks from the table, rename each to its **Name** and set the values in its **Set** column. Searching **+** for `DCMachine` lists the course library's `HandsOn04` and `Vehicle › Electric` machines first: drag the one under `MyCar`. Each block lands with a default name (`constant1`, `voltagesource`, `dcmachine`, …), so rename all seven.
+7. Wire:
    - `voltage.y → supply.V`
    - `supply.p → machine.p`
    - `machine.n → supply.n`, and `supply.n → ground.g`
@@ -299,7 +297,7 @@ New component `DCMachineDyno` in `MyCar`:
    - `machine.support → mounts.spline`, and `dyno.support → mounts.spline`
 
    Click an empty spot of the canvas between two wires: right after a wire is drawn, the next drag can be taken as a click and draw nothing. Count the `connect` lines in code view: eight.
-4. <Badge type="tip" text="New analysis" /> Toggle to code. Add these two lines in the `relations` section, so that the dyno's angle and the armature current start at zero:
+8. <Badge type="tip" text="New analysis" /> Toggle to code. Add these two lines in the `relations` section, so that the dyno's angle and the armature current start at zero:
 
    ```txt
    initial dyno.phi = 0
@@ -319,7 +317,7 @@ New component `DCMachineDyno` in `MyCar`:
    ```
 
    `tstops` lands the solver on both corners of the ramp. The current starts at zero and reaches its 332 A within 50 ms: the armature's time constant is *L*/*R* = 10 ms.
-5. Click ▷ **Run Analysis → DCMachineDynoTransient** once, then plot the torque-speed curve, and check that the copper loss is *I*²*R*:
+9. Click ▷ **Run Analysis → DCMachineDynoTransient** once, then plot the torque-speed curve, and check that the copper loss is *I*²*R*:
 
    ```julia
    using Plots; plotly()
@@ -331,7 +329,7 @@ New component `DCMachineDyno` in `MyCar`:
    ```
 
    Points 1 to 100 are the first second, where the current is still rising from zero, so the curve starts at point 101, at *t* = 1 s.
-6. Lower the supply to 200 V, and look at the current the machine draws at 1500 rpm:
+10. Lower the supply to 200 V, and look at the current the machine draws at 1500 rpm:
 
    ```julia
    r = MyCar.DCMachineDynoTransient(V = 200.0, rpm_start = 1500.0, rpm_end = 2200.0);
@@ -355,7 +353,134 @@ Commit: **Source Control** → message `Step 01: machine` → **Commit** → **S
 
 :::: warning Fell behind?
 
-Paste `DCMachine` from step 1 of **Do this** above. Then right-click `MyCar` → **Add Component**, name it `DCMachineDyno`, toggle to code (⇄) and paste this over its contents.
+Right-click `MyCar` → **Add Component**, name it `DCMachine`, toggle to code (⇄) and paste this over its contents. The `{^…}` tags and the `metadata` block lay the diagram out as the deck's circuit and give the machine the course library's icon.
+
+::: code-group
+
+```txt [DCMachine]
+component DCMachine
+  "Positive electrical pin."
+  p = Pin() {^p}
+  "Negative electrical pin."
+  n = Pin() {^n}
+  "Rotor shaft"
+  spline = Spline() {^spline}
+  "Housing"
+  support = Spline() {^support}
+  resistor = ElectricalComponents.Analog.Basic.Resistor(R = R) {^resistor}
+  inductor = ElectricalComponents.Analog.Basic.Inductor(L = L) {^inductor}
+  emf = ElectricalComponents.Analog.Basic.RotationalEMF(k = k) {^emf}
+  rotor = RotationalComponents.Components.Inertia(J = J) {^rotor}
+  friction = RotationalComponents.Sources.SignTorque(tau_nominal = -T_f, reg = RotationalComponents.Sources.Regularization.Linear(), w0 = w_reg) {^friction}
+  iron = RotationalComponents.Sources.SignTorque(tau_nominal = -K_i, reg = RotationalComponents.Sources.Regularization.Linear(), w0 = w_reg) {^iron}
+  windage = RotationalComponents.Sources.QuadraticSpeedDependentTorque(tau_nominal = -k_w * w_base ^ 2, w_nominal = w_base, TorqueDirection = false) {^windage}
+  constant_loss = RotationalComponents.Sources.InverseSpeedDependentTorque(tau_nominal = -C / w_reg, w_nominal = w_reg, w0 = w_reg, TorqueDirection = false) {^constant_loss}
+  "Peak shaft torque, Leaf ZE1"
+  parameter T_max::Torque = 320.0
+  "Base speed, 3283 rpm"
+  parameter w_base::AngularVelocity = 3283.0 * pi / 30.0
+  "Supply voltage at which the machine reaches base speed at full torque"
+  parameter V_nom::Voltage = 350.0
+  "Armature resistance"
+  parameter R::Resistance = 0.05
+  "Armature inductance, L/R = 10 ms"
+  parameter L::Inductance = 0.5e-3
+  "Rotor inertia"
+  parameter J::Inertia = 0.05
+  "Friction torque T_f; loss T_f w"
+  parameter T_f::Torque = 0.5
+  "Iron loss coefficient K_i; loss K_i w"
+  parameter K_i::Torque = 1.0
+  "Windage coefficient k_w; loss k_w w^3, 300 W at 10100 rpm [N.m.s2]"
+  parameter k_w::Real = 300.0 / (10100.0 * pi / 30.0) ^ 3
+  "Constant loss C"
+  parameter C::Power = 200.0
+  "Speed below which the speed-independent loss torques fade to zero"
+  parameter w_reg::AngularVelocity = 10.0
+  "Torque the losses take at base speed"
+  parameter tau_loss_base::Torque = T_f + K_i + k_w * w_base ^ 2 + C / w_base
+  "Torque and back-EMF constant KΦ, from k w_base + R (T_max + tau_loss_base) / k = V_nom"
+  parameter k::ElectricalTorqueConstant = (V_nom + sqrt(V_nom ^ 2 - 4.0 * w_base * R * (T_max + tau_loss_base))) / (2.0 * w_base)
+  "Voltage across the component (between pin p and pin n)."
+  variable v::Voltage
+  "Armature current, into p"
+  variable i::Current
+  "Back-EMF, E = k w"
+  variable E::Voltage
+  "Electromagnetic torque, tau_em = k i"
+  variable tau_em::Torque
+  "Shaft speed relative to the housing"
+  variable w::AngularVelocity
+  "Torque delivered at the shaft"
+  variable tau::Torque
+  "Electrical power into the terminals"
+  variable P_elec::Power
+  "Mechanical power out of the shaft"
+  variable P_mech::Power
+  "Copper loss, R i^2"
+  variable P_cu::Power
+  "Friction loss"
+  variable P_fric::Power
+  "Iron loss"
+  variable P_iron::Power
+  "Windage loss"
+  variable P_wind::Power
+  "Constant loss"
+  variable P_const::Power
+  "Sum of the losses"
+  variable P_loss::Power
+relations
+  v = p.v - n.v
+  connect(p, resistor.p) {^id1}
+  connect(resistor.n, inductor.p) {^id2}
+  connect(inductor.n, emf.p) {^id3}
+  connect(emf.n, n) {^id4}
+  connect(emf.rotor, rotor.spline_a, friction.spline, iron.spline, windage.spline, constant_loss.spline) {^id5}
+  connect(rotor.spline_b, spline) {^id6}
+  connect(emf.housing, friction.support, iron.support, windage.support, constant_loss.support, support) {^id7}
+  i = p.i
+  E = emf.v
+  tau_em = -emf.tau
+  w = emf.w
+  tau = -spline.tau
+  P_elec = v * i
+  P_mech = tau * w
+  P_cu = resistor.v * resistor.i
+  P_fric = -friction.tau * w
+  P_iron = -iron.tau * w
+  P_wind = -windage.tau * w
+  P_const = -constant_loss.tau * w
+  P_loss = P_cu + P_fric + P_iron + P_wind + P_const
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/DCMachine.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1150, "rot": 0}]},
+  "_links": {
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 120, "y": 450}], "E": -1}, {"S": 2, "M": [], "E": -1}, {"S": -1, "M": [{"x": 120, "y": 880}], "E": -2}, {"S": 3, "M": [{"x": 360, "y": 800}], "E": -2}, {"S": -2, "M": [], "E": -3}, {"S": -3, "M": [], "E": 6}, {"S": -3, "M": [], "E": -4}, {"S": 4, "M": [{"x": 545, "y": 800}], "E": -4}, {"S": 5, "M": [{"x": 720, "y": 800}, {"x": 720, "y": 880}], "E": -4}], "junctions": [{"x": 120, "y": 800}, {"x": 360, "y": 880}, {"x": 500, "y": 880}, {"x": 545, "y": 880}]}},
+    "id6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": -3}, {"S": -2, "M": [], "E": -4}, {"S": -3, "M": [{"x": 490, "y": 750}], "E": 4}, {"S": -3, "M": [{"x": 290, "y": 630}, {"x": 290, "y": 750}], "E": 3}, {"S": -4, "M": [{"x": 690, "y": 750}], "E": 5}, {"S": -4, "M": [{"x": 890, "y": 630}, {"x": 890, "y": 750}], "E": 6}], "junctions": [{"x": 620, "y": 450}, {"x": 620, "y": 630}, {"x": 490, "y": 630}, {"x": 690, "y": 630}]}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 470, "y": 500}, {"x": 470, "y": 560}, {"x": 60, "y": 560}, {"x": 60, "y": 800}], "E": 2}]}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 200}], "E": 2}]}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 400, "x2": 1050, "y2": 500}}}},
+    "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
+    "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}, "diagram": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+    "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": -50, "y1": 750, "x2": 50, "y2": 850}, "diagram": {"iconName": "neg", "x1": -50, "y1": 750, "x2": 50, "y2": 850}}}},
+    "resistor": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 150, "x2": 200, "y2": 250}}}},
+    "inductor": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 150, "x2": 350, "y2": 250}}}},
+    "emf": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 400, "x2": 550, "y2": 500}}}},
+    "rotor": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 400, "x2": 800, "y2": 500}}}},
+    "friction": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 700, "x2": 250, "y2": 800}}}},
+    "iron": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 700, "x2": 450, "y2": 800}}}},
+    "windage": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 700, "x2": 650, "y2": 800}}}},
+    "constant_loss": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 700, "x2": 850, "y2": 800}}}}
+  }
+}
+end
+```
+
+:::
+
+Then right-click `MyCar` → **Add Component**, name it `DCMachineDyno`, toggle to code (⇄) and paste this over its contents.
 
 ::: code-group
 
