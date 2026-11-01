@@ -22,7 +22,63 @@ the machine in its rotating frame, and the other machines in depth are in the ex
 routeAlias: brushless
 ---
 
-## Why brushless
+## Why brushless (1/2): turn it inside out
+
+<div class="grid grid-cols-2 gap-4">
+<div>
+
+![Cross-section of a two-pole brushed DC machine. The housing carries two permanent magnets, N on the left and S on the right. Inside the air gap the armature has twelve slots: the conductors under the N pole carry current into the page, those under the S pole out of it, the two at top and bottom are being reversed; the torque is counterclockwise. Heat marks sit in the rotor. An inset shows the commutator further along the shaft: twelve copper segments with a carbon brush at top (+) and bottom (−), the sliding contacts circled.](/diagrams/03-brushed-cut.svg)
+
+</div>
+<div>
+
+![Cross-section of a two-pole brushless DC machine at the same scale and orientation. The water-cooled housing holds the stator iron with six slots, labeled A+, C−, B+, A−, C+, B− around the bore; at this step current flows into phase A and out of phase B, so the left slots carry current into the page and the right slots out of it, phase C is off. The rotor carries surface magnets, N on the left and S on the right; the torque is counterclockwise. Three Hall sensors H1 to H3 sit 120 degrees apart at the bore and report the rotor position to an inverter, which drives the leads A, B and C from the pack. Heat arrows run from the stator slots into the housing; no sliding contact.](/diagrams/03-brushless-cut.svg)
+
+</div>
+</div>
+
+Same scale, same orientation: the magnets and the windings swap places, and the commutator becomes
+an inverter.
+
+<!--
+Two cuts through two machines, drawn at the same scale and the same way round: two poles each, N on
+the left, S on the right, and the torque counterclockwise in both.
+
+Start on the left, the brushed machine of the last section. On the outside is the housing, which
+also carries the magnetic flux from one pole to the other. On it sit the two permanent magnets, the
+stator. Inside, across a narrow air gap, the armature: a rotor of iron with twelve slots, and a
+conductor in each. The current comes in through the carbon brush at the top of the inset, which is
+the commutator, further along the same shaft. The commutator is a ring of copper segments, each
+joined to a coil end, and the brushes press on it from top and bottom. It routes the current so that
+every conductor under the N pole carries it into the page and every conductor under the S pole
+carries it out. The field crosses from N to S, so the left conductors are pushed down and the right
+ones up, and the rotor turns counterclockwise, exactly the force on a wire from the last section.
+The two conductors at the top and the bottom are the ones being turned around: their segments are
+passing under the brushes right now. Two things to look for. The heat: it is made in that winding,
+deep inside the rotor, and to leave it must cross the air gap. And the red circles: the brushes slide
+on the turning commutator, so they rub, wear and spark.
+
+Now the right-hand cut, and swap the two parts. The magnets have moved onto the rotor, still N on
+the left and S on the right. The windings have moved into the stator: six slots, two for each of
+three phases, A, B and C, each phase a coil whose two sides sit opposite each other, A plus and A
+minus. At the moment drawn, the inverter drives current into phase A and out of phase B, and phase C
+rests. So the two slots on the left carry current into the page and the two on the right out of it,
+the same pattern as before, only now in the stator. The force on those conductors pushes on the
+stator, and its reaction turns the rotor counterclockwise. After sixty degrees of rotation the
+inverter moves on to the next pair of phases; it knows when because three Hall sensors, a third of
+a turn apart at the bore, read the magnets passing. That is the job the commutator did, done by
+electronics; the inverter itself is section 05.
+
+The two notes at the bottom are the reason electric cars use this. The heat is now made in the
+stator winding, right against the housing, which can carry a water jacket, so it has a short way
+out. And nothing slides: only cables leave the stator.
+-->
+
+---
+routeAlias: bldc
+---
+
+## Why brushless (2/2)
 
 <div class="grid grid-cols-2 gap-8">
 <div>
@@ -55,16 +111,10 @@ by electronics: an inverter, switching the stator currents in step with the roto
 </div>
 
 <!--
-Why do electric cars use brushless machines? Start on the left, with the brushed machine of the last
-section. Its commutator is a mechanical switch: carbon brushes slide on it and reverse each coil's
-current as the coil passes the poles, so that the torque keeps its direction. The deck lists the
-price: friction between the brushes and the commutator, brushes that wear out, and heat made in the
-rotor, where it is hard to remove.
-
-So turn the machine inside out. Put the magnets on the rotor and the windings in the stator, where
-the heat is easier to take away. Now nothing turns the current around mechanically any more, so
-electronics must do it: an inverter, switching the stator currents in step with the rotor's
-position. The inverter is section 05.
+The same comparison in words, to keep. On the left, the price of the brushed machine: friction
+between brushes and commutator, brushes that wear out, and heat made in the rotor, where it is hard
+to remove. Turning it inside out pays that price off, and the inverter takes over the commutator's
+work, switching the stator currents in step with the rotor's position.
 
 On the right, the deck's brushless DC machine, BLDC for short. Hall sensors tell the inverter where
 the rotor is. The phases are switched in blocks, so the back-EMF and the currents have a trapezoidal
