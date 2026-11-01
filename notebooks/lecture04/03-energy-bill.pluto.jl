@@ -296,6 +296,66 @@ let
     ratio narrows.
     """)
 end
+# ╔═╡ 48163d2d-0340-48a4-8d7e-4830bfb92543
+md"""
+## 5. In the cold
+
+The bill above carries 300 W of auxiliaries: a car on a test cycle with the climate control off.
+In winter the cabin heater joins them. The same car on the same cycle with `P_aux` raised to a
+measured heater power, everything else unchanged:
+
+- **2 kW**, a warm cabin at about −7 °C to −10 °C: ADAC measured 1.5–2 kW to hold +20 °C at
+  −10 °C (seven cars, 2022), and AAA's 2018 Leaf at −7 °C used 1.6–2.8 kW more with the heater
+  on (derived from AAA 2019, at the battery);
+- **5 kW**, a resistive (PTC) heater warming a cold cabin: Argonne measured 2.5–5.2 kW in a
+  2011/12 Leaf on a city cycle at −7 °C (ANL 2012).
+
+Only the heater changes here. A cold pack's higher resistance, denser air and stiffer tires
+cost more again; none of them is in the model.
+"""
+
+# ╔═╡ f0e913e8-bb65-418c-beab-9f050b70dc84
+COLD_LOADS = [("test cycle, climate off", 300.0), ("warm cabin, about −7 °C", 2000.0),
+    ("resistive heater warming up", 5000.0)];
+
+# ╔═╡ d74a167a-f59e-49c2-8f70-865eac9ae86b
+cold = [(; name, P, b = energy_bill(; P_aux = P, v_fade)) for (name, P) in COLD_LOADS];
+
+# ╔═╡ 49a07b58-ec4c-4e7c-bdb4-1ee50e41e835
+cold_plot = let
+    Whkm = [c.b.E.dc / c.b.km * 1000 for c in cold]
+    names = ["$(round(Int, c.P)) W: $(c.name)" for c in cold]
+    p = bar(1:length(cold), Whkm; xticks = (1:length(cold), names),
+        color = [1, :darkorange, :firebrick], label = "", bar_width = 0.55, size = (960, 420),
+        ylabel = "at the battery terminals [Wh/km]",
+        title = "WLTC with the auxiliaries at a cabin heater's power")
+    annotate!(p, [(k, v + 4, text("$(round(v; digits = 1)) Wh/km", 10, :bottom))
+                  for (k, v) in enumerate(Whkm)])
+    ylims!(p, 0, 1.2 * maximum(Whkm))
+    p
+end
+
+# ╔═╡ f1e07c11-00d4-49e0-9f08-6128d9a30f60
+let
+    r1(x) = round(x; digits = 1)
+    base = cold[1].b.E.dc / cold[1].b.km * 1000
+    rows = map(cold) do c
+        w = c.b.E.dc / c.b.km * 1000
+        aux = c.b.E.aux / c.b.km * 1000
+        "| $(c.name) | $(round(Int, c.P)) | $(r1(aux)) | $(r1(w)) | +$(round(Int, 100 * (w / base - 1))) | $(round(Int, 40e3 / w)) |"
+    end
+    Markdown.parse("""
+    | auxiliaries | P_aux [W] | auxiliaries [Wh/km] | at the terminals [Wh/km] | vs 300 W [%] | range on 40 kWh [km] |
+    |:---|---:|---:|---:|---:|---:|
+    $(join(rows, "\n"))
+
+    A heater's power is per hour, not per kilometer: over the WLTC's 23.3 km in 30 minutes,
+    every kilowatt adds about 21 Wh/km. The range column is the pack's 40 kWh over the bill,
+    my arithmetic, with no reserve: it compares the rows, it is not a range forecast. AAA's
+    five cars at −7 °C lost 41 % of their range with the heater on.
+    """)
+end
+
 
 # ╔═╡ Cell order:
 # ╟─b305a5e5-c273-4a58-ae71-75e37ea34a10
@@ -320,3 +380,8 @@ end
 # ╟─de7086b7-0f27-49da-bb95-442cf9c86f0c
 # ╟─6d8fa9f3-d715-459a-b96c-a71f5c19e9b0
 # ╟─97a2ec88-3835-4c19-a464-92d68c1542cb
+# ╟─48163d2d-0340-48a4-8d7e-4830bfb92543
+# ╠═f0e913e8-bb65-418c-beab-9f050b70dc84
+# ╟─d74a167a-f59e-49c2-8f70-865eac9ae86b
+# ╟─49a07b58-ec4c-4e7c-bdb4-1ee50e41e835
+# ╟─f1e07c11-00d4-49e0-9f08-6128d9a30f60

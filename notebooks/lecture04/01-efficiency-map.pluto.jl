@@ -330,6 +330,77 @@ let
     """)
 end
 
+# ╔═╡ 1ebd6f32-7ab3-4dc5-8ee9-17655b1a69f8
+md"""
+### Same power, more speed
+
+A constant power `P` is the hyperbola `T = P/ω` on the map. Along it, more speed means less
+torque, less current and less copper loss (`∝ T²`), until the iron loss and windage, which grow
+with speed, take over. The lines below are 10, 30 and 60 kW, and the right panel reads the
+combined efficiency along each from the swept map.
+"""
+
+# ╔═╡ 43091b5a-ade4-4514-9cc3-0ea13c86d4a7
+POWER_LINES = [10e3, 30e3, 60e3];
+
+# ╔═╡ f6e94320-5ac6-422b-a7bf-2dbc198dd1e4
+power_lines = map(POWER_LINES) do P
+    n = collect(500.0:50.0:RPM_MAX)
+    T = P ./ (n .* pi ./ 30)
+    # Stay a few percent inside the envelope, where the swept map is interpolated, not extrapolated.
+    keep = [T[k] <= 0.97 * emap.tau_max[argmin(abs.(emap.rpm .- n[k]))] for k in eachindex(n)]
+    n, T = n[keep], T[keep]
+    (; P, n, T, eta = [100 * eta_at(emap, n[k], T[k]) for k in eachindex(n)])
+end;
+
+# ╔═╡ 1373a93a-a243-410e-a319-fc5b49123802
+power_lines_plot = let
+    p = plot(layout = (1, 2), size = (1240, 520), legend = false)
+    keep = emap.torque .>= 0
+    map_panel!(p, 1, collect(emap.rpm), collect(emap.torque[keep]), 100 .* emap.eta[keep, :];
+        mask = envelope_mask(emap)[1:1], colorbar = false, label_y = k -> 265.0 - 22.0 * (k - 1))
+    plot!(p[1], emap.rpm, emap.tau_max; color = :black, lw = 2)
+    colors = [:white, :orangered, :deepskyblue]
+    for (l, c) in zip(power_lines, colors)
+        plot!(p[1], l.n, l.T; color = c, lw = 3)
+        k = findfirst(>=(8500.0), l.n)
+        annotate!(p[1], [(l.n[k], l.T[k] + 9, text("$(round(Int, l.P / 1e3)) kW", 11, c, :bottom))])
+        plot!(p[2], l.n, l.eta; color = c == :white ? :black : c, lw = 2.5)
+        j = argmax(l.eta)
+        scatter!(p[2], [l.n[j]], [l.eta[j]]; color = c == :white ? :black : c, ms = 5)
+        annotate!(p[2], [(l.n[end], l.eta[end] - 0.4,
+            text("$(round(Int, l.P / 1e3)) kW", 11, c == :white ? :black : c, :right, :top))])
+    end
+    xlims!(p[1], 0, RPM_MAX); ylims!(p[1], 0, 330)
+    plot!(p[1]; xlabel = "machine speed [rpm]", ylabel = "shaft torque [N·m]",
+        title = "constant power T = P/ω over the map")
+    plot!(p[2]; xlabel = "machine speed [rpm]", ylabel = "combined efficiency [%]",
+        xlims = (0, RPM_MAX), ylims = (80, 97), title = "efficiency along each line (dot: best)")
+    p
+end
+
+# ╔═╡ 7d823ac7-daa1-4d69-8ef0-227245098355
+let
+    r1(x) = round(x; digits = 1)
+    rows = map(power_lines) do l
+        at(n) = l.eta[argmin(abs.(l.n .- n))]
+        j = argmax(l.eta)
+        "| $(round(Int, l.P / 1e3)) | $(r1(at(l.n[1]))) at $(round(Int, l.n[1])) | $(r1(at(2000))) | $(r1(at(4000))) | $(r1(at(8000))) | $(r1(l.eta[j])) at $(round(Int, l.n[j])) |"
+    end
+    Markdown.parse("""
+    | power [kW] | lowest speed reached [%] | 2000 rpm [%] | 4000 rpm [%] | 8000 rpm [%] | best [%] at rpm |
+    |---:|---:|---:|---:|---:|---:|
+    $(join(rows, "\n"))
+
+    At a given power the machine is most efficient well above its lowest speed: less torque
+    means less current and a fraction of the copper loss. Past the best speed the iron loss and
+    windage, which grow with speed, take it back slowly. Torque, not power, sets a machine's size
+    (its current and its magnetic loading), so a fast machine behind a reduction delivers the same
+    power from a smaller, lighter machine that runs in the efficient middle of its map: the Leaf
+    turns up to about 10 000 rpm through 8.193.
+    """)
+end
+
 # ╔═╡ 30815e0e-f523-4902-b831-6a18a637c754
 md"""
 ## 3. Where WLTC puts the machine
@@ -510,6 +581,11 @@ end
 # ╟─9de5f689-a602-4f10-ae56-c99c8db187e3
 # ╠═46c2c26d-dbd4-4653-be5d-593b3443e24a
 # ╟─a31a4b57-277c-41a5-840e-26bc86e070fa
+# ╟─1ebd6f32-7ab3-4dc5-8ee9-17655b1a69f8
+# ╠═43091b5a-ade4-4514-9cc3-0ea13c86d4a7
+# ╟─f6e94320-5ac6-422b-a7bf-2dbc198dd1e4
+# ╟─1373a93a-a243-410e-a319-fc5b49123802
+# ╟─7d823ac7-daa1-4d69-8ef0-227245098355
 # ╟─30815e0e-f523-4902-b831-6a18a637c754
 # ╠═0b3fd999-30a8-4d5d-ae5a-1a2bb062a3de
 # ╟─7fa3b4c5-d987-42f0-9fb5-436efd9aab73
