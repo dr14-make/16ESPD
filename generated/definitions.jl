@@ -231,5 +231,7 @@ end
 
 include("DriverCommands_definition.jl")
 include("Hello_definition.jl")
+include("PlanarBEVRealtimeDrive_definition.jl")
+include("RealtimeDrive_definition.jl")
 include("SignalGain_definition.jl")
 include("World_definition.jl")

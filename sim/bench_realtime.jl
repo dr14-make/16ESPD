@@ -13,9 +13,9 @@ println("compiled in $(round(t_build, digits = 1)) s; ",
 
 prob = ODEProblem(sys, [], (0.0, 1e6))
 integ = init(prob, Rodas5P(); dtmax = 0.005, save_everystep = false)
-set_throttle! = setp(integ, sys.throttle)
-set_brake! = setp(integ, sys.brake)
-set_steer! = setp(integ, sys.steer)
+set_throttle!(i, v) = VehicleSystemsComponents.set_driver_commands!(i, sys; throttle = v)
+set_brake!(i, v) = VehicleSystemsComponents.set_driver_commands!(i, sys; brake = v)
+set_steer!(i, v) = VehicleSystemsComponents.set_driver_commands!(i, sys; steer = v)
 speed = getu(integ, sys.motion.vx)
 yaw = getu(integ, sys.motion.r)
 torques = getu(integ, [sys.car.tau_fl, sys.car.tau_fr, sys.car.tau_rl, sys.car.tau_rr])

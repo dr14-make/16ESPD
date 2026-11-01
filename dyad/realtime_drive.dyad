@@ -1,0 +1,22 @@
+"Drives a model in wall-clock time and returns the recorded transient solution."
+partial analysis RealtimeDrive
+  extends Analysis
+  "Vehicle with a held driver command source"
+  model::Dyad.EmptyComponent = Dyad.EmptyComponent()
+  "Wall-clock drive length; zero runs until the window closes"
+  parameter duration::Time = 0
+  "Frame length"
+  parameter frame::Time = 0.016666667
+  "Solver step cap"
+  parameter dtmax::Time = 0.005
+  "Scripted driver without a window or controller"
+  parameter headless::Boolean = false
+end
+
+"Scripted planar BEV drive; override headless to drive interactively."
+analysis PlanarBEVRealtimeDrive
+  extends RealtimeDrive(duration = 3, headless = true)
+  model = Vehicle.Planar.PlanarBEVDrive(m = m)
+  "Vehicle mass"
+  parameter m::Mass = 1500
+end
