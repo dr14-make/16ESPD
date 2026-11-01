@@ -21,9 +21,10 @@ the DC-DC for the 12 volt network and the charger.
 One rule runs through this section, the same rule as in Lecture 2: never stack time scales. A
 switching edge lasts a microsecond; a WLTC lasts 1800 seconds. So the car carries the average
 converter of section 04, and the switching models run beside it, for a few milliseconds, to show
-what the average hides. The notebook regenerates three of the deck's figures from running models:
-the step-down chopper, the H-bridge and pulse-width modulation. The step-up chopper and the
-three-phase bridge stay diagrams.
+what the average hides. The step-down chopper, the step-up chopper and the H-bridge each come with
+an oscilloscope that replays traces exported from the library's switched models; the notebook
+regenerates the figures for the chopper's losses and for pulse-width modulation. The three-phase
+bridge stays a diagram.
 -->
 
 ---
@@ -174,7 +175,7 @@ routeAlias: buck
 
 ## The step-down chopper
 
-<div class="grid grid-cols-[1fr_1.25fr] gap-6 items-center">
+<div class="grid grid-cols-[1fr_1.35fr] gap-6 items-center">
 <div>
 
 ![Buck chopper: a 48 V supply, switch S, freewheeling diode D from ground to the switch node, inductor L, 0.7 Ω load. Switch on, the supply drives L; switch off, L keeps the current flowing through D. Average output d times V_in.](/diagrams/05-buck.svg)
@@ -182,7 +183,7 @@ routeAlias: buck
 </div>
 <div>
 
-![Three switching periods of the buck chopper in steady state: the supply current flows only while the switch is on (shaded), the diode current only while it is off, and the load current, their sum, is continuous with a small ripple.](/figures/05-buck-currents.svg)
+<Scope src="/scope/buck.json" :offset="['i_L']" :average="['v_out']" />
 
 </div>
 </div>
@@ -198,17 +199,30 @@ current through the inductor into the load. When it is off, the inductor keeps t
 because an inductor's current cannot stop suddenly, and the diode gives it a path up from ground.
 The average output is d times V in.
 
-On the right, the notebook's run of the library's `BuckChopper`, three switching periods in steady
-state at 20 kilohertz, so each period is 50 microseconds, and the time axis is in microseconds.
-Three panels, all in amperes. Top: the source current, through the switch. It flows only while the
-switch is on, in the shaded intervals. Middle: the diode current. It flows only while the switch is
-off. Bottom: the load current, their sum. It is continuous, with a small ripple: it rises while the
-switch is on and falls while it is off, around the average the duty sets.
+On the right, an oscilloscope. Its traces are not drawn by hand: they are a run of the library's
+`BuckChopper` model, exported and replayed; the line under the screen names the model and the
+script. Each period at 20 kilohertz is 50 microseconds, 2 and a half divisions at 20 microseconds
+per division, so the screen shows four periods. Four channels, one per band, each with its own scale
+at the bottom of the screen. Channel 1, yellow, is the gate: high while the switch is on. Channel 2,
+cyan, is the switch node, the top of the diode. While the switch is on it sits at the supply, 48
+volts; while it is off it drops just below zero, by the diode's forward drop, because the diode now
+carries the current. Channel 3, magenta, is the inductor current. This channel has its offset set,
+as you would on a real scope: the middle of its band is the value written next to its name, so a
+ripple of a few amperes on top of tens of amperes fills the band. Watch it ramp up while the gate
+is high and ramp down while it is low: it never stops, it only changes slope. Channel 4, green, is
+the output voltage across the load. There is no output capacitor, so it is the inductor current
+times 0.7 ohms, with the same ripple; its band starts at zero, and the readout gives its average.
 
-The line under the figures gives the design point: 48 volts down to 13 at 20 kilohertz, about 250
+The buttons under the screen switch the duty between a quarter, a half and three quarters. The
+scales stay fixed, so you can see the output move: it follows d times V in, a little below it. At d
+equal to one half the readout says 22.8 volts, against 24 for the ideal chopper. A larger duty
+keeps the gate high longer, holds the switch node at 48 volts longer, and lifts the inductor current
+and the output with it; the offset next to the inductor current moves up with each step.
+
+The line under the scope gives the design point: 48 volts down to 13 at 20 kilohertz, about 250
 watts. That is the kind of converter that feeds a 12 volt bus from a 48 volt mild-hybrid battery.
-The design point is assumed, not taken from a product. The duty is 0.3, so the textbook output would
-be 14.4 volts; the simulated output sits lower, at about 13, because of the diode's drop during the
+The design point is assumed, not taken from a product, and it sits between the scope's first two
+duties. Its duty is 0.3, so the textbook output would be 14.4 volts; the simulated output sits lower, at about 13, because of the diode's drop during the
 off time and the resistive drops. The diode is the library's exponential diode, 0.6 volts at 3.3
 amperes and 0.8 volts at 20 amperes, the deck's 0.6 volt diode.
 -->
@@ -303,31 +317,32 @@ routeAlias: boost
 
 ## The step-up chopper
 
-<div class="grid grid-cols-[1.1fr_1fr] gap-8 items-center">
-<div>
+<div class="grid grid-cols-[1fr_1.35fr] gap-6 items-center">
+<div class="diagram-short">
 
 ![Boost chopper: supply, inductor L, then a switch S from the node to ground and a diode D to the output capacitor C and the load. Switch on, L charges from the supply; switch off, L adds its voltage to the supply's. Average output V_in divided by 1 minus d.](/diagrams/05-boost.svg)
 
-</div>
-<div>
-
-The same three parts, rearranged. With the switch on, the inductor charges from the supply; with it
-off, the inductor's voltage **adds** to the supply's, through the diode into the capacitor:
+The same three parts, rearranged. Switch on, the inductor charges from the supply; switch off, its
+voltage **adds** to the supply's, through the diode into the capacitor:
 
 $$
 \overline{v}_{out} = \frac{V_{in}}{1 - d}
 $$
 
-Run backwards, a boost is a buck: one bidirectional converter does both.
+</div>
+<div>
 
-The Leaf has none: its inverter sits straight on the pack (ORNL).
+<Scope src="/scope/boost.json" :offset="['i_L']" :average="['v_out']" />
 
 </div>
 </div>
+
+Run backwards, a boost is a buck: one bidirectional converter does both. The Leaf has none: its
+inverter sits straight on the pack (ORNL).
 
 <!--
-The step-up chopper, or boost converter. This one is a diagram; the notebook has no switched boost
-model. It uses the same three parts, rearranged: the supply, then the inductor L; from the node
+The step-up chopper, or boost converter. On the left, the circuit. It uses the same three parts,
+rearranged: the supply, then the inductor L; from the node
 after the inductor, the switch S down to ground; and from that node the diode D to the output
 capacitor C and the load.
 
@@ -336,6 +351,27 @@ inductor stores energy. When the switch opens, the inductor's current has to go 
 path is through the diode into the capacitor. Now the inductor's voltage adds to the supply's, so
 the output sits above the supply. Averaged, the output voltage is V in divided by 1 minus d. A duty
 of one half doubles the voltage, and the closer d gets to 1, the higher the output.
+
+On the right, the oscilloscope, replaying a run of the library's switched `BoostChopper` model; the
+line under the screen names the model and the script; the supply is 48 volts. Channel 1, yellow,
+is the gate. Channel 2, cyan, is the switch node, the point between the inductor, the switch and
+the diode. While the switch is on it is held at ground; while it is off it jumps up to the output,
+plus the diode's drop, because the inductor is now pushing its current through the diode. Channel
+3, magenta, is the inductor current, with its offset set, so the band is centered on the value
+written next to its name. It ramps up while the gate is high, the whole supply voltage across the
+inductor, and ramps down while the gate is low, when the inductor gives its energy to the output.
+Channel 4, green, is the output voltage, with its band starting at zero and its average in the
+readout. It sits well above the supply, with a ripple: it sags while the switch is on, because then
+the capacitor alone feeds the load, and climbs back while the switch is off, when the inductor
+recharges it through the diode.
+
+Switch the duty with the buttons under the screen: a quarter, a half, three quarters. The scales
+stay fixed. A larger duty keeps the switch node at ground longer, the inductor current climbs
+higher, and the output rises: it follows V in over 1 minus d, a little below it because of the
+losses. At d equal to one half the readout says 93.1 volts, against 96 for the ideal converter. At
+three quarters the ideal would be 192 volts; the readout is lower, 181, because the losses grow
+with the current, and the inductor current is now around 70 amperes. The closer d comes to 1, the
+faster the output climbs, and the further the real converter falls short of the formula.
 
 Run it backwards, with the energy flowing from the high side to the low side, and a boost is a buck.
 So one bidirectional converter can do both.
@@ -350,7 +386,7 @@ routeAlias: h-bridge
 
 ## The H-bridge: DC to AC
 
-<div class="grid grid-cols-[1fr_1.25fr] gap-6 items-center">
+<div class="grid grid-cols-[1fr_1.35fr] gap-6 items-center">
 <div>
 
 ![H-bridge: four switches A, B (upper) and C, D (lower), each with a freewheeling diode, on a 350 V DC link; the load, 10 Ω plus 10 mH, between the midpoints a and b. A and D on gives plus V_dc across the load; B and C on gives minus V_dc.](/diagrams/05-h-bridge.svg)
@@ -358,7 +394,7 @@ routeAlias: h-bridge
 </div>
 <div>
 
-![H-bridge in square-wave operation: the output voltage switches between plus and minus 350 V every half cycle at 50 Hz, A and D on, then B and C; the load current rises and falls exponentially through 10 Ω and 10 mH.](/figures/05-hbridge-square.svg)
+<Scope src="/scope/hbridge.json" :channels="['v_ab', 'i_load']" />
 
 </div>
 </div>
@@ -374,12 +410,20 @@ the positive rail and b at the negative one, so the load sees plus 350 volts. Wi
 sees minus 350. The two switches of one leg must never be on together: that would short the pack.
 The diodes give the inductive current a path whenever its switch opens.
 
-On the right, the notebook's run of the library's `HBridge` in square-wave operation at 50 hertz,
-over two cycles, with time in milliseconds. Top: the output voltage in volts, jumping between plus
-and minus 350 every half cycle. The blue-shaded halves are A and D on, the red-shaded halves B and C
-on. Bottom: the load current in amperes. In each half cycle it climbs toward 350 volts over 10 ohms,
-35 amperes, with the load's time constant, L over R, 1 millisecond, so it rises and falls in
-exponential curves.
+On the right, the oscilloscope, replaying a run of the library's `HBridge` model, two cycles of 50
+hertz; the line under the screen names the model and the script. Channel 1, yellow, is the output
+voltage between a and b. In square-wave operation it jumps between plus and minus 350 every half
+cycle: plus while A and D are on, minus while B and C are on. Channel 2, cyan, is the load current.
+In each half cycle it climbs toward 350 volts over 10 ohms, 35 amperes, with the load's time
+constant, L over R, 1 millisecond, so it rises and falls in exponential curves, and it changes sign
+later than the voltage does: the inductance holds it back. The run starts from rest, so the first
+half cycle climbs from zero; after that the current swings between about plus and minus 35.
+
+The second button switches the same bridge to sine pulse-width modulation, with m equal to 0.8 and
+a 1 kilohertz carrier, on the same scales. Now the voltage is a train of pulses, between 0 and plus
+350 in the positive half cycle and between 0 and minus 350 in the negative one, wide near the peaks
+and narrow near the zero crossings. The current becomes nearly a sine with a small ripple. That is
+the next slide.
 
 That is the sentence under the figures: hold each pair on for half a cycle and you get a square
 wave, and the load's inductance rounds its current. It is the crudest AC. Its fundamental is the

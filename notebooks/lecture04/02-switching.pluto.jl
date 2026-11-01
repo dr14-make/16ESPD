@@ -35,17 +35,17 @@ md"""
 
 The car in this lecture carries an **average** converter: `V_out = d·V_in`, with no switching
 at all, because a WLTC run lasts 1800 s and a switching edge lasts a microsecond (plan S4: never
-stack time scales). This notebook puts the switching back, on two small circuits that run for a
+stack time scales). This notebook puts the switching back, on three small circuits that run for a
 few milliseconds beside the car, and regenerates deck 7's power-electronics slides from them:
 
 | section | deck 7 | model |
 |:---|:---|:---|
 | 1. Step-down chopper: ripple and losses | slide 28 | `Vehicle.Electric.BuckChopper` |
+| Step-up chopper | slide 29 | `Vehicle.Electric.BoostChopper` |
 | 2. H-bridge: square wave | slide 30 | `Vehicle.Electric.HBridge` |
 | 3. Pulse-width modulation and harmonics | slide 31 | `Vehicle.Electric.HBridge` |
 
-Slide 29 (the boost converter) and slide 32 (the three-phase bridge) have no switched model
-here; their figures are circuit diagrams and stay theory.
+Slide 32 (the three-phase bridge) has no switched model here and stays theory.
 
 Every number below is read from a simulation of the Dyad models shown.
 """
@@ -290,6 +290,39 @@ buck_currents_plot = let b = buck
             ylims = (-0.05ymax, ymax), xlims = (0, 3T * 1e6))
     end
     plot!(p[1]; title = "Buck chopper, three switching periods: switch on (shaded) and off")
+    xlabel!(p[3], "time [µs]")
+    p
+end
+
+# ╔═╡ e54ec97a-1988-46a6-abed-16b338aab68e
+md"""
+## Step-up chopper
+
+The boost stores energy in the inductor while the switch is on; the diode delivers
+it to the external DC-link capacitor while the switch is off. At 48 V, duty 0.5
+and 20 kHz the ideal mean is 96 V and ripple 12 A; drops and finite edges reduce both.
+"""
+
+# ╔═╡ 53849526-0aaa-43eb-80f9-2eb20707ad6c
+boost_currents_plot = let run = E4.BoostChopperTransient()
+    sol = run.sol
+    C = symbolic_container(run).chopper
+    T, d = 1 / 20e3, 0.5
+    t1, t2 = 6e-3 - 3T, 6e-3
+    rows = ((C.transistor.i, "switch [A]"), (C.diode.i, "diode [A]"),
+        (C.i_L, "inductor [A]"))
+    ymax = 1.15 * maximum(sol(range(t1, t2; length = 2001), idxs = C.i_L).u)
+    p = plot(layout = (3, 1), size = (960, 620), legend = false, link = :x)
+    for (k, (x, label)) in enumerate(rows)
+        t, y = trace(sol, x, t1, t2)
+        tt, yy = thin(t, y; tol = 0.01)
+        for j in 0:2
+            shade!(p[k], (((1 - d) / 2, (1 + d) / 2) .+ j) .* T .* 1e6..., -0.05ymax, ymax)
+        end
+        plot!(p[k], (tt .- t1) .* 1e6, yy; lw = 2.5, color = :steelblue, ylabel = label,
+            ylims = (-0.05ymax, ymax), xlims = (0, 3T * 1e6))
+    end
+    plot!(p[1]; title = "Boost chopper, three switching periods: switch on (shaded) and off")
     xlabel!(p[3], "time [µs]")
     p
 end
@@ -720,6 +753,8 @@ a drive cycle lasts half an hour.
 # ╠═196a08db-d2b8-447e-b9c3-940b7b4fd52f
 # ╟─73398ebf-b276-4178-be66-e692e172d0ae
 # ╠═8ed9e4a6-8f65-45ac-8521-c71c357f3f0b
+# ╟─e54ec97a-1988-46a6-abed-16b338aab68e
+# ╠═53849526-0aaa-43eb-80f9-2eb20707ad6c
 # ╟─fad8609c-7faf-4eea-9bc3-9f692a05130a
 # ╠═74ba3fc3-32d1-4cb7-88fa-784db089c260
 # ╟─47459729-3b43-454e-9068-1615e6fe2573

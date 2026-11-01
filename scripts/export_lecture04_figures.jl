@@ -32,6 +32,7 @@ const FIGURES = Dict(
     ],
     "02-switching.pluto.jl" => [
         "05-buck-currents" => :buck_currents_plot,
+        "05-boost-currents" => :boost_currents_plot,
         "05-buck-losses" => :buck_losses_plot,
         "05-buck-frequency" => :buck_frequency_plot,
         "05-faster-switch" => :faster_switch_plot,
