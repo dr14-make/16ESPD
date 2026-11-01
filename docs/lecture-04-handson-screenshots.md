@@ -49,6 +49,7 @@ The conventions for a re-capture:
 
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
+| `step03-battery.png` | `HandsOn04.Battery`, or a student's `Battery` built from the guide | Not captured yet. The battery's internal diagram: `p` on the left edge, `n` on the right, `SoC` on top; `cell` upright on the left with `ocv` (k = E) into its `V`; `cell.p` → `resistor` → `meter` along the top and from `meter.n` round to `p`; `n` along the bottom to `cell.n`; `meter.i` down into `counter` and `counter.y` up to `SoC`. |
 | `step03-battery-discharge.png` | `HandsOn04.BatteryDischarge` | `load_profile` into the top of `load`; `load` across `battery`, `p` to `p` on the left and `n` to `n` on the right; `battery.n` to `ground`, branching from the `n` wire at a junction dot; the battery's unconnected `SoC` output on top. Portrait, 413 × 633. |
 
 ## Step 04 — the car

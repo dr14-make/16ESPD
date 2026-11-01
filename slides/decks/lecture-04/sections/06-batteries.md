@@ -405,8 +405,10 @@ routeAlias: build-battery
 
 <img src="/img/lecture-04/step03-battery-discharge.png" class="mx-auto" style="max-height: 21rem" alt="The finished BatteryDischarge in Studio: load_profile into the top of load; load across battery, p to p on the left and n to n on the right; battery.n to ground."/>
 
-*New `Battery`: paste from the guide · new `BatteryDischarge`: parameter `I_load` 100 ·
-`load_profile` Step at 60 s → `load` CurrentSource across `battery` · `ground` ·
+*New `Battery` · ports `p`, `n`, `SoC` on top · 4 parameters `E`, `R0`, `Q_nom`, `SoC0` · 5
+parts: `ocv` Constant → `cell` VoltageSource → `resistor` → `meter` CurrentSensor, `counter`
+Integrator · 7 wires · in code: `v`, `i`, two relations · new `BatteryDischarge`: `I_load` 100,
+`load_profile` Step at 60 s → `load` CurrentSource across `battery`, `ground` ·
 `BatteryDischargeTransient`, 1860 s, tstops at 60 · ▷ once, then plot*
 
 [page: step 03](../lecture/lecture-04/#step-03) · reference `dyad/HandsOn04/BatteryDischarge.dyad`
@@ -437,11 +439,25 @@ Build 03: the battery. On the left, the finished bench in Studio. A step block n
 feeds the top of a current source named load. The load sits across the battery, p to p on the left
 and n to n on the right, and the battery's n goes to ground.
 
-The steps, in the italic line. First, a new component `Battery`: paste the code from the guide. It
-has two pins, p and n, and one output, SoC. Inside are the two equations of the last slides: v
-equals E minus R0 i, and the coulomb counter, the derivative of SoC equals minus i over Q nom. Its
-parameters are named E, R0, Q nom and SoC0 on purpose: the extra session's more detailed cell keeps
-those names and replaces this one without rewiring. Second, a new component `BatteryDischarge`, with
+The steps, in the italic line. First, a new component `Battery`, built in Studio like the machine.
+Its ports from the Dyad library: two pins, p on the left and n on the right, and a real output, SoC,
+on top. Four parameters with Add parameter: E, 350 volts; R0, 0.1 ohm; Q nom, typed as the formula
+40 kilowatt-hours over 350 volts, in coulombs; and SoC0, 0.9. They are named that way on purpose:
+the extra session's more detailed cell keeps those names and replaces this one without rewiring.
+
+Then five parts, one per term of the two equations of the last slides. A constant block, ocv, holds
+the number E, and a voltage source, cell, turns it into E volts. A resistor, R equals R0, takes R0 i
+off. A current sensor, meter, reads the current. And an integrator, counter, with gain minus one
+over Q nom and initial value SoC0, is the coulomb counter: the derivative of SoC equals minus i over
+Q nom. Seven wires. Five make the circuit, from n through the cell, the resistor and the meter out
+to p. Watch the sign on the last of those: the sensor measures the current from its p to its n, and
+its n is on the battery's p, so it reads the current leaving the battery into the load, the
+discharge current. That is why the counter's gain is negative. The other two wires feed the meter
+into the counter, and the counter out to SoC. Then toggle to code and type what the diagram cannot
+draw: two variables, v and i, and two relations, v equals p dot v minus n dot v, and i equals meter
+dot i. No initial line: the integrator starts at SoC0 by itself.
+
+Second, a new component `BatteryDischarge`, with
 one parameter, I load, 100 amperes. The load profile is a `Step` block that switches I load on at 60
 seconds. The load is an ideal current source: it forces exactly that current out of the battery's
 positive terminal, whatever the voltage, as a motor drive does when it is asked for a fixed torque.
