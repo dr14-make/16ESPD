@@ -87,11 +87,11 @@ If one of these moves, something changed the physics; find out what before conti
 
 ## Known issues, tracked in the library
 
-- **#140** `RegenBlend(abs_rule = true)` withdraws regen under ABS and the hard-stop benches use
-  it, but `PlanarBEVDrive` does not: in a hard stop below the 34 km/h corner the motor alone brakes
-  the front axle and turns the front wheels backward while the ABS holds the front friction brakes
-  at 0. `RegenBlend` also splits the friction remainder equally over four wheels. The HUD shows
-  regen beside friction so this is visible.
+- **#140 follow-up:** `PlanarBEVDrive` now uses `RegenBlend(abs_rule = true)` with
+  `BrakeControlUnit.front_active` wired to `blend.abs_active`, withdrawing regen under front ABS
+  as the hard-stop benches do. The coast/brake check no longer reverses the front wheels.
+  `RegenBlend` still splits the friction remainder equally over four wheels; the HUD shows regen
+  beside friction.
 - **#156** the planar ABS stop reached about 0.65 g; PR #162 recalibrates it to 26.5 m from
   80 km/h, about 0.95 g.
 - **#157** ESP rarely acts under ABS, and the car cannot be steered with both on.

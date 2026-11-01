@@ -737,6 +737,22 @@ notebooks, docs, `sim/`) was re-run and compared; everything not listed below ma
   braking observations, re-run (below 34 km/h `PlanarBEVDrive`, which has no ABS rule, turns
   the front wheels backward under regen alone); stale "not re-exported" notes; the Lecture 4
   guide's `RegenBlend` snippet, whose first docstring sat on the wrong line.
-- **Open:** `PlanarBEVLowGripStopTransient()` and `HandsOn04.BEVLowGripStopTransient()` still
-  default to `stop = 28` and fail `Unstable` at 15.835 s with withdrawal on, after stopping at
-  8.165 s; the guide tells students to pass `stop = 12`.
+- **Resolved in the regen/ABS follow-up:** `PlanarBEVLowGripStopTransient()` and
+  `HandsOn04.BEVLowGripStopTransient()` default to `stop = 12`, covering both withdrawal settings
+  without the prolonged-parking failure at 15.835 s. The guide no longer needs an override.
+  `PlanarBEVDrive` now enables the ABS rule and receives `front_active` through an opt-in
+  `BrakeControlUnit` output; Lecture 3 benches retain the default ECU interface.
+
+Follow-up verification (`dyad-cli@3.5.0`, `julia +dyad-3.5.0`): low-grip defaults all reach 12 s
+with `Success`. Library ON/OFF: stop at 8.165/8.890 s, 87.594615426/95.098241553 m;
+HandsOn ON/OFF: 8.170/8.890 s, 87.604052512/95.097737533 m. No calibration changed.
+The unchanged `sim/check_coast_brake.jl` completes. Its pedal sequence, measured on a 5 ms grid
+from brake application at 19 s to speed below 0.5 m/s, gives drive distance
+36.492356536 → 36.231403765 m and minimum front slip above 3 m/s
+−5.917798529 → −0.127071945. Minimum front angular speed over that range changes
+−47.611032800 → +8.828158545 rad/s. The before measurement uses the `origin/main` constructor.
+Tests, serial by group: `regen` 115 pass; `abs` 84 pass; `esp` 159 pass (including Lecture 3
+sine-with-dwell and split-µ ECU benches); `planar_wltc` 36 pass / 1 pre-existing broken.
+Diagram placements and orthogonal routes are present; ECU check reports zero problems with its
+conditional output unseen at the default. Drive still has nine crossing warnings, not all proved
+forced; layout review is incomplete. No wasm rebuild or figure export in this follow-up.

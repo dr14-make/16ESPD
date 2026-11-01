@@ -6,7 +6,7 @@
 
 using DyadInterface
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@component function BEVLowGripStopTransient__System(; name = nothing, var"alg"=ODEAlg.Rodas5P(), var"start"=0, var"stop"=28.0, var"abstol"=0.000001, var"reltol"=0.000001, var"saveat"=0, var"dtmax"=0.005, var"tstops"=[0.5, 0.6], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.None(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", var"T_cmd"=2500.0, var"tau_max"=320.0, var"P_charge"=80500.0, var"v_fade"=10.0, var"withdraw"=1.0, var"road_mu"=0.3, __overrides = Dict{String, Any}())
+@component function BEVLowGripStopTransient__System(; name = nothing, var"alg"=ODEAlg.Rodas5P(), var"start"=0, var"stop"=12.0, var"abstol"=0.000001, var"reltol"=0.000001, var"saveat"=0, var"dtmax"=0.005, var"tstops"=[0.5, 0.6], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.None(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", var"T_cmd"=2500.0, var"tau_max"=320.0, var"P_charge"=80500.0, var"v_fade"=10.0, var"withdraw"=1.0, var"road_mu"=0.3, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -162,7 +162,7 @@ export BEVLowGripStopTransient__System
   __overrides::Dict{SymbolicT, SymbolicT} = Dict{SymbolicT, SymbolicT}()
   var"alg"::ODEAlg.Type = ODEAlg.Rodas5P()
   var"start"::Float64 = 0
-  var"stop"::Float64 = 28.0
+  var"stop"::Float64 = 12.0
   var"abstol"::Float64 = 0.000001
   var"reltol"::Float64 = 0.000001
   var"saveat"::Float64 = 0
@@ -185,8 +185,8 @@ export BEVLowGripStopTransient__System
   # The ABS withdrawal rule defaults ON: `withdraw = 0` runs the locked-wheel counterfactual.
   # Report stopping distance from pedal application to speed below 0.5 m/s and minimum front
   # slip while speed exceeds 3 m/s. The peak-centered ABS calibration is shared with the dry stop.
-  # Use `stop = 12` with withdrawal off,
-  # before the known exact-rest tire singularity; its locked-wheel distance is not a physical benchmark.
+  # The default 12 s horizon covers both stops without prolonged parking at the known exact-rest
+  # tire singularity; the withdrawal-off locked-wheel distance is not a physical benchmark.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn04.BEVLowGripStop(; name=:BEVLowGripStop)
   __system::System = BEVLowGripStopTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file", var"T_cmd"=var"T_cmd", var"tau_max"=var"tau_max", var"P_charge"=var"P_charge", var"v_fade"=var"v_fade", var"withdraw"=var"withdraw", var"road_mu"=var"road_mu")
 end

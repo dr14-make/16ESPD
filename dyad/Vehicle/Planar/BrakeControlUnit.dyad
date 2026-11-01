@@ -12,6 +12,9 @@ component BrakeControlUnit
   tau_fr = RealOutput(units = "N.m") {^tau_fr}
   tau_rl = RealOutput(units = "N.m") {^tau_rl}
   tau_rr = RealOutput(units = "N.m") {^tau_rr}
+  "Front-axle ABS intervention for regenerative braking; opt-in preserves the Lecture 3 boundary"
+  front_active = RealOutput() if report_front {^front_active}
+  structural parameter report_front::Boolean = false
   parameter esp_on::Real = 1.0
   parameter abs_on::Real = 1.0
   parameter L::Length = 2.7
@@ -53,7 +56,7 @@ component BrakeControlUnit
   parameter k_inc_slow::Real = 16000.0
   parameter v_min::Velocity = 1.5
   esp = VehicleSystemsComponents.Vehicle.Planar.ESPController(esp_on = esp_on, L = L, K_us = K_us, i_s = i_s, mu_est = mu_est, g = g, k_lim = k_lim, v_floor = v_floor, Kp = Kp, Ki = Ki, deadband = deadband, v_on = v_on, Mz_max = Mz_max, tw = tw, radius = radius, T_max = T_max, T_build = T_build, R_build = R_build) {^esp}
-  abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(abs_on = abs_on, dt = dt, select_low = select_low, T_p = T_p, lambda_1_f = lambda_1_f, lambda_1_r = lambda_1_r, lambda_lock = lambda_lock, alpha_rel = alpha_rel, beta_reapply = beta_reapply, l_rec = l_rec, T_hold_max = T_hold_max, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow, v_min = v_min) {^abs}
+  abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(report_front = report_front, abs_on = abs_on, dt = dt, select_low = select_low, T_p = T_p, lambda_1_f = lambda_1_f, lambda_1_r = lambda_1_r, lambda_lock = lambda_lock, alpha_rel = alpha_rel, beta_reapply = beta_reapply, l_rec = l_rec, T_hold_max = T_hold_max, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow, v_min = v_min) {^abs}
 relations
   connect(demand, abs.demand) {^w1}
   connect(delta_sw, esp.delta_sw) {^w2}
@@ -71,9 +74,14 @@ relations
   connect(abs.tau_fr, tau_fr) {^w14}
   connect(abs.tau_rl, tau_rl) {^w15}
   connect(abs.tau_rr, tau_rr) {^w16}
+  if report_front
+    connect(abs.front_active, front_active) {^w17}
+  end
 metadata {
   "Dyad": {"icons": {"default": "dyad://MultibodyComponents/CascadeServoController.svg"}},
   "_links": {
+    "front_active": {"Dyad": {"placement": {"diagram": {"x1": 685, "x2": 715, "y1": -15, "y2": 15}, "icon": {"rot": 270, "x1": 450, "x2": 550, "y1": -50, "y2": 50}}}},
+    "w17": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 700, "y": 80}], "S": 1}]}},
     "demand": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 50, "x2": 50, "y2": 150}, "diagram": {"x1": -15.0, "y1": 35.0, "x2": 15.0, "y2": 65.0}}}},
     "delta_sw": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 200, "x2": 50, "y2": 300}, "diagram": {"x1": -15.0, "y1": 225.0, "x2": 15.0, "y2": 255.0}}}},
     "r": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 350, "x2": 50, "y2": 450}, "diagram": {"x1": -15.0, "y1": 275.0, "x2": 15.0, "y2": 305.0}}}},
@@ -91,11 +99,11 @@ metadata {
     "w1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 470, "y": 50}, {"x": 470, "y": 190.0}], "E": 2}]}},
     "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 150, "y": 418.0}, {"x": 470, "y": 418.0}, {"x": 470, "y": 390.0}], "E": 3}], "junctions": [{"x": 150, "y": 340.0}]}},
+    "w4": {"Dyad": {"edges": [{"E": -1, "M": [], "S": 1}, {"E": 2, "M": [], "S": -1}, {"E": 3, "M": [{"x": 150, "y": 395}, {"x": 470, "y": 395}, {"x": 470, "y": 390}], "S": -1}], "junctions": [{"x": 150, "y": 340}]}},
     "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 580.0, "y": 620}], "E": 2}]}},
-    "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 660.0, "y": 700}], "E": 2}]}},
+    "w8": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 780, "y": 700}, {"x": 780, "y": 550}, {"x": 660, "y": 550}], "S": 1}]}},
     "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},

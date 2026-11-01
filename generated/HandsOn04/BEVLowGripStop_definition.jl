@@ -11,8 +11,8 @@ Low-grip version of step 5's hard stop, on Lecture 3's road (grip ×0.3).
 The ABS withdrawal rule defaults ON: `withdraw = 0` runs the locked-wheel counterfactual.
 Report stopping distance from pedal application to speed below 0.5 m/s and minimum front
 slip while speed exceeds 3 m/s. The peak-centered ABS calibration is shared with the dry stop.
-Use `stop = 12` with withdrawal off,
-before the known exact-rest tire singularity; its locked-wheel distance is not a physical benchmark.
+The default 12 s horizon covers both stops without prolonged parking at the known exact-rest
+tire singularity; the withdrawal-off locked-wheel distance is not a physical benchmark.
 
 ## Parameters:
 
