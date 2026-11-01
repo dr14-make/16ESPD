@@ -10,19 +10,6 @@ layout: section
 The chain in the planar car, the motor as a brake, the three ceilings on regen, and series
 blending onto Lecture 3's brakes.
 
-With the ABS memory fix, the dry default keeps `withdraw = 1`: **27.10 m** in **2.340 s**,
-against **26.94 m** friction-only: 0.61 % longer, within the 1 % regression tolerance.
-Machine/friction energy is **2.951/348.908 kJ** (**0.839 %** gross motor share).
-The meaningful motor-share goal is **NOT met**: blanket front-active withdrawal suppresses regen.
-Rule OFF: **27.24 m**, **28.7 %** gross motor share, but front slip **−5.893705** means
-reversed wheels, **not a physical regen benchmark**. ON is shorter and keeps slip above −0.2 while vx > 3 m/s.
-Low grip (`PlanarBEVLowGripStopTransient(stop = 12)`): **87.594615426 m**, **7.665 s**,
-minimum front/rear slip **−0.187106/−0.104377** above 3 m/s. Rule OFF: **95.10 m**,
-front slip **−17.36**, reversed wheels. Use `stop = 12` for both low-grip benches;
-20 s now fails during parking at 15.835 s (stopped at 8.165 s absolute).
-Exact `HandsOn04.BEVLowGripStopTransient` remeasurement and test-group results are pending.
-WLTC is unchanged.
-
 `notebooks/lecture04/04-machine-battery-regen.pluto.jl`
 
 <!--
