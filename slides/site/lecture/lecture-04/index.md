@@ -1209,7 +1209,7 @@ New component `BatteryDischarge` in `MyCar`:
 
 1. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `Battery`. Click **+**, open `Dyad`, place two `Pin`s and one `RealOutput`, and rename them `p`, `n` and `SoC`: select each → **Edit Parameters** → the pencil next to its name. Drag them onto the thin blue outline: `p` on the left edge, `n` on the right edge, `SoC` in the middle of the top edge. On the bench the load wires to `p` on the left and `n` on the right, and step 04 reads `SoC` from above.
 2. With nothing selected, click **Edit Parameters** → **Add parameter** for each of the four parameters in the table, with the type `Real` and the unit from the table. Type `Q_nom` into **Value** as the formula: it is in coulombs, so 114.3 A·h is 40 kWh × 3600 s/h over 350 V.
-3. Place the five parts from the table, rename each to its **Name**, and set the values in its **Set** column. Lay them out as a loop: `cell` on the left with `ocv` beside it, `resistor` and `meter` in a row along the top, `counter` below `meter`.
+3. Place the five parts from the table, rename each to its **Name**, and set the values in its **Set** column. Lay them out as in the picture below: `resistor` and `meter` along the top, `counter` beside `meter`, `cell` on a bottom row with `ocv` above-left of it.
 4. Wire:
    1. `ocv.y → cell.V`
    2. `n → cell.n`
@@ -1218,6 +1218,10 @@ New component `BatteryDischarge` in `MyCar`:
    5. `meter.n → p`
    6. `meter.i → counter.u`
    7. `counter.y → SoC`
+
+   [![The finished Battery in Studio: p on the left edge, n on the right, SoC on top; resistor and meter along the top, meter.i down into counter and counter.y up to SoC; ocv into the top of cell on the bottom row, cell.p back up to resistor.p, cell.n out to n, and meter.n round the outside to p.](/lecture/lecture-04/img/step03-battery.png)](/lecture/lecture-04/img/step03-battery.png)
+
+   The battery in Studio after the seven wires: the circuit runs from `n` along the bottom through `cell`, up to `resistor` and `meter`, and round the outside to `p`; the counter hangs below `meter` and feeds `SoC`.
 
    Wires 1–5 are the circuit, *v* = *E* − *R*<sub>0</sub>*i*: from `n` up through `cell`, which adds *E*, through `resistor`, which takes *R*<sub>0</sub>*i* off, and through `meter` out to `p`. Wire 5 sets the sign: the current `meter` measures from its `p` to its `n` is the current that leaves the battery at `p`, the discharge current. Wires 6–7 are the coulomb counter, d*SoC*/d*t* = −*i*/*Q*<sub>nom</sub>. Hover the ports before you wire them: on `cell` and `meter`, `p` is the left pin and `n` the right one; `cell`'s input `V` is on top and `meter`'s output `i` at the bottom; `ocv.y` and `counter.y` are on the right, `counter.u` on the left. Count the `connect` lines in code view: seven. Studio routes each wire itself and can run one straight through a part; drag that wire's segment aside to move it, then save with <kbd>Ctrl</kbd>+<kbd>S</kbd>.
 5. Toggle to code (⇄). The GUI has placed the ports, parts, parameters and wires; what it cannot draw are the two variables a later step reads and the equations that compute them. Paste the variables among the declarations, just above `relations`, and the relations at the end of `relations`, above the `metadata` block. Save.
