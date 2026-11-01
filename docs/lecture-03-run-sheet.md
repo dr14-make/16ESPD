@@ -234,16 +234,18 @@ After the section 03 summary. The building is done for the day.
   brake torque), ESP through ABS 1.5. The planar car slide is one sentence: the car was introduced
   in section 03. Split-µ is its table only, in passing. Students watch; nothing to build.
 - ESP braking directly passes at every amplitude but locks the braked wheel and leaves at
-  48 km/h; say it, then show the fix on the next slide: through ABS the slip stays above −0.09
+  48 km/h; say it, then show the fix on the next slide: through ABS the slip stays above −0.13
   and the car leaves at about 19 m/s.
-- Split-µ: stress that the steering wheel is held straight. ABS alone turns the car 129°; the
+- Split-µ: stress that the steering wheel is held straight. ABS alone turns the car 101°; the
   P controller barely helps, the PI holds 3° at the cost of stopping distance.
-- Split-µ is budgeted at its table only: ABS alone 129°, the PI ESP 3°. Read the figure and the
+- Split-µ is budgeted at its table only: ABS alone 101°, the PI ESP 3°. Read the figure and the
   four rows (2 min) only if ahead of the clock.
 - Figures: `public/figures/05-swd-path.svg`, `05-swd-yaw-rate.svg`, `05-swd-esp-path.svg`,
   `05-swd-esp-yaw.svg`, `05-esp-abs.svg`, `05-split-mu.svg`, from
-  `scripts/export_lecture03_esp_figures.jl` at 23bd4bb (the script's docstring has the command;
-  about ten minutes). The numbers on the slides are what it prints.
+  `scripts/export_lecture03_esp_figures.jl` (the script's docstring has the command; about ten
+  minutes). The four sine-with-dwell figures are the 23bd4bb export; `05-esp-abs.svg` and
+  `05-split-mu.svg` were exported again after the planar ABS recalibration. The numbers on the
+  slides are what it prints.
 
 ## 06 Wrap-up — 3 min
 
