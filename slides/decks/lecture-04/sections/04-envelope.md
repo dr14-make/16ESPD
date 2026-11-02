@@ -110,6 +110,14 @@ $$
 P_{loss} = V_{on}\,|i_{out}| + f_s\, t_{sw}\, v_{in}\,|i_{out}|
 $$
 
+<div class="text-sm">
+
+*v*<sub>in</sub>, *i*<sub>in</sub>: the input, the pack's voltage (350 V) and current ·
+*v*<sub>out</sub>, *i*<sub>out</sub>: the output, the machine's (up to 332.2 A) ·
+*f*<sub>s</sub>: the switching frequency (5 kHz) · *t*<sub>sw</sub>: the time of one switching edge (1 µs)
+
+</div>
+
 </div>
 <div class="tight">
 
@@ -134,13 +142,19 @@ equals d times v in. The input current, the second formula, is d times the outpu
 loss power divided by the input voltage: the extra current that pays for the losses. Without its
 losses the converter is a DC transformer: power in equals power out.
 
+The short legend under the formulas names the symbols. v in and i in are the input side, the pack's
+voltage, 350 volts, and its current. v out and i out are the output side, the machine's voltage and
+current, up to 332.2 amperes. f s is the switching frequency, and t sw the time one switching edge
+takes; their values are in the table.
+
 Then the two limits. The output current is at most I max, in either direction, and the duty is at
 most d max, which is 1.
 
 And the deck's switch losses, the last formula. A conduction loss, V on times the current, where V
 on is the voltage across the devices that carry it. Plus a switching loss, f s times t sw times v in
-times the current, where f s is the switching frequency and t sw the time each edge takes: every
-edge costs a little energy, so this loss grows with the switching frequency.
+times the current: during each edge the device carries the current while the pack's voltage is
+still across it, so every edge costs a little energy, and this loss grows with the switching
+frequency.
 
 The table says where each number comes from. I max, 332.2 amperes, is the current at which build
 01's machine gives 320 newton meters at base speed. d max is 1: the converter cannot give the
