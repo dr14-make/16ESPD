@@ -74,15 +74,6 @@ Human driver sampling the latest buffered commands and holding them between tick
   # Subcomponent clock of type DiscreteComponents.PeriodicClock
   clock_overrides = __pop_subcomponent_overrides!(__overrides, "clock")
   push!(__systems, @named clock = DiscreteComponents.PeriodicClock(; dt=period, __symbol_overrides(clock_overrides)...))
-  # Subcomponent continuousclock of type BlockComponents.Sources.ContinuousClock
-  continuousclock_overrides = __pop_subcomponent_overrides!(__overrides, "continuousclock")
-  push!(__systems, @named continuousclock = BlockComponents.Sources.ContinuousClock(; __overrides = continuousclock_overrides))
-  # Subcomponent time_sampler of type DiscreteComponents.Sampler
-  time_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "time_sampler")
-  push!(__systems, @named time_sampler = DiscreteComponents.Sampler(; __overrides = time_sampler_overrides))
-  # Subcomponent reader of type VehicleSystemsComponents.HumanCommandSampler
-  reader_overrides = __pop_subcomponent_overrides!(__overrides, "reader")
-  push!(__systems, @named reader = VehicleSystemsComponents.HumanCommandSampler(; __overrides = reader_overrides))
   # Subcomponent throttle_hold of type DiscreteComponents.ZeroOrderHold
   throttle_hold_overrides = __pop_subcomponent_overrides!(__overrides, "throttle_hold")
   push!(__systems, @named throttle_hold = DiscreteComponents.ZeroOrderHold(; __overrides = throttle_hold_overrides))
@@ -92,6 +83,15 @@ Human driver sampling the latest buffered commands and holding them between tick
   # Subcomponent steer_hold of type DiscreteComponents.ZeroOrderHold
   steer_hold_overrides = __pop_subcomponent_overrides!(__overrides, "steer_hold")
   push!(__systems, @named steer_hold = DiscreteComponents.ZeroOrderHold(; __overrides = steer_hold_overrides))
+  # Subcomponent continuousclock of type BlockComponents.Sources.ContinuousClock
+  continuousclock_overrides = __pop_subcomponent_overrides!(__overrides, "continuousclock")
+  push!(__systems, @named continuousclock = BlockComponents.Sources.ContinuousClock(; __overrides = continuousclock_overrides))
+  # Subcomponent time_sampler of type DiscreteComponents.Sampler
+  time_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "time_sampler")
+  push!(__systems, @named time_sampler = DiscreteComponents.Sampler(; __overrides = time_sampler_overrides))
+  # Subcomponent reader of type VehicleSystemsComponents.HumanCommandSampler
+  reader_overrides = __pop_subcomponent_overrides!(__overrides, "reader")
+  push!(__systems, @named reader = VehicleSystemsComponents.HumanCommandSampler(; __overrides = reader_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))

@@ -1,3 +1,2 @@
-# Compatibility entry point for probe.jl; the implementation belongs to the pad extension.
-# This loads transport definitions only, without GLMakie or opening a controller.
+# probe.jl includes the transport from here; it needs neither GLMakie nor an open controller.
 include(joinpath(@__DIR__, "..", "ext", "DualSense.jl"))

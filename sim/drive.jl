@@ -8,7 +8,6 @@ using SimpleDirectMediaLayer
 
 "Run a supplied drive specification, or open the lecture drive with optional overrides."
 main(spec) = run_analysis(spec)
-main(; kwargs...) = VehicleSystemsComponents.PlanarBEVByHandDrive(;
-    kwargs...)
+main(; kwargs...) = VehicleSystemsComponents.PlanarBEVByHandDrive(; kwargs...)
 
 abspath(PROGRAM_FILE) == (@__FILE__) && main()

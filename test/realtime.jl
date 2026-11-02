@@ -74,8 +74,6 @@ end
         @test sol(t; idxs = sys.driver.steer_signal) == 0.0
     end
     @test round(3.6sol(22.0; idxs = sys.vehicle.motion.vx); digits = 1) == 0.0
-    @test 900 * 0.01 == 9.0
-    @test 1900 * 0.01 == 19.0
     for (t, signal, before, after) in ((9.0, sys.driver.throttle_signal, 1.0, 0.0),
                                      (19.0, sys.driver.brake_signal, 0.0, 1.0))
         @test sol(t - 1e-6; idxs = signal) == before

@@ -21,7 +21,7 @@ using SimpleDirectMediaLayer
         model, stop = 4.0, optimize = DyadInterface.OptimizationLevel.None(), progress = false))
     sys = DyadInterface.symbolic_container(setup.prob.f)
     spec = VehicleSystemsComponents.RealtimeDriveSpec(; model, duration = 3.0, window = false)
-    integ = init(setup.prob, Rodas5P(); dtmax = 0.005, saveat = spec.frame, save_everystep = false)
+    integ = VehicleSystemsComponents.drive_integrator(setup.prob, spec)
     initial = remake(integ.sol.prob; p = deepcopy(integ.p), u0 = copy(integ.u))
     ctx = win.context(integ, sys)
     controls = win.Controls()

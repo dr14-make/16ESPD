@@ -46,13 +46,12 @@ mutable struct Controls
     steer::Float64
     esp::Bool
     abs::Bool
-    mu::Float64
     paused::Bool
     lock::Float64
     mode::Int
 end
-Controls(; esp_on = 1.0, abs_on = 1.0, mu = 1.0) =
-    Controls(0, 0, 0, esp_on > 0.5, abs_on > 0.5, mu, false, FULL_LOCK, 2)
+Controls(; esp_on = 1.0, abs_on = 1.0) =
+    Controls(0, 0, 0, esp_on > 0.5, abs_on > 0.5, false, FULL_LOCK, 2)
 adjust_lock!(c, dir) = (c.lock = clamp(c.lock * 1.15^dir, LOCK_RANGE...))
 max_steer(c, speed) = c.lock / (1 + max(speed, 0.0) / 45)
 
@@ -95,14 +94,14 @@ function course!(ax)
     text!(ax, Point2f(-10, 125); text = "40 m circle", color = :gray40)
 end
 
+# Runtime routing avoids dependencies between the two optional extensions.
+pad_extension() = Base.get_extension(VehicleSystemsComponents, :VehicleSystemsComponentsPadExt)
 # No method is overwritten when SDL loads. Choose its extension only when driving is requested.
 function VehicleSystemsComponents.drive_window(integ, sys, spec)
-    padext = Base.get_extension(VehicleSystemsComponents, :VehicleSystemsComponentsPadExt)
+    padext = pad_extension()
     mode = padext === nothing || !hasproperty(sys.driver, :reader) ? nothing : padext.PadMode()
     return VehicleSystemsComponents.drive_window(integ, sys, spec, mode)
 end
-# Runtime routing avoids dependencies between the two optional extensions.
-pad_extension() = Base.get_extension(VehicleSystemsComponents, :VehicleSystemsComponentsPadExt)
 poll_controls!(pad, c, kb) = pad_extension().poll_controls!(pad, c, kb)
 feedback!(pad, s, c, clock) = pad_extension().feedback!(pad, s, c, clock)
 haptics!(pad, s, c, clock) = pad_extension().haptics!(pad, s, c, clock)
@@ -146,10 +145,8 @@ VehicleSystemsComponents.drive_window(integ, sys, spec, ::Nothing) = window!(int
 function fresh_integrator(initial_prob, spec)
     VehicleSystemsComponents.reset_human_commands!()
     prob = remake(initial_prob; p = deepcopy(initial_prob.p))
-    return init(prob, Rodas5P(); dtmax = spec.dtmax, saveat = spec.frame,
-        save_everystep = false)
+    return VehicleSystemsComponents.drive_integrator(prob, spec)
 end
-
 
 function window!(integ, sys, spec, pad; run_window = window_session!)
     try
@@ -167,7 +164,7 @@ function window_session!(integ, sys, spec, pad)
     end
     ctx = context(integ, sys)
     warm_up!(integ, sys, ctx, pad)
-    controls = Controls(; esp_on = spec.esp_on, abs_on = spec.abs_on, mu = spec.mu)
+    controls = Controls(; esp_on = spec.esp_on, abs_on = spec.abs_on)
     GLMakie.activate!(; title = "VehicleSystemsComponents — planar BEV", vsync = false)
     fig = Figure(size = (1500, 900), backgroundcolor = RGBf(0.93, 0.93, 0.9))
     ax = Axis(fig[1, 1]; aspect = DataAspect(), backgroundcolor = RGBf(0.82, 0.83, 0.8), xlabel = "x [m]", ylabel = "y [m]")
@@ -248,7 +245,7 @@ function window_session!(integ, sys, spec, pad)
             work = @elapsed if !controls.paused
                 apply!(integ, sys, ctx, controls, s.vx)
                 step!(integ, dt, true)
-                if !(string(integ.sol.retcode) in ("Default", "Success"))
+                if !VehicleSystemsComponents.stepping(integ)
                     @warn "solver stopped ($(integ.sol.retcode)); resetting the car"
                     reset!()
                 end
@@ -284,7 +281,7 @@ function window_session!(integ, sys, spec, pad)
                 "lat acc $(lpad(round(s.ay / 9.81, digits = 2), 6)) g", "",
                 "ESP $(controls.esp ? "on " : "OFF")  $(esp_braking(s, controls) ? "▶ BRAKING A WHEEL" : "")",
                 "ABS $(controls.abs ? "on " : "OFF")  $(abs_cycling(s, controls) ? "▶ CYCLING" : "")",
-                "road  μ = $(controls.mu)", "drive $(DRIVE_MODES[controls.mode][1])", "",
+                "road  μ = $(spec.mu)", "drive $(DRIVE_MODES[controls.mode][1])", "",
                 "$(pad === nothing ? "keyboard" : "DualSense + keyboard")$(controls.paused ? "   PAUSED" : "")",
                 "solver $(round(work_ms, digits = 1)) ms / frame"], "\n")
             haptics!(pad, s, controls, wall_acc)
@@ -294,8 +291,6 @@ function window_session!(integ, sys, spec, pad)
         e isa InterruptException || rethrow()
         @info "drive interrupted; returning current drive" simulation_time = integ.t
     finally
-        # The pad extension owns pad lifetime, including errors before display(fig).
-        VehicleSystemsComponents.reset_human_commands!()
         isopen(screen) && close(screen)
     end
     return (; frames, wall = time() - wall_start, integrator = integ)

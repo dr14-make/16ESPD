@@ -16,30 +16,17 @@ end
 
 "Human driver sampling the latest buffered commands and holding them between ticks."
 component HumanDriver
-  extends Driver
-  "Command sampling period"
-  structural parameter period::Time = 0.01
-  "Command clock"
-  clock = DiscreteComponents.PeriodicClock(dt = period)
+  extends ClockedDriver
   "Simulation time source"
   continuousclock = BlockComponents.Sources.ContinuousClock()
   "Time sampled onto the command clock"
   time_sampler = DiscreteComponents.Sampler()
   "Clocked command buffer reader"
   reader = HumanCommandSampler()
-  "Throttle held between command ticks"
-  throttle_hold = DiscreteComponents.ZeroOrderHold()
-  "Brake held between command ticks"
-  brake_hold = DiscreteComponents.ZeroOrderHold()
-  "Steering held between command ticks"
-  steer_hold = DiscreteComponents.ZeroOrderHold()
 relations
   connect(continuousclock.y, time_sampler.u)
   connect(time_sampler.y, reader.sampled_time, clock.y)
   connect(reader.throttle, throttle_hold.u)
   connect(reader.brake, brake_hold.u)
   connect(reader.steer, steer_hold.u)
-  throttle_signal = throttle_hold.y
-  brake_signal = brake_hold.y
-  steer_signal = steer_hold.y
 end
