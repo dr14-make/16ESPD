@@ -11,6 +11,7 @@ end
 
 include("ABSStraightStop_experiment.jl")
 include("BrakeAndSteer_experiment.jl")
+include("ESPBrakeAndSteer_experiment.jl")
 include("ESPSineWithDwell_experiment.jl")
 include("ESPSteerRamp_experiment.jl")
 include("FullCarABSStop_experiment.jl")
