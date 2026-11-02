@@ -33,7 +33,8 @@ function context(integ, assembly)
         :power => sys.drive.battery.v * sys.drive.battery.i, :soc => sys.drive.SoC)
     read_signals = getu(assembly, collect(last.(signals)))
     snapshot = i -> NamedTuple{Tuple(first.(signals))}(Tuple(read_signals(i)))
-    return (; i_s, mass, radius, torque, ratio, snapshot,
+    esp_on, abs_on, mu = Float64.(getp(assembly, [sys.esp_on, sys.abs_on, sys.mu])(integ))
+    return (; i_s, mass, radius, torque, ratio, snapshot, esp_on, abs_on, mu,
             by_hand = hasproperty(assembly.driver, :reader),
             wheel_at = (fl = (a, tw / 2), fr = (a, -tw / 2),
                         rl = (-b, tw / 2), rr = (-b, -tw / 2)))
@@ -172,7 +173,7 @@ function window_session!(integ, sys, spec, pad)
     end
     ctx = context(integ, sys)
     integ = warm_up!(integ, sys, ctx, pad; spec)
-    controls = Controls(; esp_on = spec.esp_on, abs_on = spec.abs_on)
+    controls = Controls(; ctx.esp_on, ctx.abs_on)
     GLMakie.activate!(; title = "VehicleSystemsComponents — planar BEV", vsync = false)
     fig = Figure(size = (1500, 900), backgroundcolor = RGBf(0.93, 0.93, 0.9))
     ax = Axis(fig[1, 1]; aspect = DataAspect(), backgroundcolor = RGBf(0.82, 0.83, 0.8), xlabel = "x [m]", ylabel = "y [m]")
@@ -289,7 +290,7 @@ function window_session!(integ, sys, spec, pad)
                 "lat acc $(lpad(round(s.ay / 9.81, digits = 2), 6)) g", "",
                 "ESP $(controls.esp ? "on " : "OFF")  $(esp_braking(s, controls) ? "▶ BRAKING A WHEEL" : "")",
                 "ABS $(controls.abs ? "on " : "OFF")  $(abs_cycling(s, controls) ? "▶ CYCLING" : "")",
-                "road  μ = $(spec.mu)", "drive $(DRIVE_MODES[controls.mode][1])", "",
+                "road  μ = $(ctx.mu)", "drive $(DRIVE_MODES[controls.mode][1])", "",
                 "$(pad === nothing ? "keyboard" : "DualSense + keyboard")$(controls.paused ? "   PAUSED" : "")",
                 "solver $(round(work_ms, digits = 1)) ms / frame"], "\n")
             haptics!(pad, s, controls, wall_acc)

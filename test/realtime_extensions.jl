@@ -16,7 +16,7 @@ using SimpleDirectMediaLayer
     @test win !== nothing
     padext = Base.get_extension(VehicleSystemsComponents, :VehicleSystemsComponentsPadExt)
     @test padext !== nothing
-    @named model = VehicleSystemsComponents.PlanarBEVByHand()
+    @named model = VehicleSystemsComponents.PlanarBEVByHand(esp_on = 0.0, abs_on = 0.0, mu = 0.6)
     setup = DyadInterface.setup_analysis(DyadInterface.TransientAnalysisSpec(;
         model, stop = 4.0, optimize = DyadInterface.OptimizationLevel.None(), progress = false))
     sys = DyadInterface.symbolic_container(setup.prob.f)
@@ -43,7 +43,11 @@ using SimpleDirectMediaLayer
     @test !win.drive_complete((; t = 18.9), (; duration = 22.0))
     @test win.drive_complete((; t = 22.0), (; duration = 22.0))
     @test !win.drive_complete((; t = 0.0), spec)
-    controls = win.Controls()
+    controls = win.Controls(; ctx.esp_on, ctx.abs_on)
+    @test !controls.esp
+    @test !controls.abs
+    @test ctx.mu == 0.6
+    @test !win.abs_cycling((; demand = 1000, tfl = 0, tfr = 0, trl = 0, trr = 0), controls)
     controls.throttle = 1.0
     win.apply!(integ, sys, ctx, controls, 0.0)
     step!(integ, 0.2, true)
