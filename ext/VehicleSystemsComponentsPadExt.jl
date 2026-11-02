@@ -80,6 +80,5 @@ function feedback!(session::PadSession, s, c, clock)
     return pad
 end
 haptics!(session::PadSession, s, c, clock) = send!(feedback!(session, s, c, clock))
-# Qualify the transport method: these are different types, not new transport API methods.
 quiet_session!(session::PadSession) = DualSense.quiet!(session.pad)
 end

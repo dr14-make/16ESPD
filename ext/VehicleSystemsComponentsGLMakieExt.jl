@@ -113,29 +113,31 @@ feedback!(::Nothing, s, c, clock) = nothing
 haptics!(::Nothing, s, c, clock) = nothing
 quiet!(::Nothing) = nothing
 
-# Feedback is computed without sending during solver warm-up.
 const WARMED = Set{DataType}()
 function warm_up!(integ, sys, ctx, pad)
     typeof(integ) in WARMED && return quiet!(pad)
-    println("warming up the solver…")
-    quiet!(pad)
-    warmprob = remake(integ.sol.prob; p = deepcopy(integ.p), tspan = (0.0, 11.0))
-    warm = init(warmprob, Rodas5P(); dtmax = 0.005, save_everystep = false)
-    controls = Controls()
-    for k in 1:600
-        tm = k * FRAME
-        controls.throttle, controls.brake, controls.steer =
-            tm < 4 ? (1.0, 0.0, 0.0) : tm < 7 ? (0.3, 0.0, sin(3tm)) : (0.0, 1.0, 0.0)
-        apply!(warm, sys, ctx, controls, 10.0)
-        step!(warm, FRAME, true)
-        s = ctx.snapshot(warm)
-        car_shapes(ctx, s)
-        map(grip_color, grips(s))
-        feedback!(pad, s, controls, tm)
+    try
+        println("warming up the solver…")
+        quiet!(pad)
+        warmprob = remake(integ.sol.prob; p = deepcopy(integ.p), tspan = (0.0, 11.0))
+        warm = init(warmprob, Rodas5P(); dtmax = 0.005, save_everystep = false)
+        controls = Controls()
+        for k in 1:600
+            tm = k * FRAME
+            controls.throttle, controls.brake, controls.steer =
+                tm < 4 ? (1.0, 0.0, 0.0) : tm < 7 ? (0.3, 0.0, sin(3tm)) : (0.0, 1.0, 0.0)
+            apply!(warm, sys, ctx, controls, 10.0)
+            step!(warm, FRAME, true)
+            s = ctx.snapshot(warm)
+            car_shapes(ctx, s)
+            map(grip_color, grips(s))
+            feedback!(pad, s, controls, tm)
+        end
+        quiet!(pad)
+        push!(WARMED, typeof(integ))
+    finally
+        VehicleSystemsComponents.reset_human_commands!()
     end
-    VehicleSystemsComponents.reset_human_commands!()
-    quiet!(pad)
-    push!(WARMED, typeof(integ))
 end
 
 VehicleSystemsComponents.drive_window(integ, sys, spec, ::Nothing) = window!(integ, sys, spec, nothing)
@@ -149,7 +151,15 @@ function fresh_integrator(initial_prob, spec)
 end
 
 
-function window!(integ, sys, spec, pad)
+function window!(integ, sys, spec, pad; run_window = window_session!)
+    try
+        return run_window(integ, sys, spec, pad)
+    finally
+        VehicleSystemsComponents.reset_human_commands!()
+    end
+end
+
+function window_session!(integ, sys, spec, pad)
     initial_prob = remake(integ.sol.prob; p = deepcopy(integ.p), u0 = copy(integ.u))
     function reset!()
         integ = fresh_integrator(initial_prob, spec)

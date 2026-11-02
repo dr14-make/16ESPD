@@ -65,7 +65,19 @@ using SimpleDirectMediaLayer
     @test pad.effect[11] == pad.effect[22] == 0x05
     @test ds.encode(ds.Feedback(2, 0.0)) == ds.encode(ds.TriggerOff())
     @test ds.encode(ds.Vibration(2, 1.0, 25))[10] == 25
+    empty!(win.WARMED)
+    failing_ctx = merge(ctx, (; snapshot = i -> error("forced warm-up failure")))
+    @test_throws "forced warm-up failure" win.window!(fresh, sys, spec, nothing;
+        run_window = (i, s, spec, pad) -> win.warm_up!(i, s, failing_ctx, pad))
+    @test VehicleSystemsComponents.HUMAN_COMMANDS[] == (0.0, 0.0, 0.0)
+    @test_throws "forced window creation failure" win.window!(fresh, sys, spec, nothing;
+        run_window = function (i, s, spec, pad)
+            VehicleSystemsComponents.set_human_commands!(throttle = 1, brake = 1, steer = 1)
+            error("forced window creation failure")
+        end)
+    @test VehicleSystemsComponents.HUMAN_COMMANDS[] == (0.0, 0.0, 0.0)
     win.warm_up!(fresh, sys, ctx, nothing)
+    @test VehicleSystemsComponents.HUMAN_COMMANDS[] == (0.0, 0.0, 0.0)
     @test fresh.t == 0.1
     include(joinpath(@__DIR__, "..", "sim", "drive.jl"))
     @test isdefined(@__MODULE__, :main)
