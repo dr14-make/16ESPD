@@ -381,6 +381,9 @@ At 131 km/h the machine turns **9260 rpm**, the field down to **0.36**.
 > **Light-load efficiency matters more than peak efficiency.** The car spends the cycle where the
 > fixed losses count.
 
+**Why light load favors the PMSM:** a magnet's field is free; a machine without magnets pays a
+magnetizing or field current even at light load (<Link to="other-machines">the other machines</Link>).
+
 </div>
 </div>
 
@@ -402,8 +405,13 @@ kilometers per hour, the machine turns 9260 rpm, with the field down to 0.36.
 
 So the number that decides the energy bill is not the peak efficiency in the brochure. It is the
 efficiency at light load, where friction, iron loss, windage and the constant loss weigh most. That
-is the quote box, and it is also the PMSM's advantage over the machines without magnets from
-section 03.
+is the quote box. The last line says why light load also favors the permanent-magnet machine. Its
+field comes from the magnets and costs nothing, so at a few tens of newton meters it draws only the
+small current the torque needs. An induction machine or a wound-rotor machine has no magnets: it
+must drive a magnetizing current, or a field current, to make its field at every operating point,
+even when the torque asked for is small, and that current makes copper loss whatever the load. On a
+cycle that lives at light load, that fixed price is a large share of the output. The link goes back
+to the slide in section 03 that names those machines.
 -->
 
 ---
