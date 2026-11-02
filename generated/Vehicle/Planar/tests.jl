@@ -18,6 +18,7 @@ end
 @testset "`VehicleSystemsComponents.Vehicle.Planar`" begin
 include("ABSUnit_test.jl")
 include("AckermannSteering_test.jl")
+include("BEVBrakeAndSteer_test.jl")
 include("BrakeAllocator_test.jl")
 include("BrakeChannel_test.jl")
 include("BrakeControlUnit_test.jl")

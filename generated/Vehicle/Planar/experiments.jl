@@ -11,6 +11,7 @@ end
 
 include("ABSUnit_experiment.jl")
 include("AckermannSteering_experiment.jl")
+include("BEVBrakeAndSteer_experiment.jl")
 include("BrakeAllocator_experiment.jl")
 include("BrakeChannel_experiment.jl")
 include("BrakeControlUnit_experiment.jl")

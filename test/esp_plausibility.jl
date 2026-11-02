@@ -398,3 +398,33 @@ end
     @test with_abs.kappa_min > -0.2
     @info "Brake and steer measurements" with_abs locked
 end
+
+
+@testset "ESP retains yaw authority during an ABS stop (#157)" begin
+    # 80 km/h, full pedal at 0.5 s, 90-degree steering-wheel ramp at 0.8 s.
+    # Before the ECU fix the peaks were 0.306/0.301/0.329 rad/s; independent
+    # rear channels give 0.411/0.429/0.425. 0.38 separates those populations
+    # with margin; heading >0.3 rad also checks sustained, correctly signed response.
+    cases = (
+        VehicleSystemsComponents.Vehicle.Planar.BEVBrakeAndSteerTransient(),
+        VehicleSystemsComponents.Vehicle.Planar.BEVBrakeAndSteerTransient(P_charge = 0.0),
+        VehicleSystemsComponents.Lecture3.ESPBrakeAndSteerTransient(),
+    )
+    for run in cases
+        sol = run.sol
+        m = symbolic_container(run)
+        ecu = hasproperty(m, :ecu) ? m.ecu : m.abs
+        ts = collect(0.8:0.005:2.5)
+        yaw = sol(ts; idxs = m.car.bus.r).u
+        rear_difference = sol(ts; idxs = ecu.tau_rl).u .- sol(ts; idxs = ecu.tau_rr).u
+        @test string(sol.retcode) == "Success"
+        # The reference peak is below 0.5 rad/s; reject a spinning car as well.
+        @test 0.38 < maximum(yaw) < 0.6
+        @test sol(2.5; idxs = m.car.bus.psi) > 0.3
+        # A positive yaw response alone passed before the fix; also require the
+        # rear ESP allocation to survive arbitration, rather than cutting both rears.
+        releasing = sol(ts; idxs = m.phase_fl.y).u .< -0.5
+        @test any(releasing)
+        @test maximum(rear_difference[releasing]) > 500.0
+    end
+end
