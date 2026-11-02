@@ -35,7 +35,8 @@ component BrakeControlUnit
   parameter T_build::Time = 0.1
   parameter R_build::Real = 1.0e9
   structural parameter dt::Time = 0.005
-  parameter select_low::Real = 1.0
+  "Independent rear channels preserve ESP yaw allocation; select-low is for ABS-only use"
+  parameter select_low::Real = 0.0
   "Prediction includes hydraulic lag and sampled release/reapply delay (derived)"
   parameter T_p::Time = 0.08
   "Predicted release just beyond the front tire's 0.12 peak slip (derived)"

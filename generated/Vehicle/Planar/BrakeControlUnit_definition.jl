@@ -34,7 +34,7 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
 | `T_max`         |                          | N.m  |   2500.0 |
 | `T_build`         |                          | s  |   0.1 |
 | `R_build`         |                          | --  |   1.0e9 |
-| `select_low`         |                          | --  |   1.0 |
+| `select_low`         | Independent rear channels preserve ESP yaw allocation; select-low is for ABS-only use                         | --  |   0.0 |
 | `T_p`         | Prediction includes hydraulic lag and sampled release/reapply delay (derived)                         | s  |   0.08 |
 | `lambda_1_f`         | Predicted release just beyond the front tire's 0.12 peak slip (derived)                         | --  |   0.14 |
 | `lambda_1_r`         | Predicted release just beyond the rear tire's 0.09 peak slip (derived)                         | --  |   0.11 |
@@ -64,7 +64,7 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
  * `tau_rr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `front_active` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function BrakeControlUnit(; name = nothing, var"report_front"=false, var"dt"=0.005, var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"L"=2.7, var"K_us"=0.0020387, var"i_s"=Float64(16.0), var"mu_est"=Float64(1.0), var"g"=9.81, var"k_lim"=0.85, var"v_floor"=Float64(1.0), var"Kp"=Float64(40000.0), var"Ki"=Float64(0.0), var"deadband"=0.03, var"v_on"=Float64(5.0), var"Mz_max"=Float64(10000.0), var"tw"=1.55, var"radius"=0.31, var"T_max"=Float64(2500.0), var"T_build"=0.1, var"R_build"=Float64(1000000000.0), var"select_low"=Float64(1.0), var"T_p"=0.08, var"lambda_1_f"=0.14, var"lambda_1_r"=0.11, var"lambda_lock"=0.2, var"alpha_rel"=0.9, var"beta_reapply"=0.85, var"l_rec"=0.12, var"T_hold_max"=0.01, var"k_dec"=Float64(40000.0), var"k_inc_fast"=Float64(40000.0), var"k_inc_slow"=Float64(16000.0), var"v_min"=1.5, __overrides = Dict{String, Any}())
+@component function BrakeControlUnit(; name = nothing, var"report_front"=false, var"dt"=0.005, var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"L"=2.7, var"K_us"=0.0020387, var"i_s"=Float64(16.0), var"mu_est"=Float64(1.0), var"g"=9.81, var"k_lim"=0.85, var"v_floor"=Float64(1.0), var"Kp"=Float64(40000.0), var"Ki"=Float64(0.0), var"deadband"=0.03, var"v_on"=Float64(5.0), var"Mz_max"=Float64(10000.0), var"tw"=1.55, var"radius"=0.31, var"T_max"=Float64(2500.0), var"T_build"=0.1, var"R_build"=Float64(1000000000.0), var"select_low"=Float64(0.0), var"T_p"=0.08, var"lambda_1_f"=0.14, var"lambda_1_r"=0.11, var"lambda_lock"=0.2, var"alpha_rel"=0.9, var"beta_reapply"=0.85, var"l_rec"=0.12, var"T_hold_max"=0.01, var"k_dec"=Float64(40000.0), var"k_inc_fast"=Float64(40000.0), var"k_inc_slow"=Float64(16000.0), var"v_min"=1.5, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -189,7 +189,7 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
   append!(__params, @parameters (R_build::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, R_build, __local__R_build)
   __local__select_low = select_low
-  append!(__params, @parameters (select_low::Real))
+  append!(__params, @parameters (select_low::Real), [description = "Independent rear channels preserve ESP yaw allocation; select-low is for ABS-only use"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, select_low, __local__select_low)
   __local__T_p = T_p
   append!(__params, @parameters (T_p::Real), [description = "Prediction includes hydraulic lag and sampled release/reapply delay (derived)"])

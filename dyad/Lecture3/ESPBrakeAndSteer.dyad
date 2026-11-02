@@ -1,0 +1,89 @@
+"""Full braking from 80 km/h on a dry road with an evasive steer to the left, ABS on or off."""
+test component ESPBrakeAndSteer
+  parameter v0::Velocity = 22.22222222222222
+  parameter T_cmd::Torque = 2500.0
+  parameter brake_time::Time = 0.5
+  parameter radius::Length = 0.31
+  parameter abs_on::Real = 1.0
+  parameter esp_on::Real = 1.0
+  parameter delta_sw_final::Angle = 1.5707963267948966
+  parameter t_steer::Time = 0.8
+  parameter t_ramp::Time = 0.2
+  parameter select_low::Real = 0.0
+  parameter k_dec::Real = 40000.0
+  parameter k_inc_fast::Real = 40000.0
+  parameter k_inc_slow::Real = 16000.0
+  parameter h_cg::Length = 0.0
+  structural parameter load_transfer::Boolean = false
+  steer = BlockComponents.Sources.Ramp(offset = 0.0, height = delta_sw_final, duration = t_ramp, start_time = t_steer) {^steer}
+  demand = BlockComponents.Sources.Step(offset = 0.0, height = T_cmd, start_time = brake_time) {^demand}
+  steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot() {^steering_robot}
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(radius = radius, h_cg = h_cg, load_transfer = load_transfer) {^car}
+  motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
+  slips = VehicleSystemsComponents.Vehicle.Planar.BusSlip() {^slips}
+  abs = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(esp_on = esp_on, abs_on = abs_on, radius = radius, select_low = select_low, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow) {^abs}
+  pre_fl = DiscreteComponents.ZeroOrderHold()
+  post_fl = DiscreteComponents.ZeroOrderHold()
+  phase_fl = DiscreteComponents.ZeroOrderHold()
+  pre_fr = DiscreteComponents.ZeroOrderHold()
+  post_fr = DiscreteComponents.ZeroOrderHold()
+  phase_fr = DiscreteComponents.ZeroOrderHold()
+  pre_rl = DiscreteComponents.ZeroOrderHold()
+  post_rl = DiscreteComponents.ZeroOrderHold()
+  phase_rl = DiscreteComponents.ZeroOrderHold()
+  pre_rr = DiscreteComponents.ZeroOrderHold()
+  post_rr = DiscreteComponents.ZeroOrderHold()
+  phase_rr = DiscreteComponents.ZeroOrderHold()
+relations
+  connect(abs.abs.abs.fl.modulator.tau_cmd, pre_fl.u)
+  connect(abs.abs.abs.fl.tau_cmd, post_fl.u)
+  connect(abs.abs.abs.fl.modulator.phase_out, phase_fl.u)
+  connect(abs.abs.abs.fr.modulator.tau_cmd, pre_fr.u)
+  connect(abs.abs.abs.fr.tau_cmd, post_fr.u)
+  connect(abs.abs.abs.fr.modulator.phase_out, phase_fr.u)
+  connect(abs.abs.abs.rl.modulator.tau_cmd, pre_rl.u)
+  connect(abs.abs.abs.rl.tau_cmd, post_rl.u)
+  connect(abs.abs.abs.rl.modulator.phase_out, phase_rl.u)
+  connect(abs.abs.abs.rr.modulator.tau_cmd, pre_rr.u)
+  connect(abs.abs.abs.rr.tau_cmd, post_rr.u)
+  connect(abs.abs.abs.rr.modulator.phase_out, phase_rr.u)
+  connect(car.bus, motion.bus, slips.bus) {^wbus}
+  connect(steer.y, steering_robot.delta_sw_ref) {^w1}
+  connect(steering_robot.steering, car.steering) {^w2}
+  connect(demand.y, abs.demand) {^w14}
+  connect(motion.vx, abs.vx) {^w15}
+  connect(slips.kappa_fl, abs.kappa_fl) {^w16}
+  connect(slips.kappa_fr, abs.kappa_fr) {^w17}
+  connect(slips.kappa_rl, abs.kappa_rl) {^w18}
+  connect(slips.kappa_rr, abs.kappa_rr) {^w19}
+  connect(motion.delta_sw, abs.delta_sw)
+  connect(motion.r, abs.r)
+  connect(abs.tau_fl, car.tau_fl) {^w35}
+  connect(abs.tau_fr, car.tau_fr) {^w36}
+  connect(abs.tau_rl, car.tau_rl) {^w37}
+  connect(abs.tau_rr, car.tau_rr) {^w38}
+  initial car.body.r = [0, 0]
+  initial car.body.v = [v0, 0]
+  initial car.body.phi = 0.0
+  initial car.body.w = 0.0
+  initial car.fl.inertia.w = (v0 + 0.01) / radius
+  initial car.fr.inertia.w = (v0 + 0.01) / radius
+  initial car.rl.inertia.w = (v0 + 0.01) / radius
+  initial car.rr.inertia.w = (v0 + 0.01) / radius
+  initial car.fl.inertia.phi = 0.0
+  initial car.fr.inertia.phi = 0.0
+  initial car.rl.inertia.phi = 0.0
+  initial car.rr.inertia.phi = 0.0
+  initial car.fl.brake.tau_actual = 0.0
+  initial car.fr.brake.tau_actual = 0.0
+  initial car.rl.brake.tau_actual = 0.0
+  initial car.rr.brake.tau_actual = 0.0
+end
+
+analysis ESPBrakeAndSteerTransient
+  extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Tsit5(), dtmax = 0.005, optimize = OptimizationLevel.None())
+  parameter abs_on::Real = 1.0
+  parameter esp_on::Real = 1.0
+  parameter select_low::Real = 0.0
+  model = VehicleSystemsComponents.Lecture3.ESPBrakeAndSteer(abs_on = abs_on, esp_on = esp_on, select_low = select_low)
+end

@@ -771,3 +771,47 @@ forced; layout review is incomplete. No wasm rebuild or figure export in this fo
   the research note links Infineon's copy.
 - **Open:** a conduction-plus-switching loss model that drops into the 80s at low speed and stays
   above 99 % at high speed is #176. No slide, guide, test or figure number changed.
+
+
+### ESP under ABS (#157)
+
+Re-tested after #162 and #177 using an 80 km/h dry-road stop: full pedal at 0.5 s,
+90-degree steering-wheel ramp over 0.8–1.0 s, solve to 6 s. New benches:
+`Vehicle.Planar.BEVBrakeAndSteer` (the drivable BEV chain, including pedal/hand lags,
+front-ABS regen withdrawal and road load), and `Lecture3.ESPBrakeAndSteer`
+(engine-less `BrakeAndSteer` pattern with the combined ECU). Their held `pre_*`,
+`post_*`, `phase_*` signals retain sampled histories; do not interpolate the raw
+clocked variables, which return the last tick on Dyad 3.5.
+
+The reported inability to steer with ABS+ESP does **not** reproduce here. Before the
+change, peak yaw with both on is 0.306 rad/s (BEV), 0.301 (P_charge=0), 0.329
+(engine-less). ABS off locks the wheels and gives only 0.001–0.003 rad/s, with or
+without ESP. During 1–2.5 s the BEV front-active signal is 1 and actual machine
+torque is below 1.2e-5 N.m: regen withdrawal is already effective.
+
+A separate arbitration defect remains: rear select-low cancels rear ESP yaw
+allocation. At 1.005 s the BEV requests +1604/-1604 N.m; the rear commands before
+select-low are 1302/0, but select-low sends 0/0 to the brakes. The same cancellation
+occurs with regen disabled and on the engine-less car. The new default in
+`BrakeControlUnit` is independent rear channels (`select_low=0`); standalone
+`ABSUnit`/`FourChannelABS` defaults and explicit select-low overrides are unchanged.
+Positive ESP demand still passes through ABS, intentionally: bypassing wheel-slip
+protection would not preserve steering. This maneuver requests no positive front
+ESP torque, so the proposed front-request suppression mechanism is not demonstrated.
+
+With both systems on after the change, yaw peaks are 0.411/0.429/0.425 rad/s;
+pedal-to-stop path lengths fall from 34.868/34.866/36.247 m to
+29.100/28.829/29.979 m. Stop is the first 5 ms sample with vx<0.5 m/s.
+The new `esp` plausibility test requires positive peak yaw between 0.38 and 0.6 rad/s,
+heading at 2.5 s >0.3 rad, and rear torque difference >500 N.m during an actual
+front ABS release, for all three cars. The yaw threshold separates the measured pre/post-fix ranges
+with at least 0.03 rad/s margin; existing thresholds are unchanged.
+
+
+Validation: supplied pre-change baselines were `esp` 159, `abs` 84, `regen` 115,
+`bev` 48, all passing. Post-change groups, run separately from `test/`, pass
+174/84/115/48 assertions, zero failures/errors. Final compile exits 0; after minor
+Lecture bench cleanup (unused zero source removed, radius forwarded), the new
+15-assertion testset was rerun against the final generated models and passes.
+Only the edited ECU, two new benches and their generated include registrations
+changed under `generated/`.
