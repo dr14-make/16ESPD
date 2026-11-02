@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 372" width="760" height="372">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .house { fill: #e3e7ec; stroke: #4a5a6b; stroke-width: 2; }
+    .iron { fill: #f1f3f5; stroke: #16202c; stroke-width: 2; }
+    .pole { fill: #e3e7ec; stroke: #4a5a6b; stroke-width: 2; }
+    .shaft { fill: #c9ced6; stroke: #16202c; stroke-width: 2; }
+    .north { fill: #f6d5d3; stroke: #c0392b; stroke-width: 2; }
+    .south { fill: #dbe7f6; stroke: #1f5fa8; stroke-width: 2; }
+    .slot { fill: #fdf0e0; stroke: #a75d00; stroke-width: 1.5; }
+    .mark { stroke: #16202c; stroke-width: 2; }
+    .field { stroke: #4a5a6b; stroke-width: 1.5; stroke-dasharray: 6 5; fill: none; }
+    .wire { stroke: #a75d00; stroke-width: 2; fill: none; }
+    .src { fill: #fff; stroke: #a75d00; stroke-width: 2; }
+    .knob { stroke: #a75d00; stroke-width: 1.5; fill: none; }
+    .title { font-size: 20px; font-weight: 700; }
+    .t { font-size: 22px; font-weight: 700; }
+    .red { fill: #c0392b; }
+    .blue { fill: #1f5fa8; }
+    .orange { fill: #a75d00; }
+    .sig { font-size: 16px; font-weight: 600; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+  </style>
+  <defs>
+    <marker id="fc-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a5a6b"/></marker>
+    <marker id="fc-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+    <marker id="fc-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+  </defs>
+  <path d="M330 40 V340" stroke="#c9ced6" stroke-width="1.5"/>
+  <text x="160" y="26" text-anchor="middle" class="title">Permanent magnets: Φ fixed</text>
+  <path class="house" fill-rule="evenodd" d="M42.0 168 a118 118 0 1 0 236 0 a118 118 0 1 0 -236 0 Z M52.0 168 a108 108 0 1 0 216 0 a108 108 0 1 0 -216 0 Z"/>
+  <path class="north" d="M90.6 85.3 A108 108 0 0 0 90.6 250.7 L117.6 218.6 A66 66 0 0 1 117.6 117.4 Z"/>
+  <path class="south" d="M229.4 250.7 A108 108 0 0 0 229.4 85.3 L202.4 117.4 A66 66 0 0 1 202.4 218.6 Z"/>
+  <circle class="iron" cx="160" cy="168" r="58"/>
+  <circle class="shaft" cx="160" cy="168" r="10"/>
+  <path class="field" d="M98 134 H222" marker-end="url(#fc-gray)"/>
+  <path class="field" d="M98 168 H222" marker-end="url(#fc-gray)"/>
+  <path class="field" d="M98 202 H222" marker-end="url(#fc-gray)"/>
+  <text x="73.0" y="176.0" text-anchor="middle" class="t">N</text>
+  <text x="247.0" y="176.0" text-anchor="middle" class="t">S</text>
+  <text x="160" y="326" text-anchor="middle" class="sig">Φ set once, by the magnets</text>
+  <text x="160" y="348" text-anchor="middle" class="lbl">only the voltage is left to control</text>
+  <text x="500" y="26" text-anchor="middle" class="title">Wound field: Φ set by a current</text>
+  <path class="house" fill-rule="evenodd" d="M382.0 168 a118 118 0 1 0 236 0 a118 118 0 1 0 -236 0 Z M392.0 168 a108 108 0 1 0 216 0 a108 108 0 1 0 -216 0 Z"/>
+  <path class="pole" d="M392 152 L422 152 L422 128 L434 134 L434 202 L422 208 L422 184 L392 184 Z"/>
+  <rect class="slot" x="394" y="134" width="26" height="18" rx="2"/>
+  <circle cx="407.0" cy="143" r="2.5" fill="#16202c"/>
+  <rect class="slot" x="394" y="184" width="26" height="18" rx="2"/>
+  <path class="mark" d="M403.0 189 L411.0 197 M411.0 189 L403.0 197"/>
+  <text x="405.0" y="176" text-anchor="middle" class="t red">N</text>
+  <path class="pole" d="M608 152 L578 152 L578 128 L566 134 L566 202 L578 208 L578 184 L608 184 Z"/>
+  <rect class="slot" x="580" y="134" width="26" height="18" rx="2"/>
+  <circle cx="593.0" cy="143" r="2.5" fill="#16202c"/>
+  <rect class="slot" x="580" y="184" width="26" height="18" rx="2"/>
+  <path class="mark" d="M589.0 189 L597.0 197 M597.0 189 L589.0 197"/>
+  <text x="595.0" y="176" text-anchor="middle" class="t blue">S</text>
+  <circle class="iron" cx="500" cy="168" r="58"/>
+  <circle class="shaft" cx="500" cy="168" r="10"/>
+  <path class="field" d="M438 134 H562" marker-end="url(#fc-gray)"/>
+  <path class="field" d="M438 168 H562" marker-end="url(#fc-gray)"/>
+  <path class="field" d="M438 202 H562" marker-end="url(#fc-gray)"/>
+  <path class="wire" d="M604 143 H700 V148"/>
+  <path class="wire" d="M396 193 H368 V298 H700 V188"/>
+  <circle class="src" cx="700" cy="168" r="20"/>
+  <path class="wire" d="M700 180 V158" marker-end="url(#fc-ink)"/>
+  <path class="knob" d="M674 192 L724 142" marker-end="url(#fc-orange)"/>
+  <text x="728" y="174" class="sig orange">i<tspan baseline-shift="sub" font-size="12">f</tspan></text>
+  <text x="500" y="326" text-anchor="middle" class="sig">Φ ∝ i<tspan baseline-shift="sub" font-size="12">f</tspan>, from a source of its own</text>
+  <text x="500" y="348" text-anchor="middle" class="lbl">turn i<tspan baseline-shift="sub" font-size="12">f</tspan> down: faster on the same voltage</text>
+</svg>

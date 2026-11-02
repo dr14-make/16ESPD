@@ -339,44 +339,49 @@ routeAlias: dc-control
 
 ## Two ways to control a DC motor
 
-<div class="grid grid-cols-2 gap-8 text-[0.95rem]">
+<div class="grid grid-cols-[1fr_1.1fr] gap-6 items-center text-[0.9rem]">
 <div>
 
 **By the voltage**, $T = \frac{K\Phi}{R}\bigl(V - K\Phi\,\omega\bigr)$: lower *V* moves the line down
 in speed, same slope. **Step 02:** a converter sets *V* = *d* · *V*<sub>pack</sub>, and caps the
 current.
 
+**By the flux**: replace the magnets by field coils, and their current *i*<sub>f</sub> sets Φ.
+Lower Φ, less torque per ampere and less back-EMF per rpm, so the machine **runs faster on the
+same voltage**. **Step 02:** when the voltage runs out, the converter turns the field down:
+**field weakening**.
+
 </div>
 <div>
 
-**By the flux**: lower Φ, less torque per ampere and less back-EMF per rpm, so the machine **runs
-faster on the same voltage**. **Step 02:** when the voltage runs out, the converter turns the
-field down: **field weakening**.
+<img src="/diagrams/02-flux-control.svg" class="mx-auto" style="max-height: 16.5rem" alt="Two cross-sections of a two-pole DC machine side by side. Left, permanent magnets: an N magnet on the left and an S magnet on the right of the housing, the field crossing the rotor from N to S; Φ is set once, by the magnets, and only the voltage is left to control. Right, a wound field: two iron poles, N and S, each with a field coil around it; the two coils are wired in series to an adjustable current source i_f outside the housing; Φ is proportional to i_f, and turning i_f down lets the machine run faster on the same voltage."/>
 
 </div>
 </div>
 
-<div class="mt-2">
-
-![Steady-state shaft torque against machine speed for the step 01 machine. Left, at full field: straight lines for 100, 200 and 350 V with the same slope, reaching zero torque near 985, 1969 and 3447 rpm; a dot on each marks 332.2 A, about 320 N·m. Right, at 350 V: the field fraction f at 1, 0.7 and 0.5; at the same 332.2 A the dots move to higher speed and lower torque, and the lines reach zero at higher speed with a flatter slope.](/figures/02-control-family.svg)
-
-</div>
+<img src="/figures/02-control-family.svg" class="mx-auto mt-1" style="max-height: 23rem" alt="Steady-state shaft torque against machine speed for the step 01 machine. Left, at full field: straight lines for 100, 200 and 350 V with the same slope, reaching zero torque near 985, 1969 and 3447 rpm; a dot on each marks 332.2 A, about 320 N·m. Right, at 350 V: the field fraction f at 1, 0.7 and 0.5; at the same 332.2 A the dots move to higher speed and lower torque, and the lines reach zero at higher speed with a flatter slope."/>
 
 <!--
-The deck gives two ways to control a DC motor, one per column, and the two plots below show what
-each one does to the machine's line.
+The deck gives two ways to control a DC motor, one per paragraph on the left; the drawing on the
+right shows what the second one needs, and the two plots below show what each one does to the
+machine's line.
 
-On the left, by the voltage. The formula is the fixed-supply line from two slides back, written as a
+First, by the voltage. The formula is the fixed-supply line from two slides back, written as a
 torque: T equals K Phi over R, times V minus K Phi omega. Lower the voltage V and the whole line
 moves down in speed, with the same slope. At low speed the back-EMF is small, so a low voltage is all
 it takes to drive the rated current. That is what step 02's converter does: it gives the machine a
 voltage d times the pack voltage, where the duty d is a number between 0 and 1, and below base speed
 it sets d just high enough to hold the current at its limit.
 
-On the right, by the flux. Lower Phi and two things happen: the machine makes less torque per
-ampere, and less back-EMF per rpm. The second is the useful one: with less back-EMF per rpm, the
-same voltage drives the machine faster. In the deck's version, the permanent magnets are replaced by
-field coils, and their current is turned down.
+Second, by the flux. A machine with permanent magnets cannot do this: the drawing's left half has
+two magnets, N and S, and their flux is set once, when the machine is built, so only the voltage is
+left to control. The drawing's right half is the deck's version: the magnets are replaced by two
+iron poles, each wound with a field coil, and the two coils, in series, are fed from a current
+source of their own, the field current i f, with the arrow through it meaning adjustable. The flux
+is proportional to that current. This is the separately excited machine of the course deck's
+drawing. Lower Phi and two things happen: the machine makes less torque per ampere, and less
+back-EMF per rpm. The second is the useful one: with less back-EMF per rpm, the same voltage drives
+the machine faster.
 
 Now the plots. They are notebook 04, section 1, computed from step 01's machine in steady state,
 with every parameter read from the dyno run: the current is V minus f K Phi omega over R, and the
