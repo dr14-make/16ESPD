@@ -31,6 +31,9 @@ All downloaded PDFs were read in October 2026.
 | 2012 Leaf inverter peak efficiency | above 99% at high speed | verified (ORNL) |
 | 2012 Leaf motor + inverter peak efficiency | above 96% | verified (ORNL) |
 | Braking energy at the wheel on WLTC 3b, course car | 25–26% of positive traction energy (33–36 Wh/km) | derived (§4.1) |
+| Lecture 2's engine on WLTC 3b, positive crank work ÷ fuel energy | 29.5 % over the cycle (11.59 MJ of 39.26 MJ); by phase 21.8 / 28.2 / 30.3 / 33.0 % (Low / Medium / High / Extra High); 26.8 % net of engine braking | derived (the `MappedCarWLTC` reference bench of branch `feat/handson02-wltc-bonus`, 5.22 L/100 km reproduced, on current main) |
+| Course BEV on WLTC 3b, cells to machine shaft while driving | 88.1 % (terminals to shaft 89.6 %), auxiliaries excluded; shaft to cells under braking 91.2 % | derived (`PlanarBEVWLTCTransient`, its energy meters) |
+| Engine car ÷ BEV at the battery, MJ/100 km by WLTC phase | Low 5.53, Medium 4.50, High 3.44, Extra High 2.89 | derived (notebook 03, §4) |
 | Leaf braking-to-battery efficiency on UDDS | 70–80% (MY2012), 72–87% (MY2013) | search summary (Boretti 2016 abstract) |
 | 48 V mild-hybrid WLTC CO₂ reduction, similar 15–16 kW e-machine | P0 3.8–6.6%; P1 8.5%; P2 11.9–15.8%; P3 15.3%; P4+P0 15.5% (vs 12 V stop/start) | verified (ICCT 2022, quoting Schaeffler 2018) |
 

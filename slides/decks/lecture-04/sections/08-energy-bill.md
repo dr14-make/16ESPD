@@ -257,20 +257,33 @@ class: big-figure
 
 ## Against the engine car
 
-<div class="grid grid-cols-[1.6fr_1fr] gap-6 items-center">
+<div class="grid grid-cols-[1.5fr_1fr] gap-6 items-start">
 <div>
 
-![Energy over the WLTC in MJ/100 km: Lecture 2's engine car 168.8 in fuel, the battery-electric car 54.3 at the wall with 13 % charging loss, and 47.2 at the battery.](/figures/08-mj-comparison.svg)
+<img src="/figures/08-mj-comparison.svg" style="max-height: 20rem" alt="Energy over the WLTC in MJ/100 km: Lecture 2's engine car 168.8 in fuel, the battery-electric car 54.3 at the wall with 13 % charging loss, and 47.2 at the battery."/>
+
+<div class="text-[0.85rem]">
+
+**At the battery:** what the model integrates, the net energy out of the pack's terminals over the
+WLTC. **At the wall:** what the grid delivers to recharge it, ÷ 0.87 for an assumed **13 %**
+charging loss: the charger's AC to DC, the pack heating while it charges.
 
 </div>
-<div class="text-[0.95rem]">
+</div>
+<div class="text-[0.85rem]">
 
 1 kWh = 3.6 MJ: **13.12 kWh/100 km = 47.2 MJ/100 km**.
 
 Lecture 2's engine car: 5.22 L/100 km × 0.745 kg/L × 43.4 MJ/kg = **168.8 MJ/100 km**.
 
-**3.6 times less**, on the same cycle and road load, with a car 100 kg heavier. At the wall:
-54.3.
+**3.6 times less**, same cycle and road load, a car 100 kg heavier. Why (derived):
+
+- The engine turns at most **36&nbsp;%** of its fuel into work (Lecture 2's EPA map),
+  **30&nbsp;%** over the WLTC, **22&nbsp;%** in town; the cells to the shaft pass **88&nbsp;%**.
+- Braking comes back through regen, last slide, instead of heating the discs.
+- The gap is widest in town, **5.5×**, narrowest on the motorway, **2.9×**: drag dominates.
+
+*Tank to wheel only:* the electricity is made somewhere; neither car has a heater.
 
 </div>
 </div>
@@ -278,26 +291,47 @@ Lecture 2's engine car: 5.22 L/100 km × 0.745 kg/L × 43.4 MJ/kg = **168.8 MJ/1
 <!--
 Against the engine car. The figure is notebook 03, section 4: the energy over the WLTC in megajoules
 per 100 kilometers, three bars. Green, Lecture 2's engine car, in fuel: 168.8. Light gray, the
-battery-electric car at the wall, including the 13 percent charging loss: 54.3. Blue, the
-battery-electric car at the battery: 47.2.
+battery-electric car at the wall: 54.3. Blue, the battery-electric car at the battery: 47.2.
+
+The two electric bars are defined under the figure. At the battery is what the model integrates:
+the net energy out of the pack's terminals over the whole cycle, what it gave out minus what
+braking put back. At the wall is what the grid has to deliver to put that energy back into the
+pack. Charging loses some on the way: the charger converts AC to DC, and the pack's own resistance
+heats it while it charges. We assume 13 percent, inside the 10 to 15 percent the plan allows, so
+the wall bar is the battery bar divided by 0.87: 47.2 over 0.87 is 54.3.
 
 The arithmetic on the right. One kilowatt-hour is 3.6 megajoules, so 13.12 kilowatt-hours per 100
 kilometers is 47.2 megajoules per 100 kilometers. Lecture 2's engine car burns 5.22 liters per 100
 kilometers on the same cycle; times 0.745 kilograms per liter, times the lower heating value of 43.4
 megajoules per kilogram, that is 168.8. The electric car needs 3.6 times less energy, on the same
-cycle and road load, with a car 100 kilograms heavier. And at the wall, 47.2 divided by 0.87 is
-54.3.
+cycle and road load, with a car 100 kilograms heavier.
 
-Be fair about the comparison. The engine car weighs 1400 kilograms, this one 1500. Neither carries a
-heater or air conditioning: a 3 kilowatt heater would add 64 watt-hours per kilometer, half again.
-And the megajoules of electricity were made somewhere, in a power station, at its own efficiency.
-The bill compares the cars, not the energy systems behind them.
+Why 3.6 times? Both cars do about the same work at the shaft. Lecture 2's engine gives 11.6
+megajoules of positive work at its crankshaft over the cycle, about 50 megajoules per 100
+kilometers; our machine gives 51.7 at its shaft. The difference is what each car spends to make that
+work, the three lines.
 
-Most of the gap is the engine's efficiency: Lecture 2's engine, on its EPA map, turns at most 36
-percent of its fuel into work, and on the WLTC it rarely runs near that best point, against a chain
-that loses a few percent per link and gets braking energy back. The notebook also shows the gap
-phase by phase: it is widest in town, where the engine runs far below its best efficiency and every stop turns
-kinetic energy into heat, and it narrows on the motorway, where drag dominates both bills.
+First, the engine. On Lecture 2's EPA map it turns at most 36 percent of its fuel into work, at its
+best point. Over the WLTC it averages 30 percent, and in the town phase only 22, because the cycle
+asks for little power and the engine idles at every stop. I computed those from Lecture 2's
+reference run of the WLTC bench: its positive crankshaft work divided by the fuel's energy. The
+electric chain, from the cells to the machine's shaft, passes 88 percent of the energy while
+driving, from notebook 03's meters: the battery's resistance, the converter and the machine each
+take their share, the machine the most.
+
+Second, braking. The last slide showed a quarter of the traction energy coming back to the pack.
+The engine car turns that energy into heat in its brakes and in engine braking.
+
+Third, the gap phase by phase, from notebook 03's table: in town, the low phase, the engine car
+needs 5.5 times the energy; on the motorway, the extra-high phase, 2.9 times. In town the engine
+runs far below its best efficiency and every stop turns kinetic energy into heat. On the motorway
+the engine runs nearer its best point, there is little braking to recover, and drag dominates both
+bills.
+
+The last line is the fair-comparison caveat. These are tank-to-wheel numbers: the megajoules of
+electricity were made somewhere, in a power station, at its own efficiency, and the bill compares
+the cars, not the energy systems behind them. And neither car carries a heater or air conditioning:
+a 3 kilowatt heater would add 64 watt-hours per kilometer, half again.
 -->
 
 ---
