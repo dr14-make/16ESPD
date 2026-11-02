@@ -33,7 +33,7 @@ function context(integ, assembly)
     read_signals = getu(assembly, collect(last.(signals)))
     snapshot = i -> NamedTuple{Tuple(first.(signals))}(Tuple(read_signals(i)))
     return (; i_s, mass, radius, torque, ratio, snapshot,
-            by_hand = hasproperty(assembly.driver, :throttle),
+            by_hand = hasproperty(assembly.driver, :reader),
             wheel_at = (fl = (a, tw / 2), fr = (a, -tw / 2),
                         rl = (-b, tw / 2), rr = (-b, -tw / 2)))
 end
@@ -59,7 +59,7 @@ function apply!(integ, sys, ctx, c, speed)
     ctx.by_hand || return nothing
     liftoff = c.throttle < 0.02 ? ctx.mass * 9.81 * DRIVE_MODES[c.mode][2] *
         ctx.radius / (4 * ctx.torque) : 0.0
-    VehicleSystemsComponents.set_driver_commands!(integ, sys;
+    VehicleSystemsComponents.set_human_commands!(;
         throttle = c.throttle, brake = max(c.brake, liftoff), steer = c.steer * max_steer(c, speed))
 end
 
@@ -97,7 +97,7 @@ end
 # No method is overwritten when SDL loads. Choose its extension only when driving is requested.
 function VehicleSystemsComponents.drive_window(integ, sys, spec)
     padext = Base.get_extension(VehicleSystemsComponents, :VehicleSystemsComponentsPadExt)
-    mode = padext === nothing || !hasproperty(sys.driver, :throttle) ? nothing : padext.PadMode()
+    mode = padext === nothing || !hasproperty(sys.driver, :reader) ? nothing : padext.PadMode()
     return VehicleSystemsComponents.drive_window(integ, sys, spec, mode)
 end
 # Runtime routing avoids dependencies between the two optional extensions.
@@ -132,6 +132,7 @@ function warm_up!(integ, sys, ctx, pad)
         map(grip_color, grips(s))
         feedback!(pad, s, controls, tm)
     end
+    VehicleSystemsComponents.reset_human_commands!()
     quiet!(pad)
     push!(WARMED, typeof(integ))
 end
@@ -140,6 +141,7 @@ VehicleSystemsComponents.drive_window(integ, sys, spec, ::Nothing) = window!(int
 
 "Reset with fresh continuous and discrete solution histories."
 function fresh_integrator(initial_prob, spec)
+    VehicleSystemsComponents.reset_human_commands!()
     prob = remake(initial_prob; p = deepcopy(initial_prob.p))
     return init(prob, Rodas5P(); dtmax = spec.dtmax, saveat = spec.frame,
         save_everystep = false)
@@ -282,6 +284,7 @@ function window!(integ, sys, spec, pad)
         @info "drive interrupted; returning current drive" simulation_time = integ.t
     finally
         # The pad extension owns pad lifetime, including errors before display(fig).
+        VehicleSystemsComponents.reset_human_commands!()
         isopen(screen) && close(screen)
     end
     return (; frames, wall = time() - wall_start, integrator = integ)

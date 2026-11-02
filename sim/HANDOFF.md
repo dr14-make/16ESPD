@@ -10,14 +10,18 @@ Realtime drive is a library analysis with optional UI extensions. Read this, the
 - GLMakie alone gives keyboard driving. Loading both GLMakie and SimpleDirectMediaLayer enables
   `VehicleSystemsComponentsPadExt`, selected at call time through `Base.get_extension`; device
   discovery occurs only on an explicit drive call. Failed discovery falls back to keyboard.
-- The window uses the caller's integrator and system, returns `(; frames, wall, integrator)`
-  (wall seconds excluding warm-up/window construction), and writes exclusively through core
-  `set_driver_commands!(integ, sys; throttle, brake, steer, esp_on, abs_on,
-  mu_fl, mu_fr, mu_rl, mu_rr)`. That helper owns discrete-history saving. Toggle/friction values
-  are omitted with `nothing` unless changed; analog commands are supplied every driving frame.
-- Model parameter values and signal getters are local to each window. Commands now target
-  `sys.driver`; no model equations are changed by the UI migration. In signal mode, runtime
-  friction replaces the parameter-mode `mu_scale` values; existing benches retain parameter mode.
+- The window uses the caller's integrator and system and returns `(; frames, wall, integrator)`.
+  For `HumanDriver`, it writes `set_human_commands!(; throttle, brake, steer)` each driving frame.
+  The Julia buffer is sampled on a 100 Hz periodic clock (`HumanDriver.period`, a structural
+  parameter) and the three outputs are held between ticks. Sampled simulation time keeps the
+  registered Julia reads on the clock; returned solutions retain the held command history.
+- `reset_human_commands!()` clears the session-wide buffer to (0, 0, 0). The analysis clears it
+  before setup, warm-up clears it afterward, reset clears it before initializing, and window
+  exit clears it. Direct integrator users must clear it before initializing each run. One
+  interactive drive owns this buffer at a time; concurrent human drives are not supported.
+- Model parameter values and signal getters are local to each window. A scripted assembly has
+  no buffer reader: the window only draws it and never opens a pad or writes commands.
+  ESP, ABS and uniform road grip are fixed analysis settings, not runtime commands.
 - Reset initializes a new integrator from the initial problem with empty command histories.
   The window returns that current integrator to the analysis, so the returned solution is the
   drive since the last reset. UI toggles/mode/lock survive reset. `reinit!` alone does not erase
@@ -28,8 +32,9 @@ Realtime drive is a library analysis with optional UI extensions. Read this, the
   the transport retains its close/finalizer/exit-hook quieting.
 - `sim/drive.jl` only loads optional packages from the stacked sim environment and runs an
   analysis. `main(spec)` calls `DyadInterface.run_analysis(spec)`; the zero-argument convenience
-  calls `VehicleSystemsComponents.PlanarBEVRealtimeDrive(headless = false, duration = 0)`.
-  Studio and Orchestrator list `PlanarBEVRealtimeDrive`, whose default is a three-second headless run.
+  calls `VehicleSystemsComponents.PlanarBEVByHandDrive()`. Studio and Orchestrator list
+  `PlanarBEVRealtimeDrive` (scripted, 22 seconds, no window) and `PlanarBEVByHandDrive`
+  (human, window on, runs until closed). Set `window = false, duration = 3` for neutral driving.
 - `sim/DualSense.jl` is a compatibility include of `ext/DualSense.jl`, so `probe.jl` needs no
   GLMakie and retains the transport API. Do not open a window/pad during import or tests.
 - Automated validation is headless. `test/realtime_extensions.jl` separately loads the optional
@@ -60,9 +65,8 @@ dependencies (ADR-0002's student never needs to resolve them).
 The car is the library component `Vehicle.Planar.PlanarBEVDrive`
 (`dyad/Vehicle/Planar/PlanarBEVDrive.dyad`): `PlanarCar`, `ElectricDrive` on the front axle via
 `DifferentialGear`, `RegenBlend`, `BrakeControlUnit` and `PlanarRoadLoad`. The realtime analysis
-owns model/integrator construction; the extension only consumes them. The driver-command helper
-sets `sys.driver` commands and road friction. `bench_realtime.jl` and `check_coast_brake.jl`
-retain their scenarios and model construction, using the same command helper.
+owns model/integrator construction; the extension only consumes them. `bench_realtime.jl`
+fills the human buffer between frame steps; `check_coast_brake.jl` uses the scripted hard-stop preset.
 
 ## Run
 
@@ -88,8 +92,8 @@ On Linux, SDL drives the DualSense's effects only through its `/dev/hidraw*` nod
 read-write access there (desktop sessions usually grant it to the seat user) SDL falls back to
 evdev, input still works, and `probe.jl` reports the refused feedback sends.
 
-Controls: R2/L2 or W/S throttle and brake, left stick or A/D steer, △/E ESP, □/Q ABS, ○/R road
-surface (dry, wet, snow, split-µ), ×/M drive mode (N, D, e-Pedal), D-pad or `[` `]` steering lock,
+Controls: R2/L2 or W/S throttle and brake, left stick or A/D steer, ×/M drive mode
+(N, D, e-Pedal), D-pad or `[` `]` steering lock,
 Options/Backspace reset, PS/P pause.
 
 ## Numbers that should hold
@@ -102,19 +106,18 @@ If one of these moves, something changed the physics; find out what before conti
 
 ## Decisions and why
 
-- **Driver commands as causal signals**, emitted by `DriverCommands` from discrete parameters.
-  The loop updates them between steps and explicitly saves their parameter time series, so
-  observables retain the command history instead of recomputing with final values. Throttle,
-  brake, and steering retain the 50 ms first-order lags (`foot`, `hands`) so a torque command
-  does not jump the converter's algebraic variable at an instant without a solver event.
+- **Driver commands as clocked causal signals**, emitted by `HumanDriver` from a Julia buffer.
+  The loop writes between steps; the model samples and holds commands, and the solver records
+  their discrete history. The car retains its 50 ms actuator response so any driver can use
+  the same socket without moving solver protection into the driver.
 - **Device I/O never runs inside the equations** (same reason as ADR-0004): the loop polls the pad
   and sends one feedback report per frame.
 - **The pad is quiet whenever the sim is not driving it.** A DualSense keeps its last motor and
   trigger bytes with no timeout, so warm-up computes the haptics without sending them and ends with
   one quiet report, pause sends no rumble or trigger effect (the lightbar and player LEDs still show
   state), and `close`, plus an exit hook for a hard Ctrl-C, zeroes every open pad.
-- **ESP, ABS and road surface are set on the integrator only when they change**; throttle, brake
-  and steering every frame.
+- **ESP, ABS and road surface are fixed per run**; their pad and keyboard buttons are dropped
+  until the CAN bus lectures. Throttle, brake and steering are buffered every driving frame.
 - **SDL for transport, our own effect block**: SDL2 (`SimpleDirectMediaLayer`) reads input and
   frames output for USB and Bluetooth on all three OSes. No library encodes the adaptive triggers,
   so `DualSense.jl` fills the 47-byte DualSense effect block itself and hands it to

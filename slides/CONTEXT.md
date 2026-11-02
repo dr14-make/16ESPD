@@ -83,6 +83,7 @@ A Driver implementation that plays commands from a time table without human inpu
 _Avoid_: headless driver, test loop
 
 **Human driver**:
-A Driver implementation that reads a person's pedals, steering or keyboard on its own clock
-and holds each command between ticks; without a window it reads neutral.
+A Driver implementation that samples buffered pedal and steering commands on its own clock
+and holds each command between ticks. The window fills the buffer from a pad or keyboard;
+without a window it reads neutral. Device I/O stays outside the model equations.
 _Avoid_: interactive analysis, gamepad controller

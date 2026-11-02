@@ -30,8 +30,8 @@ using SimpleDirectMediaLayer
     step!(integ, 0.2, true)
     fresh = win.fresh_integrator(initial, spec)
     @test fresh.t == 0.0
-    @test fresh.ps[sys.driver.throttle] == 0.0
-    @test integ.ps[sys.driver.throttle] == 1.0
+    @test fresh.sol(0.0; idxs = sys.driver.throttle_signal) == 0.0
+    @test integ.sol(0.05; idxs = sys.driver.throttle_signal) == 1.0
     controls.throttle, controls.brake = 0.0, 0.2
     win.apply!(fresh, sys, ctx, controls, 0.0)
     step!(fresh, 0.1, true)
@@ -40,6 +40,15 @@ using SimpleDirectMediaLayer
     @test issorted(fresh.sol.t)
     @test all(h -> issorted(h.t), fresh.sol.discretes)
     @test length(win.car_shapes(ctx, ctx.snapshot(fresh))[2]) == 4
+    @named scripted = VehicleSystemsComponents.PlanarBEVScripted()
+    viewer_setup = DyadInterface.setup_analysis(DyadInterface.TransientAnalysisSpec(;
+        model = scripted, stop = 0.1, optimize = DyadInterface.OptimizationLevel.None(), progress = false))
+    viewer_sys = DyadInterface.symbolic_container(viewer_setup.prob.f)
+    viewer = init(viewer_setup.prob, Rodas5P(); dtmax = 0.005)
+    viewer_ctx = win.context(viewer, viewer_sys)
+    @test !viewer_ctx.by_hand
+    @test win.apply!(viewer, viewer_sys, viewer_ctx, controls, 0.0) === nothing
+    @test length(win.car_shapes(viewer_ctx, viewer_ctx.snapshot(viewer))[2]) == 4
     ds = padext.DualSense
     pad = ds.Pad(C_NULL, "in-memory test", true,
         ds.PadState(0, 0, 0, 0, 0, 0, 0x08, 0), 0, 0, ds.TriggerOff(), ds.TriggerOff(),
@@ -60,10 +69,10 @@ using SimpleDirectMediaLayer
     @eval VehicleSystemsComponents function unpaced_drive!(i, s, spec)
         win = Base.get_extension(@__MODULE__, :VehicleSystemsComponentsGLMakieExt)
         initial = remake(i.sol.prob; p = deepcopy(i.p), u0 = copy(i.u))
-        set_driver_commands!(i, s; throttle = 1.0)
+        set_human_commands!(throttle = 1.0, brake = 0.0, steer = 0.0)
         step!(i, 0.2, true)
         fresh = win.fresh_integrator(initial, spec)
-        set_driver_commands!(fresh, s; brake = 0.2)
+        set_human_commands!(throttle = 0.0, brake = 0.2, steer = 0.0)
         step!(fresh, 0.1, true)
         return (; frames = 1, wall = 0.1, integrator = fresh)
     end
