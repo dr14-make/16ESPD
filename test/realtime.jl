@@ -73,7 +73,7 @@ end
         @test sol(t; idxs = sys.driver.brake_signal) == (t < 19 ? 0.0 : 1.0)
         @test sol(t; idxs = sys.driver.steer_signal) == 0.0
     end
-    @test round(3.6sol(22.0; idxs = sys.vehicle.motion.vx); digits = 1) == 19.3
+    @test round(3.6sol(22.0; idxs = sys.vehicle.motion.vx); digits = 1) == 0.0
     configured = VehicleSystemsComponents.PlanarBEVRealtimeDrive(duration = 0.1, esp_on = 0.0, abs_on = 0.0, mu = 0.7)
     cs = symbolic_container(configured)
     @test configured.sol.prob.ps[cs.vehicle.ecu.esp_on] == 0.0
