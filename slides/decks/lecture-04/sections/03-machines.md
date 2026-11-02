@@ -275,23 +275,25 @@ routeAlias: foc
 
 <FocMachine />
 
-<div class="caption">Drawn with one pole pair. The red arrow is the stator current; d points along the
-magnets, q a quarter turn ahead.</div>
+<div class="caption">Drawn with one pole pair, so every angle is in electrical degrees; a real machine
+has <i>p</i> pole pairs: <Link to="poles-and-phases">poles and phases</Link>. The red arrow is the
+stator current; d points along the magnets, q a quarter turn ahead.</div>
 
 </div>
 <div class="text-[0.95rem]">
 
-The inverter measures the rotor angle and places the stator current **a quarter turn ahead of the
-magnets**, on the **q** axis: there every ampere makes torque.
-
-The stator carries three **alternating** currents. Seen from the rotor, they are **two steady
+**d and q.** The three phase currents add up to one rotating vector, the red arrow. Measured on
+axes fixed to the rotor, **d** along the magnets and **q** 90° electrical ahead, it is **two steady
 numbers**:
 
-- *i*<sub>q</sub>, the torque current: *T* ∝ *i*<sub>q</sub>
-- *i*<sub>d</sub>, along the magnets: zero, until the voltage runs out
+- *i*<sub>q</sub> makes torque, *T* ∝ *i*<sub>q</sub>: the DC machine's armature current;
+- *i*<sub>d</sub> strengthens or weakens the magnets' field: the DC machine's field current.
 
-**Field weakening on:** part of the current turns against the magnets and weakens their field;
-less is left for torque. Why and how: next slide.
+Up to base speed the inverter puts all the current on **q**, where every ampere makes torque.
+
+**The speed slider:** past 1× base speed the voltage runs out; part of the current turns to
+−*i*<sub>d</sub>, against the magnets, and less is left for *i*<sub>q</sub>.
+<Link to="field-weakening">Why and how</Link>.
 
 </div>
 </div>
@@ -303,32 +305,43 @@ its south half blue, turning inside a three-phase stator. The three dashed lines
 are the axes of the three stator windings, 120 degrees apart. Two black dashed lines turn with the
 rotor: d points along the magnets, through the north pole, and q points a quarter turn ahead of it.
 The thick red arrow, labeled i, is the stator current: the combined effect of the three phase
-currents, drawn as one vector.
+currents, drawn as one vector. The caption says the drawing has one pole pair, so its angles are
+electrical degrees; the Leaf has four pole pairs, and the next slide shows how that fits.
 
-Watch the red arrow as the rotor turns. The inverter measures the rotor angle and keeps the current
-a quarter turn ahead of the magnets, on the q axis. There every ampere makes torque, as in the
-picture of the conductor in the field: the force is largest when the current is at right angles to
-the field.
+On the right, the definition of d and q, in two lines. The three phase currents add up to one
+vector that rotates with the rotor: the red arrow. Measure that vector on two axes fixed to the
+rotor, d along the magnets and q 90 electrical degrees ahead of it, and it becomes two numbers that
+do not change as the rotor turns. i q, across the magnets, makes the torque: the torque is
+proportional to it, and it plays the role of the DC machine's armature current. i d, along the
+magnets, strengthens or weakens the magnets' field: it plays the role of the DC machine's field
+current.
 
-On the right, the top plot is labeled the stator carries: three alternating currents. These are the
-three phase currents, a in blue, b in orange and c in green, over one electrical revolution. They
-alternate at the rotor's electrical frequency, and the red cursor moves with the rotor. Below them,
-labeled the rotor sees: two steady numbers, is the same current seen from the rotor: one bar for i
-d, along the magnets, and one for i q, across them. They do not change at all as the rotor turns.
-That is the whole trick of field-oriented control: in the rotor's frame an AC machine has DC
-quantities, and the controller can regulate them as such. As the slide says, i q is the torque
-current, and the torque is proportional to it. i d, along the magnets, is zero until the voltage
-runs out.
+Watch the red arrow as the rotor turns. Up to base speed the inverter measures the rotor angle and
+keeps the current a quarter turn ahead of the magnets, on the q axis. There every ampere makes
+torque, as in the picture of the conductor in the field: the force is largest when the current is
+at right angles to the field.
 
-[click the field weakening button]
+Beside the machine, the top plot is labeled the stator carries: three alternating currents. These are
+the three phase currents, a in blue, b in orange and c in green, over one electrical revolution.
+They alternate at the rotor's electrical frequency, and the red cursor moves with the rotor. Below
+them, labeled the rotor sees: two steady numbers, is the same current seen from the rotor: one bar
+for i d and one for i q. They do not change at all as the rotor turns. That is the whole trick of
+field-oriented control: in the rotor's frame an AC machine has DC quantities, and the controller
+can regulate them as such.
 
-Now the current vector swings back, toward the south pole: part of it points against the magnets.
-The i d bar goes negative, and that negative d current opposes the magnets' flux and weakens their
-field. The length of the vector stays the same, at the inverter's current limit, so what is left for
-the q part, and for the torque, shrinks: in the animation i d is minus 0.6 of the limit, and i q
-drops to 0.8. That is the last paragraph of the slide, and it is what the Leaf's inverter does above
-base speed, and what our converter does with its field input. Why it is needed, and how far it
-goes, is the next slide.
+[move the speed slider from 0.5 up past 1]
+
+The slider sets the machine's speed as a multiple of base speed, and the rotor turns faster with it.
+Up to 1 nothing else changes: all the current stays on q. Past 1 the voltage has run out, and the
+current vector swings back, toward the south pole: part of it points against the magnets. The i d
+bar goes negative, and that negative d current opposes the magnets' flux and weakens their field.
+The length of the vector stays the same, at the inverter's current limit, so what is left for the q
+part, and for the torque, shrinks. The numbers under the controls are the operating point of the
+per-unit machine of the field-weakening slide, computed the same way: at one and a half times base
+speed i d is minus 0.56 and i q 0.83; at two and a half times, minus 0.84 and 0.54; at four times,
+minus 0.94 and 0.33. That is what the Leaf's inverter does above base speed, and what our converter
+does with its field input. Why it is needed, and how far it goes, is the field-weakening slide,
+after the next one.
 -->
 
 ---
