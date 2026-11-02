@@ -10,7 +10,8 @@ sinusoidal (PMSM) machine, the three back-EMFs, the currents the drive puts in, 
 curve is the BLDC's torque with winding inductance: a six-step inverter at a fixed average voltage.
 
 `04-what-envelope`: a schematic torque–speed envelope at the course machine's corner, with the
-reachable region, a few operating points and the power.
+reachable region, a few operating points and the power. `01-envelope-small` is the same curves,
+small, for the Leaf's numbers in section 01.
 
 `03-field-weakening`: the current and voltage limits of a PMSM in the i_d–i_q plane at several
 speeds, and the torque and power along the limits, for an illustrative per-unit machine.
@@ -225,10 +226,14 @@ end
 # `04-envelope` and the base-speed slide states them; the schematic leaves out the shaft losses.
 const T_RATED, N_BASE, N_MAX = 320.0, 3283.0, 10100.0
 
-function envelope_schematic_plot()
+function envelope_curves()
     n = collect(range(0, N_MAX; length = 400))
     T = [x <= N_BASE ? T_RATED : T_RATED * N_BASE / x for x in n]
-    P = T .* n .* (π / 30) ./ 1e3
+    return n, T, T .* n .* (π / 30) ./ 1e3
+end
+
+function envelope_schematic_plot()
+    n, T, P = envelope_curves()
     p = plot(; layout = grid(2, 1; heights = [0.72, 0.28]), size = (1280, 600), legend = false,
         link = :x, xlims = (0, 10600), xticks = 0:2000:10000)
     for sp in (1, 2)
@@ -264,7 +269,37 @@ function envelope_schematic_plot()
     return p
 end
 
+"""
+The same envelope at the size of a column beside a table: the two curves, base speed and the two
+regions named, without the operating points.
+"""
+function envelope_small_plot()
+    n, T, P = envelope_curves()
+    p = plot(; layout = grid(2, 1; heights = [0.62, 0.38]), size = (620, 400), legend = false,
+        link = :x, xlims = (0, 10600), xticks = (0:2500:10000, ["0", "2500", "5000", "7500", "10 000"]),
+        guidefontsize = 15, tickfontsize = 13, left_margin = 4Plots.mm)
+    for sp in (1, 2)
+        vline!(p[sp], [N_BASE]; color = :gray, ls = :dash, lw = 1.5)
+    end
+    plot!(p[1], Shape([n; N_MAX; 0], [T; 0; 0]); color = "#1f5fa8", fillalpha = 0.12,
+        linealpha = 0)
+    plot!(p[1], n, T; color = :black, lw = 3.5, ylims = (0, 420), yticks = 0:100:400,
+        ylabel = "torque [N·m]")
+    scatter!(p[1], [N_BASE], [T_RATED]; color = :black, ms = 8)
+    annotate!(p[1], N_BASE + 150, T_RATED + 45,
+        text("base speed, $(round(Int, N_BASE)) rpm", 15, :left, :black))
+    annotate!(p[1], N_BASE / 2, 150, text("constant", 15, :center, "#1f5fa8"))
+    annotate!(p[1], N_BASE / 2, 100, text("torque", 15, :center, "#1f5fa8"))
+    annotate!(p[1], 7600, 250, text("constant power", 15, :center, "#a75d00"))
+    plot!(p[2], n, P; color = :black, lw = 3, ylims = (0, 150), yticks = 0:50:150,
+        ylabel = "power [kW]", xlabel = "motor speed [rpm]")
+    annotate!(p[2], N_BASE + 150, 130,
+        text("$(round(Int, T_RATED * N_BASE * π / 30 / 1e3)) kW", 15, :left, :black))
+    return p
+end
+
 const FIGURES = [
+    "01-envelope-small" => envelope_small_plot,
     "03-bldc-pmsm-waveforms" => waveform_plot,
     "03-field-weakening" => field_weakening_plot,
     "04-what-envelope" => envelope_schematic_plot,

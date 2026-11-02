@@ -593,6 +593,8 @@ The battery is charged
 - forward and reverse driving: a **two-quadrant** controller;
 - plus braking in both directions, energy back into the battery: **four quadrants**.
 
+<img src="/figures/01-envelope-small.svg" class="mx-auto" style="max-height: 18.5rem" alt="Small torque and power against motor speed for the Leaf's motor: torque flat at 320 N·m up to the base speed of 3283 rpm, then falling to about 104 N·m at 10 100 rpm; power rising in a straight line to 110 kW at base speed, then flat. The flat-torque region is labeled constant torque, the rest constant power."/>
+
 </div>
 <div class="tight">
 
@@ -607,6 +609,10 @@ The battery is charged
 | pack | 40 kWh, 350 V, 96s2p | Nissan |
 | pack resistance | 0.10–0.14 Ω | INL |
 | mass | 1500 kg | course car |
+
+**<Link to="base-speed">Base speed</Link>:** the motor speed where constant torque turns into
+constant power, 110 kW / 320 N·m = 343.8 rad/s = **3283 rpm**.
+
 
 </div>
 </div>
@@ -624,9 +630,14 @@ Regenerative braking needs four quadrants.
 
 The table on the right is the car you build today, with each number's source. Peak torque 320 newton
 meters and peak power 110 kilowatts, both from Nissan's specification. Base speed 3283 rpm, also
-Nissan's, and you can check that the numbers agree: 110 000 watts divided by 320 newton meters is
-343.8 radians per second, which is 3283 rpm. So the motor gives 320 newton meters up to 3283 rpm,
-where it meets its 110 kilowatts. The top motor speed, about 10 100 rpm, is derived: Nissan does not
+Nissan's. The line under the table says what base speed is: the motor speed where constant torque
+turns into constant power. And you can check that the numbers agree: 110 000 watts divided by 320
+newton meters is 343.8 radians per second, which is 3283 rpm. The small plot at the bottom left
+shows it. Top, torque
+against motor speed: flat at 320 newton meters up to the dashed line at 3283 rpm, then falling.
+Bottom, power: rising in a straight line to 110 kilowatts at base speed, then flat. Section 04
+draws the same picture large and says why the corner falls there; the link on base speed goes to
+it. The top motor speed, about 10 100 rpm, is derived: Nissan does not
 state it, but the car's top speed of 144 kilometers per hour, through the 8.193 reduction and a
 wheel radius of 0.31 meters, gives about 10 100 rpm. The reduction ratio, 8.193, is Nissan's. The
 pack is 40 kilowatt-hours at 350 volts nominal, made of 96 pairs of cells in series, 96s2p. The pack
