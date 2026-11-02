@@ -4,31 +4,43 @@ using DyadInterface: simplify_model, symbolic_container
 using OrdinaryDiffEqDefault: init, step!, Rodas5P
 using DyadOrchestrator
 
-@testset "Held by-hand command history" begin
+@testset "Clocked human command history and replay" begin
+    VehicleSystemsComponents.reset_human_commands!()
     @named model = VehicleSystemsComponents.PlanarBEVByHand(esp_on = 0.0, abs_on = 0.0, mu = 0.7)
     sys = simplify_model(model)
-    integ = init(ODEProblem(sys, [], (0.0, 1.0)), Rodas5P(); dtmax = 0.005, saveat = 0.01)
-    names = (:throttle, :brake, :steer)
-    outputs = (:throttle_signal, :brake_signal, :steer_signal)
-    commands = [(1.0, 0.0, 0.0), (0.0, 0.2, 0.1), (0.3, 0.0, -0.1)]
-    for values in commands
-        VehicleSystemsComponents.set_driver_commands!(integ, sys; NamedTuple{names}(values)...)
-        step!(integ, 0.2, true)
-        for (name, value) in zip(names, values)
-            @test integ.ps[getproperty(sys.driver, name)] == value
+    prob = ODEProblem(sys, [], (0.0, 1.0))
+    function replay()
+        VehicleSystemsComponents.reset_human_commands!()
+        integ = init(prob, Rodas5P(); dtmax = 0.005, saveat = 0.001)
+        step!(integ, 0.005, true)
+        commands = [(1.0, 0.0, 0.0), (0.0, 0.2, 0.1), (0.3, 0.0, -0.1)]
+        for values in commands
+            VehicleSystemsComponents.set_human_commands!(; NamedTuple{(:throttle, :brake, :steer)}(values)...)
+            step!(integ, 0.02, true)
         end
-        for wheel in (:fl, :fr, :rl, :rr)
-            w = getproperty(sys.vehicle.car, wheel)
-            @test integ.ps[w.mu_scale] == 0.7
-            @test integ.ps[w.joint.mu_A] == 0.7
-        end
+        return integ.sol
     end
-    for (j, output) in enumerate(outputs)
+    first, second = replay(), replay()
+    for (j, output) in enumerate((:throttle_signal, :brake_signal, :steer_signal))
         signal = getproperty(sys.driver, output)
-        expected = [commands[min(searchsortedlast([0.0, 0.2, 0.4], t), 3)][j] for t in integ.sol.t]
-        @test integ.sol(integ.sol.t; idxs = signal).u == expected
+        @test first[signal] == second[signal]
+        for (t, expected) in ((0.007, (0.0, 0.0, 0.0)), (0.012, (1.0, 0.0, 0.0)),
+                              (0.027, (1.0, 0.0, 0.0)), (0.032, (0.0, 0.2, 0.1)),
+                              (0.047, (0.0, 0.2, 0.1)), (0.052, (0.3, 0.0, -0.1)))
+            @test first(t; idxs = signal) == expected[j]
+        end
+        # Changing the live buffer cannot change returned history.
+        VehicleSystemsComponents.reset_human_commands!()
+        @test first(0.052; idxs = signal) == (0.3, 0.0, -0.1)[j]
     end
-    @test string(integ.sol.retcode) in ("Default", "Success")
+    @test first.t == second.t
+    @test first.u == second.u
+    VehicleSystemsComponents.set_human_commands!(throttle = 1, brake = 1, steer = 1)
+    neutral = VehicleSystemsComponents.PlanarBEVByHandDrive(window = false, duration = 0.1)
+    ns = symbolic_container(neutral)
+    for signal in (ns.driver.throttle_signal, ns.driver.brake_signal, ns.driver.steer_signal)
+        @test all(iszero, neutral.sol[signal])
+    end
 end
 
 @testset "Scripted analysis by name" begin

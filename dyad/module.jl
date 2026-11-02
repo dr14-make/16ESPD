@@ -1,43 +1,4 @@
 using ModelingToolkit
-using ModelingToolkit: t_nounits as t, setp
-
-"Held driver commands whose updates are recorded in the solution's parameter time series."
-function DriverCommands(; name)
-    ps = @discretes begin
-        (throttle(t) = 0.0), [description = "Throttle pedal"]
-        (brake(t) = 0.0), [description = "Brake pedal"]
-        (steer(t) = 0.0), [description = "Steering-wheel angle"]
-    end
-    ys = @variables begin
-        (throttle_signal(t)), [output = true]
-        (brake_signal(t)), [output = true]
-        (steer_signal(t)), [output = true]
-    end
-    # Register one discrete clock without polling or device I/O inside the equations.
-    affect = ModelingToolkit.ImperativeAffect((m, o, ctx, integ) -> m;
-        modified = (; throttle, brake, steer))
-    clock = ModelingToolkit.SymbolicDiscreteCallback(t < 0, affect)
-    return System([y ~ p for (y, p) in zip(ys, ps)], t, ys, ps;
-        name, discrete_events = [clock])
-end
-
-"Set supplied driver commands between steps and save their discrete parameter clock."
-function set_driver_commands!(integ, sys; kwargs...)
-    clocks = Set{Int}()
-    for (key, value) in kwargs
-        value === nothing && continue
-        p = getproperty(sys.driver, key)
-        setp(sys, p)(integ, Float64(value))
-        idx = ModelingToolkit.SymbolicIndexingInterface.timeseries_parameter_index(sys, p)
-        push!(clocks, idx.timeseries_idx)
-    end
-    for clock in clocks
-        ModelingToolkit.SciMLBase.save_discretes!(integ, clock; skip_duplicates = false)
-    end
-    # Only discrete parameters changed; reinitializing continuous states restores their defaults.
-    ModelingToolkit.SciMLBase.u_modified!(integ, false)
-    return nothing
-end
 
 import DyadInterface
 using DyadInterface: AbstractAnalysisSpec, TransientAnalysisSpec, TransientAnalysisSolution, OptimizationLevel
@@ -79,6 +40,7 @@ function unpaced_drive!(integ, sys, spec)
 end
 
 function DyadInterface.run_analysis(spec::RealtimeDriveSpec)
+    reset_human_commands!()
     spec.frame > 0 && spec.dtmax > 0 && spec.duration >= 0 ||
         throw(ArgumentError("RealtimeDrive requires frame > 0, dtmax > 0, and duration >= 0"))
     if spec.window && isempty(methods(drive_window))

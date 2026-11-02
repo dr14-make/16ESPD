@@ -1,4 +1,0 @@
-"Driver commands held between frames, with recorded discrete parameter history."
-external component DriverCommands
-  extends Driver
-end

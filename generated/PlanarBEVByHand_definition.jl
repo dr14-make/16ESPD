@@ -80,9 +80,9 @@ Planar BEV assembly with a held by-hand driver.
   __constants = Any[]
 
   ### Components
-  # Subcomponent driver of type VehicleSystemsComponents.DriverCommands
+  # Subcomponent driver of type VehicleSystemsComponents.HumanDriver
   driver_overrides = __pop_subcomponent_overrides!(__overrides, "driver")
-  push!(__systems, @named driver = VehicleSystemsComponents.DriverCommands(; __symbol_overrides(driver_overrides)...))
+  push!(__systems, @named driver = VehicleSystemsComponents.HumanDriver(; __overrides = driver_overrides))
   # Subcomponent vehicle of type VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDrive
   vehicle_overrides = __pop_subcomponent_overrides!(__overrides, "vehicle")
   push!(__systems, @named vehicle = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDrive(; m=m, esp_on=esp_on, abs_on=abs_on, mu=mu, __overrides = vehicle_overrides))

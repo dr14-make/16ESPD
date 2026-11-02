@@ -9,7 +9,7 @@ component PlanarBEVByHand
   "Uniform road-grip multiplier"
   parameter mu::Real = 1.0
   "Driver supplying the three causal commands"
-  driver = VehicleSystemsComponents.DriverCommands()
+  driver = VehicleSystemsComponents.HumanDriver()
   "Car including actuator response"
   vehicle = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDrive(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
 relations
