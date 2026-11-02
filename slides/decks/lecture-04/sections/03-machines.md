@@ -345,6 +345,76 @@ after the next one.
 -->
 
 ---
+routeAlias: poles-and-phases
+---
+
+## Poles and phases: the Leaf's machine
+
+<div class="grid grid-cols-[1.2fr_1fr] gap-6 items-center">
+<div>
+
+<img src="/diagrams/03-poles-and-phases.svg" class="mx-auto" style="width: 100%; max-height: 36rem" alt="Cross-section of an 8-pole interior permanent-magnet rotor inside a 48-slot stator. The rotor carries eight buried magnets, alternating N and S. Around the bore, 48 slots; the 16 slots of phase a are filled dark blue, eight marked × for current into the page and eight marked • for out of it, in pairs a quarter turn apart. One quarter of the stator is labeled with the six two-slot belts a+, c−, b+, a−, c+, b−, and an arc marks that quarter: one pole pair, 90° mechanical, 360° electrical."/>
+
+</div>
+<div class="text-[0.95rem]">
+
+A real machine has *p* **pole pairs**, and still **three phases**.
+
+**The Leaf** (ORNL, first-generation motor): **8 poles**, *p* = 4, magnets buried in the rotor
+(interior PM), **48 slots**: 48 / (8 · 3) = **2 slots per pole per phase**.
+
+**Each phase is many coils.** The pattern a+ c− b+ a− c+ b− covers one pole pair and repeats
+*p* = 4 times around the stator; phase a's coils are in series or parallel and carry one current.
+
+**Control works in electrical angle**, θ<sub>e</sub> = *p* · θ<sub>m</sub>. The one-pole-pair
+drawing on <Link to="foc">field-oriented control</Link> is exact in electrical degrees: 90°
+electrical is **22.5° mechanical** on the Leaf.
+
+**Phase frequency** *f* = *p* · *n* / 60: **219 Hz** at base speed, 3283 rpm; **673 Hz** at
+10 100 rpm.
+
+</div>
+</div>
+
+<!--
+The animation on the last slide had one pole pair: one north and one south pole. A real machine
+has p pole pairs, and still only three phases. This slide shows how that fits, on the Leaf.
+
+The drawing on the left is a cross-section of a machine with the Leaf's numbers. In the middle, the
+rotor, with eight magnets buried in its iron, alternating north, in red, and south, in blue: 8
+poles, so p is 4. Around it, across the air gap, the stator with 48 slots. The magnets are drawn as
+one bar per pole, a schematic; the Leaf's real rotor shapes its magnets differently, but the count
+is what matters here. The 16 dark blue slots are phase a. Eight of them, marked with a cross, carry
+its current into the page, and eight, marked with a dot, carry it out. They come in pairs: a pair
+in, then a quarter turn later a pair out, and so on around the stator.
+
+The numbers on the right. Oak Ridge National Laboratory's teardown of the first-generation Leaf
+motor, the one already cited on the BLDC and PMSM slide, counted 8 poles, interior permanent magnets and 48
+stator slots. Divide the slots among the poles and the phases: 48 over 8 times 3 is 2 slots per
+pole per phase. That is why the dark blue slots come in pairs.
+
+Each phase is many coils. Read the labels in the top right quarter of the stator, between the
+slots and the edge: a plus, c minus, b plus, a minus, c plus, b minus, each label over its two
+slots. That sequence covers one pole pair, a north and a south pole, and the arc outside marks it:
+a quarter of the machine. It repeats four times around the stator, p times. All of phase a's coils
+are connected together, in series or in parallel, and carry the one current the inverter gives
+phase a.
+
+So what does the controller see? The magnetic picture repeats every pole pair, so the controller
+works in electrical angle: theta electrical equals p times theta mechanical. One pole pair, 90
+mechanical degrees on the Leaf, is a full electrical turn, 360 electrical degrees: that is the
+label on the arc. The one-pole-pair drawing of the animation is therefore exact, as long as you read
+its angles as electrical degrees. The quarter turn between d and q, 90 electrical degrees, is 22.5
+mechanical degrees on the Leaf.
+
+And the frequency. The phase currents complete one cycle per pole pair passing, so their frequency
+is p times the speed in revolutions per second: p n over 60, with n in rpm. At base speed, 3283 rpm,
+that is 4 times 3283 over 60, 219 hertz. At the top speed, 10 100 rpm, 673 hertz. Against the 5
+kilohertz the inverter switches at, the number of section 04, that leaves only about seven switching
+periods per electrical cycle at the top speed.
+-->
+
+---
 routeAlias: field-weakening
 ---
 
