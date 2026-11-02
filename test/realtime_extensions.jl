@@ -46,6 +46,10 @@ using SimpleDirectMediaLayer
     viewer_sys = DyadInterface.symbolic_container(viewer_setup.prob.f)
     viewer = init(viewer_setup.prob, Rodas5P(); dtmax = 0.005)
     viewer_ctx = win.context(viewer, viewer_sys)
+    @test ctx.snapshot(integ).throttle == 1.0
+    @test ctx.snapshot(fresh).brake == 0.2
+    @test viewer_ctx.snapshot(viewer).throttle == 1.0
+    @test viewer_ctx.snapshot(viewer).brake == 0.0
     @test !viewer_ctx.by_hand
     @test win.apply!(viewer, viewer_sys, viewer_ctx, controls, 0.0) === nothing
     @test length(win.car_shapes(viewer_ctx, viewer_ctx.snapshot(viewer))[2]) == 4

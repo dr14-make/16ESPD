@@ -18,6 +18,7 @@ function context(integ, assembly)
         sys.car.a, sys.car.b, sys.car.tw, sys.car.i_s, sys.car.m,
         sys.car.radius, sys.car.tau_max, sys.blend.ratio])(integ))
     signals = (
+        :throttle => assembly.driver.throttle_signal, :brake => assembly.driver.brake_signal,
         :x => sys.motion.x, :y => sys.motion.y, :psi => sys.motion.psi,
         :vx => sys.motion.vx, :r => sys.motion.r, :ay => sys.motion.ay, :sw => sys.steering_response.y,
         :kfl => sys.slips.kappa_fl, :kfr => sys.slips.kappa_fr,
@@ -262,7 +263,7 @@ function window!(integ, sys, spec, pad)
             limits!(ax, s.x - 40, s.x + 40, s.y - 25, s.y + 25)
             speed_text[] = "$(round(Int, 3.6 * s.vx)) km/h"
             status_text[] = join([
-                "throttle $(bar(controls.throttle))", "brake    $(bar(controls.brake))",
+                "throttle $(bar(s.throttle))", "brake    $(bar(s.brake))",
                 "steer    $(lpad(round(Int, rad2deg(s.sw)), 4))°  wheel $(lpad(round(Int, rad2deg(s.sw / ctx.i_s)), 3))°",
                 "lock now $(lpad(round(Int, rad2deg(max_steer(controls, s.vx) / ctx.i_s)), 4))° at the wheel ($(round(Int, 100controls.lock / FULL_LOCK)) %)", "",
                 "motor   $(lpad(round(Int, s.motor), 5)) N·m",
