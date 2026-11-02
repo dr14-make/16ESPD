@@ -74,6 +74,27 @@ end
         @test sol(t; idxs = sys.driver.steer_signal) == 0.0
     end
     @test round(3.6sol(22.0; idxs = sys.vehicle.motion.vx); digits = 1) == 0.0
+    @test 900 * 0.01 == 9.0
+    @test 1900 * 0.01 == 19.0
+    for (t, signal, before, after) in ((9.0, sys.driver.throttle_signal, 1.0, 0.0),
+                                     (19.0, sys.driver.brake_signal, 0.0, 1.0))
+        @test sol(t - 1e-6; idxs = signal) == before
+        @test sol(t; idxs = signal) == after
+        @test sol(t + 1e-6; idxs = signal) == after
+    end
+    for signal in (sys.driver.throttle_signal, sys.driver.brake_signal, sys.driver.steer_signal)
+        @test all(0:2199) do k
+            tick = k * 0.01
+            held = sol(tick; idxs = signal)
+            all(f -> sol(tick + f * 0.01; idxs = signal) == held, (0.25, 0.5, 0.75))
+        end
+    end
+    tau_max = sol.prob.ps[sys.vehicle.tau_max]
+    lag = sys.vehicle.torque_response
+    switch_times = 8.95:0.0001:9.05
+    @test all(t -> 0.0 <= sol(t; idxs = lag.u) <= tau_max, switch_times)
+    @test all(t -> -1e-8 <= sol(t; idxs = lag.y) <= tau_max + 1e-8, switch_times)
+    @test round(sol(9.0; idxs = lag.y)) == tau_max
     configured = VehicleSystemsComponents.PlanarBEVRealtimeDrive(duration = 0.1, esp_on = 0.0, abs_on = 0.0, mu = 0.7)
     cs = symbolic_container(configured)
     @test configured.sol.prob.ps[cs.vehicle.ecu.esp_on] == 0.0

@@ -1,6 +1,28 @@
-"Scripted driver playing a time table with left-held commands and constant extrapolation."
+"""Scripted driver sampling a constant-interpolated time table on a clock and holding commands
+between ticks. Breakpoints take effect at the first tick at or after their time; the new row
+is sampled at an exactly coincident tick. Values outside the table use constant extrapolation."""
 component ScriptedDriver
   extends Driver
+  "Command sampling period"
+  structural parameter period::Time = 0.01
+  "Command clock"
+  clock = DiscreteComponents.PeriodicClock(dt = period)
+  "Brake clock link without command-value coupling"
+  brake_clock = DiscreteComponents.ClockPropagator()
+  "Steering clock link without command-value coupling"
+  steer_clock = DiscreteComponents.ClockPropagator()
+  "Clocked throttle sampler"
+  throttle_sampler = DiscreteComponents.Sampler()
+  "Clocked brake sampler"
+  brake_sampler = DiscreteComponents.Sampler()
+  "Clocked steering sampler"
+  steer_sampler = DiscreteComponents.Sampler()
+  "Throttle held between command ticks"
+  throttle_hold = DiscreteComponents.ZeroOrderHold()
+  "Brake held between command ticks"
+  brake_hold = DiscreteComponents.ZeroOrderHold()
+  "Steering held between command ticks"
+  steer_hold = DiscreteComponents.ZeroOrderHold()
   "CSV time table containing time, throttle, brake and steer columns"
   structural parameter table::String = "dyad://VehicleSystemsComponents/drivers/coast_down.csv"
   "Throttle command table"
@@ -17,11 +39,18 @@ component ScriptedDriver
   steer_table = BlockComponents.Tables.Interpolation(dataset = steer_data, interpolation_type = BlockComponents.Tables.InterpolationType.ConstantInterpolation(), extrapolation_type = BlockComponents.Tables.ExtrapolationType.Constant())
 relations
   throttle_table.u = time
-  connect(throttle_table.y, throttle_signal)
+  connect(throttle_table.y, throttle_sampler.u)
+  connect(throttle_sampler.y, throttle_hold.u, clock.y)
+  throttle_signal = throttle_hold.y
   brake_table.u = time
-  connect(brake_table.y, brake_signal)
+  connect(brake_table.y, brake_sampler.u)
+  connect(clock.y, brake_clock.u, steer_clock.u)
+  connect(brake_sampler.y, brake_hold.u, brake_clock.y)
+  brake_signal = brake_hold.y
   steer_table.u = time
-  connect(steer_table.y, steer_signal)
+  connect(steer_table.y, steer_sampler.u)
+  connect(steer_sampler.y, steer_hold.u, steer_clock.y)
+  steer_signal = steer_hold.y
 end
 
 "Full throttle until 9 seconds, then coast."

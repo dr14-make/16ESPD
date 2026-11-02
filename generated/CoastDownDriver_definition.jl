@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   CoastDownDriver(; name, table, throttle_data, brake_data, steer_data, __overrides)
+   CoastDownDriver(; name, period, table, throttle_data, brake_data, steer_data, __overrides)
 
 Full throttle until 9 seconds, then coast.
 
@@ -13,6 +13,7 @@ Full throttle until 9 seconds, then coast.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `period`         | Command sampling period                         | s  |   0.01 |
 | `table`         | CSV time table containing time, throttle, brake and steer columns                         | --  |   "dyad://Veh...t_down.csv" |
 | `throttle_data`         | Throttle command table                         | --  |   DyadData.Dy...throttle"]) |
 | `brake_data`         | Brake command table                         | --  |   DyadData.Dy...=["brake"]) |
@@ -24,7 +25,7 @@ Full throttle until 9 seconds, then coast.
  * `brake_signal` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `steer_signal` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function CoastDownDriver(; name = nothing, var"table"="dyad://VehicleSystemsComponents/drivers/coast_down.csv", var"throttle_data"=nothing, var"brake_data"=nothing, var"steer_data"=nothing, __overrides = Dict{String, Any}())
+@component function CoastDownDriver(; name = nothing, var"period"=0.01, var"table"="dyad://VehicleSystemsComponents/drivers/coast_down.csv", var"throttle_data"=nothing, var"brake_data"=nothing, var"steer_data"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -43,6 +44,7 @@ Full throttle until 9 seconds, then coast.
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "period") && (period = pop!(__overrides, "period"))
   haskey(__overrides, "table") && (table = pop!(__overrides, "table"))
   haskey(__overrides, "throttle_data") && (throttle_data = pop!(__overrides, "throttle_data"))
   haskey(__overrides, "brake_data") && (brake_data = pop!(__overrides, "brake_data"))
@@ -82,6 +84,33 @@ Full throttle until 9 seconds, then coast.
   __constants = Any[]
 
   ### Components
+  # Subcomponent clock of type DiscreteComponents.PeriodicClock
+  clock_overrides = __pop_subcomponent_overrides!(__overrides, "clock")
+  push!(__systems, @named clock = DiscreteComponents.PeriodicClock(; dt=period, __symbol_overrides(clock_overrides)...))
+  # Subcomponent brake_clock of type DiscreteComponents.ClockPropagator
+  brake_clock_overrides = __pop_subcomponent_overrides!(__overrides, "brake_clock")
+  push!(__systems, @named brake_clock = DiscreteComponents.ClockPropagator(; __overrides = brake_clock_overrides))
+  # Subcomponent steer_clock of type DiscreteComponents.ClockPropagator
+  steer_clock_overrides = __pop_subcomponent_overrides!(__overrides, "steer_clock")
+  push!(__systems, @named steer_clock = DiscreteComponents.ClockPropagator(; __overrides = steer_clock_overrides))
+  # Subcomponent throttle_sampler of type DiscreteComponents.Sampler
+  throttle_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "throttle_sampler")
+  push!(__systems, @named throttle_sampler = DiscreteComponents.Sampler(; __overrides = throttle_sampler_overrides))
+  # Subcomponent brake_sampler of type DiscreteComponents.Sampler
+  brake_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "brake_sampler")
+  push!(__systems, @named brake_sampler = DiscreteComponents.Sampler(; __overrides = brake_sampler_overrides))
+  # Subcomponent steer_sampler of type DiscreteComponents.Sampler
+  steer_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "steer_sampler")
+  push!(__systems, @named steer_sampler = DiscreteComponents.Sampler(; __overrides = steer_sampler_overrides))
+  # Subcomponent throttle_hold of type DiscreteComponents.ZeroOrderHold
+  throttle_hold_overrides = __pop_subcomponent_overrides!(__overrides, "throttle_hold")
+  push!(__systems, @named throttle_hold = DiscreteComponents.ZeroOrderHold(; __overrides = throttle_hold_overrides))
+  # Subcomponent brake_hold of type DiscreteComponents.ZeroOrderHold
+  brake_hold_overrides = __pop_subcomponent_overrides!(__overrides, "brake_hold")
+  push!(__systems, @named brake_hold = DiscreteComponents.ZeroOrderHold(; __overrides = brake_hold_overrides))
+  # Subcomponent steer_hold of type DiscreteComponents.ZeroOrderHold
+  steer_hold_overrides = __pop_subcomponent_overrides!(__overrides, "steer_hold")
+  push!(__systems, @named steer_hold = DiscreteComponents.ZeroOrderHold(; __overrides = steer_hold_overrides))
   # Subcomponent throttle_table of type BlockComponents.Tables.Interpolation
   throttle_table_overrides = __pop_subcomponent_overrides!(__overrides, "throttle_table")
   push!(__systems, @named throttle_table = BlockComponents.Tables.Interpolation(; dataset=throttle_data, interpolation_type=BlockComponents.Tables.InterpolationType.ConstantInterpolation(), extrapolation_type=BlockComponents.Tables.ExtrapolationType.Constant(), __overrides = throttle_table_overrides))
@@ -104,11 +133,18 @@ Full throttle until 9 seconds, then coast.
 
   ### Equations
   push!(__eqs, throttle_table.u ~ t)
+  push!(__eqs, throttle_signal ~ throttle_hold.y)
   push!(__eqs, brake_table.u ~ t)
+  push!(__eqs, brake_signal ~ brake_hold.y)
   push!(__eqs, steer_table.u ~ t)
-  push!(__eqs, connect(throttle_table.y, throttle_signal))
-  push!(__eqs, connect(brake_table.y, brake_signal))
-  push!(__eqs, connect(steer_table.y, steer_signal))
+  push!(__eqs, steer_signal ~ steer_hold.y)
+  push!(__eqs, connect(throttle_table.y, throttle_sampler.u))
+  push!(__eqs, connect(throttle_sampler.y, throttle_hold.u, clock.y))
+  push!(__eqs, connect(brake_table.y, brake_sampler.u))
+  push!(__eqs, connect(clock.y, brake_clock.u, steer_clock.u))
+  push!(__eqs, connect(brake_sampler.y, brake_hold.u, brake_clock.y))
+  push!(__eqs, connect(steer_table.y, steer_sampler.u))
+  push!(__eqs, connect(steer_sampler.y, steer_hold.u, steer_clock.y))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

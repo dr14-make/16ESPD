@@ -79,7 +79,9 @@ The car owns actuator response; ESP, ABS and road grip are fixed run settings, n
 _Avoid_: controller, command parameters
 
 **Scripted driver**:
-A Driver implementation that plays commands from a time table without human input.
+A Driver implementation that samples commands from a time table on its own clock and holds
+each command between ticks, without human input. A breakpoint takes effect at the first tick
+at or after its time.
 _Avoid_: headless driver, test loop
 
 **Human driver**:
