@@ -101,7 +101,7 @@ we model today.
 
 Why did the first electric cars fade? The line under the table: cheap, mass-produced petrol cars,
 and the electric starter that removed the crank. Petrol stored far more energy per kilogram than
-lead acid, and the battery that changed that, lithium-ion, is section 06.
+lead acid, and the battery that changed that, lithium-ion, is section 05.
 
 The pictures, left to right. Trouve's tricycle of 1881, an engraving from a French book of 1891 by
 Raoul Marquis, as Wikimedia Commons records it: the batteries sit in the box behind the rider. La Jamais Contente of 1899, with
@@ -261,7 +261,7 @@ Materials. In 2025 China made over 80 percent of the world's battery cells, abou
 cathode active material and more than 90 percent of the anode active material, the IEA says. And
 the US Geological Survey puts the Democratic Republic of the Congo at 73 percent of the cobalt mined
 in 2025. The supply is concentrated, which is a risk for anyone building cars elsewhere, and one
-reason the cobalt-free LFP cell of section 06 spread.
+reason the cobalt-free LFP cell of section 05 spread.
 
 Used cars. Most people buy a used car. In the five largest European markets electric cars were
 about 4 percent of used-car sales in 2025, up from 1 percent in 2021. And a used battery-electric

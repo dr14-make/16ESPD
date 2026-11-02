@@ -110,8 +110,8 @@ follow the [build guide](./lecture/lecture-03/); each build slide links to its s
 2. [**The DC machine**](./lecture-04/index.html#/dc-machine){target="_self"} — T = KΦI, E = KΦω, the losses
 3. [**Machines in real EVs**](./lecture-04/index.html#/machines){target="_self"} — PMSM under field-oriented control, induction, SRM
 4. [**The envelope**](./lecture-04/index.html#/envelope){target="_self"} — base speed, field weakening, the efficiency map
-5. [**Power electronics**](./lecture-04/index.html#/power-electronics){target="_self"} — choppers, H-bridge, PWM, the three-phase bridge
-6. [**Batteries, simply**](./lecture-04/index.html#/batteries){target="_self"} — V = E − IR, A·h and W·h
+5. [**Batteries, simply**](./lecture-04/index.html#/batteries){target="_self"} — V = E − IR, A·h and W·h
+6. [**Power electronics**](./lecture-04/index.html#/power-electronics){target="_self"} — choppers, H-bridge, PWM, the three-phase bridge
 7. [**The car and regen**](./lecture-04/index.html#/car-and-regen){target="_self"} — three ceilings, series blending, the hard stop
 8. [**The energy bill**](./lecture-04/index.html#/energy-bill){target="_self"} — WLTC link by link, MJ against the engine
 

@@ -1098,7 +1098,7 @@ end
 
 ---
 
-## 06 Batteries, simply
+## 05 Batteries, simply
 
 ### 03 · The battery: V = E − I·R {#step-03}
 

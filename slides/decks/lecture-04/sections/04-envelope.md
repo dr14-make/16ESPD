@@ -91,7 +91,7 @@ routeAlias: average-converter
 <div class="grid grid-cols-[1.1fr_1fr] gap-8">
 <div>
 
-Between the pack and the machine sits the inverter; section 05 opens up its switches. Averaged
+Between the pack and the machine sits the inverter; section 06 opens up its switches. Averaged
 over one switching period it is one number, the **duty** *d*:
 
 $$
@@ -135,7 +135,7 @@ At 350 V out and 332.2 A: **99.2 %** efficient.
 </div>
 
 <!--
-Between the pack and the machine sits the inverter. Section 05 opens it up; here we average it. Over
+Between the pack and the machine sits the inverter. Section 06 opens it up; here we average it. Over
 one switching period, 200 microseconds at 5 kilohertz, the switches give the machine the fraction d
 of the pack voltage. d is the duty, a number between 0 and 1. That is the first formula: v out
 equals d times v in. The input current, the second formula, is d times the output current, plus the
@@ -592,7 +592,7 @@ One detail you may notice: near 95 rpm the shaft torque dips to 300 newton meter
 - At a given power, more speed means less torque and less copper loss: a fast machine behind a
   reduction. 110 kW is a peak; the continuous rating is set by heat.
 
-### Next: what is inside the converter. <Link to="power-electronics">→ 05, power electronics</Link>
+### Next: the source behind the converter. <Link to="batteries">→ 05, batteries, simply</Link>
 
 <!--
 Section 04 in four lines. The inverter, averaged, is v out equals d times v in, with a current limit
@@ -605,6 +605,7 @@ decides the bill. And at a given power, more speed means less torque and less co
 is why the machine is fast and sits behind a reduction; its 110 kilowatts is a peak, and what it
 can give continuously is set by heat.
 
-The converter in the car is an average. The next section opens it up: switches, diodes and
-pulse-width modulation, on a microsecond time scale, beside the car rather than in it.
+The converter in the car is an average; section 06 opens it up, switches, diodes and pulse-width
+modulation on a microsecond time scale. First, the next section builds the source behind it: the
+battery.
 -->

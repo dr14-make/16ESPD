@@ -3,7 +3,7 @@ routeAlias: batteries
 layout: section
 ---
 
-###### Section 06
+###### Section 05
 
 # Batteries, simply
 
@@ -13,7 +13,7 @@ chemistries against today's, and what a kilowatt-hour costs.
 `notebooks/lecture04/04-machine-battery-regen.pluto.jl`
 
 <!--
-Section 06, batteries, simply. We keep the battery as simple as it can be and still be useful: V
+Section 05, batteries, simply. We keep the battery as simple as it can be and still be useful: V
 equals E minus I R, charge and energy, specific energy and specific power, the deck's comparison
 of chemistries set against today's cells, and what a kilowatt-hour of battery costs. Then you build
 it, build 03. The discharge figure comes from notebook 04; the price figure from published data. The deck's tour of
@@ -531,7 +531,7 @@ nothing in the model knows that the pack is empty.
 
 ---
 
-## Summary of section 06
+## Summary of section 05
 
 - A pack is cells in series and parallel: **v = E − R₀ i**. The sag is lost as heat.
 - Capacity is charge, A·h; energy is charge times voltage: **40 kWh at 350 V is 114.3 A·h**.
@@ -541,10 +541,10 @@ nothing in the model knows that the pack is empty.
   battery-electric car practical: best cells 265 Wh/kg (IEA), packs **$108/kWh** in 2025 (BNEF).
 - On your bench: **10 V** of sag at 100 A, SoC **0.9 → 0.4625** in half an hour.
 
-### Next: put the chain in the car, and brake with it. <Link to="car-and-regen">→ 07, the car and regen</Link>
+### Next: what is inside the converter. <Link to="power-electronics">→ 06, power electronics</Link>
 
 <!--
-Section 06 in five lines. A pack is cells in series and in parallel, and its terminal voltage is v
+Section 05 in five lines. A pack is cells in series and in parallel, and its terminal voltage is v
 equals E minus R0 i; the sag is lost as heat. Capacity is charge, in ampere-hours, and energy is
 charge times voltage: 40 kilowatt-hours at 350 volts is 114.3 ampere-hours. The state of charge is
 counted from the current, by coulomb counting. Power costs efficiency: the pack loses 0.8 percent at
@@ -554,6 +554,6 @@ watt-hours per kilogram, by the IEA's count, and a pack cost 108 dollars per kil
 BloombergNEF's 2025 survey. And on your bench: a 10 volt sag at
 100 amperes, and the state of charge from 0.9 to 0.4625 in half an hour.
 
-Three links are built: the machine, the converter and the battery. Next they go into the planar car,
-and the machine learns to brake.
+Three links are built: the machine, the converter and the battery. Before they go into the car, the
+next section opens the converter up: the switches that the average of section 04 hides.
 -->

@@ -177,12 +177,12 @@ interleaved. Figures the models can produce are regenerated from them, not copie
 4. The envelope (new): constant torque, field weakening, constant power; the efficiency map and
    where WLTC operating points land; constant-power lines on the map (why a fast machine behind a
    reduction) and peak versus continuous rating. → step 2
-5. Power electronics (7: 27–33): DC regulation, today's switches (Si MOSFET, IGBT, SiC, GaN)
-   from datasheets, buck and boost, a faster switch on the buck, H-bridge, PWM and harmonics,
-   three-phase bridge; demo on the switching models. The DC-DC for 12 V. The charger.
-6. Batteries, simply (8: 3–6, 14–16): V = E − IR, Ah and Wh, specific energy and power, the
+5. Batteries, simply (8: 3–6, 14–16): V = E − IR, Ah and Wh, specific energy and power, the
    pack's own Ragone curve (η = 1 − R₀i/E), the summary table labeled as dated beside today's
    cells, and the BNEF pack price. → step 3
+6. Power electronics (7: 27–33): DC regulation, today's switches (Si MOSFET, IGBT, SiC, GaN)
+   from datasheets, buck and boost, a faster switch on the buck, H-bridge, PWM and harmonics,
+   three-phase bridge; demo on the switching models. The DC-DC for 12 V. The charger.
 7. The car and regen (7: 6, 33): the hard stop's ½mv² against its measured friction energy,
    regen limits, series versus parallel blending. → steps 4–5
 8. The energy bill: WLTC results, a cold-weather bill with a cabin heater for O_aux, the engine

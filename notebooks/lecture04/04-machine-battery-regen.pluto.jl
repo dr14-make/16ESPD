@@ -27,7 +27,7 @@ library's copies of the students' parts:
 |:---|:---|:---|:---|
 | 1. The DC machine on a fixed supply | 02 The DC machine | 01 | `Vehicle.Electric.DCMachineTransient` |
 | 2. Where the machine's losses go | 02 The DC machine | 01–02 | `Vehicle.Electric.ConverterTransient` |
-| 3. The battery under load | 06 Batteries, simply | 03 | `Vehicle.Electric.BatteryTransient` |
+| 3. The battery under load | 05 Batteries, simply | 03 | `Vehicle.Electric.BatteryTransient` |
 | 4. Regen on a hard stop | 07 The car and regen | 05 | `Vehicle.Planar.PlanarBEVHardStopTransient` |
 
 The envelope and the efficiency map are notebook 01's; the switching models notebook 02's; the

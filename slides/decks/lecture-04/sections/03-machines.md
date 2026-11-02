@@ -67,7 +67,7 @@ the same pattern as before, only now in the stator. The force on those conductor
 stator, and its reaction turns the rotor counterclockwise. After sixty degrees of rotation the
 inverter moves on to the next pair of phases; it knows when because three Hall sensors, a third of
 a turn apart at the bore, read the magnets passing. That is the job the commutator did, done by
-electronics; the inverter itself is section 05.
+electronics; the inverter itself is section 06.
 
 The two notes at the bottom are the reason electric cars use this. The heat is now made in the
 stator winding, right against the housing, which can carry a water jacket, so it has a short way
