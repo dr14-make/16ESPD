@@ -8,6 +8,8 @@
    PlanarBEVDrive(; name, esp_on, abs_on, mu, T_actuator, m, radius, T_full, tau_max, P_charge, v_fade, P_aux, ratio, dv_wheel, __overrides)
 
 Planar battery-electric car with causal driver inputs and first-order actuator response.
+Regen withdraws while the ECU acts on either front brake, returning the demand to friction
+under ABS control.
 
 ## Parameters:
 
@@ -151,7 +153,7 @@ Planar battery-electric car with causal driver inputs and first-order actuator r
   push!(__systems, @named kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour(; __overrides = kmh_overrides))
   # Subcomponent blend of type VehicleSystemsComponents.Vehicle.Electric.RegenBlend
   blend_overrides = __pop_subcomponent_overrides!(__overrides, "blend")
-  push!(__systems, @named blend = VehicleSystemsComponents.Vehicle.Electric.RegenBlend(; ratio=ratio, radius=radius, tau_max=tau_max, P_charge=P_charge, v_fade=v_fade, __overrides = blend_overrides))
+  push!(__systems, @named blend = VehicleSystemsComponents.Vehicle.Electric.RegenBlend(; abs_rule=true, ratio=ratio, radius=radius, tau_max=tau_max, P_charge=P_charge, v_fade=v_fade, __overrides = blend_overrides))
   # Subcomponent drive of type VehicleSystemsComponents.Vehicle.Electric.ElectricDrive
   drive_overrides = __pop_subcomponent_overrides!(__overrides, "drive")
   push!(__systems, @named drive = VehicleSystemsComponents.Vehicle.Electric.ElectricDrive(; ratio=ratio, P_aux=P_aux, __overrides = drive_overrides))
@@ -163,7 +165,7 @@ Planar battery-electric car with causal driver inputs and first-order actuator r
   push!(__systems, @named mount = RotationalComponents.Components.Fixed(; __overrides = mount_overrides))
   # Subcomponent ecu of type VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit
   ecu_overrides = __pop_subcomponent_overrides!(__overrides, "ecu")
-  push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(; esp_on=esp_on, abs_on=abs_on, radius=radius, T_max=T_full, __overrides = ecu_overrides))
+  push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(; report_front=true, esp_on=esp_on, abs_on=abs_on, radius=radius, T_max=T_full, __overrides = ecu_overrides))
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
   push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; mu_scale_fl=mu, mu_scale_fr=mu, mu_scale_rl=mu, mu_scale_rr=mu, m=m, radius=radius, tau_max=T_full, __overrides = car_overrides))
@@ -222,6 +224,7 @@ Planar battery-electric car with causal driver inputs and first-order actuator r
   push!(__eqs, connect(kmh.y, blend.v))
   push!(__eqs, connect(blend.tau_motor, drive.tau_ref))
   push!(__eqs, connect(blend.tau_brake, ecu.demand))
+  push!(__eqs, connect(ecu.front_active, blend.abs_active))
   push!(__eqs, connect(drive.spline, differential.flange_b))
   push!(__eqs, connect(differential.flange_left, car.spin_fl))
   push!(__eqs, connect(differential.flange_right, car.spin_fr))

@@ -36,6 +36,7 @@ The conventions for a re-capture:
 
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
+| `step01-machine.png` | `HandsOn04.DCMachine` with `field` absent (the step 01 version, `RotationalEMF`), or a student's `DCMachine` built from the guide | The machine's internal diagram: `p` and `n` on the left edge, `resistor` → `inductor` → `emf` along the top and back to `n`; `emf.rotor` → `rotor` → `spline` on the right; `friction`, `iron`, `windage` and `constant_loss` in a row below, each on the rotor node and on `support` at the bottom. A student's `DCMachine` built from guide step 01 in Studio web 3.5.1. Three auto-routed segments (`emf.n` → `n`, `iron.spline`, `emf.housing`) are dragged clear of the `emf`, and the loss risers are moved to x = 700; the canvas is panned two arrow-key steps down so `support` fits. 980 × 827. |
 | `step01-dyno.png` | `HandsOn04.DCMachineDyno` | `voltage` (k = V) into the top of `supply`, `ground` under `supply`; `machine` at the top right with its machine icon, `p` and `n` on its left edge wired to `supply`; `speed` into `dyno`, `machine.spline` to `dyno`, both supports down to `mounts`. |
 
 ## Step 02 — the converter
@@ -48,6 +49,7 @@ The conventions for a re-capture:
 
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
+| `step03-battery.png` | a student's `Battery` built from guide step 03, the same diagram as `HandsOn04.Battery` | The battery's internal diagram: `p` on the left edge, `n` on the right, `SoC` on top; `resistor` and `meter` along the top, `meter.i` down into `counter`, `counter.y` up to `SoC`; `ocv` into the top of `cell` on the bottom row, `cell.p` back up to `resistor.p`, `cell.n` out to `n`, `meter.n` round the outside to `p`. Built in Studio web 3.5.1 exactly as the guide writes it, with `cell` moved to a bottom row and `ocv` above-left of it; three auto-routed segments dragged clear of the parts; panned one arrow-key step so `SoC` is not clipped. 894 × 708. With this `Battery` in the drive, `BEVWLTCTransient` reproduced the reference: worst gap 1.634 km/h, 23 266.9 m, SoC 0.8219, battery current 137.7 / −86.2 A, minimum pack voltage 336.2 V. |
 | `step03-battery-discharge.png` | `HandsOn04.BatteryDischarge` | `load_profile` into the top of `load`; `load` across `battery`, `p` to `p` on the left and `n` to `n` on the right; `battery.n` to `ground`, branching from the `n` wire at a junction dot; the battery's unconnected `SoC` output on top. Portrait, 413 × 633. |
 
 ## Step 04 — the car
@@ -55,9 +57,10 @@ The conventions for a re-capture:
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
 | `step04-electric-drive.png` | `HandsOn04.ElectricDrive` | `battery` and `aux` across one positive and one negative rail, `converter` fed from the positive rail, `p_out` and Φ into `machine`, `machine.n` and `ground` on the negative rail; `machine` into `reduction` into the `spline` port; `battery.SoC` up to the `SoC` port, `tau_ref` top left, `support` at the bottom. Stitched from two captures, 970 × 996. |
+| `step04-bevwltc.png` | a student's `BEVWLTC` built from guide step 04 | The car bench with `drive` and `split` placed: `split` between `driver` and `drive` along the top, `kmh.y` into both `driver` and `split`; `split.tau_motor` into `drive.tau_ref`, `split.tau_brake` down to the two front brake inputs `car.tau_fl` and `car.tau_fr`; `drive.spline` down to `differential`, whose outputs go to the car's front spins; `drive.support` to `mount`; `motion` on the car's bus, `roadload` on its chassis with `flat` as the grade, `straight` on the steering. Built from guide step 04 in Studio web 3.5.1 (17 `connect` lines), with the reference `ElectricDrive` as the student's drive, so `drive` shows the course icon. Reset view; the canvas toolbar overlapped `no_ff`, so two captures one 39 px canvas scroll apart are stitched. The rehearsal run reproduced the checkpoint: retcode Success, worst gap 1.634 km/h, `car.bus.x` 23 266.9 m, SoC 0.8219, battery current 137.7 A / −86.2 A. 880 × 869. |
 
 ## Step 05 — regen blending
 
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
-| `step05-regen-blend.png` | `HandsOn04.BEVHardStop` | `pedal` and `kmh` into `blend`; `blend.tau_motor` into `drive`, `blend.tau_brake` into the ABS; `drive` through `differential` to the car's front spins; `zero` and `slips` into the ABS, its four outputs into the car's brakes; `motion` reading the bus. `RegenBlend`'s own diagram holds only its four ports, so the bench shows it in place. |
+| `step05-regen-blend.png` | `HandsOn04.BEVHardStop` | `pedal` and `kmh` into `blend`; `blend.tau_motor` into `drive`, `blend.tau_brake` into the ABS; `drive` through `differential` to the car's front spins; `zero` and `slips` into the ABS, its four outputs into the car's brakes; `abs.front_active` into `blend.abs_active`, the ABS rule; `motion` reading the bus. `RegenBlend`'s own diagram holds only its ports, so the bench shows it in place. Taken from `main`'s `HandsOn04.BEVHardStop`: the `lecture-04-dyad-3.5` tag predates the `abs.front_active` → `blend.abs_active` wire. 887 × 834. |

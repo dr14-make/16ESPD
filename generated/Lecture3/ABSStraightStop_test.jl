@@ -19,7 +19,7 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.car.bus.x, "car.bus.x", 47.182, 0.5, 1e-5),
+    (m -> m.car.bus.x, "car.bus.x", 37.643, 0.5, 1e-5),
     (m -> m.car.bus.vx, "car.bus.vx", 0, 0.05, 1e-5),
   ],
   signals=Tuple[

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   BrakeControlUnit(; name, dt, esp_on, abs_on, L, K_us, i_s, mu_est, g, k_lim, v_floor, Kp, Ki, deadband, v_on, Mz_max, tw, radius, T_max, T_build, R_build, select_low, T_p, lambda_1_f, lambda_1_r, lambda_lock, alpha_rel, beta_reapply, l_rec, T_hold_max, k_dec, k_inc_fast, k_inc_slow, v_min, __overrides)
+   BrakeControlUnit(; name, report_front, dt, esp_on, abs_on, L, K_us, i_s, mu_est, g, k_lim, v_floor, Kp, Ki, deadband, v_on, Mz_max, tw, radius, T_max, T_build, R_build, select_low, T_p, lambda_1_f, lambda_1_r, lambda_lock, alpha_rel, beta_reapply, l_rec, T_hold_max, k_dec, k_inc_fast, k_inc_slow, v_min, __overrides)
 
 Electronic brake control unit combining continuous ESP and sampled four-channel ABS.
 
@@ -13,6 +13,7 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `report_front`         |                          | --  |   false |
 | `dt`         |                          | s  |   0.005 |
 | `esp_on`         |                          | --  |   1.0 |
 | `abs_on`         |                          | --  |   1.0 |
@@ -33,17 +34,17 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
 | `T_max`         |                          | N.m  |   2500.0 |
 | `T_build`         |                          | s  |   0.1 |
 | `R_build`         |                          | --  |   1.0e9 |
-| `select_low`         |                          | --  |   1.0 |
-| `T_p`         |                          | s  |   0.03 |
-| `lambda_1_f`         |                          | --  |   0.08 |
-| `lambda_1_r`         |                          | --  |   0.06 |
+| `select_low`         | Independent rear channels preserve ESP yaw allocation; select-low is for ABS-only use                         | --  |   0.0 |
+| `T_p`         | Prediction includes hydraulic lag and sampled release/reapply delay (derived)                         | s  |   0.08 |
+| `lambda_1_f`         | Predicted release just beyond the front tire's 0.12 peak slip (derived)                         | --  |   0.14 |
+| `lambda_1_r`         | Predicted release just beyond the rear tire's 0.09 peak slip (derived)                         | --  |   0.11 |
 | `lambda_lock`         |                          | --  |   0.20 |
-| `alpha_rel`         |                          | --  |   0.6 |
+| `alpha_rel`         | Retain 90 percent of incipient-limit pressure; calibrated with lag (assumed)                         | --  |   0.9 |
 | `beta_reapply`         |                          | --  |   0.85 |
-| `l_rec`         |                          | --  |   0.03 |
-| `T_hold_max`         |                          | s  |   0.06 |
+| `l_rec`         | Reapply near peak adhesion rather than demanding near-zero slip (derived)                         | --  |   0.12 |
+| `T_hold_max`         | Two ECU ticks before another recovery decision (assumed)                         | s  |   0.01 |
 | `k_dec`         |                          | --  |   40000.0 |
-| `k_inc_fast`         |                          | --  |   160000.0 |
+| `k_inc_fast`         | Initial build limited to 200 N.m per 5 ms tick for low-grip recovery (assumed)                         | --  |   40000.0 |
 | `k_inc_slow`         |                          | --  |   16000.0 |
 | `v_min`         |                          | m/s  |   1.5 |
 
@@ -61,8 +62,9 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
  * `tau_fr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `tau_rl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `tau_rr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `front_active` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function BrakeControlUnit(; name = nothing, var"dt"=0.005, var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"L"=2.7, var"K_us"=0.0020387, var"i_s"=Float64(16.0), var"mu_est"=Float64(1.0), var"g"=9.81, var"k_lim"=0.85, var"v_floor"=Float64(1.0), var"Kp"=Float64(40000.0), var"Ki"=Float64(0.0), var"deadband"=0.03, var"v_on"=Float64(5.0), var"Mz_max"=Float64(10000.0), var"tw"=1.55, var"radius"=0.31, var"T_max"=Float64(2500.0), var"T_build"=0.1, var"R_build"=Float64(1000000000.0), var"select_low"=Float64(1.0), var"T_p"=0.03, var"lambda_1_f"=0.08, var"lambda_1_r"=0.06, var"lambda_lock"=0.2, var"alpha_rel"=0.6, var"beta_reapply"=0.85, var"l_rec"=0.03, var"T_hold_max"=0.06, var"k_dec"=Float64(40000.0), var"k_inc_fast"=Float64(160000.0), var"k_inc_slow"=Float64(16000.0), var"v_min"=1.5, __overrides = Dict{String, Any}())
+@component function BrakeControlUnit(; name = nothing, var"report_front"=false, var"dt"=0.005, var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"L"=2.7, var"K_us"=0.0020387, var"i_s"=Float64(16.0), var"mu_est"=Float64(1.0), var"g"=9.81, var"k_lim"=0.85, var"v_floor"=Float64(1.0), var"Kp"=Float64(40000.0), var"Ki"=Float64(0.0), var"deadband"=0.03, var"v_on"=Float64(5.0), var"Mz_max"=Float64(10000.0), var"tw"=1.55, var"radius"=0.31, var"T_max"=Float64(2500.0), var"T_build"=0.1, var"R_build"=Float64(1000000000.0), var"select_low"=Float64(0.0), var"T_p"=0.08, var"lambda_1_f"=0.14, var"lambda_1_r"=0.11, var"lambda_lock"=0.2, var"alpha_rel"=0.9, var"beta_reapply"=0.85, var"l_rec"=0.12, var"T_hold_max"=0.01, var"k_dec"=Float64(40000.0), var"k_inc_fast"=Float64(40000.0), var"k_inc_slow"=Float64(16000.0), var"v_min"=1.5, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -81,6 +83,7 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "report_front") && (report_front = pop!(__overrides, "report_front"))
   haskey(__overrides, "dt") && (dt = pop!(__overrides, "dt"))
   haskey(__overrides, "esp_on") && (esp_on = pop!(__overrides, "esp_on"))
   haskey(__overrides, "abs_on") && (abs_on = pop!(__overrides, "abs_on"))
@@ -186,37 +189,37 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
   append!(__params, @parameters (R_build::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, R_build, __local__R_build)
   __local__select_low = select_low
-  append!(__params, @parameters (select_low::Real))
+  append!(__params, @parameters (select_low::Real), [description = "Independent rear channels preserve ESP yaw allocation; select-low is for ABS-only use"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, select_low, __local__select_low)
   __local__T_p = T_p
-  append!(__params, @parameters (T_p::Real))
+  append!(__params, @parameters (T_p::Real), [description = "Prediction includes hydraulic lag and sampled release/reapply delay (derived)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, T_p, __local__T_p)
   __local__lambda_1_f = lambda_1_f
-  append!(__params, @parameters (lambda_1_f::Real))
+  append!(__params, @parameters (lambda_1_f::Real), [description = "Predicted release just beyond the front tire's 0.12 peak slip (derived)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_1_f, __local__lambda_1_f)
   __local__lambda_1_r = lambda_1_r
-  append!(__params, @parameters (lambda_1_r::Real))
+  append!(__params, @parameters (lambda_1_r::Real), [description = "Predicted release just beyond the rear tire's 0.09 peak slip (derived)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_1_r, __local__lambda_1_r)
   __local__lambda_lock = lambda_lock
   append!(__params, @parameters (lambda_lock::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_lock, __local__lambda_lock)
   __local__alpha_rel = alpha_rel
-  append!(__params, @parameters (alpha_rel::Real))
+  append!(__params, @parameters (alpha_rel::Real), [description = "Retain 90 percent of incipient-limit pressure; calibrated with lag (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, alpha_rel, __local__alpha_rel)
   __local__beta_reapply = beta_reapply
   append!(__params, @parameters (beta_reapply::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, beta_reapply, __local__beta_reapply)
   __local__l_rec = l_rec
-  append!(__params, @parameters (l_rec::Real))
+  append!(__params, @parameters (l_rec::Real), [description = "Reapply near peak adhesion rather than demanding near-zero slip (derived)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, l_rec, __local__l_rec)
   __local__T_hold_max = T_hold_max
-  append!(__params, @parameters (T_hold_max::Real))
+  append!(__params, @parameters (T_hold_max::Real), [description = "Two ECU ticks before another recovery decision (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, T_hold_max, __local__T_hold_max)
   __local__k_dec = k_dec
   append!(__params, @parameters (k_dec::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, k_dec, __local__k_dec)
   __local__k_inc_fast = k_inc_fast
-  append!(__params, @parameters (k_inc_fast::Real))
+  append!(__params, @parameters (k_inc_fast::Real), [description = "Initial build limited to 200 N.m per 5 ms tick for low-grip recovery (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, k_inc_fast, __local__k_inc_fast)
   __local__k_inc_slow = k_inc_slow
   append!(__params, @parameters (k_inc_slow::Real))
@@ -240,6 +243,7 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
   append!(__vars, @variables (tau_fr(t)::Real), [output = true])
   append!(__vars, @variables (tau_rl(t)::Real), [output = true])
   append!(__vars, @variables (tau_rr(t)::Real), [output = true])
+  append!(__vars, @variables (front_active(t)::Real), [output = true])
 
   ### Variables (declarations)
 
@@ -254,7 +258,7 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
   push!(__systems, @named esp = VehicleSystemsComponents.Vehicle.Planar.ESPController(; esp_on=esp_on, L=L, K_us=K_us, i_s=i_s, mu_est=mu_est, g=g, k_lim=k_lim, v_floor=v_floor, Kp=Kp, Ki=Ki, deadband=deadband, v_on=v_on, Mz_max=Mz_max, tw=tw, radius=radius, T_max=T_max, T_build=T_build, R_build=R_build, __overrides = esp_overrides))
   # Subcomponent abs of type VehicleSystemsComponents.Vehicle.Planar.ABSUnit
   abs_overrides = __pop_subcomponent_overrides!(__overrides, "abs")
-  push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(; abs_on=abs_on, dt=dt, select_low=select_low, T_p=T_p, lambda_1_f=lambda_1_f, lambda_1_r=lambda_1_r, lambda_lock=lambda_lock, alpha_rel=alpha_rel, beta_reapply=beta_reapply, l_rec=l_rec, T_hold_max=T_hold_max, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, v_min=v_min, __overrides = abs_overrides))
+  push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(; report_front=report_front, abs_on=abs_on, dt=dt, select_low=select_low, T_p=T_p, lambda_1_f=lambda_1_f, lambda_1_r=lambda_1_r, lambda_lock=lambda_lock, alpha_rel=alpha_rel, beta_reapply=beta_reapply, l_rec=l_rec, T_hold_max=T_hold_max, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, v_min=v_min, __overrides = abs_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -283,6 +287,12 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
   push!(__eqs, connect(abs.tau_fr, tau_fr))
   push!(__eqs, connect(abs.tau_rl, tau_rl))
   push!(__eqs, connect(abs.tau_rr, tau_rr))
+
+  ### Control Structures
+  if report_front
+    push!(__eqs, connect(abs.front_active, front_active))
+  else
+  end
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

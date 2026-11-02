@@ -207,6 +207,8 @@ end
 
 include("ABSUnit_definition.jl")
 include("AckermannSteering_definition.jl")
+include("BEVBrakeAndSteerTransient_definition.jl")
+include("BEVBrakeAndSteer_definition.jl")
 include("BrakeAllocator_definition.jl")
 include("BrakeChannel_definition.jl")
 include("BrakeControlUnit_definition.jl")

@@ -6,7 +6,7 @@ test component ABSStraightStop
   parameter radius::Length = 0.31
   parameter select_low::Real = 0.0
   parameter k_dec::Real = 40000.0
-  parameter k_inc_fast::Real = 160000.0
+  parameter k_inc_fast::Real = 40000.0
   parameter k_inc_slow::Real = 16000.0
   parameter h_cg::Length = 0.0
   structural parameter load_transfer::Boolean = true
@@ -56,7 +56,7 @@ metadata {
         "solver": "Tsit5", "stop": 6.0,
         "params": {"load_transfer": false},
         "atol": {"car.bus.x": 0.5, "car.bus.vx": 0.05},
-        "expect": {"final": {"car.bus.x": 47.182, "car.bus.vx": 0.0}, "signals": ["car.bus.x", "car.bus.vx", "car.bus.r", "car.bus.kappa_fl", "car.bus.kappa_rl", "abs.hold_fl.y", "abs.hold_rl.y"]}
+        "expect": {"final": {"car.bus.x": 37.643, "car.bus.vx": 0.0}, "signals": ["car.bus.x", "car.bus.vx", "car.bus.r", "car.bus.kappa_fl", "car.bus.kappa_rl", "abs.hold_fl.y", "abs.hold_rl.y"]}
       }
     }
   },
@@ -93,7 +93,7 @@ analysis ABSStraightStopTransient
   parameter T_cmd::Torque = 2500.0
   parameter select_low::Real = 0.0
   parameter k_dec::Real = 40000.0
-  parameter k_inc_fast::Real = 160000.0
+  parameter k_inc_fast::Real = 40000.0
   parameter k_inc_slow::Real = 16000.0
   parameter h_cg::Length = 0.0
   model = VehicleSystemsComponents.Lecture3.ABSStraightStop(v0 = v0, T_cmd = T_cmd, select_low = select_low, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow, h_cg = h_cg)

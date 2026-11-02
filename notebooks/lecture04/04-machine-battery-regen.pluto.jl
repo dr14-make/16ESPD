@@ -110,6 +110,70 @@ let
     """
 end
 
+# ╔═╡ dcbb7dba-6a48-4fbe-bd9b-5834f3c82bfc
+md"""
+### Moving the line: voltage and field
+
+The same machine in steady state, `di/dt = 0` and `dω/dt = 0`, with the flux scaled by the field
+fraction *f*: *i* = (*V* − *f K*Φ ω)/*R*, and the shaft torque is *f K*Φ *i* less the loss torques
+*T*<sub>f</sub> + *K*<sub>i</sub> + *k*<sub>w</sub>ω² + *C*/ω. Every parameter is read from the
+350 V dyno run above, so this is the model's own steady-state line, not a second model. Lowering
+*V* moves the line in speed and keeps its slope (*f K*Φ)²/*R*. Lowering *f* raises the no-load
+speed *V*/(*f K*Φ) and flattens the slope, but each ampere now makes only *f K*Φ of torque.
+"""
+
+# ╔═╡ d5b55265-e6b5-46e4-8134-3cc84a5b7a82
+steady = let
+    s, m = dyno.r350.sol, symbolic_container(dyno.r350)
+    ps = (; (n => s.ps[getproperty(m.machine, n)] for n in (:R, :k, :T_f, :K_i, :k_w, :C))...)
+    tau_loss(w) = ps.T_f + ps.K_i + ps.k_w * w^2 + ps.C / w
+    torque(V, f, w) = f * ps.k * (V - f * ps.k * w) / ps.R - tau_loss(w)
+    a = dyno_line(dyno.r350)
+    i = a.i[1]
+    "Speed in rad/s and shaft torque where the line for `V`, `f` draws the current `i`."
+    function at_current(V, f)
+        w = (V - ps.R * i) / (f * ps.k)
+        return (; w, tau = f * ps.k * i - tau_loss(w))
+    end
+    (; ps, torque, at_current, i_corner = i, check = torque(350.0, 1.0, a.rpm[1] * pi / 30) - a.tau[1])
+end;
+
+# ╔═╡ 9e32505e-671a-43ec-93e6-7f694ef2e43b
+control_family_plot = let
+    (; ps, torque, at_current, i_corner) = steady
+    p = plot(; layout = (1, 2), size = (1100, 420), legend = false)
+    rpm = range(100.0, 8000.0; length = 750)
+    for (c, V) in enumerate((100.0, 200.0, 350.0))
+        keep = rpm .<= rpm_of(V / ps.k) + 150
+        plot!(p[1], rpm[keep], [torque(V, 1.0, r * pi / 30) for r in rpm[keep]]; color = c, lw = 2.5)
+        q = at_current(V, 1.0)
+        scatter!(p[1], [rpm_of(q.w)], [q.tau]; color = c, ms = 5)
+        annotate!(p[1], [(rpm_of(V / ps.k) + 60, 70.0, text("$(round(Int, V)) V", 10, :left, palette(:default)[c]))])
+    end
+    hline!(p[1], [0.0]; color = :black, lw = 0.5)
+    plot!(p[1]; xlabel = "machine speed [rpm]", ylabel = "shaft torque [N·m]", xlims = (0, 4000),
+        ylims = (-150, 800), title = "Voltage V, full field: the line moves; dots $(round(i_corner; digits = 1)) A")
+    for (c, f) in enumerate((1.0, 0.7, 0.5))
+        keep = rpm .<= rpm_of(350.0 / (f * ps.k)) + 250
+        plot!(p[2], rpm[keep], [torque(350.0, f, r * pi / 30) for r in rpm[keep]]; color = c, lw = 2.5)
+        q = at_current(350.0, f)
+        scatter!(p[2], [rpm_of(q.w)], [q.tau]; color = c, ms = 5)
+        annotate!(p[2], [(rpm_of(q.w) + 120, q.tau, text("$(round(Int, q.tau)) N·m", 10, :left, palette(:default)[c])),
+            (rpm_of(350.0 / (f * ps.k)) + 120, 70.0, text("f = $(f == 1 ? "1" : f)", 10, :left, palette(:default)[c]))])
+    end
+    hline!(p[2], [0.0]; color = :black, lw = 0.5)
+    plot!(p[2]; xlabel = "machine speed [rpm]", ylabel = "shaft torque [N·m]", xlims = (0, 8000),
+        ylims = (-150, 800), title = "Field f at 350 V: faster, less torque per ampere; " *
+        "dots $(round(i_corner; digits = 1)) A")
+    p
+end
+
+# ╔═╡ edd4e960-6800-4827-9ffc-fb0e2f9f6277
+md"""
+The steady-state line meets the dyno: at 3283 rpm on 350 V it differs from the simulated
+torque by $(round(steady.check; sigdigits = 2)) N·m.
+"""
+
 # ╔═╡ 8c15e1f1-211b-4b8b-b43d-4c38d38bdfb3
 md"""
 ## 2. Where the machine's losses go
@@ -207,6 +271,82 @@ battery_plot = let
     p
 end
 
+# ╔═╡ 8e6a94b1-3c0e-4580-82a2-4c95ede53ad9
+md"""
+### Power costs efficiency
+
+Every ampere the pack delivers costs `R₀ i` of its voltage, so the share of the cells' energy
+that reaches the terminals is `η = v/E = 1 − R₀ i / E`, and the terminal power is
+`P = E i − R₀ i²`. Both are read below from the same bench, held at one current after another.
+The power peaks where `i = E / 2R₀`, at `E²/4R₀`, with half of the cells' energy lost in the
+pack: past that point more current gives less power. On a Ragone chart (specific energy against
+specific power) the same sweep is the pack's own trade-off: the faster it is emptied, the less
+of its energy arrives. The pack mass is the Leaf ZE1's 303 kg (Nissan).
+"""
+
+# ╔═╡ 1fc9b799-840d-4df7-be5c-a3a2fdc535e0
+ragone = let
+    probe = E4.BatteryTransient(I_load = 100.0)
+    ps, mp = probe.sol.ps, symbolic_container(probe)
+    E, R0, Q = ps[mp.battery.E], ps[mp.battery.R0], ps[mp.battery.Q_nom]
+    current(P) = (E - sqrt(E^2 - 4R0 * P)) / 2R0
+    named = [current(10e3), current(117.25e3), E / 2R0]
+    I = sort(vcat(collect(range(5.0, E / 2R0; length = 40)), named))
+    pts = map(I) do i
+        r = E4.BatteryTransient(I_load = i)
+        s, m = r.sol, symbolic_container(r)
+        v = s[m.battery.v][end]
+        (; i, v, P = v * i, eta = v / E)
+    end
+    (; E, R0, Q, mass = 303.0, pts, named = [pts[findfirst(p -> p.i == i, pts)] for i in named])
+end;
+
+# ╔═╡ 6ab11e61-b97d-4872-917b-8fedab02f964
+ragone_plot = let
+    (; E, Q, mass, pts, named) = ragone
+    P = [p.P for p in pts] ./ 1e3
+    eta = [100 * p.eta for p in pts]
+    p = plot(layout = (1, 2), size = (960, 440), legend = false)
+    plot!(p[1], P, eta; color = 1, lw = 2.5, xlabel = "terminal power [kW]",
+        ylabel = "energy efficiency v / E [%]", ylims = (45, 102), xlims = (0, 330),
+        title = "η = 1 − R₀ i / E")
+    scatter!(p[1], [n.P for n in named] ./ 1e3, [100 * n.eta for n in named]; color = 2, ms = 5)
+    annotate!(p[1], [(n.P / 1e3 + (k == 3 ? -6 : 6), 100 * n.eta + (k == 3 ? 3 : 0),
+        text("$(round(n.P / 1e3; digits = 1)) kW: $(round(100 * n.eta; digits = 1)) %", 10,
+            k == 3 ? :right : :left)) for (k, n) in enumerate(named)])
+    # Specific energy: the charge Q delivered at the terminal voltage, per kilogram of pack.
+    Wh_kg = [p.v * Q / 3600 / mass for p in pts]
+    W_kg = [p.P / mass for p in pts]
+    plot!(p[2], W_kg, Wh_kg; color = 1, lw = 2.5, xscale = :log10, yscale = :log10,
+        xlabel = "specific power [W/kg]", ylabel = "specific energy [Wh/kg]",
+        title = "Ragone: the pack's own trade-off ($(round(Int, mass)) kg)",
+        xticks = ([10, 30, 100, 300, 1000], ["10", "30", "100", "300", "1000"]),
+        yticks = ([60, 80, 100, 120, 140], ["60", "80", "100", "120", "140"]),
+        ylims = (60, 145))
+    scatter!(p[2], [n.P / mass for n in named], [n.v * Q / 3600 / mass for n in named];
+        color = 2, ms = 5)
+    p
+end
+
+# ╔═╡ 9b9bff5f-8326-458a-ae99-ad3e0acb6ffe
+let
+    (; E, R0, named) = ragone
+    r1(x) = round(x; digits = 1)
+    rows = join(["| $(r1(n.P / 1e3)) | $(r1(n.i)) | $(r1(n.v)) | $(r1(100 * (1 - n.eta))) |"
+                 for n in named], "\n")
+    Markdown.parse("""
+    | terminal power [kW] | current [A] | terminal voltage [V] | lost in R₀ [%] |
+    |---:|---:|---:|---:|
+    $rows
+
+    A WLTC-like 10 kW costs the pack under 1 % of its energy; the machine's full input,
+    117.25 kW (notebook 01's converter at the corner), costs about a tenth; and the most the
+    pack can deliver, `E²/4R₀` = $(r1(E^2 / 4R0 / 1e3)) kW, costs half. A real pack's BMS stops
+    far below that peak: INL measured a 30 s discharge capability of 103.3 kW at 80 % depth
+    of discharge on a 2013 Leaf pack.
+    """)
+end
+
 # ╔═╡ 7c8f87f4-00d0-40a9-b06c-6a9661ea1006
 md"""
 ## 4. Regen on a hard stop
@@ -215,18 +355,28 @@ Build step 05's car on Lecture 3's straight ABS stop from 80 km/h: the driver as
 braking than the tires carry, and `RegenBlend` gives the machine as much of it as the smallest of
 three ceilings allows: its 320 N·m, the pack's 80.5 kW charge limit over the machine speed, and a
 linear fade below 10 km/h. The rest goes to Lecture 3's friction brakes through the ABS. The same
-stop with `P_charge = 0` brakes on friction alone. The dry default is `withdraw = 0`:
-36.22 m, 49.32 % motor braking (176.9 kJ motor, 181.8 kJ friction), about half the stop.
-ABS withdrawal remains opt-in pending the gentle ABS calibration #156. The guide demonstrates
-`Vehicle.Planar.PlanarBEVLowGripStopTransient()` / `HandsOn04.BEVLowGripStopTransient()`
-(default `withdraw = 1`, `stop = 28`), compared with `withdraw = 0, stop = 12`. Low-grip bench
-measurements: 275.02 m enabled, minimum front slip −0.04931 above 3 m/s; 112.35 m disabled with
-locked/reversing wheels, not a physical benchmark. WLTC is unchanged.
+stop with `P_charge = 0` brakes on friction alone: 26.94 m. The dry default enables withdrawal
+(`withdraw = 1`): 27.102036224 m in 2.340 s after the pedal, machine/friction
+2.951/348.908 kJ (0.839 % gross motor share), battery positive recovery 2.957 kJ.
+The shared `ABSModulatorDiscrete` now uses its existing `k_inc_fast`/`k_inc_slow` build ramps
+when `tau_lock < tau_memory_min` (1 N·m, assumed); otherwise memory-scaled reapply,
+release memory and decrement are unchanged, with the threshold tagged (assumed). The stop is 0.16414 m
+(0.61 %) longer than friction alone, inside the `<= 1.01 * friction_distance` regression.
+The meaningful motor-share goal is NOT met: blanket front-active withdrawal suppresses regen
+almost throughout. With `withdraw = 0`: 27.238292677 m, 2.425 s, 28.7 % gross motor share,
+but minimum front slip −5.893705 above 3 m/s means reversed wheels, not a physical regen
+benchmark. Keep the rule ON: shorter and keeps slip above −0.2 while vx > 3 m/s (front/rear slip −0.126072/−0.090554).
+Low grip with withdrawal (`stop = 12`): 87.594615426 m, 7.665 s after pedal, minimum
+front/rear slip −0.187106/−0.104377 above 3 m/s. Off: 95.098241553 m and reversed wheels
+(minimum front slip −17.35918), not a physical benchmark. Use 12 s for both low-grip benches:
+20 s fails during parking at 15.835 s, after stopping at 8.165 s absolute. HandsOn
+low-grip is 87.604052512 m (Success, `stop = 12`). WLTC is unchanged (23.85 %,
+34.25 Wh/km recovered, 131.15 Wh/km consumption).
 """
 
 # ╔═╡ 43682d73-077d-446a-9d02-3f704293fd1e
-# Keep the dry envelope/deck figure explicit; the guide demonstrates withdrawal on low grip.
-stop = (; on = PL.PlanarBEVHardStopTransient(withdraw = 0.0), off = PL.PlanarBEVHardStopTransient(P_charge = 0.0));
+# Use the coordinated dry default; the hardware envelope remains visible as reference curves.
+stop = (; on = PL.PlanarBEVHardStopTransient(), off = PL.PlanarBEVHardStopTransient(P_charge = 0.0));
 
 # ╔═╡ 7e8d1c4b-a689-45c1-b6f1-9e840a99baaf
 "Speed against distance from the brake application at 0.5 s, and the distance to the first sample under 0.5 m/s."
@@ -257,18 +407,20 @@ regen_stop_plot = let
     annotate!(p[1], [(60.0, 335.0, text("torque limit, 320 N·m", 10, :bottom)),
         (27.0, 440.0, text("charge power, 80.5 kW / ω", 10, :left)),
         (11.0, 120.0, text("fade below 10 km/h", 10, :left)),
-        (62.0, 205.0, text("machine, regenerating", 10, :left, palette(:default)[1])),
+        (40.0, 8.0, text("machine, regenerating", 10, :left, :bottom, palette(:default)[1])),
         (v_corner - 1.0, 305.0, text("corner, $(round(v_corner; digits = 1)) km/h", 10, :right, :top))])
     plot!(p[1]; xlabel = "car speed [km/h]", ylabel = "braking torque at the machine [N·m]",
         ylims = (0, 480), xlims = (0, 82), legend = false,
-        title = "The machine takes the smallest ceiling")
+        title = "ABS withdrawal scales the hardware envelope")
     a, b = stop_trace(stop.on), stop_trace(stop.off)
     plot!(p[2], b.x, b.kmh; color = 2, lw = 2.5, label = "")
     plot!(p[2], a.x, a.kmh; color = 1, lw = 2.5, label = "")
-    annotate!(p[2], [(33.0, 4.0, text("regen + friction: $(round(a.d; digits = 1)) m", 10, :right, palette(:default)[1])),
-        (33.0, 12.0, text("friction only: $(round(b.d; digits = 1)) m", 10, :right, palette(:default)[2]))])
+    xmax = 1.15 * max(a.d, b.d)
+    x_label = min(a.d, b.d) - 1.5
+    annotate!(p[2], [(x_label, 4.0, text("regen + friction: $(round(a.d; digits = 1)) m", 10, :right, palette(:default)[1])),
+        (x_label, 12.0, text("friction only: $(round(b.d; digits = 1)) m", 10, :right, palette(:default)[2]))])
     plot!(p[2]; xlabel = "distance from the pedal [m]", ylabel = "car speed [km/h]",
-        legend = false, ylims = (0, 85), xlims = (0, 42), title = "Hard stop from 80 km/h")
+        legend = false, ylims = (0, 85), xlims = (0, xmax), title = "Hard stop from 80 km/h")
     p
 end
 
@@ -300,6 +452,10 @@ end
 # ╠═3682b634-a0dd-4436-97fa-61a8499843a0
 # ╟─bfdfb407-06cd-44bf-acbd-d56762c8e2dd
 # ╟─17c1868c-da16-4f2f-ad4a-a2003a870851
+# ╟─dcbb7dba-6a48-4fbe-bd9b-5834f3c82bfc
+# ╠═d5b55265-e6b5-46e4-8134-3cc84a5b7a82
+# ╟─9e32505e-671a-43ec-93e6-7f694ef2e43b
+# ╟─edd4e960-6800-4827-9ffc-fb0e2f9f6277
 # ╟─8c15e1f1-211b-4b8b-b43d-4c38d38bdfb3
 # ╠═10962649-cde5-4bea-ab84-08874291b7a3
 # ╟─3ef3be46-a5e3-4e27-a1d2-6b0a714ba563
@@ -307,6 +463,10 @@ end
 # ╟─f1508342-69b2-4bf5-9cc0-764009078ed2
 # ╠═611c1b72-0377-41ce-9476-6dd3d9f96b83
 # ╟─4e9ef33b-325f-4971-b2e8-86cad3875f70
+# ╟─8e6a94b1-3c0e-4580-82a2-4c95ede53ad9
+# ╠═1fc9b799-840d-4df7-be5c-a3a2fdc535e0
+# ╟─6ab11e61-b97d-4872-917b-8fedab02f964
+# ╟─9b9bff5f-8326-458a-ae99-ad3e0acb6ffe
 # ╟─7c8f87f4-00d0-40a9-b06c-6a9661ea1006
 # ╠═43682d73-077d-446a-9d02-3f704293fd1e
 # ╠═7e8d1c4b-a689-45c1-b6f1-9e840a99baaf

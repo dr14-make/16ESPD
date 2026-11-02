@@ -117,6 +117,8 @@ component ABSModulatorDiscrete@[input clk extends Discrete]
   parameter k_dec::Real = 80000.0
   parameter k_inc_fast::Real = 80000.0
   parameter k_inc_slow::Real = 8000.0
+  "Minimum useful friction lock torque; below this resume defined rebuild ramps (assumed)"
+  parameter tau_memory_min::Torque(min = eps(Float64)) = 1.0
   parameter v_min::Velocity = 1.5
   variable p::Torque
   variable phase::Real
@@ -148,8 +150,11 @@ relations
   hold_count@clk = ifelse(phase@clk > -0.5 and phase@clk < 0.5, hold_count@(clk-1) + 1.0, 0.0)
   fast_reapply@clk = ifelse(phase@clk < 0.5, 0.0, ifelse(phase@(clk-1) < 0.5 and phase@clk > 0.5, 1.0, ifelse(fast_reapply@(clk-1) > 0.5 and p@(clk-1) < beta_reapply * tau_lock@(clk-1), 1.0, 0.0)))
   dec_rate@clk = ifelse(released@(clk-1) > 0.5, 15.0 * tau_lock@(clk-1), k_dec)
-  fast_rate@clk = ifelse(released@(clk-1) > 0.5, 15.0 * tau_lock@(clk-1), k_inc_fast)
-  slow_rate@clk = ifelse(released@(clk-1) > 0.5, 1.5 * tau_lock@(clk-1), k_inc_slow)
+  # External axle torque can trigger release before friction pressure builds. A sub-N.m
+  # memory is not a usable lock estimate: search toward demand with the defined build ramps.
+  # Keep the actual lock memory for release/hold decisions, not an artificial pressure floor.
+  fast_rate@clk = ifelse(released@(clk-1) > 0.5 and tau_lock@(clk-1) >= tau_memory_min, 15.0 * tau_lock@(clk-1), k_inc_fast)
+  slow_rate@clk = ifelse(released@(clk-1) > 0.5 and tau_lock@(clk-1) >= tau_memory_min, 1.5 * tau_lock@(clk-1), k_inc_slow)
   rate@clk = ifelse(phase@clk < -0.5, -dec_rate@clk, ifelse(phase@clk < 0.5, 0.0, ifelse(released@(clk-1) < 0.5 or fast_reapply@clk > 0.5, fast_rate@clk, slow_rate@clk)))
   p@clk = ifelse(phase@clk > 1.5, max(demand@clk, 0.0), min(max(p@(clk-1) + rate@clk * dt, 0.0), max(demand@clk, 0.0)))
   tau_cmd = p

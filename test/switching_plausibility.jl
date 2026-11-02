@@ -221,3 +221,35 @@ end
     @test maximum(i) ≈ 35.0 * tanh(0.02 / 4 / 1e-3) rtol = 0.005
     @test minimum(i) ≈ -maximum(i) rtol = 1e-3
 end
+
+
+@testset "Switching: boost mean, ripple and energy at two duties" begin
+    for d in (0.25, 0.5)
+        r = _Esw.BoostChopperTransient(d = d)
+        s, C = r.sol, symbolic_container(r).chopper
+        a, b = 5e-3, 6e-3 # 20 whole switching periods, after settling
+        I = _sw_mean(s, C.i_L, a, b)
+        V = _sw_mean(s, C.v_out, a, b)
+        # Volt-second balance with winding, switch and diode conduction drops.
+        predicted = (48 - I * (0.01 + d * 0.01)) / (1 - d) - _sw_vf(I)
+        # 2% covers finite 0.5 us gate edges (1% of a period), effective duty
+        # and capacitor ripple: measured corrections to this DC estimate are 0.9–1.7%.
+        @test string(s.retcode) == "Success"
+        @test V ≈ predicted rtol = 0.02
+        @test V < 48 / (1 - d)
+        # Under 0.01 V drift between successive 20-period windows: <0.016%.
+        @test V ≈ _sw_mean(s, C.v_out, 4e-3, 5e-3) atol = 0.01
+        ts = range(b - 1 / 20e3, b; length = 5001)
+        ii = s(ts, idxs = C.i_L).u
+        @test minimum(ii) > 0 # textbook ripple assumes continuous conduction
+        # Ideal 6/12 A ripple: <0.4 V conduction drop during on-time and
+        # finite-edge timing account for about 2%; allow 4% including C ripple.
+        @test maximum(ii) - minimum(ii) ≈ 48 * d / (100e-6 * 20e3) rtol = 0.04
+        P = Dict(k => _sw_mean(s, getproperty(C, k), a, b)
+                 for k in (:P_in, :P_out, :P_loss, :P_switch, :P_diode, :P_winding))
+        # Solver-step quadrature resolves edge loss. 0.01% (0.04–0.09 W)
+        # allows quadrature error and residual stored-energy drift, not missing loss.
+        @test abs(P[:P_in] - P[:P_out] - P[:P_loss]) / P[:P_in] < 1e-4
+        @test P[:P_loss] ≈ P[:P_switch] + P[:P_diode] + P[:P_winding] rtol = 1e-9
+    end
+end

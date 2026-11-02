@@ -13,12 +13,73 @@ drives on it.
 `notebooks/lecture04/01-efficiency-map.pluto.jl`
 
 <!--
-Section 04, the envelope. Every electric car's spec sheet shows the same shape: constant torque up
-to a base speed, then constant power, with the torque falling as the speed rises. In this section we
+Section 04, the envelope. The envelope is the boundary of the most torque, and so the most power,
+the machine can give at each speed: every point the machine can reach lies on it or under it. Every
+electric car's spec sheet shows the same shape: constant torque up to a base speed, then constant
+power, with the torque falling as the speed rises. In this section we
 see where that shape comes from: the converter's current limit, its voltage limit, and field
 weakening. Then we compute the efficiency map of our machine, compare it with a measured Leaf, and
 see where the WLTC drives on it. The figures come from notebook 01, the efficiency-map notebook, and
 you build the converter at the end.
+-->
+
+---
+routeAlias: what-envelope
+---
+
+## What the envelope is
+
+![Schematic torque and power against machine speed for the course machine. Top: the envelope, flat at 320 N·m from standstill to the base speed of 3283 rpm, then falling as 1/ω to the maximum speed of 10 100 rpm; the region under it is shaded and labeled reachable, with green operating points scattered inside and a red cross above the curve labeled out of reach. The flat part is labeled constant torque, current limit; the falling part constant power, torque proportional to 1/ω, voltage limit: field weakening. Bottom: the power rising linearly to 110 kW at base speed and flat after it.](/figures/04-what-envelope.svg)
+
+<div class="grid grid-cols-2 gap-8 text-sm">
+<div>
+
+The **envelope** is the boundary of the most torque, and so the most power, the machine can give
+at each speed. Every operating point lies **on or under** it, as in an aircraft's flight envelope.
+Also called the operating envelope, the capability curve or the full-load curve; spec sheets show
+it as the torque and power curves.
+
+</div>
+<div>
+
+- **Up to base speed:** constant torque, set by the **current** limit.
+- **Above it:** constant power, torque ≈ 1/ω, set by the **voltage** limit, through <Link to="field-weakening">field weakening</Link>;
+  the corner is <Link to="base-speed">base speed</Link>.
+- The <Link to="efficiency-map">efficiency map</Link> fills the region under it; a drive cycle is a <Link to="wltc-on-the-map">cloud of points</Link>
+  inside it.
+
+</div>
+</div>
+
+<!--
+Before we compute anything, what does the word in the section title mean? The envelope is the
+boundary of the most torque the machine can give at each speed, and since power is torque times
+speed, also the most power. Every operating point the machine can reach lies on that boundary or
+under it. The word is used as in an aircraft's flight envelope, the region of speeds and altitudes
+the plane can fly in. It is a common engineering term rather than one fixed by a standard, and you
+will also meet it as the operating envelope, the capability curve, or the full-load or maximum-
+torque curve. On a spec sheet it is the pair of curves labeled torque and power.
+
+The figure is a sketch of our machine's envelope at its corner numbers: 320 newton meters up to a
+base speed of 3283 rpm, and about 110 kilowatts above it, up to the top speed of 10 100 rpm. It
+leaves out the machine's small losses; the computed envelope is two slides on. The top panel is
+torque against machine speed. The black line is the envelope. The shaded region under it is
+labeled reachable, and the green dots are operating points: whatever the driver asks for, at
+whatever speed, lands somewhere in there. The red cross above the line is a point the machine
+cannot reach, however the inverter drives it: at that speed it simply has no more torque.
+
+The envelope has two parts, and each has its own limit. Up to base speed, on the left, the torque is
+flat: the converter gives its maximum current, and the torque is proportional to the current. That
+part is set by the current limit. Right of the dashed line, the torque falls as 1 over omega, and
+the bottom panel shows why that is called constant power: the power rises in proportion to the
+speed up to base speed and then stays flat at about 110 kilowatts. That part is set by the voltage
+limit. The back-EMF has used up the battery's voltage, and the machine can only go faster by
+weakening its field, which is the field-weakening slide in section 03. The base-speed slide, next
+but one, computes where that corner falls.
+
+Two more things live in this picture. The efficiency map, later in this section, colors the region
+under the envelope by how efficient the machine is at each point. And a drive cycle, the WLTC, is a
+cloud of such operating points inside the envelope, which we will see on the map at the end.
 -->
 
 ---
@@ -57,7 +118,7 @@ $$
 | *I*<sub>max</sub> | 332.2 A | 320 N·m at base speed |
 | *d*<sub>max</sub> | 1 | no more than the pack's voltage |
 | *T*<sub>i</sub> | 1 ms | current loop |
-| *V*<sub>on</sub> | 1.2 V | two devices, 0.6 V each (deck) |
+| *V*<sub>on</sub> | 1.2 V | two devices, calibrated to ORNL (derived) |
 | *f*<sub>s</sub>, *t*<sub>sw</sub> | 5 kHz, 1 µs | ORNL ran the Leaf inverter at 5 kHz |
 
 At 350 V out and 332.2 A: **99.2 %** efficient.
@@ -84,10 +145,13 @@ edge costs a little energy, so this loss grows with the switching frequency.
 The table says where each number comes from. I max, 332.2 amperes, is the current at which build
 01's machine gives 320 newton meters at base speed. d max is 1: the converter cannot give the
 machine more than the pack's voltage. T i, 1 millisecond, is the time constant of the inverter's
-current loop: the output current follows its command with a lag that short. V on is 1.2 volts: at
-any instant two devices carry the current, 0.6 volts each, the deck's number. And f s and t sw are 5
-kilohertz and 1 microsecond. Oak Ridge ran the Leaf's inverter at 5 kilohertz, and 1 microsecond
-edges put the converter's efficiency in the 96 to 99 percent Oak Ridge measured.
+current loop: the output current follows its command with a lag that short. V on is 1.2 volts for
+the two devices that carry the current at any instant, calibrated so the inverter reaches the above
+99 percent Oak Ridge measured at high speed. A comparable traction IGBT module's datasheet gives
+about twice that for the pair; the lecture plan's known limits have that comparison and why one
+current-proportional loss cannot match Oak Ridge at both ends. And f s and t sw are 5 kilohertz and
+1 microsecond. Oak Ridge ran the Leaf's inverter at 5 kilohertz; the 1 microsecond edge is our
+assumption.
 
 The number at the bottom: at 350 volts out and 332.2 amperes, the loss is 332.2 amperes times 1.2
 volts plus 5000 times 1 microsecond times 350 volts, that is 332.2 times 2.95 volts, 0.98 kilowatts.
@@ -324,7 +388,81 @@ kilometers per hour, the machine turns 9260 rpm, with the field down to 0.36.
 
 So the number that decides the energy bill is not the peak efficiency in the brochure. It is the
 efficiency at light load, where friction, iron loss, windage and the constant loss weigh most. That
-is the quote box, and it is also the PMSM's advantage over the induction machine from section 03.
+is the quote box, and it is also the PMSM's advantage over the machines without magnets from
+section 03.
+-->
+
+---
+routeAlias: fast-machine
+---
+
+## Why a fast machine behind a reduction
+
+<img src="/figures/04-power-lines.svg" class="mx-auto" style="max-height: 20rem" alt="Left: the motoring half of the efficiency map with three constant-power lines, 10, 30 and 60 kW, falling as 1 over speed. Right: the combined efficiency along each line against speed: it climbs steeply out of low speed, peaks at 92.6 % near 2150 rpm for 10 kW and at 95.5 % near 3400 rpm for 30 and 60 kW, and falls slowly above."/>
+
+<div class="grid grid-cols-2 gap-8 text-[0.9rem]">
+<div>
+
+**Same power, more speed, less torque:** less current, and copper loss ∝ *T*². At 30 kW:
+**84.0 %** at 1000 rpm, **95.5 %** at 3400, 91.5 % at 10 000 (derived). Torque, not power, sizes a
+machine, so a fast one behind **8.193** is smaller for the same power.
+
+</div>
+<div>
+
+**Peak is not continuous:** 110 kW for seconds; **85 kW** rated output (Nissan), 90 kW continuous
+in the Dutch register (RDW). Heat sets the difference, and the model has none: section 09.
+
+</div>
+</div>
+
+<!--
+Why does an electric car use a fast machine behind a reduction gear, rather than a slow machine
+driving the wheels directly? The figure is notebook 01's efficiency map again, with lines of
+constant power drawn on it.
+
+Left panel: the motoring half of the map from three slides back, machine speed in rpm across, shaft
+torque in newton meters up, the same colors and contours, the black envelope on top. The three
+colored curves are constant power: white 10 kilowatts, red 30, blue 60. Power is torque times speed,
+so at constant power the torque falls as 1 over the speed, and each line is a hyperbola. Each line
+starts where it leaves the envelope: 60 kilowatts needs more than 320 newton meters below about
+1800 rpm.
+
+Right panel: the combined efficiency of machine and converter along each line, read from the
+swept map, against the same speed axis, in percent. The dot marks each line's best point. Read the
+red one, 30 kilowatts. At 1000 rpm the machine has to give about 290 newton meters, and the
+efficiency is 84.0 percent. At 3400 rpm the same 30 kilowatts takes only 84 newton meters, and the
+efficiency is 95.5 percent, the line's best. Above that it falls slowly, to 91.5 percent at 10 000
+rpm. The 60 kilowatt line has its best, also 95.5 percent, at the same 3400 rpm; the 10 kilowatt
+line peaks at 92.6 percent near 2150 rpm. These are model numbers, read from the map in the
+notebook, so I tag them derived.
+
+Why the steep climb? Same power, more speed, means less torque, less current, and the copper loss
+goes with the current squared, so with the torque squared. Halve the torque and the copper loss
+drops to a quarter. Past the best point, the iron loss and windage, which grow with speed, take
+some of it back, which is why the lines bend down slowly; a real machine's peak sits higher in
+speed, as Oak Ridge's map showed.
+
+The last sentence on the left is the design argument. A machine's size is set by its torque: the
+current its windings carry and the magnetic flux its iron holds. Power is torque times speed, so
+for the same power a fast machine needs less torque and is smaller and lighter. The reduction gear
+then turns the high speed into wheel torque: 8.193 times. That is why the Leaf's machine turns up
+to about 10 000 rpm.
+
+On the right, a second point about ratings. The 110 kilowatts on the spec sheet is a peak, which the
+machine can give for seconds, not for half an hour. What it can give continuously is set by heat:
+how fast the windings and magnets shed their losses into the coolant. Nissan's Japanese
+specification sheet for the 40 kilowatt-hour Leaf lists a rated output, teikaku shutsuryoku, of 85
+kilowatts beside the 110 kilowatt maximum. The Dutch vehicle register, RDW, records 90 kilowatts as
+the nominal continuous maximum power for most registered Leaf 40 kilowatt-hour cars. The two
+sources do not say which test they follow, and they do not agree, so read both as roughly 85 to 90
+kilowatts. For type approval in Europe the test is UN Regulation 85, whose maximum 30 minutes power
+is the average power a drive train holds for 30 minutes. And Oak Ridge ran the first-generation 80
+kilowatt motor at its full 80 kilowatts continuously at 7000 rpm, with the stator temperature
+leveling out at about 135 degrees Celsius.
+
+Our model has no temperatures at all, so it would hold 110 kilowatts forever. That is one of the
+known limits in section 09.
 -->
 
 ---
@@ -429,6 +567,8 @@ One detail you may notice: near 95 rpm the shaft torque dips to 300 newton meter
 - The efficiency map is computed from the machine's parts: peak at mid load, low at low speed and
   high torque, collapsing near zero torque. Against ORNL: shape and level.
 - WLTC drives at light load: **light-load efficiency** decides the bill.
+- At a given power, more speed means less torque and less copper loss: a fast machine behind a
+  reduction. 110 kW is a peak; the continuous rating is set by heat.
 
 ### Next: what is inside the converter. <Link to="power-electronics">→ 05, power electronics</Link>
 
@@ -438,8 +578,10 @@ and a duty limit, and 99.2 percent efficient at the corner. Base speed is where 
 at 3283 rpm: below it, constant torque; above it, field weakening, with the torque falling as 1 over
 omega and the power constant. The efficiency map is computed from the machine's own parts: its peak
 at mid load, lower at low speed and high torque, collapsing near zero torque, and it matches Oak
-Ridge's measured Leaf in shape and level. And the WLTC drives at light load, so light-load
-efficiency decides the bill.
+Ridge's measured Leaf in shape and level. The WLTC drives at light load, so light-load efficiency
+decides the bill. And at a given power, more speed means less torque and less copper loss, which
+is why the machine is fast and sits behind a reduction; its 110 kilowatts is a peak, and what it
+can give continuously is set by heat.
 
 The converter in the car is an average. The next section opens it up: switches, diodes and
 pulse-width modulation, on a microsecond time scale, beside the car rather than in it.

@@ -10,11 +10,18 @@ dtmax 5 ms and no load transfer, and prints every number the slides quote: the s
 distance from brake onset, the lateral offset at the obstacle and at standstill, the peak yaw
 rate, and the front wheels' slip and lateral force. The clocked ABS makes each run take about
 half a minute.
+
+The dyad-3.5 kernel has no GR, so the figures go through Plots' plotly backend and Kaleido at
+their own size, by `save_svg` in `scripts/plotly_svg.jl`.
 """
 
 using VehicleSystemsComponents
 using DyadInterface: symbolic_container
 using Plots
+import PlotlyBase, PlotlyKaleido
+
+plotly()
+include("plotly_svg.jl")
 
 const L3 = VehicleSystemsComponents.Lecture3
 const OUT = normpath(@__DIR__, "..", "slides", "decks", "lecture-03", "public", "figures")
@@ -30,7 +37,7 @@ r2(x) = round(x; digits = 2)
 function brake_and_steer(abs_on)
     result = L3.BrakeAndSteerTransient(; abs_on)
     sol, model = result.sol, symbolic_container(result)
-    s = model.sensors
+    s = model.car.bus
     get(x) = sol(T, idxs = x).u
     x, y, vx, vy = get(s.x), get(s.y), get(s.vx), get(s.vy)
     v = hypot.(vx, vy)
@@ -111,12 +118,12 @@ for (i, text) in ((1, "start, 80 km/h"), (on.ib, "brake, 0.5 s"), (on.isteer, "s
     scatter!(traj, [on.x[i]], [on.y[i]]; color = :black, ms = 4, label = "")
     annotate!(traj, on.x[i], on.y[i] + 1.6, Plots.text(text, 8, :center, :gray25))
 end
-savefig(traj, joinpath(OUT, "03-brake-steer-path.svg"))
+save_svg(traj, joinpath(OUT, "03-brake-steer-path.svg"))
 println("  03-brake-steer-path.svg")
 
 window(d) = d.ib:d.is
 force_plot = plot(; ylabel = "front lateral force [kN]", legend = :topright,
-    title = "Front axle: lateral force and slip, steering from 0.8 s")
+    title = "Front axle: lateral force and slip, steering from 0.8 s", bottom_margin = 4Plots.mm)
 slip_plot = plot(; xlabel = "time [s]", ylabel = "front slip κ", legend = false,
     ylims = (-1.05, 0.05))
 for ((label, color, ls), d) in ((ABS_OFF, off), (ABS_ON, on))
@@ -130,7 +137,8 @@ annotate!(slip_plot, 2.0, -0.15, Plots.text("κ = −0.2", 8, :left, :gray25))
 for p in (force_plot, slip_plot)
     vline!(p, [BRAKE_TIME, STEER_TIME]; color = :gray, ls = :dot, label = "")
 end
-fig = plot(force_plot, slip_plot; layout = grid(2, 1, heights = [0.55, 0.45]), link = :x,
+fig = plot(force_plot, slip_plot; layout = grid(2, 1, heights = [0.55, 0.45]),
     size = (960, 540), dpi = 100, left_margin = 6Plots.mm, xlims = (0.4, max(on.t_stop, off.t_stop) + 0.1))
-savefig(fig, joinpath(OUT, "03-brake-steer-forces.svg"))
+save_svg(fig, joinpath(OUT, "03-brake-steer-forces.svg"))
 println("  03-brake-steer-forces.svg")
+PlotlyKaleido.kill_kaleido()

@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 530" width="600" height="530">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .house { fill: #e3e7ec; stroke: #4a5a6b; stroke-width: 2; }
+    .iron { fill: #f1f3f5; stroke: #16202c; stroke-width: 2; }
+    .shaft { fill: #c9ced6; stroke: #16202c; stroke-width: 2; }
+    .north { fill: #f6d5d3; stroke: #c0392b; stroke-width: 2; }
+    .south { fill: #dbe7f6; stroke: #1f5fa8; stroke-width: 2; }
+    .slot { fill: #fdf0e0; stroke: #a75d00; stroke-width: 1.5; }
+    .cond { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .idle { fill: #fff; stroke: #4a5a6b; stroke-width: 1.5; stroke-dasharray: 3 2; }
+    .mark { stroke: #16202c; stroke-width: 2; }
+    .seg { fill: #e9c49a; stroke: #16202c; stroke-width: 1.5; }
+    .brush { fill: #4a5a6b; stroke: #16202c; stroke-width: 1.5; }
+    .wire { stroke: #16202c; stroke-width: 2; fill: none; }
+    .sense { stroke: #1f5fa8; stroke-width: 1.5; fill: none; stroke-dasharray: 5 3; }
+    .lead { stroke: #4a5a6b; stroke-width: 1; fill: none; }
+    .frame { fill: none; stroke: #4a5a6b; stroke-width: 1; stroke-dasharray: 4 4; }
+    .torque { stroke: #16202c; stroke-width: 2.5; fill: none; }
+    .heat { stroke: #d9480f; stroke-width: 2; fill: none; stroke-linecap: round; }
+    .chip { fill: #16202c; }
+    .inv { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .cool { fill: #cfe6f3; stroke: #1f5fa8; stroke-width: 1; }
+    .title { font-size: 21px; font-weight: 700; }
+    .t { font-size: 24px; font-weight: 700; }
+    .sig { font-size: 15px; font-weight: 600; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+    .small { font-size: 12px; fill: #4a5a6b; }
+    .ph { font-size: 14px; font-weight: 700; fill: #a75d00; }
+    .hot { font-size: 14px; font-weight: 600; fill: #d9480f; }
+    .rub { font-size: 14px; font-weight: 600; fill: #c0392b; }
+    .ok { font-size: 14px; font-weight: 600; fill: #2e8b57; }
+    .halo { paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
+  </style>
+  <defs>
+    <marker id="bl-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+    <marker id="bl-hot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#d9480f"/></marker>
+  </defs>
+  <text x="16" y="28" class="title">Brushless DC machine (BLDC)</text>
+  <path class="house" fill-rule="evenodd" d="M38 250 a172 172 0 1 0 344 0 a172 172 0 1 0 -344 0 Z M50 250 a160 160 0 1 0 320 0 a160 160 0 1 0 -320 0 Z"/>
+  <circle class="cool" cx="374.6" cy="228.3" r="3.5"/>
+  <circle class="cool" cx="363.4" cy="186.5" r="3.5"/>
+  <circle class="cool" cx="341.7" cy="148.9" r="3.5"/>
+  <circle class="cool" cx="311.1" cy="118.3" r="3.5"/>
+  <circle class="cool" cx="273.5" cy="96.6" r="3.5"/>
+  <circle class="cool" cx="231.7" cy="85.4" r="3.5"/>
+  <circle class="cool" cx="188.3" cy="85.4" r="3.5"/>
+  <circle class="cool" cx="146.5" cy="96.6" r="3.5"/>
+  <circle class="cool" cx="108.9" cy="118.3" r="3.5"/>
+  <circle class="cool" cx="78.3" cy="148.9" r="3.5"/>
+  <circle class="cool" cx="56.6" cy="186.5" r="3.5"/>
+  <circle class="cool" cx="45.4" cy="228.3" r="3.5"/>
+  <circle class="cool" cx="45.4" cy="271.7" r="3.5"/>
+  <circle class="cool" cx="56.6" cy="313.5" r="3.5"/>
+  <circle class="cool" cx="78.3" cy="351.1" r="3.5"/>
+  <circle class="cool" cx="108.9" cy="381.7" r="3.5"/>
+  <circle class="cool" cx="146.5" cy="403.4" r="3.5"/>
+  <circle class="cool" cx="188.3" cy="414.6" r="3.5"/>
+  <circle class="cool" cx="231.7" cy="414.6" r="3.5"/>
+  <circle class="cool" cx="273.5" cy="403.4" r="3.5"/>
+  <circle class="cool" cx="311.1" cy="381.7" r="3.5"/>
+  <circle class="cool" cx="341.7" cy="351.1" r="3.5"/>
+  <circle class="cool" cx="363.4" cy="313.5" r="3.5"/>
+  <circle class="cool" cx="374.6" cy="271.7" r="3.5"/>
+  <path class="iron" fill-rule="evenodd" d="M50 250 a160 160 0 1 0 320 0 a160 160 0 1 0 -320 0 Z M98 250 a112 112 0 1 0 224 0 a112 112 0 1 0 -224 0 Z"/>
+  <rect class="slot" x="306.2" y="166.5" width="38" height="34" rx="3" transform="rotate(-30 325.2 183.5)"/>
+  <rect class="slot" x="191" y="100" width="38" height="34" rx="3" transform="rotate(-90 210 117)"/>
+  <rect class="slot" x="75.8" y="166.5" width="38" height="34" rx="3" transform="rotate(-150 94.8 183.5)"/>
+  <rect class="slot" x="75.8" y="299.5" width="38" height="34" rx="3" transform="rotate(-210 94.8 316.5)"/>
+  <rect class="slot" x="191" y="366" width="38" height="34" rx="3" transform="rotate(-270 210 383)"/>
+  <rect class="slot" x="306.2" y="299.5" width="38" height="34" rx="3" transform="rotate(-330 325.2 316.5)"/>
+  <circle class="cond" cx="325.2" cy="183.5" r="11"/>
+  <circle cx="325.2" cy="183.5" r="3.5" fill="#16202c"/>
+  <text x="376.3" y="159" text-anchor="middle" class="ph">A−</text>
+  <circle class="idle" cx="210" cy="117" r="11"/>
+  <text x="210" y="63" text-anchor="middle" class="ph">C+</text>
+  <circle class="cond" cx="94.8" cy="183.5" r="11"/>
+  <path class="mark" d="M88.2 176.9 L101.4 190.1 M101.4 176.9 L88.2 190.1"/>
+  <text x="43.7" y="159" text-anchor="middle" class="ph">B−</text>
+  <circle class="cond" cx="94.8" cy="316.5" r="11"/>
+  <path class="mark" d="M88.2 309.9 L101.4 323.1 M101.4 309.9 L88.2 323.1"/>
+  <text x="43.7" y="351" text-anchor="middle" class="ph">A+</text>
+  <circle class="idle" cx="210" cy="383" r="11"/>
+  <text x="210" y="447" text-anchor="middle" class="ph">C−</text>
+  <circle class="cond" cx="325.2" cy="316.5" r="11"/>
+  <circle cx="325.2" cy="316.5" r="3.5" fill="#16202c"/>
+  <text x="376.3" y="351" text-anchor="middle" class="ph">B+</text>
+  <rect class="chip" x="322" y="244" width="12" height="12" rx="2" transform="rotate(0 328 250)"/>
+  <text x="344.9" y="277.8" text-anchor="middle" class="small" font-weight="600">H1</text>
+  <rect class="chip" x="145" y="141.8" width="12" height="12" rx="2" transform="rotate(-120 151 147.8)"/>
+  <text x="163.1" y="125.3" text-anchor="middle" class="small" font-weight="600">H2</text>
+  <rect class="chip" x="145" y="346.2" width="12" height="12" rx="2" transform="rotate(-240 151 352.2)"/>
+  <text x="121.9" y="358.9" text-anchor="middle" class="small" font-weight="600">H3</text>
+  <circle class="iron" cx="210" cy="250" r="90"/>
+  <path class="north" d="M158 159.9 A104 104 0 0 0 158 340.1 L165 327.9 A90 90 0 0 1 165 172.1 Z"/>
+  <path class="south" d="M262 340.1 A104 104 0 0 0 262 159.9 L255 172.1 A90 90 0 0 1 255 327.9 Z"/>
+  <text x="138" y="258" text-anchor="middle" class="t">N</text>
+  <text x="282" y="258" text-anchor="middle" class="t">S</text>
+  <circle class="shaft" cx="210" cy="250" r="22"/>
+  <text x="210" y="254" text-anchor="middle" class="small">shaft</text>
+  <text x="210" y="216" text-anchor="middle" class="lbl halo">rotor</text>
+  <path class="torque" d="M164.1 282.1 A56 56 0 0 0 255.9 282.1" marker-end="url(#bl-ink)"/>
+  <text x="210" y="294" text-anchor="middle" class="sig halo">T, ω</text>
+  <path class="heat" d="M78.4 174 L66.2 167" marker-end="url(#bl-hot)"/>
+  <path class="heat" d="M78.4 326 L66.2 333" marker-end="url(#bl-hot)"/>
+  <path class="heat" d="M341.6 174 L353.8 167" marker-end="url(#bl-hot)"/>
+  <path class="heat" d="M341.6 326 L353.8 333" marker-end="url(#bl-hot)"/>
+  <path class="lead" d="M404 65 H392 L312.2 119.2"/>
+  <circle cx="312.2" cy="119.2" r="2.5" fill="#4a5a6b"/>
+  <text x="410" y="70" class="lbl">housing, water-cooled</text>
+  <path class="lead" d="M404 93 H392 L225.1 106.8"/>
+  <circle cx="225.1" cy="106.8" r="2.5" fill="#4a5a6b"/>
+  <text x="410" y="98" class="lbl">stator winding</text>
+  <path class="lead" d="M404 121 H392 L280 128.8"/>
+  <circle cx="280" cy="128.8" r="2.5" fill="#4a5a6b"/>
+  <text x="410" y="126" class="lbl">stator iron</text>
+  <path class="lead" d="M404 149 H392 L301.2 283.2"/>
+  <circle cx="301.2" cy="283.2" r="2.5" fill="#4a5a6b"/>
+  <text x="410" y="154" class="lbl">surface magnets</text>
+  <text x="410" y="200" class="small">this 60° step: i_A in, i_B out,</text>
+  <text x="410" y="216" class="small">C off; H1–H3 read the magnets</text>
+  <rect class="frame" x="404" y="250" width="188" height="186" rx="6"/>
+  <rect class="inv" x="440" y="330" width="100" height="90" rx="6"/>
+  <text x="490" y="370" text-anchor="middle" class="sig">inverter</text>
+  <text x="490" y="388" text-anchor="middle" class="small">6 switches</text>
+  <path class="wire" d="M345.5 356 H440"/>
+  <text x="418" y="352" class="ph">A</text>
+  <path class="wire" d="M322.6 380 H440"/>
+  <text x="418" y="376" class="ph">B</text>
+  <path class="wire" d="M286.6 404 H440"/>
+  <text x="418" y="400" class="ph">C</text>
+  <path class="sense" d="M334 250 H522 V330"/>
+  <text x="414" y="270" class="small" fill="#1f5fa8">rotor position</text>
+  <text x="414" y="286" class="small" fill="#1f5fa8">from H1–H3</text>
+  <path class="wire" d="M540 362 H566 M540 392 H566"/>
+  <text x="576" y="367" text-anchor="middle" class="sig">+</text>
+  <text x="576" y="397" text-anchor="middle" class="sig">−</text>
+  <path class="heat" d="M18 466 H36" marker-end="url(#bl-hot)"/>
+  <text x="44" y="471" class="hot">heat: in the stator winding, next to the housing</text>
+  <text x="44" y="497" class="ok">no sliding contact: only cables leave the stator</text>
+  <path d="M20 492 l5 5 l10 -10" stroke="#2e8b57" stroke-width="2.5" fill="none"/>
+  <text x="44" y="520" class="small">2 poles · 6 slots · torque counterclockwise</text>
+</svg>

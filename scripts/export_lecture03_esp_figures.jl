@@ -11,12 +11,18 @@ braking directly and through ABS (`abs_on = 1`, `Ki = 1e5`, as in
 `notebooks/lecture03/03-esp.pluto.jl`), and `Lecture3.SplitMuStopTransient` in its four
 configurations, all Tsit5 with dtmax 5 ms and no load transfer. It prints every number the
 slides quote. The clocked analyses take about 30 s each, so a full run takes about ten minutes.
-The figures were made at 23bd4bb.
+
+The dyad-3.5 kernel has no GR, so the figures go through Plots' plotly backend and Kaleido at
+their own size, by `save_svg` in `scripts/plotly_svg.jl`.
 """
 
 using VehicleSystemsComponents
 using DyadInterface: symbolic_container
 using Plots
+import PlotlyBase, PlotlyKaleido
+
+plotly()
+include("plotly_svg.jl")
 
 const L3 = VehicleSystemsComponents.Lecture3
 const fmvss126_metrics = VehicleSystemsComponents.Vehicle.Planar.fmvss126_metrics
@@ -39,7 +45,7 @@ r1(x) = round(x; digits = 1)
 function sine_with_dwell(analysis; kwargs...)
     result = analysis(; stop = 6.0, kwargs...)
     sol, model = result.sol, symbolic_container(result)
-    s = model.sensors
+    s = model.car.bus
     has_esp = analysis === L3.ESPSineWithDwellTransient
     get(x) = sol(T, idxs = x).u
     m = fmvss126_metrics(T, get(s.delta_sw), get(s.r), get(s.y); A = A_REF)
@@ -112,7 +118,7 @@ for (amp, label, color, ls) in CASES
     plot!(traj, d.x, d.y; lw = 2.5, color, ls, label)
     draw_car!(traj, d, color)
 end
-savefig(traj, joinpath(OUT, "05-swd-path.svg"))
+save_svg(traj, joinpath(OUT, "05-swd-path.svg"))
 println("  05-swd-path.svg")
 
 # Steering-wheel angle and yaw rate over time, with the two FMVSS 126 check instants.
@@ -136,7 +142,7 @@ for (t, text) in ((m_ref.t_cos, "steering ends"), (m_ref.t_cos + 1.0, "+1.00 s")
 end
 yaw = plot(swa_plot, yaw_plot; layout = grid(2, 1, heights = [0.38, 0.62]),
     link = :x, size = (960, 540), dpi = 100, left_margin = 6Plots.mm)
-savefig(yaw, joinpath(OUT, "05-swd-yaw-rate.svg"))
+save_svg(yaw, joinpath(OUT, "05-swd-yaw-rate.svg"))
 println("  05-swd-yaw-rate.svg")
 
 const ESP_OFF = ("ESP off", :firebrick, :dash)
@@ -150,7 +156,7 @@ for ((label, color, ls), d) in ((ESP_OFF, off), (ESP_ON, on))
     plot!(traj, d.x, d.y; lw = 2.5, color, ls, label)
     draw_car!(traj, d, color)
 end
-savefig(traj, joinpath(OUT, "05-swd-esp-path.svg"))
+save_svg(traj, joinpath(OUT, "05-swd-esp-path.svg"))
 println("  05-swd-esp-path.svg")
 
 # Yaw rate against the reference, and the brake torque ESP puts on each wheel.
@@ -174,7 +180,7 @@ for p in (yaw_plot, tau_plot)
 end
 fig = plot(yaw_plot, tau_plot; layout = grid(2, 1, heights = [0.55, 0.45]),
     link = :x, size = (960, 540), dpi = 100, left_margin = 6Plots.mm)
-savefig(fig, joinpath(OUT, "05-swd-esp-yaw.svg"))
+save_svg(fig, joinpath(OUT, "05-swd-esp-yaw.svg"))
 println("  05-swd-esp-yaw.svg")
 
 # Brake work per wheel, ∫τ dt, over the reversal and the dwell, where the car oversteers.
@@ -202,7 +208,7 @@ end
 hline!(speed_plot, [22.22]; color = :gray, ls = :dot, label = "entry, 80 km/h")
 fig = plot(slip_plot, speed_plot; layout = (1, 2), size = (960, 400), dpi = 100,
     left_margin = 5Plots.mm, bottom_margin = 5Plots.mm)
-savefig(fig, joinpath(OUT, "05-esp-abs.svg"))
+save_svg(fig, joinpath(OUT, "05-esp-abs.svg"))
 println("  05-esp-abs.svg")
 
 # Split-µ stop: left wheels on dry asphalt, right wheels on ice, full braking, wheel straight.
@@ -218,7 +224,7 @@ const SPLIT = (
 )
 function split_mu(knobs)
     result = L3.SplitMuStopTransient(; stop = 6.0, knobs...)
-    sol, s = result.sol, symbolic_container(result).sensors
+    sol, s = result.sol, symbolic_container(result).car.bus
     get(x) = sol(T, idxs = x).u
     d = (; t = T, x = get(s.x), y = get(s.y), psi = get(s.psi), vx = get(s.vx))
     i = something(findfirst(<(3.0), d.vx), length(T))
@@ -247,5 +253,6 @@ end
 vline!(heading_plot, [0.5]; color = :gray, ls = :dot)
 fig = plot(path_plot, heading_plot; layout = grid(1, 2, widths = [0.68, 0.32]),
     size = (960, 360), dpi = 100, left_margin = 5Plots.mm, bottom_margin = 5Plots.mm)
-savefig(fig, joinpath(OUT, "05-split-mu.svg"))
+save_svg(fig, joinpath(OUT, "05-split-mu.svg"))
 println("  05-split-mu.svg")
+PlotlyKaleido.kill_kaleido()

@@ -7,15 +7,16 @@ layout: section
 
 # Batteries, simply
 
-V = E − IR, charge and energy, specific energy and power, and the deck's comparison of
-chemistries.
+V = E − IR, charge and energy, specific energy and power, the deck's comparison of
+chemistries against today's, and what a kilowatt-hour costs.
 
 `notebooks/lecture04/04-machine-battery-regen.pluto.jl`
 
 <!--
 Section 06, batteries, simply. We keep the battery as simple as it can be and still be useful: V
-equals E minus I R, charge and energy, specific energy and specific power, and the deck's comparison
-of chemistries. Then you build it, build 03. The figure comes from notebook 04. The deck's tour of
+equals E minus I R, charge and energy, specific energy and specific power, the deck's comparison
+of chemistries set against today's cells, and what a kilowatt-hour of battery costs. Then you build
+it, build 03. The discharge figure comes from notebook 04; the price figure from published data. The deck's tour of
 the individual chemistries, the fuel cells, and a more detailed cell model, with its charging,
 state-of-charge estimation and balancing, are in the extra session.
 -->
@@ -199,15 +200,79 @@ round trip at 95 to 98 percent.
 -->
 
 ---
+routeAlias: battery-ragone
+class: big-figure
+---
+
+## Power costs efficiency: the pack's own Ragone curve
+
+<div class="grid grid-cols-[1.6fr_1fr] gap-6 items-center">
+<div>
+
+![Left: energy efficiency v/E of the 350 V, 0.1 Ω pack against terminal power: 99.2 % at 10 kW, 89.3 % at 117.2 kW, 50 % at the maximum 306.2 kW. Right: the same sweep as specific energy against specific power for a 303 kg pack, log-log: about 131 Wh/kg at 33 W/kg, 118 Wh/kg at 387 W/kg, 66 Wh/kg at 1010 W/kg.](/figures/06-battery-ragone.svg)
+
+</div>
+<div class="text-[0.95rem]">
+
+$$
+\eta = \frac{v}{E} = 1 - \frac{R_0\, i}{E} \qquad P = E\,i - R_0\, i^2
+$$
+
+- **10 kW**, cruising at 90 km/h: **0.8 %** lost (derived);
+- the machine's full input, **117 kW**: **10.7 %**;
+- the most it can give, $E^2/4R_0$ = **306 kW**: **50 %**.
+
+Every link costs more at high power; the battery too.
+
+</div>
+</div>
+
+<!--
+The deck's Ragone plot set lead acid against nickel-cadmium: energy against power. Our own pack
+draws a better one. The figure is notebook 04: the bench of build 03, held at one constant current
+after another, from 5 amperes up to 1750, and read at each.
+
+The formulas first. The cells make E times i; the terminals deliver v times i, with v equal to E
+minus R0 i. So the share of the cells' energy that reaches the terminals is eta equals v over E, 1
+minus R0 i over E: E is the open-circuit voltage, 350 volts, R0 the internal resistance, 0.1 ohm, i
+the current in amperes. And the power at the terminals is P equals E i minus R0 i squared, in watts.
+P grows with the current until R0 i reaches half of E, at i equals E over 2 R0, 1750 amperes; there
+P is at its maximum, E squared over 4 R0, and eta is exactly one half. Past that point more current
+gives less power.
+
+Left panel: the efficiency v over E in percent, against the terminal power in kilowatts. It starts
+near 100 at no load and falls ever faster. The three orange dots are the three lines on the right.
+At 10 kilowatts, about what the course car's road load takes at a steady 90 kilometers per hour,
+my arithmetic from section 01's numbers, the pack loses 0.8 percent: 99.2 percent reaches the
+terminals. At 117 kilowatts, the full input of the machine and converter at the
+corner from section 04, it loses 10.7 percent, about a tenth. And at its theoretical maximum, 306
+kilowatts, half. These are derived from the model's parameters and read off the bench in the
+notebook.
+
+Right panel: the same sweep as a Ragone chart, both axes logarithmic. Across is specific power,
+watts per kilogram of pack; up is specific energy, the watt-hours per kilogram the pack delivers
+if it is emptied at that power. The pack mass is the Leaf ZE1's 303 kilograms, from Nissan. At 33
+watts per kilogram, the 10 kilowatt point, the pack delivers about 131 watt-hours per kilogram, close
+to the 132 it stores. At 387 watts per kilogram, the machine's full input, 118. At the peak, 1010
+watts per kilogram, only 66: half is lost in the pack. The faster you empty a battery, the less of
+its energy arrives. A real pack's battery management never lets it near that peak: Idaho National
+Laboratory measured the 2013 Leaf pack's 30 second discharge capability at 103.3 kilowatts, at 80
+percent depth of discharge.
+
+The last line is the lecture's thesis applied to the battery: every link costs a few percent, and
+more at high power.
+-->
+
+---
 routeAlias: battery-table
 ---
 
-## The deck's comparison of chemistries
+## The textbook's chemistries, and today's
 
-<div class="grid grid-cols-[1.3fr_1fr] gap-8 items-start">
+<div class="grid grid-cols-[1.15fr_1fr] gap-8 items-start text-[0.9rem]">
 <div class="tight">
 
-| Battery | Wh/kg | Wh/L | W/kg | Cost |
+| Battery, early 2000s | Wh/kg | Wh/L | W/kg | Cost |
 |---|---:|---:|---:|---:|
 | Lead acid | 30 | 75 | 250 | 0.5 |
 | NiCad | 50 | 80 | 150 | 1.5 |
@@ -216,60 +281,200 @@ routeAlias: battery-table
 | Li ion | 150 | 150 | 300 | 3 |
 | Zinc–air | 230 | 270 | 105 | ? |
 
-<div class="caption">Deck 8, after Larminie and Lowry. Cost in arbitrary units; every figure a
-broad guideline only.</div>
+<div class="caption">Deck 8, after Larminie and Lowry (textbook): dated. Cost in arbitrary units.</div>
+
+| Li-ion today | Wh/kg | Source |
+|---|---:|---|
+| NMC cell, best, 2025 | 265 | IEA |
+| LFP cell, best, 2025 | 205 | IEA |
+| Leaf ZE1 pack: 40 kWh, 303 kg | 132 | Nissan, derived |
 
 </div>
 <div>
 
-**The deck's conclusions**
+**What the textbook predicted** (deck)
 
-- Lead acid suits only short-range vehicles.
-- Lithium has the energy density for medium range and charges quickly: ideal for hybrids.
-- None yet lets a pure EV match an engine for range and versatility; specific energy was
-  predicted to rise.
+- Lead acid only for short range: still true; it survives as the 12 V battery.
+- Lithium ideal for hybrids: it went much further. Every EV is Li-ion; **LFP** cells, cheaper,
+  over 55 % of EV batteries in 2025 (IEA).
+- "No battery lets a pure EV compete": a quarter of new cars were electric in 2025 (IEA).
+- "350 Wh/kg by 2020": not reached; the best cells are at 265, and a pack weighs more than
+  its cells.
 
-The Leaf ZE1's pack is lithium-ion: NMC cells, 40 kWh.
+The Leaf ZE1: **NMC** cells, 40 kWh.
 
 </div>
 </div>
 
 <!--
-The deck's comparison of chemistries, kept as the deck has it, after Larminie and Lowry. Six battery
-types in rows. The columns are specific energy in watt-hours per kilogram, energy density in
-watt-hours per liter, specific power in watts per kilogram, and cost in arbitrary units. As the
-caption says, every figure is a broad guideline only.
+The comparison of chemistries from the course's battery deck, after Larminie and Lowry, and next to
+it what the batteries of today are. The table on the top left is kept as the deck has it, and the
+caption says what it is: the textbook's broad guideline from the early 2000s, dated.
 
-Lead acid: 30 watt-hours per kilogram, 75 per liter, 250 watts per kilogram, cost 0.5.
-Nickel-cadmium: 50, 80, 150, cost 1.5. Nickel-metal hydride: 65, 150, 200, cost 2. The Zebra
-battery, a sodium battery: 100, 150, 150, cost 2. Lithium-ion: 150, 150, 300, cost 3. Zinc-air: 230,
-270, 105, cost unknown. Lithium-ion is the only one high in both specific energy and specific power;
-zinc-air stores more, but gives it out slowly.
+Read it quickly. The columns are specific energy in watt-hours per kilogram, energy density in
+watt-hours per liter, specific power in watts per kilogram, and cost in arbitrary units. Lead acid:
+30 watt-hours per kilogram, 75 per liter, 250 watts per kilogram, cost 0.5. Nickel-cadmium: 50, 80,
+150, cost 1.5. Nickel-metal hydride: 65, 150, 200, cost 2. The Zebra battery, a sodium battery: 100,
+150, 150, cost 2. Lithium-ion: 150, 150, 300, cost 3. Zinc-air: 230, 270, 105, cost unknown. Already
+then, lithium-ion was the only one high in both specific energy and specific power.
 
-The deck's conclusions, on the right. Lead acid suits only short-range vehicles. Lithium has the
-energy density for medium range and charges quickly, which makes it ideal for hybrids. And none of
-them yet lets a pure electric car match an engine car for range and versatility, though specific
-energy was predicted to rise.
+The small table below is lithium-ion today. The International Energy Agency's Global EV Outlook
+2026 gives the best cells of 2025: up to 265 watt-hours per kilogram for nickel-manganese-cobalt,
+NMC, and up to 205 for lithium iron phosphate, LFP. Those are best-in-class cells, not averages; the
+IEA's battery report of 2024 gives a demonstrated range of about 90 to 300 watt-hours per kilogram
+at cell level. A pack weighs more than its cells: the housing, the cooling, the wiring and the
+electronics. The Leaf ZE1 is the example. Nissan's dismantling guide for the 2018 Leaf gives its
+40 kilowatt-hour battery as 303 kilograms, so the pack stores about 132 watt-hours per kilogram;
+that division is mine. The IEA also says that an LFP pack stores about a fifth less per kilogram
+than an NMC pack, and that the average EV pack's watt-hours per kilogram rose by about 60 percent
+over the last decade.
 
-The Leaf ZE1's pack is lithium-ion, 40 kilowatt-hours, with nickel-manganese-cobalt cells according
-to the EV Database, a secondary source. The first-generation Leaf of 2012 used a lithium manganese
-oxide chemistry.
+On the right, the deck's conclusions, now as what the textbook predicted, with what happened. Lead
+acid suits only short-range vehicles: still true, and today lead acid survives as the 12 volt battery of
+many cars. Lithium was called ideal for hybrids: it went much further, and every
+electric car now runs on lithium-ion. More than half of them on LFP, which stores less per kilogram
+but costs less: the IEA counts LFP at over 55 percent of the EV batteries deployed in 2025.
+
+The deck said that no battery yet let a pure electric car compete with an engine car for range and
+versatility. In 2025 a quarter of the new cars sold worldwide were electric, by the IEA's count. And
+the deck predicted 350 watt-hours per kilogram as early as 2020. That did not happen: the best
+production cells reached 265, and a pack is lower again. What did happen was the price, on the next
+slide.
+
+The last line: the Leaf ZE1's pack is lithium-ion, 40 kilowatt-hours, with nickel-manganese-cobalt
+cells according to the EV Database, a secondary source. The first-generation Leaf of 2012 used a
+lithium manganese oxide chemistry.
+-->
+
+---
+routeAlias: battery-price
+class: big-figure
+---
+
+## What a kilowatt-hour costs
+
+<div class="grid grid-cols-[1.6fr_1fr] gap-6 items-center">
+<div>
+
+![Volume-weighted average lithium-ion pack price, all segments, in real 2025 dollars per kWh: 827 in 2013, 475 in 2015, 273 in 2017, 194 in 2019, 159 in 2021, 170 in 2022, 148 in 2023, 118 in 2024 and 108 in 2025.](/figures/06-battery-price.svg)
+
+<div class="caption">BloombergNEF battery price survey, December 2025, real 2025 $.</div>
+
+</div>
+<div class="text-[0.95rem]">
+
+**2025** (BNEF): **$108/kWh** average pack, −8 % on 2024; **$99/kWh** for BEV packs.
+
+**LFP** packs $81/kWh, **NMC** $128/kWh.
+
+**In 12 years, 87 % cheaper** (derived): the Leaf's 40 kWh pack at 2025 prices, about
+**$4300** (derived).
+
+</div>
+</div>
+
+<!--
+The prediction the textbook did not make was the one that came true: the price. The figure is drawn
+from BloombergNEF's annual survey of lithium-ion battery prices, as its December 2025 press release
+charts it, with the values in a table in the repository. The bars are the volume-weighted average
+price of a battery pack, in dollars per kilowatt-hour, every year in the same real 2025 dollars,
+because BloombergNEF restates the whole history each year. That is why its 2024 bar reads 118, not
+the 115 dollars announced in December 2024 in that year's dollars.
+
+827 dollars per kilowatt-hour in 2013, 475 in 2015, 273 in 2017, 194 in 2019, 159 in 2021, one bump
+up to 170 in 2022, then 148, 118 and 108 dollars in 2025.
+
+On the right, the 2025 survey in BloombergNEF's words: 108 dollars per kilowatt-hour on average, 8
+percent less than in 2024. That average covers buses, two-wheelers and stationary storage too;
+battery-electric car packs alone were the cheapest of the transport segments, at 99 dollars. LFP
+packs averaged 81 dollars and NMC packs 128, which is why LFP took over half the market.
+
+The last box is my arithmetic. From 827 to 108 is 87 percent cheaper in twelve years. And the Leaf's
+40 kilowatt-hour pack, at the 2025 car-pack price of 99 dollars, would cost about 4000 dollars, at
+the all-segment 108 about 4300; in 2013 money it would have been over 30 000.
 -->
 
 ---
 routeAlias: build-battery
 ---
 
-## Build 03: the battery
+## Build 03a: the battery
+
+<div class="grid grid-cols-[1.5fr_1fr] gap-8 items-start">
+<div>
+
+<img src="/img/lecture-04/step03-battery.png" class="mx-auto" style="max-height: 26rem" alt="The finished Battery in Studio: p on the left edge, n on the right, SoC on top; resistor and meter along the top, meter.i down into counter and counter.y up to SoC; ocv into the top of cell on the bottom row, cell.p back up to resistor.p, cell.n out to n, and meter.n round to p."/>
+
+[page: step 03](../lecture/lecture-04/#step-03) · reference: the guide's **Fell behind?** code
+
+</div>
+<div class="stack">
+
+*New `Battery` · ports from `Dyad`: `p`, `n` Pin on the left and right, `SoC` RealOutput on
+top · 4 parameters `E`, `R0`, `Q_nom`, `SoC0`, `Q_nom` as its formula · 5 parts: `ocv`
+Constant → `cell` VoltageSource → `resistor` → `meter` CurrentSensor, `counter` Integrator ·
+7 wires: n → cell → R → meter → p, meter → counter → SoC · then in code: `v`, `i` and two
+relations*
+
+```txt
+  v = p.v - n.v
+  i = meter.i
+```
+
+<div class="handson">✓ one part per term of <i>v</i> = <i>E</i> − <i>R</i>₀<i>i</i> and
+d<i>SoC</i>/d<i>t</i> = −<i>i</i>/<i>Q</i><sub>nom</sub> · <b>7</b> <code>connect</code> lines ·
+no <code>initial</code> line</div>
+
+</div>
+</div>
+
+<!--
+Build 03a: the battery. You build it in Studio, part by part, like the machine, and on the left is
+the finished component as Studio draws it. The positive pin p sits on the left edge, the negative
+pin n on the right, and the state of charge SoC is an output on top. On the bottom row is the cell,
+a voltage source, with a constant block, ocv, feeding its input from above. From the cell's plus
+pin the wire goes up to the resistor along the top, then into the current sensor, meter, and from
+the meter round the outside to p. The cell's minus pin goes straight out to n. Below the meter, the
+integrator, counter: the meter's reading goes in on the left, and its output goes up to SoC.
+
+The steps are in the italic line. First, a new component `Battery`, and its ports from the Dyad
+library: two pins, p on the left and n on the right, and a real output, SoC, on top. Second, four
+parameters with Add parameter: E, 350 volts; R0, 0.1 ohm; Q nom, typed as the formula 40
+kilowatt-hours over 350 volts, in coulombs; and SoC0, 0.9. They are named that way on purpose: the
+extra session's more detailed cell keeps those names and replaces this one without rewiring.
+
+Third, five parts, one per term of the two equations of the last slides. A constant block, ocv,
+holds the number E, and a voltage source, cell, turns it into E volts. A resistor, R equals R0,
+takes R0 i off. A current sensor, meter, reads the current. And an integrator, counter, with gain
+minus one over Q nom and initial value SoC0, is the coulomb counter: the derivative of SoC equals
+minus i over Q nom.
+
+Fourth, seven wires. Five make the circuit, from n through the cell, the resistor and the meter out
+to p. Watch the sign on the last of those: the sensor measures the current from its p to its n, and
+its n is on the battery's p, so it reads the current leaving the battery into the load, the
+discharge current. That is why the counter's gain is negative. The other two wires feed the meter
+into the counter, and the counter out to SoC. Studio routes the wires itself and can run one through
+a part; drag that segment aside.
+
+Then toggle to code and type what the diagram cannot draw: two variables, v and i, and the two
+relations on the right, v equals p dot v minus n dot v, and i equals meter dot i. No initial line:
+the integrator starts at SoC0 by itself.
+-->
+
+---
+routeAlias: build-battery-bench
+---
+
+## Build 03b: the discharge bench
 
 <div class="grid grid-cols-[1fr_1.15fr] gap-8 items-start">
 <div>
 
 <img src="/img/lecture-04/step03-battery-discharge.png" class="mx-auto" style="max-height: 21rem" alt="The finished BatteryDischarge in Studio: load_profile into the top of load; load across battery, p to p on the left and n to n on the right; battery.n to ground."/>
 
-*New `Battery`: paste from the guide · new `BatteryDischarge`: parameter `I_load` 100 ·
-`load_profile` Step at 60 s → `load` CurrentSource across `battery` · `ground` ·
-`BatteryDischargeTransient`, 1860 s, tstops at 60 · ▷ once, then plot*
+*New `BatteryDischarge`: parameter `I_load` 100 · `load_profile` Step at 60 s → `load`
+CurrentSource across `battery` · `ground` · `BatteryDischargeTransient`, 1860 s, tstops at 60 ·
+▷ once, then plot*
 
 [page: step 03](../lecture/lecture-04/#step-03) · reference `dyad/HandsOn04/BatteryDischarge.dyad`
 
@@ -295,22 +500,18 @@ from 60 s: a sag of <b>10 V</b> · <code>battery.SoC</code> <b>0.9</b> → <b>0.
 </div>
 
 <!--
-Build 03: the battery. On the left, the finished bench in Studio. A step block named load profile
-feeds the top of a current source named load. The load sits across the battery, p to p on the left
-and n to n on the right, and the battery's n goes to ground.
+Build 03b: the discharge bench. On the left, the finished bench in Studio. A step block named load
+profile feeds the top of a current source named load. The load sits across the battery, p to p on
+the left and n to n on the right, and the battery's n goes to ground.
 
-The steps, in the italic line. First, a new component `Battery`: paste the code from the guide. It
-has two pins, p and n, and one output, SoC. Inside are the two equations of the last slides: v
-equals E minus R0 i, and the coulomb counter, the derivative of SoC equals minus i over Q nom. Its
-parameters are named E, R0, Q nom and SoC0 on purpose: the extra session's more detailed cell keeps
-those names and replaces this one without rewiring. Second, a new component `BatteryDischarge`, with
-one parameter, I load, 100 amperes. The load profile is a `Step` block that switches I load on at 60
-seconds. The load is an ideal current source: it forces exactly that current out of the battery's
-positive terminal, whatever the voltage, as a motor drive does when it is asked for a fixed torque.
-Add the ground. Third, the analysis `BatteryDischargeTransient`, 1860 seconds long, with a tstop at
-60 so that the solver lands exactly on the load step; without it the solver strides across the
-switch-on, misses about half a second of current, and the final state of charge comes out slightly
-off. Then click Run Analysis once and plot.
+The steps, in the italic line. A new component `BatteryDischarge`, with one parameter, I load, 100
+amperes. The load profile is a `Step` block that switches I load on at 60 seconds. The load is an
+ideal current source: it forces exactly that current out of the battery's positive terminal,
+whatever the voltage, as a motor drive does when it is asked for a fixed torque. Add the ground.
+Then the analysis `BatteryDischargeTransient`, 1860 seconds long, with a tstop at 60 so that the
+solver lands exactly on the load step; without it the solver strides across the switch-on, misses
+about half a second of current, and the final state of charge comes out slightly off. Then click
+Run Analysis once and plot.
 
 The snippet plots the terminal voltage, the current and the state of charge in three panels, and
 reads the final state of charge. The last line runs the full-power case, 330 amperes.
@@ -335,8 +536,9 @@ nothing in the model knows that the pack is empty.
 - A pack is cells in series and parallel: **v = E − R₀ i**. The sag is lost as heat.
 - Capacity is charge, A·h; energy is charge times voltage: **40 kWh at 350 V is 114.3 A·h**.
 - SoC is counted from the current: coulomb counting.
+- Power costs efficiency: **0.8 %** lost at 10 kW, **50 %** at the pack's 306 kW peak.
 - Specific energy and specific power trade against each other; lithium-ion made the
-  battery-electric car practical.
+  battery-electric car practical: best cells 265 Wh/kg (IEA), packs **$108/kWh** in 2025 (BNEF).
 - On your bench: **10 V** of sag at 100 A, SoC **0.9 → 0.4625** in half an hour.
 
 ### Next: put the chain in the car, and brake with it. <Link to="car-and-regen">→ 07, the car and regen</Link>
@@ -345,8 +547,11 @@ nothing in the model knows that the pack is empty.
 Section 06 in five lines. A pack is cells in series and in parallel, and its terminal voltage is v
 equals E minus R0 i; the sag is lost as heat. Capacity is charge, in ampere-hours, and energy is
 charge times voltage: 40 kilowatt-hours at 350 volts is 114.3 ampere-hours. The state of charge is
-counted from the current, by coulomb counting. Specific energy and specific power trade against each
-other, and lithium-ion made the battery-electric car practical. And on your bench: a 10 volt sag at
+counted from the current, by coulomb counting. Power costs efficiency: the pack loses 0.8 percent at
+10 kilowatts and half at its 306 kilowatt peak. Specific energy and specific power trade against each
+other, and lithium-ion made the battery-electric car practical: the best cells of 2025 store 265
+watt-hours per kilogram, by the IEA's count, and a pack cost 108 dollars per kilowatt-hour in
+BloombergNEF's 2025 survey. And on your bench: a 10 volt sag at
 100 amperes, and the state of charge from 0.9 to 0.4625 in half an hour.
 
 Three links are built: the machine, the converter and the battery. Next they go into the planar car,

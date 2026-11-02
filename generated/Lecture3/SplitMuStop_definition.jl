@@ -23,12 +23,12 @@ Split-friction straight stop with four-channel ABS and optional yaw-control brak
 | `Ki`         |                          | --  |   100000.0 |
 | `radius`         |                          | m  |   0.31 |
 | `k_dec`         |                          | --  |   40000.0 |
-| `k_inc_fast`         |                          | --  |   160000.0 |
+| `k_inc_fast`         |                          | --  |   40000.0 |
 | `k_inc_slow`         |                          | --  |   16000.0 |
 | `h_cg`         |                          | m  |   0.0 |
 | `R_build`         |                          | --  |   1.0e9 |
 """
-@component function SplitMuStop(; name = nothing, var"load_transfer"=true, var"v0"=22.22222222222222, var"T_cmd"=Float64(2500.0), var"mu_scale_right"=0.3, var"select_low"=Float64(0.0), var"esp_on"=Float64(0.0), var"Kp"=Float64(40000.0), var"Ki"=Float64(100000.0), var"radius"=0.31, var"k_dec"=Float64(40000.0), var"k_inc_fast"=Float64(160000.0), var"k_inc_slow"=Float64(16000.0), var"h_cg"=Float64(0.0), var"R_build"=Float64(1000000000.0), __overrides = Dict{String, Any}())
+@component function SplitMuStop(; name = nothing, var"load_transfer"=true, var"v0"=22.22222222222222, var"T_cmd"=Float64(2500.0), var"mu_scale_right"=0.3, var"select_low"=Float64(0.0), var"esp_on"=Float64(0.0), var"Kp"=Float64(40000.0), var"Ki"=Float64(100000.0), var"radius"=0.31, var"k_dec"=Float64(40000.0), var"k_inc_fast"=Float64(40000.0), var"k_inc_slow"=Float64(16000.0), var"h_cg"=Float64(0.0), var"R_build"=Float64(1000000000.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:

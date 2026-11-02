@@ -1,0 +1,8 @@
+from_year,to_year,test,g_per_km,label
+2015,2019,NEDC,130,130
+2020,2020,NEDC,95,95
+2021,2024,WLTP,115.1,≈ 115 (95 NEDC)
+2025,2029,WLTP,93.6,93.6
+2030,2034,WLTP,49.5,49.5
+2035,2037,WLTP,0,0 (law)
+2035,2037,proposal,11,≈ 11: −90 % proposed

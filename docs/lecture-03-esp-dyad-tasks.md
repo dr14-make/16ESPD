@@ -1,5 +1,11 @@
 # Dyad agent brief — Lecture 3 planar car and ESP
 
+> Calibration update, issue #156: the original 0.08/0.06 release values below are historical.
+> Current planar ABS uses predicted release 0.14/0.11, recovery 0.12, 80 ms prediction,
+> 90% pressure retention, 10 ms hold and 40 kN·m/s initial build. Straight dry stopping
+> distance is 26.52 m from 80 km/h and 41.03 m from 100 km/h, established 9.74 m/s².
+> See `docs/HANDOVER.md` for one-change evidence, sources and the moved-number ledger.
+
 This brief turns `docs/lecture-03-esp-research.md` (the research) into ten Dyad tasks. Each task
 ends in a check the agent runs before the next task starts. The model is a planar four-wheel car
 built from `MultibodyComponents.PlanarMechanics`, steered through an Ackermann linkage, with a

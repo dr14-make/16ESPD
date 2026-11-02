@@ -10,6 +10,14 @@ run = "julia +dyad-3.5.0 --project=. scripts/export_deck_cards.jl"
 description = "Run the Lecture 3 notebooks and write their figures into the theory deck's public/figures/"
 run = "julia +dyad-3.5.0 --project=. scripts/export_lecture03_figures.jl"
 
+[tasks."figures:lecture-03-steer"]
+description = "Export planar brake-and-steer figures"
+run = "julia +dyad-3.5.0 --project=. scripts/export_lecture03_steer_figures.jl"
+
+[tasks."figures:lecture-03-esp"]
+description = "Export planar ESP and split-friction figures"
+run = "julia +dyad-3.5.0 --project=. scripts/export_lecture03_esp_figures.jl"
+
 [tasks."figures:lecture-04"]
 description = "Run the Lecture 4 notebooks and write their figures into the theory deck's public/figures/"
 run = "julia +dyad-3.5.0 --project=. scripts/export_lecture04_figures.jl"

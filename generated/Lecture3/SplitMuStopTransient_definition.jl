@@ -6,7 +6,7 @@
 
 using DyadInterface
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@component function SplitMuStopTransient__System(; name = nothing, var"alg"=ODEAlg.Tsit5(), var"start"=0, var"stop"=6.0, var"abstol"=0.000001, var"reltol"=0.000001, var"saveat"=0, var"dtmax"=0.005, var"tstops"=[], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.None(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", var"v0"=22.22222222222222, var"T_cmd"=2500.0, var"mu_scale_right"=0.3, var"select_low"=0.0, var"esp_on"=0.0, var"Kp"=40000.0, var"Ki"=100000.0, var"k_dec"=40000.0, var"k_inc_fast"=160000.0, var"k_inc_slow"=16000.0, var"h_cg"=0.0, var"R_build"=1000000000.0, __overrides = Dict{String, Any}())
+@component function SplitMuStopTransient__System(; name = nothing, var"alg"=ODEAlg.Tsit5(), var"start"=0, var"stop"=6.0, var"abstol"=0.000001, var"reltol"=0.000001, var"saveat"=0, var"dtmax"=0.005, var"tstops"=[], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.None(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", var"v0"=22.22222222222222, var"T_cmd"=2500.0, var"mu_scale_right"=0.3, var"select_low"=0.0, var"esp_on"=0.0, var"Kp"=40000.0, var"Ki"=100000.0, var"k_dec"=40000.0, var"k_inc_fast"=40000.0, var"k_inc_slow"=16000.0, var"h_cg"=0.0, var"R_build"=1000000000.0, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -207,7 +207,7 @@ export SplitMuStopTransient__System
   var"Kp"::Float64 = 40000.0
   var"Ki"::Float64 = 100000.0
   var"k_dec"::Float64 = 40000.0
-  var"k_inc_fast"::Float64 = 160000.0
+  var"k_inc_fast"::Float64 = 40000.0
   var"k_inc_slow"::Float64 = 16000.0
   var"h_cg"::Float64 = 0.0
   var"R_build"::Float64 = 1000000000.0

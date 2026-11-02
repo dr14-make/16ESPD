@@ -43,9 +43,13 @@ regenerates. Both losses track the current, so the efficiency rises with the out
 speed. A real PM machine also pays d-axis copper loss for its weakened field; that cost is in
 neither this converter nor `FieldEMF`.
 
-Defaults are a Leaf ZE1-class inverter. Source tags: (deck) deck 7 slide 28; (ORNL) 2013
-benchmarking of the 2012 Leaf; (derived) computed from other numbers, method given; (assumed) the
-course's choice.
+One current-proportional loss cannot match ORNL's map at both ends: a comparable traction module's
+datasheet drop (Infineon FS820R08A6P2B, 2.45 V for an IGBT + diode pair) barely closes the
+low-speed gap and pushes high speed below ORNL's > 99 %. The comparison is in
+docs/lecture-04-plan.md, Known limits.
+
+Defaults are a Leaf ZE1-class inverter. Source tags: (ORNL) 2013 benchmarking of the 2012 Leaf;
+(derived) computed from other numbers, method given; (assumed) the course's choice.
 
 ## Parameters:
 
@@ -54,7 +58,7 @@ course's choice.
 | `I_max`         | Output current limit: the 332.2 A at which the default DCMachine gives 320 N.m at base speed (derived)                         | A  |   332.2 |
 | `d_max`         | Largest duty, the voltage limit as a fraction of the input: an inverter cannot give more than its DC link (assumed)                         | --  |   1.0 |
 | `T_i`         | Current-loop time constant (assumed)                         | s  |   1.0e-3 |
-| `V_on`         | Conduction drop of the two devices that carry the current, 0.6 V each (deck)                         | V  |   1.2 |
+| `V_on`         | Conduction drop of the two devices that carry the current, calibrated so the inverter matches ORNL's measured > 99 % at high speed (derived); the FS820R08A6P2B pair drop is 2.45 V, see docs/lecture-04-plan.md                         | V  |   1.2 |
 | `f_s`         | Switching frequency; ORNL tested the Leaf inverter at 5 kHz (ORNL)                         | Hz  |   5.0e3 |
 | `t_sw`         | Duration of each switching edge; with V_on it lands the efficiency in ORNL's inverter band (assumed)                         | s  |   1.0e-6 |
 | `eps`         | Rounding of the corner between full field and full duty: there (1 - field)(d_max - \|d\|) = eps^2 / 4 (numerical)                         | --  |   1.0e-4 |
@@ -133,7 +137,7 @@ course's choice.
   append!(__params, @parameters (T_i::Real), [description = "Current-loop time constant (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, T_i, __local__T_i)
   __local__V_on = V_on
-  append!(__params, @parameters (V_on::Real), [description = "Conduction drop of the two devices that carry the current, 0.6 V each (deck)"])
+  append!(__params, @parameters (V_on::Real), [description = "Conduction drop of the two devices that carry the current, calibrated so the inverter matches ORNL's measured > 99 % at high speed (derived); the FS820R08A6P2B pair drop is 2.45 V, see docs/lecture-04-plan.md"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, V_on, __local__V_on)
   __local__f_s = f_s
   append!(__params, @parameters (f_s::Real), [description = "Switching frequency; ORNL tested the Leaf inverter at 5 kHz (ORNL)"])

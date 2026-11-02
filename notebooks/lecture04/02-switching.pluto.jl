@@ -35,17 +35,17 @@ md"""
 
 The car in this lecture carries an **average** converter: `V_out = d·V_in`, with no switching
 at all, because a WLTC run lasts 1800 s and a switching edge lasts a microsecond (plan S4: never
-stack time scales). This notebook puts the switching back, on two small circuits that run for a
+stack time scales). This notebook puts the switching back, on three small circuits that run for a
 few milliseconds beside the car, and regenerates deck 7's power-electronics slides from them:
 
 | section | deck 7 | model |
 |:---|:---|:---|
 | 1. Step-down chopper: ripple and losses | slide 28 | `Vehicle.Electric.BuckChopper` |
+| Step-up chopper | slide 29 | `Vehicle.Electric.BoostChopper` |
 | 2. H-bridge: square wave | slide 30 | `Vehicle.Electric.HBridge` |
 | 3. Pulse-width modulation and harmonics | slide 31 | `Vehicle.Electric.HBridge` |
 
-Slide 29 (the boost converter) and slide 32 (the three-phase bridge) have no switched model
-here; their figures are circuit diagrams and stay theory.
+Slide 32 (the three-phase bridge) has no switched model here and stays theory.
 
 Every number below is read from a simulation of the Dyad models shown.
 """
@@ -294,6 +294,39 @@ buck_currents_plot = let b = buck
     p
 end
 
+# ╔═╡ e54ec97a-1988-46a6-abed-16b338aab68e
+md"""
+## Step-up chopper
+
+The boost stores energy in the inductor while the switch is on; the diode delivers
+it to the external DC-link capacitor while the switch is off. At 48 V, duty 0.5
+and 20 kHz the ideal mean is 96 V and ripple 12 A; drops and finite edges reduce both.
+"""
+
+# ╔═╡ 53849526-0aaa-43eb-80f9-2eb20707ad6c
+boost_currents_plot = let run = E4.BoostChopperTransient()
+    sol = run.sol
+    C = symbolic_container(run).chopper
+    T, d = 1 / 20e3, 0.5
+    t1, t2 = 6e-3 - 3T, 6e-3
+    rows = ((C.transistor.i, "switch [A]"), (C.diode.i, "diode [A]"),
+        (C.i_L, "inductor [A]"))
+    ymax = 1.15 * maximum(sol(range(t1, t2; length = 2001), idxs = C.i_L).u)
+    p = plot(layout = (3, 1), size = (960, 620), legend = false, link = :x)
+    for (k, (x, label)) in enumerate(rows)
+        t, y = trace(sol, x, t1, t2)
+        tt, yy = thin(t, y; tol = 0.01)
+        for j in 0:2
+            shade!(p[k], (((1 - d) / 2, (1 + d) / 2) .+ j) .* T .* 1e6..., -0.05ymax, ymax)
+        end
+        plot!(p[k], (tt .- t1) .* 1e6, yy; lw = 2.5, color = :steelblue, ylabel = label,
+            ylims = (-0.05ymax, ymax), xlims = (0, 3T * 1e6))
+    end
+    plot!(p[1]; title = "Boost chopper, three switching periods: switch on (shaded) and off")
+    xlabel!(p[3], "time [µs]")
+    p
+end
+
 # ╔═╡ fad8609c-7faf-4eea-9bc3-9f692a05130a
 let b = buck
     r1(x) = round(x; digits = 1)
@@ -387,6 +420,65 @@ let s = buck_sweep
 
     The other losses fall a little with frequency only because the edges take a larger share of
     each period, which trims the effective duty and with it the current.
+    """)
+end
+
+# ╔═╡ 8244054c-9765-4b5d-b8df-c94ea2e5c113
+md"""
+### A faster switch
+
+The switching loss is a fixed energy per edge, proportional to the edge time `t_sw`. A faster
+device, a wide-bandgap (SiC or GaN) transistor in place of a silicon one, shortens the edge. The
+same sweep is rerun below with the edge five times shorter, `t_sw` = 0.1 µs instead of the
+default 0.5 µs, everything else unchanged; the run overrides only that one parameter of the
+chopper.
+"""
+
+# ╔═╡ 444749ed-79f5-45c7-8e46-497f62f60600
+T_SW_FAST = 0.1e-6;
+
+# ╔═╡ c79e229c-f9d5-4172-aad9-56d860629df5
+buck_sweep_fast = let
+    spec = E4.BuckChopperTransient__Spec()
+    t_sw = ModelingToolkit.toggle_namespacing(spec.model, false).chopper.t_sw
+    [run_buck(d = duty, f_s = b.f_s, __overrides = Dict(t_sw => T_SW_FAST)) for b in buck_sweep]
+end;
+
+# ╔═╡ b9e88eeb-b18d-4697-8ac1-a2c2682b01c4
+faster_switch_plot = let
+    f = [b.f_s for b in buck_sweep] ./ 1e3
+    ticks = (f, string.(round.(Int, f)))
+    p = plot(layout = (1, 2), size = (960, 440), legend = false)
+    for (sweep, lbl, c) in ((buck_sweep, "t_sw = 0.5 µs", :darkorange), (buck_sweep_fast, "t_sw = 0.1 µs", :seagreen))
+        psw = [b.P_switching for b in sweep]
+        eta = [100 * b.P_out / b.P_in for b in sweep]
+        plot!(p[1], f, psw; marker = :circle, lw = 2.5, color = c)
+        plot!(p[2], f, eta; marker = :circle, lw = 2.5, color = c)
+        # Plotly places annotations on a log axis by the exponent.
+        annotate!(p[1], [(log10(f[end - 1]), psw[end - 1], text(lbl * "  ", 10, c, :right, :bottom))])
+        annotate!(p[2], [(log10(f[end - 1]), eta[end - 1], text(lbl * "  ", 10, c, :right, :top))])
+    end
+    plot!(p[1]; xscale = :log10, xticks = ticks, xlabel = "switching frequency [kHz]",
+        ylabel = "switching loss [W]", title = "Switching loss: a fifth of the edge, a fifth of the loss")
+    plot!(p[2]; xscale = :log10, xticks = ticks, xlabel = "switching frequency [kHz]",
+        ylabel = "efficiency [%]", title = "Efficiency: the faster switch can switch faster")
+    p
+end
+
+# ╔═╡ 4cf9f054-7c10-458b-b291-441fcc83720f
+let
+    r1(x) = round(x; digits = 1)
+    r2(x) = round(x; digits = 2)
+    rows = join(("| $(round(Int, a.f_s / 1e3)) | $(r2(a.P_switching)) | $(r2(b.P_switching)) | $(r1(100a.P_out / a.P_in)) | $(r1(100b.P_out / b.P_in)) |"
+                 for (a, b) in zip(buck_sweep, buck_sweep_fast)), "\n")
+    Markdown.parse("""
+    | f_s [kHz] | switching loss, 0.5 µs [W] | switching loss, 0.1 µs [W] | η, 0.5 µs [%] | η, 0.1 µs [%] |
+    |---:|---:|---:|---:|---:|
+    $rows
+
+    The switching loss scales with the edge time. With the faster switch the chopper can run
+    at a higher frequency, with a smaller inductor and less ripple, for the efficiency the slow
+    switch had at a low one. The diode's loss does not change: it is the same diode.
     """)
 end
 
@@ -661,12 +753,19 @@ a drive cycle lasts half an hour.
 # ╠═196a08db-d2b8-447e-b9c3-940b7b4fd52f
 # ╟─73398ebf-b276-4178-be66-e692e172d0ae
 # ╠═8ed9e4a6-8f65-45ac-8521-c71c357f3f0b
+# ╟─e54ec97a-1988-46a6-abed-16b338aab68e
+# ╠═53849526-0aaa-43eb-80f9-2eb20707ad6c
 # ╟─fad8609c-7faf-4eea-9bc3-9f692a05130a
 # ╠═74ba3fc3-32d1-4cb7-88fa-784db089c260
 # ╟─47459729-3b43-454e-9068-1615e6fe2573
 # ╠═7433ba23-7db5-4f72-93bc-244e9c56b511
 # ╠═c5856c79-e759-4edf-b042-7e85adcee5fa
 # ╟─c4e0960a-9cea-4dba-91e3-b43595774bf1
+# ╟─8244054c-9765-4b5d-b8df-c94ea2e5c113
+# ╠═444749ed-79f5-45c7-8e46-497f62f60600
+# ╟─c79e229c-f9d5-4172-aad9-56d860629df5
+# ╟─b9e88eeb-b18d-4697-8ac1-a2c2682b01c4
+# ╟─4cf9f054-7c10-458b-b291-441fcc83720f
 # ╟─4810296a-23f7-4bb4-89e1-e4941891fdb2
 # ╟─d5786319-b328-45cb-a85b-a4b3e6587ed3
 # ╠═3c6d67ba-e58b-4080-9b3a-f48e5d2e6747

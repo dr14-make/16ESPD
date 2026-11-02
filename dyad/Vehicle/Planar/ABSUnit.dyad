@@ -7,7 +7,7 @@ sampled modulator while retaining the nonnegative ESP brake increments.
 With `report_front = true` the unit also reports, on `front_active`, whether it is acting on a
 front wheel: 1 while it holds either front brake below what is asked of that brake (the driver's
 demand plus any positive ESP increment), else 0. That covers an ABS release, hold or slow reapply,
-and an ESP cut. On a first application the channel builds up at `k_inc_fast`, 800 N.m a sample at
+and an ESP cut. On a first application the channel builds up at `k_inc_fast`, 200 N.m a sample at
 the defaults, so a demand that rises more slowly than that does not set it; a step demand sets it
 for the few samples the build-up takes. It is sampled and held like the brake commands, and it is
 0 with `abs_on` below 0.5. A regenerative blend reads it to withdraw regen from the front axle
@@ -35,16 +35,23 @@ component ABSUnit
   structural parameter report_front::Boolean = false
   parameter abs_on::Real = 1.0
   parameter select_low::Real = 1.0
-  parameter T_p::Time = 0.03
-  parameter lambda_1_f::Real = 0.08
-  parameter lambda_1_r::Real = 0.06
+  "Prediction includes hydraulic lag and sampled release/reapply delay (derived)"
+  parameter T_p::Time = 0.08
+  "Predicted release just beyond the front tire's 0.12 peak slip (derived)"
+  parameter lambda_1_f::Real = 0.14
+  "Predicted release just beyond the rear tire's 0.09 peak slip (derived)"
+  parameter lambda_1_r::Real = 0.11
   parameter lambda_lock::Real = 0.20
-  parameter alpha_rel::Real = 0.6
+  "Retain 90 percent of incipient-limit pressure; calibrated with lag (assumed)"
+  parameter alpha_rel::Real = 0.9
   parameter beta_reapply::Real = 0.85
-  parameter l_rec::Real = 0.03
-  parameter T_hold_max::Time = 0.06
+  "Reapply near peak adhesion rather than demanding near-zero slip (derived)"
+  parameter l_rec::Real = 0.12
+  "Two ECU ticks before another recovery decision (assumed)"
+  parameter T_hold_max::Time = 0.01
   parameter k_dec::Real = 40000.0
-  parameter k_inc_fast::Real = 160000.0
+  "Initial build limited to 200 N.m per 5 ms tick for low-grip recovery (assumed)"
+  parameter k_inc_fast::Real = 40000.0
   parameter k_inc_slow::Real = 16000.0
   parameter v_min::Velocity = 1.5
   clock = DiscreteComponents.PeriodicClock(dt = dt) {^clock}

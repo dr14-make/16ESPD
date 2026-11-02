@@ -112,7 +112,7 @@ routeAlias: what-you-measured
 | 02 | the converter, the envelope | duty 1 at 3283 rpm · field 0.328 at 10 000 rpm · 110.75 kW · 99.2 % |
 | 03 | the battery | 10 V sag at 100 A · SoC 0.9 → 0.4625 in 30 min · 17.0 of 17.5 kWh delivered |
 | 04 | the car on WLTC | within 1.63 km/h · 23 267 m · SoC 0.9 → 0.822 |
-| 05 | regen | hard stop 36.2 m, machine 49 % · WLTC 23.85 % back |
+| 05 | regen | hard stop 27.10 m (within 1 % of friction); gross machine 0.839 %, meaningful-share goal NOT met · WLTC 23.85 % back |
 | 06 | the bill | 131.2 Wh/km · 47.2 MJ/100 km against 168.8 |
 
 </div>
@@ -136,8 +136,14 @@ envelope: the duty reaches 1 at 3283 rpm, the field is down to 0.328 at 10 000 r
 power holds at 110.75 kilowatts, and the converter is 99.2 percent efficient. Build 03, the battery:
 a 10 volt sag at 100 amperes, the state of charge from 0.9 to 0.4625 in 30 minutes, and 17.0 of the
 17.5 kilowatt-hours delivered. Build 04, the car on the WLTC: within 1.63 kilometers per hour of the
-trace, 23 267 meters, the state of charge from 0.9 to 0.822. Build 05, regen: a 36.2 meter hard stop
-with the machine taking 49 percent of the braking, and 23.85 percent of the traction back on the
+trace, 23 267 meters, the state of charge from 0.9 to 0.822. Build 05, regen: after the ABS
+memory fix, 27.102036224 meters in 2.340 seconds after pedal, against 26.937898732 meters
+friction-only: 0.61 percent longer, within the 1 percent regression tolerance. Keep withdrawal
+ON: OFF is longer and reverses wheels, not a physical regen benchmark. Gross machine share
+is only 0.839 percent: blanket front-active withdrawal suppresses regen almost throughout,
+so the meaningful-share goal is NOT met. Low-grip ON is 87.594615426 meters in 7.665 seconds;
+use stop 12 for both benches (HandsOn 87.604052512 m, Success).
+WLTC remains 23.85 percent of traction back on the
 WLTC. Build 06, the bill: 131.2 watt-hours per kilometer, and 47.2 megajoules per 100 kilometers
 against 168.8.
 
@@ -170,7 +176,7 @@ routeAlias: known-limits
 
 - **Ideal gears:** a real reducer's 2–3 % each way would add **4–5 Wh/km**.
 - **WLTC is gentle:** its blending result is mostly fade; the hard stop carries that lesson.
-- **The machine is outside the ABS loop:** nothing withdraws regen when the ABS acts.
+- **ABS coordination is blanket withdrawal:** front-active reporting suppresses regen almost throughout the stop; it is not traction control for machine-only braking.
 - **ORNL's map** belongs to the 80 kW first-generation motor: shape and level, not a fit.
 
 </div>
@@ -190,9 +196,11 @@ of build 02 showed.
 Right column. Ideal gears: a real single-speed reducer loses 2 to 3 percent each way. On the 144
 watt-hours per kilometer of traction and the 39 of braking at the shaft, that would add 4 to 5
 watt-hours per kilometer to the bill. The WLTC is gentle: its blending result is mostly the fade,
-which is why the hard stop carries the blending lesson. The machine is outside the ABS loop: nothing
-withdraws regen when the ABS acts, so on the dry hard stop the front friction brakes stayed off, and
-on a slippery road the machine alone would lock the front wheels. And Oak Ridge's map belongs to the
+which is why the hard stop carries the blending lesson. ABS coordination now withdraws regen
+while either front command is below demand, including initial build, hold and reapply. This blanket
+rule suppresses regen almost throughout the dry stop; the memory fix repairs hydraulic recovery,
+not the motor-share shortfall. It is not traction control: machine-only light braking may lock a
+wheel with no friction demand for the ABS to modulate. And Oak Ridge's map belongs to the
 80 kilowatt first-generation motor, so the comparison with it is of shape and level, not a fit.
 -->
 
@@ -219,7 +227,10 @@ routeAlias: sources
 - Nissan Japan, Leaf ZE1 main specifications (2017); Nissan Global newsroom (2017)
 - T. Burress (ORNL), *Benchmarking State-of-the-Art Technologies*, DOE VTO AMR APE006, 2013
 - INL, *BEV Battery Testing Results, 2013 Nissan Leaf*, INL/MIS-14-31587 (2014)
-- Argonne/INL, *2013 Nissan Leaf Baseline Testing Results*
+- Argonne/INL, *2013 Nissan Leaf Baseline Testing Results*; ANL, AMR VSS030, 2012 (heater)
+- AAA, *EV Range Testing*, 2019; ADAC heater, winter and charging tests, 2021–2026
+- Datasheets: Infineon FS820R08A6P2B, FS03MR12A6MA1B, IAUT300N10S5N015, IGOT65R055D2; ABB
+  5STP 45Y8500; RDW open data (Leaf continuous power)
 - Bosch Mobility, ESP hev
 
 </div>
@@ -234,9 +245,22 @@ routeAlias: sources
   Electric, and Fuel Cell Vehicles*, CRC
 - W. Gao et al., *eTransportation* 20 (2024) 100313: Leaf cell resistance
 
+**Market and regulation**
+
+- IEA, *Global EV Outlook 2026*; BloombergNEF, battery price survey, Dec 2025; EEA, new-car CO₂
+  and electricity indicators, 2026; ACEA, Jan 2026; Toyota, TNGA engine, 2018
+- EU Regulations 2019/631, 2023/851, 2025/1214 (car CO₂), 2024/1257 (Euro 7), 2023/1542
+  (batteries), 2023/1804 (AFIR); proposal COM(2025) 995
+- US: 89 FR 27842 (EPA 2024), 91 FR 7686 (EPA 2026), 91 FR 61988 (NHTSA 2026); Public Law 119-21
+- ICCT, *EV Transition Check 2026*; EC, grid action plan, 2023; USGS, *Mineral Commodity
+  Summaries 2026*
+- History: US Census 1900; DOE (2014); The Henry Ford; APS; MagLab; Linda Hall Library; Guinness;
+  State Historical Society of Iowa
+
 **Secondary**
 
 - ADAC Autokatalog and EV Database: Leaf WLTP consumption, cell chemistry
+- Our World in Data (IEA EV shares); D. Nye (Jenatzy); Hyundai via Infineon (SiC)
 
 </div>
 </div>
@@ -251,16 +275,27 @@ Oak Ridge maps, the cell data and the regen studies, each with its verification 
 build guide with its checkpoint tests. Then the manufacturer and the laboratories: Nissan's ZE1
 specifications and its 2017 press release; Burress at Oak Ridge National Laboratory, the 2013
 benchmarking presentation with the Leaf's efficiency maps; Idaho National Laboratory's 2014 battery
-tests of a 2013 Leaf pack; the baseline testing of the 2013 Leaf by Argonne and Idaho; and Bosch's
-ESP hev.
+tests of a 2013 Leaf pack; the baseline testing of the 2013 Leaf by Argonne and Idaho, and
+Argonne's 2012 benchmarking with the Leaf's heater power; AAA's 2019 range tests and ADAC's heater,
+winter and charging tests, for the cold and for charging times; the device datasheets behind the
+switch table, and the Dutch vehicle register for the Leaf's continuous power; and Bosch's ESP hev.
 
 On the right, papers and books: Larminie and Lowry's textbook; Boretti's analyses of the Leaf's
 regenerative braking efficiency; Gao and Ehsani's paper, and Ehsani, Gao and Emadi's textbook, on
-blending; and the 2024 paper by Gao and colleagues on Leaf cell resistance. Below them the secondary
-sources, ADAC's car catalog and the EV Database, for the Leaf's WLTP consumption and its cell
-chemistry.
+blending; and the 2024 paper by Gao and colleagues on Leaf cell resistance. Below them, the market and
+regulation sources behind section 01 and the battery prices of section 06: the IEA's Global EV
+Outlook 2026, BloombergNEF's 2025 battery price survey, the European Environment Agency's
+indicators, ACEA, Toyota's engine page; the EU regulations on car CO2, Euro 7, batteries and charging
+infrastructure, and the Commission's 2035 proposal; and the US Federal Register notices and the 2025
+law behind the American rules. Then the ICCT's EV Transition Check, the Commission's grid action plan
+and the US Geological Survey, behind why not all cars are electric yet; and the history slide's
+sources, from the 1900 US census to the State Historical Society of Iowa. Last, the secondary sources: ADAC's car catalog and the EV Database,
+for the Leaf's WLTP consumption and its cell chemistry, Our World in Data's copy of the IEA's
+yearly EV shares, Doug Nye's history of speed records for Jenatzy's run, and Hyundai's statement on
+silicon carbide as reprinted from Infineon's press release.
 
-Some numbers are not verified from a primary source, and it is fair to say which. The Leaf ZE1's
+Some numbers are not verified from a primary source, and it is fair to say which. The yearly EV
+shares in the market figure are Our World in Data's copy of the IEA's data. The Leaf ZE1's
 WLTP consumption comes from ADAC and the EV Database. The low-speed regen fade speed is assumed at
 10 kilometers per hour. Boretti's efficiencies were read from the abstracts. And Oak Ridge's map
 points were read by eye from contour labels, to within about a percentage point.

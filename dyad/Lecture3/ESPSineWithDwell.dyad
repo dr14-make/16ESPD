@@ -13,7 +13,7 @@ test component ESPSineWithDwell
   parameter mu_scale_right::Real = 1.0
   parameter T_cmd::Torque = 0.0
   parameter k_dec::Real = 40000.0
-  parameter k_inc_fast::Real = 160000.0
+  parameter k_inc_fast::Real = 40000.0
   parameter k_inc_slow::Real = 16000.0
   parameter h_cg::Length = 0.0
   structural parameter load_transfer::Boolean = true
@@ -107,7 +107,7 @@ analysis ESPSineWithDwellTransient
   parameter mu_scale_right::Real = 1.0
   parameter T_cmd::Torque = 0.0
   parameter k_dec::Real = 40000.0
-  parameter k_inc_fast::Real = 160000.0
+  parameter k_inc_fast::Real = 40000.0
   parameter k_inc_slow::Real = 16000.0
   parameter h_cg::Length = 0.0
   model = VehicleSystemsComponents.Lecture3.ESPSineWithDwell(A_sw = A_sw, v0 = v0, esp_on = esp_on, abs_on = abs_on, Kp = Kp, Ki = Ki, T_build = T_build, R_build = R_build, select_low = select_low, mu_scale_right = mu_scale_right, T_cmd = T_cmd, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow, h_cg = h_cg)
