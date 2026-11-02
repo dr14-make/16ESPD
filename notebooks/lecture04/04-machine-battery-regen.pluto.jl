@@ -407,7 +407,7 @@ regen_stop_plot = let
     annotate!(p[1], [(60.0, 335.0, text("torque limit, 320 N·m", 10, :bottom)),
         (27.0, 440.0, text("charge power, 80.5 kW / ω", 10, :left)),
         (11.0, 120.0, text("fade below 10 km/h", 10, :left)),
-        (62.0, 205.0, text("machine, regenerating", 10, :left, palette(:default)[1])),
+        (40.0, 8.0, text("machine, regenerating", 10, :left, :bottom, palette(:default)[1])),
         (v_corner - 1.0, 305.0, text("corner, $(round(v_corner; digits = 1)) km/h", 10, :right, :top))])
     plot!(p[1]; xlabel = "car speed [km/h]", ylabel = "braking torque at the machine [N·m]",
         ylims = (0, 480), xlims = (0, 82), legend = false,
