@@ -166,16 +166,26 @@ class: big-figure
 ![Shaft torque against machine speed on two fixed supplies. 350 V: from 320.0 N·m at 3283 rpm and 332.2 A the line falls to −304 N·m and −312 A at 3600 rpm, generating. 200 V: from 922 N·m at 1500 rpm and 953 A it falls with the same slope through zero near 1969 rpm. The Leaf's 320 N·m peak is a dashed line.](/figures/02-torque-speed.svg)
 
 </div>
-<div>
+<div class="text-[0.9rem]">
+
+Steady state of <Link to="machine-as-a-circuit">the circuit</Link>, *di*/*dt* = 0:
 
 $$
-i = \frac{V - K\Phi\,\omega}{R}
+V = R\,i + K\Phi\,\omega \;\Rightarrow\; i = \frac{V - K\Phi\,\omega}{R}
 $$
 
-The torque falls by (*K*Φ)²/*R* = **1.97 N·m per rpm**, to zero at **V/KΦ**: there the
-back-EMF has caught up with the supply.
+Times *K*Φ:
 
-Faster than that, *E* > *V*: the current reverses and **the motor is a generator**.
+$$
+T_{em} = \frac{K\Phi\,V}{R} - \frac{(K\Phi)^2}{R}\,\omega
+$$
+
+Stall torque *K*ΦV/*R*; slope (*K*Φ)²/*R* = **1.97 N·m per rpm**; zero at **V/KΦ**, where the
+back-EMF has caught up with the supply. Faster, *E* > *V*: the current reverses and **the motor is
+a generator**.
+
+The plot is shaft torque, *T*<sub>em</sub> less the small loss torques: 332.2 A gives **320.0**,
+not 322.1 N·m.
 
 On 200 V, at 1500 rpm: **922 N·m for 953 A**, three times the current at the Leaf's 320 N·m.
 
@@ -191,20 +201,30 @@ vertical axis the shaft torque in newton meters. The blue line is a 350 volt sup
 2200 rpm. The gray dashed line is the Leaf's peak torque, 320 newton meters, and the thin black line
 is zero torque.
 
-The first formula explains the shape. With the supply voltage V fixed, the current is whatever the
-gap between the supply and the back-EMF drives through the armature resistance: i equals V minus K
-Phi omega, over R. The torque is K Phi times that current, so it is a straight line that falls with
-speed. Its slope is K Phi squared over R: 0.9697 squared over 0.05 is 18.8 newton meters per radian
-per second, which is 1.97 newton meters per rpm. That is steep, because R is small. The line reaches
-zero torque at V over K Phi, the speed at which the back-EMF has caught up with the supply. On 350
-volts that is 3447 rpm, as the title says.
+On the right, where the line comes from, in two steps. Start from the voltage equation of the
+machine as a circuit, two slides back: v equals R i plus L di by dt plus K Phi omega. In steady
+state the current no longer changes, di by dt is zero, and the inductance drops out. So V equals R i
+plus K Phi omega, and the current is whatever the gap between the supply and the back-EMF drives
+through the armature resistance: i equals V minus K Phi omega, over R. That is the first formula.
+
+Second step: the torque is K Phi times that current. Multiply out and you get the second formula: T
+em equals K Phi V over R, minus K Phi squared over R times omega. A straight line in speed. At
+standstill, omega zero, it is K Phi V over R, the stall torque: on 350 volts that is 0.9697 times
+350 over 0.05, about 6800 newton meters, far off the top of this plot. Its slope is K Phi squared over
+R: 0.9697 squared over 0.05 is 18.8 newton meters per radian per second, which is 1.97 newton meters
+per rpm. That is steep, because R is small. The line reaches zero torque at V over K Phi, the speed
+at which the back-EMF has caught up with the supply: on 350 volts, 3447 rpm.
+
+One detail on the slide: the plot shows the shaft torque, not T em. The shaft gets T em minus the
+small loss torques of friction, iron, windage and the constant loss. That is why 332.2 amperes give
+320.0 newton meters at the shaft, and not the 322.1 that K Phi times 332.2 gives in the air gap.
 
 Follow the blue line. Its dot at 3283 rpm is 320.0 newton meters for 332.2 amperes, by construction:
 that is how K Phi was chosen. The line crosses zero near 3447 rpm. And at its right end, at 3600
 rpm, the back-EMF is 365.6 volts, above the 350 volt supply. The current reverses: minus 312
 amperes, and the shaft takes minus 304 newton meters. The motor has become a generator and pushes
-energy back into the supply. That is the sentence in the middle of the slide, and it is regenerative
-braking, already in this first model.
+energy back into the supply. That is the end of the paragraph under the formulas, and it is
+regenerative braking, already in this first model.
 
 Now the orange line. It has the same slope and sits lower in speed, crossing zero near 1969 rpm.
 Lowering the voltage is the deck's first way to control a DC motor. But look at its dot: at 1500
@@ -237,7 +257,7 @@ class: big-figure
 <div class="grid grid-cols-[1.5fr_1fr] gap-6 items-center mt-2">
 <div>
 
-![Machine losses against speed on a log scale, at the converter's current limit of 332.2 A from standstill to 10 000 rpm: copper constant at 5.52 kW; iron and friction rising in proportion to speed, to about 1 kW and 0.5 kW; the constant loss flat at 200 W; windage rising as the cube of speed to about 300 W. Base speed 3283 rpm dashed.](/figures/02-losses.svg)
+![Machine losses against speed on a log scale, at the converter's current limit of 332.2 A from standstill to 10 000 rpm: copper constant at 5.52 kW; iron and friction rising in proportion to speed, to about 1 kW and 0.5 kW; the constant loss flat at 200 W; windage rising as the cube of speed to about 300 W. A dashed copper line at half load, 166.1 A, sits at 1.38 kW, a quarter of the full-current copper loss. Base speed 3283 rpm dashed.](/figures/02-losses.svg)
 
 </div>
 <div class="text-[0.95rem]">
@@ -251,6 +271,8 @@ $$
 $$
 
 At 320 N·m and 3283 rpm: copper **5.52 kW**, shaft losses **0.73 kW**, **94.6 %**.
+
+Half load, 166.1 A (dashed): copper **1.38 kW**, a quarter; the speed terms stay.
 
 </div>
 </div>
@@ -299,9 +321,12 @@ So at full current the copper loss dominates at every speed. The four shaft loss
 newton meters at 3283 rpm, the shaft gives 110.0 kilowatts and the electrical input is 116.3
 kilowatts: 94.6 percent, the line under the two formulas.
 
-At part load the picture changes. The current falls with the torque, and the copper loss with its
-square: halve the torque and the copper loss drops to a quarter, while the speed terms stay where
-they are. That is why a machine is least efficient at very light load, and why the efficiency map in
+At part load the picture changes, and the dashed blue line shows it. The current falls with the
+torque, and the copper loss with its square: at half load, 166.1 amperes, the copper loss is 1.38
+kilowatts, a quarter of the full 5.52, while the speed terms stay where they are. That is the last
+line beside the figure. Read it against the shaft losses: at base speed half load still costs 1.38
+kilowatts of copper against 0.73 of shaft losses, but at high speed the iron and friction lines
+come up to meet it. That is why a machine is least efficient at very light load, and why the efficiency map in
 section 04 collapses near zero torque.
 
 The model has no thermal part: every number in it is for a machine at its warm operating
@@ -314,44 +339,49 @@ routeAlias: dc-control
 
 ## Two ways to control a DC motor
 
-<div class="grid grid-cols-2 gap-8 text-[0.95rem]">
+<div class="grid grid-cols-[1fr_1.1fr] gap-6 items-center text-[0.9rem]">
 <div>
 
 **By the voltage**, $T = \frac{K\Phi}{R}\bigl(V - K\Phi\,\omega\bigr)$: lower *V* moves the line down
 in speed, same slope. **Step 02:** a converter sets *V* = *d* · *V*<sub>pack</sub>, and caps the
 current.
 
+**By the flux**: replace the magnets by field coils, and their current *i*<sub>f</sub> sets Φ.
+Lower Φ, less torque per ampere and less back-EMF per rpm, so the machine **runs faster on the
+same voltage**. **Step 02:** when the voltage runs out, the converter turns the field down:
+**field weakening**.
+
 </div>
 <div>
 
-**By the flux**: lower Φ, less torque per ampere and less back-EMF per rpm, so the machine **runs
-faster on the same voltage**. **Step 02:** when the voltage runs out, the converter turns the
-field down: **field weakening**.
+<img src="/diagrams/02-flux-control.svg" class="mx-auto" style="max-height: 16.5rem" alt="Two cross-sections of a two-pole DC machine side by side. Left, permanent magnets: an N magnet on the left and an S magnet on the right of the housing, the field crossing the rotor from N to S; Φ is set once, by the magnets, and only the voltage is left to control. Right, a wound field: two iron poles, N and S, each with a field coil around it; the two coils are wired in series to an adjustable current source i_f outside the housing; Φ is proportional to i_f, and turning i_f down lets the machine run faster on the same voltage."/>
 
 </div>
 </div>
 
-<div class="mt-2">
-
-![Steady-state shaft torque against machine speed for the step 01 machine. Left, at full field: straight lines for 100, 200 and 350 V with the same slope, reaching zero torque near 985, 1969 and 3447 rpm; a dot on each marks 332.2 A, about 320 N·m. Right, at 350 V: the field fraction f at 1, 0.7 and 0.5; at the same 332.2 A the dots move to higher speed and lower torque, and the lines reach zero at higher speed with a flatter slope.](/figures/02-control-family.svg)
-
-</div>
+<img src="/figures/02-control-family.svg" class="mx-auto mt-1" style="max-height: 23rem" alt="Steady-state shaft torque against machine speed for the step 01 machine. Left, at full field: straight lines for 100, 200 and 350 V with the same slope, reaching zero torque near 985, 1969 and 3447 rpm; a dot on each marks 332.2 A, about 320 N·m. Right, at 350 V: the field fraction f at 1, 0.7 and 0.5; at the same 332.2 A the dots move to higher speed and lower torque, and the lines reach zero at higher speed with a flatter slope."/>
 
 <!--
-The deck gives two ways to control a DC motor, one per column, and the two plots below show what
-each one does to the machine's line.
+The deck gives two ways to control a DC motor, one per paragraph on the left; the drawing on the
+right shows what the second one needs, and the two plots below show what each one does to the
+machine's line.
 
-On the left, by the voltage. The formula is the fixed-supply line from two slides back, written as a
+First, by the voltage. The formula is the fixed-supply line from two slides back, written as a
 torque: T equals K Phi over R, times V minus K Phi omega. Lower the voltage V and the whole line
 moves down in speed, with the same slope. At low speed the back-EMF is small, so a low voltage is all
 it takes to drive the rated current. That is what step 02's converter does: it gives the machine a
 voltage d times the pack voltage, where the duty d is a number between 0 and 1, and below base speed
 it sets d just high enough to hold the current at its limit.
 
-On the right, by the flux. Lower Phi and two things happen: the machine makes less torque per
-ampere, and less back-EMF per rpm. The second is the useful one: with less back-EMF per rpm, the
-same voltage drives the machine faster. In the deck's version, the permanent magnets are replaced by
-field coils, and their current is turned down.
+Second, by the flux. A machine with permanent magnets cannot do this: the drawing's left half has
+two magnets, N and S, and their flux is set once, when the machine is built, so only the voltage is
+left to control. The drawing's right half is the deck's version: the magnets are replaced by two
+iron poles, each wound with a field coil, and the two coils, in series, are fed from a current
+source of their own, the field current i f, with the arrow through it meaning adjustable. The flux
+is proportional to that current. This is the separately excited machine of the course deck's
+drawing. Lower Phi and two things happen: the machine makes less torque per ampere, and less
+back-EMF per rpm. The second is the useful one: with less back-EMF per rpm, the same voltage drives
+the machine faster.
 
 Now the plots. They are notebook 04, section 1, computed from step 01's machine in steady state,
 with every parameter read from the dyno run: the current is V minus f K Phi omega over R, and the

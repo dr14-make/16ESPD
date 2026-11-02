@@ -70,8 +70,8 @@ the cycle drives at light load. Everything else costs a few watt-hours per kilom
   for torque, *i*<sub>d</sub> for the field.
 - **04** the converter's voltage runs out at base speed; above it, field weakening at constant
   power. Light-load efficiency decides the bill.
-- **05** switches and PWM make the converter; averaged, *v* = *d* · *V*.
-- **06** *v* = *E* − *R*₀*i*, SoC counted from the current.
+- **05** *v* = *E* − *R*₀*i*, SoC counted from the current.
+- **06** switches and PWM make the converter; averaged, *v* = *d* · *V*.
 - **07** regen is limited by torque, charge power and speed; series blending gives the rest to
   friction.
 - **08** **131.2 Wh/km**, **47.2 MJ/100 km** against the engine car's 168.8.
@@ -84,9 +84,9 @@ on the WLTC the braking energy is a quarter of the traction. 02: a DC machine, T
 E equals K Phi omega; on a fixed supply a steep straight line, and a generator past V over K Phi.
 03: a PMSM under field-oriented control is that machine from the outside, with i q for torque and i
 d for the field. 04: the converter's voltage runs out at base speed, and above it field weakening
-holds the power constant; light-load efficiency decides the bill. 05: switches and pulse-width
-modulation make the converter, and averaged, v equals d times V. 06: v equals E minus R0 i, and the
-state of charge counted from the current. 07: regen is limited by torque, charge power and speed,
+holds the power constant; light-load efficiency decides the bill. 05: v equals E minus R0 i, and the
+state of charge counted from the current. 06: switches and pulse-width modulation make the converter,
+and averaged, v equals d times V. 07: regen is limited by torque, charge power and speed,
 and series blending gives the rest to friction. 08: 131.2 watt-hours per kilometer, 47.2 megajoules
 per 100 kilometers, against the engine car's 168.8.
 
@@ -283,7 +283,7 @@ switch table, and the Dutch vehicle register for the Leaf's continuous power; an
 On the right, papers and books: Larminie and Lowry's textbook; Boretti's analyses of the Leaf's
 regenerative braking efficiency; Gao and Ehsani's paper, and Ehsani, Gao and Emadi's textbook, on
 blending; and the 2024 paper by Gao and colleagues on Leaf cell resistance. Below them, the market and
-regulation sources behind section 01 and the battery prices of section 06: the IEA's Global EV
+regulation sources behind section 01 and the battery prices of section 05: the IEA's Global EV
 Outlook 2026, BloombergNEF's 2025 battery price survey, the European Environment Agency's
 indicators, ACEA, Toyota's engine page; the EU regulations on car CO2, Euro 7, batteries and charging
 infrastructure, and the Commission's 2035 proposal; and the US Federal Register notices and the 2025

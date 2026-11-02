@@ -445,8 +445,8 @@ the coupled and decoupled positions is about 7–15 points at 15 kW.
 ## 6. Context claims in the Lecture 4 deck
 
 Sources for the deck's statements that carry no model number: why electric, the market and the
-rules (section 01), the machine types (section 03), charging (section 05), today's batteries and
-their price (section 06). The slides quote these sources' wording and numbers. The series plotted
+rules (section 01), the machine types (section 03), charging (section 06), today's batteries and
+their price (section 05). The slides quote these sources' wording and numbers. The series plotted
 on the slides (EV shares, EU new-car CO₂ and targets, BNEF pack prices) are copied into
 `data/ev_context/`; change them there and here together.
 
@@ -974,7 +974,7 @@ requests); page numbers come from the XML. Public Laws were read on govinfo.
   deck's "about 30 % at its best" understates a modern production petrol engine's peak; "about
   40 % at its best, far less on average in real driving" matches the source.
 
-### 6.7 Power switches (section 05, "Which switch")
+### 6.7 Power switches (section 06, "Which switch")
 
 Read 1 Nov 2026 from current manufacturer datasheets; the drops in volts are datasheet resistance
 times current (derived). The deck's switch table is built from these rows.

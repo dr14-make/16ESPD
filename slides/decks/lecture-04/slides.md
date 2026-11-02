@@ -25,11 +25,11 @@ src: ./sections/04-envelope.md
 ---
 
 ---
-src: ./sections/05-power-electronics.md
+src: ./sections/05-batteries.md
 ---
 
 ---
-src: ./sections/06-batteries.md
+src: ./sections/06-power-electronics.md
 ---
 
 ---

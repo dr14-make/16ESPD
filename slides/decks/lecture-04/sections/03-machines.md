@@ -67,7 +67,7 @@ the same pattern as before, only now in the stator. The force on those conductor
 stator, and its reaction turns the rotor counterclockwise. After sixty degrees of rotation the
 inverter moves on to the next pair of phases; it knows when because three Hall sensors, a third of
 a turn apart at the bore, read the magnets passing. That is the job the commutator did, done by
-electronics; the inverter itself is section 05.
+electronics; the inverter itself is section 06.
 
 The two notes at the bottom are the reason electric cars use this. The heat is now made in the
 stator winding, right against the housing, which can carry a water jacket, so it has a short way
@@ -99,7 +99,9 @@ by electronics: an inverter, switching the stator currents in step with the roto
 **The brushless DC machine (BLDC)** (deck)
 
 - Hall sensors tell the inverter where the rotor is.
-- The phases are switched in blocks, so the back-EMF and the currents are trapezoidal.
+- The phases are switched in blocks, so the back-EMF and the currents are trapezoidal: wide
+  magnets and concentrated coils give a flat-topped EMF, and 120° blocks then need only six
+  switching angles, which three Hall sensors mark (<Link to="trap-vs-sine">the waveforms</Link>).
 - Its back-EMF grows with speed and opposes the current: torque falls as speed rises, as in step
   01.
 - It is a generator as it stands.
@@ -118,7 +120,10 @@ work, switching the stator currents in step with the rotor's position.
 
 On the right, the deck's brushless DC machine, BLDC for short. Hall sensors tell the inverter where
 the rotor is. The phases are switched in blocks, so the back-EMF and the currents have a trapezoidal
-shape. As in build 01, the back-EMF grows with speed and opposes the current, so the torque falls as
+shape. Why trapezoidal? Wide magnets and coils concentrated around single teeth give a back-EMF with
+a flat top. While it is flat, a constant current makes a constant torque, so the drive feeds each
+phase a block 120 degrees long. Blocks change only at six angles per electrical turn, and three
+Hall sensors are enough to mark those six. The slide after next shows the waveforms. As in build 01, the back-EMF grows with speed and opposes the current, so the torque falls as
 the speed rises. And because the back-EMF is there whenever the rotor turns, the machine is a
 generator as it stands, with no change.
 
@@ -270,23 +275,25 @@ routeAlias: foc
 
 <FocMachine />
 
-<div class="caption">Drawn with one pole pair. The red arrow is the stator current; d points along the
-magnets, q a quarter turn ahead.</div>
+<div class="caption">Drawn with one pole pair, so every angle is in electrical degrees; a real machine
+has <i>p</i> pole pairs: <Link to="poles-and-phases">poles and phases</Link>. The red arrow is the
+stator current; d points along the magnets, q a quarter turn ahead.</div>
 
 </div>
 <div class="text-[0.95rem]">
 
-The inverter measures the rotor angle and places the stator current **a quarter turn ahead of the
-magnets**, on the **q** axis: there every ampere makes torque.
-
-The stator carries three **alternating** currents. Seen from the rotor, they are **two steady
+**d and q.** The three phase currents add up to one rotating vector, the red arrow. Measured on
+axes fixed to the rotor, **d** along the magnets and **q** 90° electrical ahead, it is **two steady
 numbers**:
 
-- *i*<sub>q</sub>, the torque current: *T* ∝ *i*<sub>q</sub>
-- *i*<sub>d</sub>, along the magnets: zero, until the voltage runs out
+- *i*<sub>q</sub> makes torque, *T* ∝ *i*<sub>q</sub>: the DC machine's armature current;
+- *i*<sub>d</sub> strengthens or weakens the magnets' field: the DC machine's field current.
 
-**Field weakening on:** part of the current turns against the magnets and weakens their field;
-less is left for torque. Why and how: next slide.
+Up to base speed the inverter puts all the current on **q**, where every ampere makes torque.
+
+**The speed slider:** past 1× base speed the voltage runs out; part of the current turns to
+−*i*<sub>d</sub>, against the magnets, and less is left for *i*<sub>q</sub>.
+<Link to="field-weakening">Why and how</Link>.
 
 </div>
 </div>
@@ -298,32 +305,113 @@ its south half blue, turning inside a three-phase stator. The three dashed lines
 are the axes of the three stator windings, 120 degrees apart. Two black dashed lines turn with the
 rotor: d points along the magnets, through the north pole, and q points a quarter turn ahead of it.
 The thick red arrow, labeled i, is the stator current: the combined effect of the three phase
-currents, drawn as one vector.
+currents, drawn as one vector. The caption says the drawing has one pole pair, so its angles are
+electrical degrees; the Leaf has four pole pairs, and the next slide shows how that fits.
 
-Watch the red arrow as the rotor turns. The inverter measures the rotor angle and keeps the current
-a quarter turn ahead of the magnets, on the q axis. There every ampere makes torque, as in the
-picture of the conductor in the field: the force is largest when the current is at right angles to
-the field.
+On the right, the definition of d and q, in two lines. The three phase currents add up to one
+vector that rotates with the rotor: the red arrow. Measure that vector on two axes fixed to the
+rotor, d along the magnets and q 90 electrical degrees ahead of it, and it becomes two numbers that
+do not change as the rotor turns. i q, across the magnets, makes the torque: the torque is
+proportional to it, and it plays the role of the DC machine's armature current. i d, along the
+magnets, strengthens or weakens the magnets' field: it plays the role of the DC machine's field
+current.
 
-On the right, the top plot is labeled the stator carries: three alternating currents. These are the
-three phase currents, a in blue, b in orange and c in green, over one electrical revolution. They
-alternate at the rotor's electrical frequency, and the red cursor moves with the rotor. Below them,
-labeled the rotor sees: two steady numbers, is the same current seen from the rotor: one bar for i
-d, along the magnets, and one for i q, across them. They do not change at all as the rotor turns.
-That is the whole trick of field-oriented control: in the rotor's frame an AC machine has DC
-quantities, and the controller can regulate them as such. As the slide says, i q is the torque
-current, and the torque is proportional to it. i d, along the magnets, is zero until the voltage
-runs out.
+Watch the red arrow as the rotor turns. Up to base speed the inverter measures the rotor angle and
+keeps the current a quarter turn ahead of the magnets, on the q axis. There every ampere makes
+torque, as in the picture of the conductor in the field: the force is largest when the current is
+at right angles to the field.
 
-[click the field weakening button]
+Beside the machine, the top plot is labeled the stator carries: three alternating currents. These are
+the three phase currents, a in blue, b in orange and c in green, over one electrical revolution.
+They alternate at the rotor's electrical frequency, and the red cursor moves with the rotor. Below
+them, labeled the rotor sees: two steady numbers, is the same current seen from the rotor: one bar
+for i d and one for i q. They do not change at all as the rotor turns. That is the whole trick of
+field-oriented control: in the rotor's frame an AC machine has DC quantities, and the controller
+can regulate them as such.
 
-Now the current vector swings back, toward the south pole: part of it points against the magnets.
-The i d bar goes negative, and that negative d current opposes the magnets' flux and weakens their
-field. The length of the vector stays the same, at the inverter's current limit, so what is left for
-the q part, and for the torque, shrinks: in the animation i d is minus 0.6 of the limit, and i q
-drops to 0.8. That is the last paragraph of the slide, and it is what the Leaf's inverter does above
-base speed, and what our converter does with its field input. Why it is needed, and how far it
-goes, is the next slide.
+[move the speed slider from 0.5 up past 1]
+
+The slider sets the machine's speed as a multiple of base speed, and the rotor turns faster with it.
+Up to 1 nothing else changes: all the current stays on q. Past 1 the voltage has run out, and the
+current vector swings back, toward the south pole: part of it points against the magnets. The i d
+bar goes negative, and that negative d current opposes the magnets' flux and weakens their field.
+The length of the vector stays the same, at the inverter's current limit, so what is left for the q
+part, and for the torque, shrinks. The numbers under the controls are the operating point of the
+per-unit machine of the field-weakening slide, computed the same way: at one and a half times base
+speed i d is minus 0.56 and i q 0.83; at two and a half times, minus 0.84 and 0.54; at four times,
+minus 0.94 and 0.33. That is what the Leaf's inverter does above base speed, and what our converter
+does with its field input. Why it is needed, and how far it goes, is the field-weakening slide,
+after the next one.
+-->
+
+---
+routeAlias: poles-and-phases
+---
+
+## Poles and phases: the Leaf's machine
+
+<div class="grid grid-cols-[1.2fr_1fr] gap-6 items-center">
+<div>
+
+<img src="/diagrams/03-poles-and-phases.svg" class="mx-auto" style="width: 100%; max-height: 36rem" alt="Cross-section of an 8-pole interior permanent-magnet rotor inside a 48-slot stator. The rotor carries eight buried magnets, alternating N and S. Around the bore, 48 slots; the 16 slots of phase a are filled dark blue, eight marked × for current into the page and eight marked • for out of it, in pairs a quarter turn apart. One quarter of the stator is labeled with the six two-slot belts a+, c−, b+, a−, c+, b−, and an arc marks that quarter: one pole pair, 90° mechanical, 360° electrical."/>
+
+</div>
+<div class="text-[0.95rem]">
+
+A real machine has *p* **pole pairs**, and still **three phases**.
+
+**The Leaf** (ORNL, first-generation motor): **8 poles**, *p* = 4, magnets buried in the rotor
+(interior PM), **48 slots**: 48 / (8 · 3) = **2 slots per pole per phase**.
+
+**Each phase is many coils.** The pattern a+ c− b+ a− c+ b− covers one pole pair and repeats
+*p* = 4 times around the stator; phase a's coils are in series or parallel and carry one current.
+
+**Control works in electrical angle**, θ<sub>e</sub> = *p* · θ<sub>m</sub>. The one-pole-pair
+drawing on <Link to="foc">field-oriented control</Link> is exact in electrical degrees: 90°
+electrical is **22.5° mechanical** on the Leaf.
+
+**Phase frequency** *f* = *p* · *n* / 60: **219 Hz** at base speed, 3283 rpm; **673 Hz** at
+10 100 rpm.
+
+</div>
+</div>
+
+<!--
+The animation on the last slide had one pole pair: one north and one south pole. A real machine
+has p pole pairs, and still only three phases. This slide shows how that fits, on the Leaf.
+
+The drawing on the left is a cross-section of a machine with the Leaf's numbers. In the middle, the
+rotor, with eight magnets buried in its iron, alternating north, in red, and south, in blue: 8
+poles, so p is 4. Around it, across the air gap, the stator with 48 slots. The magnets are drawn as
+one bar per pole, a schematic; the Leaf's real rotor shapes its magnets differently, but the count
+is what matters here. The 16 dark blue slots are phase a. Eight of them, marked with a cross, carry
+its current into the page, and eight, marked with a dot, carry it out. They come in pairs: a pair
+in, then a quarter turn later a pair out, and so on around the stator.
+
+The numbers on the right. Oak Ridge National Laboratory's teardown of the first-generation Leaf
+motor, the one already cited on the BLDC and PMSM slide, counted 8 poles, interior permanent magnets and 48
+stator slots. Divide the slots among the poles and the phases: 48 over 8 times 3 is 2 slots per
+pole per phase. That is why the dark blue slots come in pairs.
+
+Each phase is many coils. Read the labels in the top right quarter of the stator, between the
+slots and the edge: a plus, c minus, b plus, a minus, c plus, b minus, each label over its two
+slots. That sequence covers one pole pair, a north and a south pole, and the arc outside marks it:
+a quarter of the machine. It repeats four times around the stator, p times. All of phase a's coils
+are connected together, in series or in parallel, and carry the one current the inverter gives
+phase a.
+
+So what does the controller see? The magnetic picture repeats every pole pair, so the controller
+works in electrical angle: theta electrical equals p times theta mechanical. One pole pair, 90
+mechanical degrees on the Leaf, is a full electrical turn, 360 electrical degrees: that is the
+label on the arc. The one-pole-pair drawing of the animation is therefore exact, as long as you read
+its angles as electrical degrees. The quarter turn between d and q, 90 electrical degrees, is 22.5
+mechanical degrees on the Leaf.
+
+And the frequency. The phase currents complete one cycle per pole pair passing, so their frequency
+is p times the speed in revolutions per second: p n over 60, with n in rpm. At base speed, 3283 rpm,
+that is 4 times 3283 over 60, 219 hertz. At the top speed, 10 100 rpm, 673 hertz. Against the 5
+kilohertz the inverter switches at, the number of section 04, that leaves only about seven switching
+periods per electrical cycle at the top speed.
 -->
 
 ---
@@ -332,80 +420,95 @@ routeAlias: field-weakening
 
 ## Field weakening: why, and how
 
-![Left: the i_d–i_q plane of an illustrative per-unit PMSM. The current limit is a black circle of radius 1 around the origin. The voltage limit is a circle centered at minus psi_PM over L_d, about −1.11, drawn for base speed, 1.5, 2.5 and 4 times base speed; it shrinks as the speed rises. The operating point sits at i_d = 0, i_q = 1 at base speed and slides along the current circle toward negative i_d, a red arc: about (−0.56, 0.83) at 1.5 times, (−0.85, 0.54) at 2.5 times and (−0.94, 0.33) at 4 times base speed. Right: torque, proportional to i_q, flat at 1 up to base speed and then falling, close to a 1/ω curve; power, proportional to ω times i_q, rising to 1 at base speed and then staying near 1.25 to 1.35.](/figures/03-field-weakening.svg)
+**In plain words:** above base speed, make the stator cancel part of the magnets' flux. **Why:**
+the back-EMF *E* = ω ψ<sub>PM</sub> grows with speed, the magnets cannot be switched off, and the
+inverter's voltage is capped by the battery.
 
-<div class="grid grid-cols-2 gap-8 text-sm">
-<div>
+<div class="grid grid-cols-[1.55fr_1fr] gap-4 items-start">
+<div class="relative">
 
-**Why.** The back-EMF grows with speed, *E* = ω ψ<sub>PM</sub>, and magnets cannot be switched
-off. The inverter's voltage is capped by the battery. At **base speed** *E* plus the winding's drop
-reaches the cap; faster, the inverter can no longer push *i*<sub>q</sub> in, and the torque
-collapses.
-
-In our model: the DC machine's field Φ turned down (step 02).
-
-</div>
-<div>
-
-**How.** Drive a **negative *i*<sub>d</sub>**: its flux *L*<sub>d</sub>*i*<sub>d</sub> opposes the
-magnets', so the voltage needed stays at the cap:
-$v \approx \omega\sqrt{(\psi_\mathrm{PM} + L_d i_d)^2 + (L_q i_q)^2}$.
-The current is capped too, $i_d^2 + i_q^2 \le I_\mathrm{max}^2$: what goes into −*i*<sub>d</sub>
-is lost to *i*<sub>q</sub>. Torque falls about as 1/ω, power stays roughly level: the
-envelope's <Link to="base-speed">constant-power part</Link>. The price: *i*<sub>d</sub> makes
-copper loss, no torque.
+<img src="/figures/03-field-weakening-1.svg" style="max-height: none; width: 100%" alt="The i_d–i_q plane of an illustrative per-unit PMSM: the current limit, a black circle of radius 1 around the origin, alone."/>
+<img v-click="1" src="/figures/03-field-weakening-2.svg" class="absolute top-0 left-0" style="max-height: none; width: 100%" alt="The current-limit circle and the voltage limit at base speed: a blue circle centered at minus psi_PM over L_d, about −1.11, passing through the top of the current circle, where the operating point sits at i_d = 0, i_q = 1."/>
+<img v-click="2" src="/figures/03-field-weakening-3.svg" class="absolute top-0 left-0" style="max-height: none; width: 100%" alt="The same, with the voltage-limit circles at 1.5, 2.5 and 4 times base speed added, each smaller than the last, around the same center; the point at the top of the current circle is now outside them."/>
+<img v-click="3" src="/figures/03-field-weakening-4.svg" class="absolute top-0 left-0" style="max-height: none; width: 100%" alt="The same, with the operating points: a red arc along the current circle from the top toward negative i_d, through the crossings of the current circle with each voltage circle, about (−0.56, 0.83) at 1.5 times, (−0.84, 0.54) at 2.5 times and (−0.94, 0.33) at 4 times base speed; a red arrow from the origin marks the current at 2.5 times."/>
 
 </div>
+<div v-click="4">
+
+<img src="/figures/03-field-weakening-power.svg" style="max-height: none; width: 100%" alt="Torque and power against speed in per unit of base speed. Torque, proportional to i_q, flat at 1 up to base speed and then falling, close to a dotted 1/ω curve; power, proportional to ω times i_q, rising to 1 at base speed and then staying near 1.25 to 1.35. Dots mark 1, 1.5, 2.5 and 4 times base speed."/>
+
+</div>
+</div>
+
+<div class="text-sm fw-steps">
+
+1. Black: the **current limit**, $i_d^2 + i_q^2 \le I_\mathrm{max}^2$.
+2. <span v-click="1">Blue: the **voltage limit** at base speed, $\omega\sqrt{(\psi_\mathrm{PM} + L_d i_d)^2 + (L_q i_q)^2} \le v_\mathrm{max}$, a circle around −ψ<sub>PM</sub>/*L*<sub>d</sub>. It passes the top of the current circle: all the current on *q*.</span>
+3. <span v-click="2">Faster, the voltage circle **shrinks** (1.5×, 2.5×, 4× base): the top point falls outside it.</span>
+4. <span v-click="3">So the point **slides along the current circle toward −*i*<sub>d</sub>** (red): the flux *L*<sub>d</sub>*i*<sub>d</sub> cancels part of the magnets', and *i*<sub>q</sub> shrinks.</span>
+5. <span v-click="4">Right: torque ∝ *i*<sub>q</sub> falls about as 1/ω, power stays roughly level, the envelope's <Link to="base-speed">constant-power part</Link>. The price: *i*<sub>d</sub> makes copper loss, no torque. Our model turns Φ down (step 02).</span>
+
 </div>
 
 <!--
-The last slide switched field weakening on with a button. This one says why a permanent-magnet
-machine needs it, and how the inverter does it.
+Two slides back, the speed slider swung the current away from the q axis above base speed. This
+slide says why a permanent-magnet machine needs that, and how the inverter does it, one click at a
+time.
 
-Why first, in the left column. The magnets' flux, psi PM, is fixed, so the back-EMF grows in
-proportion to the speed: E equals omega times psi PM, with omega the electrical speed. The inverter
-can only make a voltage up to a limit set by the battery: with space-vector modulation, the peak
-phase voltage is at most the DC voltage over the square root of three. Below base speed the inverter
-has voltage to spare, and it drives the full current into the q axis, where every ampere makes
-torque. At base speed the back-EMF plus the drop across the winding reaches the limit. Go faster,
-and the inverter has no voltage left to push the q current against the back-EMF, so without doing
-anything the current and the torque collapse. And the magnets cannot be switched off.
+First the plain words at the top: above base speed, make the stator cancel part of the magnets'
+flux. Why? The magnets' flux, psi PM, is fixed, so the back-EMF grows in proportion to the speed: E
+equals omega times psi PM, with omega the electrical speed. The magnets cannot be switched off. And
+the inverter can only make a voltage up to a limit set by the battery: with space-vector
+modulation, the peak phase voltage is at most the DC voltage over the square root of three.
 
-Now the picture, the left panel. It is a generic machine in per unit, not the Leaf: the axes are the
-d and q currents as fractions of the current limit, i d horizontal, negative meaning against the
-magnets, and i q vertical. The black circle is the current limit: the inverter and the winding allow
-any current inside it, i d squared plus i q squared at most I max squared. The colored circles are
-the voltage limit. Neglecting the resistance, the voltage the machine needs is omega times the
-length of the flux vector: the magnets' flux plus L d times i d along d, and L q times i q along q.
-That is the formula on the right. So at a given speed the allowed currents lie inside a circle
-centered at minus psi PM over L d, the point marked with a cross, where the stator flux would cancel
-the magnets' exactly. I take L d equal to L q here, as our model does; with buried magnets, as in
-the Leaf, L q is larger and the circle becomes an ellipse. The radius is the voltage limit over omega
-L, so the circle shrinks as the speed rises: blue at base speed, then orange at one and a half
-times, green at two and a half times and purple at four times base speed. The machine must sit
-inside both circles.
+The picture on the left is a generic machine in per unit, not the Leaf: the axes are the d and q
+currents as fractions of the current limit, i d horizontal, negative meaning against the magnets,
+and i q vertical. Line 1: the black circle is the current limit. The inverter and the winding allow
+any current inside it: i d squared plus i q squared at most I max squared.
 
-At base speed the blue circle passes exactly through the top of the current circle, the blue dot:
-full current, all of it on q. Faster, that point falls outside the shrinking voltage circle, and the
-best the inverter can do is the crossing of the two circles. That is the red arc: the operating
+[click]
+
+Line 2, the blue circle: the voltage limit at base speed. Neglecting the resistance, the voltage the
+machine needs is omega times the length of the flux vector: the magnets' flux plus L d times i d
+along d, and L q times i q along q. That is the formula in the line. So at a given speed the allowed
+currents lie inside a circle centered at minus psi PM over L d, the point marked with a cross, where
+the stator flux would cancel the magnets' exactly. I take L d equal to L q here, as our model does;
+with buried magnets, as in the Leaf, L q is larger and the circle becomes an ellipse. At base speed
+the blue circle passes exactly through the top of the current circle, the blue dot: full current,
+all of it on q. That is the definition of base speed in this picture.
+
+[click]
+
+Line 3. The radius of the voltage circle is the voltage limit over omega L, so it shrinks as the
+speed rises: orange at one and a half times base speed, green at two and a half times and purple at
+four times. The machine must sit inside both circles, and the blue dot at the top is now outside
+all of them. Without doing anything, the inverter would have no voltage left to push the q current
+against the back-EMF, and the torque would collapse.
+
+[click]
+
+Line 4, the red arc. The best the inverter can do is the crossing of the two circles: the operating
 point slides along the current limit toward negative i d. At one and a half times base speed it
-sits at minus 0.56 on d and 0.83 on q; at two and a half times at minus 0.85 and 0.54, which is the
-red arrow; at four times at minus 0.94 and 0.33. That is how field weakening is done: a negative d
-current, whose flux L d times i d opposes the magnets' flux, so that the flux the winding sees,
-psi PM plus L d i d, is smaller, and the voltage the machine needs stays at the limit.
+sits at minus 0.56 on d and 0.83 on q; at two and a half times at minus 0.84 and 0.54, which is the
+red arrow; at four times at minus 0.94 and 0.33. A negative d current makes a flux, L d times i d,
+that opposes the magnets' flux, so the flux the winding sees, psi PM plus L d i d, is smaller, and
+the voltage the machine needs stays at the limit. That is the stator cancelling part of the magnets'
+flux, the plain words at the top.
 
-The right panel is what that costs. The current's length stays at the limit, so whatever goes into
-minus i d is lost to i q, and the torque is proportional to i q. The solid line is the torque: flat
-at 1 up to base speed, then falling to 0.83, 0.54 and 0.33 at the three marked speeds, close to the
-dotted 1 over omega curve. The dashed line is the power, omega times i q: it rises with the speed up
-to base speed and then stays roughly level, between about 1.25 and 1.35 of its base-speed value in
-this machine. That is the constant-power region of section 04's envelope. It is not exactly flat in
-a real machine; the course model makes it exactly flat.
+[click]
 
-The price is in the last line: the d current flows in the winding, so it makes copper loss, R i
-squared, but no torque. Our model leaves that loss out, as the next slide says. And the tie to our
-model is the line on the left: in step 02, the DC machine's field Phi is simply turned down above
-base speed. Negative i d is how a PMSM turns its field down.
+Line 5, the right panel, is what that costs. The current's length stays at the limit, so whatever
+goes into minus i d is lost to i q, and the torque is proportional to i q. The solid line is the
+torque: flat at 1 up to base speed, then falling to 0.83, 0.54 and 0.33 at the three marked speeds,
+close to the dotted 1 over omega curve. The dashed line is the power, omega times i q: it rises with
+the speed up to base speed and then stays roughly level, between about 1.25 and 1.35 of its
+base-speed value in this machine. That is the constant-power region of section 04's envelope. It is
+not exactly flat in a real machine; the course model makes it exactly flat.
+
+The price: the d current flows in the winding, so it makes copper loss, R i squared, but no torque.
+Our model leaves that loss out, as the next slide says. And the tie to our model: in step 02, the DC
+machine's field Phi is simply turned down above base speed. Negative i d is how a PMSM turns its
+field down.
 -->
 
 ---

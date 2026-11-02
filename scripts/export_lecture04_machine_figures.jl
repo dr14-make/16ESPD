@@ -10,10 +10,13 @@ sinusoidal (PMSM) machine, the three back-EMFs, the currents the drive puts in, 
 curve is the BLDC's torque with winding inductance: a six-step inverter at a fixed average voltage.
 
 `04-what-envelope`: a schematic torque–speed envelope at the course machine's corner, with the
-reachable region, a few operating points and the power.
+reachable region, a few operating points and the power. `01-envelope-small` is the same curves,
+small, for the Leaf's numbers in section 01.
 
-`03-field-weakening`: the current and voltage limits of a PMSM in the i_d–i_q plane at several
-speeds, and the torque and power along the limits, for an illustrative per-unit machine.
+`03-field-weakening-1` to `-4`: the current and voltage limits of a PMSM in the i_d–i_q plane, one
+file per click of the slide, and `03-field-weakening-power`: the torque and power along the
+limits; for an illustrative per-unit machine. `FocMachine.vue` computes its operating point with
+the same circle intersection as `operating_point` here, and must keep the same machine constants.
 
 All are computed here, with no Dyad model; `scripts/export_lecture04_figures.jl` runs this file
 after the notebooks.
@@ -173,49 +176,67 @@ function operating_point(ω)
     return i_d, sqrt(max(I_MAX^2 - i_d^2, 0.0))
 end
 
-function field_weakening_plot()
-    p = plot(; layout = grid(1, 2; widths = [0.6, 0.4]), size = (1280, 480), legend = false)
+"""
+The i_d–i_q plane at click `stage` of the field-weakening slide: 1 the current limit alone, 2 the
+voltage limit at base speed with the operating point on q, 3 the voltage limits at higher speeds,
+4 the operating points and the arc they slide along. The axes are the same at every stage, so the
+slide can swap one stage for the next without the picture moving.
+"""
+function field_weakening_limits_plot(stage)
+    p = plot(; size = (800, 430), legend = false)
     a = 0:0.5:360
-    plot!(p[1], I_MAX .* cosd.(a), I_MAX .* sind.(a); color = :black, lw = 2.5)
-    annotate!(p[1], 0.5, 1.0, text("current limit", 13, :left, :black))
+    plot!(p, I_MAX .* cosd.(a), I_MAX .* sind.(a); color = :black, lw = 2.5)
+    annotate!(p, 0.5, 1.0, text("current limit", 13, :left, :black))
     c = -ψ_PM / L_S
     for (ω, col) in FW_SPEEDS
+        (ω == 1 ? stage >= 2 : stage >= 3) || continue
         r = V_MAX / (ω * L_S)
-        plot!(p[1], c .+ r .* cosd.(a), r .* sind.(a); color = col, lw = 2.5)
+        plot!(p, c .+ r .* cosd.(a), r .* sind.(a); color = col, lw = 2.5)
         label = ω == 1 ? "voltage limit, base speed" : "$(isinteger(ω) ? Int(ω) : ω)× base"
-        annotate!(p[1], c + r * cosd(125) - 0.04, r * sind(125) + 0.04,
-            text(label, 13, :right, col))
-        i_d, i_q = operating_point(ω)
-        scatter!(p[1], [i_d], [i_q]; color = col, ms = 9, markerstrokewidth = 0)
+        annotate!(p, c + r * cosd(125) - 0.04, r * sind(125) + 0.04, text(label, 13, :right, col))
     end
-    arc = range(0, operating_point(6.0)[1]; length = 200)
-    plot!(p[1], arc, sqrt.(I_MAX^2 .- arc .^ 2); color = CURRENT_RED, lw = 5)
-    i_d, i_q = operating_point(2.5)
-    plot!(p[1], [0, i_d], [0, i_q]; color = CURRENT_RED, lw = 3, arrow = true)
-    annotate!(p[1], i_d / 2 + 0.06, i_q / 2 - 0.06, text("i", 16, :left, CURRENT_RED))
-    scatter!(p[1], [c], [0]; color = :black, ms = 6, marker = :x)
-    annotate!(p[1], c + 0.05, -0.13, text("−ψ<sub>PM</sub> / L<sub>d</sub>", 13, :right, :black))
-    plot!(p[1]; xlims = (-2.95, 1.25), ylims = (-0.25, 1.75), aspect_ratio = :equal,
+    if stage >= 2
+        scatter!(p, [c], [0]; color = :black, ms = 6, marker = :x)
+        annotate!(p, c + 0.05, -0.13, text("−ψ<sub>PM</sub> / L<sub>d</sub>", 13, :right, :black))
+    end
+    if stage >= 4
+        arc = range(0, operating_point(6.0)[1]; length = 200)
+        plot!(p, arc, sqrt.(I_MAX^2 .- arc .^ 2); color = CURRENT_RED, lw = 5)
+        i_d, i_q = operating_point(2.5)
+        plot!(p, [0, i_d], [0, i_q]; color = CURRENT_RED, lw = 3, arrow = true)
+        annotate!(p, i_d / 2 + 0.06, i_q / 2 - 0.06, text("i", 16, :left, CURRENT_RED))
+    end
+    for (ω, col) in FW_SPEEDS
+        (ω == 1 ? stage >= 2 : stage >= 4) || continue
+        i_d, i_q = operating_point(ω)
+        scatter!(p, [i_d], [i_q]; color = col, ms = 9, markerstrokewidth = 0)
+    end
+    plot!(p; xlims = (-2.95, 1.25), ylims = (-0.25, 1.75), aspect_ratio = :equal,
         xlabel = "i<sub>d</sub> / I<sub>max</sub>   (negative: against the magnets)",
         ylabel = "i<sub>q</sub> / I<sub>max</sub>",
         xticks = -2.5:0.5:1, yticks = 0:0.5:1.5,
         title = "Current and voltage limits, illustrative per-unit PMSM")
+    return p
+end
 
+"Torque and power of the per-unit machine along both limits, against speed."
+function field_weakening_power_plot()
+    p = plot(; size = (520, 430), legend = false)
     ω = range(0.02, 5; length = 500)
     T = [operating_point(w)[2] for w in ω]
-    plot!(p[2], ω, 1 ./ ω; color = :gray, ls = :dot, lw = 1.5)
-    plot!(p[2], ω, T; color = :black, lw = 3)
-    plot!(p[2], ω, ω .* T; color = :black, lw = 3, ls = :dash)
-    vline!(p[2], [1]; color = :gray, ls = :dash, lw = 1.5)
+    plot!(p, ω, 1 ./ ω; color = :gray, ls = :dot, lw = 1.5)
+    plot!(p, ω, T; color = :black, lw = 3)
+    plot!(p, ω, ω .* T; color = :black, lw = 3, ls = :dash)
+    vline!(p, [1]; color = :gray, ls = :dash, lw = 1.5)
     for (w, col) in FW_SPEEDS
         t = operating_point(w)[2]
-        scatter!(p[2], [w, w], [t, w * t]; color = col, ms = 8, markerstrokewidth = 0)
+        scatter!(p, [w, w], [t, w * t]; color = col, ms = 8, markerstrokewidth = 0)
     end
-    annotate!(p[2], 4.9, 0.48, text("torque ∝ i<sub>q</sub>", 13, :right, :black))
-    annotate!(p[2], 3.0, 1.46, text("power ∝ ω·i<sub>q</sub>", 13, :center, :black))
-    annotate!(p[2], 4.9, 0.12, text("1/ω", 12, :right, :gray))
-    annotate!(p[2], 1.08, 0.08, text("base speed", 12, :left, :gray))
-    plot!(p[2]; xlims = (0, 5), ylims = (0, 1.55), xticks = 0:1:5, yticks = 0:0.5:1.5,
+    annotate!(p, 4.9, 0.48, text("torque ∝ i<sub>q</sub>", 13, :right, :black))
+    annotate!(p, 3.0, 1.46, text("power ∝ ω·i<sub>q</sub>", 13, :center, :black))
+    annotate!(p, 4.9, 0.12, text("1/ω", 12, :right, :gray))
+    annotate!(p, 1.08, 0.08, text("base speed", 12, :left, :gray))
+    plot!(p; xlims = (0, 5), ylims = (0, 1.55), xticks = 0:1:5, yticks = 0:0.5:1.5,
         xlabel = "speed ω / base speed", ylabel = "per unit of the base-speed value",
         title = "Torque and power at the limits")
     return p
@@ -225,10 +246,14 @@ end
 # `04-envelope` and the base-speed slide states them; the schematic leaves out the shaft losses.
 const T_RATED, N_BASE, N_MAX = 320.0, 3283.0, 10100.0
 
-function envelope_schematic_plot()
+function envelope_curves()
     n = collect(range(0, N_MAX; length = 400))
     T = [x <= N_BASE ? T_RATED : T_RATED * N_BASE / x for x in n]
-    P = T .* n .* (π / 30) ./ 1e3
+    return n, T, T .* n .* (π / 30) ./ 1e3
+end
+
+function envelope_schematic_plot()
+    n, T, P = envelope_curves()
     p = plot(; layout = grid(2, 1; heights = [0.72, 0.28]), size = (1280, 600), legend = false,
         link = :x, xlims = (0, 10600), xticks = 0:2000:10000)
     for sp in (1, 2)
@@ -264,9 +289,40 @@ function envelope_schematic_plot()
     return p
 end
 
+"""
+The same envelope at the size of a column beside a table: the two curves, base speed and the two
+regions named, without the operating points.
+"""
+function envelope_small_plot()
+    n, T, P = envelope_curves()
+    p = plot(; layout = grid(2, 1; heights = [0.62, 0.38]), size = (620, 400), legend = false,
+        link = :x, xlims = (0, 10600), xticks = (0:2500:10000, ["0", "2500", "5000", "7500", "10 000"]),
+        guidefontsize = 15, tickfontsize = 13, left_margin = 4Plots.mm)
+    for sp in (1, 2)
+        vline!(p[sp], [N_BASE]; color = :gray, ls = :dash, lw = 1.5)
+    end
+    plot!(p[1], Shape([n; N_MAX; 0], [T; 0; 0]); color = "#1f5fa8", fillalpha = 0.12,
+        linealpha = 0)
+    plot!(p[1], n, T; color = :black, lw = 3.5, ylims = (0, 420), yticks = 0:100:400,
+        ylabel = "torque [N·m]")
+    scatter!(p[1], [N_BASE], [T_RATED]; color = :black, ms = 8)
+    annotate!(p[1], N_BASE + 150, T_RATED + 45,
+        text("base speed, $(round(Int, N_BASE)) rpm", 15, :left, :black))
+    annotate!(p[1], N_BASE / 2, 150, text("constant", 15, :center, "#1f5fa8"))
+    annotate!(p[1], N_BASE / 2, 100, text("torque", 15, :center, "#1f5fa8"))
+    annotate!(p[1], 7600, 250, text("constant power", 15, :center, "#a75d00"))
+    plot!(p[2], n, P; color = :black, lw = 3, ylims = (0, 150), yticks = 0:50:150,
+        ylabel = "power [kW]", xlabel = "motor speed [rpm]")
+    annotate!(p[2], N_BASE + 150, 130,
+        text("$(round(Int, T_RATED * N_BASE * π / 30 / 1e3)) kW", 15, :left, :black))
+    return p
+end
+
 const FIGURES = [
+    "01-envelope-small" => envelope_small_plot,
     "03-bldc-pmsm-waveforms" => waveform_plot,
-    "03-field-weakening" => field_weakening_plot,
+    ("03-field-weakening-$k" => () -> field_weakening_limits_plot(k) for k in 1:4)...,
+    "03-field-weakening-power" => field_weakening_power_plot,
     "04-what-envelope" => envelope_schematic_plot,
 ]
 

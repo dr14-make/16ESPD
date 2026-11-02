@@ -1,26 +1,39 @@
 <script setup lang="ts">
 // A permanent-magnet machine under field-oriented control, drawn with one pole pair: the rotor
-// turns, the inverter keeps the stator current vector at a fixed angle to the magnets, and the
-// same current is shown twice, as three alternating phase currents (what the stator carries) and
-// as two steady numbers (what the rotor sees). Concepts only: no transform is computed beyond the
-// projection the picture needs.
+// turns at the speed the slider sets, the inverter holds the stator current vector at the angle to
+// the magnets that speed calls for, and the same current is shown twice, as three alternating phase
+// currents (what the stator carries) and as two steady numbers (what the rotor sees). Concepts
+// only: no transform is computed beyond the projection the picture needs.
 import { computed, onMounted, onUnmounted, ref } from "vue"
 
-const props = withDefaults(defineProps<{ weakened?: boolean }>(), { weakened: false })
+const props = withDefaults(defineProps<{ speed?: number }>(), { speed: 0.5 })
 
 const theta = ref(0.6)
 const playing = ref(true)
-const weakening = ref(props.weakened)
+// Machine speed as a multiple of base speed.
+const speed = ref(props.speed)
 
-// Current magnitude 1 at the inverter's limit. Field weakening turns part of it against the
-// magnets, and what is left for torque shrinks so the magnitude stays at the limit.
-const id = computed(() => (weakening.value ? -0.6 : 0))
-const iq = computed(() => Math.sqrt(1 - id.value * id.value))
+// The per-unit machine of the field-weakening slide (`scripts/export_lecture04_machine_figures.jl`):
+// magnet flux 1, L_d = L_q = 0.9, current limit 1, and the voltage limit set so that at base speed
+// the voltage circle passes through (0, 1). Above base speed the operating point is the upper
+// crossing of the current circle and the shrinking voltage circle.
+const PSI = 1
+const L = 0.9
+const I_MAX = 1
+const V_MAX = Math.hypot(PSI, L * I_MAX)
+function operatingPoint(w: number) {
+  if (w <= 1) return { d: 0, q: I_MAX }
+  const r2 = (V_MAX / w) ** 2
+  const d = Math.max(-I_MAX, Math.min(0, (r2 - PSI ** 2 - (L * I_MAX) ** 2) / (2 * PSI * L)))
+  return { d, q: Math.sqrt(Math.max(I_MAX ** 2 - d * d, 0)) }
+}
+const id = computed(() => operatingPoint(speed.value).d)
+const iq = computed(() => operatingPoint(speed.value).q)
 
 let frame = 0
 let last = 0
 function tick(now: number) {
-  if (last !== 0 && playing.value) theta.value = (theta.value + (now - last) * 0.0016) % (2 * Math.PI)
+  if (last !== 0 && playing.value) theta.value = (theta.value + (now - last) * 0.0016 * speed.value) % (2 * Math.PI)
   last = now
   frame = requestAnimationFrame(tick)
 }
@@ -90,7 +103,7 @@ function wave(angle: number) {
 const cursorX = computed(() => PLOT.x + (PLOT.w * theta.value) / (2 * Math.PI))
 
 // Rotor-frame bars: i_d and i_q against the same limit.
-const BAR = { x0: 120, w: 180, y: 250 }
+const BAR = { x0: 185, w: 160, y: 250 }
 const barEnd = (v: number) => BAR.x0 + (BAR.w / 2) * v
 </script>
 
@@ -139,10 +152,15 @@ const barEnd = (v: number) => BAR.x0 + (BAR.w / 2) * v
       </svg>
       <div class="foc-controls">
         <button @click="playing = !playing">{{ playing ? "⏸ pause" : "▶ play" }}</button>
-        <button :class="{ on: weakening }" @click="weakening = !weakening">
-          field weakening {{ weakening ? "on" : "off" }}
-        </button>
+        <label :class="{ on: speed > 1 }">
+          speed
+          <input v-model.number="speed" type="range" min="0" max="4" step="0.05"
+            aria-label="Machine speed, as a multiple of base speed" />
+          <span class="speed-value">{{ speed.toFixed(2) }}× base</span>
+        </label>
       </div>
+      <div class="foc-readout">i<sub>d</sub> {{ id.toFixed(2) }} · i<sub>q</sub> {{ iq.toFixed(2) }} ·
+        {{ speed > 1 ? "field weakening" : "full current on q" }}</div>
     </div>
   </div>
 </template>
@@ -188,5 +206,17 @@ const barEnd = (v: number) => BAR.x0 + (BAR.w / 2) * v
   background: #fff;
   color: #16202c;
 }
-.foc-controls button.on { background: #fdf0e0; border-color: #a75d00; }
+.foc-controls label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid #4a5a6b;
+  border-radius: 4px;
+}
+.foc-controls label.on { background: #fdf0e0; border-color: #a75d00; }
+.foc-controls input[type="range"] { width: 7rem; accent-color: #a75d00; }
+.foc-controls .speed-value { min-width: 4.2rem; font-variant-numeric: tabular-nums; }
+.foc-readout { font-size: 0.75rem; text-align: center; margin-top: 0.2rem; font-variant-numeric: tabular-nums; }
 </style>

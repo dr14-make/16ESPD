@@ -91,7 +91,7 @@ routeAlias: average-converter
 <div class="grid grid-cols-[1.1fr_1fr] gap-8">
 <div>
 
-Between the pack and the machine sits the inverter; section 05 opens up its switches. Averaged
+Between the pack and the machine sits the inverter; section 06 opens up its switches. Averaged
 over one switching period it is one number, the **duty** *d*:
 
 $$
@@ -110,6 +110,14 @@ $$
 P_{loss} = V_{on}\,|i_{out}| + f_s\, t_{sw}\, v_{in}\,|i_{out}|
 $$
 
+<div class="text-sm">
+
+*v*<sub>in</sub>, *i*<sub>in</sub>: the input, the pack's voltage (350 V) and current ·
+*v*<sub>out</sub>, *i*<sub>out</sub>: the output, the machine's (up to 332.2 A) ·
+*f*<sub>s</sub>: the switching frequency (5 kHz) · *t*<sub>sw</sub>: the time of one switching edge (1 µs)
+
+</div>
+
 </div>
 <div class="tight">
 
@@ -127,20 +135,26 @@ At 350 V out and 332.2 A: **99.2 %** efficient.
 </div>
 
 <!--
-Between the pack and the machine sits the inverter. Section 05 opens it up; here we average it. Over
+Between the pack and the machine sits the inverter. Section 06 opens it up; here we average it. Over
 one switching period, 200 microseconds at 5 kilohertz, the switches give the machine the fraction d
 of the pack voltage. d is the duty, a number between 0 and 1. That is the first formula: v out
 equals d times v in. The input current, the second formula, is d times the output current, plus the
 loss power divided by the input voltage: the extra current that pays for the losses. Without its
 losses the converter is a DC transformer: power in equals power out.
 
+The short legend under the formulas names the symbols. v in and i in are the input side, the pack's
+voltage, 350 volts, and its current. v out and i out are the output side, the machine's voltage and
+current, up to 332.2 amperes. f s is the switching frequency, and t sw the time one switching edge
+takes; their values are in the table.
+
 Then the two limits. The output current is at most I max, in either direction, and the duty is at
 most d max, which is 1.
 
 And the deck's switch losses, the last formula. A conduction loss, V on times the current, where V
 on is the voltage across the devices that carry it. Plus a switching loss, f s times t sw times v in
-times the current, where f s is the switching frequency and t sw the time each edge takes: every
-edge costs a little energy, so this loss grows with the switching frequency.
+times the current: during each edge the device carries the current while the pack's voltage is
+still across it, so every edge costs a little energy, and this loss grows with the switching
+frequency.
 
 The table says where each number comes from. I max, 332.2 amperes, is the current at which build
 01's machine gives 320 newton meters at base speed. d max is 1: the converter cannot give the
@@ -367,6 +381,9 @@ At 131 km/h the machine turns **9260 rpm**, the field down to **0.36**.
 > **Light-load efficiency matters more than peak efficiency.** The car spends the cycle where the
 > fixed losses count.
 
+**Why light load favors the PMSM:** a magnet's field is free; a machine without magnets pays a
+magnetizing or field current even at light load (<Link to="other-machines">the other machines</Link>).
+
 </div>
 </div>
 
@@ -388,8 +405,13 @@ kilometers per hour, the machine turns 9260 rpm, with the field down to 0.36.
 
 So the number that decides the energy bill is not the peak efficiency in the brochure. It is the
 efficiency at light load, where friction, iron loss, windage and the constant loss weigh most. That
-is the quote box, and it is also the PMSM's advantage over the machines without magnets from
-section 03.
+is the quote box. The last line says why light load also favors the permanent-magnet machine. Its
+field comes from the magnets and costs nothing, so at a few tens of newton meters it draws only the
+small current the torque needs. An induction machine or a wound-rotor machine has no magnets: it
+must drive a magnetizing current, or a field current, to make its field at every operating point,
+even when the torque asked for is small, and that current makes copper loss whatever the load. On a
+cycle that lives at light load, that fixed price is a large share of the output. The link goes back
+to the slide in section 03 that names those machines.
 -->
 
 ---
@@ -570,7 +592,7 @@ One detail you may notice: near 95 rpm the shaft torque dips to 300 newton meter
 - At a given power, more speed means less torque and less copper loss: a fast machine behind a
   reduction. 110 kW is a peak; the continuous rating is set by heat.
 
-### Next: what is inside the converter. <Link to="power-electronics">→ 05, power electronics</Link>
+### Next: the source behind the converter. <Link to="batteries">→ 05, batteries, simply</Link>
 
 <!--
 Section 04 in four lines. The inverter, averaged, is v out equals d times v in, with a current limit
@@ -583,6 +605,7 @@ decides the bill. And at a given power, more speed means less torque and less co
 is why the machine is fast and sits behind a reduction; its 110 kilowatts is a peak, and what it
 can give continuously is set by heat.
 
-The converter in the car is an average. The next section opens it up: switches, diodes and
-pulse-width modulation, on a microsecond time scale, beside the car rather than in it.
+The converter in the car is an average; section 06 opens it up, switches, diodes and pulse-width
+modulation on a microsecond time scale. First, the next section builds the source behind it: the
+battery.
 -->

@@ -27,7 +27,7 @@ library's copies of the students' parts:
 |:---|:---|:---|:---|
 | 1. The DC machine on a fixed supply | 02 The DC machine | 01 | `Vehicle.Electric.DCMachineTransient` |
 | 2. Where the machine's losses go | 02 The DC machine | 01–02 | `Vehicle.Electric.ConverterTransient` |
-| 3. The battery under load | 06 Batteries, simply | 03 | `Vehicle.Electric.BatteryTransient` |
+| 3. The battery under load | 05 Batteries, simply | 03 | `Vehicle.Electric.BatteryTransient` |
 | 4. Regen on a hard stop | 07 The car and regen | 05 | `Vehicle.Planar.PlanarBEVHardStopTransient` |
 
 The envelope and the efficiency map are notebook 01's; the switching models notebook 02's; the
@@ -184,8 +184,9 @@ run along its whole envelope at one current: build step 02's converter holds the
 332.2 A, from standstill to 10 000 rpm, and turns the field down above base speed. The copper loss
 is then the same at every speed, and the speed terms grow under it: friction and iron as ω,
 windage as ω³. At part load the current, and with it the copper loss, falls as the square of the
-torque, and the speed terms are what is left: that is why the efficiency map of section 04
-collapses at light load.
+torque, and the speed terms are what is left: the dashed line is the copper loss at half the
+current, a quarter of the full one. That is why the efficiency map of section 04 collapses at light
+load.
 """
 
 # ╔═╡ 10962649-cde5-4bea-ab84-08874291b7a3
@@ -193,7 +194,7 @@ envelope = let
     run = E4.ConverterTransient()
     s, m = run.sol, symbolic_container(run)
     k = s.t .>= 1.0
-    (; rpm = rpm_of.(s[m.machine.w][k]), P_cu = s[m.machine.P_cu][k],
+    (; rpm = rpm_of.(s[m.machine.w][k]), i = s[m.machine.i][k], P_cu = s[m.machine.P_cu][k],
         P_fric = s[m.machine.P_fric][k], P_iron = s[m.machine.P_iron][k],
         P_wind = s[m.machine.P_wind][k], P_const = s[m.machine.P_const][k],
         P_mech = s[m.machine.P_mech][k])
@@ -216,6 +217,10 @@ losses_plot = let
         keep = (e.rpm .>= 100.0) .& (P .>= 1.0)
         plot!(p, e.rpm[keep], P[keep]; color = c, lw = 2.5, label = name)
     end
+    half = e.P_cu ./ 4
+    plot!(p, e.rpm[e.rpm .>= 100.0], half[e.rpm .>= 100.0]; color = 1, lw = 2.5, ls = :dash,
+        label = "copper at half load, $(round(e.i[j] / 2; digits = 1)) A: " *
+                "$(round(half[j] / 1e3; digits = 2)) kW")
     plot!(p, [3283.0, 3283.0], [1.0, 2.0e4]; color = :gray, ls = :dash, lw = 1,
         label = "base speed, 3283 rpm")
     p

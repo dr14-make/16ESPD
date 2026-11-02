@@ -3,7 +3,7 @@ routeAlias: power-electronics
 layout: section
 ---
 
-###### Section 05
+###### Section 06
 
 # Power electronics
 
@@ -13,7 +13,7 @@ harmonics, the three-phase bridge; the DC-DC for 12 V and the charger.
 `notebooks/lecture04/02-switching.pluto.jl`
 
 <!--
-Section 05, power electronics. There is no build here, but a demonstration on switching models from
+Section 06, power electronics. There is no build here, but a demonstration on switching models from
 notebook 02. We cover DC regulation, the step-down and step-up choppers, the H-bridge, pulse-width
 modulation and its harmonics, and the three-phase bridge; then the two other converters in the car,
 the DC-DC for the 12 volt network and the charger.
@@ -37,7 +37,7 @@ routeAlias: dc-regulation
 <div>
 
 The voltage of every source moves (deck): with time, temperature and load; the pack sags under
-load (section 06). Electronics need a steady voltage.
+load (section 05). Electronics need a steady voltage.
 
 **Two ways to drop a voltage**
 
@@ -64,7 +64,7 @@ switch.
 
 <!--
 Why regulate a voltage at all? The deck: the voltage of every source moves, with time, with
-temperature and with load. Our own pack sags the moment it is loaded, as section 06 shows.
+temperature and with load. Our own pack sags the moment it is loaded, as section 05 showed.
 Electronics and motors need a voltage that suits them.
 
 There are two ways to drop a voltage. A dropping device, a resistance or a linear regulator, burns
@@ -697,7 +697,7 @@ battery.
 
 ---
 
-## Summary of section 05
+## Summary of section 06
 
 - A switch is ideally lossless; averaged, **v = d · V<sub>in</sub>**. The buck steps down, the
   boost steps up, both with a switch, a diode and an inductor.
@@ -708,10 +708,10 @@ battery.
 - Three legs make the three-phase inverter: **section 04's converter**, averaged.
 - The 12 V network is a 300 W draw on the pack; the charger, one efficiency.
 
-### Next: the source behind the converter. <Link to="batteries">→ 06, batteries, simply</Link>
+### Next: put the chain in the car, and brake with it. <Link to="car-and-regen">→ 07, the car and regen</Link>
 
 <!--
-Section 05 in five lines. A switch is ideally lossless, and averaged, v equals d times V in. The
+Section 06 in five lines. A switch is ideally lossless, and averaged, v equals d times V in. The
 buck steps down and the boost steps up, both with a switch, a diode and an inductor. Real switches
 lose at every edge and while conducting, and in a buck the diode can be the largest loss. Cars use
 silicon IGBTs at 400 volts and silicon carbide MOSFETs at 800 volts, whose faster edges lose less.
@@ -721,6 +721,7 @@ the carrier, where the winding's inductance blocks them. Three legs make the thr
 which, averaged, is section 04's converter. And the 12 volt network is a 300 watt draw on the pack,
 the charger one efficiency.
 
-With the switching out of the way, the converter in the car is one average model. Behind it sits the
-pack, the last link of the chain to build.
+With the switching out of the way, the converter in the car stays one average model, with section
+05's pack behind it. Next, the whole chain goes into the planar car, and the machine learns to
+brake.
 -->
