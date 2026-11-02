@@ -1,0 +1,22 @@
+# Capacity against discharge time of the textbook's example battery, rated 42 A·h at the
+# 10-hour rate. Digitized from deck 8 (Batteries and Fuel Cells), slide 4, the chart
+# "Graph showing change in battery capacity with discharge time", after Larminie and Lowry.
+# Read off the chart; about ±0.1 h and ±0.1 A·h.
+discharge_h,capacity_ah
+0.76,32.6
+1.0,33.8
+1.5,35.3
+2.0,36.5
+3.0,37.9
+4.0,38.8
+5.0,39.6
+6.0,40.1
+7.0,40.5
+8.0,40.9
+9.0,41.5
+10.0,42.0
+12.0,42.8
+14.0,43.7
+16.0,44.4
+18.0,45.2
+20.0,46.0

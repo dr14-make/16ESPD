@@ -1,6 +1,6 @@
-# Real-world context for Lecture 4: EV market, battery prices, EU car CO₂
+# Real-world context for Lecture 4: EV market, battery prices, EU car CO₂, textbook batteries
 
-Published data behind three figures of the Lecture 4 deck. None of it comes from a course model.
+Published data behind five figures of the Lecture 4 deck. None of it comes from a course model.
 The figures are drawn by
 
     julia +dyad-3.5.0 --startup-file=no scripts/export_lecture04_context_figures.jl
@@ -18,6 +18,8 @@ here. Values were read in October–November 2026; change a value only together 
 | `eu_new_car_co2.csv` | average CO₂ of new cars registered in the EU (with Iceland from 2018, Norway from 2019), g/km, by test cycle; 2025 provisional | `01-eu-co2.svg` | [EEA-CARS-IND], [EEA-CARS-2025-PROV] |
 | `eu_co2_targets.csv` | the EU fleet-wide targets for new cars, g/km, with their test cycle | `01-eu-co2.svg` | [EU-443], [EU-2019/631], [EU-2023/851], [EU-ID-2023/1623], [EEA-CARS-IND], [EU-COM-2025-995] |
 | `battery_pack_price.csv` | volume-weighted average Li-ion pack price, all segments, $/kWh in real 2025 dollars, 2013–2025 | `06-battery-price.svg` | [BNEF-2025] |
+| `textbook_capacity_vs_time.csv` | capacity against discharge time of a battery rated 42 A·h at the 10-hour rate, digitized | `06-battery-capacity-rate.svg` | [DECK8-LL] |
+| `textbook_ragone.csv` | Ragone curves (specific energy against specific power) of a lead-acid and a nickel-cadmium traction battery, digitized | `06-battery-textbook-ragone.svg` | [DECK8-LL] |
 
 ## Notes on reading them
 
@@ -40,3 +42,8 @@ here. Values were read in October–November 2026; change a value only together 
   in 2024 dollars. Values are the printed bar labels of the release's chart. The average covers
   every segment (cars, buses, two-wheelers, stationary storage), not cars alone; BEV packs alone
   averaged $99/kWh in 2025.
+- **Textbook battery charts.** Read off the charts of the course's battery deck (deck 8, *Batteries
+  and Fuel Cells*, slides 4 and 5), which reproduce Larminie and Lowry's *Electric Vehicle
+  Technology Explained*; the book itself was not at hand, so the deck's copy is the source. The
+  capacity chart is redrawn against current: current = capacity / time (derived). Neither chart
+  names its batteries' makers or cells.

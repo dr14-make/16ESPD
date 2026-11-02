@@ -682,6 +682,18 @@ on the slides (EV shares, EU new-car CO₂ and targets, BNEF pack prices) are co
   ([N-US-DG-2018], derived). CATL's 2022 Qilin claims (up to 255 Wh/kg NMC, 160 Wh/kg LFP) reached
   only through trade press (CnEVPost, 23 Jun 2022), which does not say whether they are cell- or
   pack-level; not used.
+- **[DECK8-LL]** Course deck 8, *Batteries and Fuel Cells* (docs/materials, not committed), after
+  J. Larminie, J. Lowry, *Electric Vehicle Technology Explained*, Wiley. digitized from the deck's
+  charts; the book was not at hand. Slide 4, "Graph showing change in battery capacity with
+  discharge time": 32.6 A·h at 0.76 h, 33.8 at 1 h, 36.5 at 2 h, 39.6 at 5 h, 42.0 at 10 h, 46.0
+  at 20 h, so a battery rated 42 A·h at the 10-hour rate; the chemistry is not stated on the
+  slide. derived: current = capacity / time, 2.3 A at 20 h to 43 A at 0.76 h; a least-squares
+  Peukert fit, I^n t = const, gives n = 1.11. Slide 5, "Ragone plot for Lead Acid and Nickel
+  Cadmium traction batteries", log-log: lead acid from about 35 Wh/kg at 1.6 W/kg to 17 Wh/kg at
+  260 W/kg; nickel-cadmium from about 52 Wh/kg at 2 W/kg to 26 Wh/kg at 230 W/kg, falling steeply
+  above 100 W/kg. The slide's notes: "for both batteries, as the specific power increases, the
+  specific energy is reduced", and "the NiCad battery performs better if power densities of less
+  than 100Wkg−1 are required". Values in `data/ev_context/textbook_*.csv`.
 
 ### 6.3 Charging and grid
 
