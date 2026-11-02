@@ -72,3 +72,15 @@ html.dark .slidev-layout img[src^="data:image/svg+xml"] {
 .slidev-layout .tight td {
   padding: 0.2rem 0.5rem;
 }
+
+/* The numbered lines under a figure that builds one click at a time. */
+.slidev-layout .fw-steps ol {
+  margin-top: 0.4rem;
+}
+.slidev-layout .fw-steps li {
+  margin: 0;
+  line-height: 1.35rem;
+}
+.slidev-layout .fw-steps li:has(.slidev-vclick-hidden) {
+  opacity: 0;
+}

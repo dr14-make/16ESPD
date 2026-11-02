@@ -420,80 +420,95 @@ routeAlias: field-weakening
 
 ## Field weakening: why, and how
 
-![Left: the i_d–i_q plane of an illustrative per-unit PMSM. The current limit is a black circle of radius 1 around the origin. The voltage limit is a circle centered at minus psi_PM over L_d, about −1.11, drawn for base speed, 1.5, 2.5 and 4 times base speed; it shrinks as the speed rises. The operating point sits at i_d = 0, i_q = 1 at base speed and slides along the current circle toward negative i_d, a red arc: about (−0.56, 0.83) at 1.5 times, (−0.85, 0.54) at 2.5 times and (−0.94, 0.33) at 4 times base speed. Right: torque, proportional to i_q, flat at 1 up to base speed and then falling, close to a 1/ω curve; power, proportional to ω times i_q, rising to 1 at base speed and then staying near 1.25 to 1.35.](/figures/03-field-weakening.svg)
+**In plain words:** above base speed, make the stator cancel part of the magnets' flux. **Why:**
+the back-EMF *E* = ω ψ<sub>PM</sub> grows with speed, the magnets cannot be switched off, and the
+inverter's voltage is capped by the battery.
 
-<div class="grid grid-cols-2 gap-8 text-sm">
-<div>
+<div class="grid grid-cols-[1.55fr_1fr] gap-4 items-start">
+<div class="relative">
 
-**Why.** The back-EMF grows with speed, *E* = ω ψ<sub>PM</sub>, and magnets cannot be switched
-off. The inverter's voltage is capped by the battery. At **base speed** *E* plus the winding's drop
-reaches the cap; faster, the inverter can no longer push *i*<sub>q</sub> in, and the torque
-collapses.
-
-In our model: the DC machine's field Φ turned down (step 02).
-
-</div>
-<div>
-
-**How.** Drive a **negative *i*<sub>d</sub>**: its flux *L*<sub>d</sub>*i*<sub>d</sub> opposes the
-magnets', so the voltage needed stays at the cap:
-$v \approx \omega\sqrt{(\psi_\mathrm{PM} + L_d i_d)^2 + (L_q i_q)^2}$.
-The current is capped too, $i_d^2 + i_q^2 \le I_\mathrm{max}^2$: what goes into −*i*<sub>d</sub>
-is lost to *i*<sub>q</sub>. Torque falls about as 1/ω, power stays roughly level: the
-envelope's <Link to="base-speed">constant-power part</Link>. The price: *i*<sub>d</sub> makes
-copper loss, no torque.
+<img src="/figures/03-field-weakening-1.svg" style="max-height: none; width: 100%" alt="The i_d–i_q plane of an illustrative per-unit PMSM: the current limit, a black circle of radius 1 around the origin, alone."/>
+<img v-click="1" src="/figures/03-field-weakening-2.svg" class="absolute top-0 left-0" style="max-height: none; width: 100%" alt="The current-limit circle and the voltage limit at base speed: a blue circle centered at minus psi_PM over L_d, about −1.11, passing through the top of the current circle, where the operating point sits at i_d = 0, i_q = 1."/>
+<img v-click="2" src="/figures/03-field-weakening-3.svg" class="absolute top-0 left-0" style="max-height: none; width: 100%" alt="The same, with the voltage-limit circles at 1.5, 2.5 and 4 times base speed added, each smaller than the last, around the same center; the point at the top of the current circle is now outside them."/>
+<img v-click="3" src="/figures/03-field-weakening-4.svg" class="absolute top-0 left-0" style="max-height: none; width: 100%" alt="The same, with the operating points: a red arc along the current circle from the top toward negative i_d, through the crossings of the current circle with each voltage circle, about (−0.56, 0.83) at 1.5 times, (−0.84, 0.54) at 2.5 times and (−0.94, 0.33) at 4 times base speed; a red arrow from the origin marks the current at 2.5 times."/>
 
 </div>
+<div v-click="4">
+
+<img src="/figures/03-field-weakening-power.svg" style="max-height: none; width: 100%" alt="Torque and power against speed in per unit of base speed. Torque, proportional to i_q, flat at 1 up to base speed and then falling, close to a dotted 1/ω curve; power, proportional to ω times i_q, rising to 1 at base speed and then staying near 1.25 to 1.35. Dots mark 1, 1.5, 2.5 and 4 times base speed."/>
+
+</div>
+</div>
+
+<div class="text-sm fw-steps">
+
+1. Black: the **current limit**, $i_d^2 + i_q^2 \le I_\mathrm{max}^2$.
+2. <span v-click="1">Blue: the **voltage limit** at base speed, $\omega\sqrt{(\psi_\mathrm{PM} + L_d i_d)^2 + (L_q i_q)^2} \le v_\mathrm{max}$, a circle around −ψ<sub>PM</sub>/*L*<sub>d</sub>. It passes the top of the current circle: all the current on *q*.</span>
+3. <span v-click="2">Faster, the voltage circle **shrinks** (1.5×, 2.5×, 4× base): the top point falls outside it.</span>
+4. <span v-click="3">So the point **slides along the current circle toward −*i*<sub>d</sub>** (red): the flux *L*<sub>d</sub>*i*<sub>d</sub> cancels part of the magnets', and *i*<sub>q</sub> shrinks.</span>
+5. <span v-click="4">Right: torque ∝ *i*<sub>q</sub> falls about as 1/ω, power stays roughly level, the envelope's <Link to="base-speed">constant-power part</Link>. The price: *i*<sub>d</sub> makes copper loss, no torque. Our model turns Φ down (step 02).</span>
+
 </div>
 
 <!--
-The last slide switched field weakening on with a button. This one says why a permanent-magnet
-machine needs it, and how the inverter does it.
+Two slides back, the speed slider swung the current away from the q axis above base speed. This
+slide says why a permanent-magnet machine needs that, and how the inverter does it, one click at a
+time.
 
-Why first, in the left column. The magnets' flux, psi PM, is fixed, so the back-EMF grows in
-proportion to the speed: E equals omega times psi PM, with omega the electrical speed. The inverter
-can only make a voltage up to a limit set by the battery: with space-vector modulation, the peak
-phase voltage is at most the DC voltage over the square root of three. Below base speed the inverter
-has voltage to spare, and it drives the full current into the q axis, where every ampere makes
-torque. At base speed the back-EMF plus the drop across the winding reaches the limit. Go faster,
-and the inverter has no voltage left to push the q current against the back-EMF, so without doing
-anything the current and the torque collapse. And the magnets cannot be switched off.
+First the plain words at the top: above base speed, make the stator cancel part of the magnets'
+flux. Why? The magnets' flux, psi PM, is fixed, so the back-EMF grows in proportion to the speed: E
+equals omega times psi PM, with omega the electrical speed. The magnets cannot be switched off. And
+the inverter can only make a voltage up to a limit set by the battery: with space-vector
+modulation, the peak phase voltage is at most the DC voltage over the square root of three.
 
-Now the picture, the left panel. It is a generic machine in per unit, not the Leaf: the axes are the
-d and q currents as fractions of the current limit, i d horizontal, negative meaning against the
-magnets, and i q vertical. The black circle is the current limit: the inverter and the winding allow
-any current inside it, i d squared plus i q squared at most I max squared. The colored circles are
-the voltage limit. Neglecting the resistance, the voltage the machine needs is omega times the
-length of the flux vector: the magnets' flux plus L d times i d along d, and L q times i q along q.
-That is the formula on the right. So at a given speed the allowed currents lie inside a circle
-centered at minus psi PM over L d, the point marked with a cross, where the stator flux would cancel
-the magnets' exactly. I take L d equal to L q here, as our model does; with buried magnets, as in
-the Leaf, L q is larger and the circle becomes an ellipse. The radius is the voltage limit over omega
-L, so the circle shrinks as the speed rises: blue at base speed, then orange at one and a half
-times, green at two and a half times and purple at four times base speed. The machine must sit
-inside both circles.
+The picture on the left is a generic machine in per unit, not the Leaf: the axes are the d and q
+currents as fractions of the current limit, i d horizontal, negative meaning against the magnets,
+and i q vertical. Line 1: the black circle is the current limit. The inverter and the winding allow
+any current inside it: i d squared plus i q squared at most I max squared.
 
-At base speed the blue circle passes exactly through the top of the current circle, the blue dot:
-full current, all of it on q. Faster, that point falls outside the shrinking voltage circle, and the
-best the inverter can do is the crossing of the two circles. That is the red arc: the operating
+[click]
+
+Line 2, the blue circle: the voltage limit at base speed. Neglecting the resistance, the voltage the
+machine needs is omega times the length of the flux vector: the magnets' flux plus L d times i d
+along d, and L q times i q along q. That is the formula in the line. So at a given speed the allowed
+currents lie inside a circle centered at minus psi PM over L d, the point marked with a cross, where
+the stator flux would cancel the magnets' exactly. I take L d equal to L q here, as our model does;
+with buried magnets, as in the Leaf, L q is larger and the circle becomes an ellipse. At base speed
+the blue circle passes exactly through the top of the current circle, the blue dot: full current,
+all of it on q. That is the definition of base speed in this picture.
+
+[click]
+
+Line 3. The radius of the voltage circle is the voltage limit over omega L, so it shrinks as the
+speed rises: orange at one and a half times base speed, green at two and a half times and purple at
+four times. The machine must sit inside both circles, and the blue dot at the top is now outside
+all of them. Without doing anything, the inverter would have no voltage left to push the q current
+against the back-EMF, and the torque would collapse.
+
+[click]
+
+Line 4, the red arc. The best the inverter can do is the crossing of the two circles: the operating
 point slides along the current limit toward negative i d. At one and a half times base speed it
-sits at minus 0.56 on d and 0.83 on q; at two and a half times at minus 0.85 and 0.54, which is the
-red arrow; at four times at minus 0.94 and 0.33. That is how field weakening is done: a negative d
-current, whose flux L d times i d opposes the magnets' flux, so that the flux the winding sees,
-psi PM plus L d i d, is smaller, and the voltage the machine needs stays at the limit.
+sits at minus 0.56 on d and 0.83 on q; at two and a half times at minus 0.84 and 0.54, which is the
+red arrow; at four times at minus 0.94 and 0.33. A negative d current makes a flux, L d times i d,
+that opposes the magnets' flux, so the flux the winding sees, psi PM plus L d i d, is smaller, and
+the voltage the machine needs stays at the limit. That is the stator cancelling part of the magnets'
+flux, the plain words at the top.
 
-The right panel is what that costs. The current's length stays at the limit, so whatever goes into
-minus i d is lost to i q, and the torque is proportional to i q. The solid line is the torque: flat
-at 1 up to base speed, then falling to 0.83, 0.54 and 0.33 at the three marked speeds, close to the
-dotted 1 over omega curve. The dashed line is the power, omega times i q: it rises with the speed up
-to base speed and then stays roughly level, between about 1.25 and 1.35 of its base-speed value in
-this machine. That is the constant-power region of section 04's envelope. It is not exactly flat in
-a real machine; the course model makes it exactly flat.
+[click]
 
-The price is in the last line: the d current flows in the winding, so it makes copper loss, R i
-squared, but no torque. Our model leaves that loss out, as the next slide says. And the tie to our
-model is the line on the left: in step 02, the DC machine's field Phi is simply turned down above
-base speed. Negative i d is how a PMSM turns its field down.
+Line 5, the right panel, is what that costs. The current's length stays at the limit, so whatever
+goes into minus i d is lost to i q, and the torque is proportional to i q. The solid line is the
+torque: flat at 1 up to base speed, then falling to 0.83, 0.54 and 0.33 at the three marked speeds,
+close to the dotted 1 over omega curve. The dashed line is the power, omega times i q: it rises with
+the speed up to base speed and then stays roughly level, between about 1.25 and 1.35 of its
+base-speed value in this machine. That is the constant-power region of section 04's envelope. It is
+not exactly flat in a real machine; the course model makes it exactly flat.
+
+The price: the d current flows in the winding, so it makes copper loss, R i squared, but no torque.
+Our model leaves that loss out, as the next slide says. And the tie to our model: in step 02, the DC
+machine's field Phi is simply turned down above base speed. Negative i d is how a PMSM turns its
+field down.
 -->
 
 ---
