@@ -166,16 +166,26 @@ class: big-figure
 ![Shaft torque against machine speed on two fixed supplies. 350 V: from 320.0 N·m at 3283 rpm and 332.2 A the line falls to −304 N·m and −312 A at 3600 rpm, generating. 200 V: from 922 N·m at 1500 rpm and 953 A it falls with the same slope through zero near 1969 rpm. The Leaf's 320 N·m peak is a dashed line.](/figures/02-torque-speed.svg)
 
 </div>
-<div>
+<div class="text-[0.9rem]">
+
+Steady state of <Link to="machine-as-a-circuit">the circuit</Link>, *di*/*dt* = 0:
 
 $$
-i = \frac{V - K\Phi\,\omega}{R}
+V = R\,i + K\Phi\,\omega \;\Rightarrow\; i = \frac{V - K\Phi\,\omega}{R}
 $$
 
-The torque falls by (*K*Φ)²/*R* = **1.97 N·m per rpm**, to zero at **V/KΦ**: there the
-back-EMF has caught up with the supply.
+Times *K*Φ:
 
-Faster than that, *E* > *V*: the current reverses and **the motor is a generator**.
+$$
+T_{em} = \frac{K\Phi\,V}{R} - \frac{(K\Phi)^2}{R}\,\omega
+$$
+
+Stall torque *K*ΦV/*R*; slope (*K*Φ)²/*R* = **1.97 N·m per rpm**; zero at **V/KΦ**, where the
+back-EMF has caught up with the supply. Faster, *E* > *V*: the current reverses and **the motor is
+a generator**.
+
+The plot is shaft torque, *T*<sub>em</sub> less the small loss torques: 332.2 A gives **320.0**,
+not 322.1 N·m.
 
 On 200 V, at 1500 rpm: **922 N·m for 953 A**, three times the current at the Leaf's 320 N·m.
 
@@ -191,20 +201,30 @@ vertical axis the shaft torque in newton meters. The blue line is a 350 volt sup
 2200 rpm. The gray dashed line is the Leaf's peak torque, 320 newton meters, and the thin black line
 is zero torque.
 
-The first formula explains the shape. With the supply voltage V fixed, the current is whatever the
-gap between the supply and the back-EMF drives through the armature resistance: i equals V minus K
-Phi omega, over R. The torque is K Phi times that current, so it is a straight line that falls with
-speed. Its slope is K Phi squared over R: 0.9697 squared over 0.05 is 18.8 newton meters per radian
-per second, which is 1.97 newton meters per rpm. That is steep, because R is small. The line reaches
-zero torque at V over K Phi, the speed at which the back-EMF has caught up with the supply. On 350
-volts that is 3447 rpm, as the title says.
+On the right, where the line comes from, in two steps. Start from the voltage equation of the
+machine as a circuit, two slides back: v equals R i plus L di by dt plus K Phi omega. In steady
+state the current no longer changes, di by dt is zero, and the inductance drops out. So V equals R i
+plus K Phi omega, and the current is whatever the gap between the supply and the back-EMF drives
+through the armature resistance: i equals V minus K Phi omega, over R. That is the first formula.
+
+Second step: the torque is K Phi times that current. Multiply out and you get the second formula: T
+em equals K Phi V over R, minus K Phi squared over R times omega. A straight line in speed. At
+standstill, omega zero, it is K Phi V over R, the stall torque: on 350 volts that is 0.9697 times
+350 over 0.05, about 6800 newton meters, far off the top of this plot. Its slope is K Phi squared over
+R: 0.9697 squared over 0.05 is 18.8 newton meters per radian per second, which is 1.97 newton meters
+per rpm. That is steep, because R is small. The line reaches zero torque at V over K Phi, the speed
+at which the back-EMF has caught up with the supply: on 350 volts, 3447 rpm.
+
+One detail on the slide: the plot shows the shaft torque, not T em. The shaft gets T em minus the
+small loss torques of friction, iron, windage and the constant loss. That is why 332.2 amperes give
+320.0 newton meters at the shaft, and not the 322.1 that K Phi times 332.2 gives in the air gap.
 
 Follow the blue line. Its dot at 3283 rpm is 320.0 newton meters for 332.2 amperes, by construction:
 that is how K Phi was chosen. The line crosses zero near 3447 rpm. And at its right end, at 3600
 rpm, the back-EMF is 365.6 volts, above the 350 volt supply. The current reverses: minus 312
 amperes, and the shaft takes minus 304 newton meters. The motor has become a generator and pushes
-energy back into the supply. That is the sentence in the middle of the slide, and it is regenerative
-braking, already in this first model.
+energy back into the supply. That is the end of the paragraph under the formulas, and it is
+regenerative braking, already in this first model.
 
 Now the orange line. It has the same slope and sits lower in speed, crossing zero near 1969 rpm.
 Lowering the voltage is the deck's first way to control a DC motor. But look at its dot: at 1500
