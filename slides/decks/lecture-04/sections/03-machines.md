@@ -99,7 +99,9 @@ by electronics: an inverter, switching the stator currents in step with the roto
 **The brushless DC machine (BLDC)** (deck)
 
 - Hall sensors tell the inverter where the rotor is.
-- The phases are switched in blocks, so the back-EMF and the currents are trapezoidal.
+- The phases are switched in blocks, so the back-EMF and the currents are trapezoidal: wide
+  magnets and concentrated coils give a flat-topped EMF, and 120° blocks then need only six
+  switching angles, which three Hall sensors mark (<Link to="trap-vs-sine">the waveforms</Link>).
 - Its back-EMF grows with speed and opposes the current: torque falls as speed rises, as in step
   01.
 - It is a generator as it stands.
@@ -118,7 +120,10 @@ work, switching the stator currents in step with the rotor's position.
 
 On the right, the deck's brushless DC machine, BLDC for short. Hall sensors tell the inverter where
 the rotor is. The phases are switched in blocks, so the back-EMF and the currents have a trapezoidal
-shape. As in build 01, the back-EMF grows with speed and opposes the current, so the torque falls as
+shape. Why trapezoidal? Wide magnets and coils concentrated around single teeth give a back-EMF with
+a flat top. While it is flat, a constant current makes a constant torque, so the drive feeds each
+phase a block 120 degrees long. Blocks change only at six angles per electrical turn, and three
+Hall sensors are enough to mark those six. The slide after next shows the waveforms. As in build 01, the back-EMF grows with speed and opposes the current, so the torque falls as
 the speed rises. And because the back-EMF is there whenever the rotor turns, the machine is a
 generator as it stands, with no change.
 
