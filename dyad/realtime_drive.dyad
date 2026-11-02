@@ -3,7 +3,7 @@ partial analysis RealtimeDrive
   extends Analysis
   "Driver-and-car assembly"
   model::Dyad.EmptyComponent = Dyad.EmptyComponent()
-  "Simulation duration; zero runs until the window closes"
+  "Simulation duration; zero runs until window close or the 3600 s simulation limit"
   parameter duration::Time = 22
   "Saved sample and window frame interval"
   parameter frame::Time = 0.016666667

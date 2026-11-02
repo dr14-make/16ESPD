@@ -15,6 +15,7 @@ abstract type AbstractRealtimeDriveSpec <: AbstractAnalysisSpec end
     overrides::Dict{ModelingToolkit.SymbolicT, ModelingToolkit.SymbolicT} =
         Dict{ModelingToolkit.SymbolicT, ModelingToolkit.SymbolicT}()
     __system::Any = nothing
+    "Simulation duration; zero runs until window close or the 3600 s simulation limit."
     duration::Float64 = 0.0
     frame::Float64 = 1 / 60
     dtmax::Float64 = 0.005
@@ -48,7 +49,20 @@ function unpaced_drive!(integ, sys, spec)
     return (; frames = ceil(Int, integ.t / spec.frame), wall = time() - started, integrator = integ)
 end
 
-function DyadInterface.run_analysis(spec::RealtimeDriveSpec)
+"Disable continuous-position saves without changing discrete parameter histories."
+function disable_callback_saves!(callback)
+    callback === nothing && return nothing
+    if callback isa ModelingToolkit.SciMLBase.CallbackSet
+        foreach(disable_callback_saves!, callback.continuous_callbacks)
+        foreach(disable_callback_saves!, callback.discrete_callbacks)
+    else
+        callback.save_positions .= false
+    end
+    return nothing
+end
+
+function DyadInterface.run_analysis(spec::RealtimeDriveSpec;
+        run_drive = spec.window ? drive_window : unpaced_drive!)
     reset_human_commands!()
     spec.frame > 0 && spec.dtmax > 0 && spec.duration >= 0 ||
         throw(ArgumentError("RealtimeDrive requires frame > 0, dtmax > 0, and duration >= 0"))
@@ -60,13 +74,10 @@ function DyadInterface.run_analysis(spec::RealtimeDriveSpec)
     sys = DyadInterface.symbolic_container(setup.prob.f)
     # MTK's clock and discontinuity callbacks otherwise add saves at solver frequency.
     # Their discrete parameter histories are saved independently of continuous positions.
-    callbacks = setup.prob.kwargs[:callback]
-    for cb in (callbacks.continuous_callbacks..., callbacks.discrete_callbacks...)
-        cb.save_positions .= false
-    end
+    disable_callback_saves!(get(setup.prob.kwargs, :callback, nothing))
     integ = drive_integrator(setup.prob, spec)
     stats = try
-        spec.window ? drive_window(integ, sys, spec) : unpaced_drive!(integ, sys, spec)
+        run_drive(integ, sys, spec)
     catch e
         e isa InterruptException || rethrow()
         @info "drive interrupted at t = $(integ.t) s; returning what was driven"

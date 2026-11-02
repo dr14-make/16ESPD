@@ -16,6 +16,17 @@ using SimpleDirectMediaLayer
     @test win !== nothing
     padext = Base.get_extension(VehicleSystemsComponents, :VehicleSystemsComponentsPadExt)
     @test padext !== nothing
+    sciml = ModelingToolkit.SciMLBase
+    @test VehicleSystemsComponents.disable_callback_saves!(nothing) === nothing
+    callback = sciml.DiscreteCallback((u, t, i) -> false, i -> nothing)
+    VehicleSystemsComponents.disable_callback_saves!(callback)
+    @test !any(callback.save_positions)
+    callback2 = sciml.DiscreteCallback((u, t, i) -> false, i -> nothing)
+    VehicleSystemsComponents.disable_callback_saves!(sciml.CallbackSet(callback2))
+    @test !any(callback2.save_positions)
+    @test !win.drive_complete((; t = 3599.0), (; duration = 0.0))
+    @test win.drive_complete((; t = 3600.0), (; duration = 0.0))
+
     @named model = VehicleSystemsComponents.PlanarBEVByHand(esp_on = 0.0, abs_on = 0.0, mu = 0.6)
     setup = DyadInterface.setup_analysis(DyadInterface.TransientAnalysisSpec(;
         model, stop = 4.0, optimize = DyadInterface.OptimizationLevel.None(), progress = false))
@@ -105,17 +116,16 @@ using SimpleDirectMediaLayer
     include(joinpath(@__DIR__, "..", "sim", "drive.jl"))
     @test isdefined(@__MODULE__, :main)
     # A runner can replace its integrator after reset; finalization must return that session.
-    @eval VehicleSystemsComponents function unpaced_drive!(i, s, spec)
-        win = Base.get_extension(@__MODULE__, :VehicleSystemsComponentsGLMakieExt)
+    function reset_runner(i, s, spec)
         initial = remake(i.sol.prob; p = deepcopy(i.p), u0 = copy(i.u))
-        set_human_commands!(throttle = 1.0, brake = 0.0, steer = 0.0)
+        VehicleSystemsComponents.set_human_commands!(throttle = 1.0, brake = 0.0, steer = 0.0)
         step!(i, 0.2, true)
         fresh = win.fresh_integrator(initial, spec)
-        set_human_commands!(throttle = 0.0, brake = 0.2, steer = 0.0)
+        VehicleSystemsComponents.set_human_commands!(throttle = 0.0, brake = 0.2, steer = 0.0)
         step!(fresh, 0.1, true)
         return (; frames = 1, wall = 0.1, integrator = fresh)
     end
-    result = VehicleSystemsComponents.PlanarBEVByHandDrive(window = false, duration = 3)
+    result = DyadInterface.run_analysis(spec; run_drive = reset_runner)
     rs = DyadInterface.symbolic_container(result)
     @test result.sol.t[end] ≈ 0.1
     @test result.sol(0.05; idxs = rs.driver.throttle_signal) == 0.0

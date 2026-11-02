@@ -48,7 +48,7 @@ using VehicleSystemsComponents: AbstractRealtimeDriveSpec, RealtimeDriveSpec
 
   ### Symbolic Parameters
   __local__duration = duration
-  append!(__params, @parameters (duration::Float64), [description = "Simulation duration; zero runs until the window closes"])
+  append!(__params, @parameters (duration::Float64), [description = "Simulation duration; zero runs until window close or the 3600 s simulation limit"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, duration, __local__duration)
   __local__frame = frame
   append!(__params, @parameters (frame::Float64), [description = "Saved sample and window frame interval"])
@@ -108,7 +108,7 @@ export PlanarBEVRealtimeDrive__System
 @kwdef struct PlanarBEVRealtimeDrive__Spec <: AbstractRealtimeDriveSpec
   name::Symbol = :PlanarBEVRealtimeDrive
   __overrides::Dict{SymbolicT, SymbolicT} = Dict{SymbolicT, SymbolicT}()
-  # Simulation duration; zero runs until the window closes
+  # Simulation duration; zero runs until window close or the 3600 s simulation limit
   var"duration"::Float64 = 22
   # Saved sample and window frame interval
   var"frame"::Float64 = 0.016666667

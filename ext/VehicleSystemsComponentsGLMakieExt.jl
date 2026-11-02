@@ -95,9 +95,8 @@ function course!(ax)
     text!(ax, Point2f(-10, 125); text = "40 m circle", color = :gray40)
 end
 
-# Runtime routing avoids dependencies between the two optional extensions.
+# SDL may load after GLMakie; resolve the pad extension at drive time.
 pad_extension() = Base.get_extension(VehicleSystemsComponents, :VehicleSystemsComponentsPadExt)
-# No method is overwritten when SDL loads. Choose its extension only when driving is requested.
 function VehicleSystemsComponents.drive_window(integ, sys, spec)
     padext = pad_extension()
     mode = padext === nothing || !hasproperty(sys.driver, :reader) ? nothing : padext.PadMode()
@@ -163,7 +162,7 @@ function window!(integ, sys, spec, pad; run_window = window_session!)
     end
 end
 
-drive_complete(integ, spec) = spec.duration > 0 && integ.t >= spec.duration
+drive_complete(integ, spec) = integ.t >= (spec.duration > 0 ? spec.duration : 3600.0)
 
 function window_session!(integ, sys, spec, pad)
     initial_prob = remake(integ.sol.prob; p = deepcopy(integ.p), u0 = copy(integ.u))

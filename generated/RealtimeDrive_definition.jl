@@ -9,7 +9,7 @@ using VehicleSystemsComponents: AbstractRealtimeDriveSpec, RealtimeDriveSpec
 @kwdef struct RealtimeDrive__Spec <: AbstractRealtimeDriveSpec
   name::Symbol = :RealtimeDrive
   __overrides::Dict{SymbolicT, SymbolicT} = Dict{SymbolicT, SymbolicT}()
-  # Simulation duration; zero runs until the window closes
+  # Simulation duration; zero runs until window close or the 3600 s simulation limit
   var"duration"::Float64 = 22
   # Saved sample and window frame interval
   var"frame"::Float64 = 0.016666667

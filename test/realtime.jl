@@ -20,21 +20,21 @@ using DyadOrchestrator
         end
         return integ.sol
     end
-    first, second = replay(), replay()
+    first_replay, second_replay = replay(), replay()
     for (j, output) in enumerate((:throttle_signal, :brake_signal, :steer_signal))
         signal = getproperty(sys.driver, output)
-        @test first[signal] == second[signal]
+        @test first_replay[signal] == second_replay[signal]
         for (t, expected) in ((0.007, (0.0, 0.0, 0.0)), (0.012, (1.0, 0.0, 0.0)),
                               (0.027, (1.0, 0.0, 0.0)), (0.032, (0.0, 0.2, 0.1)),
                               (0.047, (0.0, 0.2, 0.1)), (0.052, (0.3, 0.0, -0.1)))
-            @test first(t; idxs = signal) == expected[j]
+            @test first_replay(t; idxs = signal) == expected[j]
         end
         # Changing the live buffer cannot change returned history.
         VehicleSystemsComponents.reset_human_commands!()
-        @test first(0.052; idxs = signal) == (0.3, 0.0, -0.1)[j]
+        @test first_replay(0.052; idxs = signal) == (0.3, 0.0, -0.1)[j]
     end
-    @test first.t == second.t
-    @test first.u == second.u
+    @test first_replay.t == second_replay.t
+    @test first_replay.u == second_replay.u
     VehicleSystemsComponents.set_human_commands!(throttle = 1, brake = 1, steer = 1)
     neutral = VehicleSystemsComponents.PlanarBEVByHandDrive(window = false, duration = 0.1)
     ns = symbolic_container(neutral)
