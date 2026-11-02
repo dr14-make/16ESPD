@@ -19,10 +19,9 @@ wheels and, when the car brakes, takes it back.
 routeAlias: history
 ---
 
-## A short history, corrected
+## A short history
 
-<div class="grid grid-cols-[1.35fr_1fr] gap-8">
-<div class="tight">
+<div class="tight text-[0.9rem]">
 
 | Year | What | Source |
 |---|---|---|
@@ -38,25 +37,44 @@ routeAlias: history
 | 2009, 2010 | Mitsubishi i-MiEV; Nissan Leaf | Mitsubishi, Nissan |
 
 </div>
-<div class="text-[0.95rem]">
-
-**What the deck had wrong**
-
-- Grove, "1841, first rechargeable EV": Grove built no car. His 1842 gas battery was the first
-  **fuel cell** (APS).
-- Morrison "1981": about **1890**.
-- 100 km/h "in 1900": **1899**.
-- "A third of the cars on the road" in 1900 (DOE): the census counted **production**, not the fleet.
 
 **Why the first EVs faded:** cheap mass-produced petrol cars, and the starter that ended the crank.
+
+<div class="grid grid-cols-4 gap-4 mt-1">
+<div>
+
+<img src="/photos/01-trouve-tricycle.jpg" style="height: 10rem" alt="Engraving of Trouvé's electric tricycle of 1881: a man in a top hat rides a large-wheeled tricycle with a box of batteries behind the seat, watched by a crowd and a barking dog; the caption reads Fig. 138, Tricycle de M. Trouvé."/>
+
+<div class="caption">1881, Trouvé · engraving, 1891 · public domain</div>
+
+</div>
+<div>
+
+<img src="/photos/01-jamais-contente.jpg" style="height: 10rem" alt="Black-and-white photograph of La Jamais Contente in 1899: a torpedo-shaped body on four wire-spoked wheels, Camille Jenatzy sitting up out of the top in a cap."/>
+
+<div class="caption">1899, <i>La Jamais Contente</i> · public domain</div>
+
+</div>
+<div>
+
+<img src="/photos/01-gm-ev1.jpg" style="height: 10rem" alt="A silver-blue GM EV1 on display in a museum hall, seen from the front left: low, rounded nose and a teardrop cabin."/>
+
+<div class="caption">1996, GM EV1 · Hallo3800, CC0</div>
+
+</div>
+<div>
+
+<img src="/photos/01-nissan-leaf.jpg" style="height: 10rem" alt="A light-blue first-generation Nissan Leaf at a 2010 motor show, seen from the front with its doors open."/>
+
+<div class="caption">2010, Nissan Leaf · OSX, public domain</div>
 
 </div>
 </div>
 
 <!--
-The course's deck opened with a history slide, and parts of it were wrong. Here is a short version,
-checked against primary or reputable sources. The table on the left runs down the years, with the
-source of each line in the last column.
+A short history of the electric car, each line checked against a primary or reputable source. The
+table runs down the years, with the source of each line in the last column, and the four pictures
+under it are four of its lines.
 
 1828: Anyos Jedlik in Hungary built an electromagnetic rotor, one of the first electric motors; the
 Linda Hall Library dates the rotor to 1828. 1837: Thomas Davenport in Vermont received the first
@@ -81,19 +99,16 @@ in the US Department of Energy's history. And 2009 and 2010: Mitsubishi launched
 in July 2009, and Nissan delivered the first Leaf in December 2010. The Leaf's descendant is the car
 we model today.
 
-On the right, what the old slide had wrong. It said William Grove made the first rechargeable
-electric vehicle in 1841. Grove built no vehicle; his famous cell of 1839 was not rechargeable, and
-his gas voltaic battery, described in a letter to Faraday in October 1842, was the first fuel cell,
-as the American Physical Society's history column tells it. The first rechargeable battery is
-Plante's, 1859. The slide put Morrison in 1981: that is a typo for about 1890. It put the first
-vehicle over 100 kilometers per hour in 1900: it was 1899, and electric. And the line you will often
-read, that a third of the cars on American roads in 1900 were electric, which the Department of
-Energy's history also uses, comes from the census's production count, not from a count of the cars
-on the road. The census has no such count.
+Why did the first electric cars fade? The line under the table: cheap, mass-produced petrol cars,
+and the electric starter that removed the crank. Petrol stored far more energy per kilogram than
+lead acid, and the battery that changed that, lithium-ion, is section 06.
 
-Why did the first electric cars fade? The last line: cheap, mass-produced petrol cars, and the
-electric starter that removed the crank. Petrol stored far more energy per kilogram than lead acid,
-and the battery that changed that, lithium-ion, is section 06.
+The pictures, left to right. Trouve's tricycle of 1881, an engraving from a French book of 1891 by
+Raoul Marquis, as Wikimedia Commons records it: the batteries sit in the box behind the rider. La Jamais Contente of 1899, with
+Jenatzy sitting up out of its torpedo-shaped body; the course's own deck 7 uses the same photograph.
+GM's EV1, in a museum, and a first-generation Nissan Leaf at a motor show in October 2010. All four come from
+Wikimedia Commons: the two old ones are in the public domain by age, the EV1 photograph is CC0, by
+the user Hallo3800, and the Leaf photograph was released into the public domain by the user OSX.
 -->
 
 ---
