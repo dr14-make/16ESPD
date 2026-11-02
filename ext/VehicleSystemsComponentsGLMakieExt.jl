@@ -113,8 +113,12 @@ haptics!(::Nothing, s, c, clock) = nothing
 quiet!(::Nothing) = nothing
 
 const WARMED = Set{DataType}()
-function warm_up!(integ, sys, ctx, pad)
-    typeof(integ) in WARMED && return quiet!(pad)
+function warm_up!(integ, sys, ctx, pad; spec = (; dtmax = integ.opts.dtmax, frame = FRAME))
+    if typeof(integ) in WARMED
+        quiet!(pad)
+        return integ
+    end
+    liveprob = remake(integ.sol.prob; p = deepcopy(integ.p), u0 = copy(integ.u))
     try
         println("warming up the solver…")
         quiet!(pad)
@@ -137,6 +141,8 @@ function warm_up!(integ, sys, ctx, pad)
     finally
         VehicleSystemsComponents.reset_human_commands!()
     end
+    # SynchToolkit callbacks share a runtime context; the live integrator must initialize last.
+    return VehicleSystemsComponents.drive_integrator(liveprob, spec)
 end
 
 VehicleSystemsComponents.drive_window(integ, sys, spec, ::Nothing) = window!(integ, sys, spec, nothing)
@@ -163,7 +169,7 @@ function window_session!(integ, sys, spec, pad)
         return nothing
     end
     ctx = context(integ, sys)
-    warm_up!(integ, sys, ctx, pad)
+    integ = warm_up!(integ, sys, ctx, pad; spec)
     controls = Controls(; esp_on = spec.esp_on, abs_on = spec.abs_on)
     GLMakie.activate!(; title = "VehicleSystemsComponents — planar BEV", vsync = false)
     fig = Figure(size = (1500, 900), backgroundcolor = RGBf(0.93, 0.93, 0.9))

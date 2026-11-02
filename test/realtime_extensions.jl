@@ -22,6 +22,22 @@ using SimpleDirectMediaLayer
     sys = DyadInterface.symbolic_container(setup.prob.f)
     spec = VehicleSystemsComponents.RealtimeDriveSpec(; model, duration = 3.0, window = false)
     integ = VehicleSystemsComponents.drive_integrator(setup.prob, spec)
+    @testset "First drive after warm-up" begin
+        VehicleSystemsComponents.reset_human_commands!()
+        empty!(win.WARMED)
+        integ = win.warm_up!(integ, sys, win.context(integ, sys), nothing; spec)
+        @test VehicleSystemsComponents.HUMAN_COMMANDS[] == (0.0, 0.0, 0.0)
+        VehicleSystemsComponents.set_human_commands!(throttle = 1, brake = 0, steer = 0)
+        step!(integ, 0.2, true)
+        @test integ.sol(0.05; idxs = sys.driver.throttle_signal) == 1.0
+        @test integ.sol(0.2; idxs = sys.vehicle.motion.vx) > 0.1
+        sampled_speed = integ.sol(0.195; idxs = sys.vehicle.ecu.abs.speed_sampler.y)
+        live_speed = integ.sol(0.195; idxs = sys.vehicle.motion.vx)
+        @test sampled_speed ≈ live_speed atol = 0.02
+        @test sampled_speed > 0.1
+    end
+    VehicleSystemsComponents.reset_human_commands!()
+    integ = VehicleSystemsComponents.drive_integrator(setup.prob, spec)
     initial = remake(integ.sol.prob; p = deepcopy(integ.p), u0 = copy(integ.u))
     ctx = win.context(integ, sys)
     controls = win.Controls()
