@@ -31,6 +31,9 @@ All downloaded PDFs were read in October 2026.
 | 2012 Leaf inverter peak efficiency | above 99% at high speed | verified (ORNL) |
 | 2012 Leaf motor + inverter peak efficiency | above 96% | verified (ORNL) |
 | Braking energy at the wheel on WLTC 3b, course car | 25–26% of positive traction energy (33–36 Wh/km) | derived (§4.1) |
+| Lecture 2's engine on WLTC 3b, positive crank work ÷ fuel energy | 29.5 % over the cycle (11.59 MJ of 39.26 MJ); by phase 21.8 / 28.2 / 30.3 / 33.0 % (Low / Medium / High / Extra High); 26.8 % net of engine braking | derived (the `MappedCarWLTC` reference bench of branch `feat/handson02-wltc-bonus`, 5.22 L/100 km reproduced, on current main) |
+| Course BEV on WLTC 3b, cells to machine shaft while driving | 88.1 % (terminals to shaft 89.6 %), auxiliaries excluded; shaft to cells under braking 91.2 % | derived (`PlanarBEVWLTCTransient`, its energy meters) |
+| Engine car ÷ BEV at the battery, MJ/100 km by WLTC phase | Low 5.53, Medium 4.50, High 3.44, Extra High 2.89 | derived (notebook 03, §4) |
 | Leaf braking-to-battery efficiency on UDDS | 70–80% (MY2012), 72–87% (MY2013) | search summary (Boretti 2016 abstract) |
 | 48 V mild-hybrid WLTC CO₂ reduction, similar 15–16 kW e-machine | P0 3.8–6.6%; P1 8.5%; P2 11.9–15.8%; P3 15.3%; P4+P0 15.5% (vs 12 V stop/start) | verified (ICCT 2022, quoting Schaeffler 2018) |
 
@@ -682,6 +685,18 @@ on the slides (EV shares, EU new-car CO₂ and targets, BNEF pack prices) are co
   ([N-US-DG-2018], derived). CATL's 2022 Qilin claims (up to 255 Wh/kg NMC, 160 Wh/kg LFP) reached
   only through trade press (CnEVPost, 23 Jun 2022), which does not say whether they are cell- or
   pack-level; not used.
+- **[DECK8-LL]** Course deck 8, *Batteries and Fuel Cells* (docs/materials, not committed), after
+  J. Larminie, J. Lowry, *Electric Vehicle Technology Explained*, Wiley. digitized from the deck's
+  charts; the book was not at hand. Slide 4, "Graph showing change in battery capacity with
+  discharge time": 32.6 A·h at 0.76 h, 33.8 at 1 h, 36.5 at 2 h, 39.6 at 5 h, 42.0 at 10 h, 46.0
+  at 20 h, so a battery rated 42 A·h at the 10-hour rate; the chemistry is not stated on the
+  slide. derived: current = capacity / time, 2.3 A at 20 h to 43 A at 0.76 h; a least-squares
+  Peukert fit, I^n t = const, gives n = 1.11. Slide 5, "Ragone plot for Lead Acid and Nickel
+  Cadmium traction batteries", log-log: lead acid from about 35 Wh/kg at 1.6 W/kg to 17 Wh/kg at
+  260 W/kg; nickel-cadmium from about 52 Wh/kg at 2 W/kg to 26 Wh/kg at 230 W/kg, falling steeply
+  above 100 W/kg. The slide's notes: "for both batteries, as the specific power increases, the
+  specific energy is reduced", and "the NiCad battery performs better if power densities of less
+  than 100Wkg−1 are required". Values in `data/ev_context/textbook_*.csv`.
 
 ### 6.3 Charging and grid
 

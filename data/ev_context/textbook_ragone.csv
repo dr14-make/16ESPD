@@ -1,0 +1,43 @@
+# Ragone curves of a lead-acid and a nickel-cadmium traction battery. Digitized from deck 8
+# (Batteries and Fuel Cells), slide 5, the chart "Ragone plot for Lead Acid and Nickel Cadmium
+# traction batteries", after Larminie and Lowry. Read off the log-log chart; about ±3 %.
+battery,wh_per_kg,w_per_kg
+lead acid,17.4,264
+lead acid,18,229
+lead acid,19,185
+lead acid,20,152
+lead acid,21,114
+lead acid,22,89
+lead acid,23,66
+lead acid,24,49
+lead acid,25,36
+lead acid,26,26
+lead acid,27,19
+lead acid,28,13.5
+lead acid,29,9.7
+lead acid,30,7.2
+lead acid,31,5.3
+lead acid,32,4.0
+lead acid,33,3.1
+lead acid,34,2.3
+lead acid,35,1.7
+lead acid,35.4,1.6
+nickel cadmium,25.8,233
+nickel cadmium,27,221
+nickel cadmium,28,209
+nickel cadmium,30,190
+nickel cadmium,32,175
+nickel cadmium,34,161
+nickel cadmium,35,154
+nickel cadmium,36,140
+nickel cadmium,38,116
+nickel cadmium,40,96
+nickel cadmium,41,87
+nickel cadmium,42,72
+nickel cadmium,44,41
+nickel cadmium,46,24
+nickel cadmium,48,12.3
+nickel cadmium,50,5.9
+nickel cadmium,51,4.0
+nickel cadmium,52,2.6
+nickel cadmium,52.4,2.0

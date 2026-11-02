@@ -95,11 +95,25 @@ routeAlias: charge-and-energy
 
 ## Charge and energy: A·h and W·h
 
-<div class="grid grid-cols-2 gap-8">
+<div class="grid grid-cols-[1.05fr_1fr] gap-8 items-start">
 <div>
 
+<img src="/figures/06-battery-capacity-rate.svg" style="max-height: 21rem" alt="Capacity delivered against discharge current, log scale, for the textbook's battery rated 42 A·h at the 10-hour rate: 46.0 A·h at 2.3 A over 20 h, 42.0 at 4.2 A over 10 h, 39.6 at 7.9 A over 5 h, 36.5 at 18 A over 2 h, 33.8 at 34 A over 1 h. A dashed horizontal line at 42 A·h is the model, one Q_nom at every current."/>
+
+<div class="caption">Deck 8, after Larminie and Lowry: capacity against discharge time, redrawn
+against current, I = C/t (derived).</div>
+
+<div class="text-[0.9rem]">
+
+Drawn faster, the battery gives less: **46 A·h** over 20 h, **34 A·h** over 1 h. **Our model
+does not:** one *Q*<sub>nom</sub> at every current; only R₀ makes current cost energy.
+
+</div>
+</div>
+<div class="text-[0.95rem]">
+
 **Capacity** is charge (deck): a 10 A·h cell gives 1 A for 10 h, ideally. In practice less at
-high current: side reactions.
+high current: side reactions, left.
 
 **Energy** is that charge times the voltage it is delivered at:
 
@@ -107,9 +121,6 @@ $$
 Q_{nom} = \frac{40\ \text{kWh}}{350\ \text{V}} = 114.3\ \text{A·h}
 \qquad 1\ \text{Wh} = 3600\ \text{J}
 $$
-
-</div>
-<div>
 
 **State of charge** is counted, not measured: the battery management system integrates the
 current. **Coulomb counting**, whose drift the extra session corrects:
@@ -124,21 +135,37 @@ $$
 </div>
 
 <!--
-Charge and energy. On the left, capacity, from the deck. Capacity is charge, measured in
-ampere-hours: a 10 ampere-hour cell gives 1 ampere for 10 hours, ideally. In practice it gives less
-at high current, because of side reactions. One ampere-hour is one ampere for 3600 seconds, 3600
-coulombs.
+Charge and energy. Start on the right, with capacity, from the deck. Capacity is charge, measured
+in ampere-hours: a 10 ampere-hour cell gives 1 ampere for 10 hours, ideally. In practice it gives
+less at high current, because of side reactions, and the figure on the left shows how much less.
 
-Energy is that charge times the voltage it is delivered at. So the first formula: the nominal charge
-of our pack, Q nom, is 40 kilowatt-hours divided by 350 volts, 114.3 ampere-hours, which is 411 429
-coulombs. And 1 watt-hour, a watt for an hour, is 3600 joules.
+The figure is the deck's chart, after Larminie and Lowry, redrawn. The deck plots capacity against
+the time the battery takes to discharge; I read the curve off it and divided each capacity by its
+time, which gives the discharge current. So across is the discharge current in amperes, on a log
+scale, and up is the charge the battery delivers before it is empty, in ampere-hours. The battery
+is rated 42 ampere-hours at the 10-hour rate: the dot marked 10 hours, 4.2 amperes. Emptied gently,
+over 20 hours at 2.3 amperes, it gives 46 ampere-hours. Emptied in 5 hours, 39.6; in 2 hours,
+36.5; in one hour, at 34 amperes, only 33.8, a fifth less than its rating. Fitting Peukert's law,
+current to the power n times time is constant, gives n of about 1.1; that fit is mine. The deck
+does not name the chemistry, so take the shape from it, not the numbers for a lithium-ion cell.
 
-On the right, the state of charge. Nothing in a battery measures it directly. The battery management
-system counts it: it measures the current and integrates it. That is coulomb counting, the second
-formula: the rate of change of SoC equals minus the current i over the nominal charge Q nom, in
-coulombs, per second. Discharging, i is positive and SoC falls; charging, it rises. Our model's SoC
-is exactly that integral. A real count drifts, and the extra session shows how a battery management
-system corrects it.
+The dashed gray line is our model, and the sentence under the figure says it plainly: our model
+does not do this. Its coulomb counter divides by one Q nom at every current, so it delivers the
+same ampere-hours whether it is emptied in 20 hours or in 20 minutes. What it does capture is that
+high current costs energy: the R0 i squared loss of the last slide, which the next slide but one
+turns into the pack's own Ragone curve.
+
+One ampere-hour is one ampere for 3600 seconds, 3600 coulombs. Energy is that charge times the
+voltage it is delivered at. So the first formula: the nominal charge of our pack, Q nom, is 40
+kilowatt-hours divided by 350 volts, 114.3 ampere-hours, which is 411 429 coulombs. And 1 watt-hour,
+a watt for an hour, is 3600 joules.
+
+Then the state of charge. Nothing in a battery measures it directly. The battery management system
+counts it: it measures the current and integrates it. That is coulomb counting, the second formula:
+the rate of change of SoC equals minus the current i over the nominal charge Q nom, in coulombs,
+per second. Discharging, i is positive and SoC falls; charging, it rises. Our model's SoC is exactly
+that integral. A real count drifts, and the extra session shows how a battery management system
+corrects it.
 
 The number at the bottom is build 03's checkpoint, worked out: 100 amperes for half an hour is 50
 ampere-hours, and 50 over 114.3 is 0.4375 of the pack. Starting at 0.9, the state of charge ends at
@@ -151,17 +178,23 @@ routeAlias: specific-energy
 
 ## Specific energy, specific power, efficiency
 
-<div class="grid grid-cols-2 gap-8">
+<div class="grid grid-cols-[1fr_1.05fr] gap-8 items-start">
 <div>
 
-**Specific energy** (deck): Wh per kilogram of battery. **Energy density:** Wh per liter.
-**Specific power:** W per kilogram.
+<img src="/figures/06-battery-textbook-ragone.svg" style="max-height: 19rem" alt="Ragone plot, log-log: specific energy in Wh/kg against specific power in W/kg for two traction batteries. Nickel-cadmium falls slowly from about 52 Wh/kg at 2 W/kg to 41 at 90 W/kg, then steeply to 26 at 230 W/kg. Lead acid falls from about 35 Wh/kg at 1.6 W/kg to 17 at 260 W/kg."/>
 
-A cell built for energy stores a lot and gives it slowly; one built for power gives it fast and
-stores less. **High specific power normally costs specific energy.**
+<div class="caption">Deck 8, after Larminie and Lowry: two traction batteries, digitized.</div>
 
 </div>
-<div>
+<div class="text-[0.9rem]">
+
+**Specific energy** (deck): Wh per kilogram of battery. **Energy density:** Wh per liter.
+**Specific power:** W per kilogram. **High specific power normally costs specific energy:**
+
+- **Design:** a power cell's thin electrodes keep R₀ low, but carry more foil, separator and
+  casing per kg of active material. An energy cell, the opposite.
+- **Use:** drawn harder, more is lost in R₀ i² and the voltage reaches cutoff sooner: less of the
+  stored energy comes out (last slide).
 
 **Charge efficiency** (deck): the charge you get back over the charge you put in, always below
 100 %. **Energy efficiency:** the energy back over the energy needed to recharge.
@@ -175,20 +208,44 @@ Build 03 measures it at 100 A.</div>
 </div>
 
 <!--
-Three numbers a battery designer trades, from the deck. Specific energy: watt-hours per kilogram of
-battery. Energy density: watt-hours per liter. And specific power: watts per kilogram. Specific
-energy decides how much range each kilogram of battery buys; specific power decides how fast it can
-give energy out and take it back in, for acceleration and for regenerative braking.
+Three numbers a battery designer trades, from the deck, and the deck's own chart of the trade.
+Specific energy: watt-hours per kilogram of battery. Energy density: watt-hours per liter. And
+specific power: watts per kilogram. Specific energy decides how much range each kilogram of battery
+buys; specific power decides how fast it can give energy out and take it back in, for acceleration
+and for regenerative braking.
 
-A cell built for energy stores a lot and gives it out slowly; a cell built for power gives it fast
-and stores less. High specific power normally costs specific energy.
+The figure on the left is the deck's Ragone plot, after Larminie and Lowry, which I digitized and
+redrew. Across is specific power, in watts per kilogram; up is specific energy, in watt-hours per
+kilogram, the energy the battery delivers when it is emptied at that power. Both axes are
+logarithmic, and specific power runs across, as on our own pack's Ragone curve on the next slide. Two
+traction batteries. Orange, lead acid: about 35 watt-hours per kilogram when emptied at under 2
+watts per kilogram, falling steadily to 17 at 260. Blue, nickel-cadmium: about 52 at 2 watts per
+kilogram, still 41 at 90, and then it falls steeply, to 26 at 230. The deck's notes draw the
+conclusion: for both, more specific power means less specific energy, and nickel-cadmium is the
+better battery as long as less than about 100 watts per kilogram is asked of it.
 
-On the right, the deck's two efficiencies. Charge efficiency is the charge you get back over the
-charge you put in, always below 100 percent. Energy efficiency is the energy you get back over the
-energy needed to recharge, and it includes the voltage drop across the internal resistance, both
-ways. The deck also lists self-discharge, temperature and cooling, and the number of deep cycles a
-battery survives. Those are real, and they are outside our model, which runs at a warm operating
-temperature.
+Why does more power cost energy? The bold line and its two reasons.
+
+The first is design. In a cell the active material, which stores the energy, is coated on thin
+metal foils that collect the current, with a porous separator between the electrodes, and the
+whole stack sits in a casing. A cell built for power has thin coatings: the ions travel a short
+way through them, so the internal resistance is low and the cell can give a high current. But
+for every gram of active material it then carries more foil, more separator and more casing, which
+store nothing, so it stores fewer watt-hours per kilogram. A cell built for energy is the opposite:
+thick coatings, more active material per kilogram, a longer path and a higher resistance.
+
+The second is use. Take any one cell and draw it harder. The loss in the internal resistance is R0
+times i squared, so it grows with the square of the current, and the terminal voltage, E minus R0
+i, reaches the cutoff voltage at which the cell must stop sooner. Both mean less of the stored
+energy comes out. That is the capacity curve of the last slide, and the next slide draws it for our
+own pack.
+
+On the right, below, the deck's two efficiencies. Charge efficiency is the charge you get back over
+the charge you put in, always below 100 percent. Energy efficiency is the energy you get back over
+the energy needed to recharge, and it includes the voltage drop across the internal resistance,
+both ways. The deck also lists self-discharge, temperature and cooling, and the number of deep
+cycles a battery survives. Those are real, and they are outside our model, which runs at a warm
+operating temperature.
 
 The green box is our model. Its charge efficiency is exactly 100 percent, because coulomb counting
 has no side reactions, and its energy efficiency is set by R0 alone. Build 03 measures it at 100
@@ -228,8 +285,8 @@ Every link costs more at high power; the battery too.
 </div>
 
 <!--
-The deck's Ragone plot set lead acid against nickel-cadmium: energy against power. Our own pack
-draws a better one. The figure is notebook 04: the bench of build 03, held at one constant current
+On the last slide, the deck's Ragone plot set lead acid against nickel-cadmium. Our own pack
+draws one too. The figure is notebook 04: the bench of build 03, held at one constant current
 after another, from 5 amperes up to 1750, and read at each.
 
 The formulas first. The cells make E times i; the terminals deliver v times i, with v equal to E

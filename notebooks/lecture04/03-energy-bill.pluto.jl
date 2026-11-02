@@ -257,7 +257,7 @@ the energy at its battery terminals; at the wall, a 10–15 % charging loss come
 
 The comparison is the course's own, not a label: Lecture 2's car weighs 1400 kg, this one
 1500 kg, and neither carries a heater or air conditioning. Most of the difference is the
-engine's efficiency, about 30 % at its best, against a chain that loses a few percent per link
+engine's efficiency, 36 % at its best and 30 % over the WLTC, against a chain that passes 88 %
 and gets braking energy back.
 """
 
