@@ -49,6 +49,7 @@ The conventions for a re-capture:
 
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
+| `step03-battery.png` | a student's `Battery` built from guide step 03, the same diagram as `HandsOn04.Battery` | The battery's internal diagram: `p` on the left edge, `n` on the right, `SoC` on top; `resistor` and `meter` along the top, `meter.i` down into `counter`, `counter.y` up to `SoC`; `ocv` into the top of `cell` on the bottom row, `cell.p` back up to `resistor.p`, `cell.n` out to `n`, `meter.n` round the outside to `p`. Built in Studio web 3.5.1 exactly as the guide writes it, with `cell` moved to a bottom row and `ocv` above-left of it; three auto-routed segments dragged clear of the parts; panned one arrow-key step so `SoC` is not clipped. 894 × 708. With this `Battery` in the drive, `BEVWLTCTransient` reproduced the reference: worst gap 1.634 km/h, 23 266.9 m, SoC 0.8219, battery current 137.7 / −86.2 A, minimum pack voltage 336.2 V. |
 | `step03-battery-discharge.png` | `HandsOn04.BatteryDischarge` | `load_profile` into the top of `load`; `load` across `battery`, `p` to `p` on the left and `n` to `n` on the right; `battery.n` to `ground`, branching from the `n` wire at a junction dot; the battery's unconnected `SoC` output on top. Portrait, 413 × 633. |
 
 ## Step 04 — the car
