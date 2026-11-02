@@ -40,6 +40,9 @@ using SimpleDirectMediaLayer
     integ = VehicleSystemsComponents.drive_integrator(setup.prob, spec)
     initial = remake(integ.sol.prob; p = deepcopy(integ.p), u0 = copy(integ.u))
     ctx = win.context(integ, sys)
+    @test !win.drive_complete((; t = 18.9), (; duration = 22.0))
+    @test win.drive_complete((; t = 22.0), (; duration = 22.0))
+    @test !win.drive_complete((; t = 0.0), spec)
     controls = win.Controls()
     controls.throttle = 1.0
     win.apply!(integ, sys, ctx, controls, 0.0)

@@ -162,6 +162,8 @@ function window!(integ, sys, spec, pad; run_window = window_session!)
     end
 end
 
+drive_complete(integ, spec) = spec.duration > 0 && integ.t >= spec.duration
+
 function window_session!(integ, sys, spec, pad)
     initial_prob = remake(integ.sol.prob; p = deepcopy(integ.p), u0 = copy(integ.u))
     function reset!()
@@ -217,7 +219,7 @@ function window_session!(integ, sys, spec, pad)
     try
         while isopen(screen)
             frame_start = time()
-            spec.duration > 0 && frame_start - wall_start >= spec.duration && break
+            drive_complete(integ, spec) && break
             dt = clamp(frame_start - last_wall, 1e-3, 0.05)
             last_wall = frame_start
             reset = false
