@@ -257,7 +257,7 @@ class: big-figure
 <div class="grid grid-cols-[1.5fr_1fr] gap-6 items-center mt-2">
 <div>
 
-![Machine losses against speed on a log scale, at the converter's current limit of 332.2 A from standstill to 10 000 rpm: copper constant at 5.52 kW; iron and friction rising in proportion to speed, to about 1 kW and 0.5 kW; the constant loss flat at 200 W; windage rising as the cube of speed to about 300 W. Base speed 3283 rpm dashed.](/figures/02-losses.svg)
+![Machine losses against speed on a log scale, at the converter's current limit of 332.2 A from standstill to 10 000 rpm: copper constant at 5.52 kW; iron and friction rising in proportion to speed, to about 1 kW and 0.5 kW; the constant loss flat at 200 W; windage rising as the cube of speed to about 300 W. A dashed copper line at half load, 166.1 A, sits at 1.38 kW, a quarter of the full-current copper loss. Base speed 3283 rpm dashed.](/figures/02-losses.svg)
 
 </div>
 <div class="text-[0.95rem]">
@@ -271,6 +271,8 @@ $$
 $$
 
 At 320 N·m and 3283 rpm: copper **5.52 kW**, shaft losses **0.73 kW**, **94.6 %**.
+
+Half load, 166.1 A (dashed): copper **1.38 kW**, a quarter; the speed terms stay.
 
 </div>
 </div>
@@ -319,9 +321,12 @@ So at full current the copper loss dominates at every speed. The four shaft loss
 newton meters at 3283 rpm, the shaft gives 110.0 kilowatts and the electrical input is 116.3
 kilowatts: 94.6 percent, the line under the two formulas.
 
-At part load the picture changes. The current falls with the torque, and the copper loss with its
-square: halve the torque and the copper loss drops to a quarter, while the speed terms stay where
-they are. That is why a machine is least efficient at very light load, and why the efficiency map in
+At part load the picture changes, and the dashed blue line shows it. The current falls with the
+torque, and the copper loss with its square: at half load, 166.1 amperes, the copper loss is 1.38
+kilowatts, a quarter of the full 5.52, while the speed terms stay where they are. That is the last
+line beside the figure. Read it against the shaft losses: at base speed half load still costs 1.38
+kilowatts of copper against 0.73 of shaft losses, but at high speed the iron and friction lines
+come up to meet it. That is why a machine is least efficient at very light load, and why the efficiency map in
 section 04 collapses near zero torque.
 
 The model has no thermal part: every number in it is for a machine at its warm operating
