@@ -136,19 +136,26 @@ function readout(value: number, unit: string) {
 }
 
 // What the current variant puts on screen per band: where the ground marker sits and the offset or
-// average readout.
+// average readout. A ground outside the band is shown as an arrow on the band's edge pointing toward
+// it, as a scope does with a ground moved off screen.
 const bands = computed(() =>
   scales.value.map((s) => {
     const vi = current.value
     const zero = s.y(0, vi)
-    const inBand = zero >= s.top && zero <= s.bottom
+    const side = zero > s.bottom ? 1 : zero < s.top ? -1 : 0
     const notes = []
     if (s.offset) notes.push(`offset ${readout(s.mids[vi], s.unit)}`)
     const avg = s.averages[vi]
     if (avg !== null) notes.push(`avg ${`${avg.toPrecision(3)} ${s.unit}`.trim()}`)
-    return { zero, inBand, marker: inBand ? zero : s.center, note: notes.join("  ") }
+    return { zero, inBand: side === 0, side, marker: side > 0 ? s.bottom : side < 0 ? s.top : zero,
+      note: notes.join("  ") }
   }),
 )
+
+function markerPath(m: number, side: number) {
+  if (side === 0) return `M${X0 - 12} ${m - 6} h7 l5 6 l-5 6 h-7 z`
+  return `M${X0 - 12} ${m - side * 17} h12 v${side * 10} l-6 ${side * 7} l-6 ${-side * 7} z`
+}
 
 const timebase = computed(() => {
   const variants = data.value?.variants ?? []
@@ -171,15 +178,29 @@ const paths = computed(() =>
   (data.value?.variants ?? []).map((v, vi) => scales.value.map((s) => pathOf(v, s.name, (y) => s.y(y, vi)))),
 )
 
-// Normal trigger on the first channel shown: its first rising crossing of the middle of its range.
+// Normal trigger on the first channel shown, rising through the middle of its range with hysteresis
+// of a tenth of the swing: armed below the band around the level, fired above it. A PWM train then
+// triggers once per cycle of its fundamental, not on the end of a negative pulse, whose zero state
+// sits just above a level of 0. The first division is pre-trigger record, so an edge there is not
+// taken.
 const trigger = computed(() => {
   const v = data.value?.variants[current.value]
   const s = scales.value[0]
   const ch = v?.channels.find((c) => c.name === s?.name)
   if (!v || !s || !ch) return null
   const level = s.mids[current.value]
-  let k = ch.y.findIndex((y, i) => i > 0 && ch.y[i - 1] < level && y >= level)
-  if (k < 0) k = 0
+  const hyst = 0.1 * (Math.max(...ch.y) - Math.min(...ch.y))
+  const earliest = timebase.value.t0 + timebase.value.perDiv
+  let armed = false
+  let k = -1
+  for (let i = 0; i < ch.y.length && k < 0; i++) {
+    if (ch.y[i] <= level - hyst) armed = true
+    else if (armed && ch.y[i] >= level + hyst) {
+      if (v.t[i] >= earliest) k = i
+      else armed = false
+    }
+  }
+  if (k < 0) return null
   return { x: timebase.value.x(v.t[k]), y: s.y(level, current.value), color: s.color }
 })
 
@@ -266,8 +287,9 @@ const minorTicks = computed(() => {
       <template v-if="status === 'ready' && data">
         <g v-for="(s, k) in scales" :key="s.name">
           <line v-if="bands[k].inBand" :x1="X0" :y1="bands[k].zero" :x2="X0 + W" :y2="bands[k].zero" :stroke="s.color" class="ground" />
-          <path :d="`M${X0 - 12} ${bands[k].marker - 6} h7 l5 6 l-5 6 h-7 z`" :fill="s.color" />
-          <text :x="X0 - 8.5" :y="bands[k].marker + 4" text-anchor="middle" class="marker-num">{{ k + 1 }}</text>
+          <path :d="markerPath(bands[k].marker, bands[k].side)" :fill="s.color" />
+          <text :x="bands[k].side ? X0 - 6 : X0 - 8.5" :y="bands[k].marker + (bands[k].side ? -bands[k].side * 12 + 3.5 : 4)"
+            text-anchor="middle" class="marker-num">{{ k + 1 }}</text>
           <path v-if="sweeping" :d="paths[previous][k]" :stroke="s.color" :stroke-opacity="FLOOR"
             :clip-path="`url(#${uid}-old)`" class="trace" />
           <path :d="paths[current][k]" :stroke="sweeping ? `url(#${uid}-g${k})` : s.color"

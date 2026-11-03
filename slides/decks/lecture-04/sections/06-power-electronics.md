@@ -422,8 +422,8 @@ half cycle climbs from zero; after that the current swings between about plus an
 The second button switches the same bridge to sine pulse-width modulation, with m equal to 0.8 and
 a 1 kilohertz carrier, on the same scales. Now the voltage is a train of pulses, between 0 and plus
 350 in the positive half cycle and between 0 and minus 350 in the negative one, wide near the peaks
-and narrow near the zero crossings. The current becomes nearly a sine with a small ripple. That is
-the next slide.
+and narrow near the zero crossings. The current becomes nearly a sine with a small ripple, peaking at
+29.3 amperes. That is the next slide.
 
 That is the sentence under the figures: hold each pair on for half a cycle and you get a square
 wave, and the load's inductance rounds its current. It is the crudest AC. Its fundamental is the
@@ -474,8 +474,9 @@ pulses are wide near the peak of the sine and narrow near its zero crossings.
 Right, the result. Top: the output voltage in volts. It pulses between 0 and plus or minus 350,
 wider near the peaks. The orange dashed curve is its fundamental, the 50 hertz sine inside it: 280
 volts amplitude, which is m times 350, 0.8 times 350. Bottom: the load current in amperes, nearly a
-clean sine of 26.7 amperes amplitude with a small ripple, because the inductance averages the
-pulses.
+sine, because the inductance averages the pulses. Its 50 hertz fundamental is 26.7 amperes
+amplitude: 280 volts over the load's 10.5 ohm impedance at 50 hertz. The switching ripple rides on
+top of it, so the peaks reach 29.3 amperes, the value the oscilloscope on the last slide shows.
 
 So, averaged over each carrier period, the output is the sine. That is what the average converter of
 section 04 says in one line: v out equals d times v in. A real inverter switches at 5 to 20

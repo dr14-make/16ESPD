@@ -39,8 +39,8 @@ Each loss is its own term: conduction in the two devices that carry the current 
 each costing `v_in |i_out| t_sw / 2`). Power is conserved apart from them: `P_in = P_out +
 P_loss` at every instant, in both directions; `i_in` and `i_out` are negative while the machine
 regenerates. Both losses track the current, so the efficiency rises with the output voltage: at
-350 V it is 99.2 %, at 113 V (1000 rpm, 220 N.m) 97.5 %, ORNL's 96-98 % with 99 % at high
-speed. A real PM machine also pays d-axis copper loss for its weakened field; that cost is in
+350 V it is 99.2 %, ORNL's > 99 % at high speed, and at 113 V (1000 rpm, 220 N.m) 97.5 %, where
+ORNL's inverter falls into the 80s. A real PM machine also pays d-axis copper loss for its weakened field; that cost is in
 neither this converter nor `FieldEMF`.
 
 One current-proportional loss cannot match ORNL's map at both ends: a comparable traction module's
@@ -60,7 +60,7 @@ Defaults are a Leaf ZE1-class inverter. Source tags: (ORNL) 2013 benchmarking of
 | `T_i`         | Current-loop time constant (assumed)                         | s  |   1.0e-3 |
 | `V_on`         | Conduction drop of the two devices that carry the current, calibrated so the inverter matches ORNL's measured > 99 % at high speed (derived); the FS820R08A6P2B pair drop is 2.45 V, see docs/lecture-04-plan.md                         | V  |   1.2 |
 | `f_s`         | Switching frequency; ORNL tested the Leaf inverter at 5 kHz (ORNL)                         | Hz  |   5.0e3 |
-| `t_sw`         | Duration of each switching edge; with V_on it lands the efficiency in ORNL's inverter band (assumed)                         | s  |   1.0e-6 |
+| `t_sw`         | Duration of each switching edge (assumed); with V_on it gives 99.2 % at 350 V out, ORNL's > 99 % at high speed, but 97.5 % at 113 V, where ORNL's inverter falls into the 80s (docs/lecture-04-plan.md, Known limits)                         | s  |   1.0e-6 |
 | `eps`         | Rounding of the corner between full field and full duty: there (1 - field)(d_max - \|d\|) = eps^2 / 4 (numerical)                         | --  |   1.0e-4 |
 
 ## Connectors
@@ -143,7 +143,7 @@ Defaults are a Leaf ZE1-class inverter. Source tags: (ORNL) 2013 benchmarking of
   append!(__params, @parameters (f_s::Real), [description = "Switching frequency; ORNL tested the Leaf inverter at 5 kHz (ORNL)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, f_s, __local__f_s)
   __local__t_sw = t_sw
-  append!(__params, @parameters (t_sw::Real), [description = "Duration of each switching edge; with V_on it lands the efficiency in ORNL's inverter band (assumed)"])
+  append!(__params, @parameters (t_sw::Real), [description = "Duration of each switching edge (assumed); with V_on it gives 99.2 % at 350 V out, ORNL's > 99 % at high speed, but 97.5 % at 113 V, where ORNL's inverter falls into the 80s (docs/lecture-04-plan.md, Known limits)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, t_sw, __local__t_sw)
   __local__eps = eps
   append!(__params, @parameters (eps::Real), [description = "Rounding of the corner between full field and full duty: there (1 - field)(d_max - |d|) = eps^2 / 4 (numerical)"])
