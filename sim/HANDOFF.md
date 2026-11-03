@@ -35,6 +35,13 @@ Realtime drive is a library analysis with optional UI extensions. Read this, the
   calls `VehicleSystemsComponents.PlanarBEVByHandDrive()`. Studio and Orchestrator list
   `PlanarBEVRealtimeDrive` (scripted, 22 seconds, no window) and `PlanarBEVByHandDrive`
   (human, window on, runs until closed). Set `window = false, duration = 3` for neutral driving.
+- A window request loads GLMakie and SimpleDirectMediaLayer by itself when the environment stack
+  provides them (`sim/` on `LOAD_PATH`, or both added to the default `@v1.13` environment);
+  otherwise it raises the "load GLMakie" error. Students without them never resolve them.
+- From Dyad Studio's play button, set the analysis loading strategy to `:using`. With the
+  default `:include`, Studio runs a private copy `Main.VehicleSystemsComponents`; package
+  extensions attach only to the real package, so the copy has no window. Studio's bundled
+  compiler must match the repository's (3.5.x): an older one rewrites `generated/` on play.
 - `sim/DualSense.jl` is a compatibility include of `ext/DualSense.jl`, so `probe.jl` needs no
   GLMakie and retains the transport API. Do not open a window/pad during import or tests.
 - Automated validation is headless. `test/realtime_extensions.jl` separately loads the optional

@@ -31,7 +31,22 @@ DyadInterface.is_runnable(T::Type{<:AbstractRealtimeDriveSpec}) =
 "Interactive driver loop supplied by optional window and controller extensions."
 function drive_window end
 
-const WINDOW_MISSING = "RealtimeDrive needs the drive window: load GLMakie, or set window = false."
+const WINDOW_MISSING = "RealtimeDrive needs the drive window: load GLMakie (add it to your " *
+    "Julia environment, with SimpleDirectMediaLayer for a game controller), or set window = false."
+
+"Optional window and game-controller packages, in the order their extensions need them."
+const WINDOW_PACKAGES = (
+    Base.PkgId(Base.UUID("e9467ef8-e4e7-5192-8a1a-b1aee30e663a"), "GLMakie"),
+    Base.PkgId(Base.UUID("98e33af6-2ee5-5afd-9e75-cbc738b767c4"), "SimpleDirectMediaLayer"),
+)
+
+"Load whichever window packages the environment stack provides; their extensions follow."
+function load_window_packages!()
+    for pkg in WINDOW_PACKAGES
+        Base.locate_package(pkg) === nothing || Base.require(pkg)
+    end
+    return nothing
+end
 
 "Integrator saving one sample per frame; drives and resets share the solver settings."
 drive_integrator(prob, spec) =
@@ -66,6 +81,7 @@ function DyadInterface.run_analysis(spec::RealtimeDriveSpec;
     reset_human_commands!()
     spec.frame > 0 && spec.dtmax > 0 && spec.duration >= 0 ||
         throw(ArgumentError("RealtimeDrive requires frame > 0, dtmax > 0, and duration >= 0"))
+    spec.window && isempty(methods(drive_window)) && load_window_packages!()
     spec.window && isempty(methods(drive_window)) && error(WINDOW_MISSING)
     transient(stop) = TransientAnalysisSpec(; name = spec.name, model = spec.model,
         overrides = spec.overrides, stop, dtmax = spec.dtmax, progress = false,
@@ -77,7 +93,8 @@ function DyadInterface.run_analysis(spec::RealtimeDriveSpec;
     disable_callback_saves!(get(setup.prob.kwargs, :callback, nothing))
     integ = drive_integrator(setup.prob, spec)
     stats = try
-        run_drive(integ, sys, spec)
+        # Window methods loaded during this call exist only in a newer world.
+        Base.invokelatest(run_drive, integ, sys, spec)
     catch e
         e isa InterruptException || rethrow()
         @info "drive interrupted at t = $(integ.t) s; returning what was driven"

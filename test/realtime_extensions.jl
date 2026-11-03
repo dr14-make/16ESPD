@@ -131,3 +131,20 @@ using SimpleDirectMediaLayer
     @test result.sol(0.05; idxs = rs.driver.throttle_signal) == 0.0
     @test result.sol(0.05; idxs = rs.driver.brake_signal) == 0.2
 end
+
+@testset "A window request loads the optional packages itself" begin
+    # A fresh process, because this one already loaded GLMakie above.
+    script = """
+        push!(LOAD_PATH, $(repr(joinpath(@__DIR__, "..", "sim"))))
+        using VehicleSystemsComponents
+        import DyadInterface
+        const V = VehicleSystemsComponents
+        spec = V.__dyad_base_analysis_spec(V.PlanarBEVByHandDrive__Spec(; duration = 0.1))
+        stand_in(integ, sys, spec) = V.unpaced_drive!(integ, sys, (; duration = 0.1, spec.frame))
+        DyadInterface.run_analysis(spec; run_drive = stand_in)
+        print(Base.get_extension(V, :VehicleSystemsComponentsGLMakieExt) !== nothing, " ",
+            Base.get_extension(V, :VehicleSystemsComponentsPadExt) !== nothing)
+        """
+    out = read(`$(Base.julia_cmd()) --project=$(dirname(@__DIR__)) -e $script`, String)
+    @test endswith(out, "true true")
+end

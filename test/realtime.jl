@@ -59,7 +59,15 @@ end
     @test round(3.6sol(19.0; idxs = sys.vehicle.motion.vx); digits = 1) == 94.5
     @test DyadInterface.artifacts(result, :SimulationSolutionPlot) !== nothing
     @test size(DyadInterface.artifacts(result, :SimulationSolutionTable), 1) > 0
-    @test_throws "load GLMakie" VehicleSystemsComponents.PlanarBEVRealtimeDrive(window = true)
+    # A load path providing GLMakie would open a real window instead of raising.
+    @test_throws "load GLMakie" let saved = copy(LOAD_PATH)
+        try
+            append!(empty!(LOAD_PATH), ["@", "@stdlib"])
+            VehicleSystemsComponents.PlanarBEVRealtimeDrive(window = true)
+        finally
+            append!(empty!(LOAD_PATH), saved)
+        end
+    end
     @test_throws "duration > 0" VehicleSystemsComponents.PlanarBEVRealtimeDrive(duration = 0)
 end
 
