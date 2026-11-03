@@ -359,24 +359,20 @@ md"""
 Build step 05's car on Lecture 3's straight ABS stop from 80 km/h: the driver asks for far more
 braking than the tires carry, and `RegenBlend` gives the machine as much of it as the smallest of
 three ceilings allows: its 320 N·m, the pack's 80.5 kW charge limit over the machine speed, and a
-linear fade below 10 km/h. The rest goes to Lecture 3's friction brakes through the ABS. The same
-stop with `P_charge = 0` brakes on friction alone: 26.94 m. The dry default enables withdrawal
-(`withdraw = 1`): 27.102036224 m in 2.340 s after the pedal, machine/friction
-2.951/348.908 kJ (0.839 % gross motor share), battery positive recovery 2.957 kJ.
-The shared `ABSModulatorDiscrete` now uses its existing `k_inc_fast`/`k_inc_slow` build ramps
-when `tau_lock < tau_memory_min` (1 N·m, assumed); otherwise memory-scaled reapply,
-release memory and decrement are unchanged, with the threshold tagged (assumed). The stop is 0.16414 m
-(0.61 %) longer than friction alone, inside the `<= 1.01 * friction_distance` regression.
-The meaningful motor-share goal is NOT met: blanket front-active withdrawal suppresses regen
-almost throughout. With `withdraw = 0`: 27.238292677 m, 2.425 s, 28.7 % gross motor share,
-but minimum front slip −5.893705 above 3 m/s means reversed wheels, not a physical regen
-benchmark. Keep the rule ON: shorter and keeps slip above −0.2 while vx > 3 m/s (front/rear slip −0.126072/−0.090554).
-Low grip with withdrawal (`stop = 12`): 87.594615426 m, 7.665 s after pedal, minimum
-front/rear slip −0.187106/−0.104377 above 3 m/s. Off: 95.098241553 m and reversed wheels
-(minimum front slip −17.35918), not a physical benchmark. Use 12 s for both low-grip benches:
-20 s fails during parking at 15.835 s, after stopping at 8.165 s absolute. HandsOn
-low-grip is 87.604052512 m (Success, `stop = 12`). WLTC is unchanged (23.85 %,
-34.25 Wh/km recovered, 131.15 Wh/km consumption).
+linear fade below 10 km/h. The rest goes to Lecture 3's friction brakes through the ABS.
+
+ABS modulates the friction pressure only: torque the machine adds on top is torque ABS cannot
+release. So whenever ABS works a front wheel, the blend withdraws regen, and on a hard stop that
+is almost the whole way. The envelope is a ceiling, and withdrawal scales the machine down from it
+toward zero. Without the withdrawal, the machine's torque on top of the friction drives the front
+wheels far past the tire's peak, in this model until they turn backward.
+
+With regen the car stops in 27.10 m, 2.340 s after the pedal; the same stop with `P_charge = 0`
+brakes on friction alone in 26.94 m, so the coordinated stop is within 1 % of friction only. Of
+the car's 380.7 kJ, the machine takes 2.951 kJ back through the reduction and the friction brakes
+burn 348.908 kJ: a gross machine share of 0.839 %. The battery gets back 2.957 kJ, 0.82 Wh, about
+6 m of WLTC driving. On a hard stop the friction brakes do the work; regen earns its energy on
+ordinary decelerations, which is notebook 03's WLTC bill.
 """
 
 # ╔═╡ 43682d73-077d-446a-9d02-3f704293fd1e
