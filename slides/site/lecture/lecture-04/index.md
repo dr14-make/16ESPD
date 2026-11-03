@@ -608,9 +608,38 @@ Faster than that, the only way to keep the current flowing is to lower *E* = *K*
 
 #### Parts
 
-New component `FieldEMF` in `MyCar`, and a new version of your `DCMachine`: paste the code below.
+Your `DCMachine` from step 01, with four changes:
 
-New component `Converter` in `MyCar`: paste the code below.
+| Change | What | Where |
+| --- | --- | --- |
+| `field` | Dyad › RealInput, present only `if field_weakening` | port, left edge, between `p` and `n` |
+| `emf` | VehicleSystemsComponents › Vehicle › Electric › FieldEMF, `k = k` | in place of `RotationalEMF` |
+| `field_weakening` | `structural parameter`, `Boolean`, `false` | among the declarations |
+| the flux | `connect(field, emf.field)` if `field_weakening`, else `emf.field = 1.0` | at the end of `relations` |
+
+New component `Converter` in `MyCar`. Its ports:
+
+| Name | Library path | Set |
+| --- | --- | --- |
+| `p_in` | Dyad › Pin | port, left edge, upper: the DC link, the battery side |
+| `p_out` | Dyad › Pin | port, right edge, upper: the machine side |
+| `n` | Dyad › Pin | port, bottom edge: the negative rail, common to both sides |
+| `i_ref` | Dyad › RealInput | port, top edge: the current command |
+| `field` | Dyad › RealOutput | port, right edge, lower: the field command to the machine |
+
+Its parameters, the table under **Given** and the rounding of the either-or:
+
+| Name | Type, unit | Value |
+| --- | --- | --- |
+| `I_max` | `Current`, `A` | `332.2`: output current limit |
+| `d_max` | `Real` | `1.0`: largest duty |
+| `T_i` | `Time`, `s` | `1.0e-3`: current-loop time constant |
+| `V_on` | `Voltage`, `V` | `1.2`: conduction drop |
+| `f_s` | `Frequency`, `Hz` | `5.0e3`: switching frequency |
+| `t_sw` | `Time`, `s` | `1.0e-6`: duration of each switching edge |
+| `eps` | `Real` | `1.0e-4`: rounding of the corner of `min(1 - field, d_max - abs(d))` |
+
+It has no parts. Averaged over a switching period, the converter is the five equations under **Given**: no library block computes a duty from a current loop with an either-or between field and duty. So its insides are equations, which you paste in code view, as you did for the machine's power balance in step 01.
 
 New component `ConverterDyno` in `MyCar`:
 
@@ -632,7 +661,7 @@ New component `ConverterDyno` in `MyCar`:
 
 :::: info Given parts: the field and the current command
 
-**`FieldEMF`** (inside your machine, as `emf`): the standard library's `RotationalEMF` with one more input, `field`. Its equations are `RotationalEMF`'s with *k* replaced by `field * k`, and it has the same pins, splines and names, so it swaps in without touching a wire. With `field = 1` it is the element you had.
+**`FieldEMF`** (inside your machine, as `emf`): VehicleSystemsComponents › Vehicle › Electric. The standard library's `RotationalEMF` with one more input, `field`, on its top edge. Its equations are `RotationalEMF`'s with *k* replaced by `field * k`, and it has the same pins, splines and names, so it swaps in without touching a wire. With `field = 1` it is the element you had.
 
 **`Constant`** (`current`): the current command into the converter's `i_ref`, in amperes; positive drives, negative brakes. Asking for 500 A asks for more than the converter will give, so every point of the sweep is a point of the envelope.
 
@@ -650,232 +679,47 @@ The supply, the dyno and the mounts are step 01's.
 
 [![The finished ConverterDyno in Studio: current into the top of converter; supply's p into converter.p_in, converter.p_out into machine.p; converter.n, machine.n, supply.n and ground on one node; converter's field output into machine.field; speed into dyno and both supports to mounts, as in step 01.](/lecture/lecture-04/img/step02-converter-dyno.png)](/lecture/lecture-04/img/step02-converter-dyno.png)
 
-1. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `FieldEMF`. Toggle to code (⇄), select everything, paste the block below and save.
+1. <Badge type="warning" text="Change" /> Open your `DCMachine`. Four changes turn step 01's machine into one with a field input, and leave it step 01's machine while that input is off:
+
+   1. **The `field` port.** Click **+**, open `Dyad`, place a `RealInput` and rename it `field`: select it → **Edit Parameters** → the pencil next to its name. Drag it onto the left edge of the outline, halfway between `p` and `n`. A port moves by the ring just outside its icon: grab the triangle itself and you start a wire instead.
+   2. **The `emf`.** Toggle to code (⇄). In the `emf` line, replace `ElectricalComponents.Analog.Basic.RotationalEMF` with `VehicleSystemsComponents.Vehicle.Electric.FieldEMF`, so that the line reads
+
+      ```txt
+      emf = VehicleSystemsComponents.Vehicle.Electric.FieldEMF(k = k) {^emf}
+      ```
+
+      `FieldEMF` has `RotationalEMF`'s pins, splines and names, so the eight wires on `emf` stay as they are.
+   3. **The switch.** In the `field` line, put `if field_weakening` before the `{^field}` tag, and add the parameter on the line below it:
+
+      ```txt
+      field = Dyad.RealInput() if field_weakening {^field}
+      structural parameter field_weakening::Boolean = false
+      ```
+
+      A port that exists only when a parameter says so needs a `structural` parameter, which **Add parameter** does not offer: type it.
+   4. **The flux.** Paste these lines at the end of `relations`, above the `metadata` block, and save:
+
+      ```txt
+        if field_weakening
+          connect(field, emf.field)
+        else
+          emf.field = 1.0
+        end
+      ```
+
+   [![Your DCMachine after the four changes in Studio: step 01's machine with the new field input on the left edge between p and n, unwired, and the small field input of the FieldEMF at the top left of emf, also unwired: the wire between them exists only with field_weakening = true.](/lecture/lecture-04/img/step02-machine-field.png)](/lecture/lecture-04/img/step02-machine-field.png)
+
+   The machine in Studio after the four changes: the new `field` port on the left edge, and `emf`'s own field input, the small triangle at its top left. Studio draws both, but no wire between them: with `field_weakening` at its default, `false`, the `if` block holds the field at 1 and the `connect` is not there. A bench that sets `field_weakening = true` gets the port and the wire, and `field` then sets *E* = field·*K*Φ·ω and *T*<sub>em</sub> = field·*K*Φ·*i*. Left `false`, this is step 01's machine: run **DCMachineDynoTransient** again and it gives the same 320.0 N·m and −304 N·m.
+
+   If the compile then flags `DCMachineDyno` with `Unknown type DCMachine`, the language server kept a half-typed version of your machine: <kbd>F1</kbd> → **Dyad: Restart Language Server**, and compile again.
+2. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `Converter`. Click **+**, open `Dyad`, place three `Pin`s, a `RealInput` and a `RealOutput`, and rename them `p_in`, `p_out`, `n`, `i_ref` and `field`. Drag them onto the outline as the ports table says: `p_in` high on the left edge, `p_out` high on the right edge, `n` in the middle of the bottom edge, `i_ref` in the middle of the top edge, `field` low on the right edge. With `i_ref` selected, press <kbd>r</kbd> once so that its triangle points down, into the converter. On the dyno the supply wires to `p_in` on the left, the machine to `p_out` and `field` on the right, the current command comes in from above and the negative rail leaves below.
+
+   With nothing selected, click **Edit Parameters** → **Add parameter** for each of the seven parameters in the table, with the type `Real` and the unit from the table. After each **Create**, the next **Create** stays grey for about 15 s.
+3. Toggle to code (⇄). The GUI has placed the ports and the parameters; the converter's insides are equations. Paste the variables among the declarations, just above `relations`, and the relations below `relations`, above the `metadata` block. Save.
 
    ::: code-group
 
-   ```txt [FieldEMF]
-   component FieldEMF
-     "Positive electrical pin"
-     p = Pin() {^p}
-     "Negative electrical pin"
-     n = Pin() {^n}
-     "Rotor spline"
-     rotor = Spline() {^rotor}
-     "Housing (support) of the emf shaft"
-     housing = Spline() {^housing}
-     "Flux as a fraction of full flux, 1 for full"
-     field = RealInput() {^field}
-     "Torque and back-EMF constant KΦ at full flux"
-     parameter k::ElectricalTorqueConstant
-     "Voltage drop between the two pins"
-     variable v::Voltage
-     "Current flowing from positive to negative pin"
-     variable i::Current
-     "Angle of the rotor with respect to the housing"
-     variable phi::Angle
-     "Angular velocity of the rotor relative to the housing"
-     variable w::AngularVelocity
-     "Torque on the rotor"
-     variable tau::Torque
-   relations
-     v = p.v - n.v
-     0 = p.i + n.i
-     i = p.i
-     phi = rotor.phi - housing.phi
-     w = der(phi)
-     v = field * k * w
-     tau = -field * k * i
-     tau = rotor.tau
-     0 = housing.tau + rotor.tau
-   metadata {
-     "Dyad": {
-       "labels": [{"label": "$(instance)", "x": 500, "y": 1200, "rot": 0}],
-       "icons": {"default": "dyad://ElectricalComponents/RotationalEMF.svg"}
-     },
-     "_links": {
-       "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 450, "y1": -50, "x2": 550, "y2": 50}}}},
-       "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
-       "rotor": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
-       "housing": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
-       "field": {"Dyad": {"placement": {"icon": {"x1": 150, "y1": -50, "x2": 250, "y2": 50, "rot": 90}}}}
-     }
-   }
-   end
-   ```
-
-   :::
-
-2. <Badge type="warning" text="Change" /> Open your `DCMachine`, toggle to code, select everything and paste the block below over it.
-
-   ::: code-group
-
-   ```txt [DCMachine]
-   component DCMachine
-     "Positive electrical pin."
-     p = Pin() {^p}
-     "Negative electrical pin."
-     n = Pin() {^n}
-     "Rotor shaft"
-     spline = Spline() {^spline}
-     "Housing"
-     support = Spline() {^support}
-     "Flux as a fraction of full flux; present only with field_weakening = true"
-     field = RealInput() if field_weakening {^field}
-     resistor = ElectricalComponents.Analog.Basic.Resistor(R = R) {^resistor}
-     inductor = ElectricalComponents.Analog.Basic.Inductor(L = L) {^inductor}
-     emf = FieldEMF(k = k) {^emf}
-     rotor = RotationalComponents.Components.Inertia(J = J) {^rotor}
-     friction = RotationalComponents.Sources.SignTorque(tau_nominal = -T_f, reg = RotationalComponents.Sources.Regularization.Linear(), w0 = w_reg) {^friction}
-     iron = RotationalComponents.Sources.SignTorque(tau_nominal = -K_i, reg = RotationalComponents.Sources.Regularization.Linear(), w0 = w_reg) {^iron}
-     windage = RotationalComponents.Sources.QuadraticSpeedDependentTorque(tau_nominal = -k_w * w_base ^ 2, w_nominal = w_base, TorqueDirection = false) {^windage}
-     constant_loss = RotationalComponents.Sources.InverseSpeedDependentTorque(tau_nominal = -C / w_reg, w_nominal = w_reg, w0 = w_reg, TorqueDirection = false) {^constant_loss}
-     "Expose the field input; off runs at full flux"
-     structural parameter field_weakening::Boolean = false
-     "Peak shaft torque, Leaf ZE1"
-     parameter T_max::Torque = 320.0
-     "Base speed, 3283 rpm"
-     parameter w_base::AngularVelocity = 3283.0 * pi / 30.0
-     "Supply voltage at which the machine reaches base speed at full torque"
-     parameter V_nom::Voltage = 350.0
-     "Armature resistance"
-     parameter R::Resistance = 0.05
-     "Armature inductance, L/R = 10 ms"
-     parameter L::Inductance = 0.5e-3
-     "Rotor inertia"
-     parameter J::Inertia = 0.05
-     "Friction torque T_f; loss T_f w"
-     parameter T_f::Torque = 0.5
-     "Iron loss coefficient K_i; loss K_i w"
-     parameter K_i::Torque = 1.0
-     "Windage coefficient k_w; loss k_w w^3, 300 W at 10100 rpm [N.m.s2]"
-     parameter k_w::Real = 300.0 / (10100.0 * pi / 30.0) ^ 3
-     "Constant loss C"
-     parameter C::Power = 200.0
-     "Speed below which the speed-independent loss torques fade to zero"
-     parameter w_reg::AngularVelocity = 10.0
-     "Torque the losses take at base speed"
-     parameter tau_loss_base::Torque = T_f + K_i + k_w * w_base ^ 2 + C / w_base
-     "Torque and back-EMF constant KΦ, from k w_base + R (T_max + tau_loss_base) / k = V_nom"
-     parameter k::ElectricalTorqueConstant = (V_nom + sqrt(V_nom ^ 2 - 4.0 * w_base * R * (T_max + tau_loss_base))) / (2.0 * w_base)
-     "Voltage across the component (between pin p and pin n)."
-     variable v::Voltage
-     "Armature current, into p"
-     variable i::Current
-     "Back-EMF, E = k w"
-     variable E::Voltage
-     "Electromagnetic torque, tau_em = k i"
-     variable tau_em::Torque
-     "Shaft speed relative to the housing"
-     variable w::AngularVelocity
-     "Torque delivered at the shaft"
-     variable tau::Torque
-     "Electrical power into the terminals"
-     variable P_elec::Power
-     "Mechanical power out of the shaft"
-     variable P_mech::Power
-     "Copper loss, R i^2"
-     variable P_cu::Power
-     "Friction loss"
-     variable P_fric::Power
-     "Iron loss"
-     variable P_iron::Power
-     "Windage loss"
-     variable P_wind::Power
-     "Constant loss"
-     variable P_const::Power
-     "Sum of the losses"
-     variable P_loss::Power
-   relations
-     v = p.v - n.v
-     connect(p, resistor.p) {^id1}
-     connect(resistor.n, inductor.p) {^id2}
-     connect(inductor.n, emf.p) {^id3}
-     connect(emf.n, n) {^id4}
-     connect(emf.rotor, rotor.spline_a, friction.spline, iron.spline, windage.spline, constant_loss.spline) {^id5}
-     connect(rotor.spline_b, spline) {^id6}
-     connect(emf.housing, friction.support, iron.support, windage.support, constant_loss.support, support) {^id7}
-     if field_weakening
-       connect(field, emf.field) {^id8}
-     else
-       emf.field = 1.0
-     end
-     i = p.i
-     E = emf.v
-     tau_em = -emf.tau
-     w = emf.w
-     tau = -spline.tau
-     P_elec = v * i
-     P_mech = tau * w
-     P_cu = resistor.v * resistor.i
-     P_fric = -friction.tau * w
-     P_iron = -iron.tau * w
-     P_wind = -windage.tau * w
-     P_const = -constant_loss.tau * w
-     P_loss = P_cu + P_fric + P_iron + P_wind + P_const
-   metadata {
-     "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/DCMachine.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1150, "rot": 0}]},
-     "_links": {
-       "id8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 80, "y": 500}, {"x": 80, "y": 320}, {"x": 470, "y": 320}], "E": 2}]}},
-       "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 120, "y": 450}], "E": -1}, {"S": 2, "M": [], "E": -1}, {"S": -1, "M": [{"x": 120, "y": 880}], "E": -2}, {"S": 3, "M": [{"x": 360, "y": 800}], "E": -2}, {"S": -2, "M": [], "E": -3}, {"S": -3, "M": [], "E": 6}, {"S": -3, "M": [], "E": -4}, {"S": 4, "M": [{"x": 545, "y": 800}], "E": -4}, {"S": 5, "M": [{"x": 720, "y": 800}, {"x": 720, "y": 880}], "E": -4}], "junctions": [{"x": 120, "y": 800}, {"x": 360, "y": 880}, {"x": 500, "y": 880}, {"x": 545, "y": 880}]}},
-       "id6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-       "id5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": -3}, {"S": -2, "M": [], "E": -4}, {"S": -3, "M": [{"x": 490, "y": 750}], "E": 4}, {"S": -3, "M": [{"x": 290, "y": 630}, {"x": 290, "y": 750}], "E": 3}, {"S": -4, "M": [{"x": 690, "y": 750}], "E": 5}, {"S": -4, "M": [{"x": 890, "y": 630}, {"x": 890, "y": 750}], "E": 6}], "junctions": [{"x": 620, "y": 450}, {"x": 620, "y": 630}, {"x": 490, "y": 630}, {"x": 690, "y": 630}]}},
-       "id4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 470, "y": 500}, {"x": 470, "y": 560}, {"x": 60, "y": 560}, {"x": 60, "y": 800}], "E": 2}]}},
-       "id3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 200}], "E": 2}]}},
-       "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-       "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-       "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 400, "x2": 1050, "y2": 500}}}},
-       "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
-       "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}, "diagram": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
-       "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": -50, "y1": 750, "x2": 50, "y2": 850}, "diagram": {"iconName": "neg", "x1": -50, "y1": 750, "x2": 50, "y2": 850}}}},
-       "field": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
-       "resistor": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 150, "x2": 200, "y2": 250}}}},
-       "inductor": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 150, "x2": 350, "y2": 250}}}},
-       "emf": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 400, "x2": 550, "y2": 500}}}},
-       "rotor": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 400, "x2": 800, "y2": 500}}}},
-       "friction": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 700, "x2": 250, "y2": 800}}}},
-       "iron": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 700, "x2": 450, "y2": 800}}}},
-       "windage": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 700, "x2": 650, "y2": 800}}}},
-       "constant_loss": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 700, "x2": 850, "y2": 800}}}}
-     }
-   }
-   end
-   ```
-
-   :::
-
-   Four things changed. `emf` is now your `FieldEMF`. The structural parameter `field_weakening` decides whether the machine has a `field` input: the line `field = RealInput() if field_weakening` creates it only when `field_weakening` is true. The `if` block in `relations` wires that input to the EMF, or else holds the field at 1. And the metadata places `field` on the machine's left edge, between `p` and `n`, and routes its wire to `emf`. Left at its default, `false`, this is step 01's machine: run **DCMachineDynoTransient** again and it gives the same 320 N·m and −304 N·m.
-
-3. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `Converter`. Toggle to code, select everything, paste the block below and save.
-
-   ::: code-group
-
-   ```txt [Converter]
-   component Converter
-     "DC link, positive rail: the battery side"
-     p_in = Pin() {^p_in}
-     "Output, positive rail: the machine side"
-     p_out = Pin() {^p_out}
-     "Negative rail, common to input and output"
-     n = Pin() {^n}
-     "Output current command, positive motoring"
-     i_ref = RealInput() {^i_ref}
-     "Field command to the machine: flux as a fraction of full"
-     field = RealOutput() {^field}
-     "Output current limit, the 332.2 A at which the machine gives 320 N.m"
-     parameter I_max::Current = 332.2
-     "Largest duty: the voltage limit as a fraction of the input"
-     parameter d_max::Real = 1.0
-     "Current-loop time constant"
-     parameter T_i::Time = 1.0e-3
-     "Conduction drop of the two devices that carry the current, calibrated so the inverter matches ORNL's measured > 99 % at high speed (derived); the FS820R08A6P2B pair drop is 2.45 V, see docs/lecture-04-plan.md"
-     parameter V_on::Voltage = 1.2
-     "Switching frequency"
-     parameter f_s::Frequency = 5.0e3
-     "Duration of each switching edge (assumed)"
-     parameter t_sw::Time = 1.0e-6
-     "Rounding of the corner of min(1 - field, d_max - |d|)"
-     parameter eps::Real = 1.0e-4
+   ```txt [Variables]
      "Input voltage, the DC link"
      variable v_in::Voltage
      "Input current, drawn from the DC link"
@@ -898,7 +742,9 @@ The supply, the dyno and the mounts are step 01's.
      variable P_sw::Power
      "Sum of the losses"
      variable P_loss::Power
-   relations
+   ```
+
+   ```txt [Relations]
      v_in = p_in.v - n.v
      v_out = p_out.v - n.v
      i_in = p_in.i
@@ -914,22 +760,13 @@ The supply, the dyno and the mounts are step 01's.
      P_cond = V_on * abs(i_out)
      P_sw = f_s * t_sw * v_in * abs(i_out)
      P_loss = P_cond + P_sw
-   metadata {
-     "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/Converter.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
-     "_links": {
-       "p_in": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}, "diagram": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
-       "p_out": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 950, "y1": 150, "x2": 1050, "y2": 250}, "diagram": {"iconName": "pos", "x1": 950, "y1": 150, "x2": 1050, "y2": 250}}}},
-       "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "neg", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
-       "i_ref": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}, "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}}}},
-       "field": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}, "diagram": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}}}}
-     }
-   }
-   end
    ```
 
    :::
 
    The three pins share one negative rail, `n`, as in the deck's chopper: the pack sits between `p_in` and `n`, the machine between `p_out` and `n`. A pin's current counts positive *into* the component, so `i_in = p_in.i` is drawn from the pack and `i_out = -p_out.i` is pushed into the machine, and the three currents sum to zero. The next two lines are the converter's equations; `P_loss / v_in` is the extra input current that pays for the losses. Then the current limit and the current loop, the either-or between field and duty, and the two losses.
+
+   Your converter shows as a plain box on the dyno, not with the course library's converter icon as in the picture: the icon comes with the **Fell behind?** code only.
 
 4. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `ConverterDyno`. With nothing selected, click **Edit Parameters** → **Add parameter** four times for `V`, `I_ref`, `rpm_start` and `rpm_end`. Place the nine blocks from the table, rename each to its **Name** and set the values in its **Set** column. Studio draws `machine`'s `field` input on its left edge, between `p` and `n`, whatever `field_weakening` says; it only exists once `field_weakening` is ticked `true`.
 5. Wire:
@@ -1017,9 +854,218 @@ Commit: **Source Control** → message `Step 02: converter` → **Commit** → *
 
 :::: warning Fell behind?
 
-Paste `FieldEMF`, `DCMachine` and `Converter` from steps 1 to 3 of **Do this** above. Then right-click `MyCar` → **Add Component**, name it `ConverterDyno`, toggle to code (⇄) and paste this over its contents.
+Open your `DCMachine`, toggle to code (⇄) and paste the `DCMachine` tab below over its contents. Then right-click `MyCar` → **Add Component** twice, naming them `Converter` and `ConverterDyno`; toggle each to code and paste its tab over its contents. The `{^…}` tags and the `metadata` blocks place the new `field` port, the converter's ports and the bench, and give the machine and the converter the course library's icons.
 
 ::: code-group
+
+```txt [DCMachine]
+component DCMachine
+  "Positive electrical pin."
+  p = Pin() {^p}
+  "Negative electrical pin."
+  n = Pin() {^n}
+  "Rotor shaft"
+  spline = Spline() {^spline}
+  "Housing"
+  support = Spline() {^support}
+  "Flux as a fraction of full flux; present only with field_weakening = true"
+  field = RealInput() if field_weakening {^field}
+  resistor = ElectricalComponents.Analog.Basic.Resistor(R = R) {^resistor}
+  inductor = ElectricalComponents.Analog.Basic.Inductor(L = L) {^inductor}
+  emf = VehicleSystemsComponents.Vehicle.Electric.FieldEMF(k = k) {^emf}
+  rotor = RotationalComponents.Components.Inertia(J = J) {^rotor}
+  friction = RotationalComponents.Sources.SignTorque(tau_nominal = -T_f, reg = RotationalComponents.Sources.Regularization.Linear(), w0 = w_reg) {^friction}
+  iron = RotationalComponents.Sources.SignTorque(tau_nominal = -K_i, reg = RotationalComponents.Sources.Regularization.Linear(), w0 = w_reg) {^iron}
+  windage = RotationalComponents.Sources.QuadraticSpeedDependentTorque(tau_nominal = -k_w * w_base ^ 2, w_nominal = w_base, TorqueDirection = false) {^windage}
+  constant_loss = RotationalComponents.Sources.InverseSpeedDependentTorque(tau_nominal = -C / w_reg, w_nominal = w_reg, w0 = w_reg, TorqueDirection = false) {^constant_loss}
+  "Expose the field input; off runs at full flux"
+  structural parameter field_weakening::Boolean = false
+  "Peak shaft torque, Leaf ZE1"
+  parameter T_max::Torque = 320.0
+  "Base speed, 3283 rpm"
+  parameter w_base::AngularVelocity = 3283.0 * pi / 30.0
+  "Supply voltage at which the machine reaches base speed at full torque"
+  parameter V_nom::Voltage = 350.0
+  "Armature resistance"
+  parameter R::Resistance = 0.05
+  "Armature inductance, L/R = 10 ms"
+  parameter L::Inductance = 0.5e-3
+  "Rotor inertia"
+  parameter J::Inertia = 0.05
+  "Friction torque T_f; loss T_f w"
+  parameter T_f::Torque = 0.5
+  "Iron loss coefficient K_i; loss K_i w"
+  parameter K_i::Torque = 1.0
+  "Windage coefficient k_w; loss k_w w^3, 300 W at 10100 rpm [N.m.s2]"
+  parameter k_w::Real = 300.0 / (10100.0 * pi / 30.0) ^ 3
+  "Constant loss C"
+  parameter C::Power = 200.0
+  "Speed below which the speed-independent loss torques fade to zero"
+  parameter w_reg::AngularVelocity = 10.0
+  "Torque the losses take at base speed"
+  parameter tau_loss_base::Torque = T_f + K_i + k_w * w_base ^ 2 + C / w_base
+  "Torque and back-EMF constant KΦ, from k w_base + R (T_max + tau_loss_base) / k = V_nom"
+  parameter k::ElectricalTorqueConstant = (V_nom + sqrt(V_nom ^ 2 - 4.0 * w_base * R * (T_max + tau_loss_base))) / (2.0 * w_base)
+  "Voltage across the component (between pin p and pin n)."
+  variable v::Voltage
+  "Armature current, into p"
+  variable i::Current
+  "Back-EMF, E = k w"
+  variable E::Voltage
+  "Electromagnetic torque, tau_em = k i"
+  variable tau_em::Torque
+  "Shaft speed relative to the housing"
+  variable w::AngularVelocity
+  "Torque delivered at the shaft"
+  variable tau::Torque
+  "Electrical power into the terminals"
+  variable P_elec::Power
+  "Mechanical power out of the shaft"
+  variable P_mech::Power
+  "Copper loss, R i^2"
+  variable P_cu::Power
+  "Friction loss"
+  variable P_fric::Power
+  "Iron loss"
+  variable P_iron::Power
+  "Windage loss"
+  variable P_wind::Power
+  "Constant loss"
+  variable P_const::Power
+  "Sum of the losses"
+  variable P_loss::Power
+relations
+  v = p.v - n.v
+  connect(p, resistor.p) {^id1}
+  connect(resistor.n, inductor.p) {^id2}
+  connect(inductor.n, emf.p) {^id3}
+  connect(emf.n, n) {^id4}
+  connect(emf.rotor, rotor.spline_a, friction.spline, iron.spline, windage.spline, constant_loss.spline) {^id5}
+  connect(rotor.spline_b, spline) {^id6}
+  connect(emf.housing, friction.support, iron.support, windage.support, constant_loss.support, support) {^id7}
+  if field_weakening
+    connect(field, emf.field) {^id8}
+  else
+    emf.field = 1.0
+  end
+  i = p.i
+  E = emf.v
+  tau_em = -emf.tau
+  w = emf.w
+  tau = -spline.tau
+  P_elec = v * i
+  P_mech = tau * w
+  P_cu = resistor.v * resistor.i
+  P_fric = -friction.tau * w
+  P_iron = -iron.tau * w
+  P_wind = -windage.tau * w
+  P_const = -constant_loss.tau * w
+  P_loss = P_cu + P_fric + P_iron + P_wind + P_const
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/DCMachine.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1150, "rot": 0}]},
+  "_links": {
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 80, "y": 500}, {"x": 80, "y": 320}, {"x": 470, "y": 320}], "E": 2}]}},
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 120, "y": 450}], "E": -1}, {"S": 2, "M": [], "E": -1}, {"S": -1, "M": [{"x": 120, "y": 880}], "E": -2}, {"S": 3, "M": [{"x": 360, "y": 800}], "E": -2}, {"S": -2, "M": [], "E": -3}, {"S": -3, "M": [], "E": 6}, {"S": -3, "M": [], "E": -4}, {"S": 4, "M": [{"x": 545, "y": 800}], "E": -4}, {"S": 5, "M": [{"x": 720, "y": 800}, {"x": 720, "y": 880}], "E": -4}], "junctions": [{"x": 120, "y": 800}, {"x": 360, "y": 880}, {"x": 500, "y": 880}, {"x": 545, "y": 880}]}},
+    "id6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": -3}, {"S": -2, "M": [], "E": -4}, {"S": -3, "M": [{"x": 490, "y": 750}], "E": 4}, {"S": -3, "M": [{"x": 290, "y": 630}, {"x": 290, "y": 750}], "E": 3}, {"S": -4, "M": [{"x": 690, "y": 750}], "E": 5}, {"S": -4, "M": [{"x": 890, "y": 630}, {"x": 890, "y": 750}], "E": 6}], "junctions": [{"x": 620, "y": 450}, {"x": 620, "y": 630}, {"x": 490, "y": 630}, {"x": 690, "y": 630}]}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 470, "y": 500}, {"x": 470, "y": 560}, {"x": 60, "y": 560}, {"x": 60, "y": 800}], "E": 2}]}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 200}], "E": 2}]}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 400, "x2": 1050, "y2": 500}}}},
+    "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
+    "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}, "diagram": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+    "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": -50, "y1": 750, "x2": 50, "y2": 850}, "diagram": {"iconName": "neg", "x1": -50, "y1": 750, "x2": 50, "y2": 850}}}},
+    "field": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "resistor": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 150, "x2": 200, "y2": 250}}}},
+    "inductor": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 150, "x2": 350, "y2": 250}}}},
+    "emf": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 400, "x2": 550, "y2": 500}}}},
+    "rotor": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 400, "x2": 800, "y2": 500}}}},
+    "friction": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 700, "x2": 250, "y2": 800}}}},
+    "iron": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 700, "x2": 450, "y2": 800}}}},
+    "windage": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 700, "x2": 650, "y2": 800}}}},
+    "constant_loss": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 700, "x2": 850, "y2": 800}}}}
+  }
+}
+end
+```
+
+```txt [Converter]
+component Converter
+  "DC link, positive rail: the battery side"
+  p_in = Pin() {^p_in}
+  "Output, positive rail: the machine side"
+  p_out = Pin() {^p_out}
+  "Negative rail, common to input and output"
+  n = Pin() {^n}
+  "Output current command, positive motoring"
+  i_ref = RealInput() {^i_ref}
+  "Field command to the machine: flux as a fraction of full"
+  field = RealOutput() {^field}
+  "Output current limit, the 332.2 A at which the machine gives 320 N.m"
+  parameter I_max::Current = 332.2
+  "Largest duty: the voltage limit as a fraction of the input"
+  parameter d_max::Real = 1.0
+  "Current-loop time constant"
+  parameter T_i::Time = 1.0e-3
+  "Conduction drop of the two devices that carry the current, calibrated so the inverter matches ORNL's measured > 99 % at high speed (derived); the FS820R08A6P2B pair drop is 2.45 V, see docs/lecture-04-plan.md"
+  parameter V_on::Voltage = 1.2
+  "Switching frequency"
+  parameter f_s::Frequency = 5.0e3
+  "Duration of each switching edge (assumed)"
+  parameter t_sw::Time = 1.0e-6
+  "Rounding of the corner of min(1 - field, d_max - |d|)"
+  parameter eps::Real = 1.0e-4
+  "Input voltage, the DC link"
+  variable v_in::Voltage
+  "Input current, drawn from the DC link"
+  variable i_in::Current
+  "Output voltage, across the machine"
+  variable v_out::Voltage
+  "Output current, into the machine"
+  variable i_out::Current
+  "Duty ratio, v_out / v_in"
+  variable d::Real
+  "Current command after the limit"
+  variable i_cmd::Current
+  "Power drawn from the DC link"
+  variable P_in::Power
+  "Power delivered to the machine"
+  variable P_out::Power
+  "Conduction loss"
+  variable P_cond::Power
+  "Switching loss"
+  variable P_sw::Power
+  "Sum of the losses"
+  variable P_loss::Power
+relations
+  v_in = p_in.v - n.v
+  v_out = p_out.v - n.v
+  i_in = p_in.i
+  i_out = -p_out.i
+  p_in.i + p_out.i + n.i = 0
+  v_out = d * v_in
+  i_in = d * i_out + P_loss / v_in
+  i_cmd = max(-I_max, min(I_max, i_ref))
+  T_i * der(i_out) = i_cmd - i_out
+  (1 - field) + (d_max - abs(d)) - sqrt(((1 - field) - (d_max - abs(d))) ^ 2 + eps ^ 2) = 0
+  P_in = v_in * i_in
+  P_out = v_out * i_out
+  P_cond = V_on * abs(i_out)
+  P_sw = f_s * t_sw * v_in * abs(i_out)
+  P_loss = P_cond + P_sw
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/Converter.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
+  "_links": {
+    "p_in": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}, "diagram": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+    "p_out": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 950, "y1": 150, "x2": 1050, "y2": 250}, "diagram": {"iconName": "pos", "x1": 950, "y1": 150, "x2": 1050, "y2": 250}}}},
+    "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "neg", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
+    "i_ref": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}, "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}}}},
+    "field": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}, "diagram": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}}}}
+  }
+}
+end
+```
 
 ```txt [ConverterDyno]
 component ConverterDyno
@@ -1891,7 +1937,14 @@ New component `RegenBlend` in `MyCar`:
 | `tau_motor` | Dyad › RealOutput | the torque the machine is asked for |
 | `tau_brake` | Dyad › RealOutput | the torque asked of each of the four friction brakes |
 
-New components `BEVHardStop` and `BEVRegenWLTC` in `MyCar`: paste the code below.
+New component `BEVHardStop` in `MyCar`: paste the code below.
+
+New component `BEVRegenWLTC` in `MyCar`: a duplicate of your step 04 `BEVWLTC`, with `split` swapped for your `RegenBlend`:
+
+| Name | Library path | Set |
+| --- | --- | --- |
+| `P_charge` | parameter `Power` | `80.5e3`: the charge-power limit |
+| `blend` | your `RegenBlend`, in place of `split` | `ratio = ratio`, `radius = radius`, `tau_max = tau_max`, `P_charge = P_charge`, `v_fade = v_fade` |
 
 :::: info Given parts: the ABS and the slips
 
@@ -2134,142 +2187,67 @@ Reference: `HandsOn04.RegenBlend`, `HandsOn04.BEVHardStop`, `HandsOn04.BEVHardSt
 
 :::
 
-5. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `BEVRegenWLTC`. Toggle to code (⇄), select everything, paste the block below and save. It is step 04's bench with `blend` in place of `split`, the friction share on all four brakes, and four meters.
+5. <Badge type="tip" text="New component" /> The WLTC bench with regen blending is step 04's car bench with one block swapped: `blend` in place of `split`. Right-click your `BEVWLTC` in the **Components** panel → **Duplicate**, type `BEVRegenWLTC` over the suggested name and press <kbd>Enter</kbd>. The copy opens as a diagram; Studio copies the component, not its analysis.
 
-   ::: code-group
+   1. **The swap.** Select `split` and press <kbd>Delete</kbd>: its five wires go with it. Place your `RegenBlend` where `split` was: searching **+** for `RegenBlend` lists the course library's `HandsOn04` and `Vehicle › Electric` blocks first, so drag the one under `MyCar`.
+   2. **Its parameter.** With nothing selected, click **Edit Parameters** → **Add parameter**: `P_charge`, type `Real`, value `80.5e3`, unit `W`. Then select the new block and set `ratio = ratio`, `radius = radius`, `tau_max = tau_max`, `P_charge = P_charge` and `v_fade = v_fade`, and rename it `blend` last.
+   3. **Wire** it where `split` was, and on to the rear brakes too:
+      1. `kmh.y → blend.v`
+      2. `driver.y → blend.tau_ref`
+      3. `blend.tau_motor → drive.tau_ref`
+      4. `blend.tau_brake → car.tau_fl`
+      5. `blend.tau_brake → car.tau_fr`
+      6. `blend.tau_brake → car.tau_rl`
+      7. `blend.tau_brake → car.tau_rr`
 
-   ```txt [BEVRegenWLTC]
-   component BEVRegenWLTC
-     "Vehicle mass, shared by the car and its road load (probe)"
-     parameter m::Mass = 1500.0
-     "Wheel radius (repository default)"
-     parameter radius::Length = 0.31
-     "Driver gain, machine torque per km/h of speed error (assumed)"
-     parameter k::Real = 50.0
-     "Driver integral time (assumed)"
-     parameter Ti::Time = 2.0
-     "Driver and machine torque limit, the machine's peak torque (Nissan)"
-     parameter tau_max::Torque = 320.0
-     "Battery charge-power limit (INL)"
-     parameter P_charge::Power = 80.5e3
-     "Speed below which the braking ceiling fades to zero, km/h (assumed)"
-     parameter v_fade::Real = 10.0
-     "Power drawn by the 12 V network (assumed)"
-     parameter P_aux::Power = 300.0
-     "Single-speed reduction (Nissan)"
-     parameter ratio::Real = 8.193
-     "Initial wheel surface speed above the body's, keeps the start off zero slip (assumed)"
-     parameter dv_wheel::Velocity = 0.01
-     trace = VehicleSystemsComponents.Vehicle.DriveCycle() {^trace}
-     driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_max) {^driver}
-     no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
-     kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
-     drive = ElectricDrive(ratio = ratio, P_aux = P_aux) {^drive}
-     differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
-     mount = RotationalComponents.Components.Fixed() {^mount}
-     straight = RotationalComponents.Components.Fixed() {^straight}
-     flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
-     car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius) {^car}
-     motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
-     roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
-     blend = RegenBlend(ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade) {^blend}
-     "Power at the battery terminals, positive discharging"
-     variable P_dc::Power
-     "Power at the reduction output, positive driving the wheels"
-     variable P_shaft::Power
-     variable E_dc_in::Energy
-     variable E_shaft_out::Energy
-     variable E_shaft_in::Energy
-     variable E_brake::Energy
-   relations
-     connect(car.bus, motion.bus) {^wbus}
-     connect(trace.y, driver.u_s) {^w1}
-     connect(motion.vx, kmh.u) {^w2}
-     connect(kmh.y, driver.u_m, blend.v) {^w3}
-     connect(no_ff.y, driver.u_ff) {^w4}
-     connect(drive.spline, differential.flange_b) {^w5}
-     connect(differential.flange_left, car.spin_fl) {^w6}
-     connect(differential.flange_right, car.spin_fr) {^w7}
-     connect(drive.support, mount.spline) {^w8}
-     connect(car.steering, straight.spline) {^w9}
-     connect(flat.y, roadload.grade) {^w10}
-     connect(car.chassis, roadload.chassis) {^w11}
-     connect(driver.y, blend.tau_ref) {^w21}
-     connect(blend.tau_motor, drive.tau_ref) {^w23}
-     connect(blend.tau_brake, car.tau_fl, car.tau_fr, car.tau_rl, car.tau_rr) {^w24}
-     P_dc = drive.battery.v * drive.battery.i
-     P_shaft = drive.machine.P_mech
-     der(E_dc_in) = max(-P_dc, 0.0)
-     der(E_shaft_out) = max(P_shaft, 0.0)
-     der(E_shaft_in) = max(-P_shaft, 0.0)
-     der(E_brake) = car.fl.brake.tau_friction * car.fl.brake.w + car.fr.brake.tau_friction * car.fr.brake.w + car.rl.brake.tau_friction * car.rl.brake.w + car.rr.brake.tau_friction * car.rr.brake.w
-     initial car.body.r = [0, 0]
-     initial car.body.v = [0, 0]
-     initial car.body.phi = 0.0
-     initial car.body.w = 0.0
-     initial car.fl.inertia.w = dv_wheel / radius
-     initial car.fr.inertia.w = dv_wheel / radius
-     initial car.rl.inertia.w = dv_wheel / radius
-     initial car.rr.inertia.w = dv_wheel / radius
-     initial car.fl.inertia.phi = 0.0
-     initial car.fr.inertia.phi = 0.0
-     initial car.rl.inertia.phi = 0.0
-     initial car.rr.inertia.phi = 0.0
-     initial car.fl.brake.tau_actual = 0.0
-     initial car.fr.brake.tau_actual = 0.0
-     initial car.rl.brake.tau_actual = 0.0
-     initial car.rr.brake.tau_actual = 0.0
-     initial drive.converter.i_out = 0.0
-     initial E_dc_in = 0.0
-     initial E_shaft_out = 0.0
-     initial E_shaft_in = 0.0
-     initial E_brake = 0.0
-   metadata {
-     "_links": {
-       "wbus": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-       "trace": {"Dyad": {"placement": {"diagram": {"x1": 20, "y1": 57, "x2": 100, "y2": 137}}}},
-       "driver": {"Dyad": {"placement": {"diagram": {"x1": 140, "y1": 70, "x2": 240, "y2": 170}}}},
-       "no_ff": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 10, "x2": 140, "y2": 50}}}},
-       "kmh": {"Dyad": {"placement": {"diagram": {"x1": 40, "y1": 190, "x2": 110, "y2": 260}}}},
-       "drive": {"Dyad": {"placement": {"diagram": {"x1": 430, "y1": 50, "x2": 530, "y2": 150}}}},
-       "differential": {"Dyad": {"placement": {"diagram": {"x1": 560, "y1": 260, "x2": 640, "y2": 340}}}},
-       "mount": {"Dyad": {"placement": {"diagram": {"x1": 485, "y1": 190, "x2": 545, "y2": 240}}}},
-       "straight": {"Dyad": {"placement": {"diagram": {"x1": 605, "y1": 500, "x2": 655, "y2": 550, "rot": 180}}}},
-       "flat": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 880, "x2": 480, "y2": 920}}}},
-       "car": {"Dyad": {"placement": {"diagram": {"x1": 520, "y1": 600, "x2": 740, "y2": 820}}}},
-       "motion": {"Dyad": {"placement": {"diagram": {"x1": 775, "y1": 610, "x2": 975, "y2": 810}}}},
-       "roadload": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 865, "x2": 570, "y2": 935}}}},
-       "blend": {"Dyad": {"placement": {"diagram": {"x1": 290, "y1": 70, "x2": 390, "y2": 170}}}},
-       "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-       "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 990, "y": 662.0}, {"x": 990, "y": 980}, {"x": 20, "y": 980}, {"x": 20, "y": 225}], "E": 2}]}},
-       "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 125, "y": 143}], "E": 2}, {"S": -1, "M": [{"x": 270, "y": 225}, {"x": 270, "y": 140}], "E": 3}], "junctions": [{"x": 125, "y": 225}]}},
-       "w4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 190, "y": 30}], "E": 2}]}},
-       "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 100}, {"x": 550, "y": 344}], "E": 2}]}},
-       "w6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 480, "y": 300}, {"x": 480, "y": 655}], "E": 2}]}},
-       "w7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 765, "y": 300}, {"x": 765, "y": 655}], "E": 2}]}},
-       "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 515, "y": 150}], "E": 2}]}},
-       "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-       "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-       "w11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 680, "y": 820}, {"x": 680, "y": 900}], "E": 2}]}},
-       "w21": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 265, "y": 120}, {"x": 265, "y": 100}], "E": 2}]}},
-       "w23": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-       "w24": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 410, "y": 140}], "E": -1}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": 2}, {"S": -2, "M": [{"x": 500, "y": 470}, {"x": 750, "y": 470}, {"x": 750, "y": 633}], "E": 3}, {"S": -1, "M": [], "E": -3}, {"S": -3, "M": [], "E": 4}, {"S": -3, "M": [{"x": 410, "y": 960}, {"x": 760, "y": 960}, {"x": 760, "y": 743}], "E": 5}], "junctions": [{"x": 410, "y": 633}, {"x": 500, "y": 633}, {"x": 410, "y": 743}]}}
-     }
-   }
-   end
+      `blend` has `split`'s ports in `split`'s places: `tau_ref` and `v` on the left edge, top and bottom, `tau_motor` and `tau_brake` on the right edge, top and bottom; the small input on its bottom edge is `abs_active`, which exists only with `abs_rule = true` and stays unwired here. On `car`, `tau_rl` and `tau_rr` are the inputs on the left and right edges just above the rear spins. `tau_brake` is the torque for *each* of the four friction brakes, so it goes to all four, where `split`'s went to the front two. Count the `connect` lines in code view: nineteen, step 04's seventeen less `split`'s five, plus these seven. If your `BEVWLTC` is step 04's **Fell behind?** code, it wrote the front brake wires as one `connect(split.tau_brake, car.tau_fl, car.tau_fr)`, and deleting `split` leaves `connect(car.tau_fr, car.tau_fl)` behind. Delete that line too: once wires 4 and 5 are drawn it ties nothing new, but it would hide a missing wire.
+   4. **Code.** Toggle to code (⇄). Delete the two lines `car.tau_rl = 0.0` and `car.tau_rr = 0.0`: the rear brakes are wired now, and a wired input set by an equation as well is set twice. Then paste the meters' variables among the declarations, just above `relations`, their equations at the end of `relations`, above the `metadata` block, and the analysis below the component's last `end`. Save.
 
-   analysis BEVRegenWLTCTransient
-     extends TransientAnalysis(stop = 1800.0, alg = ODEAlg.Rodas5P(), dtmax = 1.0, optimize = OptimizationLevel.None())
-     parameter k::Real = 50.0
-     parameter Ti::Time = 2.0
-     parameter P_charge::Power = 80.5e3
-     parameter v_fade::Real = 10.0
-     parameter P_aux::Power = 300.0
-     model = BEVRegenWLTC(k = k, Ti = Ti, P_charge = P_charge, v_fade = v_fade, P_aux = P_aux)
-   end
-   ```
+      ::: code-group
 
-   :::
+      ```txt [Variables]
+        "Power at the battery terminals, positive discharging"
+        variable P_dc::Power
+        "Power at the reduction output, positive driving the wheels"
+        variable P_shaft::Power
+        variable E_dc_in::Energy
+        variable E_shaft_out::Energy
+        variable E_shaft_in::Energy
+        variable E_brake::Energy
+      ```
+
+      ```txt [Relations]
+        P_dc = drive.battery.v * drive.battery.i
+        P_shaft = drive.machine.P_mech
+        der(E_dc_in) = max(-P_dc, 0.0)
+        der(E_shaft_out) = max(P_shaft, 0.0)
+        der(E_shaft_in) = max(-P_shaft, 0.0)
+        der(E_brake) = car.fl.brake.tau_friction * car.fl.brake.w + car.fr.brake.tau_friction * car.fr.brake.w + car.rl.brake.tau_friction * car.rl.brake.w + car.rr.brake.tau_friction * car.rr.brake.w
+        initial E_dc_in = 0.0
+        initial E_shaft_out = 0.0
+        initial E_shaft_in = 0.0
+        initial E_brake = 0.0
+      ```
+
+      ```txt [Analysis]
+      analysis BEVRegenWLTCTransient
+        extends TransientAnalysis(stop = 1800.0, alg = ODEAlg.Rodas5P(), dtmax = 1.0, optimize = OptimizationLevel.None())
+        parameter k::Real = 50.0
+        parameter Ti::Time = 2.0
+        parameter P_charge::Power = 80.5e3
+        parameter v_fade::Real = 10.0
+        parameter P_aux::Power = 300.0
+        model = BEVRegenWLTC(k = k, Ti = Ti, P_charge = P_charge, v_fade = v_fade, P_aux = P_aux)
+      end
+      ```
+
+      :::
+
+      The four meters integrate what the battery takes back, what the shaft gives and takes back at the reduction, and what the four friction brakes burn; `max(…, 0.0)` keeps only one direction of each.
+
+   [![Your BEVRegenWLTC in Studio: step 04's bench with blend where split was, between driver and drive along the top; kmh.y and driver.y into blend's left side, blend's motor output into drive, and its brake output down to all four brake inputs of car; the rest of step 04's bench unchanged.](/lecture/lecture-04/img/step05-bevregenwltc.png)](/lecture/lecture-04/img/step05-bevregenwltc.png)
+
+   The duplicated bench after the swap, as Studio routes the seven new wires: the brake output runs down to both front and both rear brake inputs of `car`. Studio can run a wire across a part; drag that segment aside if you want it clear.
 
    The ABS is not on this bench: on WLTC no wheel comes near its slip threshold, and its 200 Hz clock would make the solver stop every 5 ms for half an hour.
 6. Click ▷ **Run Analysis → BEVRegenWLTCTransient** once, then read the recovered share and where the braking went:
@@ -2301,7 +2279,7 @@ Commit: **Source Control** → message `Step 05: regen blending` → **Commit** 
 
 :::: warning Fell behind?
 
-Paste `BEVHardStop` and `BEVRegenWLTC` from steps 3 and 5 of **Do this** above; they need step 04's `ElectricDrive`, whose **Fell behind?** block is above. Then right-click `MyCar` → **Add Component**, name it `RegenBlend`, toggle to code (⇄) and paste this over its contents.
+Paste `BEVHardStop` from step 3 of **Do this** above; it needs step 04's `ElectricDrive`, whose **Fell behind?** block is above. Then right-click `MyCar` → **Add Component** twice, naming them `RegenBlend` and `BEVRegenWLTC`; toggle each to code (⇄) and paste its tab below over its contents.
 
 ::: code-group
 
@@ -2380,6 +2358,137 @@ metadata {
     "tau_brake": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}}}}
   }
 }
+end
+```
+
+```txt [BEVRegenWLTC]
+component BEVRegenWLTC
+  "Vehicle mass, shared by the car and its road load (probe)"
+  parameter m::Mass = 1500.0
+  "Wheel radius (repository default)"
+  parameter radius::Length = 0.31
+  "Driver gain, machine torque per km/h of speed error (assumed)"
+  parameter k::Real = 50.0
+  "Driver integral time (assumed)"
+  parameter Ti::Time = 2.0
+  "Driver and machine torque limit, the machine's peak torque (Nissan)"
+  parameter tau_max::Torque = 320.0
+  "Battery charge-power limit (INL)"
+  parameter P_charge::Power = 80.5e3
+  "Speed below which the braking ceiling fades to zero, km/h (assumed)"
+  parameter v_fade::Real = 10.0
+  "Power drawn by the 12 V network (assumed)"
+  parameter P_aux::Power = 300.0
+  "Single-speed reduction (Nissan)"
+  parameter ratio::Real = 8.193
+  "Initial wheel surface speed above the body's, keeps the start off zero slip (assumed)"
+  parameter dv_wheel::Velocity = 0.01
+  trace = VehicleSystemsComponents.Vehicle.DriveCycle() {^trace}
+  driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_max) {^driver}
+  no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
+  kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
+  drive = ElectricDrive(ratio = ratio, P_aux = P_aux) {^drive}
+  differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
+  mount = RotationalComponents.Components.Fixed() {^mount}
+  straight = RotationalComponents.Components.Fixed() {^straight}
+  flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius) {^car}
+  motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
+  roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
+  blend = RegenBlend(ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade) {^blend}
+  "Power at the battery terminals, positive discharging"
+  variable P_dc::Power
+  "Power at the reduction output, positive driving the wheels"
+  variable P_shaft::Power
+  variable E_dc_in::Energy
+  variable E_shaft_out::Energy
+  variable E_shaft_in::Energy
+  variable E_brake::Energy
+relations
+  connect(car.bus, motion.bus) {^wbus}
+  connect(trace.y, driver.u_s) {^w1}
+  connect(motion.vx, kmh.u) {^w2}
+  connect(kmh.y, driver.u_m, blend.v) {^w3}
+  connect(no_ff.y, driver.u_ff) {^w4}
+  connect(drive.spline, differential.flange_b) {^w5}
+  connect(differential.flange_left, car.spin_fl) {^w6}
+  connect(differential.flange_right, car.spin_fr) {^w7}
+  connect(drive.support, mount.spline) {^w8}
+  connect(car.steering, straight.spline) {^w9}
+  connect(flat.y, roadload.grade) {^w10}
+  connect(car.chassis, roadload.chassis) {^w11}
+  connect(driver.y, blend.tau_ref) {^w21}
+  connect(blend.tau_motor, drive.tau_ref) {^w23}
+  connect(blend.tau_brake, car.tau_fl, car.tau_fr, car.tau_rl, car.tau_rr) {^w24}
+  P_dc = drive.battery.v * drive.battery.i
+  P_shaft = drive.machine.P_mech
+  der(E_dc_in) = max(-P_dc, 0.0)
+  der(E_shaft_out) = max(P_shaft, 0.0)
+  der(E_shaft_in) = max(-P_shaft, 0.0)
+  der(E_brake) = car.fl.brake.tau_friction * car.fl.brake.w + car.fr.brake.tau_friction * car.fr.brake.w + car.rl.brake.tau_friction * car.rl.brake.w + car.rr.brake.tau_friction * car.rr.brake.w
+  initial car.body.r = [0, 0]
+  initial car.body.v = [0, 0]
+  initial car.body.phi = 0.0
+  initial car.body.w = 0.0
+  initial car.fl.inertia.w = dv_wheel / radius
+  initial car.fr.inertia.w = dv_wheel / radius
+  initial car.rl.inertia.w = dv_wheel / radius
+  initial car.rr.inertia.w = dv_wheel / radius
+  initial car.fl.inertia.phi = 0.0
+  initial car.fr.inertia.phi = 0.0
+  initial car.rl.inertia.phi = 0.0
+  initial car.rr.inertia.phi = 0.0
+  initial car.fl.brake.tau_actual = 0.0
+  initial car.fr.brake.tau_actual = 0.0
+  initial car.rl.brake.tau_actual = 0.0
+  initial car.rr.brake.tau_actual = 0.0
+  initial drive.converter.i_out = 0.0
+  initial E_dc_in = 0.0
+  initial E_shaft_out = 0.0
+  initial E_shaft_in = 0.0
+  initial E_brake = 0.0
+metadata {
+  "_links": {
+    "wbus": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "trace": {"Dyad": {"placement": {"diagram": {"x1": 20, "y1": 57, "x2": 100, "y2": 137}}}},
+    "driver": {"Dyad": {"placement": {"diagram": {"x1": 140, "y1": 70, "x2": 240, "y2": 170}}}},
+    "no_ff": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 10, "x2": 140, "y2": 50}}}},
+    "kmh": {"Dyad": {"placement": {"diagram": {"x1": 40, "y1": 190, "x2": 110, "y2": 260}}}},
+    "drive": {"Dyad": {"placement": {"diagram": {"x1": 430, "y1": 50, "x2": 530, "y2": 150}}}},
+    "differential": {"Dyad": {"placement": {"diagram": {"x1": 560, "y1": 260, "x2": 640, "y2": 340}}}},
+    "mount": {"Dyad": {"placement": {"diagram": {"x1": 485, "y1": 190, "x2": 545, "y2": 240}}}},
+    "straight": {"Dyad": {"placement": {"diagram": {"x1": 605, "y1": 500, "x2": 655, "y2": 550, "rot": 180}}}},
+    "flat": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 880, "x2": 480, "y2": 920}}}},
+    "car": {"Dyad": {"placement": {"diagram": {"x1": 520, "y1": 600, "x2": 740, "y2": 820}}}},
+    "motion": {"Dyad": {"placement": {"diagram": {"x1": 775, "y1": 610, "x2": 975, "y2": 810}}}},
+    "roadload": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 865, "x2": 570, "y2": 935}}}},
+    "blend": {"Dyad": {"placement": {"diagram": {"x1": 290, "y1": 70, "x2": 390, "y2": 170}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 990, "y": 662.0}, {"x": 990, "y": 980}, {"x": 20, "y": 980}, {"x": 20, "y": 225}], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 125, "y": 143}], "E": 2}, {"S": -1, "M": [{"x": 270, "y": 225}, {"x": 270, "y": 140}], "E": 3}], "junctions": [{"x": 125, "y": 225}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 190, "y": 30}], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 100}, {"x": 550, "y": 344}], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 480, "y": 300}, {"x": 480, "y": 655}], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 765, "y": 300}, {"x": 765, "y": 655}], "E": 2}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 515, "y": 150}], "E": 2}]}},
+    "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 680, "y": 820}, {"x": 680, "y": 900}], "E": 2}]}},
+    "w21": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 265, "y": 120}, {"x": 265, "y": 100}], "E": 2}]}},
+    "w23": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w24": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 410, "y": 140}], "E": -1}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": 2}, {"S": -2, "M": [{"x": 500, "y": 470}, {"x": 750, "y": 470}, {"x": 750, "y": 633}], "E": 3}, {"S": -1, "M": [], "E": -3}, {"S": -3, "M": [], "E": 4}, {"S": -3, "M": [{"x": 410, "y": 960}, {"x": 760, "y": 960}, {"x": 760, "y": 743}], "E": 5}], "junctions": [{"x": 410, "y": 633}, {"x": 500, "y": 633}, {"x": 410, "y": 743}]}}
+  }
+}
+end
+
+analysis BEVRegenWLTCTransient
+  extends TransientAnalysis(stop = 1800.0, alg = ODEAlg.Rodas5P(), dtmax = 1.0, optimize = OptimizationLevel.None())
+  parameter k::Real = 50.0
+  parameter Ti::Time = 2.0
+  parameter P_charge::Power = 80.5e3
+  parameter v_fade::Real = 10.0
+  parameter P_aux::Power = 300.0
+  model = BEVRegenWLTC(k = k, Ti = Ti, P_charge = P_charge, v_fade = v_fade, P_aux = P_aux)
 end
 ```
 
