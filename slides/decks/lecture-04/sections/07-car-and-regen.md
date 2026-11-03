@@ -459,8 +459,9 @@ routeAlias: build-regen
 <img src="/img/lecture-04/step05-regen-blend.png" class="mx-auto" style="max-height: 21rem" alt="The finished BEVHardStop in Studio: pedal and kmh into blend; blend.tau_motor into drive, blend.tau_brake into the ABS; drive through the differential to the front wheels; slips and zero into the ABS, whose outputs drive the four brakes; motion reads the car's bus."/>
 
 *New `RegenBlend`: parameters `ratio`, `radius`, `tau_max` 320, `P_charge` 80.5e3, `v_fade` 10 ·
-two inputs, two outputs · its variables and equations in code · new `BEVHardStop` and
-`BEVRegenWLTC`: paste from the guide · ▷ once each, then plot*
+two inputs, two outputs · its variables and equations in code · new `BEVHardStop`: paste from the
+guide · `BEVRegenWLTC`: **Duplicate** your `BEVWLTC`, swap `split` for `blend`, its brake output to
+all four brakes, four meters in code · ▷ once each, then plot*
 
 **Given:** Lecture 3's `ABSUnit`, `BusSlip`, your step 04 `ElectricDrive`
 
@@ -500,10 +501,12 @@ friction brakes. In code go its variables and equations, the last slides in orde
 from the car's speed, the fade, the charge-power ceiling, the smallest of the three ceilings, the
 demand as a positive braking torque, the regen torque as the smaller of the demand and the ceiling,
 and the remainder, carried through the reduction and divided over four wheels. Driving torque passes
-straight through to the machine. Then paste two benches from the guide. `BEVHardStop` is Lecture 3's
+straight through to the machine. Then two benches. Paste `BEVHardStop` from the guide: Lecture 3's
 straight ABS stop, with your drive on the front axle and the blend between the driver's brake
-command and the ABS. `BEVRegenWLTC` is build 04's bench with the blend in place of the split, the
-friction share on all four brakes, and four energy meters. Run each analysis once.
+command and the ABS. `BEVRegenWLTC` you make from your own build 04 bench: right-click it,
+Duplicate, delete the split and put the blend in its place. The blend's brake output goes to all
+four friction brakes, not just the front two, so delete the two lines that held the rear brakes at
+zero, and paste four energy meters. Run each analysis once.
 
 The snippet runs the hard stop, plots the regen ceiling and the machine's regen torque against
 speed, with the speed axis flipped so that the stop reads from left to right, and reads three

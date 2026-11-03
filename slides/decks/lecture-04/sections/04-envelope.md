@@ -498,9 +498,10 @@ routeAlias: build-converter
 
 <img src="/img/lecture-04/step02-converter-dyno.png" class="mx-auto" style="max-height: 21rem" alt="The finished ConverterDyno in Studio: current into the top of converter; supply into converter.p_in, converter.p_out into machine.p; converter.n, machine.n, supply.n and ground on one node; converter.field into machine.field; speed into dyno, both supports to mounts."/>
 
-*New `FieldEMF` and `Converter`: paste from the guide · give `DCMachine` its field input ·
-new `ConverterDyno`: `V` 350, `I_ref` 500, `rpm_start` 0, `rpm_end` 10 000 · `ConverterDynoTransient`,
-102 s · ▷ once, then plot*
+*`DCMachine`: a `field` input · `emf` → the library's `FieldEMF` · `field_weakening` · the `if`
+block · new `Converter`: 5 ports, 7 parameters, its equations in code · new `ConverterDyno`: `V`
+350, `I_ref` 500, `rpm_start` 0, `rpm_end` 10 000 · `ConverterDynoTransient`, 102 s · ▷ once, then
+plot*
 
 [page: step 02](../lecture/lecture-04/#step-02) · reference `dyad/HandsOn04/ConverterDyno.dyad`
 
@@ -536,12 +537,15 @@ n, the machine's n, the supply's n and the ground all share one node, one negati
 converter's field output goes into the machine's new field input. The speed ramp drives the dyno,
 and both housings go to the mounts, as in step 01.
 
-The steps, in the italic line. First, paste `FieldEMF` from the guide: the standard library's
+The steps, in the italic line. First, four changes to your build 01 `DCMachine`. A new input port,
+field, on its left edge. The `emf` becomes the course library's `FieldEMF`: the standard library's
 rotational EMF with one more input, field, so that E equals field times K Phi omega and the torque
-equals field times K Phi i. With field equal to 1 it is the element you had. Second, give your
-`DCMachine` its field input: the new code has a switch, `field_weakening`, which creates the input
-only when it is true. Left false, it is build 01's machine, unchanged. Third, paste `Converter`. Its
-key lines are the current loop, T i times the derivative of the output current equals the command
+equals field times K Phi i; it has the same pins, so the wires stay. A switch, `field_weakening`,
+which creates the input only when it is true. And an if block that wires the input to the EMF, or
+else holds the field at 1. Left false, it is build 01's machine, unchanged. Second, a new
+`Converter`: five ports and seven parameters placed in Studio, and its equations pasted in code,
+because averaged over a switching period the converter is nothing but its equations. Its key lines
+are the current loop, T i times the derivative of the output current equals the command
 minus the output current, with the command clipped to plus or minus I max; the duty, which is
 whatever the machine needs to carry that current; and an either-or relation: either the field is
 full, or the duty is at its limit. That relation is written with the corner of a minimum rounded off
