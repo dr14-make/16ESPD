@@ -1,0 +1,36 @@
+"Runs a driver-and-car assembly, optionally paced and displayed in a window."
+partial analysis RealtimeDrive
+  extends Analysis
+  "Driver-and-car assembly"
+  model::Dyad.EmptyComponent = Dyad.EmptyComponent()
+  "Simulation duration; zero runs until window close or the 3600 s simulation limit"
+  parameter duration::Time = 22
+  "Saved sample and window frame interval"
+  parameter frame::Time = 0.016666667
+  "Solver step cap"
+  parameter dtmax::Time = 0.005
+  "Show a window and pace the simulation to wall clock"
+  parameter window::Boolean = false
+  "ESP enable for the run"
+  parameter esp_on::Real = 1.0
+  "ABS enable for the run"
+  parameter abs_on::Real = 1.0
+  "Uniform road-grip multiplier"
+  parameter mu::Real = 1.0
+end
+
+"Scripted coast-down, run without a window by default."
+analysis PlanarBEVRealtimeDrive
+  extends RealtimeDrive(window = false)
+  model = PlanarBEVScripted(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
+  "Vehicle mass"
+  parameter m::Mass = 1500
+end
+
+"By-hand planar BEV drive with the optional window and controller extensions."
+analysis PlanarBEVByHandDrive
+  extends RealtimeDrive(window = true, duration = 0)
+  model = PlanarBEVByHand(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
+  "Vehicle mass"
+  parameter m::Mass = 1500
+end

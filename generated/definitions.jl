@@ -229,5 +229,15 @@ component.
 end
 
 
+include("CoastDownDriver_definition.jl")
+include("HardStopDriver_definition.jl")
 include("Hello_definition.jl")
+include("HumanCommandSampler_definition.jl")
+include("HumanDriver_definition.jl")
+include("PlanarBEVByHandDrive_definition.jl")
+include("PlanarBEVByHand_definition.jl")
+include("PlanarBEVRealtimeDrive_definition.jl")
+include("PlanarBEVScripted_definition.jl")
+include("RealtimeDrive_definition.jl")
+include("ScriptedDriver_definition.jl")
 include("World_definition.jl")

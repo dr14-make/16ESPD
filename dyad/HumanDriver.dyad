@@ -1,0 +1,32 @@
+"Samples the Julia command buffer without performing device I/O."
+component HumanCommandSampler@[input clk extends Discrete]
+  "Sampled simulation time, keeping buffer reads on the clock"
+  sampled_time = RealInput@[clk]()
+  "Sampled throttle fraction"
+  throttle = RealOutput@[clk]()
+  "Sampled brake fraction"
+  brake = RealOutput@[clk]()
+  "Sampled steering-wheel angle in radians"
+  steer = RealOutput@[clk]()
+relations
+  throttle@clk = _human_command(sampled_time@clk, 1)
+  brake@clk = _human_command(sampled_time@clk, 2)
+  steer@clk = _human_command(sampled_time@clk, 3)
+end
+
+"Human driver sampling the latest buffered commands and holding them between ticks."
+component HumanDriver
+  extends ClockedDriver
+  "Simulation time source"
+  continuousclock = BlockComponents.Sources.ContinuousClock()
+  "Time sampled onto the command clock"
+  time_sampler = DiscreteComponents.Sampler()
+  "Clocked command buffer reader"
+  reader = HumanCommandSampler()
+relations
+  connect(continuousclock.y, time_sampler.u)
+  connect(time_sampler.y, reader.sampled_time, clock.y)
+  connect(reader.throttle, throttle_hold.u)
+  connect(reader.brake, brake_hold.u)
+  connect(reader.steer, steer_hold.u)
+end

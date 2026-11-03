@@ -1,0 +1,30 @@
+"""Driver socket: implementations produce throttle and brake fractions in [0, 1] and a
+steering-wheel angle in radians. Actuator response belongs to the car, not the driver."""
+partial component Driver
+  "Throttle pedal fraction"
+  throttle_signal = RealOutput()
+  "Brake pedal fraction"
+  brake_signal = RealOutput()
+  "Steering-wheel angle in radians"
+  steer_signal = RealOutput()
+end
+
+"""Driver that samples its commands on a periodic clock and holds each one between ticks.
+Implementations feed the three holds from their own clocked source."""
+partial component ClockedDriver
+  extends Driver
+  "Command sampling period"
+  structural parameter period::Time = 0.01
+  "Command clock"
+  clock = DiscreteComponents.PeriodicClock(dt = period)
+  "Throttle held between command ticks"
+  throttle_hold = DiscreteComponents.ZeroOrderHold()
+  "Brake held between command ticks"
+  brake_hold = DiscreteComponents.ZeroOrderHold()
+  "Steering held between command ticks"
+  steer_hold = DiscreteComponents.ZeroOrderHold()
+relations
+  throttle_signal = throttle_hold.y
+  brake_signal = brake_hold.y
+  steer_signal = steer_hold.y
+end

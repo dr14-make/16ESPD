@@ -4,21 +4,19 @@
 using VehicleSystemsComponents, ModelingToolkit
 using DyadInterface: simplify_model
 using OrdinaryDiffEqDefault: Rodas5P, init, step!
-using SymbolicIndexingInterface: setp, getu
+using ModelingToolkit: getu
 
-@named model = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDrive()
+@named model = VehicleSystemsComponents.PlanarBEVByHand()
 t_build = @elapsed sys = simplify_model(model)
 println("compiled in $(round(t_build, digits = 1)) s; ",
         length(unknowns(sys)), " unknowns")
 
+VehicleSystemsComponents.reset_human_commands!()
 prob = ODEProblem(sys, [], (0.0, 1e6))
 integ = init(prob, Rodas5P(); dtmax = 0.005, save_everystep = false)
-set_throttle! = setp(integ, sys.throttle)
-set_brake! = setp(integ, sys.brake)
-set_steer! = setp(integ, sys.steer)
-speed = getu(integ, sys.motion.vx)
-yaw = getu(integ, sys.motion.r)
-torques = getu(integ, [sys.car.tau_fl, sys.car.tau_fr, sys.car.tau_rl, sys.car.tau_rr])
+speed = getu(integ, sys.vehicle.motion.vx)
+yaw = getu(integ, sys.vehicle.motion.r)
+torques = getu(integ, [sys.vehicle.car.tau_fl, sys.vehicle.car.tau_fr, sys.vehicle.car.tau_rl, sys.vehicle.car.tau_rr])
 
 function driver(time)
     time < 6 ? (1.0, 0.0, 0.0) :
@@ -32,9 +30,7 @@ function run(stop)
     next_print = 2 * (floor(integ.t / 2) + 1)
     wall = @elapsed while integ.t < stop
         th, br, st = driver(integ.t)
-        set_throttle!(integ, th)
-        set_brake!(integ, br)
-        set_steer!(integ, st)
+        VehicleSystemsComponents.set_human_commands!(throttle = th, brake = br, steer = st)
         f = @elapsed step!(integ, frame, true)
         worst = max(worst, f)
         if integ.t >= next_print - frame / 2

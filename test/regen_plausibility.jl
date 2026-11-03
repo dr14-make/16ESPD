@@ -311,22 +311,19 @@ using OrdinaryDiffEqDefault: Rodas5P, init, step!
 using SymbolicIndexingInterface: setp, getu
 
 @testset "Drivable BEV withdraws regen under front ABS" begin
-    @named model = _RG_PL.PlanarBEVDrive()
+    @named model = VehicleSystemsComponents.PlanarBEVScripted(
+        table = "dyad://VehicleSystemsComponents/drivers/hard_stop.csv")
     sys = simplify_model(model)
     integ = init(ODEProblem(sys, [], (0.0, 25.0)), Rodas5P();
         dtmax = 0.005, save_everystep = false)
-    throttle = setp(integ, sys.throttle)
-    brake = setp(integ, sys.brake)
-    readout = getu(integ, [sys.motion.vx, sys.car.bus.x, sys.slips.kappa_fl,
-        sys.slips.kappa_fr, sys.car.fl.inertia.w, sys.car.fr.inertia.w])
-    throttle(integ, 1.0)
+    vehicle = sys.vehicle
+    readout = getu(integ, [vehicle.motion.vx, vehicle.car.bus.x, vehicle.slips.kappa_fl,
+        vehicle.slips.kappa_fr, vehicle.car.fl.inertia.w, vehicle.car.fr.inertia.w])
     step!(integ, 9.0, true)
-    throttle(integ, 0.0)
     for _ in 1:5
         step!(integ, 2.0, true)
     end
     x0 = readout(integ)[2]
-    brake(integ, 1.0)
     minimum_slip, minimum_w = 0.0, Inf
     while integ.t < 25.0
         step!(integ, 0.005, true)
