@@ -17,6 +17,7 @@ const GROUPS = [
     "vacuum" => ["vacuum_booster_plausibility.jl", "vacuum_full_car.jl"],
     "lecture04" => ["machine_plausibility.jl", "converter_plausibility.jl", "battery_plausibility.jl",
         "efficiency_map_plausibility.jl"],
+    "lecture05" => ["lecture05_plausibility.jl"],
     "switching" => ["switching_plausibility.jl"],
     "planar_wltc" => ["planar_wltc_plausibility.jl"],
     "realtime" => ["realtime.jl"],
