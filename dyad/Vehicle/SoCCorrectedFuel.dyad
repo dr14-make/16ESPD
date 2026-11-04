@@ -1,18 +1,24 @@
 """
 SoC-corrected fuel of a drive-cycle run: the fuel the engine burned, plus the fuel it would take
-to put back the net energy the battery gave up, both per 100 km of distance driven.
+to put back the energy the battery's store gave up, both per 100 km of distance driven.
 
-    m_fuel = ∫ mdot_fuel dt        E_batt = ∫ P_batt dt        s = ∫ v dt
+    m_fuel = ∫ mdot_fuel dt        E_batt = ∫ P_stored dt        s = ∫ speed dt
     m_eq   = E_batt / (eta_eb H_u)
     fuel_corr = (m_fuel + m_eq) / rho_f per 100 km
 
 The method is the linear correction of SAE J1711 and UN ECE R101 Annex 8: fuel is corrected in
 proportion to the net battery energy over the run. Those procedures take the slope from a
 regression over several tests; here it is fixed by a stated engine-to-battery efficiency
-`eta_eb` instead (assumed). `E_batt` is metered at the battery terminals, positive when the run
+`eta_eb` instead (assumed).
+
+`P_stored` is the power out of the battery's store, `E i` behind the series resistance, not the
+terminal power `v i`. A bench forms it as `meter.P_stored = drive.battery.E * drive.battery.i`.
+For `Vehicle.Electric.Battery`, with constant `E`, its integral is `E Q_nom (SoC0 - SoC)`, so a
+run that returns SoC to its start reports `E_batt = 0` and corrected fuel equal to raw fuel
+exactly. Terminal energy would not: it falls short of that by `∫ R0 i^2 dt` on every run, and
+would credit the car with fuel for its own resistive loss. `E_batt` is positive when the run
 ends with less charge than it started, so a run that drew on the battery reports more corrected
-fuel than raw fuel, and one that charged it reports less. With `E_batt = 0` the corrected figure
-is the raw one exactly.
+fuel than raw fuel, and one that charged it reports less.
 
 The integrals start at zero at t = 0, so every output reads 0 there. The per-100-km outputs
 divide by `sqrt(s^2 + d_reg^2)` in place of `s`, which keeps the division finite at standstill
@@ -26,21 +32,21 @@ Fuel constants are the course's petrol: `rho_f` 0.745 kg/L (Hands-on 02) and `H_
 component SoCCorrectedFuel
   "Fuel mass flow into the engine [kg/s]"
   mdot_fuel = RealInput() {^mdot_fuel}
-  "Electrical power at the battery terminals, v i, positive discharging [W]"
-  P_batt = RealInput() {^P_batt}
+  "Power out of the battery's store, E i, positive discharging [W]"
+  P_stored = RealInput() {^P_stored}
   "Vehicle speed along its path [m/s]"
-  v = RealInput() {^v}
+  speed = RealInput() {^speed}
   "Raw fuel consumption [L/100 km]"
   fuel_raw = RealOutput() {^fuel_raw}
-  "Net battery energy discharged at the terminals since t = 0, positive when charge was drawn [MJ]"
+  "Net energy out of the battery's store since t = 0, positive when charge was drawn [MJ]"
   E_batt_MJ = RealOutput() {^E_batt_MJ}
   "SoC-corrected fuel consumption [L/100 km]"
   fuel_corr = RealOutput() {^fuel_corr}
   "SoC-corrected fuel energy, fuel_corr at H_u [MJ/100 km]"
   energy_corr = RealOutput() {^energy_corr}
 
-  "Engine-to-battery efficiency, fuel energy to battery terminals: the Lecture 2 engine's 35.7 % at its best point (232 g/kWh) times 0.90 for machine and inverter generating, inside ORNL's 0.80-0.96 combined band (derived)"
-  parameter eta_eb::Real = 0.32
+  "Engine-to-battery efficiency, fuel energy to stored battery energy: 34.7 % on the Lecture 2 engine's best-BSFC line at 15 kW (238.75 g/kWh), a part-load charging point, times 0.90 for machine and inverter generating (inside ORNL's 0.80-0.96 combined band) and 0.97 for the battery's charging loss (derived; the 232 g/kWh best point would give 0.31, a bound that favors draining the battery, and charging further down the line costs more)"
+  parameter eta_eb::Real = 0.30
   "Petrol lower heating value (Lecture 2 tasks, textbook)"
   parameter H_u::SpecificEnergy = 43.4e6
   "Petrol density, 0.745 kg/L (Hands-on 02)"
@@ -50,7 +56,7 @@ component SoCCorrectedFuel
 
   "Fuel burned since t = 0"
   variable m_fuel::Mass
-  "Net energy out of the battery terminals since t = 0"
+  "Net energy out of the battery's store since t = 0"
   variable E_batt::Energy
   "Distance driven since t = 0"
   variable s::Length
@@ -63,8 +69,8 @@ relations
   initial E_batt = 0.0
   initial s = 0.0
   der(m_fuel) = mdot_fuel
-  der(E_batt) = P_batt
-  der(s) = v
+  der(E_batt) = P_stored
+  der(s) = speed
   m_eq = E_batt / (eta_eb * H_u)
   d = sqrt(s ^ 2 + d_reg ^ 2)
   # 1e8: m^3 to L (1e3) over m to 100 km (1e-5).
@@ -75,8 +81,8 @@ relations
 metadata {
   "_links": {
     "mdot_fuel": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
-    "P_batt": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
-    "v": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 750, "x2": 50, "y2": 850}}}},
+    "P_stored": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "speed": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 750, "x2": 50, "y2": 850}}}},
     "fuel_raw": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 100, "x2": 1050, "y2": 200}}}},
     "E_batt_MJ": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 333, "x2": 1050, "y2": 433}}}},
     "fuel_corr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 566, "x2": 1050, "y2": 666}}}},
@@ -86,32 +92,74 @@ metadata {
 end
 
 """
-Constant fuel flow, battery power and speed into `SoCCorrectedFuel`, so that every integral is
-a product a test can work out by hand. Defaults: 1 g/s of fuel, 1 kW drawn from the battery and
-20 m/s (assumed test inputs).
+Constant fuel flow, stored-power draw and speed into `SoCCorrectedFuel`, so that every integral
+is a product a test can work out by hand. Defaults: 1 g/s of fuel, 1 kW drawn from the battery
+and 20 m/s (assumed test inputs).
 """
 test component TestSoCCorrectedFuel
   "Fuel mass flow (assumed test input)"
   parameter mdot::MassFlowRate = 1e-3
-  "Battery terminal power, positive discharging (assumed test input)"
+  "Power out of the battery's store, positive discharging (assumed test input)"
   parameter P::Power = 1000.0
   "Vehicle speed (assumed test input)"
-  parameter speed::Velocity = 20.0
+  parameter v_car::Velocity = 20.0
   fuel = BlockComponents.Sources.Constant(k = mdot)
   battery = BlockComponents.Sources.Constant(k = P)
-  motion = BlockComponents.Sources.Constant(k = speed)
+  motion = BlockComponents.Sources.Constant(k = v_car)
   meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel()
 relations
   connect(fuel.y, meter.mdot_fuel)
-  connect(battery.y, meter.P_batt)
-  connect(motion.y, meter.v)
+  connect(battery.y, meter.P_stored)
+  connect(motion.y, meter.speed)
 end
 
-"Constant inputs for 500 s: 10 km at the default 20 m/s (derived)."
+"Constant inputs for 500 s: 10 km at the bench's 20 m/s (derived)."
 analysis SoCCorrectedFuelTransient
   extends TransientAnalysis(stop = 500.0, abstol = 1e-10, reltol = 1e-10)
+  model = TestSoCCorrectedFuel()
+end
+
+"""
+A real `Vehicle.Electric.Battery` (Leaf defaults, R0 = 0.1 Ohm) driven by a current source
+through whole periods of a sine, so its charge, and SoC, return to the start while `R0 i^2` is
+burned throughout. The battery's `E i` feeds `SoCCorrectedFuel` beside a constant fuel flow and
+speed. `E_R0` and `E_dc` meter the resistive loss and the terminal energy for comparison.
+"""
+test component TestSoCCorrectedFuelBattery
+  "Fuel mass flow (assumed test input)"
   parameter mdot::MassFlowRate = 1e-3
-  parameter P::Power = 1000.0
-  parameter speed::Velocity = 20.0
-  model = TestSoCCorrectedFuel(mdot = mdot, P = P, speed = speed)
+  "Vehicle speed (assumed test input)"
+  parameter v_car::Velocity = 20.0
+  "Discharge current amplitude (assumed test input)"
+  parameter I_amp::Current = 100.0
+  "Current waveform frequency, five periods in the 500 s run (assumed test input)"
+  parameter f::Frequency = 0.01
+  fuel = BlockComponents.Sources.Constant(k = mdot)
+  motion = BlockComponents.Sources.Constant(k = v_car)
+  wave = BlockComponents.Sources.Sine(amplitude = I_amp, frequency = f)
+  load = ElectricalComponents.Analog.Sources.CurrentSource()
+  battery = VehicleSystemsComponents.Vehicle.Electric.Battery()
+  ground = ElectricalComponents.Analog.Basic.Ground()
+  meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel()
+  "Energy burned in the battery's series resistance"
+  variable E_R0::Energy
+  "Net energy out of the battery terminals"
+  variable E_dc::Energy
+relations
+  initial E_R0 = 0.0
+  initial E_dc = 0.0
+  connect(wave.y, load.I)
+  connect(battery.p, load.p)
+  connect(load.n, battery.n, ground.g)
+  connect(fuel.y, meter.mdot_fuel)
+  connect(motion.y, meter.speed)
+  meter.P_stored = battery.E * battery.i
+  der(E_R0) = battery.R0 * battery.i ^ 2
+  der(E_dc) = battery.v * battery.i
+end
+
+"Five whole periods of the battery current, 500 s (derived)."
+analysis SoCCorrectedFuelBatteryTransient
+  extends TransientAnalysis(stop = 500.0, abstol = 1e-10, reltol = 1e-10)
+  model = TestSoCCorrectedFuelBattery()
 end

@@ -5,21 +5,21 @@
 
 
 @doc Markdown.doc"""
-   TestSoCCorrectedFuel(; name, mdot, P, speed, __overrides)
+   TestSoCCorrectedFuel(; name, mdot, P, v_car, __overrides)
 
-Constant fuel flow, battery power and speed into `SoCCorrectedFuel`, so that every integral is
-a product a test can work out by hand. Defaults: 1 g/s of fuel, 1 kW drawn from the battery and
-20 m/s (assumed test inputs).
+Constant fuel flow, stored-power draw and speed into `SoCCorrectedFuel`, so that every integral
+is a product a test can work out by hand. Defaults: 1 g/s of fuel, 1 kW drawn from the battery
+and 20 m/s (assumed test inputs).
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `mdot`         | Fuel mass flow (assumed test input)                         | kg/s  |   1e-3 |
-| `P`         | Battery terminal power, positive discharging (assumed test input)                         | W  |   1000.0 |
-| `speed`         | Vehicle speed (assumed test input)                         | m/s  |   20.0 |
+| `P`         | Power out of the battery's store, positive discharging (assumed test input)                         | W  |   1000.0 |
+| `v_car`         | Vehicle speed (assumed test input)                         | m/s  |   20.0 |
 """
-@component function TestSoCCorrectedFuel(; name = nothing, var"mdot"=0.001, var"P"=Float64(1000.0), var"speed"=Float64(20.0), __overrides = Dict{String, Any}())
+@component function TestSoCCorrectedFuel(; name = nothing, var"mdot"=0.001, var"P"=Float64(1000.0), var"v_car"=Float64(20.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -40,7 +40,7 @@ a product a test can work out by hand. Defaults: 1 g/s of fuel, 1 kW drawn from 
   ### Keyword argument overrides
   haskey(__overrides, "mdot") && (mdot = pop!(__overrides, "mdot"))
   haskey(__overrides, "P") && (P = pop!(__overrides, "P"))
-  haskey(__overrides, "speed") && (speed = pop!(__overrides, "speed"))
+  haskey(__overrides, "v_car") && (v_car = pop!(__overrides, "v_car"))
 
   ### Structural Parameters (functions)
 
@@ -59,11 +59,11 @@ a product a test can work out by hand. Defaults: 1 g/s of fuel, 1 kW drawn from 
   append!(__params, @parameters (mdot::Real), [description = "Fuel mass flow (assumed test input)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, mdot, __local__mdot)
   __local__P = P
-  append!(__params, @parameters (P::Real), [description = "Battery terminal power, positive discharging (assumed test input)"])
+  append!(__params, @parameters (P::Real), [description = "Power out of the battery's store, positive discharging (assumed test input)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, P, __local__P)
-  __local__speed = speed
-  append!(__params, @parameters (speed::Real), [description = "Vehicle speed (assumed test input)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, speed, __local__speed)
+  __local__v_car = v_car
+  append!(__params, @parameters (v_car::Real), [description = "Vehicle speed (assumed test input)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_car, __local__v_car)
 
   ### Final Parameters (assignments)
 
@@ -85,7 +85,7 @@ a product a test can work out by hand. Defaults: 1 g/s of fuel, 1 kW drawn from 
   push!(__systems, @named battery = BlockComponents.Sources.Constant(; k=P, __overrides = battery_overrides))
   # Subcomponent motion of type BlockComponents.Sources.Constant
   motion_overrides = __pop_subcomponent_overrides!(__overrides, "motion")
-  push!(__systems, @named motion = BlockComponents.Sources.Constant(; k=speed, __overrides = motion_overrides))
+  push!(__systems, @named motion = BlockComponents.Sources.Constant(; k=v_car, __overrides = motion_overrides))
   # Subcomponent meter of type VehicleSystemsComponents.Vehicle.SoCCorrectedFuel
   meter_overrides = __pop_subcomponent_overrides!(__overrides, "meter")
   push!(__systems, @named meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel(; __overrides = meter_overrides))
@@ -102,8 +102,8 @@ a product a test can work out by hand. Defaults: 1 g/s of fuel, 1 kW drawn from 
 
   ### Equations
   push!(__eqs, connect(fuel.y, meter.mdot_fuel))
-  push!(__eqs, connect(battery.y, meter.P_batt))
-  push!(__eqs, connect(motion.y, meter.v))
+  push!(__eqs, connect(battery.y, meter.P_stored))
+  push!(__eqs, connect(motion.y, meter.speed))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -8,19 +8,25 @@
    SoCCorrectedFuel(; name, eta_eb, H_u, rho_f, d_reg, __overrides)
 
 SoC-corrected fuel of a drive-cycle run: the fuel the engine burned, plus the fuel it would take
-to put back the net energy the battery gave up, both per 100 km of distance driven.
+to put back the energy the battery's store gave up, both per 100 km of distance driven.
 
-    m_fuel = ∫ mdot_fuel dt        E_batt = ∫ P_batt dt        s = ∫ v dt
+    m_fuel = ∫ mdot_fuel dt        E_batt = ∫ P_stored dt        s = ∫ speed dt
     m_eq   = E_batt / (eta_eb H_u)
     fuel_corr = (m_fuel + m_eq) / rho_f per 100 km
 
 The method is the linear correction of SAE J1711 and UN ECE R101 Annex 8: fuel is corrected in
 proportion to the net battery energy over the run. Those procedures take the slope from a
 regression over several tests; here it is fixed by a stated engine-to-battery efficiency
-`eta_eb` instead (assumed). `E_batt` is metered at the battery terminals, positive when the run
+`eta_eb` instead (assumed).
+
+`P_stored` is the power out of the battery's store, `E i` behind the series resistance, not the
+terminal power `v i`. A bench forms it as `meter.P_stored = drive.battery.E * drive.battery.i`.
+For `Vehicle.Electric.Battery`, with constant `E`, its integral is `E Q_nom (SoC0 - SoC)`, so a
+run that returns SoC to its start reports `E_batt = 0` and corrected fuel equal to raw fuel
+exactly. Terminal energy would not: it falls short of that by `∫ R0 i^2 dt` on every run, and
+would credit the car with fuel for its own resistive loss. `E_batt` is positive when the run
 ends with less charge than it started, so a run that drew on the battery reports more corrected
-fuel than raw fuel, and one that charged it reports less. With `E_batt = 0` the corrected figure
-is the raw one exactly.
+fuel than raw fuel, and one that charged it reports less.
 
 The integrals start at zero at t = 0, so every output reads 0 there. The per-100-km outputs
 divide by `sqrt(s^2 + d_reg^2)` in place of `s`, which keeps the division finite at standstill
@@ -35,7 +41,7 @@ Fuel constants are the course's petrol: `rho_f` 0.745 kg/L (Hands-on 02) and `H_
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `eta_eb`         | Engine-to-battery efficiency, fuel energy to battery terminals: the Lecture 2 engine's 35.7 % at its best point (232 g/kWh) times 0.90 for machine and inverter generating, inside ORNL's 0.80-0.96 combined band (derived)                         | --  |   0.32 |
+| `eta_eb`         | Engine-to-battery efficiency, fuel energy to stored battery energy: 34.7 % on the Lecture 2 engine's best-BSFC line at 15 kW (238.75 g/kWh), a part-load charging point, times 0.90 for machine and inverter generating (inside ORNL's 0.80-0.96 combined band) and 0.97 for the battery's charging loss (derived; the 232 g/kWh best point would give 0.31, a bound that favors draining the battery, and charging further down the line costs more)                         | --  |   0.30 |
 | `H_u`         | Petrol lower heating value (Lecture 2 tasks, textbook)                         | J/kg  |   43.4e6 |
 | `rho_f`         | Petrol density, 0.745 kg/L (Hands-on 02)                         | kg/m3  |   745.0 |
 | `d_reg`         | Distance that regularizes the division by distance at standstill (assumed)                         | m  |   1.0 |
@@ -43,8 +49,8 @@ Fuel constants are the course's petrol: `rho_f` 0.745 kg/L (Hands-on 02) and `H_
 ## Connectors
 
  * `mdot_fuel` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `P_batt` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `v` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `P_stored` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `speed` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `fuel_raw` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `E_batt_MJ` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `fuel_corr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
@@ -55,12 +61,12 @@ Fuel constants are the course's petrol: `rho_f` 0.745 kg/L (Hands-on 02) and `H_
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
 | `m_fuel`         | Fuel burned since t = 0                         | kg  |
-| `E_batt`         | Net energy out of the battery terminals since t = 0                         | J  |
+| `E_batt`         | Net energy out of the battery's store since t = 0                         | J  |
 | `s`         | Distance driven since t = 0                         | m  |
 | `m_eq`         | Fuel that would put E_batt back through the engine and the machine                         | kg  |
 | `d`         | Regularized distance, s away from standstill                         | m  |
 """
-@component function SoCCorrectedFuel(; name = nothing, var"eta_eb"=0.32, var"H_u"=Float64(43400000.0), var"rho_f"=Float64(745.0), var"d_reg"=Float64(1.0), __overrides = Dict{String, Any}())
+@component function SoCCorrectedFuel(; name = nothing, var"eta_eb"=0.3, var"H_u"=Float64(43400000.0), var"rho_f"=Float64(745.0), var"d_reg"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -98,7 +104,7 @@ Fuel constants are the course's petrol: `rho_f` 0.745 kg/L (Hands-on 02) and `H_
 
   ### Symbolic Parameters
   __local__eta_eb = eta_eb
-  append!(__params, @parameters (eta_eb::Real), [description = "Engine-to-battery efficiency, fuel energy to battery terminals: the Lecture 2 engine's 35.7 % at its best point (232 g/kWh) times 0.90 for machine and inverter generating, inside ORNL's 0.80-0.96 combined band (derived)"])
+  append!(__params, @parameters (eta_eb::Real), [description = "Engine-to-battery efficiency, fuel energy to stored battery energy: 34.7 % on the Lecture 2 engine's best-BSFC line at 15 kW (238.75 g/kWh), a part-load charging point, times 0.90 for machine and inverter generating (inside ORNL's 0.80-0.96 combined band) and 0.97 for the battery's charging loss (derived; the 232 g/kWh best point would give 0.31, a bound that favors draining the battery, and charging further down the line costs more)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, eta_eb, __local__eta_eb)
   __local__H_u = H_u
   append!(__params, @parameters (H_u::Real), [description = "Petrol lower heating value (Lecture 2 tasks, textbook)"])
@@ -114,8 +120,8 @@ Fuel constants are the course's petrol: `rho_f` 0.745 kg/L (Hands-on 02) and `H_
 
   ### Final Path Parameters
   append!(__vars, @variables (mdot_fuel(t)::Real), [input = true])
-  append!(__vars, @variables (P_batt(t)::Real), [input = true])
-  append!(__vars, @variables (v(t)::Real), [input = true])
+  append!(__vars, @variables (P_stored(t)::Real), [input = true])
+  append!(__vars, @variables (speed(t)::Real), [input = true])
   append!(__vars, @variables (fuel_raw(t)::Real), [output = true])
   append!(__vars, @variables (E_batt_MJ(t)::Real), [output = true])
   append!(__vars, @variables (fuel_corr(t)::Real), [output = true])
@@ -123,7 +129,7 @@ Fuel constants are the course's petrol: `rho_f` 0.745 kg/L (Hands-on 02) and `H_
 
   ### Variables (declarations)
   append!(__vars, @variables (m_fuel(t)::Real), [description = "Fuel burned since t = 0"])
-  append!(__vars, @variables (E_batt(t)::Real), [description = "Net energy out of the battery terminals since t = 0"])
+  append!(__vars, @variables (E_batt(t)::Real), [description = "Net energy out of the battery's store since t = 0"])
   append!(__vars, @variables (s(t)::Real), [description = "Distance driven since t = 0"])
   append!(__vars, @variables (m_eq(t)::Real), [description = "Fuel that would put E_batt back through the engine and the machine"])
   append!(__vars, @variables (d(t)::Real), [description = "Regularized distance, s away from standstill"])
@@ -170,8 +176,8 @@ Fuel constants are the course's petrol: `rho_f` 0.745 kg/L (Hands-on 02) and `H_
 
   ### Equations
   push!(__eqs, ModelingToolkit.D_nounits(m_fuel) ~ mdot_fuel)
-  push!(__eqs, ModelingToolkit.D_nounits(E_batt) ~ P_batt)
-  push!(__eqs, ModelingToolkit.D_nounits(s) ~ v)
+  push!(__eqs, ModelingToolkit.D_nounits(E_batt) ~ P_stored)
+  push!(__eqs, ModelingToolkit.D_nounits(s) ~ speed)
   push!(__eqs, m_eq ~ E_batt / (eta_eb * H_u))
   push!(__eqs, d ~ sqrt(s ^ 2 + d_reg ^ 2))
   push!(__eqs, fuel_raw ~ 100000000.0 * m_fuel / (rho_f * d))

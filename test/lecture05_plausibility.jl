@@ -108,8 +108,10 @@ end
 
 
 @testset "SoC-corrected fuel" begin
+    _V = VehicleSystemsComponents.Vehicle
     function soc_fuel_end(; P)
-        run = VehicleSystemsComponents.Vehicle.SoCCorrectedFuelTransient(P = P)
+        bench = _V.TestSoCCorrectedFuel(; name = :bench, P)
+        run = _V.SoCCorrectedFuelTransient(model = bench)
         m, s = symbolic_container(run), run.sol
         y(x) = s[x][end]
         return (; raw = y(m.meter.fuel_raw), E_MJ = y(m.meter.E_batt_MJ),
@@ -117,15 +119,15 @@ end
             first = (s[m.meter.fuel_raw][1], s[m.meter.fuel_corr][1], s[m.meter.energy_corr][1]))
     end
 
-    # Hand calculation, 1 g/s of fuel, 1 kW out of the battery and 20 m/s for 500 s:
-    # 10 km, 0.5 kg of fuel = 0.5 / 0.745 L, 0.5 MJ from the battery.
+    # Hand calculation, 1 g/s of fuel, 1 kW out of the battery's store and 20 m/s for 500 s:
+    # 10 km, 0.5 kg of fuel = 0.5 / 0.745 L, 0.5 MJ from the battery at eta_eb = 0.30.
     km = 20.0 * 500.0 / 1000.0
     fuel_L = 0.5 / 0.745
-    eq_L = 0.5 / (0.32 * 43.4) / 0.745
+    eq_L = 0.5 / (0.30 * 43.4) / 0.745
     raw = fuel_L / km * 100.0
     corr = (fuel_L + eq_L) / km * 100.0
     @test raw ≈ 6.7114 atol = 1e-4
-    @test corr ≈ 7.1946 atol = 1e-4
+    @test corr ≈ 7.2269 atol = 1e-4
 
     drawn = soc_fuel_end(P = 1000.0)
     # The standstill guard sqrt(s^2 + d_reg^2) moves 10 km by 5e-9 of itself.
@@ -146,4 +148,18 @@ end
     @test charged.E_MJ ≈ -0.5 rtol = 1e-7
     @test drawn.corr > neutral.corr > charged.corr
     @test drawn.corr - neutral.corr ≈ neutral.corr - charged.corr rtol = 1e-7
+
+    # A real battery cycled back to its start SoC: the stored energy nets to zero while
+    # R0 i^2 burns 0.1 * 100^2 / 2 * 500 = 0.25 MJ, which terminal energy would have credited.
+    run = _V.SoCCorrectedFuelBatteryTransient()
+    m, s = symbolic_container(run), run.sol
+    E_R0 = s[m.E_R0][end] / 1e6
+    @test E_R0 ≈ 0.25 rtol = 1e-6
+    @test s[m.battery.SoC][end] ≈ s[m.battery.SoC][1] atol = 1e-9
+    @test abs(s[m.meter.E_batt_MJ][end]) < 1e-6 * E_R0
+    @test s[m.E_dc][end] / 1e6 ≈ -E_R0 rtol = 1e-6
+    @test s[m.meter.fuel_corr][end] ≈ s[m.meter.fuel_raw][end] rtol = 1e-8
+    println("SoC-corrected fuel, cycled battery: E_batt = $(s[m.meter.E_batt_MJ][end]) MJ, ",
+        "R0 loss = $E_R0 MJ, terminal = $(s[m.E_dc][end] / 1e6) MJ, ",
+        "raw = $(s[m.meter.fuel_raw][end]), corrected = $(s[m.meter.fuel_corr][end]) L/100 km")
 end

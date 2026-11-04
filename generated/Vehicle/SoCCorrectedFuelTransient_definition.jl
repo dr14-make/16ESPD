@@ -6,7 +6,7 @@
 
 using DyadInterface
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@component function SoCCorrectedFuelTransient__System(; name = nothing, var"alg"=ODEAlg.Auto(), var"start"=0, var"stop"=500.0, var"abstol"=1e-10, var"reltol"=1e-10, var"saveat"=0, var"dtmax"=0, var"tstops"=[], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.Aggressive(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", var"mdot"=0.001, var"P"=1000.0, var"speed"=20.0, __overrides = Dict{String, Any}())
+@component function SoCCorrectedFuelTransient__System(; name = nothing, var"alg"=ODEAlg.Auto(), var"start"=0, var"stop"=500.0, var"abstol"=1e-10, var"reltol"=1e-10, var"saveat"=0, var"dtmax"=0, var"tstops"=[], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.Aggressive(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -40,9 +40,6 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   haskey(__overrides, "specialization") && (specialization = pop!(__overrides, "specialization"))
   haskey(__overrides, "verbose") && (verbose = pop!(__overrides, "verbose"))
   haskey(__overrides, "log_file") && (log_file = pop!(__overrides, "log_file"))
-  haskey(__overrides, "mdot") && (mdot = pop!(__overrides, "mdot"))
-  haskey(__overrides, "P") && (P = pop!(__overrides, "P"))
-  haskey(__overrides, "speed") && (speed = pop!(__overrides, "speed"))
 
   ### Structural Parameters (functions)
 
@@ -102,15 +99,6 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   __local__log_file = log_file
   append!(__params, @parameters (log_file::String))
   __dyad_seed_parameter!(__initial_conditions, __bindings, log_file, __local__log_file)
-  __local__mdot = mdot
-  append!(__params, @parameters (mdot::Float64))
-  __dyad_seed_parameter!(__initial_conditions, __bindings, mdot, __local__mdot)
-  __local__P = P
-  append!(__params, @parameters (P::Float64))
-  __dyad_seed_parameter!(__initial_conditions, __bindings, P, __local__P)
-  __local__speed = speed
-  append!(__params, @parameters (speed::Float64))
-  __dyad_seed_parameter!(__initial_conditions, __bindings, speed, __local__speed)
 
   ### Final Parameters (assignments)
 
@@ -126,7 +114,7 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   ### Components
   # Subcomponent model of type VehicleSystemsComponents.Vehicle.TestSoCCorrectedFuel
   model_overrides = __pop_subcomponent_overrides!(__overrides, "model")
-  push!(__systems, @named model = VehicleSystemsComponents.Vehicle.TestSoCCorrectedFuel(; mdot=mdot, P=P, speed=speed, __overrides = model_overrides))
+  push!(__systems, @named model = VehicleSystemsComponents.Vehicle.TestSoCCorrectedFuel(; __overrides = model_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -163,22 +151,17 @@ export SoCCorrectedFuelTransient__System
   var"specialization"::SpecializationLevel.Type = SpecializationLevel.Despecialize()
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
-  var"mdot"::Float64 = 0.001
-  var"P"::Float64 = 1000.0
-  var"speed"::Float64 = 20.0
-  # Constant fuel flow, battery power and speed into `SoCCorrectedFuel`, so that every integral is
-  # a product a test can work out by hand. Defaults: 1 g/s of fuel, 1 kW drawn from the battery and
-  # 20 m/s (assumed test inputs).
+  # Constant fuel flow, stored-power draw and speed into `SoCCorrectedFuel`, so that every integral
+  # is a product a test can work out by hand. Defaults: 1 g/s of fuel, 1 kW drawn from the battery
+  # and 20 m/s (assumed test inputs).
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Vehicle.TestSoCCorrectedFuel(; name=:TestSoCCorrectedFuel)
-  __system::System = SoCCorrectedFuelTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file", var"mdot"=var"mdot", var"P"=var"P", var"speed"=var"speed")
+  __system::System = SoCCorrectedFuelTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file")
 end
 
 function __dyad_base_analysis_spec(spec::SoCCorrectedFuelTransient__Spec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
-  push!(overrides, no_namespace_model.mdot => spec.var"mdot")
-  push!(overrides, no_namespace_model.P => spec.var"P")
-  push!(overrides, no_namespace_model.speed => spec.var"speed")
+  
   merge!(overrides, spec.__overrides)
   TransientAnalysisSpec(;
     name=spec.name, overrides, __system=spec.__system, var"alg"=spec.var"alg", var"start"=spec.var"start", var"stop"=spec.var"stop", var"abstol"=spec.var"abstol", var"reltol"=spec.var"reltol", var"saveat"=spec.var"saveat", var"dtmax"=spec.var"dtmax", var"tstops"=spec.var"tstops", var"automatic_discontinuity_detection"=spec.var"automatic_discontinuity_detection", var"optimize"=spec.var"optimize", var"progress"=spec.var"progress", var"respecialize"=spec.var"respecialize", var"specialization"=spec.var"specialization", var"verbose"=spec.var"verbose", var"log_file"=spec.var"log_file", var"model"=spec.var"model"
