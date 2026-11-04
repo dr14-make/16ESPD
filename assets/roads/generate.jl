@@ -28,7 +28,7 @@ function write_grip(name, grip, u, v)
     end
 end
 
-"Longitudinal ice patch in the hard-stop brake phase, with four-meter edge blends."
+"Longitudinal extent of the one-sided patch in the hard-stop brake phase, with four-meter edge blends."
 patch(x) = smooth((x - 446) / 4) * smooth((466 - x) / 4)
 write_grip("uniform", (x,y) -> 1.0, 0.0:1.0:2.0, -1.0:1.0:1.0)
 write_grip("uniform_low", (x,y) -> 0.3, 0.0:1.0:2.0, -1.0:1.0:1.0)
