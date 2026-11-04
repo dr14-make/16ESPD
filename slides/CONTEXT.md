@@ -116,9 +116,15 @@ supported while the reference line moves forward in its start frame's x. Road mo
 applied when loading, before grip or height evaluation.
 _Avoid_: grip CSV, road drawing format
 
-
 **Disconnect clutch (K0)**:
 The commanded clutch between the engine and the P2 machine. Opening it lets the machine drive
 or regenerate with the engine disconnected; closing it transmits engine torque through the
 machine-side shaft to the CVT. Its electrohydraulic actuator has a finite engagement response.
 _Avoid_: launch clutch, centrifugal clutch, torque converter
+
+**SoC-corrected fuel**:
+A drive-cycle run's fuel per 100 km with the net battery energy turned into the fuel that would
+replace it, at a stated engine-to-battery efficiency: a hybrid that ends the run with less charge
+than it started reports more fuel than it burned, one that ends with more reports less. The
+`Vehicle.SoCCorrectedFuel` block reports it in L/100 km and MJ/100 km beside the raw fuel.
+_Avoid_: charge-sustaining fuel, net fuel, equivalent fuel (that is only the battery's share)
