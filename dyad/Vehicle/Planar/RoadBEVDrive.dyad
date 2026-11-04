@@ -53,7 +53,12 @@ component RoadBEVDrive
   ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(report_front = true, esp_on = esp_on, abs_on = abs_on, radius = radius, T_max = T_full) {^ecu}
   car = VehicleSystemsComponents.Vehicle.Planar.RoadCar(road_file = road_file, mu_scale_fl = mu, mu_scale_fr = mu, mu_scale_rl = mu, mu_scale_rr = mu, m = m, radius = radius, tau_max = T_full) {^car}
   roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
-  flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
+  "OpenCRG height asset evaluated at the chassis center"
+  structural parameter height_file::String = "dyad://VehicleSystemsComponents/roads/flat_z.crg"
+  "Shared world-coordinate slope callable loaded once"
+  structural parameter slope::VehicleSystemsComponents.RoadSlope = VehicleSystemsComponents.road_height(height_file)
+  "Road gradient sensor at the chassis center"
+  roadgrade = VehicleSystemsComponents.Vehicle.Planar.RoadGrade(slope = slope) {^roadgrade}
   motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
   slips = VehicleSystemsComponents.Vehicle.Planar.BusSlip() {^slips}
 relations
@@ -84,8 +89,8 @@ relations
   connect(ecu.tau_fr, car.tau_fr) {^w23}
   connect(ecu.tau_rl, car.tau_rl) {^w24}
   connect(ecu.tau_rr, car.tau_rr) {^w25}
-  connect(flat.y, roadload.grade) {^w26}
-  connect(car.chassis, roadload.chassis) {^w27}
+  connect(roadgrade.grade, roadload.grade) {^w26}
+  connect(car.chassis, roadload.chassis, roadgrade.chassis) {^w27}
   initial car.body.r = [0, 0]
   initial car.body.v = [0, 0]
   initial car.body.phi = 0.0

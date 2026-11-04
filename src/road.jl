@@ -1,4 +1,4 @@
-using OpenCRG, DataInterpolationsND
+using OpenCRG, DataInterpolationsND, ForwardDiff, ModelingToolkit
 
 "Resolve a package road asset or an explicit filesystem path."
 function road_path(file::AbstractString)
@@ -18,8 +18,9 @@ function road_dimension(axis)
     return dim, matrix
 end
 
-"Load an OpenCRG grip file once and return a C1 callable of world x and y, holding grid edges."
-function road_grip(file::AbstractString; fill_missing = nothing)
+"Load an OpenCRG grid and fit its edge-held world-coordinate surface."
+function road_surface(file::AbstractString; fill_missing = nothing, elevation = false)
+    kind = elevation ? "height" : "grip"
     path = road_path(file)
     isempty(file) && error("$(repr(file)): road filename is empty")
     isfile(path) || error("$file: road file does not exist")
@@ -31,15 +32,21 @@ function road_grip(file::AbstractString; fill_missing = nothing)
     r = data.refline
     # The pinned reader recognizes the standard _S/_B keys, not these spelled-out aliases.
     header = first(split(read(path, String), "\$\$\$\$"; limit = 2))
-    for m in eachmatch(r"(?im)^\s*REFERENCE_LINE_START_(?:SLOPE|BANKING)\s*=\s*([^\s!]+)", header)
-        value = tryparse(Float64, m.captures[1])
-        value == 0.0 || error("$file: elevation data (slope or banking start value) is not grip")
+    if elevation
+        occursin(r"(?im)^\s*REFERENCE_LINE_START_(?:SLOPE|BANKING)\s*=", header) &&
+            error("$file: unsupported start slope/banking alias; use REFERENCE_LINE_START_S or REFERENCE_LINE_START_B")
     end
-    (data.slope !== nothing || data.banking !== nothing ||
-        r.start_z != 0 || r.start_slope != 0 || r.start_banking != 0) &&
-        error("$file: elevation data (slope, banking, or reference-line start elevation) is not grip")
+    if !elevation
+        for m in eachmatch(r"(?im)^\s*REFERENCE_LINE_START_(?:SLOPE|BANKING)\s*=\s*([^\s!]+)", header)
+            value = tryparse(Float64, m.captures[1])
+            value == 0.0 || error("$file: elevation data (slope or banking start value) is not grip")
+        end
+        (data.slope !== nothing || data.banking !== nothing ||
+            r.start_z != 0 || r.start_slope != 0 || r.start_banking != 0) &&
+            error("$file: elevation data (slope, banking, or reference-line start elevation) is not grip")
+    end
     if any(isnan, data.z)
-        fill_missing === nothing && error("$file: grip grid contains NaN")
+        fill_missing === nothing && error("$file: $kind grid contains NaN")
         isfinite(fill_missing) || error("$file: fill_missing must be finite")
         replace!(data.z, NaN => Float64(fill_missing))
     end
@@ -47,7 +54,7 @@ function road_grip(file::AbstractString; fill_missing = nothing)
     replace!(data.phi, NaN => r.start_phi)
     try
         u, v, X, Y, z = OpenCRG.road_surface_grid(data)
-        all(isfinite, z) || error("grip grid contains nonfinite values after modifiers")
+        all(isfinite, z) || error("$kind grid contains nonfinite values after modifiers")
         all(>(0), diff(u)) && all(>(0), diff(v)) || error("grid axes must increase")
         # Grid columns are affine in v, including the reader's corner-normal rescaling.
         # Extrapolate them to v=0 rather than choosing an offset grid column.
@@ -85,3 +92,19 @@ function road_grip(file::AbstractString; fill_missing = nothing)
         error("$file: $(sprint(showerror, e))")
     end
 end
+
+"Load an OpenCRG grip file once and return a C1 callable of world x and y, holding grid edges."
+road_grip(file::AbstractString; fill_missing = nothing) =
+    road_surface(file; fill_missing, elevation = false)
+
+"Load height and return (world x, world y, heading radians) to tan of the along-heading road angle."
+function road_height(file::AbstractString; fill_missing = nothing)
+    height = road_surface(file; fill_missing, elevation = true)
+    return (x, y, psi) -> road_directional_slope(height, x, y, psi)
+end
+
+"Evaluate a surface's directional derivative numerically, keeping spline lookup out of symbolic tracing."
+road_directional_slope(height::Function, x, y, psi) = ForwardDiff.derivative(t ->
+    height(x + t * cos(psi), y + t * sin(psi)), zero(x + y + psi))
+
+ModelingToolkit.Symbolics.@register_symbolic road_directional_slope(height::Function, x, y, psi)

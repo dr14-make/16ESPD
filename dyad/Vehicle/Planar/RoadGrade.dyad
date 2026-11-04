@@ -1,0 +1,14 @@
+"Road gradient along the chassis heading, sensed without applying force or torque."
+component RoadGrade
+  "Chassis position and heading resolved in the world frame"
+  chassis = Frame2D() {^chassis}
+  "World-position and heading callable returning tan of the along-heading road angle"
+  structural parameter slope::VehicleSystemsComponents.RoadSlope
+  "Road gradient along the chassis heading, tan(alpha)"
+  grade = RealOutput() {^grade}
+relations
+  grade = slope(chassis.x, chassis.y, chassis.phi)
+  chassis.fx = 0.0
+  chassis.fy = 0.0
+  chassis.tau = 0.0
+end

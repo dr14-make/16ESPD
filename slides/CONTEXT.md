@@ -100,9 +100,18 @@ the grid and hold edge values outside it. Straight-grid nodes are interpolated e
 roads use an x-indexed approximation away from the reference line.
 _Avoid_: road socket, TableRoad, terrain controller, grip command, height map
 
+**Road slope function**:
+The `RoadSlope` callable takes the chassis center's world x and y position in meters and heading
+in radians and returns tan of the road angle along that heading. `RoadBEVDrive` loads it once
+with `road_height(height_file)` and passes it to `RoadGrade`, which reads the chassis frame
+without applying force or torque. The world-coordinate height derivative includes curved-road
+coordinate changes. Heading, not velocity direction, defines uphill even at rest or in reverse.
+_Avoid_: road socket, bank force, per-wheel slope, pitch model, grade command
+
 **OpenCRG**:
 ASAM's road-grid file format. Grip uses a separate `<name>_mu.crg` file containing dimensionless
-multipliers, not height; an empty or missing grip file raises an error. Straight and curved
-reference lines are supported while the reference line moves forward in its start frame's x.
-Road modifications are applied when loading, before grip evaluation.
+multipliers; height uses `<name>_z.crg`, including reference-line slope, banking, and start
+elevation. An empty or missing file raises an error. Straight and curved reference lines are
+supported while the reference line moves forward in its start frame's x. Road modifications are
+applied when loading, before grip or height evaluation.
 _Avoid_: grip CSV, road drawing format
