@@ -16,54 +16,93 @@ road_stop(file; esp_on = 0.0) = road_run(VehicleSystemsComponents.PlanarBEVOnRoa
     for file in ("handmade_straight.crg", "handmade_straight_double.crg")
         path = joinpath(@__DIR__, "data", "opencrg", file)
         data = read_crg(path)
-        road = VehicleSystemsComponents.road_surface(path; fill_missing = 0.0)
-        errors = [abs(road.surface(data.refline.start_u + (i-1)*data.refline.increment,
+        road = VehicleSystemsComponents.road_grip(path; fill_missing = 0.0)
+        errors = [abs(road(data.refline.start_u + (i-1)*data.refline.increment,
             data.v[j]) - data.z[i,j]) for i in axes(data.z,1), j in axes(data.z,2)
             if isfinite(data.z[i,j])]
         @info "OpenCRG finite nodes" file maximum_error = maximum(errors)
         @test maximum(errors) < 1e-9
-        @test road.surface(-100.0, 0.0) == road.surface(0.0, 0.0)
-        @test road.surface(100.0, 100.0) == road.surface(22.0, 1.5)
+        @test road(-100.0, 0.0) == road(0.0, 0.0)
+        @test road(100.0, 100.0) == road(22.0, 1.5)
     end
     # This pinned reader does not implement the upstream minimalist file's implicit v origin.
-    @test_throws "LONG_SECTION_V_RIGHT" VehicleSystemsComponents.road_surface(
+    @test_throws "LONG_SECTION_V_RIGHT" VehicleSystemsComponents.road_grip(
         joinpath(@__DIR__, "data", "opencrg", "handmade_straight_minimalist.crg"))
     curved = joinpath(@__DIR__, "data", "opencrg", "handmade_curved.crg")
-    @test_throws Regex(basename(curved) * ".*reference line phi") VehicleSystemsComponents.road_surface(curved)
-    @test_throws r"road filename is empty" VehicleSystemsComponents.road_surface("")
-    @test_throws r"absent_mu.crg.*does not exist" VehicleSystemsComponents.road_surface("absent_mu.crg")
-    @test_throws r"handmade_straight.crg.*NaN" VehicleSystemsComponents.road_surface(
+    curved_grip = VehicleSystemsComponents.road_grip(curved)
+    data = read_crg(curved)
+    u, v, X, Y, z = road_surface_grid(data)
+    zero = findfirst(==(0.0), v)
+    @test zero !== nothing
+    reference_error = maximum(abs(curved_grip(X[i,zero], Y[i,zero]) - z[i,zero]) for i in axes(z,1))
+    @test reference_error < 1e-9
+    errors = [isfinite(z[i,j]) ? abs(curved_grip(X[i,j],Y[i,j])-z[i,j]) : -Inf
+              for i in axes(z,1), j in axes(z,2)]
+    node = argmax(errors)
+    @info "Curved nodes" reference_error maximum_error=errors[node] node world=(X[node],Y[node])
+    # The x-indexed approximation measured 0.001690; 0.002 allows an 18% margin.
+    @test maximum(errors) < 0.002
+    @test_throws r"road filename is empty" VehicleSystemsComponents.road_grip("")
+    @test_throws r"absent_mu.crg.*does not exist" VehicleSystemsComponents.road_grip("absent_mu.crg")
+    @test_throws r"handmade_straight.crg.*NaN" VehicleSystemsComponents.road_grip(
         joinpath(@__DIR__, "data", "opencrg", "handmade_straight.crg"))
     mktempdir(get(ENV, "TMPDIR", tempdir())) do dir
         original = read(VehicleSystemsComponents.road_path(ROAD_ASSETS * "ice_patch_mu.crg"), String)
         modified = joinpath(dir, "modified_mu.crg")
         write(modified, replace(original, "\$KD_DEFINITION" =>
             "\$ROAD_CRG_MODS\nREFLINE_OFFSET_X = 10\n\$!\n\$KD_DEFINITION"))
-        base = VehicleSystemsComponents.road_surface(VehicleSystemsComponents.road_path(ROAD_ASSETS * "ice_patch_mu.crg"))
-        shifted = VehicleSystemsComponents.road_surface(modified)
-        @test shifted.x0 - base.x0 ≈ 10.0
-        @test shifted.y0 ≈ base.y0
-        @test shifted.surface(470.0, 0.0) ≈ base.surface(470.0, 0.0)
-        @info "OpenCRG modifier" modifier = "REFLINE_OFFSET_X" shift_m = shifted.x0 - base.x0
+        base = VehicleSystemsComponents.road_grip(VehicleSystemsComponents.road_path(ROAD_ASSETS * "ice_patch_mu.crg"))
+        shifted = VehicleSystemsComponents.road_grip(modified)
+        @test shifted(480.0, 0.0) ≈ base(470.0, 0.0)
+        @test shifted(440.0, 0.5) ≈ base(430.0, 0.5)
+        @test shifted(500.0, -0.5) ≈ base(490.0, -0.5)
+        @info "OpenCRG modifier" modifier = "REFLINE_OFFSET_X" shift_m = 10.0
         for key in ("Z", "S", "B", "SLOPE", "BANKING")
             bad = joinpath(dir, "start_" * lowercase(key) * ".crg")
             write(bad, replace(original, "\$ROAD_CRG\n" => "\$ROAD_CRG\nREFERENCE_LINE_START_" * key * " = 1\n"))
-            @test_throws Regex(basename(bad) * ".*elevation data") VehicleSystemsComponents.road_surface(bad)
+            @test_throws Regex(basename(bad) * ".*elevation data") VehicleSystemsComponents.road_grip(bad)
         end
         uniform = read(VehicleSystemsComponents.road_path(ROAD_ASSETS * "uniform_mu.crg"), String)
         for channel in ("slope", "banking")
             bad = joinpath(dir, channel * ".crg")
             write(bad, replace(uniform, "D:long section at v = -1.0,m" =>
                 "D:reference line " * channel * ",rad"))
-            @test_throws Regex(basename(bad) * ".*elevation data") VehicleSystemsComponents.road_surface(bad)
+            @test_throws Regex(basename(bad) * ".*elevation data") VehicleSystemsComponents.road_grip(bad)
         end
         straight = joinpath(dir, "constant_phi.crg")
         header, _ = split(uniform, "\$\$\$\$"; limit = 2)
         header = replace(header, "#:LDFI" => "#:LDFI\nD:reference line phi,rad")
         write(straight, header * "\$\$\$\$\n" * repeat(join(lpad(v, 20) for v in ("0.0", "1.0", "1.0", "1.0")) * "\n", 3))
-        @test VehicleSystemsComponents.road_surface(straight).surface(1.0, 0.0) ≈ 1.0
+        @test VehicleSystemsComponents.road_grip(straight)(1.0, 0.0) ≈ 1.0
+        rotated = joinpath(dir, "rotated_mu.crg")
+        angle = 0.7
+        write(rotated, replace(original,
+            "REFERENCE_LINE_START_PHI = 0" => "REFERENCE_LINE_START_PHI = $angle",
+            "REFERENCE_LINE_START_X = 420.0" => "REFERENCE_LINE_START_X = $(420*cos(angle))",
+            "REFERENCE_LINE_START_Y = 0" => "REFERENCE_LINE_START_Y = $(420*sin(angle))"))
+        rotated_grip = VehicleSystemsComponents.road_grip(rotated)
+        for (x, y) in ((450.0, 0.2), (470.0, -0.4), (496.0, 0.0))
+            @test rotated_grip(cos(angle)*x-sin(angle)*y, sin(angle)*x+cos(angle)*y) ≈ base(x,y) atol=1e-9
+        end
+        back = joinpath(dir, "turning_back.crg")
+        header, _ = split(uniform, "\$\$\$\$"; limit = 2)
+        header = replace(header, "#:LDFI" => "#:LDFI\nD:reference line phi,rad")
+        write(back, header * "\$\$\$\$\n" * join([join(lpad(value,20) for value in
+            (string(phi), "1.0", "1.0", "1.0")) for phi in (0.0, 0.8, 1.8)], '\n') * "\n")
+        @test_throws r"turning_back.crg.*reference line turns back" VehicleSystemsComponents.road_grip(back)
+
     end
 end
+
+@testset "One wheel: file only, no road wiring" begin
+    result = road_run(VehicleSystemsComponents.Vehicle.Planar.TestRoadWheelRig(
+        name = :single, road_file = ROAD_ASSETS * "uniform_low_mu.crg"); stop = 0.5)
+    s, sol = symbolic_container(result), result.sol
+    @test all(isapprox.(sol[s.wheel.grip], 0.3; atol = 1e-12))
+    @test sol(0.5; idxs = s.wheel.frame_a.x) > sol(0.01; idxs = s.wheel.frame_a.x)
+    @test sol(0.5; idxs = s.wheel.F_z) ≈ 4000.0
+end
+
 
 for (mu, file) in ((1.0, "uniform_mu.crg"), (0.3, "uniform_low_mu.crg"))
     @testset "Uniform $mu: hard-stop parameter-grip equivalence" begin
@@ -110,8 +149,8 @@ end
     s, sol = symbolic_container(result), result.sol
     times = collect(19.005:0.005:26.0)
     for wheel in (:fl, :rl)
-        grip = collect(sol(times; idxs = getproperty(s.road, Symbol(:grip_, wheel))))
-        x = collect(sol(times; idxs = getproperty(s.road, Symbol(:x_, wheel))))
+        grip = collect(sol(times; idxs = getproperty(s.vehicle.car, wheel).grip))
+        x = collect(sol(times; idxs = getproperty(s.vehicle.car, wheel).frame_a.x))
         active = road_abs_activity(sol, times, s, wheel)
         on = grip .< 0.4
         before = x .< 454.0
@@ -142,8 +181,8 @@ end
     @test peak > 0.01
     @test sign(peak) == sign(split_peak)
     @test heading > 0.01
-    @test mapped.sol(19.5; idxs = s.road.grip_fr) < 0.4
-    @test mapped.sol(19.5; idxs = s.road.grip_fl) > 0.95
+    @test mapped.sol(19.5; idxs = s.vehicle.car.fr.grip) < 0.4
+    @test mapped.sol(19.5; idxs = s.vehicle.car.fl.grip) > 0.95
     @test mapped.sol(19.5; idxs = s.vehicle.motion.r) > 0.0
 end
 
