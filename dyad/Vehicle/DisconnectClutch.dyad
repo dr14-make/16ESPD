@@ -1,0 +1,104 @@
+"""
+Commanded K0 engine disconnect clutch with an electrohydraulic actuator (assumed fidelity).
+
+A stdlib first-order actuator starts open; its 0.15 s time constant gives a 90% rise in
+0.3454 s (derived: T * log(10)), within the stated 0.35 s engagement time. A smooth
+square-root clamp bounds the capacity fraction without events. The regularized Coulomb
+law is the CentrifugalClutch law, not an exact static-friction lock.
+
+Lecture 2's EPA ALPHA full-load curve peaks at 150.233567 N.m at 4099.50617 rpm
+(derived: maximum of EngineMapData.full_load_data; TorqueMap caps the pressure map there).
+The 230 N.m capacity covers a 1.5 sizing factor, or 225.350351 N.m, with rounding upward
+(derived); the resulting nominal margin is 53.09%. Clamp endpoint rounding reduces full
+capacity to 229.885 N.m, still above the 1.5 sizing factor.
+"""
+component DisconnectClutch
+  "Engine-side shaft (derived: K0 position in Lecture 5 S2)"
+  spline_a = Spline() {^spline_a}
+  "Machine-side shaft (derived: K0 position in Lecture 5 S2)"
+  spline_b = Spline() {^spline_b}
+  "Clutch housing (derived: rotational torque balance)"
+  support = Spline() {^support}
+  "Engagement request, 0 open to 1 closed (assumed command convention)"
+  engage = RealInput() {^engage}
+  "Electrohydraulic actuator time constant [s] (assumed: finite pressure-fill response of K0)"
+  parameter actuator_time::Time(min = eps(Float64)) = 0.15
+  "Nominal full capacity [N.m] (derived: 1.5 times ALPHA peak, rounded up to 230)"
+  parameter tau_max::Torque(min = 0.0) = 230.0
+  "Slip smoothing speed [rad/s] (assumed: near-lock at engine torque without events)"
+  parameter w_regularization::AngularVelocity(min = eps(Float64)) = 0.5
+  "Actuator position at the start of a run, 0 open to 1 closed (assumed: open, engine decoupled)"
+  parameter position_start::Real = 0.0
+  "Clamp rounding width (assumed: keeps open residual torque below 1 N.m)"
+  parameter clamp_width::Real(min = eps(Float64)) = 0.001
+  "Actuator lag (assumed: unity-gain pressure-fill approximation)"
+  actuator = BlockComponents.Continuous.FirstOrder(T = actuator_time, k = 1.0)
+  "Actuator position before capacity saturation (derived: actuator output)"
+  variable position::Real
+  "Smoothly bounded position, 0 to 1 (derived: difference of rounded positive parts)"
+  variable capacity_fraction::Real
+  "Input-to-output slip [rad/s] (derived: spline angular velocities)"
+  variable w_slip::AngularVelocity
+  "Available friction torque [N.m] (derived: bounded position times nominal capacity)"
+  variable tau_capacity::Torque
+  "Torque entering engine-side spline [N.m] (derived: regularized Coulomb law)"
+  variable tau::Torque
+relations
+  connect(engage, actuator.u)
+  initial actuator.x = position_start
+  position = actuator.y
+  capacity_fraction = 0.5 * (1 + sqrt(position^2 + clamp_width^2) - sqrt((position - 1)^2 + clamp_width^2))
+  tau_capacity = tau_max * capacity_fraction
+  w_slip = der(spline_a.phi) - der(spline_b.phi)
+  tau = tau_capacity * tanh(w_slip / w_regularization)
+  spline_a.tau = tau
+  spline_b.tau = -tau
+  support.tau = -spline_a.tau - spline_b.tau
+metadata {
+  "Dyad": {"icons": {"default": "dyad://RotationalComponents/Clutch.svg"}},
+  "_links": {
+    "spline_a": {"Dyad": {"placement": {"icon": {"iconName": "spline_a", "x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"iconName": "spline_a", "x1": -25, "y1": 475, "x2": 25, "y2": 525}}}},
+    "spline_b": {"Dyad": {"placement": {"icon": {"iconName": "spline_b", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"iconName": "spline_b", "x1": 975, "y1": 475, "x2": 1025, "y2": 525}}}},
+    "support": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"x1": 475, "y1": 975, "x2": 525, "y2": 1025}}}},
+    "engage": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50}, "diagram": {"x1": 475, "y1": -25, "x2": 525, "y2": 25}}}}
+  }
+}
+end
+
+"Two-inertia K0 engagement bench (assumed: engine flywheel and lumped machine-side load)."
+test component TestDisconnectClutch
+  "Step amplitude (assumed test command)"
+  parameter command::Real = 1.0
+  "Applied engine torque [N.m] (assumed test demand below capacity)"
+  parameter demand::Torque = 100.0
+  "Initial engine-to-load speed difference [rad/s] (assumed test operating point)"
+  parameter slip_start::AngularVelocity = 100.0
+  "Engagement step after an open interval (assumed test stimulus)"
+  command_step = BlockComponents.Sources.Step(height = command, start_time = 0.1)
+  "Engine drive torque (assumed test stimulus)"
+  drive = RotationalComponents.Sources.ConstantTorque(tau_constant = demand)
+  "Engine flywheel (assumed: same 0.15 kg.m2 as MappedEngine)"
+  engine = RotationalComponents.Components.Inertia(J = 0.15)
+  "K0 device under test (derived: default disconnect clutch)"
+  clutch = VehicleSystemsComponents.Vehicle.DisconnectClutch()
+  "Machine-side lumped inertia (assumed test fixture)"
+  load = RotationalComponents.Components.Inertia(J = 1.5)
+  "Housing reference (assumed stationary bench mount)"
+  fixed = RotationalComponents.Components.Fixed()
+relations
+  connect(command_step.y, clutch.engage)
+  connect(drive.spline, engine.spline_a)
+  connect(engine.spline_b, clutch.spline_a)
+  connect(clutch.spline_b, load.spline_a)
+  connect(drive.support, clutch.support, fixed.spline)
+  initial engine.phi = 0.0
+  initial engine.w = slip_start
+  initial load.phi = 0.0
+  initial load.w = 0.0
+end
+
+"K0 engagement transient (derived: two seconds covers actuator settling and synchronization)."
+analysis DisconnectClutchTransient
+  extends TransientAnalysis(stop = 2.0, saveat = 0.001, tstops = [0.1], abstol = 1e-8, reltol = 1e-8)
+  model = TestDisconnectClutch()
+end
