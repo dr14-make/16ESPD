@@ -1,0 +1,37 @@
+"Prescribed-motion grip wheel test with physical spin inertia and brake dynamics."
+test component TestRoadWheelRig
+  "Prescribed forward speed"
+  parameter v::Velocity = 20.0
+  "Prescribed lateral speed"
+  parameter vy::Velocity = 0.0
+  "Brake command"
+  parameter tau::Torque = 0.0
+  "Applied normal load"
+  parameter N_load::Force = 4000.0
+  "OpenCRG low-grip road asset for the wheel test"
+  structural parameter road_file::String = "dyad://VehicleSystemsComponents/roads/uniform_low_mu.crg"
+  "Road grip callable evaluated at the prescribed wheel position"
+  structural parameter road::VehicleSystemsComponents.RoadGrip = VehicleSystemsComponents.road_grip(road_file)
+  vx_source = BlockComponents.Sources.Constant(k = v) {^vx_source}
+  vy_source = BlockComponents.Sources.Constant(k = vy) {^vy_source}
+  tau_source = BlockComponents.Sources.Constant(k = tau) {^tau_source}
+  load_source = BlockComponents.Sources.Constant(k = N_load) {^load_source}
+  motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity() {^motion}
+  force = TranslationalComponents.Sources.Force() {^force}
+  load_fixed = TranslationalComponents.Components.Fixed() {^load_fixed}
+  wheel = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(road = road, sAdhesion = 0.12, sSlide = 0.36, mu_A = 1.0, mu_S = 0.8, J = 1.0, tau_max = 10000.0) {^wheel}
+  slip = VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor(radius = 0.31) {^slip}
+relations
+  connect(vx_source.y, motion.v_x) {^w1}
+  connect(vy_source.y, motion.v_y) {^w2}
+  connect(motion.frame_b, wheel.frame_a) {^w3}
+  connect(load_source.y, force.f) {^w4}
+  connect(load_fixed.flange, force.flange_a) {^w5}
+  connect(force.flange_b, wheel.load) {^w6}
+  connect(tau_source.y, wheel.tau_cmd) {^w7}
+  connect(wheel.frame_a, slip.frame_a) {^w8}
+  connect(wheel.spin, slip.spline) {^w9}
+  initial wheel.inertia.w = (v + 0.01) / 0.31
+  initial wheel.inertia.phi = 0.0
+  initial wheel.brake.tau_actual = 0.0
+end

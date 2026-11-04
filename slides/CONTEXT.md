@@ -89,3 +89,20 @@ A Driver implementation that samples buffered pedal and steering commands on its
 and holds each command between ticks. The window fills the buffer from a pad or keyboard;
 without a window it reads neutral. Device I/O stays outside the model equations.
 _Avoid_: interactive analysis, gamepad controller
+
+
+**Road grip function**:
+The `RoadGrip` callable takes a wheel's world x and y position in meters and returns its
+dimensionless grip multiplier. `RoadCar` loads it once with `road_grip(road_file)` and shares
+it with all four wheels; each wheel evaluates it at its own frame position. It does not supply
+driver commands or require road signal ports. Quadratic B-splines give C1 interpolation inside
+the grid and hold edge values outside it. Straight-grid nodes are interpolated exactly; curved
+roads use an x-indexed approximation away from the reference line.
+_Avoid_: road socket, TableRoad, terrain controller, grip command, height map
+
+**OpenCRG**:
+ASAM's road-grid file format. Grip uses a separate `<name>_mu.crg` file containing dimensionless
+multipliers, not height; an empty or missing grip file raises an error. Straight and curved
+reference lines are supported while the reference line moves forward in its start frame's x.
+Road modifications are applied when loading, before grip evaluation.
+_Avoid_: grip CSV, road drawing format

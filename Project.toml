@@ -7,6 +7,7 @@ authors = [
 
 [deps]
 BlockComponents = "1ef5d832-be8e-447f-9f2c-8b5d17d15fd3"
+DataInterpolationsND = "4f1ef021-621a-47a5-ac8a-95402a2d1ea8"
 DiscreteComponents = "b5590941-51af-4a5a-9bca-5ae7cd448b75"
 DyadData = "cab12561-e36c-4498-ae70-c9a5e79fef2a"
 DyadInterface = "99806f68-afab-45ca-9d8c-ceff6bc61f54"
@@ -17,6 +18,7 @@ Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 Moshi = "2e0e35c7-a2e4-4343-998d-7ef72827ed2d"
 MultibodyComponents = "01883e52-22cd-4538-b14d-b44f958a131d"
+OpenCRG = "40a2bf50-15af-408a-8ff9-1cb7955b13ad"
 OrdinaryDiffEqDefault = "50262376-6c5a-4cf5-baba-aaf4f84d72d7"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
@@ -30,6 +32,9 @@ TranslationalComponents = "42acc370-819b-4877-bdd6-eb3294461f5d"
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 SimpleDirectMediaLayer = "98e33af6-2ee5-5afd-9e75-cbc738b767c4"
 
+[sources]
+OpenCRG = {url = "https://github.com/asinghvi17/CarComponents", subdir = "lib/OpenCRG", rev = "e1278cfe1be27026de0c90a959f53adc71740a40"}
+
 [extensions]
 VehicleSystemsComponentsGLMakieExt = "GLMakie"
 VehicleSystemsComponentsPadExt = ["GLMakie", "SimpleDirectMediaLayer"]
@@ -38,6 +43,7 @@ VehicleSystemsComponentsPadExt = ["GLMakie", "SimpleDirectMediaLayer"]
 GLMakie = "0.13"
 SimpleDirectMediaLayer = "0.5"
 BlockComponents = "=5.0.0"
+DataInterpolationsND = "0.1.10"
 DiscreteComponents = "0.6.0"
 DyadData = "2.0.1"
 ElectricalComponents = "=3.0.0"
@@ -45,6 +51,7 @@ HydraulicComponents = "=3.0.0"
 JSON = "0.21, 1"
 Markdown = "1"
 MultibodyComponents = "=0.3.0"
+OpenCRG = "0.1.0"
 RotationalComponents = "=3.0.0"
 TOML = "1"
 ThermalComponents = "=3.0.0"

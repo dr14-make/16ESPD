@@ -1,0 +1,68 @@
+"""
+Planar road wheel combining tire contact, spin inertia, and an in-line brake.
+
+All plant interfaces are physical except the brake actuator command. Normal load enters through
+`load`; the wheel constrains that flange at zero travel and passes its force to the tire joint.
+`F_x`, `F_y`, and `F_z` are diagnostic variables rather than signal ports.
+"""
+component RoadBrakedWheel
+  "Wheel-center frame, with x along the wheel heading"
+  frame_a = Frame2D() {^frame_a}
+  "Spin shaft downstream of the brake"
+  spin = Spline() {^spin}
+  "Normal-load flange; positive force presses the tire onto the road"
+  load = Flange() {^load}
+  "Requested brake torque"
+  tau_cmd = RealInput() {^tau_cmd}
+  "Road grip callable evaluated at the wheel's world position"
+  structural parameter road::VehicleSystemsComponents.RoadGrip
+  "Road grip multiplier; scales traction capacity, not the reported physical load"
+  variable grip::Real
+  joint = MultibodyComponents.PlanarMechanics.SlipBasedWheelJoint(N = 0.0, mu_A = mu_scale * mu_A, mu_S = mu_scale * mu_S, r = [1, 0], render = false, radius = radius, sAdhesion = sAdhesion, sSlide = sSlide, vAdhesion_min = vAdhesion_min, vSlide_min = vSlide_min) {^joint}
+  inertia = RotationalComponents.Components.Inertia(J = J) {^inertia}
+  brake = VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator(T = T_brake, tau_max = tau_max, w0 = w0) {^brake}
+  housing = RotationalComponents.Components.Fixed() {^housing}
+  "Wheel rolling radius (repository default)"
+  parameter radius::Length = 0.31
+  "One-wheel spin inertia (assumed)"
+  parameter J::MomentOfInertia = 1.0
+  "Peak adhesion coefficient (probe)"
+  parameter mu_A::Real = 1.0
+  "Sliding friction coefficient (probe)"
+  parameter mu_S::Real = 0.8
+  "Per-wheel road-friction multiplier (derived)"
+  parameter mu_scale::Real = 1.0
+  "Slip ratio at peak adhesion (probe)"
+  parameter sAdhesion::Real = 0.12
+  "Slip ratio at the sliding plateau (probe)"
+  parameter sSlide::Real = 3 * sAdhesion
+  "Minimum adhesion velocity (probe)"
+  parameter vAdhesion_min::Velocity = 0.05
+  "Minimum sliding velocity (probe)"
+  parameter vSlide_min::Velocity = 0.15
+  "Hydraulic time constant (probe)"
+  parameter T_brake::Time = 0.03
+  "Maximum brake torque (assumed)"
+  parameter tau_max::Torque = 2500.0
+  "Brake regularization speed (assumed)"
+  parameter w0::AngularVelocity = 1.0
+  "Longitudinal tire force on the vehicle"
+  variable F_x::Force
+  "Lateral tire force on the vehicle"
+  variable F_y::Force
+  "Normal tire load"
+  variable F_z::Force
+relations
+  connect(frame_a, joint.frame_a) {^w1}
+  connect(joint.flange_a, inertia.spline_a) {^w2}
+  connect(inertia.spline_b, brake.spline_a) {^w3}
+  connect(brake.spline_b, spin) {^w4}
+  connect(brake.support, housing.spline) {^w5}
+  connect(tau_cmd, brake.tau_cmd) {^w6}
+  grip = road(frame_a.x, frame_a.y)
+  joint.dynamicLoad = grip * load.f
+  load.s = 0.0
+  F_x = -joint.f_long
+  F_y = -joint.f_lat
+  F_z = max(0.0, load.f)
+end
