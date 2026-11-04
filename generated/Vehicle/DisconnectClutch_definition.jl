@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   DisconnectClutch(; name, actuator_time, tau_max, w_regularization, clamp_width, __overrides)
+   DisconnectClutch(; name, actuator_time, tau_max, w_regularization, position_start, clamp_width, __overrides)
 
 Commanded K0 engine disconnect clutch with an electrohydraulic actuator (assumed fidelity).
 
@@ -27,6 +27,7 @@ capacity to 229.885 N.m, still above the 1.5 sizing factor.
 | `actuator_time`         | Electrohydraulic actuator time constant [s] (assumed: finite pressure-fill response of K0)                         | s  |   0.15 |
 | `tau_max`         | Nominal full capacity [N.m] (derived: 1.5 times ALPHA peak, rounded up to 230)                         | N.m  |   230.0 |
 | `w_regularization`         | Slip smoothing speed [rad/s] (assumed: near-lock at engine torque without events)                         | rad/s  |   0.5 |
+| `position_start`         | Actuator position at the start of a run, 0 open to 1 closed (assumed: open, engine decoupled)                         | --  |   0.0 |
 | `clamp_width`         | Clamp rounding width (assumed: keeps open residual torque below 1 N.m)                         | --  |   0.001 |
 
 ## Connectors
@@ -46,7 +47,7 @@ capacity to 229.885 N.m, still above the 1.5 sizing factor.
 | `tau_capacity`         | Available friction torque [N.m] (derived: bounded position times nominal capacity)                         | N.m  |
 | `tau`         | Torque entering engine-side spline [N.m] (derived: regularized Coulomb law)                         | N.m  |
 """
-@component function DisconnectClutch(; name = nothing, var"actuator_time"=0.15, var"tau_max"=Float64(230.0), var"w_regularization"=0.5, var"clamp_width"=0.001, __overrides = Dict{String, Any}())
+@component function DisconnectClutch(; name = nothing, var"actuator_time"=0.15, var"tau_max"=Float64(230.0), var"w_regularization"=0.5, var"position_start"=Float64(0.0), var"clamp_width"=0.001, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -68,6 +69,7 @@ capacity to 229.885 N.m, still above the 1.5 sizing factor.
   haskey(__overrides, "actuator_time") && (actuator_time = pop!(__overrides, "actuator_time"))
   haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
   haskey(__overrides, "w_regularization") && (w_regularization = pop!(__overrides, "w_regularization"))
+  haskey(__overrides, "position_start") && (position_start = pop!(__overrides, "position_start"))
   haskey(__overrides, "clamp_width") && (clamp_width = pop!(__overrides, "clamp_width"))
 
   ### Structural Parameters (functions)
@@ -92,6 +94,9 @@ capacity to 229.885 N.m, still above the 1.5 sizing factor.
   __local__w_regularization = w_regularization
   append!(__params, @parameters (w_regularization::Real), [description = "Slip smoothing speed [rad/s] (assumed: near-lock at engine torque without events)", bounds = (eps(Float64), Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, w_regularization, __local__w_regularization)
+  __local__position_start = position_start
+  append!(__params, @parameters (position_start::Real), [description = "Actuator position at the start of a run, 0 open to 1 closed (assumed: open, engine decoupled)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, position_start, __local__position_start)
   __local__clamp_width = clamp_width
   append!(__params, @parameters (clamp_width::Real), [description = "Clamp rounding width (assumed: keeps open residual torque below 1 N.m)", bounds = (eps(Float64), Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, clamp_width, __local__clamp_width)
@@ -147,7 +152,7 @@ capacity to 229.885 N.m, still above the 1.5 sizing factor.
   isnothing(__ovr_tau__guess) || (__guesses[tau] = __ovr_tau__guess)
 
   ### Initialization Equations
-  push!(__initialization_eqs, actuator.x ~ 0.0)
+  push!(__initialization_eqs, actuator.x ~ position_start)
 
   ### Assertions
   __assertions = []

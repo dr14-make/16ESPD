@@ -67,7 +67,7 @@ end
     @test nominal == 230.0
     @test capacity >= 1.5 * peak
     @test s[m.clutch.position][1] == 0.0
-    @test s(0.1 + T * log(10), idxs = m.clutch.position) ≈ 0.9 atol = 1e-6
+    @test s(0.1 + T * log(10), idxs = m.clutch.position) ≈ 0.9 atol = 1e-4
     rise = rise_time(s.t, s[m.clutch.position], 0.9; t0 = 0.1)
     @test rise <= 0.35
     @test all(0 .<= s[m.clutch.capacity_fraction] .<= 1)

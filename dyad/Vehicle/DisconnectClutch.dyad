@@ -27,6 +27,8 @@ component DisconnectClutch
   parameter tau_max::Torque(min = 0.0) = 230.0
   "Slip smoothing speed [rad/s] (assumed: near-lock at engine torque without events)"
   parameter w_regularization::AngularVelocity(min = eps(Float64)) = 0.5
+  "Actuator position at the start of a run, 0 open to 1 closed (assumed: open, engine decoupled)"
+  parameter position_start::Real = 0.0
   "Clamp rounding width (assumed: keeps open residual torque below 1 N.m)"
   parameter clamp_width::Real(min = eps(Float64)) = 0.001
   "Actuator lag (assumed: unity-gain pressure-fill approximation)"
@@ -43,7 +45,7 @@ component DisconnectClutch
   variable tau::Torque
 relations
   connect(engage, actuator.u)
-  initial actuator.x = 0.0
+  initial actuator.x = position_start
   position = actuator.y
   capacity_fraction = 0.5 * (1 + sqrt(position^2 + clamp_width^2) - sqrt((position - 1)^2 + clamp_width^2))
   tau_capacity = tau_max * capacity_fraction
