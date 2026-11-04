@@ -115,3 +115,10 @@ elevation. An empty or missing file raises an error. Straight and curved referen
 supported while the reference line moves forward in its start frame's x. Road modifications are
 applied when loading, before grip or height evaluation.
 _Avoid_: grip CSV, road drawing format
+
+**SoC-corrected fuel**:
+A drive-cycle run's fuel per 100 km with the net battery energy turned into the fuel that would
+replace it, at a stated engine-to-battery efficiency: a hybrid that ends the run with less charge
+than it started reports more fuel than it burned, one that ends with more reports less. The
+`Vehicle.SoCCorrectedFuel` block reports it in L/100 km and MJ/100 km beside the raw fuel.
+_Avoid_: charge-sustaining fuel, net fuel, equivalent fuel (that is only the battery's share)

@@ -1,0 +1,117 @@
+"""
+SoC-corrected fuel of a drive-cycle run: the fuel the engine burned, plus the fuel it would take
+to put back the net energy the battery gave up, both per 100 km of distance driven.
+
+    m_fuel = ∫ mdot_fuel dt        E_batt = ∫ P_batt dt        s = ∫ v dt
+    m_eq   = E_batt / (eta_eb H_u)
+    fuel_corr = (m_fuel + m_eq) / rho_f per 100 km
+
+The method is the linear correction of SAE J1711 and UN ECE R101 Annex 8: fuel is corrected in
+proportion to the net battery energy over the run. Those procedures take the slope from a
+regression over several tests; here it is fixed by a stated engine-to-battery efficiency
+`eta_eb` instead (assumed). `E_batt` is metered at the battery terminals, positive when the run
+ends with less charge than it started, so a run that drew on the battery reports more corrected
+fuel than raw fuel, and one that charged it reports less. With `E_batt = 0` the corrected figure
+is the raw one exactly.
+
+The integrals start at zero at t = 0, so every output reads 0 there. The per-100-km outputs
+divide by `sqrt(s^2 + d_reg^2)` in place of `s`, which keeps the division finite at standstill
+without an event. Until the car has covered many `d_reg` they are totals spread over that
+length and mean nothing; at the end of a WLTC (23.3 km) the guard changes them by 1e-9 of their
+value. Read them at the end of the run.
+
+Fuel constants are the course's petrol: `rho_f` 0.745 kg/L (Hands-on 02) and `H_u` 43.4 MJ/kg
+(Lecture 2 tasks, textbook), as in the Lecture 4 comparison of the BEV with the engine car.
+"""
+component SoCCorrectedFuel
+  "Fuel mass flow into the engine [kg/s]"
+  mdot_fuel = RealInput() {^mdot_fuel}
+  "Electrical power at the battery terminals, v i, positive discharging [W]"
+  P_batt = RealInput() {^P_batt}
+  "Vehicle speed along its path [m/s]"
+  v = RealInput() {^v}
+  "Raw fuel consumption [L/100 km]"
+  fuel_raw = RealOutput() {^fuel_raw}
+  "Net battery energy discharged at the terminals since t = 0, positive when charge was drawn [MJ]"
+  E_batt_MJ = RealOutput() {^E_batt_MJ}
+  "SoC-corrected fuel consumption [L/100 km]"
+  fuel_corr = RealOutput() {^fuel_corr}
+  "SoC-corrected fuel energy, fuel_corr at H_u [MJ/100 km]"
+  energy_corr = RealOutput() {^energy_corr}
+
+  "Engine-to-battery efficiency, fuel energy to battery terminals: the Lecture 2 engine's 35.7 % at its best point (232 g/kWh) times 0.90 for machine and inverter generating, inside ORNL's 0.80-0.96 combined band (derived)"
+  parameter eta_eb::Real = 0.32
+  "Petrol lower heating value (Lecture 2 tasks, textbook)"
+  parameter H_u::SpecificEnergy = 43.4e6
+  "Petrol density, 0.745 kg/L (Hands-on 02)"
+  parameter rho_f::Density = 745.0
+  "Distance that regularizes the division by distance at standstill (assumed)"
+  parameter d_reg::Length = 1.0
+
+  "Fuel burned since t = 0"
+  variable m_fuel::Mass
+  "Net energy out of the battery terminals since t = 0"
+  variable E_batt::Energy
+  "Distance driven since t = 0"
+  variable s::Length
+  "Fuel that would put E_batt back through the engine and the machine"
+  variable m_eq::Mass
+  "Regularized distance, s away from standstill"
+  variable d::Length
+relations
+  initial m_fuel = 0.0
+  initial E_batt = 0.0
+  initial s = 0.0
+  der(m_fuel) = mdot_fuel
+  der(E_batt) = P_batt
+  der(s) = v
+  m_eq = E_batt / (eta_eb * H_u)
+  d = sqrt(s ^ 2 + d_reg ^ 2)
+  # 1e8: m^3 to L (1e3) over m to 100 km (1e-5).
+  fuel_raw = 1e8 * m_fuel / (rho_f * d)
+  fuel_corr = fuel_raw + 1e8 * m_eq / (rho_f * d)
+  energy_corr = 1e-9 * fuel_corr * rho_f * H_u
+  E_batt_MJ = 1e-6 * E_batt
+metadata {
+  "_links": {
+    "mdot_fuel": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+    "P_batt": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "v": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 750, "x2": 50, "y2": 850}}}},
+    "fuel_raw": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 100, "x2": 1050, "y2": 200}}}},
+    "E_batt_MJ": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 333, "x2": 1050, "y2": 433}}}},
+    "fuel_corr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 566, "x2": 1050, "y2": 666}}}},
+    "energy_corr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 800, "x2": 1050, "y2": 900}}}}
+  }
+}
+end
+
+"""
+Constant fuel flow, battery power and speed into `SoCCorrectedFuel`, so that every integral is
+a product a test can work out by hand. Defaults: 1 g/s of fuel, 1 kW drawn from the battery and
+20 m/s (assumed test inputs).
+"""
+test component TestSoCCorrectedFuel
+  "Fuel mass flow (assumed test input)"
+  parameter mdot::MassFlowRate = 1e-3
+  "Battery terminal power, positive discharging (assumed test input)"
+  parameter P::Power = 1000.0
+  "Vehicle speed (assumed test input)"
+  parameter speed::Velocity = 20.0
+  fuel = BlockComponents.Sources.Constant(k = mdot)
+  battery = BlockComponents.Sources.Constant(k = P)
+  motion = BlockComponents.Sources.Constant(k = speed)
+  meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel()
+relations
+  connect(fuel.y, meter.mdot_fuel)
+  connect(battery.y, meter.P_batt)
+  connect(motion.y, meter.v)
+end
+
+"Constant inputs for 500 s: 10 km at the default 20 m/s (derived)."
+analysis SoCCorrectedFuelTransient
+  extends TransientAnalysis(stop = 500.0, abstol = 1e-10, reltol = 1e-10)
+  parameter mdot::MassFlowRate = 1e-3
+  parameter P::Power = 1000.0
+  parameter speed::Velocity = 20.0
+  model = TestSoCCorrectedFuel(mdot = mdot, P = P, speed = speed)
+end
