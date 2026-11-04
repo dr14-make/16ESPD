@@ -58,7 +58,7 @@ component RoadBEVDrive
   "Shared world-coordinate slope callable loaded once"
   structural parameter slope::VehicleSystemsComponents.RoadSlope = VehicleSystemsComponents.road_height(height_file)
   "Road gradient sensor at the chassis center"
-  roadgrade = VehicleSystemsComponents.Vehicle.Planar.RoadGrade(slope = slope)
+  roadgrade = VehicleSystemsComponents.Vehicle.Planar.RoadGrade(slope = slope) {^roadgrade}
   motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
   slips = VehicleSystemsComponents.Vehicle.Planar.BusSlip() {^slips}
 relations

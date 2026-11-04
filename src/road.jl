@@ -93,7 +93,6 @@ function road_surface(file::AbstractString; fill_missing = nothing, elevation = 
     end
 end
 
-
 "Load an OpenCRG grip file once and return a C1 callable of world x and y, holding grid edges."
 road_grip(file::AbstractString; fill_missing = nothing) =
     road_surface(file; fill_missing, elevation = false)
