@@ -115,3 +115,10 @@ elevation. An empty or missing file raises an error. Straight and curved referen
 supported while the reference line moves forward in its start frame's x. Road modifications are
 applied when loading, before grip or height evaluation.
 _Avoid_: grip CSV, road drawing format
+
+
+**Disconnect clutch (K0)**:
+The commanded clutch between the engine and the P2 machine. Opening it lets the machine drive
+or regenerate with the engine disconnected; closing it transmits engine torque through the
+machine-side shaft to the CVT. Its electrohydraulic actuator has a finite engagement response.
+_Avoid_: launch clutch, centrifugal clutch, torque converter
