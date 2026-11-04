@@ -115,3 +115,12 @@ elevation. An empty or missing file raises an error. Straight and curved referen
 supported while the reference line moves forward in its start frame's x. Road modifications are
 applied when loading, before grip or height evaluation.
 _Avoid_: grip CSV, road drawing format
+
+
+**Hybrid drive**:
+`Vehicle.Electric.HybridDrive` is the battery, average converter, DC-equivalent machine,
+auxiliaries, and ideal gear supplying a hybrid transmission input. It keeps `ElectricDrive`'s
+`tau_ref`, `spline`, `support`, and `SoC` interface, with forwardable 30 kW, 205 N·m and
+270 V, 1.4 kWh defaults from the 2011 Sonata Hybrid (ORNL-2011). Its default gear ratio is 1,
+not the BEV's final-drive reduction; it does not include the engine, K0 clutch, or energy manager.
+_Avoid_: hybrid powertrain, hybrid controller
