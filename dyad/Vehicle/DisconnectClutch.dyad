@@ -14,13 +14,13 @@ capacity to 229.885 N.m, still above the 1.5 sizing factor.
 """
 component DisconnectClutch
   "Engine-side shaft (derived: K0 position in Lecture 5 S2)"
-  spline_a = Spline()
+  spline_a = Spline() {^spline_a}
   "Machine-side shaft (derived: K0 position in Lecture 5 S2)"
-  spline_b = Spline()
+  spline_b = Spline() {^spline_b}
   "Clutch housing (derived: rotational torque balance)"
-  support = Spline()
+  support = Spline() {^support}
   "Engagement request, 0 open to 1 closed (assumed command convention)"
-  engage = RealInput()
+  engage = RealInput() {^engage}
   "Electrohydraulic actuator time constant [s] (assumed: finite pressure-fill response of K0)"
   parameter actuator_time::Time(min = eps(Float64)) = 0.15
   "Nominal full capacity [N.m] (derived: 1.5 times ALPHA peak, rounded up to 230)"
@@ -52,6 +52,15 @@ relations
   spline_a.tau = tau
   spline_b.tau = -tau
   support.tau = -spline_a.tau - spline_b.tau
+metadata {
+  "Dyad": {"icons": {"default": "dyad://RotationalComponents/Clutch.svg"}},
+  "_links": {
+    "spline_a": {"Dyad": {"placement": {"icon": {"iconName": "spline_a", "x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"iconName": "spline_a", "x1": -25, "y1": 475, "x2": 25, "y2": 525}}}},
+    "spline_b": {"Dyad": {"placement": {"icon": {"iconName": "spline_b", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"iconName": "spline_b", "x1": 975, "y1": 475, "x2": 1025, "y2": 525}}}},
+    "support": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"x1": 475, "y1": 975, "x2": 525, "y2": 1025}}}},
+    "engage": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50}, "diagram": {"x1": 475, "y1": -25, "x2": 525, "y2": 25}}}}
+  }
+}
 end
 
 "Two-inertia K0 engagement bench (assumed: engine flywheel and lumped machine-side load)."
