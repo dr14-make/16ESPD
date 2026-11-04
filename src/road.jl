@@ -32,6 +32,10 @@ function road_surface(file::AbstractString; fill_missing = nothing, elevation = 
     r = data.refline
     # The pinned reader recognizes the standard _S/_B keys, not these spelled-out aliases.
     header = first(split(read(path, String), "\$\$\$\$"; limit = 2))
+    if elevation
+        occursin(r"(?im)^\s*REFERENCE_LINE_START_(?:SLOPE|BANKING)\s*=", header) &&
+            error("$file: unsupported start slope/banking alias; use REFERENCE_LINE_START_S or REFERENCE_LINE_START_B")
+    end
     if !elevation
         for m in eachmatch(r"(?im)^\s*REFERENCE_LINE_START_(?:SLOPE|BANKING)\s*=\s*([^\s!]+)", header)
             value = tryparse(Float64, m.captures[1])
