@@ -1,0 +1,174 @@
+"""
+Four-wheel planar vehicle with physical steering, wheel, spin, and load paths.
+
+The car measures itself: an ideal `PlanarCarSensors` cluster inside it reads the chassis, the
+steering column and each wheel, and the car sends every reading on its `bus` port.
+"""
+component RoadCar
+  "fl road grip multiplier"
+  grip_fl = RealInput()
+  "fl wheel world x coordinate in meters"
+  x_fl = RealOutput()
+  "fl wheel world y coordinate in meters"
+  y_fl = RealOutput()
+  "fr road grip multiplier"
+  grip_fr = RealInput()
+  "fr wheel world x coordinate in meters"
+  x_fr = RealOutput()
+  "fr wheel world y coordinate in meters"
+  y_fr = RealOutput()
+  "rl road grip multiplier"
+  grip_rl = RealInput()
+  "rl wheel world x coordinate in meters"
+  x_rl = RealOutput()
+  "rl wheel world y coordinate in meters"
+  y_rl = RealOutput()
+  "rr road grip multiplier"
+  grip_rr = RealInput()
+  "rr wheel world x coordinate in meters"
+  x_rr = RealOutput()
+  "rr wheel world y coordinate in meters"
+  y_rr = RealOutput()
+  steering = Spline() {^steering}
+  chassis = Frame2D() {^chassis}
+  wheel_fl = Frame2D() {^wheel_fl}
+  wheel_fr = Frame2D() {^wheel_fr}
+  wheel_rl = Frame2D() {^wheel_rl}
+  wheel_rr = Frame2D() {^wheel_rr}
+  spin_fl = Spline() {^spin_fl}
+  spin_fr = Spline() {^spin_fr}
+  spin_rl = Spline() {^spin_rl}
+  spin_rr = Spline() {^spin_rr}
+  tau_fl = RealInput() {^tau_fl}
+  tau_fr = RealInput() {^tau_fr}
+  tau_rl = RealInput() {^tau_rl}
+  tau_rr = RealInput() {^tau_rr}
+  "Everything the car measures about itself"
+  bus = VehicleSystemsComponents.Vehicle.Planar.CarBus() {^bus}
+  "Vehicle mass (probe)"
+  parameter m::Mass = 1500.0
+  "Yaw inertia (probe)"
+  parameter Iz::MomentOfInertia = 2500.0
+  "CG distance to front axle (probe)"
+  parameter a::Length = 1.2
+  "CG distance to rear axle (probe)"
+  parameter b::Length = 1.5
+  "Track width (probe)"
+  parameter tw::Length = 1.55
+  "Wheel radius (repository default)"
+  parameter radius::Length = 0.31
+  "One-wheel spin inertia (assumed)"
+  parameter J::MomentOfInertia = 1.0
+  "Peak adhesion coefficient (probe)"
+  parameter mu_A::Real = 1.0
+  "Sliding friction coefficient (probe)"
+  parameter mu_S::Real = 0.8
+  "Front peak-slip ratio (probe)"
+  parameter sAdhesion_f::Real = 0.12
+  "Rear peak-slip ratio (probe)"
+  parameter sAdhesion_r::Real = 0.09
+  "Front-left road-friction multiplier (derived)"
+  parameter mu_scale_fl::Real = 1.0
+  "Front-right road-friction multiplier (derived)"
+  parameter mu_scale_fr::Real = 1.0
+  "Rear-left road-friction multiplier (derived)"
+  parameter mu_scale_rl::Real = 1.0
+  "Rear-right road-friction multiplier (derived)"
+  parameter mu_scale_rr::Real = 1.0
+  "Brake actuator time constant (probe)"
+  parameter T_brake::Time = 0.03
+  "Maximum brake torque (assumed)"
+  parameter tau_max::Torque = 2500.0
+  "Steering ratio (assumed)"
+  parameter i_s::Real = 16.0
+  "Kingpin track (probe)"
+  parameter t_k::Length = tw
+  "Ackermann fraction (assumed)"
+  parameter ackermann::Real = 1.0
+  "CG height above the road (NHTSA)"
+  parameter h_cg::Length = 0.0
+  "Enable acceleration filtering and load transfer (derived)"
+  structural parameter load_transfer::Boolean = false
+  "Load-transfer lag time constant (assumed)"
+  parameter T_lt::Time = 0.05
+  world = MultibodyComponents.PlanarMechanics.World(g = 0.0) {^world}
+  body = MultibodyComponents.PlanarMechanics.Body(m = m, I = Iz, render = false, linearStatePriority = 2) {^body}
+  tf = MultibodyComponents.PlanarMechanics.FixedTranslation(r = [a, 0]) {^tf}
+  tr = MultibodyComponents.PlanarMechanics.FixedTranslation(r = [-b, 0]) {^tr}
+  fl_arm = MultibodyComponents.PlanarMechanics.FixedTranslation(r = [0, tw / 2]) {^fl_arm}
+  fr_arm = MultibodyComponents.PlanarMechanics.FixedTranslation(r = [0, -tw / 2]) {^fr_arm}
+  rl_arm = MultibodyComponents.PlanarMechanics.FixedTranslation(r = [0, tw / 2]) {^rl_arm}
+  rr_arm = MultibodyComponents.PlanarMechanics.FixedTranslation(r = [0, -tw / 2]) {^rr_arm}
+  steerL = MultibodyComponents.PlanarMechanics.Revolute() {^steerL}
+  steerR = MultibodyComponents.PlanarMechanics.Revolute() {^steerR}
+  column = RotationalComponents.Components.IdealGear(ratio = i_s) {^column}
+  linkage = VehicleSystemsComponents.Vehicle.Planar.AckermannSteering(L = a + b, t_k = t_k, ackermann = ackermann) {^linkage}
+  housing = RotationalComponents.Components.Fixed() {^housing}
+  loads = VehicleSystemsComponents.Vehicle.Planar.QuasiStaticLoads(m = m, a = a, b = b, tw = tw, h = h_cg, load_transfer = load_transfer, T_lt = T_lt) {^loads}
+  fl = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_fl, sAdhesion = sAdhesion_f, sSlide = 3 * sAdhesion_f, T_brake = T_brake, tau_max = tau_max) {^fl}
+  fr = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_fr, sAdhesion = sAdhesion_f, sSlide = 3 * sAdhesion_f, T_brake = T_brake, tau_max = tau_max) {^fr}
+  rl = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_rl, sAdhesion = sAdhesion_r, sSlide = 3 * sAdhesion_r, T_brake = T_brake, tau_max = tau_max) {^rl}
+  sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius) {^sensors}
+  rr = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_rr, sAdhesion = sAdhesion_r, sSlide = 3 * sAdhesion_r, T_brake = T_brake, tau_max = tau_max) {^rr}
+relations
+  x_fl = wheel_fl.x
+  y_fl = wheel_fl.y
+  connect(grip_fl, fl.grip)
+  x_fr = wheel_fr.x
+  y_fr = wheel_fr.y
+  connect(grip_fr, fr.grip)
+  x_rl = wheel_rl.x
+  y_rl = wheel_rl.y
+  connect(grip_rl, rl.grip)
+  x_rr = wheel_rr.x
+  y_rr = wheel_rr.y
+  connect(grip_rr, rr.grip)
+  connect(body.frame_a, tf.frame_a, tr.frame_a, loads.chassis, chassis, sensors.chassis) {^w1}
+  connect(tf.frame_b, fl_arm.frame_a, fr_arm.frame_a) {^w2}
+  connect(tr.frame_b, rl_arm.frame_a, rr_arm.frame_a) {^w3}
+  connect(fl_arm.frame_b, steerL.frame_a) {^w4}
+  connect(steerL.frame_b, fl.frame_a, wheel_fl, sensors.wheel_fl) {^w5}
+  connect(fr_arm.frame_b, steerR.frame_a) {^w6}
+  connect(steerR.frame_b, fr.frame_a, wheel_fr, sensors.wheel_fr) {^w7}
+  connect(rl_arm.frame_b, rl.frame_a, wheel_rl, sensors.wheel_rl) {^w8}
+  connect(rr_arm.frame_b, rr.frame_a, wheel_rr, sensors.wheel_rr) {^w9}
+  connect(steering, column.spline_a, sensors.steering) {^w10}
+  connect(column.spline_b, linkage.spline_in) {^w11}
+  connect(linkage.spline_left, steerL.flange_a) {^w12}
+  connect(linkage.spline_right, steerR.flange_a) {^w13}
+  connect(column.support, linkage.support, housing.spline) {^w14}
+  connect(loads.fl, fl.load) {^w15}
+  connect(loads.fr, fr.load) {^w16}
+  connect(loads.rl, rl.load) {^w17}
+  connect(loads.rr, rr.load) {^w18}
+  connect(fl.spin, spin_fl, sensors.spin_fl) {^w19}
+  connect(fr.spin, spin_fr, sensors.spin_fr) {^w20}
+  connect(rl.spin, spin_rl, sensors.spin_rl) {^w21}
+  connect(rr.spin, spin_rr, sensors.spin_rr) {^w22}
+  connect(tau_fl, fl.tau_cmd) {^w23}
+  connect(tau_fr, fr.tau_cmd) {^w24}
+  connect(tau_rl, rl.tau_cmd) {^w25}
+  connect(tau_rr, rr.tau_cmd) {^w26}
+  bus.vx = sensors.vx
+  bus.vy = sensors.vy
+  bus.r = sensors.r
+  bus.ax = sensors.ax
+  bus.ay = sensors.ay
+  bus.x = sensors.x
+  bus.y = sensors.y
+  bus.psi = sensors.psi
+  bus.beta = sensors.beta
+  bus.delta_sw = sensors.delta_sw
+  bus.kappa_fl = sensors.kappa_fl
+  bus.kappa_fr = sensors.kappa_fr
+  bus.kappa_rl = sensors.kappa_rl
+  bus.kappa_rr = sensors.kappa_rr
+  bus.alpha_fl = sensors.alpha_fl
+  bus.alpha_fr = sensors.alpha_fr
+  bus.alpha_rl = sensors.alpha_rl
+  bus.alpha_rr = sensors.alpha_rr
+  bus.omega_fl = sensors.omega_fl
+  bus.omega_fr = sensors.omega_fr
+  bus.omega_rl = sensors.omega_rl
+  bus.omega_rr = sensors.omega_rr
+end

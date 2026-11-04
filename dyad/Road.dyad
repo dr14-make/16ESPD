@@ -1,0 +1,68 @@
+"Road socket mapping wheel world positions in meters to grip multipliers."
+partial component Road
+  "fl wheel world x coordinate in meters"
+  x_fl = RealInput()
+  "fl wheel world y coordinate in meters"
+  y_fl = RealInput()
+  "fr wheel world x coordinate in meters"
+  x_fr = RealInput()
+  "fr wheel world y coordinate in meters"
+  y_fr = RealInput()
+  "rl wheel world x coordinate in meters"
+  x_rl = RealInput()
+  "rl wheel world y coordinate in meters"
+  y_rl = RealInput()
+  "rr wheel world x coordinate in meters"
+  x_rr = RealInput()
+  "rr wheel world y coordinate in meters"
+  y_rr = RealInput()
+  "fl wheel grip multiplier"
+  grip_fl = RealOutput()
+  "fr wheel grip multiplier"
+  grip_fr = RealOutput()
+  "rl wheel grip multiplier"
+  grip_rl = RealOutput()
+  "rr wheel grip multiplier"
+  grip_rr = RealOutput()
+end
+
+"Spatially uniform grip road."
+component UniformRoad
+  extends Road
+  "Uniform grip multiplier"
+  parameter mu::Real = 1.0
+relations
+  grip_fl = mu
+  grip_fr = mu
+  grip_rl = mu
+  grip_rr = mu
+end
+
+"Scalar road surface callable."
+type RoadInterpolator = func(::Real, ::Real)::Real
+"Loaded grid and reference-line metadata."
+type RoadData = Native
+
+"Straight OpenCRG grip grid with C1 nodal interpolation and edge holding."
+component TableRoad
+  extends Road
+  "OpenCRG grip asset"
+  structural parameter file::String = "dyad://VehicleSystemsComponents/roads/uniform_mu.crg"
+  "Grid loaded and fitted once"
+  structural parameter data::RoadData = VehicleSystemsComponents.road_surface(file)
+  "Quadratic spline surface"
+  structural parameter surface::RoadInterpolator = VehicleSystemsComponents.road_interpolator(data)
+  "Reference-line x0 coordinate"
+  structural parameter x0::Real = VehicleSystemsComponents.road_coordinate(data, 1)
+  "Reference-line y0 coordinate"
+  structural parameter y0::Real = VehicleSystemsComponents.road_coordinate(data, 2)
+  "Reference-line phi0 coordinate"
+  structural parameter phi0::Real = VehicleSystemsComponents.road_coordinate(data, 3)
+  "Reference-line u0 coordinate"
+  structural parameter u0::Real = VehicleSystemsComponents.road_coordinate(data, 4)
+relations
+  grip_fl = surface(u0 + cos(phi0) * (x_fl - x0) + sin(phi0) * (y_fl - y0), -sin(phi0) * (x_fl - x0) + cos(phi0) * (y_fl - y0))
+  grip_fr = surface(u0 + cos(phi0) * (x_fr - x0) + sin(phi0) * (y_fr - y0), -sin(phi0) * (x_fr - x0) + cos(phi0) * (y_fr - y0))
+  grip_rl = surface(u0 + cos(phi0) * (x_rl - x0) + sin(phi0) * (y_rl - y0), -sin(phi0) * (x_rl - x0) + cos(phi0) * (y_rl - y0))
+  grip_rr = surface(u0 + cos(phi0) * (x_rr - x0) + sin(phi0) * (y_rr - y0), -sin(phi0) * (x_rr - x0) + cos(phi0) * (y_rr - y0))
+end
