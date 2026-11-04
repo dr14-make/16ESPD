@@ -1,4 +1,4 @@
-"Planar BEV assembly with a scripted driver."
+"Planar BEV assembly with a scripted driver and position-dependent road grip."
 component PlanarBEVOnRoad
   "Vehicle mass"
   parameter m::Mass = 1500.0
@@ -10,28 +10,14 @@ component PlanarBEVOnRoad
   parameter mu::Real = 1.0
   "Scripted scenario time table; defaults to the coast-down preset"
   structural parameter table::String = "dyad://VehicleSystemsComponents/drivers/coast_down.csv"
+  "OpenCRG road asset for all four wheel positions"
+  structural parameter road_file::String = "dyad://VehicleSystemsComponents/roads/uniform_mu.crg"
   "Driver supplying the three causal commands"
   driver = VehicleSystemsComponents.ScriptedDriver(table = table)
-  "Car including actuator response"
-  vehicle = VehicleSystemsComponents.Vehicle.Planar.RoadBEVDrive(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
-  "OpenCRG grip file for all four wheel positions"
-  structural parameter road_file::String = "dyad://VehicleSystemsComponents/roads/uniform_mu.crg"
-  "Position-dependent grip road"
-  road = TableRoad(file = road_file)
+  "Car including actuator response and road grip lookup"
+  vehicle = VehicleSystemsComponents.Vehicle.Planar.RoadBEVDrive(road_file = road_file, m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
 relations
   connect(driver.throttle_signal, vehicle.throttle)
   connect(driver.brake_signal, vehicle.brake)
   connect(driver.steer_signal, vehicle.steer)
-  connect(road.grip_fl, vehicle.grip_fl)
-  connect(vehicle.x_fl, road.x_fl)
-  connect(vehicle.y_fl, road.y_fl)
-  connect(road.grip_fr, vehicle.grip_fr)
-  connect(vehicle.x_fr, road.x_fr)
-  connect(vehicle.y_fr, road.y_fr)
-  connect(road.grip_rl, vehicle.grip_rl)
-  connect(vehicle.x_rl, road.x_rl)
-  connect(vehicle.y_rl, road.y_rl)
-  connect(road.grip_rr, vehicle.grip_rr)
-  connect(vehicle.x_rr, road.x_rr)
-  connect(vehicle.y_rr, road.y_rr)
 end

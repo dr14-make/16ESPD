@@ -7,14 +7,14 @@
 @doc Markdown.doc"""
    PlanarBEVOnRoad(; name, table, road_file, m, esp_on, abs_on, mu, __overrides)
 
-Planar BEV assembly with a scripted driver.
+Planar BEV assembly with a scripted driver and position-dependent road grip.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `table`         | Scripted scenario time table; defaults to the coast-down preset                         | --  |   "dyad://Veh...t_down.csv" |
-| `road_file`         | OpenCRG grip file for all four wheel positions                         | --  |   "dyad://Veh...orm_mu.crg" |
+| `road_file`         | OpenCRG road asset for all four wheel positions                         | --  |   "dyad://Veh...orm_mu.crg" |
 | `m`         | Vehicle mass                         | kg  |   1500.0 |
 | `esp_on`         | ESP enable for the run                         | --  |   1.0 |
 | `abs_on`         | ABS enable for the run                         | --  |   1.0 |
@@ -89,10 +89,7 @@ Planar BEV assembly with a scripted driver.
   push!(__systems, @named driver = VehicleSystemsComponents.ScriptedDriver(; table=table, __overrides = driver_overrides))
   # Subcomponent vehicle of type VehicleSystemsComponents.Vehicle.Planar.RoadBEVDrive
   vehicle_overrides = __pop_subcomponent_overrides!(__overrides, "vehicle")
-  push!(__systems, @named vehicle = VehicleSystemsComponents.Vehicle.Planar.RoadBEVDrive(; m=m, esp_on=esp_on, abs_on=abs_on, mu=mu, __overrides = vehicle_overrides))
-  # Subcomponent road of type VehicleSystemsComponents.TableRoad
-  road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
-  push!(__systems, @named road = VehicleSystemsComponents.TableRoad(; file=road_file, __overrides = road_overrides))
+  push!(__systems, @named vehicle = VehicleSystemsComponents.Vehicle.Planar.RoadBEVDrive(; road_file=road_file, m=m, esp_on=esp_on, abs_on=abs_on, mu=mu, __overrides = vehicle_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -108,18 +105,6 @@ Planar BEV assembly with a scripted driver.
   push!(__eqs, connect(driver.throttle_signal, vehicle.throttle))
   push!(__eqs, connect(driver.brake_signal, vehicle.brake))
   push!(__eqs, connect(driver.steer_signal, vehicle.steer))
-  push!(__eqs, connect(road.grip_fl, vehicle.grip_fl))
-  push!(__eqs, connect(vehicle.x_fl, road.x_fl))
-  push!(__eqs, connect(vehicle.y_fl, road.y_fl))
-  push!(__eqs, connect(road.grip_fr, vehicle.grip_fr))
-  push!(__eqs, connect(vehicle.x_fr, road.x_fr))
-  push!(__eqs, connect(vehicle.y_fr, road.y_fr))
-  push!(__eqs, connect(road.grip_rl, vehicle.grip_rl))
-  push!(__eqs, connect(vehicle.x_rl, road.x_rl))
-  push!(__eqs, connect(vehicle.y_rl, road.y_rl))
-  push!(__eqs, connect(road.grip_rr, vehicle.grip_rr))
-  push!(__eqs, connect(vehicle.x_rr, road.x_rr))
-  push!(__eqs, connect(vehicle.y_rr, road.y_rr))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

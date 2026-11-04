@@ -5,30 +5,10 @@ The car measures itself: an ideal `PlanarCarSensors` cluster inside it reads the
 steering column and each wheel, and the car sends every reading on its `bus` port.
 """
 component RoadCar
-  "fl road grip multiplier"
-  grip_fl = RealInput()
-  "fl wheel world x coordinate in meters"
-  x_fl = RealOutput()
-  "fl wheel world y coordinate in meters"
-  y_fl = RealOutput()
-  "fr road grip multiplier"
-  grip_fr = RealInput()
-  "fr wheel world x coordinate in meters"
-  x_fr = RealOutput()
-  "fr wheel world y coordinate in meters"
-  y_fr = RealOutput()
-  "rl road grip multiplier"
-  grip_rl = RealInput()
-  "rl wheel world x coordinate in meters"
-  x_rl = RealOutput()
-  "rl wheel world y coordinate in meters"
-  y_rl = RealOutput()
-  "rr road grip multiplier"
-  grip_rr = RealInput()
-  "rr wheel world x coordinate in meters"
-  x_rr = RealOutput()
-  "rr wheel world y coordinate in meters"
-  y_rr = RealOutput()
+  "OpenCRG road asset used to construct the shared grip callable"
+  structural parameter road_file::String = "dyad://VehicleSystemsComponents/roads/uniform_mu.crg"
+  "Road grip callable shared by all four wheels"
+  structural parameter road::VehicleSystemsComponents.RoadGrip = VehicleSystemsComponents.road_grip(road_file)
   steering = Spline() {^steering}
   chassis = Frame2D() {^chassis}
   wheel_fl = Frame2D() {^wheel_fl}
@@ -105,24 +85,12 @@ component RoadCar
   linkage = VehicleSystemsComponents.Vehicle.Planar.AckermannSteering(L = a + b, t_k = t_k, ackermann = ackermann) {^linkage}
   housing = RotationalComponents.Components.Fixed() {^housing}
   loads = VehicleSystemsComponents.Vehicle.Planar.QuasiStaticLoads(m = m, a = a, b = b, tw = tw, h = h_cg, load_transfer = load_transfer, T_lt = T_lt) {^loads}
-  fl = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_fl, sAdhesion = sAdhesion_f, sSlide = 3 * sAdhesion_f, T_brake = T_brake, tau_max = tau_max) {^fl}
-  fr = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_fr, sAdhesion = sAdhesion_f, sSlide = 3 * sAdhesion_f, T_brake = T_brake, tau_max = tau_max) {^fr}
-  rl = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_rl, sAdhesion = sAdhesion_r, sSlide = 3 * sAdhesion_r, T_brake = T_brake, tau_max = tau_max) {^rl}
+  fl = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(road = road, radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_fl, sAdhesion = sAdhesion_f, sSlide = 3 * sAdhesion_f, T_brake = T_brake, tau_max = tau_max) {^fl}
+  fr = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(road = road, radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_fr, sAdhesion = sAdhesion_f, sSlide = 3 * sAdhesion_f, T_brake = T_brake, tau_max = tau_max) {^fr}
+  rl = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(road = road, radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_rl, sAdhesion = sAdhesion_r, sSlide = 3 * sAdhesion_r, T_brake = T_brake, tau_max = tau_max) {^rl}
   sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius) {^sensors}
-  rr = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_rr, sAdhesion = sAdhesion_r, sSlide = 3 * sAdhesion_r, T_brake = T_brake, tau_max = tau_max) {^rr}
+  rr = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(road = road, radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_rr, sAdhesion = sAdhesion_r, sSlide = 3 * sAdhesion_r, T_brake = T_brake, tau_max = tau_max) {^rr}
 relations
-  x_fl = wheel_fl.x
-  y_fl = wheel_fl.y
-  connect(grip_fl, fl.grip)
-  x_fr = wheel_fr.x
-  y_fr = wheel_fr.y
-  connect(grip_fr, fr.grip)
-  x_rl = wheel_rl.x
-  y_rl = wheel_rl.y
-  connect(grip_rl, rl.grip)
-  x_rr = wheel_rr.x
-  y_rr = wheel_rr.y
-  connect(grip_rr, rr.grip)
   connect(body.frame_a, tf.frame_a, tr.frame_a, loads.chassis, chassis, sensors.chassis) {^w1}
   connect(tf.frame_b, fl_arm.frame_a, fr_arm.frame_a) {^w2}
   connect(tr.frame_b, rl_arm.frame_a, rr_arm.frame_a) {^w3}

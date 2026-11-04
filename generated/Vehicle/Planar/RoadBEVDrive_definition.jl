@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   RoadBEVDrive(; name, esp_on, abs_on, mu, T_actuator, m, radius, T_full, tau_max, P_charge, v_fade, P_aux, ratio, dv_wheel, __overrides)
+   RoadBEVDrive(; name, road_file, esp_on, abs_on, mu, T_actuator, m, radius, T_full, tau_max, P_charge, v_fade, P_aux, ratio, dv_wheel, __overrides)
 
 Planar battery-electric car with causal driver inputs and first-order actuator response.
 Regen withdraws while the ECU acts on either front brake, returning the demand to friction
@@ -15,6 +15,7 @@ under ABS control.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `road_file`         | OpenCRG road asset passed to the car's shared grip callable                         | --  |   "dyad://Veh...orm_mu.crg" |
 | `esp_on`         | ESP enable, fixed for the run                         | --  |   1.0 |
 | `abs_on`         | ABS enable, fixed for the run                         | --  |   1.0 |
 | `mu`         | Road-grip multiplier applied to every wheel                         | --  |   1.0 |
@@ -31,23 +32,11 @@ under ABS control.
 
 ## Connectors
 
- * `grip_fl` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `x_fl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
- * `y_fl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
- * `grip_fr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `x_fr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
- * `y_fr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
- * `grip_rl` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `x_rl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
- * `y_rl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
- * `grip_rr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `x_rr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
- * `y_rr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `throttle` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `brake` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `steer` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function RoadBEVDrive(; name = nothing, var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"mu"=Float64(1.0), var"T_actuator"=0.05, var"m"=Float64(1500.0), var"radius"=0.31, var"T_full"=Float64(2500.0), var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"dv_wheel"=0.01, __overrides = Dict{String, Any}())
+@component function RoadBEVDrive(; name = nothing, var"road_file"="dyad://VehicleSystemsComponents/roads/uniform_mu.crg", var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"mu"=Float64(1.0), var"T_actuator"=0.05, var"m"=Float64(1500.0), var"radius"=0.31, var"T_full"=Float64(2500.0), var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"dv_wheel"=0.01, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -66,6 +55,7 @@ under ABS control.
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "road_file") && (road_file = pop!(__overrides, "road_file"))
   haskey(__overrides, "esp_on") && (esp_on = pop!(__overrides, "esp_on"))
   haskey(__overrides, "abs_on") && (abs_on = pop!(__overrides, "abs_on"))
   haskey(__overrides, "mu") && (mu = pop!(__overrides, "mu"))
@@ -136,18 +126,6 @@ under ABS control.
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
-  append!(__vars, @variables (grip_fl(t)::Real), [input = true])
-  append!(__vars, @variables (x_fl(t)::Real), [output = true])
-  append!(__vars, @variables (y_fl(t)::Real), [output = true])
-  append!(__vars, @variables (grip_fr(t)::Real), [input = true])
-  append!(__vars, @variables (x_fr(t)::Real), [output = true])
-  append!(__vars, @variables (y_fr(t)::Real), [output = true])
-  append!(__vars, @variables (grip_rl(t)::Real), [input = true])
-  append!(__vars, @variables (x_rl(t)::Real), [output = true])
-  append!(__vars, @variables (y_rl(t)::Real), [output = true])
-  append!(__vars, @variables (grip_rr(t)::Real), [input = true])
-  append!(__vars, @variables (x_rr(t)::Real), [output = true])
-  append!(__vars, @variables (y_rr(t)::Real), [output = true])
   append!(__vars, @variables (throttle(t)::Real), [input = true])
   append!(__vars, @variables (brake(t)::Real), [input = true])
   append!(__vars, @variables (steer(t)::Real), [input = true])
@@ -192,7 +170,7 @@ under ABS control.
   push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(; report_front=true, esp_on=esp_on, abs_on=abs_on, radius=radius, T_max=T_full, __overrides = ecu_overrides))
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.RoadCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
-  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.RoadCar(; mu_scale_fl=mu, mu_scale_fr=mu, mu_scale_rl=mu, mu_scale_rr=mu, m=m, radius=radius, tau_max=T_full, __overrides = car_overrides))
+  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.RoadCar(; road_file=road_file, mu_scale_fl=mu, mu_scale_fr=mu, mu_scale_rl=mu, mu_scale_rr=mu, m=m, radius=radius, tau_max=T_full, __overrides = car_overrides))
   # Subcomponent roadload of type VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad
   roadload_overrides = __pop_subcomponent_overrides!(__overrides, "roadload")
   push!(__systems, @named roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(; m=m, __overrides = roadload_overrides))
@@ -236,18 +214,6 @@ under ABS control.
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(grip_fl, car.grip_fl))
-  push!(__eqs, connect(car.x_fl, x_fl))
-  push!(__eqs, connect(car.y_fl, y_fl))
-  push!(__eqs, connect(grip_fr, car.grip_fr))
-  push!(__eqs, connect(car.x_fr, x_fr))
-  push!(__eqs, connect(car.y_fr, y_fr))
-  push!(__eqs, connect(grip_rl, car.grip_rl))
-  push!(__eqs, connect(car.x_rl, x_rl))
-  push!(__eqs, connect(car.y_rl, y_rl))
-  push!(__eqs, connect(grip_rr, car.grip_rr))
-  push!(__eqs, connect(car.x_rr, x_rr))
-  push!(__eqs, connect(car.y_rr, y_rr))
   push!(__eqs, connect(car.bus, motion.bus, slips.bus))
   push!(__eqs, connect(throttle, pedals.u1))
   push!(__eqs, connect(brake, pedals.u2))

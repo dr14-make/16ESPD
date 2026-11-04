@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   RoadCar(; name, load_transfer, m, Iz, a, b, tw, radius, J, mu_A, mu_S, sAdhesion_f, sAdhesion_r, mu_scale_fl, mu_scale_fr, mu_scale_rl, mu_scale_rr, T_brake, tau_max, i_s, t_k, ackermann, h_cg, T_lt, __overrides)
+   RoadCar(; name, road_file, road, load_transfer, m, Iz, a, b, tw, radius, J, mu_A, mu_S, sAdhesion_f, sAdhesion_r, mu_scale_fl, mu_scale_fr, mu_scale_rl, mu_scale_rr, T_brake, tau_max, i_s, t_k, ackermann, h_cg, T_lt, __overrides)
 
 Four-wheel planar vehicle with physical steering, wheel, spin, and load paths.
 
@@ -16,6 +16,8 @@ steering column and each wheel, and the car sends every reading on its `bus` por
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `road_file`         | OpenCRG road asset used to construct the shared grip callable                         | --  |   "dyad://Veh...orm_mu.crg" |
+| `road`         | Road grip callable shared by all four wheels                         | --  |   VehicleSyst...(road_file) |
 | `load_transfer`         | Enable acceleration filtering and load transfer (derived)                         | --  |   false |
 | `m`         | Vehicle mass (probe)                         | kg  |   1500.0 |
 | `Iz`         | Yaw inertia (probe)                         | kg.m2  |   2500.0 |
@@ -42,18 +44,6 @@ steering column and each wheel, and the car sends every reading on its `bus` por
 
 ## Connectors
 
- * `grip_fl` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `x_fl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
- * `y_fl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
- * `grip_fr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `x_fr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
- * `y_fr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
- * `grip_rl` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `x_rl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
- * `y_rl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
- * `grip_rr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `x_rr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
- * `y_rr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `steering` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `chassis` - Coordinate system (2-dim.) fixed to the component with one cut-force and cut-torque.
 All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
@@ -81,7 +71,7 @@ A `CarBus` connects to a `CarBusIn`, field by field. Two `CarBus` ports would bo
 same signals, and the compiler does not reject that wiring, so connect a `CarBus` only to
 `CarBusIn` ports. ([`CarBus`](@ref))
 """
-@component function RoadCar(; name = nothing, var"load_transfer"=false, var"m"=Float64(1500.0), var"Iz"=Float64(2500.0), var"a"=1.2, var"b"=1.5, var"tw"=1.55, var"radius"=0.31, var"J"=Float64(1.0), var"mu_A"=Float64(1.0), var"mu_S"=0.8, var"sAdhesion_f"=0.12, var"sAdhesion_r"=0.09, var"mu_scale_fl"=Float64(1.0), var"mu_scale_fr"=Float64(1.0), var"mu_scale_rl"=Float64(1.0), var"mu_scale_rr"=Float64(1.0), var"T_brake"=0.03, var"tau_max"=Float64(2500.0), var"i_s"=Float64(16.0), var"ackermann"=Float64(1.0), var"h_cg"=Float64(0.0), var"T_lt"=0.05, var"t_k"=nothing, __overrides = Dict{String, Any}())
+@component function RoadCar(; name = nothing, var"road_file"="dyad://VehicleSystemsComponents/roads/uniform_mu.crg", var"load_transfer"=false, var"m"=Float64(1500.0), var"Iz"=Float64(2500.0), var"a"=1.2, var"b"=1.5, var"tw"=1.55, var"radius"=0.31, var"J"=Float64(1.0), var"mu_A"=Float64(1.0), var"mu_S"=0.8, var"sAdhesion_f"=0.12, var"sAdhesion_r"=0.09, var"mu_scale_fl"=Float64(1.0), var"mu_scale_fr"=Float64(1.0), var"mu_scale_rl"=Float64(1.0), var"mu_scale_rr"=Float64(1.0), var"T_brake"=0.03, var"tau_max"=Float64(2500.0), var"i_s"=Float64(16.0), var"ackermann"=Float64(1.0), var"h_cg"=Float64(0.0), var"T_lt"=0.05, var"road"=nothing, var"t_k"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -100,6 +90,7 @@ same signals, and the compiler does not reject that wiring, so connect a `CarBus
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "road_file") && (road_file = pop!(__overrides, "road_file"))
   haskey(__overrides, "load_transfer") && (load_transfer = pop!(__overrides, "load_transfer"))
   haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
   haskey(__overrides, "Iz") && (Iz = pop!(__overrides, "Iz"))
@@ -122,12 +113,15 @@ same signals, and the compiler does not reject that wiring, so connect a `CarBus
   haskey(__overrides, "ackermann") && (ackermann = pop!(__overrides, "ackermann"))
   haskey(__overrides, "h_cg") && (h_cg = pop!(__overrides, "h_cg"))
   haskey(__overrides, "T_lt") && (T_lt = pop!(__overrides, "T_lt"))
+  haskey(__overrides, "road") && (road = pop!(__overrides, "road"))
   haskey(__overrides, "t_k") && (t_k = pop!(__overrides, "t_k"))
 
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
+  isnothing(road) && (road = VehicleSystemsComponents.road_grip(road_file))
   isnothing(t_k) && (t_k = tw)
 
   ### Structural Parameters (functions)
+  roadˍ₋value = VehicleSystemsComponents.road_grip(road_file)
 
   ### Structural Parameters (Final)
 
@@ -210,18 +204,6 @@ same signals, and the compiler does not reject that wiring, so connect a `CarBus
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
-  append!(__vars, @variables (grip_fl(t)::Real), [input = true])
-  append!(__vars, @variables (x_fl(t)::Real), [output = true])
-  append!(__vars, @variables (y_fl(t)::Real), [output = true])
-  append!(__vars, @variables (grip_fr(t)::Real), [input = true])
-  append!(__vars, @variables (x_fr(t)::Real), [output = true])
-  append!(__vars, @variables (y_fr(t)::Real), [output = true])
-  append!(__vars, @variables (grip_rl(t)::Real), [input = true])
-  append!(__vars, @variables (x_rl(t)::Real), [output = true])
-  append!(__vars, @variables (y_rl(t)::Real), [output = true])
-  append!(__vars, @variables (grip_rr(t)::Real), [input = true])
-  append!(__vars, @variables (x_rr(t)::Real), [output = true])
-  append!(__vars, @variables (y_rr(t)::Real), [output = true])
   append!(__vars, @variables (tau_fl(t)::Real), [input = true])
   append!(__vars, @variables (tau_fr(t)::Real), [input = true])
   append!(__vars, @variables (tau_rl(t)::Real), [input = true])
@@ -290,19 +272,19 @@ same signals, and the compiler does not reject that wiring, so connect a `CarBus
   push!(__systems, @named loads = VehicleSystemsComponents.Vehicle.Planar.QuasiStaticLoads(; m=m, a=a, b=b, tw=tw, h=h_cg, load_transfer=load_transfer, T_lt=T_lt, __overrides = loads_overrides))
   # Subcomponent fl of type VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel
   fl_overrides = __pop_subcomponent_overrides!(__overrides, "fl")
-  push!(__systems, @named fl = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(; radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_fl, sAdhesion=sAdhesion_f, sSlide=3 * sAdhesion_f, T_brake=T_brake, tau_max=tau_max, __overrides = fl_overrides))
+  push!(__systems, @named fl = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(; road=road, radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_fl, sAdhesion=sAdhesion_f, sSlide=3 * sAdhesion_f, T_brake=T_brake, tau_max=tau_max, __overrides = fl_overrides))
   # Subcomponent fr of type VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel
   fr_overrides = __pop_subcomponent_overrides!(__overrides, "fr")
-  push!(__systems, @named fr = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(; radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_fr, sAdhesion=sAdhesion_f, sSlide=3 * sAdhesion_f, T_brake=T_brake, tau_max=tau_max, __overrides = fr_overrides))
+  push!(__systems, @named fr = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(; road=road, radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_fr, sAdhesion=sAdhesion_f, sSlide=3 * sAdhesion_f, T_brake=T_brake, tau_max=tau_max, __overrides = fr_overrides))
   # Subcomponent rl of type VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel
   rl_overrides = __pop_subcomponent_overrides!(__overrides, "rl")
-  push!(__systems, @named rl = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(; radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_rl, sAdhesion=sAdhesion_r, sSlide=3 * sAdhesion_r, T_brake=T_brake, tau_max=tau_max, __overrides = rl_overrides))
+  push!(__systems, @named rl = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(; road=road, radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_rl, sAdhesion=sAdhesion_r, sSlide=3 * sAdhesion_r, T_brake=T_brake, tau_max=tau_max, __overrides = rl_overrides))
   # Subcomponent sensors of type VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors
   sensors_overrides = __pop_subcomponent_overrides!(__overrides, "sensors")
   push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, __overrides = sensors_overrides))
   # Subcomponent rr of type VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel
   rr_overrides = __pop_subcomponent_overrides!(__overrides, "rr")
-  push!(__systems, @named rr = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(; radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_rr, sAdhesion=sAdhesion_r, sSlide=3 * sAdhesion_r, T_brake=T_brake, tau_max=tau_max, __overrides = rr_overrides))
+  push!(__systems, @named rr = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(; road=road, radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_rr, sAdhesion=sAdhesion_r, sSlide=3 * sAdhesion_r, T_brake=T_brake, tau_max=tau_max, __overrides = rr_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -315,14 +297,6 @@ same signals, and the compiler does not reject that wiring, so connect a `CarBus
   __assertions = []
 
   ### Equations
-  push!(__eqs, x_fl ~ wheel_fl.x)
-  push!(__eqs, y_fl ~ wheel_fl.y)
-  push!(__eqs, x_fr ~ wheel_fr.x)
-  push!(__eqs, y_fr ~ wheel_fr.y)
-  push!(__eqs, x_rl ~ wheel_rl.x)
-  push!(__eqs, y_rl ~ wheel_rl.y)
-  push!(__eqs, x_rr ~ wheel_rr.x)
-  push!(__eqs, y_rr ~ wheel_rr.y)
   push!(__eqs, bus.vx ~ sensors.vx)
   push!(__eqs, bus.vy ~ sensors.vy)
   push!(__eqs, bus.r ~ sensors.r)
@@ -345,10 +319,6 @@ same signals, and the compiler does not reject that wiring, so connect a `CarBus
   push!(__eqs, bus.omega_fr ~ sensors.omega_fr)
   push!(__eqs, bus.omega_rl ~ sensors.omega_rl)
   push!(__eqs, bus.omega_rr ~ sensors.omega_rr)
-  push!(__eqs, connect(grip_fl, fl.grip))
-  push!(__eqs, connect(grip_fr, fr.grip))
-  push!(__eqs, connect(grip_rl, rl.grip))
-  push!(__eqs, connect(grip_rr, rr.grip))
   push!(__eqs, connect(body.frame_a, tf.frame_a, tr.frame_a, loads.chassis, chassis, sensors.chassis))
   push!(__eqs, connect(tf.frame_b, fl_arm.frame_a, fr_arm.frame_a))
   push!(__eqs, connect(tr.frame_b, rl_arm.frame_a, rr_arm.frame_a))

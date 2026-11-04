@@ -4,30 +4,8 @@ Regen withdraws while the ECU acts on either front brake, returning the demand t
 under ABS control.
 """
 component RoadBEVDrive
-  "fl road grip multiplier"
-  grip_fl = RealInput()
-  "fl wheel world x coordinate in meters"
-  x_fl = RealOutput()
-  "fl wheel world y coordinate in meters"
-  y_fl = RealOutput()
-  "fr road grip multiplier"
-  grip_fr = RealInput()
-  "fr wheel world x coordinate in meters"
-  x_fr = RealOutput()
-  "fr wheel world y coordinate in meters"
-  y_fr = RealOutput()
-  "rl road grip multiplier"
-  grip_rl = RealInput()
-  "rl wheel world x coordinate in meters"
-  x_rl = RealOutput()
-  "rl wheel world y coordinate in meters"
-  y_rl = RealOutput()
-  "rr road grip multiplier"
-  grip_rr = RealInput()
-  "rr wheel world x coordinate in meters"
-  x_rr = RealOutput()
-  "rr wheel world y coordinate in meters"
-  y_rr = RealOutput()
+  "OpenCRG road asset passed to the car's shared grip callable"
+  structural parameter road_file::String = "dyad://VehicleSystemsComponents/roads/uniform_mu.crg"
   "Throttle pedal fraction, from zero to one"
   throttle = RealInput()
   "Brake pedal fraction, from zero to one"
@@ -73,24 +51,12 @@ component RoadBEVDrive
   differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
   mount = RotationalComponents.Components.Fixed() {^mount}
   ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(report_front = true, esp_on = esp_on, abs_on = abs_on, radius = radius, T_max = T_full) {^ecu}
-  car = VehicleSystemsComponents.Vehicle.Planar.RoadCar(mu_scale_fl = mu, mu_scale_fr = mu, mu_scale_rl = mu, mu_scale_rr = mu, m = m, radius = radius, tau_max = T_full) {^car}
+  car = VehicleSystemsComponents.Vehicle.Planar.RoadCar(road_file = road_file, mu_scale_fl = mu, mu_scale_fr = mu, mu_scale_rl = mu, mu_scale_rr = mu, m = m, radius = radius, tau_max = T_full) {^car}
   roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
   flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
   motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
   slips = VehicleSystemsComponents.Vehicle.Planar.BusSlip() {^slips}
 relations
-  connect(grip_fl, car.grip_fl)
-  connect(car.x_fl, x_fl)
-  connect(car.y_fl, y_fl)
-  connect(grip_fr, car.grip_fr)
-  connect(car.x_fr, x_fr)
-  connect(car.y_fr, y_fr)
-  connect(grip_rl, car.grip_rl)
-  connect(car.x_rl, x_rl)
-  connect(car.y_rl, y_rl)
-  connect(grip_rr, car.grip_rr)
-  connect(car.x_rr, x_rr)
-  connect(car.y_rr, y_rr)
   connect(car.bus, motion.bus, slips.bus) {^wbus}
   connect(throttle, pedals.u1) {^w1}
   connect(brake, pedals.u2) {^w2}

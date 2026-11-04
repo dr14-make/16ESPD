@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TestRoadWheelRig(; name, v, vy, tau, N_load, mu, __overrides)
+   TestRoadWheelRig(; name, road_file, road, v, vy, tau, N_load, __overrides)
 
 Prescribed-motion grip wheel test with physical spin inertia and brake dynamics.
 
@@ -13,13 +13,14 @@ Prescribed-motion grip wheel test with physical spin inertia and brake dynamics.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `road_file`         | OpenCRG low-grip road asset for the wheel test                         | --  |   "dyad://Veh...low_mu.crg" |
+| `road`         | Road grip callable evaluated at the prescribed wheel position                         | --  |   VehicleSyst...(road_file) |
 | `v`         | Prescribed forward speed                         | m/s  |   20.0 |
 | `vy`         | Prescribed lateral speed                         | m/s  |   0.0 |
 | `tau`         | Brake command                         | N.m  |   0.0 |
 | `N_load`         | Applied normal load                         | N  |   4000.0 |
-| `mu`         | Grip multiplier for the wheel test                         | --  |   0.3 |
 """
-@component function TestRoadWheelRig(; name = nothing, var"v"=Float64(20.0), var"vy"=Float64(0.0), var"tau"=Float64(0.0), var"N_load"=Float64(4000.0), var"mu"=0.3, __overrides = Dict{String, Any}())
+@component function TestRoadWheelRig(; name = nothing, var"road_file"="dyad://VehicleSystemsComponents/roads/uniform_low_mu.crg", var"v"=Float64(20.0), var"vy"=Float64(0.0), var"tau"=Float64(0.0), var"N_load"=Float64(4000.0), var"road"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -38,13 +39,18 @@ Prescribed-motion grip wheel test with physical spin inertia and brake dynamics.
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "road_file") && (road_file = pop!(__overrides, "road_file"))
   haskey(__overrides, "v") && (v = pop!(__overrides, "v"))
   haskey(__overrides, "vy") && (vy = pop!(__overrides, "vy"))
   haskey(__overrides, "tau") && (tau = pop!(__overrides, "tau"))
   haskey(__overrides, "N_load") && (N_load = pop!(__overrides, "N_load"))
-  haskey(__overrides, "mu") && (mu = pop!(__overrides, "mu"))
+  haskey(__overrides, "road") && (road = pop!(__overrides, "road"))
+
+  ### Deferred keyword defaults (defaults referencing other keyword arguments)
+  isnothing(road) && (road = VehicleSystemsComponents.road_grip(road_file))
 
   ### Structural Parameters (functions)
+  roadˍ₋value = VehicleSystemsComponents.road_grip(road_file)
 
   ### Structural Parameters (Final)
 
@@ -69,9 +75,6 @@ Prescribed-motion grip wheel test with physical spin inertia and brake dynamics.
   __local__N_load = N_load
   append!(__params, @parameters (N_load::Real), [description = "Applied normal load"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, N_load, __local__N_load)
-  __local__mu = mu
-  append!(__params, @parameters (mu::Real), [description = "Grip multiplier for the wheel test"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, mu, __local__mu)
 
   ### Final Parameters (assignments)
 
@@ -108,7 +111,7 @@ Prescribed-motion grip wheel test with physical spin inertia and brake dynamics.
   push!(__systems, @named load_fixed = TranslationalComponents.Components.Fixed(; __overrides = load_fixed_overrides))
   # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
-  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(; sAdhesion=0.12, sSlide=0.36, mu_A=Float64(1.0), mu_S=0.8, J=Float64(1.0), tau_max=Float64(10000.0), __overrides = wheel_overrides))
+  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Planar.RoadBrakedWheel(; road=road, sAdhesion=0.12, sSlide=0.36, mu_A=Float64(1.0), mu_S=0.8, J=Float64(1.0), tau_max=Float64(10000.0), __overrides = wheel_overrides))
   # Subcomponent slip of type VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor
   slip_overrides = __pop_subcomponent_overrides!(__overrides, "slip")
   push!(__systems, @named slip = VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor(; radius=0.31, __overrides = slip_overrides))
@@ -127,7 +130,6 @@ Prescribed-motion grip wheel test with physical spin inertia and brake dynamics.
   __assertions = []
 
   ### Equations
-  push!(__eqs, wheel.grip ~ mu)
   push!(__eqs, connect(vx_source.y, motion.v_x))
   push!(__eqs, connect(vy_source.y, motion.v_y))
   push!(__eqs, connect(motion.frame_b, wheel.frame_a))

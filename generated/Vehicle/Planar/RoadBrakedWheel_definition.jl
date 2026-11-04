@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   RoadBrakedWheel(; name, radius, J, mu_A, mu_S, mu_scale, sAdhesion, sSlide, vAdhesion_min, vSlide_min, T_brake, tau_max, w0, __overrides)
+   RoadBrakedWheel(; name, road, radius, J, mu_A, mu_S, mu_scale, sAdhesion, sSlide, vAdhesion_min, vSlide_min, T_brake, tau_max, w0, __overrides)
 
 Planar road wheel combining tire contact, spin inertia, and an in-line brake.
 
@@ -17,6 +17,7 @@ All plant interfaces are physical except the brake actuator command. Normal load
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `road`         | Road grip callable evaluated at the wheel's world position                         | --  |    |
 | `radius`         | Wheel rolling radius (repository default)                         | m  |   0.31 |
 | `J`         | One-wheel spin inertia (assumed)                         | kg.m2  |   1.0 |
 | `mu_A`         | Peak adhesion coefficient (probe)                         | --  |   1.0 |
@@ -37,17 +38,17 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
  * `spin` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `load` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
  * `tau_cmd` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `grip` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 
 ## Variables
 
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
+| `grip`         | Road grip multiplier; scales traction capacity, not the reported physical load                         | --  |
 | `F_x`         | Longitudinal tire force on the vehicle                         | N  |
 | `F_y`         | Lateral tire force on the vehicle                         | N  |
 | `F_z`         | Normal tire load                         | N  |
 """
-@component function RoadBrakedWheel(; name = nothing, var"radius"=0.31, var"J"=Float64(1.0), var"mu_A"=Float64(1.0), var"mu_S"=0.8, var"mu_scale"=Float64(1.0), var"sAdhesion"=0.12, var"vAdhesion_min"=0.05, var"vSlide_min"=0.15, var"T_brake"=0.03, var"tau_max"=Float64(2500.0), var"w0"=Float64(1.0), var"sSlide"=nothing, __overrides = Dict{String, Any}())
+@component function RoadBrakedWheel(; name = nothing, var"road"=nothing, var"radius"=0.31, var"J"=Float64(1.0), var"mu_A"=Float64(1.0), var"mu_S"=0.8, var"mu_scale"=Float64(1.0), var"sAdhesion"=0.12, var"vAdhesion_min"=0.05, var"vSlide_min"=0.15, var"T_brake"=0.03, var"tau_max"=Float64(2500.0), var"w0"=Float64(1.0), var"sSlide"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -66,6 +67,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "road") && (road = pop!(__overrides, "road"))
   haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
   haskey(__overrides, "J") && (J = pop!(__overrides, "J"))
   haskey(__overrides, "mu_A") && (mu_A = pop!(__overrides, "mu_A"))
@@ -136,14 +138,17 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
 
   ### Final Path Parameters
   append!(__vars, @variables (tau_cmd(t)::Real), [input = true])
-  append!(__vars, @variables (grip(t)::Real), [input = true])
 
   ### Variables (declarations)
+  append!(__vars, @variables (grip(t)::Real), [description = "Road grip multiplier; scales traction capacity, not the reported physical load"])
   append!(__vars, @variables (F_x(t)::Real), [description = "Longitudinal tire force on the vehicle"])
   append!(__vars, @variables (F_y(t)::Real), [description = "Lateral tire force on the vehicle"])
   append!(__vars, @variables (F_z(t)::Real), [description = "Normal tire load"])
 
   ### Variables (assignments)
+  __ovr_grip = pop!(__overrides, "grip", nothing); isnothing(__ovr_grip) || push!(__eqs, grip ~ __ovr_grip)
+  __ovr_grip__initial = pop!(__overrides, "grip.initial", nothing); isnothing(__ovr_grip__initial) || (__initial_conditions[grip] = __ovr_grip__initial)
+  __ovr_grip__guess = pop!(__overrides, "grip.guess", nothing)
   __ovr_F_x = pop!(__overrides, "F_x", nothing); isnothing(__ovr_F_x) || push!(__eqs, F_x ~ __ovr_F_x)
   __ovr_F_x__initial = pop!(__overrides, "F_x.initial", nothing); isnothing(__ovr_F_x__initial) || (__initial_conditions[F_x] = __ovr_F_x__initial)
   __ovr_F_x__guess = pop!(__overrides, "F_x.guess", nothing)
@@ -178,6 +183,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
+  isnothing(__ovr_grip__guess) || (__guesses[grip] = __ovr_grip__guess)
   isnothing(__ovr_F_x__guess) || (__guesses[F_x] = __ovr_F_x__guess)
   isnothing(__ovr_F_y__guess) || (__guesses[F_y] = __ovr_F_y__guess)
   isnothing(__ovr_F_z__guess) || (__guesses[F_z] = __ovr_F_z__guess)
@@ -188,6 +194,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   __assertions = []
 
   ### Equations
+  push!(__eqs, grip ~ road(frame_a.x, frame_a.y))
   push!(__eqs, joint.dynamicLoad ~ grip * load.f)
   push!(__eqs, load.s ~ 0.0)
   push!(__eqs, F_x ~ -joint.f_long)

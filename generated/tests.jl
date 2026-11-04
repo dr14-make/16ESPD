@@ -27,7 +27,6 @@ include("PlanarBEVByHand_test.jl")
 include("PlanarBEVOnRoad_test.jl")
 include("PlanarBEVScripted_test.jl")
 include("ScriptedDriver_test.jl")
-include("TableRoad_test.jl")
 end
 include("HandsOn/tests.jl")
 include("HandsOn02/tests.jl")
