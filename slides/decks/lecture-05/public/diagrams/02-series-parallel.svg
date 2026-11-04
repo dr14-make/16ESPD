@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 400" width="1100" height="400">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .box-e { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .box-f { fill: #fdf3e6; stroke: #a75d00; stroke-width: 2; }
+    .shaft { stroke: #16202c; stroke-width: 6; fill: none; }
+    .dc { stroke: #a75d00; stroke-width: 3; fill: none; }
+    .wheel { fill: #2b3440; stroke: #16202c; stroke-width: 2; }
+    .t { font-size: 20px; font-weight: 600; }
+    .b { font-size: 15px; font-weight: 600; }
+    .lbl { font-size: 13px; fill: #4a5a6b; }
+  </style>
+
+  <text x="270" y="30" text-anchor="middle" class="t">series: the engine drives a generator</text>
+
+  <rect class="box-f" x="20" y="70" width="110" height="60" rx="6"/>
+  <text x="75" y="105" text-anchor="middle" class="b">engine</text>
+  <path class="shaft" d="M130 100 H170"/>
+  <rect class="box-e" x="170" y="70" width="120" height="60" rx="6"/>
+  <text x="230" y="105" text-anchor="middle" class="b">generator</text>
+  <path class="dc" d="M290 100 H350 V180"/>
+  <rect class="box-e" x="20" y="250" width="110" height="60" rx="6"/>
+  <text x="75" y="285" text-anchor="middle" class="b">battery</text>
+  <path class="dc" d="M130 280 H350 V180"/>
+  <circle cx="350" cy="180" r="6" fill="#a75d00"/>
+  <text x="340" y="205" text-anchor="end" class="lbl">DC link</text>
+  <path class="dc" d="M350 180 H390"/>
+  <rect class="box-e" x="390" y="150" width="110" height="60" rx="6"/>
+  <text x="445" y="185" text-anchor="middle" class="b">motor</text>
+  <path class="shaft" d="M445 210 V270"/>
+  <rect class="wheel" x="410" y="270" width="70" height="30" rx="6"/>
+  <text x="445" y="330" text-anchor="middle" class="lbl">wheels</text>
+  <text x="270" y="375" text-anchor="middle" class="lbl">no shaft from the engine to the wheels: every joule from the engine is converted twice</text>
+
+  <path d="M550 50 V370" stroke="#c8d0d8" stroke-width="2"/>
+
+  <text x="830" y="30" text-anchor="middle" class="t">parallel: both drive the wheels</text>
+
+  <rect class="box-f" x="590" y="150" width="110" height="60" rx="6"/>
+  <text x="645" y="185" text-anchor="middle" class="b">engine</text>
+  <path class="shaft" d="M700 180 H1010"/>
+  <rect class="box" x="720" y="160" width="40" height="40" rx="4"/>
+  <text x="740" y="185" text-anchor="middle" class="lbl">K0</text>
+  <rect class="box-e" x="790" y="70" width="100" height="60" rx="6"/>
+  <text x="840" y="105" text-anchor="middle" class="b">motor</text>
+  <path class="shaft" d="M840 130 V180"/>
+  <rect class="box" x="910" y="150" width="90" height="60" rx="6"/>
+  <text x="955" y="177" text-anchor="middle" class="b">trans-</text>
+  <text x="955" y="196" text-anchor="middle" class="b">mission</text>
+  <path class="shaft" d="M1000 180 H1040 V270"/>
+  <rect class="wheel" x="1005" y="270" width="70" height="30" rx="6"/>
+  <text x="1040" y="330" text-anchor="middle" class="lbl">wheels</text>
+  <rect class="box-e" x="590" y="250" width="110" height="60" rx="6"/>
+  <text x="645" y="285" text-anchor="middle" class="b">battery</text>
+  <path class="dc" d="M700 280 H780 V100 H790"/>
+  <text x="830" y="375" text-anchor="middle" class="lbl">a mechanical path from the engine to the wheels, the motor on the same shaft</text>
+</svg>
