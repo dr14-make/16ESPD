@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   PlanarBEVOnRoad(; name, table, road_file, m, esp_on, abs_on, mu, __overrides)
+   PlanarBEVOnRoad(; name, table, road_file, height_file, m, esp_on, abs_on, mu, __overrides)
 
 Planar BEV assembly with a scripted driver and position-dependent road grip.
 
@@ -15,12 +15,13 @@ Planar BEV assembly with a scripted driver and position-dependent road grip.
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `table`         | Scripted scenario time table; defaults to the coast-down preset                         | --  |   "dyad://Veh...t_down.csv" |
 | `road_file`         | OpenCRG road asset for all four wheel positions                         | --  |   "dyad://Veh...orm_mu.crg" |
+| `height_file`         | OpenCRG height asset evaluated at the chassis center                         | --  |   "dyad://Veh...flat_z.crg" |
 | `m`         | Vehicle mass                         | kg  |   1500.0 |
 | `esp_on`         | ESP enable for the run                         | --  |   1.0 |
 | `abs_on`         | ABS enable for the run                         | --  |   1.0 |
 | `mu`         | Uniform road-grip multiplier                         | --  |   1.0 |
 """
-@component function PlanarBEVOnRoad(; name = nothing, var"table"="dyad://VehicleSystemsComponents/drivers/coast_down.csv", var"road_file"="dyad://VehicleSystemsComponents/roads/uniform_mu.crg", var"m"=Float64(1500.0), var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"mu"=Float64(1.0), __overrides = Dict{String, Any}())
+@component function PlanarBEVOnRoad(; name = nothing, var"table"="dyad://VehicleSystemsComponents/drivers/coast_down.csv", var"road_file"="dyad://VehicleSystemsComponents/roads/uniform_mu.crg", var"height_file"="dyad://VehicleSystemsComponents/roads/flat_z.crg", var"m"=Float64(1500.0), var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"mu"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -41,6 +42,7 @@ Planar BEV assembly with a scripted driver and position-dependent road grip.
   ### Keyword argument overrides
   haskey(__overrides, "table") && (table = pop!(__overrides, "table"))
   haskey(__overrides, "road_file") && (road_file = pop!(__overrides, "road_file"))
+  haskey(__overrides, "height_file") && (height_file = pop!(__overrides, "height_file"))
   haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
   haskey(__overrides, "esp_on") && (esp_on = pop!(__overrides, "esp_on"))
   haskey(__overrides, "abs_on") && (abs_on = pop!(__overrides, "abs_on"))
@@ -89,7 +91,7 @@ Planar BEV assembly with a scripted driver and position-dependent road grip.
   push!(__systems, @named driver = VehicleSystemsComponents.ScriptedDriver(; table=table, __overrides = driver_overrides))
   # Subcomponent vehicle of type VehicleSystemsComponents.Vehicle.Planar.RoadBEVDrive
   vehicle_overrides = __pop_subcomponent_overrides!(__overrides, "vehicle")
-  push!(__systems, @named vehicle = VehicleSystemsComponents.Vehicle.Planar.RoadBEVDrive(; road_file=road_file, m=m, esp_on=esp_on, abs_on=abs_on, mu=mu, __overrides = vehicle_overrides))
+  push!(__systems, @named vehicle = VehicleSystemsComponents.Vehicle.Planar.RoadBEVDrive(; road_file=road_file, height_file=height_file, m=m, esp_on=esp_on, abs_on=abs_on, mu=mu, __overrides = vehicle_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))

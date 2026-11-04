@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   RoadBEVDrive(; name, road_file, esp_on, abs_on, mu, T_actuator, m, radius, T_full, tau_max, P_charge, v_fade, P_aux, ratio, dv_wheel, __overrides)
+   RoadBEVDrive(; name, road_file, height_file, slope, esp_on, abs_on, mu, T_actuator, m, radius, T_full, tau_max, P_charge, v_fade, P_aux, ratio, dv_wheel, __overrides)
 
 Planar battery-electric car with causal driver inputs and first-order actuator response.
 Regen withdraws while the ECU acts on either front brake, returning the demand to friction
@@ -16,6 +16,8 @@ under ABS control.
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `road_file`         | OpenCRG road asset passed to the car's shared grip callable                         | --  |   "dyad://Veh...orm_mu.crg" |
+| `height_file`         | OpenCRG height asset evaluated at the chassis center                         | --  |   "dyad://Veh...flat_z.crg" |
+| `slope`         | Shared world-coordinate slope callable loaded once                         | --  |   VehicleSyst...eight_file) |
 | `esp_on`         | ESP enable, fixed for the run                         | --  |   1.0 |
 | `abs_on`         | ABS enable, fixed for the run                         | --  |   1.0 |
 | `mu`         | Road-grip multiplier applied to every wheel                         | --  |   1.0 |
@@ -36,7 +38,7 @@ under ABS control.
  * `brake` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `steer` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function RoadBEVDrive(; name = nothing, var"road_file"="dyad://VehicleSystemsComponents/roads/uniform_mu.crg", var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"mu"=Float64(1.0), var"T_actuator"=0.05, var"m"=Float64(1500.0), var"radius"=0.31, var"T_full"=Float64(2500.0), var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"dv_wheel"=0.01, __overrides = Dict{String, Any}())
+@component function RoadBEVDrive(; name = nothing, var"road_file"="dyad://VehicleSystemsComponents/roads/uniform_mu.crg", var"height_file"="dyad://VehicleSystemsComponents/roads/flat_z.crg", var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"mu"=Float64(1.0), var"T_actuator"=0.05, var"m"=Float64(1500.0), var"radius"=0.31, var"T_full"=Float64(2500.0), var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"dv_wheel"=0.01, var"slope"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -56,6 +58,7 @@ under ABS control.
 
   ### Keyword argument overrides
   haskey(__overrides, "road_file") && (road_file = pop!(__overrides, "road_file"))
+  haskey(__overrides, "height_file") && (height_file = pop!(__overrides, "height_file"))
   haskey(__overrides, "esp_on") && (esp_on = pop!(__overrides, "esp_on"))
   haskey(__overrides, "abs_on") && (abs_on = pop!(__overrides, "abs_on"))
   haskey(__overrides, "mu") && (mu = pop!(__overrides, "mu"))
@@ -69,8 +72,13 @@ under ABS control.
   haskey(__overrides, "P_aux") && (P_aux = pop!(__overrides, "P_aux"))
   haskey(__overrides, "ratio") && (ratio = pop!(__overrides, "ratio"))
   haskey(__overrides, "dv_wheel") && (dv_wheel = pop!(__overrides, "dv_wheel"))
+  haskey(__overrides, "slope") && (slope = pop!(__overrides, "slope"))
+
+  ### Deferred keyword defaults (defaults referencing other keyword arguments)
+  isnothing(slope) && (slope = VehicleSystemsComponents.road_height(height_file))
 
   ### Structural Parameters (functions)
+  slopeˍ₋value = VehicleSystemsComponents.road_height(height_file)
 
   ### Structural Parameters (Final)
 
@@ -174,9 +182,9 @@ under ABS control.
   # Subcomponent roadload of type VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad
   roadload_overrides = __pop_subcomponent_overrides!(__overrides, "roadload")
   push!(__systems, @named roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(; m=m, __overrides = roadload_overrides))
-  # Subcomponent flat of type BlockComponents.Sources.Constant
-  flat_overrides = __pop_subcomponent_overrides!(__overrides, "flat")
-  push!(__systems, @named flat = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = flat_overrides))
+  # Subcomponent roadgrade of type VehicleSystemsComponents.Vehicle.Planar.RoadGrade
+  roadgrade_overrides = __pop_subcomponent_overrides!(__overrides, "roadgrade")
+  push!(__systems, @named roadgrade = VehicleSystemsComponents.Vehicle.Planar.RoadGrade(; slope=slope, __overrides = roadgrade_overrides))
   # Subcomponent motion of type VehicleSystemsComponents.Vehicle.Planar.BusMotion
   motion_overrides = __pop_subcomponent_overrides!(__overrides, "motion")
   push!(__systems, @named motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion(; __overrides = motion_overrides))
@@ -241,8 +249,8 @@ under ABS control.
   push!(__eqs, connect(ecu.tau_fr, car.tau_fr))
   push!(__eqs, connect(ecu.tau_rl, car.tau_rl))
   push!(__eqs, connect(ecu.tau_rr, car.tau_rr))
-  push!(__eqs, connect(flat.y, roadload.grade))
-  push!(__eqs, connect(car.chassis, roadload.chassis))
+  push!(__eqs, connect(roadgrade.grade, roadload.grade))
+  push!(__eqs, connect(car.chassis, roadload.chassis, roadgrade.chassis))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

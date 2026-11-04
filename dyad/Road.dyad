@@ -1,2 +1,5 @@
 "Road grip callable mapping world x and y positions in meters to a dimensionless grip multiplier."
 type RoadGrip = func(::Real, ::Real)::Real
+
+"Road slope callable mapping world x and y in meters and heading in radians to tan of the road angle along that heading."
+type RoadSlope = func(::Real, ::Real, ::Real)::Real

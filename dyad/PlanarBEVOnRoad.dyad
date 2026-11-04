@@ -12,10 +12,12 @@ component PlanarBEVOnRoad
   structural parameter table::String = "dyad://VehicleSystemsComponents/drivers/coast_down.csv"
   "OpenCRG road asset for all four wheel positions"
   structural parameter road_file::String = "dyad://VehicleSystemsComponents/roads/uniform_mu.crg"
+  "OpenCRG height asset evaluated at the chassis center"
+  structural parameter height_file::String = "dyad://VehicleSystemsComponents/roads/flat_z.crg"
   "Driver supplying the three causal commands"
   driver = VehicleSystemsComponents.ScriptedDriver(table = table)
   "Car including actuator response and road grip lookup"
-  vehicle = VehicleSystemsComponents.Vehicle.Planar.RoadBEVDrive(road_file = road_file, m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
+  vehicle = VehicleSystemsComponents.Vehicle.Planar.RoadBEVDrive(road_file = road_file, height_file = height_file, m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
 relations
   connect(driver.throttle_signal, vehicle.throttle)
   connect(driver.brake_signal, vehicle.brake)
