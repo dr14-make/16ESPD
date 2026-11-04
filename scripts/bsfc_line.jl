@@ -1,6 +1,6 @@
 #!/usr/bin/env julia
 #
-# Best-BSFC operating line of the Lecture 2 mapped engine, for the Lecture 5 CVT (issue #112).
+# Best-BSFC operating line of the Lecture 2 mapped engine, for the Lecture 5 CVT.
 #
 #     julia +dyad-3.5.0 --project=. scripts/bsfc_line.jl
 #
@@ -18,13 +18,19 @@
 # power hyperbola, so the speeds are made non-decreasing in power by isotonic regression
 # (pool-adjacent-violators) and snapped back to the speed grid; torque and BSFC are then
 # recomputed at those speeds, so every row is an operating point the engine model really has.
+#
+# From the first power whose optimum sits on the full-load curve up to peak power, the line
+# follows the full-load curve itself, at the low-speed end of each power's feasible window. The
+# optimum stays on full load there, but near peak power it hops to the high-speed end of the
+# window, past the speed of peak power, on BSFC differences under 1 g/kWh; only the low-speed end
+# rises continuously to peak power.
 
 module BsfcLine
 
 using Printf
 
 export ROOT, LINE_FILE, RPM_IDLE, RPM_MAX, load_maps, operating_line, render_line,
-    bsfc_at, reachable_torque, global_min_bsfc
+    bsfc_at, reachable_torque, global_min_bsfc, power_kw, torque_for
 
 const ROOT = normpath(@__DIR__, "..")
 const MAPS = joinpath(ROOT, "data", "engine")
@@ -76,6 +82,13 @@ function columns(m, n)
     return col(m.torque), col(m.fuel)
 end
 
+const SPEEDS = collect(RPM_IDLE:RPM_STEP:RPM_MAX)
+
+"Power [kW] at speed `n` [rpm] and torque `T` [N·m]."
+power_kw(n, T) = T * n * pi / 30 / 1e3
+"Torque [N·m] that gives power `P_kw` [kW] at speed `n` [rpm]."
+torque_for(P_kw, n) = P_kw * 1e3 / (n * pi / 30)
+
 "Largest brake torque at `n` [rpm]: the map at its top p_m, capped at the full-load curve."
 reachable_torque(m, n) = min(lin(m.fl_rpm, m.fl_T, n), last(columns(m, n)[1]))
 
@@ -95,13 +108,8 @@ function bsfc_at(m, n, T)
     w = (T - τ[j]) / (τ[j+1] - τ[j])
     p = m.kpa[j] + w * (m.kpa[j+1] - m.kpa[j])
     fuel = f[j] + w * (f[j+1] - f[j])
-    return (; p_kpa = p, fuel_gps = fuel, bsfc = fuel * 3600 / (T * n * pi / 30 / 1e3))
+    return (; p_kpa = p, fuel_gps = fuel, bsfc = fuel * 3600 / power_kw(n, T))
 end
-
-const SPEEDS = collect(RPM_IDLE:RPM_STEP:RPM_MAX)
-
-power_kw(n, T) = T * n * pi / 30 / 1e3
-torque_for(P_kw, n) = P_kw * 1e3 / (n * pi / 30)
 
 "Peak power over the speed range and the speed it is reached at, on the speed grid."
 function peak_power(m)
@@ -149,9 +157,18 @@ function isotonic(y)
     return reduce(vcat, (fill(v, n) for (v, n) in blocks))
 end
 
-"Smallest grid speed at which power `P_kw` is reachable."
-min_feasible_speed(m, P_kw) =
-    SPEEDS[findfirst(n -> torque_for(P_kw, n) <= reachable_torque(m, n), SPEEDS)]
+"""
+    feasible_window(m, P_kw) -> (lo, hi)
+
+Lowest and highest grid speeds at which power `P_kw` fits under the reachable torque.
+"""
+function feasible_window(m, P_kw)
+    fits(n) = torque_for(P_kw, n) <= reachable_torque(m, n)
+    lo, hi = findfirst(fits, SPEEDS), findlast(fits, SPEEDS)
+    lo === nothing && error(@sprintf("%.3f kW is not reachable at any speed from %.0f to %.0f rpm",
+        P_kw, RPM_IDLE, RPM_MAX))
+    return SPEEDS[lo], SPEEDS[hi]
+end
 
 """
     operating_line(m) -> Vector of (; power_kw, rpm, torque, bsfc, raw_rpm)
@@ -160,21 +177,34 @@ The best-BSFC line, monotone in speed, from 1 kW to peak power (see the file hea
 """
 function operating_line(m)
     P_peak, n_peak = peak_power(m)
-    powers = [collect(POWER_STEP_KW:POWER_STEP_KW:floor(P_peak)); P_peak]
-    raw = [P == P_peak ? n_peak : raw_argmin(m, P) for P in powers]
-    fitted = isotonic(raw)
+    # Drops a whole-kW grid point equal to peak power, which is listed once, below.
+    powers = filter(P -> P < P_peak && !(P ≈ P_peak), POWER_STEP_KW:POWER_STEP_KW:P_peak)
+    windows = [feasible_window(m, P) for P in powers]
+    raw = [raw_argmin(m, P) for P in powers]
+    # Above idle, the low end of the window is where P/ω meets the full-load curve.
+    k_fl = findfirst(k -> raw[k] == windows[k][1] > RPM_IDLE, eachindex(powers))
+    target = copy(raw)
+    k_fl === nothing || (target[k_fl:end] .= first.(windows[k_fl:end]))
     speeds = Float64[]
-    for (P, n) in zip(powers, fitted)
+    for (P, n, (lo, hi)) in zip(powers, isotonic(target), windows)
         n = RPM_IDLE + RPM_STEP * round((n - RPM_IDLE) / RPM_STEP)
-        n = max(n, min_feasible_speed(m, P), isempty(speeds) ? RPM_IDLE : speeds[end])
+        n = clamp(max(n, isempty(speeds) ? RPM_IDLE : speeds[end]), lo, hi)
+        isempty(speeds) || n >= speeds[end] || error(@sprintf(
+            "%.3f kW: no speed in its window %.0f–%.0f rpm keeps the line monotone", P, lo, hi))
         push!(speeds, n)
     end
-    return map(zip(powers, speeds, raw)) do (P, n, n_raw)
+    rows = map(zip(powers, speeds, raw)) do (P, n, n_raw)
         T = torque_for(P, n)
         r = bsfc_at(m, n, T)
-        r === nothing && error("line point $(P) kW at $(n) rpm is out of the map")
+        r === nothing && error(@sprintf("%.3f kW at %.0f rpm is out of the map", P, n))
         (; power_kw = P, rpm = n, torque = T, bsfc = r.bsfc, raw_rpm = n_raw)
     end
+    # The peak row sits on the full-load curve by construction; recomputing its torque from
+    # P_peak can land an ulp above the cap, which `bsfc_at` would reject.
+    T_peak = reachable_torque(m, n_peak)
+    push!(rows, (; power_kw = P_peak, rpm = n_peak, torque = T_peak,
+        bsfc = bsfc_at(m, n_peak, T_peak).bsfc, raw_rpm = n_peak))
+    return rows
 end
 
 "The CSV text of the line; fixed decimals keep reruns byte-identical."
@@ -198,7 +228,7 @@ function main()
         @sprintf("%.1f–%.1f kW", first(line).power_kw, last(line).power_kw))
     @printf("map minimum BSFC %.2f g/kWh at %.0f rpm, %.1f N·m (%.1f kW)\n",
         g.bsfc, g.rpm, g.torque, g.power_kw)
-    @printf("line minimum BSFC %.2f g/kWh; %d of %d speeds moved to make the line monotone\n",
+    @printf("line minimum BSFC %.2f g/kWh; %d of %d speeds moved off the raw argmin\n",
         minimum(r -> r.bsfc, line), moved, length(line))
 end
 

@@ -72,10 +72,10 @@ function bsfc_line_plot()
         legend = :bottomright,
         grid = true, gridalpha = 0.25)
     for P in (20, 40, 60, 80)
-        n = filter(n -> P * 1e3 / (n * pi / 30) <= 160, rpm)
-        plot!(p, n, P * 1e3 ./ (n .* pi ./ 30); color = :gray, ls = :dot, lw = 1, label = "")
+        n = filter(n -> torque_for(P, n) <= 160, rpm)
+        plot!(p, n, torque_for.(P, n); color = :gray, ls = :dot, lw = 1, label = "")
         x = min(n[end], 6250.0)
-        annotate!(p, x, P * 1e3 / (x * pi / 30) + 4, text("$P kW", 11, :gray, :right))
+        annotate!(p, x, torque_for(P, x) + 4, text("$P kW", 11, :gray, :right))
     end
     for level in LEVELS
         pieces = contour_pieces(rpm, torque, Z, F, level)
