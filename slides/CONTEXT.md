@@ -93,7 +93,8 @@ _Avoid_: interactive analysis, gamepad controller
 
 **Road**:
 The socket that takes each wheel's world x and y position and returns its grip multiplier.
-It does not supply driver commands; a uniform road returns the same multiplier everywhere.
+It does not supply driver commands. Uniform grip uses PlanarCar's `mu` parameter without a Road
+implementation.
 _Avoid_: terrain controller, grip command
 
 **Table road**:

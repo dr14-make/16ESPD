@@ -26,18 +26,6 @@ partial component Road
   grip_rr = RealOutput()
 end
 
-"Spatially uniform grip road."
-component UniformRoad
-  extends Road
-  "Uniform grip multiplier"
-  parameter mu::Real = 1.0
-relations
-  grip_fl = mu
-  grip_fr = mu
-  grip_rl = mu
-  grip_rr = mu
-end
-
 "Scalar road surface callable."
 type RoadInterpolator = func(::Real, ::Real)::Real
 "Loaded grid and reference-line metadata."

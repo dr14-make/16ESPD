@@ -19,33 +19,44 @@ function road_dimension(axis)
 end
 
 "Load a straight OpenCRG grid and fit a C1 quadratic spline through its finite grid nodes."
-function road_surface(file::AbstractString)
+function road_surface(file::AbstractString; fill_missing = nothing)
     path = road_path(file)
-    if isempty(file) || !isfile(path)
-        path = road_path("dyad://VehicleSystemsComponents/roads/uniform_mu.crg")
+    isempty(file) && error("$(repr(file)): road filename is empty")
+    isfile(path) || error("$file: road file does not exist")
+    data = try
+        OpenCRG.read_crg(path)
+    catch e
+        error("$file: $(sprint(showerror, e))")
     end
-    data = OpenCRG.read_crg(path)
-    # Inspect section presence too: an explicitly empty MODS block must also be rejected.
-    bytes = read(path)
-    header = String(bytes[1:OpenCRG.find_header_end(bytes)-1])
-    occursin(r"(?im)^\s*\$ROAD_CRG_MODS\b", header) &&
-        error("$file: \$ROAD_CRG_MODS is unsupported for a straight table road")
-    sections = OpenCRG.group_sections(OpenCRG.split_lines(bytes[1:OpenCRG.find_header_end(bytes)-1]))
-    _, channels = OpenCRG.parse_kd_definition(sections["KD_DEFINITION"])
-    any(c -> c.kind == :phi, channels) &&
-        error("$file: reference line phi channel is unsupported (curved reference line)")
     r = data.refline
-    u = collect(range(r.start_u; step = r.increment, length = size(data.z, 1)))
-    v = data.v
+    # The pinned reader recognizes the standard _S/_B keys, not these spelled-out aliases.
+    header = first(split(read(path, String), "\$\$\$\$"; limit = 2))
+    for m in eachmatch(r"(?im)^\s*REFERENCE_LINE_START_(?:SLOPE|BANKING)\s*=\s*([^\s!]+)", header)
+        value = tryparse(Float64, m.captures[1])
+        value == 0.0 || error("$file: elevation data (slope or banking start value) is not grip")
+    end
+    any(p -> isfinite(p) && p != r.start_phi, data.phi) &&
+        error("$file: curved reference line phi differs from REFERENCE_LINE_START_PHI")
+    (data.slope !== nothing || data.banking !== nothing ||
+        r.start_z != 0 || r.start_slope != 0 || r.start_banking != 0) &&
+        error("$file: elevation data (slope, banking, or reference-line start elevation) is not grip")
+    if any(isnan, data.z)
+        fill_missing === nothing && error("$file: grip grid contains NaN")
+        isfinite(fill_missing) || error("$file: fill_missing must be finite")
+        replace!(data.z, NaN => Float64(fill_missing))
+    end
+    # The reader leaves absent heading samples as NaN, even for a straight reference line.
+    replace!(data.phi, NaN => r.start_phi)
+    u, v, X, Y, z = OpenCRG.road_surface_grid(data)
+    all(isfinite, z) || error("$file: grip grid contains nonfinite values after modifiers")
     all(>(0), diff(u)) && all(>(0), diff(v)) || error("$file: grid axes must increase")
-    # Upstream handmade samples contain missing heights. They are not grip measurements;
-    # retain every finite node and use zero for missing nodes when testing those fixtures.
-    z = map(x -> isfinite(x) ? x : 0.0, data.z)
+    phi = atan(Y[end,1] - Y[1,1], X[end,1] - X[1,1])
+    x0, y0 = X[1,1] + sin(phi)*v[1], Y[1,1] - cos(phi)*v[1]
     du, au = road_dimension(u)
     dv, av = road_dimension(v)
     coefficients = (au \ z) / transpose(av)
     surface = DataInterpolationsND.NDInterpolation(coefficients, (du, dv))
-    return (; surface, x0 = r.start_x, y0 = r.start_y, phi = r.start_phi, u0 = r.start_u)
+    return (; surface, x0, y0, phi, u0 = first(u))
 end
 
 
