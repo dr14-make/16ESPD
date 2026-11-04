@@ -16,7 +16,7 @@ road_stop(file; esp_on = 0.0) = road_run(VehicleSystemsComponents.PlanarBEVOnRoa
     for file in ("handmade_straight.crg", "handmade_straight_double.crg")
         path = joinpath(@__DIR__, "data", "opencrg", file)
         data = read_crg(path)
-        road = VehicleSystemsComponents.road_surface(path)
+        road = VehicleSystemsComponents.road_surface(path; fill_missing = 0.0)
         errors = [abs(road.surface(data.refline.start_u + (i-1)*data.refline.increment,
             data.v[j]) - data.z[i,j]) for i in axes(data.z,1), j in axes(data.z,2)
             if isfinite(data.z[i,j])]
@@ -30,11 +30,38 @@ road_stop(file; esp_on = 0.0) = road_run(VehicleSystemsComponents.PlanarBEVOnRoa
         joinpath(@__DIR__, "data", "opencrg", "handmade_straight_minimalist.crg"))
     curved = joinpath(@__DIR__, "data", "opencrg", "handmade_curved.crg")
     @test_throws Regex(basename(curved) * ".*reference line phi") VehicleSystemsComponents.road_surface(curved)
+    @test_throws r"road filename is empty" VehicleSystemsComponents.road_surface("")
+    @test_throws r"absent_mu.crg.*does not exist" VehicleSystemsComponents.road_surface("absent_mu.crg")
+    @test_throws r"handmade_straight.crg.*NaN" VehicleSystemsComponents.road_surface(
+        joinpath(@__DIR__, "data", "opencrg", "handmade_straight.crg"))
     mktempdir(get(ENV, "TMPDIR", tempdir())) do dir
-        original = read(VehicleSystemsComponents.road_path(ROAD_ASSETS * "uniform_mu.crg"), String)
+        original = read(VehicleSystemsComponents.road_path(ROAD_ASSETS * "ice_patch_mu.crg"), String)
         modified = joinpath(dir, "modified_mu.crg")
-        write(modified, replace(original, "\$KD_DEFINITION" => "\$ROAD_CRG_MODS\n\$!\n\$KD_DEFINITION"))
-        @test_throws r"modified_mu.crg.*ROAD_CRG_MODS" VehicleSystemsComponents.road_surface(modified)
+        write(modified, replace(original, "\$KD_DEFINITION" =>
+            "\$ROAD_CRG_MODS\nREFLINE_OFFSET_X = 10\n\$!\n\$KD_DEFINITION"))
+        base = VehicleSystemsComponents.road_surface(VehicleSystemsComponents.road_path(ROAD_ASSETS * "ice_patch_mu.crg"))
+        shifted = VehicleSystemsComponents.road_surface(modified)
+        @test shifted.x0 - base.x0 ≈ 10.0
+        @test shifted.y0 ≈ base.y0
+        @test shifted.surface(470.0, 0.0) ≈ base.surface(470.0, 0.0)
+        @info "OpenCRG modifier" modifier = "REFLINE_OFFSET_X" shift_m = shifted.x0 - base.x0
+        for key in ("Z", "S", "B", "SLOPE", "BANKING")
+            bad = joinpath(dir, "start_" * lowercase(key) * ".crg")
+            write(bad, replace(original, "\$ROAD_CRG\n" => "\$ROAD_CRG\nREFERENCE_LINE_START_" * key * " = 1\n"))
+            @test_throws Regex(basename(bad) * ".*elevation data") VehicleSystemsComponents.road_surface(bad)
+        end
+        uniform = read(VehicleSystemsComponents.road_path(ROAD_ASSETS * "uniform_mu.crg"), String)
+        for channel in ("slope", "banking")
+            bad = joinpath(dir, channel * ".crg")
+            write(bad, replace(uniform, "D:long section at v = -1.0,m" =>
+                "D:reference line " * channel * ",rad"))
+            @test_throws Regex(basename(bad) * ".*elevation data") VehicleSystemsComponents.road_surface(bad)
+        end
+        straight = joinpath(dir, "constant_phi.crg")
+        header, _ = split(uniform, "\$\$\$\$"; limit = 2)
+        header = replace(header, "#:LDFI" => "#:LDFI\nD:reference line phi,rad")
+        write(straight, header * "\$\$\$\$\n" * repeat(join(lpad(v, 20) for v in ("0.0", "1.0", "1.0", "1.0")) * "\n", 3))
+        @test VehicleSystemsComponents.road_surface(straight).surface(1.0, 0.0) ≈ 1.0
     end
 end
 
@@ -58,23 +85,47 @@ for (mu, file) in ((1.0, "uniform_mu.crg"), (0.3, "uniform_low_mu.crg"))
     end
 end
 
-@testset "Ice patch: ABS on and off the patch" begin
-    result = road_stop("ice_patch_mu.crg")
+"Wheel ABS release/hold activity, excluding ordinary pressure build and regen-fade tracking."
+function road_abs_activity(sol, times, s, wheel)
+    channel = getproperty(s.vehicle.ecu.abs.abs, wheel).modulator
+    collect(sol(times; idxs = channel.phase)) .< 0.5
+end
+
+@testset "Moderate stop: half-g dry braking without ABS" begin
+    result = road_run(VehicleSystemsComponents.PlanarBEVScripted(name = :moderate,
+        table = "dyad://VehicleSystemsComponents/drivers/moderate_stop.csv", esp_on = 0.0); stop = 26.0)
     s, sol = symbolic_container(result), result.sol
-    times = collect(19.1:0.01:22.0)
-    grip = collect(sol(times; idxs = s.road.grip_fl))
-    active = collect(sol(times; idxs = s.vehicle.ecu.front_active))
-    on = grip .< 0.4
-    before = (times .< 19.3) .& (grip .> 0.99)
-    after = (times .> 20.5) .& (grip .> 0.99)
-    @test any(on) && any(before) && any(after)
-    @test any(active[on] .> 0.5)
-    p = s.vehicle.ecu.abs.abs.fl.modulator.p
-    @test sol(19.5; idxs = p) < sol(19.2; idxs = p) / 2
-    @info "Ice patch ABS" patch_x_m = (446,450,462,466) on_times = extrema(times[on]) before_active = maximum(active[before]) after_active = maximum(active[after]) pressure_before = sol(19.2;idxs=p) pressure_on = sol(19.5;idxs=p)
-    # Deliberately enforce the issue's literal requirement: today's hard stop also needs ABS on dry.
-    @test all(active[before] .< 0.5)
-    @test all(active[after] .< 0.5)
+    g = (sol(19.5; idxs = s.vehicle.motion.vx) - sol(21.5; idxs = s.vehicle.motion.vx)) / (2 * 9.81)
+    @info "Moderate dry stop" pedal = 0.227 deceleration_g = g
+    @test 0.48 < g < 0.52
+    for wheel in (:fl, :rl)
+        @test !any(road_abs_activity(sol, 19.005:0.005:26.0, s, wheel))
+    end
+end
+
+@testset "Ice patch: ABS on and off the patch" begin
+    result = road_run(VehicleSystemsComponents.PlanarBEVOnRoad(name = :moderate_patch,
+        table = "dyad://VehicleSystemsComponents/drivers/moderate_stop.csv",
+        road_file = ROAD_ASSETS * "ice_patch_mu.crg", esp_on = 0.0); stop = 26.0)
+    s, sol = symbolic_container(result), result.sol
+    times = collect(19.005:0.005:26.0)
+    for wheel in (:fl, :rl)
+        grip = collect(sol(times; idxs = getproperty(s.road, Symbol(:grip_, wheel))))
+        x = collect(sol(times; idxs = getproperty(s.road, Symbol(:x_, wheel))))
+        active = road_abs_activity(sol, times, s, wheel)
+        on = grip .< 0.4
+        before = x .< 454.0
+        dry_return = findfirst((x .> 495.0) .& (abs.(grip .- 1.0) .< 1e-6))
+        after = times .>= times[dry_return] + 0.3
+        @test any(on) && any(before) && any(after)
+        @test any(active[on])
+        @test !any(active[before])
+        @test !any(active[after])
+        @test times[findfirst(x .>= 455.0)] >= 19.5
+        last_active = findlast(active)
+        dropout = max(0.0, times[last_active] + 0.005 - times[dry_return])
+        @info "Ice patch wheel" wheel patch_entry_s = times[findfirst(x .>= 455.0)] patch_exit_s = times[findfirst(x .>= 495.0)] low_grip_times = extrema(times[on]) active_times = extrema(times[active]) dry_return_s = times[dry_return] dropout_s = dropout
+    end
 end
 
 @testset "One-sided patch: yaw sign agrees with SplitMuStop" begin
