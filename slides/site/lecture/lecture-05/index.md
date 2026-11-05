@@ -36,7 +36,7 @@ Create your own `P2Powertrain` component and expose the same interface. Place:
 | `variator` | VehicleSystemsComponents › Vehicle › ControlledVariator | existing speed schedule and final drive |
 | `hold` | RotationalComponents › Components › Fixed | present only when `engine_stopped` |
 
-Add structural Boolean `engine_stopped = false`, Real `position_start = 0.0`, and angular velocity `engine_speed_start = 0.0` rad/s. `variator` must remain a distinct child: it is the replacement seam for #112, **not** a Dyad language-level `replaceable` feature. `ControlledVariator` already includes the final drive. Do not substitute `CVTDriveline`: that assembly also contains a centrifugal launch clutch and an ideal rolling wheel.
+Add structural Boolean `engine_stopped = false`, Real `position_start = 0.0`, and angular velocity `engine_speed_start = 800.0 * pi / 30` rad/s (800 rpm idle). `variator` must remain a distinct child: it is the replacement seam for #112, **not** a Dyad language-level `replaceable` feature. `ControlledVariator` already includes the final drive. Do not substitute `CVTDriveline`: that assembly also contains a centrifugal launch clutch and an ideal rolling wheel.
 
 #### Do this
 
@@ -54,7 +54,7 @@ Add structural Boolean `engine_stopped = false`, Real `position_start = 0.0`, an
 3. Export `engine.speed.w`, `engine.tau_e` and `engine.mdot_fuel`; `drive.machine.tau`; `k0.position`; `drive.SoC`; and `drive.battery.E` and `drive.battery.i` to the corresponding outputs above.
 4. Reproduce the reference initialization: engine manifold pressure `101325.0` Pa and machine rotor angle `0.0`. With `engine_stopped = false`, initialize engine crankshaft speed to `engine_speed_start` and angle to `0.0`.
 5. For the fixed electric fixture only, conditionally place `hold` and connect `engine.spline` to `hold.spline`. Set `MappedEngine`'s `fuel_cut_rpm = -2.0` and `fuel_resume_rpm = -1.0` in this configuration; otherwise retain `1300.0` and `1000.0`. At zero pedal and held zero speed, the electric fixture initializes `cut = 1`, so fuel is cut without events. This is a fixed test configuration, not engine stopping, starting or mode-switching logic.
-6. Create your own `P2WLTC` fixture using the reference `Lecture5.P2WLTC` for the planar car, road load, cycle and driver. Keep structural Boolean `electric = false`, mass `m = 1500.0` kg and `dv_wheel = 0.01` m/s. Pass `engine_stopped = electric`, `position_start = 0.0` and `engine_speed_start = ifelse(electric, 0.0, 800.0 * pi / 30)` to `powertrain`. Keep PI gain `k = 50.0` in electric mode; use `70.0` in engine-only mode, with `Ti = 2.0` s in both. Set the nested `powertrain.drive.P_aux` to `300.0` W in electric mode and `0.0` in engine-only mode so the conventional baseline draws no battery energy.
+6. Create your own `P2WLTC` fixture using the reference `Lecture5.P2WLTC` for the planar car, road load, cycle and driver. Keep structural Boolean `electric = false`, mass `m = 1500.0` kg and `dv_wheel = 0.01` m/s. Pass `engine_stopped = electric`, `position_start = 0.0` to `powertrain`. Keep PI gain `k = 50.0` in electric mode; use `70.0` in engine-only mode, with `Ti = 2.0` s in both. Set the nested `powertrain.drive.P_aux` to `300.0` W in electric mode and `0.0` in engine-only mode so the conventional baseline draws no battery energy. In engine-only mode also set the nested drive's `T_f`, `K_i`, `k_w`, `C` and `J` to zero; retain all hybrid-drive defaults in electric mode.
 7. Wire `powertrain.spline` to `differential.flange_b`, and the differential's `flange_left` and `flange_right` to `car.spin_fl` and `car.spin_fr`. Ground `powertrain.support` with `mount`, a `RotationalComponents.Components.Fixed`. Retain the reference's straight steering, flat road, speed feedback and wheel/brake initial conditions.
 
 ::: tip Checkpoint 1a — wiring
@@ -149,16 +149,22 @@ H0 is Lecture 5's conventional baseline: Lecture 2's mapped engine and CVT on th
 | Quantity | Full WLTC result |
 | --- | --- |
 | Duration | 1800 s |
-| Maximum absolute speed error | 1.695469 km/h |
-| Distance | 23266.573 m |
-| Raw fuel | 5.787688 L/100 km |
-| SoCCorrectedFuel `fuel_corr` | 5.787688 L/100 km |
-| Energy | 187.1333 MJ/100 km |
-| K0 slip energy, integrated over cycle | approximately 0.11084 MJ |
-| Peak engine torque on cycle / nominal K0 capacity | 120.496 / 230 N·m |
+| Maximum absolute speed error | 1.699441 km/h |
+| Distance | 23266.582 m |
+| Raw fuel | 5.715009 L/100 km |
+| SoCCorrectedFuel `fuel_corr` | 5.715009 L/100 km |
+| Energy | 184.7834 MJ/100 km |
+| K0 slip energy, integrated over cycle | approximately 0.10378 MJ |
+| Peak engine torque on cycle / maximum K0 capacity | 120.496 / 229.885 N·m |
+
+H0 removes the absent machine's bearing friction, iron loss, windage, constant loss and rotor
+inertia through bench-level drive modifiers (`T_f = K_i = k_w = C = J = 0`). The same P2
+composition remains; electric-only retains the hybrid defaults. With the spinning machine's
+default losses and inertia, H0 used 5.787688 L/100 km: a hardware penalty of
+0.072679 L/100 km, or 1.272% relative to the conventional baseline.
 
 Battery current is zero and SoC stays at 0.6, so raw and corrected fuel are equal. K0 position
-is above 0.9969 whenever engine speed exceeds 1900 rpm in this run, allowing actuator lag.
+is above 0.9971 whenever engine speed exceeds 1900 rpm in this run, allowing actuator lag.
 The map's full-load peak is 150.234 N·m, also below K0's 230 N·m nominal capacity
 (229.885 N·m after endpoint rounding). Slip heat is mechanical launch loss, not a separately
 measured fuel increment; its fuel cost is already included in H0's consumption.

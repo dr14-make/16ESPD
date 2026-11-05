@@ -140,9 +140,9 @@ _Avoid_: hybrid powertrain, hybrid controller
 **P2 powertrain**:
 `Vehicle.P2Powertrain` composes the mapped engine, K0 disconnect clutch, `HybridDrive` and
 `ControlledVariator`: the machine shares the shaft after K0 and before the variator. The
-variator includes the final drive, but no launch clutch; the output feeds the car's differential
-and the support is grounded. The variator is a distinct child, so a speed-commanded variator can
-replace it; this is not a language-level `replaceable` feature. Lecture 5's fixed electric fixture
+variator includes the final drive, but no launch clutch. The component exposes an output spline
+and a housing `support` that the user connects in the bench. The variator is a distinct child,
+so a speed-commanded variator can replace it; this is not a language-level `replaceable` feature. Lecture 5's fixed electric fixture
 holds the engine stopped with fuel cut and K0 open; it is not engine-start logic or an energy manager.
 In engine-only mode K0 launches the car on an engine-speed ramp.
 _Avoid_: hybrid drive (that is the electric subassembly), launch device, energy manager
