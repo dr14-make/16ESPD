@@ -147,3 +147,13 @@ speed, electrical power, and the engine power it needs, which can drive the best
 line. It is the series hybrid's power unit, not the series hybrid, and holds no energy manager or
 SoC logic.
 _Avoid_: range extender (a sizing, not a part), APU, genset
+
+**P2 powertrain**:
+`Vehicle.P2Powertrain` composes the mapped engine, K0 disconnect clutch, `HybridDrive` and
+`ControlledVariator`: the machine shares the shaft after K0 and before the variator. The
+variator includes the final drive, but no launch clutch. The component exposes an output spline
+and a housing `support` that the user connects in the bench. The variator is a distinct child,
+so a speed-commanded variator can replace it; this is not a language-level `replaceable` feature. Lecture 5's fixed electric fixture
+holds the engine stopped with fuel cut and K0 open; it is not engine-start logic or an energy manager.
+In engine-only mode K0 launches the car on an engine-speed ramp.
+_Avoid_: hybrid drive (that is the electric subassembly), launch device, energy manager

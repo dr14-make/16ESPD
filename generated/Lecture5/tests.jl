@@ -20,4 +20,6 @@ include("EngineGeneratorBatteryBench_test.jl")
 include("EngineGeneratorBench_test.jl")
 include("HybridDriveDyno_test.jl")
 include("OperatingLineBench_test.jl")
+include("P2ElectricWLTC_test.jl")
+include("P2WLTC_test.jl")
 end
