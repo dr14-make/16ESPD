@@ -205,6 +205,8 @@ component.
 end
 
 
+include("EnergyManagerBenchTransient_definition.jl")
+include("EnergyManagerBench_definition.jl")
 include("EngineGeneratorBatteryBenchTransient_definition.jl")
 include("EngineGeneratorBatteryBench_definition.jl")
 include("EngineGeneratorBenchTransient_definition.jl")

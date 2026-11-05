@@ -543,3 +543,124 @@ using .OperatingPoints
     @test all(ismissing, (f_off.bsfc_mean, f_off.bsfc_cycle, f_off.near_line, f_off.idle))
     @info "Lecture 5 cruise operating point" rpm = op.rpm[k] torque = op.torque[k] f gap
 end
+
+@testset "energy manager" begin
+    run = VehicleSystemsComponents.Lecture5.EnergyManagerBenchTransient()
+    @test string(run.sol.retcode) == "Success"
+    m, s = symbolic_container(run), run.sol
+    M = m.manager
+    p(x) = s.ps[x]
+    ts = collect(0.0:0.05:900.0)
+    at(x) = s(ts, idxs = x).u
+    within(a, b) = a .<= ts .<= b
+    eng, bst, chg = at(M.engine.y), at(M.boost.y), at(M.charge.y)
+    tau_dem, tau_m, tau_e = at(M.tau_dem), at(M.tau_machine), at(M.tau_engine)
+    fric, P_e, w = at(M.tau_friction), at(M.P_engine), at(M.w_shaft)
+    soc = at(m.SoC)
+    T_max, P_max, P_regen = p(M.T_max), p(M.P_max), p(M.P_regen)
+    P_chg, P_line_max = p(M.P_chg), p(M.P_line_max)
+    SoC_on, SoC_off = p(M.SoC_on), p(M.SoC_off)
+    # Times a latch output passes 0.5, the instants its mode changes.
+    switches(y) = ts[findall(i -> (y[i] - 0.5) * (y[i+1] - 0.5) < 0, 1:length(y)-1)]
+    settled(y, a, b, v) = all(isapprox.(y[within(a, b)], v; atol = 1e-3))
+
+    @testset "each mode in its segment" begin
+        # Electric only: the machine carries the demand, the engine is released.
+        ev = within(0.0, 15.0)
+        @test settled(eng, 0.0, 15.0, 0.0)
+        @test all(isapprox.(tau_m[ev], tau_dem[ev]; atol = 1e-6))
+        @test all(abs.(P_e[ev]) .< 1e-6)
+        # On the line: the engine supplies the demand power, the machine idles, and the line's
+        # target is the table's 30 kW speed.
+        @test settled(at(M.on_line), 36.0, 42.0, 1.0)
+        line = within(36.0, 42.0)
+        @test all(isapprox.(P_e[line], 30.0e3; rtol = 1e-6))
+        @test all(abs.(tau_m[line]) .< 1e-6)
+        k30 = findfirst(==(30.0), BSFC_LINE.power_kw)
+        @test all(isapprox.(at(m.line.N)[line], BSFC_LINE.rpm[k30]; atol = 1e-6))
+        # Boost: the engine is held at the line cap and the machine adds the remaining 15 kW.
+        @test settled(at(M.boosting), 64.5, 69.0, 1.0)
+        boost = within(64.5, 69.0)
+        @test all(isapprox.(P_e[boost], P_line_max; rtol = 1e-6))
+        @test all(isapprox.(tau_m[boost] .* w[boost], 15.0e3; rtol = 1e-6))
+        # Back to electric after the demand falls below P_off.
+        @test settled(eng, 77.0, 88.0, 0.0)
+        # Regen: the machine takes 20 kW whole; of 50 kW it takes its 30 kW ceiling and the
+        # friction brakes the rest.
+        light, heavy = within(92.0, 96.0), within(100.0, 104.0)
+        @test all(isapprox.(tau_m[light] .* w[light], -20.0e3; rtol = 1e-6))
+        @test all(abs.(fric[light]) .< 1e-6)
+        @test all(isapprox.(tau_m[heavy] .* w[heavy], -P_regen; rtol = 1e-6))
+        @test all(isapprox.(fric[heavy] .* w[heavy], 50.0e3 - P_regen; rtol = 1e-6))
+        # At standstill the regen fade hands the whole braking demand to the friction brakes.
+        stop = within(127.5, 130.0)
+        @test all(abs.(tau_m[stop]) .< 1e-9)
+        @test all(isapprox.(fric[stop], 60.0; atol = 1e-9))
+        # Charge: a low battery starts the engine at 6 kW demand, the engine runs P_chg above it
+        # and the machine generates P_chg.
+        charging = at(M.charging) .> 0.999
+        @test count(charging) > 0
+        @test all(isapprox.(P_e[charging], 6.0e3 + P_chg; rtol = 1e-3))
+        @test all(isapprox.(tau_m[charging] .* w[charging], -P_chg; rtol = 1e-3))
+        # Wherever the modes are settled, machine, engine and friction brakes deliver the demand.
+        steady = (eng .< 1e-4 .|| eng .> 1 - 1e-4) .&& (bst .< 1e-4 .|| bst .> 1 - 1e-4) .&&
+                 (chg .< 1e-4 .|| chg .> 1 - 1e-4)
+        delivered = tau_m .+ at(M.engage) .* tau_e .- fric
+        @test all(isapprox.(delivered[steady], tau_dem[steady]; atol = 0.05))
+    end
+
+    @testset "no chatter under dithering" begin
+        # One switch per threshold the scripted demand crosses, each inside the dithered or
+        # ramped window that crosses it.
+        on_off = switches(eng)
+        boost_switches = switches(bst)
+        @test count(t -> t < 150.0, on_off) == 2
+        @test 15.0 < on_off[1] < 29.0 && 74.0 < on_off[2] < 88.0
+        @test length(boost_switches) == 2
+        @test 47.0 < boost_switches[1] < 61.0 && 69.0 < boost_switches[2] < 74.0
+        @test isempty(filter(t -> t < 150.0, switches(chg)))
+        # Inside the dither windows every latch holds its value.
+        # Settled after about seven latch times past the switch.
+        @test settled(eng, 18.0, 29.0, 1.0)
+        @test settled(bst, 50.0, 61.0, 1.0)
+        @test settled(eng, 77.0, 88.0, 0.0)
+        # In the SoC loop each charge switch moves the engine once, and no mode switches faster
+        # than the battery can move SoC across its band: discharge at 6 kW, charge at P_chg.
+        loop_charge = filter(>(150.0), switches(chg))
+        loop_engine = filter(>(150.0), on_off)
+        @test length(loop_engine) == length(loop_charge)
+        E_band = (SoC_off - SoC_on) * p(m.E_cap)
+        t_min = min(E_band / (6.0e3 / p(m.eta)), E_band / (P_chg * p(m.eta)))
+        @test minimum(diff(loop_charge)) > 0.9 * t_min
+        @test length(loop_charge) <= ceil(Int, 750.0 / t_min)
+    end
+
+    @testset "outputs within their limits" begin
+        @test all(abs.(tau_m) .<= T_max + 1e-9)
+        @test all(abs.(tau_m .* w) .<= P_max * (1 + 1e-9))
+        @test all(-1e-9 .<= P_e .<= p(M.P_peak) + 1e-6)
+        N = at(m.line.N)
+        @test all(first(BSFC_LINE.rpm) - 1e-9 .<= N .<= last(BSFC_LINE.rpm) + 1e-9)
+        for y in (at(M.engage), at(M.engine_on))
+            @test all(0.0 .<= y .<= 1.0)
+        end
+        # The latch states themselves leave [0, 1] only by the integration error.
+        for y in (eng, bst, chg)
+            @test all(-1e-4 .<= y .<= 1 + 1e-4)
+        end
+        @test all(fric .>= -1e-9)
+        @test all(fric .<= max.(-tau_dem, 0.0) .+ 1e-9)
+        @test all(tau_e .>= -1e-9)
+    end
+
+    @testset "SoC stays in its window once the loop closes" begin
+        t_first = first(filter(>(150.0), switches(chg)))
+        @test soc[findfirst(>=(t_first), ts)] ≈ SoC_on atol = 1e-3
+        loop = ts .>= t_first
+        @test minimum(soc[loop]) >= SoC_on - 2e-3
+        @test maximum(soc[loop]) <= SoC_off + 2e-3
+        @test length(filter(>(150.0), switches(chg))) >= 6
+    end
+
+    @info "Energy manager bench" engine_switches = switches(eng) boost_switches = switches(bst) charge_switches = switches(chg) SoC_loop = extrema(soc[ts .>= 300.0]) SoC_max = maximum(soc) tau_machine = extrema(tau_m) P_engine_max = maximum(P_e)
+end

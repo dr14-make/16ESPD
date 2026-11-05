@@ -1,0 +1,93 @@
+"""
+Energy manager driven through every mode and back, with the battery's charge closing the loop
+(assumed bench).
+
+The scenario table scripts the demand power `P_kW`, a dither amplitude `dither_kW`, an extra
+torque demand `tau_Nm` and the vehicle speed `v_kmh`. The torque demand at the transmission
+input is the scripted power over the shaft speed, plus `tau_Nm`, so the demand power follows the
+table while the car moves. The shaft runs at the vehicle speed through a fixed ratio `i_bench`,
+and the engine at the shaft speed times K0's engagement, a stand-in for a locked K0 that starts
+the engine and a stopped engine behind an open one. The segments:
+
+| time [s] | demand | mode |
+|---|---|---|
+| 0-15 | 5 kW, then up to 12 kW | electric only |
+| 15-29 | 12 kW, dithered by 1.5 kW | engine starts once |
+| 29-42 | 30 kW | engine on the line |
+| 42-61 | 60 kW, dithered by 3 kW | boost engages once |
+| 61-69 | 75 kW | boost, machine adds 15 kW |
+| 69-88 | down to 8 kW, dithered by 1.5 kW | boost releases, engine stops once |
+| 88-107 | -20 kW, then -50 kW | regen; past the 30 kW charge ceiling friction takes the rest |
+| 107-150 | -60 N.m while the car stops, then back to 60 km/h | regen fades out, friction holds |
+| 150-900 | 6 kW | closed loop: electric drive empties the battery to SoC_on, the engine charges it to SoC_off |
+
+The battery is a 1.4 kWh store (HybridDrive's) fed the machine's shaft power through a stated
+one-way efficiency: `E_cap der(SoC) = -P_m / eta` motoring, `-P_m eta` generating. It
+represents the coulomb count only: no resistance, no voltage, no power limit of its own.
+`OperatingLine` reads the engine power request, so its speed target is on the run as well.
+"""
+test component EnergyManagerBench
+  "Scenario table: time_s, P_kW, dither_kW, tau_Nm, v_kmh (assumed)"
+  structural parameter file::String = "dyad://VehicleSystemsComponents/data/lecture05/energy_manager_scenario.csv"
+  structural parameter P_data::DyadData.DyadTimeseries = DyadData.DyadTimeseries(file, independent_var = "time_s", dependent_vars = ["P_kW"])
+  structural parameter dither_data::DyadData.DyadTimeseries = DyadData.DyadTimeseries(file, independent_var = "time_s", dependent_vars = ["dither_kW"])
+  structural parameter tau_data::DyadData.DyadTimeseries = DyadData.DyadTimeseries(file, independent_var = "time_s", dependent_vars = ["tau_Nm"])
+  structural parameter v_data::DyadData.DyadTimeseries = DyadData.DyadTimeseries(file, independent_var = "time_s", dependent_vars = ["v_kmh"])
+  "Dither period (assumed; slow against the 0.2 s mode blend, fast against the segments)"
+  parameter T_dither::Time = 2.0
+  "Fixed shaft-to-wheel ratio (assumed; puts 60 km/h at 3080 rpm)"
+  parameter i_bench::Real = 6.0
+  "Wheel radius (repository default)"
+  parameter radius::Length = 0.31
+  "Battery store energy (ORNL-2011; HybridDrive 1.4 kWh)"
+  parameter E_cap::Energy = 1.4 * 3.6e6
+  "One-way machine, converter and battery efficiency (assumed)"
+  parameter eta::Real = 0.9
+  "Initial state of charge (assumed; high enough that the scripted segments stay above SoC_on)"
+  parameter SoC0::Real = 0.68
+  P_table = BlockComponents.Tables.Interpolation(dataset = P_data, interpolation_type = BlockComponents.Tables.InterpolationType.LinearInterpolation(), extrapolation_type = BlockComponents.Tables.ExtrapolationType.Constant()) {^P_table}
+  dither_table = BlockComponents.Tables.Interpolation(dataset = dither_data, interpolation_type = BlockComponents.Tables.InterpolationType.LinearInterpolation(), extrapolation_type = BlockComponents.Tables.ExtrapolationType.Constant()) {^dither_table}
+  tau_table = BlockComponents.Tables.Interpolation(dataset = tau_data, interpolation_type = BlockComponents.Tables.InterpolationType.LinearInterpolation(), extrapolation_type = BlockComponents.Tables.ExtrapolationType.Constant()) {^tau_table}
+  v_table = BlockComponents.Tables.Interpolation(dataset = v_data, interpolation_type = BlockComponents.Tables.InterpolationType.LinearInterpolation(), extrapolation_type = BlockComponents.Tables.ExtrapolationType.Constant()) {^v_table}
+  manager = VehicleSystemsComponents.Vehicle.EnergyManager() {^manager}
+  line = VehicleSystemsComponents.Vehicle.OperatingLine() {^line}
+  "Scripted demand power [W]"
+  variable P_script::Power
+  "Machine shaft power [W]"
+  variable P_m::Power
+  "Battery state of charge"
+  variable SoC::Real
+relations
+  P_table.u = time
+  dither_table.u = time
+  tau_table.u = time
+  v_table.u = time
+  P_script = 1.0e3 * (P_table.y + dither_table.y * sin(2 * pi * time / T_dither))
+  manager.v = v_table.y
+  manager.w_shaft = v_table.y / 3.6 / radius * i_bench
+  # The 1 rad/s floor only acts at standstill, where the scripted power is zero.
+  manager.tau_dem = P_script / max(manager.w_shaft, 1.0) + tau_table.y
+  manager.engine_speed = manager.engage * manager.w_shaft
+  manager.SoC = SoC
+  connect(manager.P_engine, line.P) {^line_wire}
+  P_m = manager.tau_machine * manager.w_shaft
+  E_cap * der(SoC) = -(max(P_m, 0.0) / eta + min(P_m, 0.0) * eta)
+  initial SoC = SoC0
+metadata {
+  "_links": {
+    "P_table": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 100, "x2": 100, "y2": 200}}}},
+    "dither_table": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 300, "x2": 100, "y2": 400}}}},
+    "tau_table": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 500, "x2": 100, "y2": 600}}}},
+    "v_table": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 700, "x2": 100, "y2": 800}}}},
+    "manager": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 300, "x2": 550, "y2": 500}}}},
+    "line": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 250, "x2": 800, "y2": 350}}}},
+    "line_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end
+
+"Energy-manager bench through every mode and the closed SoC loop (assumed bench)"
+analysis EnergyManagerBenchTransient
+  extends TransientAnalysis(stop = 900.0, alg = ODEAlg.Rodas5P(), saveat = 0.05, dtmax = 0.1, tstops = [10.0, 15.0, 16.0, 28.0, 29.0, 34.0, 42.0, 47.0, 48.0, 60.0, 61.0, 64.0, 69.0, 74.0, 75.0, 87.0, 88.0, 91.0, 96.0, 99.0, 104.0, 107.0, 109.0, 112.0, 127.0, 130.0, 132.0, 135.0, 150.0, 155.0])
+  model = EnergyManagerBench()
+end

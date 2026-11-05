@@ -157,3 +157,12 @@ so a speed-commanded variator can replace it; this is not a language-level `repl
 holds the engine stopped with fuel cut and K0 open; it is not engine-start logic or an energy manager.
 In engine-only mode K0 launches the car on an engine-speed ramp.
 _Avoid_: hybrid drive (that is the electric subassembly), launch device, energy manager
+
+**Energy manager**:
+`Vehicle.EnergyManager` is the P2 hybrid's rule-based supervisor, a signal block with no physics.
+From the driver's torque demand at the transmission input, the shaft and engine speeds, vehicle
+speed and SoC it picks electric only, engine on the best-BSFC line, charge (a load-point shift up
+the line), boost or regen through three continuous `HysteresisLatch` instances on demand power and
+SoC, and requests engine power, engine torque, engine on, K0 engagement, machine torque and the
+friction brakes' share. It splits power by rule; it is not an optimizer (ECMS) and not a plant.
+_Avoid_: hybrid controller, supervisory controller, ECMS, power split device
