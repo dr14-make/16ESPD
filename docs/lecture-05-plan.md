@@ -33,7 +33,7 @@ than the machine's power.
 
 | Level | Model | What it adds | Built in |
 |---|---|---|---|
-| H0 | Lecture 2's `MapEngine` car | conventional baseline, L/100 km on WLTC | reference |
+| H0 | H1 with K0 closed and the hybrid machine removed: no torque, no losses, no inertia | conventional baseline on the same planar car, L/100 km on WLTC (Lecture 2's 5.22 is quoted for scale only) | reference |
 | H1 | P2 powertrain | `MapEngine` → K0 clutch → L4 machine (≈ 30 kW) → `CVTDriveline` → planar differential; L4 battery at ≈ 1.4 kWh | step 1 |
 | H2 | H1 + operating line | CVT ratio commanded to hold the engine on its best-BSFC line for the requested power | step 2 |
 | H3 | H2 + energy manager | rule-based modes inside an SoC window, with hysteresis; regen through L4's blending | step 3 |

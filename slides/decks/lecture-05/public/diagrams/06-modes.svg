@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 420" width="1040" height="420">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .axis { stroke: #16202c; stroke-width: 2; fill: none; }
+    .regen { fill: #cfe3d6; stroke: #2e8b57; stroke-width: 1.5; }
+    .ev { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 1.5; }
+    .line { fill: #fdf3e6; stroke: #a75d00; stroke-width: 1.5; }
+    .boost { fill: #f6d5d3; stroke: #c0392b; stroke-width: 1.5; }
+    .charge { fill: #f1e8f7; stroke: #7b4fa0; stroke-width: 1.5; }
+    .limit { stroke: #4a5a6b; stroke-width: 1.5; stroke-dasharray: 6 4; fill: none; }
+    .b { font-size: 16px; font-weight: 600; }
+    .lbl { font-size: 13px; fill: #4a5a6b; }
+  </style>
+  <defs>
+    <marker id="md-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+  </defs>
+
+  <rect class="regen" x="100" y="40" width="200" height="300"/>
+  <rect class="ev" x="300" y="40" width="180" height="200"/>
+  <rect class="line" x="480" y="40" width="250" height="200"/>
+  <rect class="boost" x="730" y="40" width="200" height="200"/>
+  <rect class="charge" x="300" y="240" width="430" height="100"/>
+  <rect class="boost" x="730" y="240" width="200" height="100" style="fill:#fbe9e7"/>
+
+  <text x="200" y="150" text-anchor="middle" class="b">regen</text>
+  <text x="200" y="172" text-anchor="middle" class="lbl">machine brakes first,</text>
+  <text x="200" y="189" text-anchor="middle" class="lbl">Lecture 4's blending</text>
+  <text x="390" y="135" text-anchor="middle" class="b">electric only</text>
+  <text x="390" y="157" text-anchor="middle" class="lbl">K0 open, engine off</text>
+  <text x="605" y="135" text-anchor="middle" class="b">engine on its line</text>
+  <text x="605" y="157" text-anchor="middle" class="lbl">machine idle</text>
+  <text x="830" y="135" text-anchor="middle" class="b">boost</text>
+  <text x="830" y="157" text-anchor="middle" class="lbl">engine + machine</text>
+  <text x="515" y="280" text-anchor="middle" class="b">charge</text>
+  <text x="515" y="302" text-anchor="middle" class="lbl">engine on its line above the demand,</text>
+  <text x="515" y="319" text-anchor="middle" class="lbl">the machine generates the rest</text>
+  <text x="830" y="280" text-anchor="middle" class="b">engine alone</text>
+  <text x="830" y="302" text-anchor="middle" class="lbl">boost fades out,</text>
+  <text x="830" y="319" text-anchor="middle" class="lbl">engine above its line</text>
+
+  <path class="limit" d="M100 225 H945"/>
+  <path class="limit" d="M100 255 H945"/>
+  <text x="950" y="229" class="lbl">charge off</text>
+  <text x="950" y="259" class="lbl">charge on</text>
+
+  <path class="axis" d="M100 340 H960" marker-end="url(#md-ink)"/>
+  <path class="axis" d="M100 340 V20" marker-end="url(#md-ink)"/>
+  <path d="M300 340 V350" class="axis"/>
+  <text x="300" y="368" text-anchor="middle" class="lbl">0</text>
+  <path d="M480 340 V350" class="axis"/>
+  <text x="480" y="368" text-anchor="middle" class="lbl">P_ev</text>
+  <path d="M730 340 V350" class="axis"/>
+  <text x="730" y="368" text-anchor="middle" class="lbl">P_line,max</text>
+  <text x="620" y="405" text-anchor="middle" class="lbl">power the driver asks for at the wheels →</text>
+  <text x="70" y="190" text-anchor="middle" class="lbl" transform="rotate(-90 70 190)">state of charge →</text>
+</svg>

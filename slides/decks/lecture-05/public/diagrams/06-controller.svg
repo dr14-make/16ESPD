@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 440" width="1100" height="440">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #f4f6f8; stroke: #16202c; stroke-width: 2; }
+    .sig { stroke: #1f5fa8; stroke-width: 2; fill: none; }
+    .bus { stroke: #1f5fa8; stroke-width: 5; fill: none; }
+    .b { font-size: 15px; font-weight: 600; }
+    .in { font-size: 14px; }
+    .lbl { font-size: 12px; fill: #4a5a6b; }
+  </style>
+  <defs>
+    <marker id="ct-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+  </defs>
+
+  <text x="20" y="30" class="lbl">measured and asked for</text>
+  <text x="20" y="70" class="in">vehicle speed</text>
+  <text x="20" y="125" class="in">engine speed</text>
+  <text x="20" y="180" class="in">machine speed</text>
+  <text x="20" y="235" class="in">accelerator demand</text>
+  <text x="20" y="290" class="in">brake demand</text>
+  <text x="20" y="345" class="in">battery SoC</text>
+  <text x="20" y="400" class="in">K0 state</text>
+  <path class="sig" d="M150 65 H230 M150 120 H230 M150 175 H230 M170 230 H230 M150 285 H230 M150 340 H230 M150 395 H230"/>
+  <path class="bus" d="M230 55 V405"/>
+
+  <rect class="box" x="330" y="40" width="210" height="60" rx="6"/>
+  <text x="435" y="68" text-anchor="middle" class="b">start / stop</text>
+  <text x="435" y="88" text-anchor="middle" class="lbl">engine on or off</text>
+  <rect class="box" x="330" y="120" width="210" height="60" rx="6"/>
+  <text x="435" y="148" text-anchor="middle" class="b">clutch control</text>
+  <text x="435" y="168" text-anchor="middle" class="lbl">K0 open or closed</text>
+  <rect class="box" x="330" y="200" width="210" height="60" rx="6"/>
+  <text x="435" y="228" text-anchor="middle" class="b">generation</text>
+  <text x="435" y="248" text-anchor="middle" class="lbl">charge power from SoC</text>
+  <rect class="box" x="330" y="280" width="210" height="60" rx="6"/>
+  <text x="435" y="308" text-anchor="middle" class="b">regen braking</text>
+  <text x="435" y="328" text-anchor="middle" class="lbl">machine share, friction rest</text>
+  <rect class="box" x="620" y="160" width="210" height="100" rx="6"/>
+  <text x="725" y="200" text-anchor="middle" class="b">demand split</text>
+  <text x="725" y="222" text-anchor="middle" class="lbl">engine torque and</text>
+  <text x="725" y="240" text-anchor="middle" class="lbl">machine torque</text>
+
+  <path class="sig" d="M230 70 H330 M230 150 H330 M230 230 H330 M230 310 H330" marker-end="url(#ct-blue)"/>
+  <path class="sig" d="M540 70 H580 V190 H620 M540 150 H570 V210 H620 M540 230 H620 M540 310 H580 V245 H620" marker-end="url(#ct-blue)"/>
+  <path class="sig" d="M230 390 H600 V255 H620" marker-end="url(#ct-blue)"/>
+
+  <path class="sig" d="M540 60 H880" marker-end="url(#ct-blue)"/>
+  <path class="sig" d="M540 140 H860 V120 H880" marker-end="url(#ct-blue)"/>
+  <path class="sig" d="M830 190 H880" marker-end="url(#ct-blue)"/>
+  <path class="sig" d="M830 230 H880" marker-end="url(#ct-blue)"/>
+  <path class="sig" d="M540 330 H880" marker-end="url(#ct-blue)"/>
+
+  <text x="890" y="30" class="lbl">commands</text>
+  <text x="890" y="65" class="in">engine on, starter</text>
+  <text x="890" y="125" class="in">K0 engagement</text>
+  <text x="890" y="195" class="in">engine torque</text>
+  <text x="890" y="235" class="in">machine torque</text>
+  <text x="890" y="335" class="in">friction brakes</text>
+</svg>
