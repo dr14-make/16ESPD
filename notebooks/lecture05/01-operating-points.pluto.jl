@@ -54,9 +54,9 @@ map_plot = bsfc_map_plot()
 md"""
 ## 2. How the fuel is counted
 
-The run is sampled every second. Each sample is an operating point: engine speed, brake torque,
-and the fuel burned over that second, so a point the car holds for a minute weighs sixty times
-one it passes through. On the map, nearby points are pooled into cells 100 rpm by 4 N·m, drawn at
+The run is sampled every 0.1 s. Each sample is an operating point: engine speed, brake torque,
+and the fuel burned over that interval, so a point the car holds for a minute weighs as much as
+600 samples it passes through. On the map, nearby points are pooled into cells 100 rpm by 4 N·m, drawn at
 their fuel-weighted center, with an area proportional to the grams burned there.
 
 From the samples:
@@ -125,58 +125,41 @@ disconnect clutch K0 closed and the machine's torque held at zero, so the engine
 wheels alone through the same CVT, on the same planar car, over the same WLTC trace. Same car,
 same driveline; only the hybrid's electric path differs.
 
-**The run plugs in below.** Replace `nothing` with the engine-only analysis read through
-`operating_points`:
-
-```julia
-conventional = let
-    r = <engine-only analysis>()
-    m = symbolic_container(r)
-    operating_points(r.sol; speed = m.<engine speed, rad/s>, torque = m.<brake torque, N·m>,
-        fuel = m.<fuel mass flow, kg/s>, vehicle_speed = m.<vehicle speed, km/h>)
-end
-```
-
-Until it does, the figure and table stay empty and the export skips the deck figure.
+The run is `Lecture5.P2EngineWLTCTransient`: a PI driver's demand is the engine's pedal, the
+CVT sets its ratio from the same pedal on its schedule, and K0 engages as the engine passes
+1300 rpm, as a centrifugal launch clutch would.
 """
+
+# ╔═╡ 90e62a3f-a0e0-49a4-b30a-611aa4837112
+show_dyad("P2WLTC")
 
 # ╔═╡ 69b442a8-4e97-4698-88ca-1dcb53e7e3b4
-conventional = nothing
-
-# ╔═╡ 0f2fe490-96eb-4da3-ab7b-ea77d2a9cc99
-conventional_plot =
-    conventional === nothing ? nothing : fuel_map_plot(["conventional" => conventional])
-
-# ╔═╡ 97148512-0b3d-48a8-b16e-902317f8b074
-conventional === nothing ? md"*The engine-only run is not plugged in yet.*" :
-metrics_table(["conventional" => conventional])
-
-# ╔═╡ 68fe97ba-ef21-48b3-a7f6-ebd05f5baf66
-md"""
-## Checking the tools on a bench run
-
-The same extraction and figures on Hands-on 02's wide-open-throttle launch, `MappedCarWOT`:
-the pedal floored from rest for two minutes. It is not a drive cycle, so its L/100 km means
-nothing; it is here because it sweeps the engine up the full-load curve, where the best-BSFC
-line joins it at high power, and so exercises every part of the figure.
-"""
-
-# ╔═╡ e21cafa1-c9d6-4871-9d1d-9bf81b713bf5
-show_dyad("MappedCarWOT")
-
-# ╔═╡ 23700ca7-2fd0-4d90-85e7-ffc353592f5b
-wot = let
-    r = VehicleSystemsComponents.HandsOn02.MappedCarWOTTransient()
-    m = symbolic_container(r)
-    operating_points(r.sol; speed = m.car.engine.speed.w, torque = m.car.engine.torque.tau,
-        fuel = m.car.engine.mdot_fuel, vehicle_speed = m.car.v_kmh)
-end;
-
-# ╔═╡ 8c1d80a9-7dba-42da-99c1-a4553d783dc5
-wot_plot = fuel_map_plot(["WOT launch" => wot]; title = "Bench check: WOT launch, 120 s")
+conventional_run = VehicleSystemsComponents.Lecture5.P2EngineWLTCTransient();
 
 # ╔═╡ 2ef46c54-c651-470c-9a69-8d3d5135756c
-metrics_table(["WOT launch" => wot])
+conventional = let
+    m = symbolic_container(conventional_run)
+    operating_points(conventional_run.sol; speed = m.powertrain.engine_speed,
+        torque = m.powertrain.engine_torque, fuel = m.powertrain.mdot_fuel,
+        vehicle_speed = m.kmh.y)
+end;
+
+# ╔═╡ 0f2fe490-96eb-4da3-ab7b-ea77d2a9cc99
+conventional_plot = fuel_map_plot(["conventional" => conventional])
+
+# ╔═╡ 97148512-0b3d-48a8-b16e-902317f8b074
+metrics_table(["conventional" => conventional])
+
+# ╔═╡ 8c1d80a9-7dba-42da-99c1-a4553d783dc5
+let
+    m = symbolic_container(conventional_run)
+    meter = round(conventional_run.sol[m.meter.fuel_raw][end]; digits = 2)
+    sampled = round(fuel_metrics(conventional).L_per_100km; digits = 2)
+    md"""
+    The run's own fuel meter, integrating the fuel flow as it solves, reads $meter L/100 km; the
+    samples above give $sampled.
+    """
+end
 
 # ╔═╡ Cell order:
 # ╠═b73eabb3-6f85-4bf0-a1fe-ae942c72e812
@@ -186,11 +169,9 @@ metrics_table(["WOT launch" => wot])
 # ╟─3a573707-da7d-435d-94f8-140ded4ca6dc
 # ╠═7de0c0a5-a781-4f55-9800-9205b4317d82
 # ╟─83d8353a-efa7-4de9-b0d8-757ee57a790e
+# ╟─90e62a3f-a0e0-49a4-b30a-611aa4837112
 # ╠═69b442a8-4e97-4698-88ca-1dcb53e7e3b4
+# ╠═2ef46c54-c651-470c-9a69-8d3d5135756c
 # ╠═0f2fe490-96eb-4da3-ab7b-ea77d2a9cc99
 # ╠═97148512-0b3d-48a8-b16e-902317f8b074
-# ╟─68fe97ba-ef21-48b3-a7f6-ebd05f5baf66
-# ╟─e21cafa1-c9d6-4871-9d1d-9bf81b713bf5
-# ╠═23700ca7-2fd0-4d90-85e7-ffc353592f5b
-# ╠═8c1d80a9-7dba-42da-99c1-a4553d783dc5
-# ╠═2ef46c54-c651-470c-9a69-8d3d5135756c
+# ╟─8c1d80a9-7dba-42da-99c1-a4553d783dc5

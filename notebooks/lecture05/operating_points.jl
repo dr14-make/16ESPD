@@ -30,7 +30,7 @@ function line_bsfc(P_kw)
 end
 
 """
-    operating_points(sol; speed, torque, fuel, vehicle_speed, dt = 1.0)
+    operating_points(sol; speed, torque, fuel, vehicle_speed, dt = 0.1)
 
 Engine operating points of solution `sol`, sampled at the midpoints of `dt`-second intervals so
 that each sample stands for `dt` seconds of the run and sums over samples are time integrals.
@@ -40,7 +40,9 @@ torque [N·m], fuel mass flow [kg/s] and vehicle speed [km/h]. Returns per-sampl
 `torque`, `power_kw`, `fuel_g` (grams burned over the sample's interval) and `bsfc` [g/kWh,
 `NaN` at or below `P_MIN_KW`], with the run's `km` and `dt`.
 """
-function operating_points(sol; speed, torque, fuel, vehicle_speed, dt = 1.0)
+# One-second samples alias with the engine's fast fuel transients, fuel cut and K0 launch, and
+# miss about 1 % of WLTC fuel; at 0.1 s the sum matches the integrated fuel to 0.03 %.
+function operating_points(sol; speed, torque, fuel, vehicle_speed, dt = 0.1)
     t0, t1 = first(sol.t), last(sol.t)
     n = floor(Int, (t1 - t0) / dt + 1e-9)
     t = t0 .+ dt .* ((1:n) .- 0.5)
