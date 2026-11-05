@@ -44,7 +44,7 @@ $$
 
 232 g/kWh with *H*<sub>u</sub> = 43.4 MJ/kg is η<sub>b</sub> = 35.7 %.
 
-Our P2: DOH = 30 kW / (30 kW + <span class="todo">TODO P<sub>ICE</sub></span>)
+Our P2: DOH = 30 kW / (30 kW + 85.6 kW) ≈ **26 %**
 
 </div>
 <div>
@@ -80,8 +80,9 @@ grams per kilowatt-hour is 0.232 kilograms per 3.6 megajoules; times 43.4 megajo
 the heating value Lecture 4 used, that is 2.80 joules of fuel per joule of work, and the inverse is
 35.7 percent.
 
-Our P2 has a 30 kilowatt machine, so its DOH is 30 over 30 plus the engine's peak power. The engine's
-peak power will be read from the Lecture 2 map with the operating line, so the number is a TODO.
+Our P2 has a 30 kilowatt machine, so its DOH is 30 over 30 plus the engine's peak power. Lecture 2's
+map peaks at 85.6 kilowatts, at about 6000 rpm, the top of the best-BSFC line. So the DOH is about 26
+percent, a full hybrid.
 
 The figure on the right will be the sweep: the same P2 car with machines from 8 to 40 kilowatts, the
 WLTC fuel saving against machine power. The ICCT review expects the saving to grow with power, and

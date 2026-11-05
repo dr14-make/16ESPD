@@ -143,19 +143,20 @@ layout: center
 - operating points: Lecture 2's engine on its BSFC map, conventional against P2 on WLTC (#115)
 - degree of hybridization: P2 machine 8–40 kW against fuel saving (#115)
 - P-position table: fuel, recovered energy and modes per position (#114)
-- the best-BSFC line over the map (#200)
+
+`scripts/bsfc_line.jl`: the best-BSFC line over the map
 
 </div>
 <div>
 
 ### Library parts
 
-`VehicleSystemsComponents.Vehicle` <span class="todo">TODO: part names</span>
+`VehicleSystemsComponents.Vehicle`
 
-- the K0 clutch with its actuator (#197)
-- the 30 kW machine and 1.4 kWh battery (#198)
-- the best-BSFC operating line, as data (#200)
-- the SoC-corrected fuel calculation (#199)
+- `DisconnectClutch`: the K0 clutch with its actuator
+- `Electric.HybridDrive`: the 30 kW machine and 1.4 kWh battery
+- `data/engine/bsfc_line.csv`: the best-BSFC operating line
+- `SoCCorrectedFuel`: the SoC-corrected fuel calculation
 - the P0, P1, P3 and P4 benches (#114)
 - the series-hybrid homework ground (#116)
 
