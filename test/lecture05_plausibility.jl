@@ -198,9 +198,10 @@ end
     @test ps[d.machine.T_max] == 205.0
     @test ps[d.machine.w_base] * 30 / pi ≈ 1397.458 atol = 0.001
     @test ps[d.V_nom] == 270.0
-    # The machine is designed at the pack's terminal voltage at rated power, under R0's sag.
-    Vd = (270 + sqrt(270^2 - 4 * 0.33 * 30e3)) / 2
-    @test ps[d.machine.V_nom] ≈ Vd rtol = 1e-12
+    # The machine is designed at the pack's terminal voltage at rated input, not its open circuit.
+    Vd = 220.0
+    @test ps[d.machine.V_nom] == Vd
+    @test Vd ≈ (270 + sqrt(270^2 - 4 * 0.33 * 30e3 / 0.9)) / 2 rtol = 1e-3
     @test ps[d.battery.E] * ps[d.battery.Q_nom] / 3.6e6 ≈ 1.4 rtol = 0.05
     @test run.sol[d.SoC][1] ≈ 0.6
     @test ps[d.battery.R0] ≈ 0.33
@@ -243,18 +244,21 @@ end
 
     # ICCT-2022 Fig. 6 compares 15 kW positions. Halve torque, not speed, to keep the
     # transmission-input speed range fixed; this is a sizing comparison, not a measured map.
-    small = VehicleSystemsComponents.Lecture5.HybridDriveDynoTransient(P_rated=15e3, T_max=102.5)
+    # Half the power sags the pack less: design at its own loaded voltage, 15 kW at about 90 %.
+    Vd_small = 248.0
+    @test Vd_small ≈ (270 + sqrt(270^2 - 4 * 0.33 * 15e3 / 0.9)) / 2 rtol = 1e-3
+    small = VehicleSystemsComponents.Lecture5.HybridDriveDynoTransient(P_rated=15e3, T_max=102.5, V_design=Vd_small)
     @test string(small.sol.retcode) == "Success"
     s = symbolic_container(small).drive
     @test small.sol.ps[s.machine.w_base] ≈ ps[d.machine.w_base]
     @test small.sol.ps[s.machine.T_max] == 102.5
     @test small.sol.ps[s.machine.C] ≈ ps[d.machine.C] / 2
-    # Half the rated power sags the pack less, so the small machine's design voltage is higher.
-    Vd_small = (270 + sqrt(270^2 - 4 * 0.33 * 15e3)) / 2
-    @test small.sol.ps[s.machine.V_nom] ≈ Vd_small rtol = 1e-12
-    @test small.sol.ps[s.machine.R] ≈ 0.05 * (Vd_small / 350)^2 / (scale / 2) rtol = 1e-12
-    @test small.sol.ps[s.converter.I_max] ≈
-        (102.5 + small.sol.ps[s.machine.tau_loss_base]) / small.sol.ps[s.machine.k] rtol = 1e-12
+    R_small = 0.05 * (Vd_small / 350)^2 / (scale / 2)
+    losses_small = losses / 2
+    k_small = (Vd_small + sqrt(Vd_small^2 - 4w * R_small * (102.5 + losses_small))) / (2w)
+    @test small.sol.ps[s.machine.R] ≈ R_small rtol = 1e-12
+    @test small.sol.ps[s.machine.k] ≈ k_small rtol = 1e-12
+    @test small.sol.ps[s.converter.I_max] ≈ (102.5 + losses_small) / k_small rtol = 1e-12
     @test small.sol.ps[s.battery.E] * small.sol.ps[s.battery.Q_nom] / 3.6e6 ≈ 1.4
     small_torque = small.sol(ts, idxs=s.machine.tau).u
     small_power = small.sol(ts, idxs=s.machine.P_mech).u
@@ -480,11 +484,9 @@ end
             @test stored > 0
             @info "Engine-generator, battery bus" P_cmd_kW = commands[k] / 1e3 P_elec_kW = h.P_el[end] / 1e3 N_rpm = h.N[end] P_engine_kW = h.P_eng[end] / 1e3 mdot_fuel_g_s = 1e3h.mdot[end] bus_V = h.v[end] field = h.field[end] eta_system = h.P_el[end] / (h.mdot[end] * H_u)
         end
-        # Charging at 50 kW lifts the bus through the pack's resistance, so the generator
-        # keeps full field at 4100 rpm on a battery, unlike on the resistive bench.
+        # 50 kW on the line runs above the generator's full-field speed for this bus.
         h4 = check_hold(u, s, ends[4], commands[4])
-        @test all(h4.field .> 0.999)
-        @test all(h4.v .> 310.0)
+        @test all(0.9 .< h4.field .< 0.99)
         @test all(s(window(s, ends[3]), idxs = u.converter.field).u .> 1 - 1e-6)
 
         # 70 kW is past the engine's full load at the line's top speed: the generator unloads,

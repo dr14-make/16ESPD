@@ -30,13 +30,19 @@ discharge (DOD), charge and discharge alike ([INL-3539], [INL-4932]).
   0.14–0.20 Ω (estimate, below).
 - **What it changes**: at 110 A the I²R loss rises from 0.93 kW (0.077 Ω) to 4.0 kW (0.33 Ω),
   4.3×. The current `R0` is 4.3× below the measured value and lets the model pack deliver about
-  4.5× its measured 10 s discharge power.
+  4.6× its measured 10 s discharge power.
 
-Recommendation for the code (not edited here): replace `R0 = 0.1·E/350` with
+Applied in the code: `R0 = 0.1·E/350` became
 `R0 = 0.33·E/270`, tagged `(INL) 10 s discharge pulse resistance, new pack, 30–60 % DOD`. The
 `E/270` factor keeps series-count scaling at fixed cells (72 × 4.6 mΩ) if `V_nom` is changed, and
 is exactly 0.33 Ω at the 270 V default. Run 0.2 Ω as the sensitivity case for short-pulse
 behavior.
+
+The pack's sag at rated power also moves the machine design: designed at the 270 V open-circuit
+voltage, the 30 kW machine reached only 25 kW on the 0.33 Ω pack. `HybridDrive` now designs it at
+`V_design` = 220 V, the pack's terminal voltage at about 33 kW of input (30 kW at roughly 90 % drive
+efficiency), a fixed value so a resistance sensitivity case changes the pack alone. A 15 kW drive
+on the same pack sags less and is designed at 248 V.
 
 ---
 
@@ -161,9 +167,8 @@ All derived from `v = E − R0·i` with E = 270 V. Battery efficiency is termina
 110 A drops from ≈ 94 % to ≈ 76 %. That lowers the hybrid's fuel saving on WLTC; how much depends
 on the energy manager's power split and needs a run, not an estimate here.
 
-`R0 = 0.1·E/350` should change: it is unsourced, physically mis-scaled, and 4.3× below the
-measured value. The `HybridDrive` docstring's caveat ("small high-power hybrid cells may sag
-more") is confirmed by the INL data.
+The previous `R0 = 0.1·E/350` was unsourced, physically mis-scaled, and 4.3× below the measured
+value; its caveat that small high-power hybrid cells may sag more is confirmed by the INL data.
 
 ---
 

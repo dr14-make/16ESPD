@@ -23,8 +23,8 @@ component HybridDrive
   parameter w_base::AngularVelocity = P_rated / T_max
   "Nominal pack voltage (ORNL-2011)"
   parameter V_nom::Voltage = 270.0
-  "Machine design voltage: the pack's terminal voltage at rated power, so the drive keeps its rating under the pack's sag (derived; E, R0, P_rated)"
-  parameter V_design::Voltage = (E + sqrt(E ^ 2 - 4.0 * R0 * P_rated)) / 2.0
+  "Machine design voltage: the 2011 Sonata pack's terminal voltage at rated input, (270 + sqrt(270^2 - 4 * 0.33 * 33.3e3)) / 2 for 30 kW at about 90 % drive efficiency (derived; ORNL-2011, INL)"
+  parameter V_design::Voltage = 220.0
   "Size factor relative to the Lecture 4 110 kW Leaf (derived; P_rated / 110 kW)"
   parameter size_scale::Real = P_rated / 110.0e3
   "Armature resistance; preserve rated copper-loss fraction at voltage-scaled current (derived; Leaf R times (V_design/350)^2 / size_scale)"
@@ -61,7 +61,7 @@ component HybridDrive
   parameter t_sw::Time = 1.0e-6
   "Field/duty corner rounding (assumed; Lecture 4 numerical regularization)"
   parameter eps::Real = 1.0e-4
-  "Pack open-circuit voltage, the machine design voltage (ORNL-2011 nominal voltage)"
+  "Pack open-circuit voltage (ORNL-2011 nominal voltage)"
   parameter E::Voltage = V_nom
   "Pack charge capacity, 1.4 kWh / E (derived; ORNL-2011)"
   parameter Q_nom::ElectricCharge = 1.4e3 * 3600.0 / E

@@ -2,18 +2,21 @@
 Battery-fed hybrid drive envelope bench (assumed; Lecture 4 dyno method). A saturated torque
 request exposes the current ceiling and field weakening. Hold 200 rpm for one second, ramp
 to 4000 rpm in 20 seconds, then hold for one second. Rotor acceleration costs J dw/dt;
-pack resistance shifts the observed corner below the nominal-voltage design corner.
+the machine is designed at the pack's loaded voltage, so the corner sits near the design corner at
+full power.
 """
 component HybridDriveDyno
   "Rated machine power forwarded to the drive (ORNL-2011)"
   parameter P_rated::Power = 30.0e3
   "Peak torque forwarded to the drive (ORNL-2011)"
   parameter T_max::Torque = 205.0
+  "Machine design voltage forwarded to the drive: the pack's terminal voltage at rated input (derived; HybridDrive)"
+  parameter V_design::Voltage = 220.0
   "Initial dyno speed [rpm] (assumed; above loss regularization)"
   parameter rpm_start::Real = 200.0
   "Final dyno speed [rpm] (assumed; tests field weakening)"
   parameter rpm_end::Real = 4000.0
-  drive = VehicleSystemsComponents.Vehicle.Electric.HybridDrive(P_rated = P_rated, T_max = T_max)
+  drive = VehicleSystemsComponents.Vehicle.Electric.HybridDrive(P_rated = P_rated, T_max = T_max, V_design = V_design)
   request = BlockComponents.Sources.Constant(k = 2.0 * T_max)
   speed = BlockComponents.Sources.Ramp(height = (rpm_end - rpm_start) * pi / 30.0, offset = rpm_start * pi / 30.0, start_time = 1.0, duration = 20.0)
   dyno = RotationalComponents.Sources.VelocitySource()
@@ -34,9 +37,11 @@ analysis HybridDriveDynoTransient
   parameter P_rated::Power = 30.0e3
   "Peak machine torque (ORNL-2011)"
   parameter T_max::Torque = 205.0
+  "Machine design voltage (derived; HybridDrive)"
+  parameter V_design::Voltage = 220.0
   "Initial dyno speed [rpm] (assumed)"
   parameter rpm_start::Real = 200.0
   "Final dyno speed [rpm] (assumed)"
   parameter rpm_end::Real = 4000.0
-  model = HybridDriveDyno(P_rated = P_rated, T_max = T_max, rpm_start = rpm_start, rpm_end = rpm_end)
+  model = HybridDriveDyno(P_rated = P_rated, T_max = T_max, V_design = V_design, rpm_start = rpm_start, rpm_end = rpm_end)
 end
