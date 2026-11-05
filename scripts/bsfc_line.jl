@@ -29,7 +29,7 @@ module BsfcLine
 
 using Printf
 
-export ROOT, LINE_FILE, RPM_IDLE, RPM_MAX, load_maps, operating_line, render_line,
+export ROOT, LINE_FILE, RPM_IDLE, RPM_MAX, load_maps, operating_line, render_line, read_line,
     bsfc_at, reachable_torque, global_min_bsfc, power_kw, torque_for
 
 const ROOT = normpath(@__DIR__, "..")
@@ -215,6 +215,13 @@ function render_line(line)
         @printf(io, "%.3f,%.1f,%.3f,%.2f\n", r.power_kw, r.rpm, r.torque, r.bsfc)
     end
     return String(take!(io))
+end
+
+"The committed line as columns `power_kw`, `rpm`, `torque`, `bsfc`."
+function read_line(path = LINE_FILE)
+    rows = [parse.(Float64, split(l, ',')) for l in readlines(path)[2:end] if !isempty(l)]
+    return (; power_kw = getindex.(rows, 1), rpm = getindex.(rows, 2),
+        torque = getindex.(rows, 3), bsfc = getindex.(rows, 4))
 end
 
 function main()

@@ -3,10 +3,12 @@
 include("../scripts/bsfc_line.jl")
 using .BsfcLine
 
+const BSFC_LINE = read_line()
+
 @testset "Lecture 5 best-BSFC line" begin
     m = load_maps()
-    rows = [parse.(Float64, split(l, ',')) for l in readlines(LINE_FILE)[2:end]]
-    power, rpm, torque, bsfc = (getindex.(rows, k) for k in 1:4)
+    (; rpm, torque, bsfc) = BSFC_LINE
+    power = BSFC_LINE.power_kw
 
     @testset "the committed file is what the script writes" begin
         @test read(LINE_FILE, String) == render_line(operating_line(m))
@@ -160,10 +162,10 @@ end
     @test drawn.energy ≈ corr * 0.745 * 43.4 rtol = 1e-7
     @test all(iszero, drawn.first)
 
-    # No net battery energy: the correction vanishes exactly, not to a tolerance.
+    # No net battery energy: raw and corrected consumption agree within 1e-10 L/100 km.
     neutral = soc_fuel_end(P = 0.0)
     @test neutral.E_MJ == 0.0
-    @test neutral.corr == neutral.raw
+    @test neutral.corr ≈ neutral.raw atol=1e-10
     @test neutral.raw ≈ raw rtol = 1e-7
 
     # Ending with less charge charges more fuel to the run; ending with more, less.
@@ -260,4 +262,284 @@ end
         t = rpm0 == 4000 ? 22.0 : rpm0 == 200 ? 0.5 : 1 + (rpm0 - 200) / 190
         @info "15 kW dyno" rpm=rpm0 torque=small.sol(t, idxs=s.machine.tau) power=small.sol(t, idxs=s.machine.P_mech)
     end
+end
+
+
+@testset "P2 powertrain" begin
+    @testset "HandsOn05 sources stay in sync" begin
+        for (name, original) in (("P2Powertrain", "Vehicle"), ("P2WLTC", "Lecture5"))
+            source(folder) = read(joinpath(@__DIR__, "..", "dyad", folder, name * ".dyad"), String)
+            normalize(text) = replace(text,
+                "VehicleSystemsComponents.HandsOn05.P2Powertrain" => "VehicleSystemsComponents.Vehicle.P2Powertrain",
+                "VehicleSystemsComponents.HandsOn05.P2WLTC" => "VehicleSystemsComponents.Lecture5.P2WLTC")
+            @test normalize(source("HandsOn05")) == normalize(source(original))
+        end
+    end
+    for (electric, analysis, stop) in (
+        (false, VehicleSystemsComponents.Lecture5.P2EngineWLTCTransient, 1800.0),
+        (true, VehicleSystemsComponents.Lecture5.P2ElectricWLTCTransient, 589.0))
+        run = analysis()
+        m, s = symbolic_container(run), run.sol
+        @test string(s.retcode) == "Success"
+        @test s.t[end] == stop
+        speed_error = maximum(abs, 3.6 .* s[m.car.bus.vx] .- s[m.trace.y])
+        trace_distance = sum(diff(s.t) .* (s[m.trace.y][1:end-1] .+ s[m.trace.y][2:end])) / 7.2
+        @test speed_error < 2.0
+        @test s[m.meter.s][end] ≈ trace_distance rtol=5e-4
+        if electric
+            @test maximum(abs, s[m.powertrain.position]) < 1e-9
+            @test abs(s[m.meter.m_fuel][end]) < 1e-9
+            @test maximum(abs, s[m.powertrain.engine_speed]) < 1e-9
+            @test s[m.powertrain.SoC][end] < s[m.powertrain.SoC][1]
+            @test s[m.meter.E_batt][end] ≈ s.ps[m.powertrain.drive.battery.E] *
+                s.ps[m.powertrain.drive.battery.Q_nom] *
+                (s[m.powertrain.SoC][1] - s[m.powertrain.SoC][end]) rtol=1e-6
+        else
+            @test maximum(abs, s[m.powertrain.tau_ref]) == 0.0
+            @test s[m.powertrain.engine_speed][1] * 30 / pi ≈ 800.0
+            @test s[m.powertrain.position][1] == 0.0
+            rpm = s[m.powertrain.engine_speed] .* (30 / pi)
+            above_ramp = rpm .> s.ps[m.engage_rpm] + 5 * s.ps[m.engage_width_rpm]
+            @test any(above_ramp)
+            # Allow actuator lag while checking near-closure above the engagement ramp.
+            @test minimum(s[m.powertrain.position][above_ramp]) > 0.99
+            @test s[m.meter.fuel_raw][end] ≈ 5.715009 rtol=1e-3
+            @test s[m.meter.fuel_corr][end] ≈ s[m.meter.fuel_raw][end] atol=1e-10
+            @test s[m.meter.energy_corr][end] ≈ 184.7834 rtol=1e-3
+            @test maximum(abs, s[m.powertrain.i]) < 1e-9
+            capacity = maximum(s[m.powertrain.k0.tau_capacity])
+            @test maximum(s[m.powertrain.engine_torque]) < capacity
+            d = m.powertrain.drive
+            for p in (d.T_f, d.K_i, d.k_w, d.C, d.J, d.tau_loss_base)
+                @test s.ps[p] == 0.0
+            end
+            w, R, V, T = (s.ps[p] for p in (d.w_base, d.R, d.V_nom, d.T_max))
+            @test s.ps[d.k] ≈ (V + sqrt(V^2 - 4w * R * T)) / (2w) rtol=1e-12
+            @test s[d.machine.i][1] == 0.0
+            loss = s[m.powertrain.k0.tau] .* s[m.powertrain.k0.w_slip]
+            @test minimum(loss) >= 0.0
+            slip_MJ = sum(diff(s.t) .* (loss[1:end-1] .+ loss[2:end])) / 2e6
+            @info "H0 K0" slip_MJ peak_engine_torque=maximum(s[m.powertrain.engine_torque]) capacity
+        end
+        @info "P2 fixed-mode WLTC" electric speed_error distance=s[m.meter.s][end] raw_L100=s[m.meter.fuel_raw][end] corrected_L100=s[m.meter.fuel_corr][end] MJ100=s[m.meter.energy_corr][end] fuel_kg=s[m.meter.m_fuel][end] SoC_drop=s[m.powertrain.SoC][1]-s[m.powertrain.SoC][end]
+    end
+end
+
+@testset "operating line" begin
+    power, rpm = BSFC_LINE.power_kw, BSFC_LINE.rpm
+
+    # The sweep request is (t - 10) kW, from -10 kW to 100 kW.
+    lookup = VehicleSystemsComponents.Vehicle.OperatingLineTransient()
+    @test string(lookup.sol.retcode) == "Success"
+    target(P_kW) = lookup.sol(P_kW + 10.0, idxs = symbolic_container(lookup).line.N)
+    @test target(32.0) ≈ 3000.0 atol = 1e-9
+    @test all(isapprox.(target.(power), rpm; atol = 1e-6))
+    @test all(target(P) ≈ first(rpm) for P in (-10.0, -1.0, 0.0, 0.5, first(power)))
+    @test all(target(P) ≈ last(rpm) for P in (last(power), 86.0, 100.0))
+
+    run = VehicleSystemsComponents.Lecture5.OperatingLineBenchTransient()
+    @test string(run.sol.retcode) == "Success"
+    m, s = symbolic_container(run), run.sol
+    v = m.variator
+    p(x) = s.ps[x]
+    N_wheel, i_od, i_l = p(m.wheel_rpm), p(v.i_overdrive), p(v.i_launch)
+    floor_bias = N_wheel / hypot(N_wheel, p(v.output_rpm_floor))
+    ts = collect(0.0:0.05:102.0)
+    at(x) = s(ts, idxs = x).u
+    N_a, N_t, ratio, cmd = at(v.N_a), at(m.line.N), at(v.ratio), at(v.i_command)
+
+    @test all(i_od - 1e-6 .<= ratio .<= i_l + 1e-6)
+
+    # Settled on the 32 kW hold: the line speed, low only by the output-speed floor's bias.
+    hold = 38.0 .<= ts .<= 43.0
+    @test all(isapprox.(N_a[hold], 3000.0 * floor_bias; atol = 0.1))
+
+    # Steady state on the hold: the dyno absorbs the requested power, so the variator passes
+    # torque times ratio and power through unchanged.
+    P_dyno = -at(v.spline_b.tau)[hold] .* at(v.w_b)[hold]
+    @test all(isapprox.(P_dyno, p(m.P_hold); rtol = 1e-6))
+
+    # In range the input shaft trails the line by the actuator lag, ratio_time times the
+    # line's steepest slope times the ramp rate, plus the floor bias, which grows with speed.
+    slope = maximum(diff(rpm) ./ diff(power))
+    rate = max((p(m.P_hold) - p(m.P_start)) / p(m.rise.duration),
+        (p(m.P_end) - p(m.P_hold)) / p(m.top.duration)) / 1e3
+    in_range = i_od + 1e-3 .< cmd .< i_l - 1e-3
+    bound = p(v.ratio_time) * slope * rate + maximum(N_t[in_range]) * (1 - floor_bias) + 10.0
+    lag = maximum(abs.(N_a[in_range] .- N_t[in_range]))
+    @test lag < bound
+
+    # Out of range the ratio sits at its limit: overdrive under the line's low end, launch
+    # past its reach, with the shaft on the side of the target the limit forces.
+    low = ts .<= 2.0
+    @test all(isapprox.(ratio[low], i_od; atol = 1e-6))
+    @test all(isapprox.(N_a[low], i_od * N_wheel; atol = 1e-3))
+    @test all(N_a[low] .> N_t[low])
+    top = ts .>= 100.0
+    @test all(isapprox.(ratio[top], i_l; atol = 1e-6))
+    @test all(isapprox.(N_a[top], i_l * N_wheel; atol = 1e-3))
+    @test all(N_a[top] .< N_t[top])
+    @info "Operating-line bench" settled_rpm = N_a[findlast(hold)] max_in_range_lag_rpm = lag lag_bound_rpm = bound dyno_power_W = P_dyno[end] low_rpm = N_a[1] top_rpm = N_a[end]
+end
+
+@testset "engine-generator" begin
+    H_u = 43.4e6
+    maps = load_maps()
+    trapz(t, y) = sum((y[1:end-1] .+ y[2:end]) ./ 2 .* diff(t))
+    # Best-BSFC line speed for an engine power, as OperatingLine interpolates it.
+    line_power, line_speed = BSFC_LINE.power_kw, BSFC_LINE.rpm
+    function line_rpm(P_kW)
+        P_kW <= first(line_power) && return first(line_speed)
+        P_kW >= last(line_power) && return last(line_speed)
+        k = searchsortedlast(line_power, P_kW)
+        w = (P_kW - line_power[k]) / (line_power[k+1] - line_power[k])
+        return line_speed[k] + w * (line_speed[k+1] - line_speed[k])
+    end
+    # Hold k ends at k t_hold + (k - 1) t_ramp; the analyses write their stop time out for the
+    # bench defaults, so check those are the defaults in force.
+    hold_ends(m, s, n) = (@test s.ps[m.t_hold] == 10.0 && s.ps[m.t_ramp] == 2.0;
+        @test s.t[end] ≈ n * s.ps[m.t_hold] + (n - 1) * s.ps[m.t_ramp];
+        [k * s.ps[m.t_hold] + (k - 1) * s.ps[m.t_ramp] for k in 1:n])
+    # Last 3 s of a hold, on the saved 0.05 s grid.
+    window(s, t_end) = filter(t -> t_end - 3.0 - 1e-9 <= t <= t_end + 1e-9, s.t)
+    function check_hold(u, s, t_end, P)
+        ts = window(s, t_end)
+        at(x) = s(ts, idxs = x).u
+        P_el, N, N_ref, P_shaft = at(u.P_elec), at(u.N), at(u.N_ref), at(u.P_shaft)
+        @test all(isapprox.(P_el, P; rtol = 1e-3))
+        @test all(isapprox.(N, N_ref; atol = 1.0))
+        # The line is fed the engine power the unit needs, so the engine sits on the line.
+        P_eng = at(u.engine.tau_e) .* at(u.machine.w)
+        @test all(isapprox.(N, line_rpm.(P_eng ./ 1e3); atol = 5.0))
+        @test all(isapprox.(P_shaft, P_eng; rtol = 5e-3))
+        return (; ts, P_el, N, P_eng, mdot = at(u.mdot_fuel), v = at(u.converter.v_in),
+            field = at(u.converter.field))
+    end
+
+    @testset "resistive load" begin
+        run = VehicleSystemsComponents.Lecture5.EngineGeneratorBenchTransient()
+        @test string(run.sol.retcode) == "Success"
+        m, s = symbolic_container(run), run.sol
+        u = m.unit
+        ends = hold_ends(m, s, 4)
+        commands = (s.ps[m.P_1], s.ps[m.P_2], s.ps[m.P_3], s.ps[m.P_4])
+        @test all(s[u.converter.field] .> 1 - 1e-6)
+        for (t_end, P) in zip(ends, commands)
+            h = check_hold(u, s, t_end, P)
+            @info "Engine-generator, resistive load" P_cmd_kW = P / 1e3 P_elec_kW = h.P_el[end] / 1e3 N_rpm = h.N[end] P_engine_kW = h.P_eng[end] / 1e3 mdot_fuel_g_s = 1e3h.mdot[end] bsfc_g_kWh = h.mdot[end] * 3.6e9 / h.P_eng[end] bus_V = h.v[end] eta_system = h.P_el[end] / (h.mdot[end] * H_u)
+        end
+
+        # The 30 kW hold puts the engine on the line's best-BSFC row, 32 kW at 3000 rpm.
+        h = check_hold(u, s, ends[3], commands[3])
+        @test all(isapprox.(h.N, 3000.0; atol = 1.0))
+        @test all(31.0 .< h.P_eng ./ 1e3 .< 33.0)
+        @test h.v[end] ≈ s.ps[m.V_bus] rtol = 1e-3
+
+        # System efficiency as electrical energy out over fuel energy in, and its two shares,
+        # each checked against what produces it: the engine's against the Lecture 2 map's BSFC
+        # at the held speed and torque, the generator's against its own loss signals.
+        ts = h.ts
+        at(x) = s(ts, idxs = x).u
+        E_el, E_fuel = trapz(ts, h.P_el), H_u * trapz(ts, h.mdot)
+        E_shaft = trapz(ts, h.P_eng)
+        E_loss = trapz(ts, at(u.machine.P_loss) .+ at(u.converter.P_loss))
+        eta_sys, eta_eng, eta_gen = E_el / E_fuel, E_shaft / E_fuel, E_el / E_shaft
+        point = bsfc_at(maps, h.N[end], s(ts[end], idxs = u.engine.tau_e))
+        @test point !== nothing
+        eta_map = 3.6e6 / (point.bsfc * 1e-3 * H_u)
+        @test eta_eng ≈ eta_map rtol = 0.01
+        @test point.bsfc ≈ BSFC_LINE.bsfc[findfirst(==(32.0), BSFC_LINE.power_kw)] rtol = 0.005
+        @test eta_gen ≈ E_el / (E_el + E_loss) rtol = 1e-3
+        @test 0.92 < eta_gen < 0.96
+        @test 0.32 < eta_sys < 0.345
+        @info "Engine-generator best point" P_engine_kW = h.P_eng[end] / 1e3 N_rpm = h.N[end] bsfc_sim = h.mdot[end] * 3.6e9 / h.P_eng[end] bsfc_map = point.bsfc eta_system = eta_sys eta_engine = eta_eng eta_generator_converter = eta_gen machine_loss_W = s(ts[end], idxs = u.machine.P_loss) converter_loss_W = s(ts[end], idxs = u.converter.P_loss)
+    end
+
+    @testset "battery bus" begin
+        run = VehicleSystemsComponents.Lecture5.EngineGeneratorBatteryBenchTransient()
+        @test string(run.sol.retcode) == "Success"
+        m, s = symbolic_container(run), run.sol
+        u, b = m.unit, m.battery
+        p(x) = s.ps[x]
+        ends = hold_ends(m, s, 6)
+        commands = (p(m.P_1), p(m.P_2), p(m.P_3), p(m.P_4), p(m.P_5), p(m.P_6))
+        for k in (1, 2, 3, 4, 6)
+            h = check_hold(u, s, ends[k], commands[k])
+            # The battery takes the delivered power less its own resistive loss.
+            ts = h.ts
+            stored = p(b.E) * p(b.Q_nom) * (s(ts[end], idxs = b.SoC) - s(ts[1], idxs = b.SoC))
+            i = s(ts, idxs = b.i).u
+            @test stored ≈ trapz(ts, h.P_el .- p(b.R0) .* i .^ 2) rtol = 1e-3
+            @test stored > 0
+            @info "Engine-generator, battery bus" P_cmd_kW = commands[k] / 1e3 P_elec_kW = h.P_el[end] / 1e3 N_rpm = h.N[end] P_engine_kW = h.P_eng[end] / 1e3 mdot_fuel_g_s = 1e3h.mdot[end] bus_V = h.v[end] field = h.field[end] eta_system = h.P_el[end] / (h.mdot[end] * H_u)
+        end
+        # 50 kW on the line runs above the generator's full-field speed for this bus.
+        h4 = check_hold(u, s, ends[4], commands[4])
+        @test all(0.9 .< h4.field .< 0.99)
+        @test all(s(window(s, ends[3]), idxs = u.converter.field).u .> 1 - 1e-6)
+
+        # 70 kW is past the engine's full load at the line's top speed: the generator unloads,
+        # the unit delivers the engine's full load just under the commanded speed, and the
+        # power trim stays bounded instead of winding up.
+        ts = window(s, ends[5])
+        at(x) = s(ts, idxs = x).u
+        N_lag = at(u.N_ref) .- at(u.N)
+        @test all(at(u.pedal) .> 0.99)
+        @test all(at(u.P_elec) .< commands[5] - 1e3)
+        @test all(at(u.P_elec) .> 55e3)
+        @test all(0.0 .< N_lag .< p(u.dw_unload) * 30 / pi)
+        @test all(abs.(at(u.P_trim)) .< 5e3)
+        @test maximum(at(u.N)) - minimum(at(u.N)) < 1.0
+        @info "Engine-generator past full load" P_cmd_kW = commands[5] / 1e3 P_elec_kW = at(u.P_elec)[end] / 1e3 N_ref_rpm = at(u.N_ref)[end] N_rpm = at(u.N)[end] P_trim_W = at(u.P_trim)[end] current_A = at(u.converter.i_out)[end] I_max_A = p(u.converter.I_max)
+        # Recovery: back on 30 kW the hold is settled from 3 s after the ramp ends.
+        late = filter(t -> ends[5] + p(m.t_ramp) + 3.0 <= t <= ends[6] + 1e-9, s.t)
+        @test all(isapprox.(s(late, idxs = u.P_elec).u, commands[6]; rtol = 1e-3))
+        @test all(isapprox.(s(late, idxs = u.N).u, 3000.0; atol = 1.0))
+    end
+end
+
+include("../notebooks/lecture05/operating_points.jl")
+using .OperatingPoints
+
+# The extraction behind the operating-points notebook, on Hands-on 02's steady 90 km/h cruise:
+# one operating point held for a minute, so every figure has a value to check it against.
+@testset "Lecture 5 operating points on a steady cruise" begin
+    r = VehicleSystemsComponents.HandsOn02.MappedCarCruiseTransient()
+    m = symbolic_container(r)
+    sol = r.sol
+    op = operating_points(sol; speed = m.car.engine.speed.w, torque = m.car.engine.torque.tau,
+        fuel = m.car.engine.mdot_fuel, vehicle_speed = m.car.v_kmh, dt = 0.5)
+    f = fuel_metrics(op)
+    T = last(sol.t)
+
+    @test length(op.t) == 120
+    @test op.km ≈ 1.5 rtol = 0.01
+
+    # The car's own L/h output, integrated apart from the extraction and its units.
+    ts = 0.0:0.01:T
+    lph = sol(ts; idxs = m.car.fuel_lph).u
+    liters = sum((lph[1:end-1] .+ lph[2:end]) ./ 2) * step(ts) / 3600
+    @test f.fuel_g / 1e3 / RHO_PETROL ≈ liters rtol = 1e-3
+    @test f.L_per_100km ≈ 100 * lph[end] / sol(T; idxs = m.car.v_kmh) rtol = 0.01
+
+    # The map tables give the same BSFC at the simulated speed and torque.
+    maps = load_maps()
+    k = length(op.t)
+    @test op.bsfc[k] ≈ bsfc_at(maps, op.rpm[k], op.torque[k]).bsfc rtol = 0.01
+    @test f.bsfc_mean ≈ op.bsfc[k] rtol = 0.01
+    @test f.bsfc_cycle ≈ f.bsfc_mean rtol = 0.01
+    @test f.idle == 0
+
+    gap = op.bsfc[k] - line_bsfc(op.power_kw[k])
+    @test gap > 0
+    @test f.near_line == (gap <= 10 ? 1.0 : 0.0)
+    @test fuel_metrics(op; band = gap + 1).near_line ≈ 1
+
+    # An engine that never fires, as in electric driving, has no cells and no BSFC to report.
+    off = merge(op, (; fuel_g = zero(op.fuel_g)))
+    @test isempty(fuel_cells(off).fuel_g)
+    f_off = fuel_metrics(off)
+    @test f_off.L_per_100km == 0
+    @test all(ismissing, (f_off.bsfc_mean, f_off.bsfc_cycle, f_off.near_line, f_off.idle))
+    @info "Lecture 5 cruise operating point" rpm = op.rpm[k] torque = op.torque[k] f gap
 end

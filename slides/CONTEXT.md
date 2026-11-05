@@ -136,3 +136,24 @@ auxiliaries, and ideal gear supplying a hybrid transmission input. It keeps `Ele
 270 V, 1.4 kWh defaults from the 2011 Sonata Hybrid (ORNL-2011). Its default gear ratio is 1,
 not the BEV's final-drive reduction; it does not include the engine, K0 clutch, or energy manager.
 _Avoid_: hybrid powertrain, hybrid controller
+
+**Engine-generator**:
+`Vehicle.EngineGenerator` is Lecture 2's mapped engine and a Lecture 4 DC-equivalent machine
+running as a generator on one shaft, with its converter, delivering DC power at the pins `p` and
+`n`; engine mounts and generator housing share `support`. It takes a commanded electrical power
+and a commanded engine speed: the generator torque holds the power, the engine pedal holds the
+speed, and the generator unloads if the engine cannot keep up. It reports fuel mass flow, shaft
+speed, electrical power, and the engine power it needs, which can drive the best-BSFC operating
+line. It is the series hybrid's power unit, not the series hybrid, and holds no energy manager or
+SoC logic.
+_Avoid_: range extender (a sizing, not a part), APU, genset
+
+**P2 powertrain**:
+`Vehicle.P2Powertrain` composes the mapped engine, K0 disconnect clutch, `HybridDrive` and
+`ControlledVariator`: the machine shares the shaft after K0 and before the variator. The
+variator includes the final drive, but no launch clutch. The component exposes an output spline
+and a housing `support` that the user connects in the bench. The variator is a distinct child,
+so a speed-commanded variator can replace it; this is not a language-level `replaceable` feature. Lecture 5's fixed electric fixture
+holds the engine stopped with fuel cut and K0 open; it is not engine-start logic or an energy manager.
+In engine-only mode K0 launches the car on an engine-speed ramp.
+_Avoid_: hybrid drive (that is the electric subassembly), launch device, energy manager
