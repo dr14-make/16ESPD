@@ -20,7 +20,8 @@
   <rect class="ev" x="300" y="40" width="180" height="200"/>
   <rect class="line" x="480" y="40" width="250" height="200"/>
   <rect class="boost" x="730" y="40" width="200" height="200"/>
-  <rect class="charge" x="300" y="240" width="630" height="100"/>
+  <rect class="charge" x="300" y="240" width="430" height="100"/>
+  <rect class="boost" x="730" y="240" width="200" height="100" style="fill:#fbe9e7"/>
 
   <text x="200" y="150" text-anchor="middle" class="b">regen</text>
   <text x="200" y="172" text-anchor="middle" class="lbl">machine brakes first,</text>
@@ -31,8 +32,12 @@
   <text x="605" y="157" text-anchor="middle" class="lbl">machine idle</text>
   <text x="830" y="135" text-anchor="middle" class="b">boost</text>
   <text x="830" y="157" text-anchor="middle" class="lbl">engine + machine</text>
-  <text x="615" y="290" text-anchor="middle" class="b">charge</text>
-  <text x="615" y="312" text-anchor="middle" class="lbl">engine on its line above the demand, the machine generates the rest</text>
+  <text x="515" y="280" text-anchor="middle" class="b">charge</text>
+  <text x="515" y="302" text-anchor="middle" class="lbl">engine on its line above the demand,</text>
+  <text x="515" y="319" text-anchor="middle" class="lbl">the machine generates the rest</text>
+  <text x="830" y="280" text-anchor="middle" class="b">engine alone</text>
+  <text x="830" y="302" text-anchor="middle" class="lbl">boost fades out,</text>
+  <text x="830" y="319" text-anchor="middle" class="lbl">engine above its line</text>
 
   <path class="limit" d="M100 225 H945"/>
   <path class="limit" d="M100 255 H945"/>

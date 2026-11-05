@@ -153,9 +153,9 @@ routeAlias: model-ladder
 
 | Level | Model | What it adds | Built in |
 |---|---|---|---|
-| H0 | H1 with K0 closed, the hybrid machine removed: no torque, no losses, no inertia | the conventional baseline on the same planar car, L/100 km on WLTC | reference |
+| H0 | H1 with the hybrid machine removed: no torque, no losses, no inertia; K0 launches the car, then stays locked | the conventional baseline on the same planar car, L/100 km on WLTC | reference |
 | H1 | P2 powertrain | engine → K0 clutch → ≈ 30 kW machine → CVT → differential; ≈ 1.4 kWh battery | build 01 |
-| H2 | H1 + operating line | the CVT ratio holds the engine on its best-BSFC line | build 02 |
+| H2 | H1 + operating line | the CVT ratio aims the engine at its best-BSFC line | build 02 |
 | H3 | H2 + energy manager | modes inside an SoC window, with hysteresis; regen through Lecture 4's blending | build 03 |
 | H4 | P0, P1, P3, P4 | the same parts on other flanges | lecturer demo |
 
@@ -168,7 +168,7 @@ H3. H4 shows that where the machine sits decides how much of each a hybrid can g
 Here is the ladder we climb today, one rung per build.
 
 H0 is the conventional baseline, in liters per 100 kilometers on the WLTC. It is the P2 car with the
-clutch closed and the hybrid machine removed: no torque, no losses, no inertia, no auxiliaries: Lecture 2's engine and CVT on the same planar car,
+hybrid machine removed, K0 slipping as a launch clutch and then locked once the car moves: no torque, no losses, no inertia, no auxiliaries: Lecture 2's engine and CVT on the same planar car,
 driveline and mass as the hybrid, so the difference you measure is the hybrid's alone. You do not
 build it; it is the reference run.
 
@@ -176,8 +176,9 @@ H1, build 01, is the P2 powertrain. Lecture 2's engine, then the K0 disconnect c
 4's machine at about 30 kilowatts, then the CVT that the course already has, then the planar car's
 differential to the front wheels. A battery of about 1.4 kilowatt-hours feeds the machine.
 
-H2, build 02, commands the CVT ratio so that the engine sits on its best-BSFC line for the power it
-is asked for.
+H2, build 02, commands the CVT ratio toward the engine's best-BSFC speed for the power it is asked
+for. With no battery the engine still follows the driver's demand, so it only gets near the line:
+build 02 measures how near.
 
 H3, build 03, adds the energy manager: rule-based modes inside a window of state of charge, switched
 with hysteresis so they do not chatter. Braking goes through Lecture 4's regen blending.

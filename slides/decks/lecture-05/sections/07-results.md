@@ -41,7 +41,7 @@ routeAlias: three-powertrains
 </div>
 
 The hybrid hardware alone, the machine idling on the shaft, costs the conventional car
-**about 0.07 L/100 km, 1.3 %**: the hybrid earns that back before it saves anything.
+**about 0.07 L/100 km, about 1 %**: the hybrid earns that back before it saves anything.
 
 MJ of petrol into the tank against MJ out of the battery's terminals: the energy each car draws
 from its store, not from the well or the grid.
@@ -70,7 +70,7 @@ rows differ only in the powertrain: 5.71 liters per 100 kilometers, 184.5 megajo
 row is build 02: the same engine-only car with its CVT on the operating-line schedule, 5.39 liters,
 174.4 megajoules, 5.5 percent less with no electric machine. For
 scale, Lecture 2's car on its own, one-dimensional bench burned 5.22. The hybrid's hardware alone,
-its machine spinning idle on the shaft, would cost the same car 0.07 liters, 1.3 percent: the hybrid
+its machine spinning idle on the shaft, would cost the same car about 0.07 liters, about 1 percent: the hybrid
 has to earn that back before it saves anything. The hybrid you finish today, with its fuel corrected for the change in the
 battery's charge: TODO until the reference run of issue 113. The battery-electric car of Lecture 4:
 no liters, 47.2 megajoules per 100 kilometers at the battery's terminals, from Lecture 4's wrap-up.
@@ -122,8 +122,8 @@ Ours: Lecture 2's engine and CVT, idling at every stop. So ours is closest to Ch
 The green box is why it matters. A baseline without stop/start lets every hybrid also take the credit
 for stopping the engine: in Chalmers' own numbers, a 12 volt stop/start alone saves 5.0 percent on
 the WLTC. Against a baseline that idles, our savings will read high next to Schaeffler and
-Braunschweig. And our CVT already holds the engine better than a stepped gearbox would, which takes
-some of the operating-point saving away from the hybrid. The plan therefore compares our table for
+Braunschweig. And our CVT can move the engine toward the line without a battery, 5.5 percent in build 02,
+which a stepped gearbox cannot, so part of the operating-point saving is already the CVT's. The plan therefore compares our table for
 ranking and order of magnitude, not to the percent.
 -->
 
@@ -204,7 +204,7 @@ routeAlias: reading-the-table
 ### What will differ, and why
 
 - **Baseline**: ours idles; two of the three studies' cars stop.
-- **Transmission**: our CVT already sits near the line; theirs are stepped.
+- **Transmission**: our CVT alone saves 5.5 % by moving toward the line; theirs are stepped.
 - **Strategy**: our five rules, not their calibrated controllers.
 - **Car and engine**: Lecture 2's engine, not a 1.0 or 1.5 L DCT car.
 
@@ -224,9 +224,9 @@ three studies. And the effect of power: the ICCT finds that going from 15 to 20 
 to 10 percent on P2, P3 and P4, while P0 and P1 gain little, because their limit is the coupled
 engine, not the machine. Our 15 and 30 kilowatt columns test exactly that.
 
-What will differ. The baseline: ours idles. The transmission: our CVT already holds the engine
-close to the line, while the studies' dual-clutch and manual gearboxes leave more for the hybrid to
-gain. The strategy: our five rules against controllers the studies calibrated. And the car and
+What will differ. The baseline: ours idles. The transmission: our CVT alone already moves the engine
+toward the line, 5.5 percent in build 02, while the studies' dual-clutch and manual gearboxes leave
+more for the hybrid to gain. The strategy: our five rules against controllers the studies calibrated. And the car and
 engine themselves.
 
 The green box is the rule for the lecturer and for you. If our ranking disagrees with all three

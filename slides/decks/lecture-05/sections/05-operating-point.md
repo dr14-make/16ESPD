@@ -7,7 +7,7 @@ layout: section
 
 # Moving the operating point
 
-The best-BSFC line, the CVT that holds the engine on it, the machine that shifts the load, and
+The best-BSFC line, the CVT that moves the engine toward it, the machine that shifts the load, and
 the power-split hybrid that does it with a planetary gear.
 
 `scripts/bsfc_line.jl` · <span class="todo">TODO: notebook file (#115)</span>
@@ -74,7 +74,7 @@ two slides on.
 routeAlias: cvt-on-the-line
 ---
 
-## The CVT holds the engine on the line
+## The CVT moves the engine toward the line
 
 <div class="grid grid-cols-[1fr_1fr] gap-8 items-start">
 <div>
@@ -284,8 +284,8 @@ Captured with the build guide, #112
 *Pedal → requested power → best-BSFC line → engine speed command, floored at 1000 rpm → the CVT
 sets the ratio that holds it*
 
-```julia
-line.P = powertrain.engine_pedal * P_peak   # 85 kW
+```txt
+line.P = powertrain.engine_pedal * P_peak   # P_peak = 85 kW, a calibration
 N_target = max(line.N, N_locked)            # 1000 rpm
 powertrain.N_ref = N_target
 ```

@@ -117,7 +117,7 @@ Section 03 is the degree of hybridization: how much of the power is electric, fr
 that only stops the engine to a plug-in, and what it costs. Section 04 is the five positions a
 parallel hybrid's machine can take, P0 to P4, and the argument that the clutch matters more than
 the machine. There you build the P2 powertrain, build 01. Section 05 moves the engine's operating
-point: the best-BSFC line, the CVT that holds the engine on it, and the power-split hybrid that does
+point: the best-BSFC line, the CVT that moves the engine toward it, and the power-split hybrid that does
 it with a planetary gear. You build the operating line, build 02. Section 06 is the energy manager:
 modes, a state-of-charge window with hysteresis, charge sustaining, and the optimizer we do not
 build in one slide. You build the energy manager, build 03. Section 07 is the result: the WLTC for
@@ -225,7 +225,7 @@ routeAlias: how-the-build-works
 
 The build guide holds every block, line and number:
 
-<span class="todo">TODO: link to the Lecture 5 build guide (#111–#113)</span>
+[page: Lecture 5 build guide](../lecture/lecture-05/)
 
 Commit after each step: `Step 01: P2 powertrain`, `Step 02: operating line`, …
 

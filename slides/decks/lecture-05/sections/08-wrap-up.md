@@ -65,8 +65,8 @@ routeAlias: what-you-measured
 
 | Step | You built | You measured |
 |---|---|---|
-| 01 | the P2 powertrain | engine only and electric only follow the WLTC: <span class="todo">TODO</span> |
-| 02 | the operating line | engine points on the best-BSFC line: <span class="todo">TODO</span> |
+| 01 | the P2 powertrain | engine only 1.55 km/h, electric only on Low 1.50 km/h worst speed error |
+| 02 | the operating line | 5.39 against H0's 5.71 L/100 km, 15 % of the fuel within ±150 rpm of the line |
 | 03 | the energy manager | modes without chatter, SoC in its window: <span class="todo">TODO</span> |
 | 04 | the charge-sustaining WLTC | SoC-corrected L/100 km and MJ/100 km: <span class="todo">TODO</span> |
 
@@ -75,7 +75,8 @@ routeAlias: what-you-measured
 <!--
 What you measured, one row per step, with the checkpoint numbers once the reference model has
 produced them. Step 01, the P2 powertrain, following the WLTC engine only and electric only. Step
-02, the engine's points on its best-BSFC line. Step 03, the modes switching without chatter and the
+02, the operating line: 5.39 liters against H0's 5.71, with only 15 percent of the fuel near the
+line. Step 03, the modes switching without chatter and the
 state of charge in its window. Step 04, the charge-sustaining WLTC, in corrected liters and in
 megajoules per 100 kilometers.
 -->

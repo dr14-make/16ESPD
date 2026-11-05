@@ -406,8 +406,10 @@ $$
 Braking, K0 open (P2, P3, P4):
 
 $$
-P_{\text{to battery}} = \eta\,\big(P_{\text{brake}} - P_{\text{gear loss}}\big)
+P_{\text{to battery}} = \eta\,\big(P_{\text{brake}} - P_{\text{driveline loss}}\big)
 $$
+
+P2 loses the CVT and final drive; P3 and P4 only their gear.
 
 And with the engine coupled there is no driving with the engine off: no electric creep, no
 sailing.
@@ -519,22 +521,23 @@ Captured with the build guide, #111
 
 **Given:** the K0 clutch with its actuator (#197), the 30 kW machine and 1.4 kWh battery (#198)
 
-<span class="todo">TODO: guide link · reference `dyad/HandsOn05/…`</span>
+[page: steps 1a–1c](../lecture/lecture-05/#step-1a) · reference `dyad/HandsOn05/P2Powertrain.dyad`, `dyad/HandsOn05/P2WLTC.dyad`
 
 </div>
 <div class="stack">
 
-*Lecture 2's `MapEngine` → K0 clutch → Lecture 4's machine, ≈ 30 kW → `CVTDriveline` → planar
-differential → front flanges; Lecture 4's battery at ≈ 1.4 kWh · then two runs: K0 closed with
-the machine idle; K0 open with the engine stopped*
+*`MappedEngine` → K0 → `HybridDrive` (30 kW, 1.4 kWh) on the CVT's input shaft →
+`ControlledVariator` → planar differential → front flanges · then two runs: engine only, K0 as
+the launch clutch; electric only, K0 open, engine held*
 
-```julia
-# TODO: snippet from the build guide (#111)
+```txt
+connect(engine.spline, k0.spline_a)
+connect(k0.spline_b, drive.spline, variator.spline_a)
+connect(variator.spline_b, spline)
 ```
 
-<div class="handson">✓ engine only, K0 closed: the car follows the WLTC, speed error
-<span class="todo">TODO</span> · electric only, K0 open, engine stopped: the car follows the WLTC at
-low demand, speed error <span class="todo">TODO</span></div>
+<div class="handson">✓ engine only (H0), full WLTC: speed error <b>1.55</b> km/h, <b>5.71</b>
+L/100 km · electric only, WLTC Low: speed error <b>1.50</b> km/h, SoC 0.60 → 0.39</div>
 
 </div>
 </div>
@@ -544,18 +547,21 @@ Build 01: the P2 powertrain. On the left will be the finished powertrain in Stud
 is captured with the build guide, issue 111.
 
 The italic line is the build. Lecture 2's mapped engine, then the K0 clutch, which the library gives
-you with its actuator. Then your Lecture 4 machine, resized to about 30 kilowatts, and Lecture 4's
-battery resized to about 1.4 kilowatt-hours; the library gives the resized parameter sets. Then the
-CVT driveline the course already has, and the planar car's differential to the front flanges.
+you with its actuator. Then the hybrid drive: a 30 kilowatt machine with its converter and a 1.4
+kilowatt-hour battery, after the 2011 Sonata, built like Lecture 4's drive but not the Leaf's. It
+sits on the CVT's input shaft, beside K0, not as another gear in series. Then the controlled
+variator, not the CVT driveline, which would bring a second launch clutch, and the planar car's
+differential to the front flanges.
 
-Then two runs, and they are the checkpoint, from the plan's live-build table. Engine only: K0
-closed, the machine idle; the car must follow the WLTC, as Lecture 2's car did. Electric only: K0
+Then two runs, and they are the checkpoint. Engine only, H0: K0 is the launch clutch, slipping as
+the engine revs and locked once the car moves; the car follows the whole WLTC within 1.55 kilometers
+per hour and burns 5.71 liters per 100 kilometers. Electric only: K0
 open, the engine stopped; the car must follow the WLTC where the demand is low. The checkpoint asks
 only for low demand: at about 30 kilowatts instead of Lecture 4's 110, the machine is not meant to
 carry the fast phases alone.
 
-The numbers in the green box, the speed errors for both runs, come from the reference model and
-are still TODO.
+On the WLTC Low phase the electric car follows within 1.5 kilometers per hour and draws the
+battery from 60 to 39 percent: the pack is far too small to drive a whole cycle on electricity.
 -->
 
 ---

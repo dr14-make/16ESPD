@@ -211,15 +211,16 @@ routeAlias: power-battery
 For each kWh it holds, the hybrid's pack gives about eight times the Leaf's power: its cells are
 built for **power rather than energy**.
 
-So its **internal resistance** matters: at 30 kW about 110 A flow through it. Measured on new
+So its **internal resistance** matters: at 30 kW about 130 A flow through it. Measured on new
 2011 Sonata packs (INL, 10 s pulse): ***R*₀ ≈ 0.33 Ω**, the value our model uses.
 
 <div class="tight">
 
-| at 110 A | *I*²*R* | battery efficiency |
-|---|---:|---:|
-| *R*₀ = 0.33 Ω | **4.0 kW** | 86.6 % |
-| round trip, charge then discharge | | **≈ 76 %** |
+| 30 kW at the terminals, *R*₀ = 0.33 Ω | current | *I*²*R* | efficiency |
+|---|---:|---:|---:|
+| discharge | 133 A | **5.8 kW** | 83.8 % |
+| charge | 99 A | 3.2 kW | 89.2 % |
+| round trip, charge then discharge | | | **≈ 75 %** |
 
 </div>
 
@@ -252,18 +253,20 @@ kilowatts from 1.4 kilowatt-hours, about 21 per hour, a 21 C discharge. Lecture 
 kilowatts from 40 kilowatt-hours, about 2.75 C. The hybrid's pack has to give about eight times more
 power for each kilowatt-hour it holds. So hybrid cells are built for power rather than energy.
 
-And the pack's internal resistance matters. At 30 kilowatts about 110 amperes flow, and every one
-of them goes through R zero. Idaho National Laboratory measured new 2011 Sonata Hybrid packs, the
+And the pack's internal resistance matters. At 30 kilowatts out of the terminals about 133 amperes
+flow, and every one of them goes through R zero. Idaho National Laboratory measured new 2011 Sonata Hybrid packs, the
 same 72-cell, 5.3 ampere-hour, 270 volt pack: 0.32 to 0.38 ohm at the end of a 10 second pulse in
 the middle of the charge window, on two cars at two labs. Our model uses 0.33 ohm, and with it
-reproduces INL's own pulse power. At 110 amperes that is 4 kilowatts of heat, 86.6 percent battery
-efficiency, and about 76 percent for a joule that goes in and comes back out. That is the round trip
+reproduces INL's own pulse power. Discharging at 30 kilowatts, the terminals sag to 226 volts: 5.8
+kilowatts of heat, 83.8 percent battery efficiency. Charging at 30 kilowatts takes 99 amperes, 3.2
+kilowatts of heat, 89.2 percent. A joule that goes in and comes back out at that power keeps about
+75 percent of itself. That is the round trip
 section 01 said every stored joule pays.
 
 A 10 second value includes slower polarization, so in a model without an RC branch it somewhat
 overstates the loss on short transients; 0.2 ohm is the sensitivity case. And note what it does to
-the machine: at 0.33 ohm the pack sags to about 220 volts at full power, so the model designs the
-30 kilowatt machine for 220 volts, not the 270 volt open-circuit value. The research note
+the machine: at 0.33 ohm the pack sags to about 220 volts at the machine's full input, about 33
+kilowatts once its own losses are counted, so the model designs the 30 kilowatt machine for 220 volts, not the 270 volt open-circuit value. The research note
 `docs/research_notes/Electric and hybrid vehicles/hybrid-pack-resistance.md` has the sources.
 
 The right side is from the batteries lecture, the summary table of slide 14; the deck calls its
