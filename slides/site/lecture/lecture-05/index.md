@@ -8,7 +8,7 @@ title: Lecture 5 — compose a P2 hybrid powertrain
 
 **Draft — Studio rehearsal unverified.** This guide describes task #111's reference composition and reported numerical checks, not a rehearsed Studio walkthrough. Do not treat the existence of an analysis as a passing run.
 
-**What you build.** A transmission-input P2 hybrid from existing library parts: mapped engine → disconnect clutch K0 → machine shaft → controlled variator → differential → front wheels. Step 2 adds the existing operating-line lookup and speed-commanded variator; no new constitutive model or energy manager is introduced.
+**What you build.** A transmission-input P2 hybrid from existing library parts: mapped engine → disconnect clutch K0 → machine shaft → controlled variator → differential → front wheels. Step 2 adds the operating-line lookup and speed-commanded variator. Steps 3 and 4 add the energy manager, clutch starts and charge-sustaining comparison.
 
 **How each step works.** As in HandsOn04, use the instance names below, build the diagram, then compare with the checkpoint before going on. The parts tables give library paths; names in code use dots instead of ›. Parameters with physical units use **Real** in Studio's **Add parameter** form, with the unit entered separately.
 
@@ -548,9 +548,91 @@ analysis P2OperatingLineWLTCTransient
 end
 ```
 
-## Where this stops
+## Step 3 — let the energy manager split the demand
 
-Steps 1 and 2 establish the composition, fixed-mode checks and operating-line target. Task #113 will address the energy manager; it is not part of this guide. Studio build steps still need rehearsal before this draft can be used as a verified classroom walkthrough.
+Start from `P2OperatingLineWLTC`, naming the new bench `P2HybridWLTC`. Restore the full
+`HybridDrive` defaults: its losses, inertia, 30 kW machine and 1.4 kWh battery are included.
+The reference solution is in `HandsOn05.P2HybridWLTC`.
+
+Add `Vehicle.EnergyManager` as `manager` and `Vehicle.TorqueToPedal` as `map`.
+Connect `driver.y` to `manager.tau_dem`, machine-shaft speed to `manager.w_shaft`, vehicle
+speed in km/h to `manager.v`, and measured engine speed and SoC to their manager inputs.
+The driver's signed demand is at the transmission input, not the wheels.
+
+- Feed `manager.P_engine` to `line.P`. Feed `manager.tau_engine` to `map.tau`, measured
+  engine speed to `map.omega`, and `map.pedal` to the engine pedal.
+- Enable `powertrain.start_stop`; connect `manager.engine_on` to `powertrain.engine_on`
+  and `manager.tau_engine` to `powertrain.engine_torque_ref`.
+- Feed `manager.tau_machine` to `powertrain.tau_ref`. The powertrain adds the difference
+  between requested engine torque and measured K0 transmission, including cranking drag.
+- Multiply `manager.engage` by the maximum of step 2's engine launch and shaft lock-up
+  ramps. Fuel permission rises smoothly from 400 to 700 rpm; with fuel off, regularized
+  drag lets the engine settle at rest. No fixed hold or event stops the engine.
+- Multiply `manager.tau_friction` by the current CVT ratio, then split it equally between
+  the front brakes. Regen has already been subtracted; do not subtract it again.
+- In electric mode, a second `OperatingLine` follows positive demand power. Blend its
+  speed toward the engine-request line using `engine_on`, then floor the target at 1000 rpm.
+
+Set the signed driver limits to ±355.234 N·m: 150.234 engine plus 205 machine. The measured
+EV transient error with `k=70`, `Ti=2` was 2.67 km/h after removing the brake ceiling;
+`k=110`, `Ti=1` reduces it to 1.32 km/h. Use `mapped_limits=true`: during a CVT transient,
+the manager must not subtract engine torque above the mapped full-load envelope from the
+machine demand. Set `SoC_on=0.52`, `SoC_off=0.55` to leave room for late-cycle regen, and
+`P_line_max=30000` W to demonstrate boost on this cycle. Other manager defaults remain.
+
+Electric mode carries low demand with K0 open. On-line mode starts the engine and follows
+the efficient-speed target. Charging raises engine load and generates the surplus. Boost
+adds machine torque above the 30 kW line cap. During deceleration the existing regen blend
+uses the machine first and sends the remainder to friction brakes.
+
+::: tip Checkpoint 3 — measured full WLTC
+The run has **45 starts**, minimum on-time **1.90 s**, mean on-time **14.50 s**, and maximum
+speed error **1.32 km/h**. Settled off periods have zero fuel and engine speed within 3 rpm
+of rest. K0 dissipates **107.84 kJ** over the run (2.40 kJ per start, including other slip).
+The four mode fractions sum to one; all four occur.
+
+| Mode | Time [s] | Fuel [kg] |
+|---|---:|---:|
+| Electric | 1146.94 | 0.00359 |
+| On line | 398.69 | 0.42949 |
+| Charging | 182.45 | 0.13944 |
+| Boosting | 71.92 | 0.13852 |
+
+Fractions blend during starts and stops; the small electric-mode fuel allocation comes from
+those transitions, not settled electric operation. Requested shaft regen is **3.119 MJ**;
+actual friction-brake dissipation is **0.0543 MJ**. The battery accepts **3.809 MJ** in total,
+including engine-driven charging. These quantities have different measurement boundaries.
+:::
+
+## Step 4 — compare at equal battery charge
+
+Keep `meter.P_stored = powertrain.E * powertrain.i`: the correction uses stored energy,
+not terminal energy. Read the meter only after the complete 1800 s cycle. The hybrid starts
+at **0.60000**, finishes at **0.59395**, and stays between **0.51760** and **0.60000**.
+
+| Car | Raw L/100 km | SoC-corrected L/100 km | MJ/100 km |
+|---|---:|---:|---:|
+| Conventional H0 | 5.705 | 5.705 | 184.47 |
+| Step-2 line car | 5.393 | 5.393 | 174.37 |
+| Charge-sustaining P2 hybrid | 4.102 | 4.116 | 133.07 |
+| Lecture-4 BEV | — | — | 47.25 |
+
+The BEV value is battery DC electrical energy; the other rows are corrected gasoline energy.
+These are vehicle energy inputs, not a well-to-wheel comparison.
+
+::: tip Checkpoint 4 — charge-sustaining comparison
+The hybrid ends **0.61 percentage points** below its starting SoC, within ±2 percentage
+points. Its corrected fuel is **27.86%** below H0. Outside the first 3 s of each start,
+on-line-mode engine power has mean absolute error **160 W**, maximum **3264 W**. Across
+the whole run, **51.34%** of fuel is burned within ±150 rpm of the line, versus step 2's 15%.
+The inverse map needs no PI trim; steady analytic torque round trips are within 1e-7 N·m.
+:::
+
+## Limits of this reference
+
+Studio build steps still need rehearsal before classroom use. The torque inverse assumes
+unchanged default engine and air-path calibration. Start compensation remains subject to
+the machine's current and power limits; it cannot guarantee full driver demand at every start.
 
 The unchanged variator schedules **1800–6000 rpm**, above the machine's 1412 rpm loaded corner;
 field weakening supplies the constant-power region. Low reached 3546 rpm. The existing dyno
