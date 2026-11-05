@@ -207,3 +207,5 @@ end
 
 include("HybridDriveDynoTransient_definition.jl")
 include("HybridDriveDyno_definition.jl")
+include("OperatingLineBenchTransient_definition.jl")
+include("OperatingLineBench_definition.jl")

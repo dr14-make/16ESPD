@@ -3,9 +3,11 @@
 include("../scripts/bsfc_line.jl")
 using .BsfcLine
 
+const LINE_ROWS = [parse.(Float64, split(l, ',')) for l in readlines(LINE_FILE)[2:end]]
+
 @testset "Lecture 5 best-BSFC line" begin
     m = load_maps()
-    rows = [parse.(Float64, split(l, ',')) for l in readlines(LINE_FILE)[2:end]]
+    rows = LINE_ROWS
     power, rpm, torque, bsfc = (getindex.(rows, k) for k in 1:4)
 
     @testset "the committed file is what the script writes" begin
@@ -260,4 +262,61 @@ end
         t = rpm0 == 4000 ? 22.0 : rpm0 == 200 ? 0.5 : 1 + (rpm0 - 200) / 190
         @info "15 kW dyno" rpm=rpm0 torque=small.sol(t, idxs=s.machine.tau) power=small.sol(t, idxs=s.machine.P_mech)
     end
+end
+
+@testset "operating line" begin
+    power, rpm = getindex.(LINE_ROWS, 1), getindex.(LINE_ROWS, 2)
+
+    # The sweep request is (t - 10) kW, from -10 kW to 100 kW.
+    lookup = VehicleSystemsComponents.Vehicle.OperatingLineTransient()
+    @test string(lookup.sol.retcode) == "Success"
+    target(P_kW) = lookup.sol(P_kW + 10.0, idxs = symbolic_container(lookup).line.N)
+    @test target(32.0) ≈ 3000.0 atol = 1e-9
+    @test all(isapprox.(target.(power), rpm; atol = 1e-6))
+    @test all(target(P) ≈ first(rpm) for P in (-10.0, -1.0, 0.0, 0.5, first(power)))
+    @test all(target(P) ≈ last(rpm) for P in (last(power), 86.0, 100.0))
+
+    run = VehicleSystemsComponents.Lecture5.OperatingLineBenchTransient()
+    @test string(run.sol.retcode) == "Success"
+    m, s = symbolic_container(run), run.sol
+    v = m.variator
+    p(x) = s.ps[x]
+    N_wheel, i_od, i_l = p(m.wheel_rpm), p(v.i_overdrive), p(v.i_launch)
+    floor_bias = N_wheel / hypot(N_wheel, p(v.output_rpm_floor))
+    ts = collect(0.0:0.05:102.0)
+    at(x) = s(ts, idxs = x).u
+    N_a, N_t, ratio, cmd = at(v.N_a), at(m.line.N), at(v.ratio), at(v.i_command)
+
+    @test all(i_od - 1e-6 .<= ratio .<= i_l + 1e-6)
+
+    # Settled on the 32 kW hold: the line speed, low only by the output-speed floor's bias.
+    hold = 38.0 .<= ts .<= 43.0
+    @test all(isapprox.(N_a[hold], 3000.0 * floor_bias; atol = 0.1))
+
+    # Steady state on the hold: the dyno absorbs the requested power, so the variator passes
+    # torque times ratio and power through unchanged.
+    P_dyno = -at(v.spline_b.tau)[hold] .* at(v.w_b)[hold]
+    @test all(isapprox.(P_dyno, p(m.P_hold); rtol = 1e-6))
+
+    # In range the input shaft trails the line by the actuator lag, ratio_time times the
+    # line's steepest slope times the ramp rate, plus the floor bias, which grows with speed.
+    slope = maximum(diff(rpm) ./ diff(power))
+    rate = max((p(m.P_hold) - p(m.P_start)) / p(m.rise.duration),
+        (p(m.P_end) - p(m.P_hold)) / p(m.top.duration)) / 1e3
+    in_range = i_od + 1e-3 .< cmd .< i_l - 1e-3
+    bound = p(v.ratio_time) * slope * rate + maximum(N_t[in_range]) * (1 - floor_bias) + 10.0
+    lag = maximum(abs.(N_a[in_range] .- N_t[in_range]))
+    @test lag < bound
+
+    # Out of range the ratio sits at its limit: overdrive under the line's low end, launch
+    # past its reach, with the shaft on the side of the target the limit forces.
+    low = ts .<= 2.0
+    @test all(isapprox.(ratio[low], i_od; atol = 1e-6))
+    @test all(isapprox.(N_a[low], i_od * N_wheel; atol = 1e-3))
+    @test all(N_a[low] .> N_t[low])
+    top = ts .>= 100.0
+    @test all(isapprox.(ratio[top], i_l; atol = 1e-6))
+    @test all(isapprox.(N_a[top], i_l * N_wheel; atol = 1e-3))
+    @test all(N_a[top] .< N_t[top])
+    @info "Operating-line bench" settled_rpm = N_a[findlast(hold)] max_in_range_lag_rpm = lag lag_bound_rpm = bound dyno_power_W = P_dyno[end] low_rpm = N_a[1] top_rpm = N_a[end]
 end

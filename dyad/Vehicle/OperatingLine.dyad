@@ -1,0 +1,49 @@
+"""
+Engine speed on the best-BSFC line for a requested engine power.
+
+The table is the Lecture 2 map's best-BSFC line (scripts/bsfc_line.jl): for each power, the
+lowest-consumption speed, following full load above 71 kW up to peak power. Linear
+interpolation reproduces every row and keeps the line monotone, which a spline through its flat
+stretches would not. Constant extrapolation clamps the request: at or below the first row the
+target is the line's idle speed, above peak power it is the peak-power speed. The output is
+continuous with kinks at the rows; a ratio actuator lag downstream keeps the integrated state
+smooth through them.
+"""
+component OperatingLine
+  "Requested engine power [W]"
+  P = RealInput() {^P}
+  "Target engine speed on the line [rpm]"
+  N = RealOutput() {^N}
+  "Best-BSFC line, power [kW] to speed [rpm] (derived; Lecture 2 map)"
+  structural parameter file::String = "dyad://VehicleSystemsComponents/data/engine/bsfc_line.csv"
+  structural parameter dataset::DyadData.DyadTimeseries = DyadData.DyadTimeseries(file, independent_var = "power_kW", dependent_vars = ["speed_rpm"])
+  table = BlockComponents.Tables.Interpolation(dataset = dataset, interpolation_type = BlockComponents.Tables.InterpolationType.LinearInterpolation(), extrapolation_type = BlockComponents.Tables.ExtrapolationType.Constant()) {^table}
+relations
+  table.u = P / 1000
+  connect(table.y, N) {^w1}
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://BlockComponents/Interpolation.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  },
+  "_links": {
+    "P": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}, "diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "N": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}, "diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "table": {"Dyad": {"placement": {"diagram": {"x1": 425, "x2": 575, "y1": 425, "y2": 575}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end
+
+"Power sweep from -10 kW to 100 kW at 1 kW/s, past both ends of the line (assumed test stimulus)"
+test component TestOperatingLine
+  request = BlockComponents.Sources.Ramp(height = 110.0e3, offset = -10.0e3, start_time = 0.0, duration = 110.0)
+  line = VehicleSystemsComponents.Vehicle.OperatingLine()
+relations
+  connect(request.y, line.P)
+end
+
+analysis OperatingLineTransient
+  extends TransientAnalysis(stop = 110.0, alg = ODEAlg.Rodas5P(), saveat = 1.0)
+  model = TestOperatingLine()
+end

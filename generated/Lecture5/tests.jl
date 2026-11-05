@@ -17,4 +17,5 @@ end
 
 @testset "`VehicleSystemsComponents.Lecture5`" begin
 include("HybridDriveDyno_test.jl")
+include("OperatingLineBench_test.jl")
 end
