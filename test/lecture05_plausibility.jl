@@ -4,6 +4,33 @@ include("../scripts/bsfc_line.jl")
 using .BsfcLine
 
 const BSFC_LINE = read_line()
+const H0_L100 = 5.7054223
+const H0_MJ100 = 184.473420
+const LINE_L100 = 5.392826
+const RPM_ENGINE_IDLE = 800.0
+
+# H0 is both a P2 fixed-mode check and the operating-line baseline; one 1800 s run serves both.
+const H0_RUN = Ref{Any}()
+h0_run() = isassigned(H0_RUN) ? H0_RUN[] :
+    (H0_RUN[] = VehicleSystemsComponents.Lecture5.P2EngineWLTCTransient())
+
+# Wherever K0 carries engine torque, the shaft must not drag the engine below idle. Tests allow
+# 20 rpm under the 800 rpm idle: the unloaded engine itself settles about that far below it.
+function k0_engaged_min_rpm(m, s)
+    engaged = s[m.powertrain.position] .> 0.5
+    minimum(s[m.powertrain.engine_speed][engaged]) * 30 / pi
+end
+
+# Level stretches of the trace above 12 km/h, off launches and decelerations. Decelerating, the
+# variator's ratio lag lets the shaft fall through the lock-up ramp and K0 opens before idle.
+# Below about 11 km/h the variator's 50 rpm output-speed floor holds the shaft under 880 rpm.
+function k0_cruise_min_position(m, s)
+    ts = collect(0.0:0.1:1800.0)
+    v, trace = (s(ts, idxs = x).u for x in (m.car.bus.vx, m.trace.y))
+    slope = [0.0; diff(trace) ./ 0.1]
+    cruise = (3.6 .* v .> 12.0) .& (abs.(slope) .< 0.5)
+    minimum(s(ts, idxs = m.powertrain.position).u[cruise])
+end
 
 @testset "Lecture 5 best-BSFC line" begin
     m = load_maps()
@@ -278,7 +305,8 @@ end
 
 @testset "P2 powertrain" begin
     @testset "HandsOn05 sources stay in sync" begin
-        for (name, original) in (("P2Powertrain", "Vehicle"), ("P2WLTC", "Lecture5"))
+        for (name, original) in (("P2Powertrain", "Vehicle"), ("P2WLTC", "Lecture5"),
+                ("P2OperatingLineWLTC", "Lecture5"))
             source(folder) = read(joinpath(@__DIR__, "..", "dyad", folder, name * ".dyad"), String)
             normalize(text) = replace(text,
                 "VehicleSystemsComponents.HandsOn05.P2Powertrain" => "VehicleSystemsComponents.Vehicle.P2Powertrain",
@@ -287,7 +315,7 @@ end
         end
     end
     for (electric, analysis, stop) in (
-        (false, VehicleSystemsComponents.Lecture5.P2EngineWLTCTransient, 1800.0),
+        (false, h0_run, 1800.0),
         (true, VehicleSystemsComponents.Lecture5.P2ElectricWLTCTransient, 589.0))
         run = analysis()
         m, s = symbolic_container(run), run.sol
@@ -314,12 +342,17 @@ end
             @test any(above_ramp)
             # Allow actuator lag while checking near-closure above the engagement ramp.
             @test minimum(s[m.powertrain.position][above_ramp]) > 0.99
-            @test s[m.meter.fuel_raw][end] ≈ 5.715009 rtol=1e-3
+            engaged_min_rpm = k0_engaged_min_rpm(m, s)
+            @test engaged_min_rpm > RPM_ENGINE_IDLE - 20.0
+            @test s[m.meter.fuel_raw][end] ≈ H0_L100 rtol=1e-3
             @test s[m.meter.fuel_corr][end] ≈ s[m.meter.fuel_raw][end] atol=1e-10
-            @test s[m.meter.energy_corr][end] ≈ 184.7834 rtol=1e-3
+            @test s[m.meter.energy_corr][end] ≈ H0_MJ100 rtol=1e-3
             @test maximum(abs, s[m.powertrain.i]) < 1e-9
             capacity = maximum(s[m.powertrain.k0.tau_capacity])
             @test maximum(s[m.powertrain.engine_torque]) < capacity
+            @test k0_cruise_min_position(m, s) > 0.99
+            locked = s[m.powertrain.position] .> 0.99
+            @test all(s[m.powertrain.engine_torque][locked] .< s[m.powertrain.k0.tau_capacity][locked])
             d = m.powertrain.drive
             for p in (d.T_f, d.K_i, d.k_w, d.C, d.J, d.tau_loss_base)
                 @test s.ps[p] == 0.0
@@ -330,7 +363,7 @@ end
             loss = s[m.powertrain.k0.tau] .* s[m.powertrain.k0.w_slip]
             @test minimum(loss) >= 0.0
             slip_MJ = sum(diff(s.t) .* (loss[1:end-1] .+ loss[2:end])) / 2e6
-            @info "H0 K0" slip_MJ peak_engine_torque=maximum(s[m.powertrain.engine_torque]) capacity
+            @info "H0 K0" slip_MJ peak_engine_torque=maximum(s[m.powertrain.engine_torque]) capacity engaged_min_rpm
         end
         @info "P2 fixed-mode WLTC" electric speed_error distance=s[m.meter.s][end] raw_L100=s[m.meter.fuel_raw][end] corrected_L100=s[m.meter.fuel_corr][end] MJ100=s[m.meter.energy_corr][end] fuel_kg=s[m.meter.m_fuel][end] SoC_drop=s[m.powertrain.SoC][1]-s[m.powertrain.SoC][end]
     end
@@ -391,6 +424,75 @@ end
     @test all(isapprox.(N_a[top], i_l * N_wheel; atol = 1e-3))
     @test all(N_a[top] .< N_t[top])
     @info "Operating-line bench" settled_rpm = N_a[findlast(hold)] max_in_range_lag_rpm = lag lag_bound_rpm = bound dyno_power_W = P_dyno[end] low_rpm = N_a[1] top_rpm = N_a[end]
+end
+
+
+@testset "operating line on the P2 car" begin
+    run = VehicleSystemsComponents.Lecture5.P2OperatingLineWLTCTransient()
+    m, s = symbolic_container(run), run.sol
+    @test string(s.retcode) == "Success"
+    @test s.t[end] == 1800.0
+    speed_error = maximum(abs, 3.6 .* s[m.car.bus.vx] .- s[m.trace.y])
+    @test speed_error < 2.0
+    trace_distance = sum(diff(s.t) .* (s[m.trace.y][1:end-1] .+ s[m.trace.y][2:end])) / 7.2
+    @test s[m.meter.s][end] ≈ trace_distance rtol=5e-4
+    @test maximum(abs, s[m.powertrain.tau_ref]) == 0.0
+    @test maximum(abs, s[m.powertrain.i]) < 1e-9
+    @test s[m.meter.fuel_corr][end] ≈ s[m.meter.fuel_raw][end] atol=1e-10
+
+    # Uniform samples avoid weighting points by adaptive solver effort. Fuel uses trapezoids.
+    ts = collect(0.0:0.1:1800.0)
+    at(x) = s(ts, idxs=x).u
+    rpm = at(m.powertrain.engine_speed) .* (30 / pi)
+    torque = at(m.powertrain.engine_torque)
+    position = at(m.powertrain.position)
+    slip = at(m.powertrain.k0.w_slip)
+    capacity = at(m.powertrain.k0.tau_capacity)
+    fuel = at(m.powertrain.mdot_fuel)
+    power = rpm .* torque .* (pi / 30 / 1000)
+    target = [BsfcLine.lin(BSFC_LINE.power_kw, BSFC_LINE.rpm, p) for p in power]
+    deviation = abs.(rpm .- target)
+    cmd = at(m.powertrain.speed_variator.i_command)
+    ratio = at(m.powertrain.speed_variator.ratio)
+    # Dense interpolation undershoots the 2.8 bound by 5.4e-6 at default solver tolerance.
+    @test all(2.8 - 1e-5 .<= ratio .<= 12.0 + 1e-5)
+    idle = (power .< 1.0) .| (at(m.driver.y) .<= 0.0)
+    launch = .!idle .& (cmd .>= 11.999)
+    overdrive = .!idle .& (cmd .<= 2.801)
+    eligible = .!idle .& .!launch .& .!overdrive
+    # ±150 rpm at actual brake power; demand scheduling need not follow realized power.
+    @test maximum(deviation[eligible]) < 1600.0
+    @test maximum(deviation[.!idle .& .!launch]) < 2400.0
+    @test maximum(abs.(at(m.line.P) .- at(m.powertrain.engine_pedal) .* s.ps[m.P_peak])) < 1e-8
+    @test all(isapprox.(at(m.N_target), max.(at(m.line.N), s.ps[m.N_locked]); atol = 1e-9))
+    moving = at(m.car.bus.vx) .* 3.6 .> 10.0
+    cruise_min_position = k0_cruise_min_position(m, s)
+    @test cruise_min_position > 0.99
+    engaged_min_rpm = k0_engaged_min_rpm(m, s)
+    @test engaged_min_rpm > RPM_ENGINE_IDLE - 20.0
+    loss = at(m.powertrain.k0.tau) .* slip
+    @test minimum(loss) >= -1e-9
+    locked = position .> 0.99
+    @test all(torque[locked] .< capacity[locked])
+    unlocked = moving .& (position .< 0.99)
+    @info "Line K0" unlocked_seconds=0.1sum(unlocked) unlocked_fuel_kg=0.1sum(fuel[unlocked]) max_slip_rad_s=maximum(abs, slip[moving .& locked]) cruise_min_position engaged_min_rpm max_deviation_rpm=maximum(deviation[eligible]) max_deviation_off_launch_rpm=maximum(deviation[.!idle .& .!launch])
+    on = eligible .& (deviation .<= 150.0)
+    @info "Line band" on_share_of_eligible=sum(on)/sum(eligible)
+    @test sum(eligible) / length(ts) > 0.20
+    @test sum(on) / sum(eligible) > 0.10
+    fuel[1] /= 2
+    fuel[end] /= 2
+    @test sum(fuel[on]) / sum(fuel) > 0.14
+    for (label, mask) in (("on", on), ("off", .!on), ("idle/braking", idle),
+            ("launch", launch), ("overdrive", overdrive), ("in-range transient", eligible .& .!on))
+        @info "P2 operating points: $label" point_percent=100sum(mask)/length(ts) fuel_percent=100sum(fuel[mask])/sum(fuel)
+    end
+    raw = s[m.meter.fuel_raw][end]
+    h0 = h0_run().sol[symbolic_container(h0_run()).meter.fuel_raw][end]
+    @test raw ≈ LINE_L100 rtol=1e-3
+    # Same driver, brakes and K0 lock-up as H0: only the CVT schedule differs.
+    @test raw < 0.96h0
+    @info "P2 operating-line WLTC" speed_error distance=s[m.meter.s][end] raw_L100=raw MJ100=s[m.meter.energy_corr][end] H0_L100=h0 difference=raw-h0 percent=100*(raw/h0-1)
 end
 
 @testset "engine-generator" begin

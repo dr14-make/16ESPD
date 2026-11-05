@@ -120,14 +120,14 @@ end
 md"""
 ## 3. The conventional car over WLTC
 
-The reference is the hybrid's own car with its electric machine out of the loop: the
-disconnect clutch K0 closed and the machine's torque held at zero, so the engine drives the
-wheels alone through the same CVT, on the same planar car, over the same WLTC trace. Same car,
-same driveline; only the hybrid's electric path differs.
+The reference is the hybrid's own car with its electric machine removed: no torque, losses
+or inertia, so the engine drives the wheels alone through K0 and the same CVT, on the same planar
+car, over the same WLTC trace. Same car, same driveline; only the hybrid's electric path differs.
 
 The run is `Lecture5.P2EngineWLTCTransient`: a PI driver's demand is the engine's pedal, the
-CVT sets its ratio from the same pedal on its schedule, and K0 engages as the engine passes
-1300 rpm, as a centrifugal launch clutch would.
+CVT sets its ratio from the same pedal on its schedule. K0 launches the car as a centrifugal
+clutch would, engaging as the engine passes 1300 rpm, and stays locked once the shaft behind it
+turns faster than about 880 rpm.
 """
 
 # ╔═╡ 90e62a3f-a0e0-49a4-b30a-611aa4837112
