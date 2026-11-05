@@ -71,6 +71,7 @@ include("TestWheeledDriveline_test.jl")
 include("ToKmPerHour_test.jl")
 include("ToPercent_test.jl")
 include("ToRPM_test.jl")
+include("TorqueToPedal_test.jl")
 include("VehicleBody_test.jl")
 include("WheeledDriveline_test.jl")
 end

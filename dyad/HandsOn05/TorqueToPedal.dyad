@@ -1,0 +1,8 @@
+"""
+Reference feed-forward calibration for the Lecture 5 engine torque command.
+Connect tau [N.m], actual omega [rad/s], and gate pedal for engine-off/coast modes.
+The shared calibration keeps this reference synchronized with the library block.
+"""
+component TorqueToPedal
+  extends VehicleSystemsComponents.Vehicle.TorqueToPedal
+end
