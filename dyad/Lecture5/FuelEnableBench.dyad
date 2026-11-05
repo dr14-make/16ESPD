@@ -1,0 +1,26 @@
+"Fuel-disabled spin-down followed by a K0 start from a rotating machine-side inertia."
+component FuelEnableBench
+  engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(fuel_controlled = true)
+  k0 = VehicleSystemsComponents.Vehicle.DisconnectClutch(clamp_width = 1e-6)
+  load = RotationalComponents.Components.Inertia(J = 10.0)
+  mount = RotationalComponents.Components.Fixed()
+  variable firing::Real
+relations
+  engine.pedal = 0.2
+  k0.engage = 0.5 * (1.0 + tanh((time - 12.0) / 0.1))
+  firing = min(max((engine.N - 400.0) / 300.0, 0.0), 1.0)
+  engine.fuel_enable = k0.engage * firing^2 * (3.0 - 2.0 * firing)
+  connect(engine.spline, k0.spline_a)
+  connect(k0.spline_b, load.spline_a)
+  connect(engine.support, k0.support, mount.spline)
+  initial engine.crankshaft.w = 800.0 * pi / 30
+  initial engine.crankshaft.phi = 0.0
+  initial engine.air.manifold.p = 101325.0
+  initial load.w = 150.0
+  initial load.phi = 0.0
+end
+
+analysis FuelEnableBenchTransient
+  extends TransientAnalysis(stop = 18.0, dtmax = 0.02, alg = ODEAlg.Rodas5P())
+  model = FuelEnableBench()
+end

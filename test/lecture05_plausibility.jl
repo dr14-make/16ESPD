@@ -843,3 +843,17 @@ end
         @info "Energy manager, depleted battery" engine_start = starts boost_share = extrema(a) SoC = extrema(soc)
     end
 end
+
+
+@testset "Lecture 5 fuel-enabled clutch start" begin
+    r = VehicleSystemsComponents.Lecture5.FuelEnableBenchTransient()
+    s, m = r.sol, symbolic_container(r)
+    @test string(s.retcode) == "Success"
+    ts = collect(5.0:0.1:11.0)
+    @test maximum(abs.(s(ts, idxs = m.engine.N).u)) < 3.0
+    @test maximum(abs.(s(ts, idxs = m.engine.mdot_fuel).u)) < 1e-10
+    @test minimum(s[m.engine.N]) > -3.0
+    @test s(14.0, idxs = m.engine.N) > 700.0
+    @test s(14.0, idxs = m.engine.mdot_fuel) > 0.0
+    @test minimum(s[m.k0.tau] .* s[m.k0.w_slip]) > -1e-8
+end
