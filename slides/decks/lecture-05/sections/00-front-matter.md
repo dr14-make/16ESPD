@@ -98,7 +98,7 @@ the end of the day we can put the conventional car, the hybrid and the electric 
 | # | Section | What it covers | You build |
 |---|---|---|---|
 | <Link to="why-hybridize">01</Link> | Why hybridize | where Lecture 2's engine spends the WLTC, the three savings | |
-| <Link to="series-and-parallel">02</Link> | Series and parallel | the two architectures, other types, the series homework | |
+| <Link to="series-and-parallel">02</Link> | Series and parallel | series, parallel, series-parallel with a clutch; other types; the series homework | |
 | <Link to="degree-of-hybridization">03</Link> | Degree of hybridization | P<sub>EM</sub> / (P<sub>EM</sub> + P<sub>ICE</sub>), micro to plug-in, cost | |
 | <Link to="p-positions">04</Link> | P0 to P4 | where the machine sits, and why the clutch decides | 01 the P2 powertrain |
 | <Link to="operating-point">05</Link> | Moving the operating point | the best-BSFC line, the CVT, power split | 02 the operating line |
@@ -111,8 +111,8 @@ Here is the plan for today: seven sections and a wrap-up. The first column links
 the last says what you build at its end.
 
 Section 01 asks why we hybridize at all: where Lecture 2's engine spends the WLTC on its fuel map,
-and the three ways a hybrid saves fuel. Section 02 is the two basic architectures, series and
-parallel, and a slide on the other kinds of hybrid; the series hybrid comes back as your homework.
+and the three ways a hybrid saves fuel. Section 02 is the architectures: series, parallel, and
+series-parallel with a clutch, and a slide on the other kinds of hybrid; the series hybrid comes back as your homework.
 Section 03 is the degree of hybridization: how much of the power is electric, from a micro hybrid
 that only stops the engine to a plug-in, and what it costs. Section 04 is the five positions a
 parallel hybrid's machine can take, P0 to P4, and the argument that the clutch matters more than
@@ -155,7 +155,7 @@ layout: center
 
 - `DisconnectClutch`: the K0 clutch with its actuator
 - `Electric.HybridDrive`: the 30 kW machine and 1.4 kWh battery
-- `data/engine/bsfc_line.csv`: the best-BSFC operating line
+- `assets/data/engine/bsfc_line.csv`: the best-BSFC operating line
 - `SoCCorrectedFuel`: the SoC-corrected fuel calculation
 - the P0, P1, P3 and P4 benches (#114)
 - the series-hybrid homework ground (#116)

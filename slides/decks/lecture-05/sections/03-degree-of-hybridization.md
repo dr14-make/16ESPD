@@ -86,7 +86,7 @@ percent, a full hybrid.
 
 The figure on the right will be the sweep: the same P2 car with machines from 8 to 40 kilowatts, the
 WLTC fuel saving against machine power. The ICCT review expects the saving to grow with power, and
-says going from 15 to 20 or 30 kilowatts adds 5 to 10 percentage points on P2, P3 and P4. Watch
+says going from 15 to 20 or 30 kilowatts adds 5 to 10 percent on P2, P3 and P4, in its own words. Watch
 whether ours flattens: past the point where the machine covers the regen and the low-power driving,
 more power buys little.
 -->
@@ -212,7 +212,9 @@ For each kWh it holds, the hybrid's pack gives about eight times the Leaf's powe
 built for **power rather than energy**.
 
 So its **internal resistance** matters: at 30 kW and 270 V, about 110 A flow through it. Our
-*R*₀ ≈ 0.077 Ω is **assumed**: the Leaf pack's 0.1 Ω scaled to 270 V.
+*R*₀ ≈ 0.077 Ω is **an assumption, not derived**, and likely optimistic: the *I*²*R* loss in our
+hybrid results may be understated. A 1.4 kWh pack of energy cells would have a far higher
+resistance; real hybrid packs use high-power cells, built for low resistance per Ah.
 
 </div>
 <div>
@@ -244,9 +246,14 @@ kilowatts from 40 kilowatt-hours, about 2.75 C. The hybrid's pack has to give ab
 power for each kilowatt-hour it holds. So hybrid cells are built for power rather than energy.
 
 And the pack's internal resistance matters. At 30 kilowatts and 270 volts about 110 amperes flow,
-and every one of them goes through R zero. Say plainly what ours is: an assumption. The model scales
-the Leaf pack's 0.1 ohm by the number of cells in series, 270 over 350 volts, so about 0.077 ohm; it
-is tagged assumed in the HybridDrive part, and small high-power cells may sag more than that.
+and every one of them goes through R zero. Say plainly what ours is: an assumption, not a derived
+number. The model takes the Leaf pack's 0.1 ohm times 270 over 350 volts, about 0.077 ohm. But pack
+resistance goes as the series count times the cell resistance over the parallel count, and scaling
+by series count alone keeps the Leaf's strings of about 114 ampere-hours: that is a 31
+kilowatt-hour pack, not a 1.4 kilowatt-hour one of about 5 ampere-hours. A 5 ampere-hour pack of
+energy cells would have a far higher resistance; real hybrid packs use high-power cells built for low
+resistance per ampere-hour. We have no source for their number, so ours is unsourced and likely
+optimistic, and the resistive loss in our hybrid results may be understated.
 
 The right side is from the batteries lecture, the summary table of slide 14; the deck calls its
 figures guidelines only. Read the two columns as a ratio: a typical Li-ion cell there gives 300 watts

@@ -64,7 +64,7 @@ Produced by the charge-sustaining WLTC run, #113
 <!--
 The first comparison: the three powertrains on the same cycle.
 
-The conventional car is H0: the same planar car with the clutch closed and the machine off, so the
+The conventional car is H0: the same planar car with the clutch closed and the hybrid machine removed, so the
 three rows differ only in the powertrain: 5.72 liters per 100 kilometers, 184.8 megajoules. For
 scale, Lecture 2's car on its own, one-dimensional bench burned 5.22. The hybrid's hardware alone,
 its machine spinning idle on the shaft, would cost the same car 0.07 liters, 1.3 percent: the hybrid
@@ -78,8 +78,8 @@ terminals. It is the energy each car draws from its own store. It is not well-to
 out the refinery, the power station, the grid and the charger. That is the same caveat as in
 Lecture 4.
 
-The figure will show the three by WLTC phase. Watch the Low phase: that is where the conventional car
-is worst, and where the hybrid's electric driving and regen should gain the most.
+The figure will show the three by WLTC phase, once the reference run of issue 113 has produced
+the split.
 -->
 
 ---
@@ -192,7 +192,7 @@ routeAlias: reading-the-table
 ### What should agree
 
 - The **ranking**: the coupled positions well below the decoupled ones.
-- The **gap** at 15 kW: about **7–15 points** between coupled and decoupled.
+- The **gap** at 15 kW: about **15–16 points** between P0 and P2 or P3 in Chalmers.
 - More power helps the decoupled positions most: 20–30 kW adds **5–10 %** on P2, P3, P4.
 
 </div>
@@ -215,8 +215,9 @@ the baseline first.</div>
 How to read the comparison when it arrives.
 
 What should agree. The ranking: the coupled positions, P0 and P1, well below the decoupled ones. The
-size of the gap: the research note's takeaway puts it at about 7 to 15 points on the WLTC at 15
-kilowatts. And the effect of power: the ICCT finds that going from 15 to 20 or 30 kilowatts adds 5
+size of the gap: in the Chalmers study, at 15 kilowatts on the WLTC, P2 is 15.6 points above P0 and
+P3 16.1; the research note puts the coupled-to-decoupled gap at about 7 to 15 points across the
+three studies. And the effect of power: the ICCT finds that going from 15 to 20 or 30 kilowatts adds 5
 to 10 percent on P2, P3 and P4, while P0 and P1 gain little, because their limit is the coupled
 engine, not the machine. Our 15 and 30 kilowatt columns test exactly that.
 
@@ -295,7 +296,7 @@ power too small for the cycle; the fuel figure is then not one to quote.
 
 ## Summary of section 07
 
-- Three powertrains on one car and one cycle: **168.8**, <span class="todo">TODO</span> and
+- Three powertrains on one car and one cycle: **184.8**, <span class="todo">TODO</span> and
   **47.2 MJ/100 km**.
 - Every saving is against a baseline: **say which**. Ours idles at stops.
 - The studies agree on the ranking, **P0 < P1 ≪ P2 ≈ P3 ≈ P4**, and so must we.
@@ -303,7 +304,7 @@ power too small for the cycle; the fuel figure is then not one to quote.
 ### Next: <Link to="wrap-up">→ 08, wrap-up</Link>
 
 <!--
-Section 07 in three lines. Three powertrains on one car and one cycle: 168.8 megajoules per 100
+Section 07 in three lines. Three powertrains on one car and one cycle: 184.8 megajoules per 100
 kilometers for the conventional car, the hybrid's number from your build 04, and 47.2 for the
 electric car. Every saving is against a baseline, so say which; ours idles at stops. And the three
 studies agree on the ranking, P0 below P1, far below P2, P3 and P4, and so must our table.

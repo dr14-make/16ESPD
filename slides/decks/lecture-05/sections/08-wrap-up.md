@@ -20,7 +20,7 @@ routeAlias: lecture-summary
 
 ## Summary of the lecture
 
-- **01** Lecture 2's engine: 232 g/kWh at best, 29.5 % over the WLTC. A hybrid moves the point,
+- **01** Lecture 2's engine: 232 g/kWh at best, 30.2 % over the WLTC. A hybrid moves the point,
   stops the engine, and brings the braking back.
 - **02** Series: the motor alone drives. Parallel: both drive. Your homework is a series.
 - **03** DOH = P<sub>EM</sub> / (P<sub>EM</sub> + P<sub>ICE</sub>); today's car is a full hybrid.
@@ -33,7 +33,7 @@ routeAlias: lecture-summary
 <!--
 The whole lecture, one line per section.
 
-01: Lecture 2's engine is 232 grams per kilowatt-hour at its best and 29.5 percent efficient over
+01: Lecture 2's engine is 232 grams per kilowatt-hour at its best and 30.2 percent efficient over
 the WLTC. A hybrid saves fuel by moving the operating point, stopping the engine, and bringing the
 braking back.
 

@@ -113,8 +113,8 @@ On the WLTC the braking at the wheel is **25–26 %** of the positive traction e
 </div>
 
 <div class="handson">Each joule that goes through the battery pays the machine, the converter and
-the battery twice, once in and once out. Saving 1 and 3 are worth it only where the engine's loss
-is larger than that round trip.</div>
+the battery twice, once in and once out. Saving 1 is worth it only where the engine's loss is larger
+than that round trip; saving 3 always gains, since braking energy otherwise all turns to heat.</div>
 
 <!--
 A hybrid goes after that gap in three ways.
@@ -153,7 +153,7 @@ routeAlias: model-ladder
 
 | Level | Model | What it adds | Built in |
 |---|---|---|---|
-| H0 | H1 with K0 closed, machine off | the conventional baseline on the same planar car, L/100 km on WLTC | reference |
+| H0 | H1 with K0 closed, the hybrid machine removed: no torque, no losses, no inertia | the conventional baseline on the same planar car, L/100 km on WLTC | reference |
 | H1 | P2 powertrain | engine → K0 clutch → ≈ 30 kW machine → CVT → differential; ≈ 1.4 kWh battery | build 01 |
 | H2 | H1 + operating line | the CVT ratio holds the engine on its best-BSFC line | build 02 |
 | H3 | H2 + energy manager | modes inside an SoC window, with hysteresis; regen through Lecture 4's blending | build 03 |
@@ -168,7 +168,7 @@ H3. H4 shows that where the machine sits decides how much of each a hybrid can g
 Here is the ladder we climb today, one rung per build.
 
 H0 is the conventional baseline, in liters per 100 kilometers on the WLTC. It is the P2 car with the
-clutch closed and the machine switched off: Lecture 2's engine and CVT on the same planar car,
+clutch closed and the hybrid machine removed: no torque, no losses, no inertia, no auxiliaries: Lecture 2's engine and CVT on the same planar car,
 driveline and mass as the hybrid, so the difference you measure is the hybrid's alone. You do not
 build it; it is the reference run.
 

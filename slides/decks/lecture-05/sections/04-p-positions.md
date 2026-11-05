@@ -69,7 +69,7 @@ routeAlias: p0-belt
 
 <div class="diagram-wide">
 
-<img src="/diagrams/04-p0.svg" alt="The course car's driveline with P0 highlighted: the machine on the engine's belt drive, inside the red zone that turns with the engine. P1 to P4 are greyed." style="max-height: 17rem" />
+<img src="/diagrams/04-p0.svg" alt="The course car's driveline with P0 highlighted: the machine on the engine's belt drive, inside the red zone that turns with the engine. P1 to P4 are grayed." style="max-height: 17rem" />
 
 </div>
 
@@ -131,7 +131,7 @@ routeAlias: p1-crank
 
 <div class="diagram-wide">
 
-<img src="/diagrams/04-p1.svg" alt="The course car's driveline with P1 highlighted: the machine on the crankshaft between the engine and K0, inside the red zone that turns with the engine. P0, P2, P3 and P4 are greyed." style="max-height: 17rem" />
+<img src="/diagrams/04-p1.svg" alt="The course car's driveline with P1 highlighted: the machine on the crankshaft between the engine and K0, inside the red zone that turns with the engine. P0, P2, P3 and P4 are grayed." style="max-height: 17rem" />
 
 </div>
 
@@ -192,7 +192,7 @@ routeAlias: p2-after-k0
 
 <div class="diagram-wide">
 
-<img src="/diagrams/04-p2.svg" alt="The course car's driveline with P2 highlighted: the machine after the K0 clutch on the CVT input, inside the green zone that can turn with the engine off. P0, P1, P3 and P4 are greyed." style="max-height: 17rem" />
+<img src="/diagrams/04-p2.svg" alt="The course car's driveline with P2 highlighted: the machine after the K0 clutch on the CVT input, inside the green zone that can turn with the engine off. P0, P1, P3 and P4 are grayed." style="max-height: 17rem" />
 
 </div>
 
@@ -250,7 +250,7 @@ routeAlias: p3-output
 
 <div class="diagram-wide">
 
-<img src="/diagrams/04-p3.svg" alt="The course car's driveline with P3 highlighted: the machine geared to the CVT output, inside the green zone that can turn with the engine off. P0, P1, P2 and P4 are greyed." style="max-height: 17rem" />
+<img src="/diagrams/04-p3.svg" alt="The course car's driveline with P3 highlighted: the machine geared to the CVT output, inside the green zone that can turn with the engine off. P0, P1, P2 and P4 are grayed." style="max-height: 17rem" />
 
 </div>
 
@@ -305,7 +305,7 @@ routeAlias: p4-rear-axle
 
 <div class="diagram-wide">
 
-<img src="/diagrams/04-p4.svg" alt="The course car's driveline with P4 highlighted: the machine driving the rear axle through its own gear, inside the green zone that can turn with the engine off. P0 to P3 are greyed." style="max-height: 17rem" />
+<img src="/diagrams/04-p4.svg" alt="The course car's driveline with P4 highlighted: the machine driving the rear axle through its own gear, inside the green zone that can turn with the engine off. P0 to P3 are grayed." style="max-height: 17rem" />
 
 </div>
 
@@ -428,7 +428,7 @@ sailing.
 
 </div>
 
-Same power, same car: decoupling is worth **up to 15 points**.
+Same power, same car: P2 and P3 beat P0 by **15–16 points**.
 
 </div>
 </div>
@@ -451,9 +451,9 @@ driving on electricity at low power and sailing with the engine off, need the cl
 The table on the right is the cleanest evidence, from the Chalmers study the ICCT review reproduces:
 the same C-segment car with a seven-speed dual-clutch gearbox, the same 15 kilowatt machine, moved
 from position to position, against the car without stop/start. On the WLTC: P0 8.9 percent, P1 10.4,
-P2 24.5, P3 25.0. The ICCT summarizes it: at equal power, decoupling the machine from the engine,
-P2 or P3 against P0 or P1, is worth up to 15 percentage points. Going from 8 to 15 kilowatts adds
-only 1.5 to 2.0 points for P0 and P1.
+P2 24.5, P3 25.0. Read the gap off the table: at equal power, P2 is 15.6 points above P0 and P3
+16.1, so decoupling the machine from the engine is worth about 15 to 16 points. Going from 8 to 15
+kilowatts adds only 1.5 to 2.0 points for P0 and P1.
 
 The green box is the sentence to take home, and the research note's teaching takeaway, consistent
 across all three studies: the decoupling clutch matters more than the machine's power. Section 07
@@ -565,7 +565,7 @@ are still TODO.
 - **P0, P1** turn with the engine: cheap, but every brake drags the engine and there is no
   driving with the engine off.
 - **P2, P3, P4** sit behind a clutch: electric drive, sailing, regen without engine drag.
-- At equal power, decoupling is worth **up to 15 points** on the WLTC. The clutch matters more
+- At equal power, P2 and P3 beat P0 by **15–16 points** on the WLTC. The clutch matters more
   than the machine's power.
 - You built the P2: the one position with every mode.
 
@@ -575,7 +575,7 @@ are still TODO.
 Section 04 in four lines. P0 and P1 turn with the engine: cheap to integrate, but every brake drags
 the engine and the car cannot drive with the engine off. P2, P3 and P4 sit behind a clutch: they can
 drive electrically, sail, and regenerate without dragging the engine. At equal power, decoupling
-is worth up to 15 points on the WLTC in the Chalmers study; the clutch matters more than the
+is worth 15 to 16 points on the WLTC in the Chalmers study, P2 and P3 against P0; the clutch matters more than the
 machine's power. And you built the P2, the one position with every mode.
 
 Next: when the engine does run, where on its map should it run?

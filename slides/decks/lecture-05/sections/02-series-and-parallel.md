@@ -7,13 +7,14 @@ layout: section
 
 # Series and parallel
 
-Who drives the wheels: only the motor, or the engine and the motor together. Other kinds of
-hybrid, briefly.
+Who drives the wheels: only the motor, the engine and the motor together, or one then the other
+through a clutch. Other kinds of hybrid, briefly.
 
 <!--
 Section 02, series and parallel. The first question about any hybrid is who drives the wheels. In
 a series hybrid only the electric motor does, and the engine only makes electricity. In a parallel
-hybrid the engine and the motor both drive them. Then one slide on the other kinds of hybrid. No
+hybrid the engine and the motor both drive them. A series-parallel hybrid switches between the
+two with a clutch. Then one slide on the other kinds of hybrid. No
 build here, but the series hybrid is your homework.
 -->
 
@@ -272,16 +273,19 @@ on this slide: none of them come back today.
   twice. Your homework.
 - **Parallel**: engine and machine both drive; one mechanical path, the engine's speed tied to the
   wheels, which the CVT loosens.
+- **Series-parallel with a clutch**: a series hybrid at low speed, the engine on the wheels at
+  steady cruise.
 - Fuel cells are a series hybrid with another source: the extra pack.
 
 ### Next: how much of the power is electric. <Link to="degree-of-hybridization">→ 03, degree of hybridization</Link>
 
 <!--
-Section 02 in three lines. In a series hybrid only the motor drives, the engine is free of the
+Section 02 in four lines. In a series hybrid only the motor drives, the engine is free of the
 road, and its energy is converted twice; you build one as homework. In a parallel hybrid the engine
 and the machine both drive, with one mechanical path, and the engine's speed tied to the wheels,
-which our CVT loosens. And the fuel-cell car is a series hybrid with another source, in the extra
-pack.
+which our CVT loosens. The series-parallel hybrid with a clutch drives as a series hybrid at low
+speed and closes a clutch to put the engine on the wheels at steady cruise. And the fuel-cell car
+is a series hybrid with another source, in the extra pack.
 
 Next: how much of the power is electric, the degree of hybridization.
 -->
