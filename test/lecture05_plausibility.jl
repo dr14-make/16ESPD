@@ -3,12 +3,12 @@
 include("../scripts/bsfc_line.jl")
 using .BsfcLine
 
-const LINE_ROWS = [parse.(Float64, split(l, ',')) for l in readlines(LINE_FILE)[2:end]]
+const BSFC_LINE = read_line()
 
 @testset "Lecture 5 best-BSFC line" begin
     m = load_maps()
-    rows = LINE_ROWS
-    power, rpm, torque, bsfc = (getindex.(rows, k) for k in 1:4)
+    (; rpm, torque, bsfc) = BSFC_LINE
+    power = BSFC_LINE.power_kw
 
     @testset "the committed file is what the script writes" begin
         @test read(LINE_FILE, String) == render_line(operating_line(m))
@@ -265,7 +265,7 @@ end
 end
 
 @testset "operating line" begin
-    power, rpm = getindex.(LINE_ROWS, 1), getindex.(LINE_ROWS, 2)
+    power, rpm = BSFC_LINE.power_kw, BSFC_LINE.rpm
 
     # The sweep request is (t - 10) kW, from -10 kW to 100 kW.
     lookup = VehicleSystemsComponents.Vehicle.OperatingLineTransient()
@@ -331,17 +331,19 @@ using .OperatingPoints
     m = symbolic_container(r)
     sol = r.sol
     op = operating_points(sol; speed = m.car.engine.speed.w, torque = m.car.engine.torque.tau,
-        fuel = m.car.engine.mdot_fuel, vehicle_speed = m.car.v_kmh)
+        fuel = m.car.engine.mdot_fuel, vehicle_speed = m.car.v_kmh, dt = 0.5)
     f = fuel_metrics(op)
     T = last(sol.t)
 
-    @test length(op.t) == 60
-    @test sum(op.fuel_g) ≈ 1e3 * sum(sol(op.t; idxs = m.car.engine.mdot_fuel).u) atol = 1e-9
+    @test length(op.t) == 120
     @test op.km ≈ 1.5 rtol = 0.01
 
-    # The car's own L/h output, independent of the extraction's units.
-    lph, kmh = sol(T; idxs = m.car.fuel_lph), sol(T; idxs = m.car.v_kmh)
-    @test f.L_per_100km ≈ 100 * lph / kmh rtol = 0.01
+    # The car's own L/h output, integrated apart from the extraction and its units.
+    ts = 0.0:0.01:T
+    lph = sol(ts; idxs = m.car.fuel_lph).u
+    liters = sum((lph[1:end-1] .+ lph[2:end]) ./ 2) * step(ts) / 3600
+    @test f.fuel_g / 1e3 / RHO_PETROL ≈ liters rtol = 1e-3
+    @test f.L_per_100km ≈ 100 * lph[end] / sol(T; idxs = m.car.v_kmh) rtol = 0.01
 
     # The map tables give the same BSFC at the simulated speed and torque.
     maps = load_maps()
@@ -355,5 +357,12 @@ using .OperatingPoints
     @test gap > 0
     @test f.near_line == (gap <= 10 ? 1.0 : 0.0)
     @test fuel_metrics(op; band = gap + 1).near_line ≈ 1
+
+    # An engine that never fires, as in electric driving, has no cells and no BSFC to report.
+    off = merge(op, (; fuel_g = zero(op.fuel_g)))
+    @test isempty(fuel_cells(off).fuel_g)
+    f_off = fuel_metrics(off)
+    @test f_off.L_per_100km == 0
+    @test all(ismissing, (f_off.bsfc_mean, f_off.bsfc_cycle, f_off.near_line, f_off.idle))
     @info "Lecture 5 cruise operating point" rpm = op.rpm[k] torque = op.torque[k] f gap
 end

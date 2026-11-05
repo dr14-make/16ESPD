@@ -16,9 +16,8 @@ begin
     using DyadInterface: symbolic_container
     include(joinpath(@__DIR__, "operating_points.jl"))
     using .OperatingPoints
-    # The deck's map figure is drawn by the same function, so this map and that one match.
-    include(joinpath(@__DIR__, "..", "..", "scripts", "export_lecture05_figures.jl"))
-    using .Lecture05Figures: bsfc_map_plot, operating_points!
+    include(joinpath(@__DIR__, "bsfc_map.jl"))
+    using .BsfcMap
 end
 
 # ╔═╡ 6ae424ff-0e49-4156-84af-263b2f433afd
@@ -72,6 +71,9 @@ From the samples:
   idle share; this is the number the hybrid is compared on;
 - **idle**: the share burned at or below $(P_MIN_KW) kW, idling at stops and creeping, where
   BSFC has no finite value.
+
+A run that burns no fuel, such as a hybrid driving electrically, draws no bubbles and shows —
+for every figure it has nothing to average over.
 """
 
 # ╔═╡ 7de0c0a5-a781-4f55-9800-9205b4317d82
@@ -85,21 +87,26 @@ begin
     `label => operating_points(...)`. All cars share one bubble scale.
     """
     function fuel_map_plot(cars; title = "Where the fuel goes over WLTC")
+        length(cars) <= length(CAR_COLORS) ||
+            error("$(length(cars)) cars but $(length(CAR_COLORS)) colors in CAR_COLORS")
         cells = [fuel_cells(op) for (_, op) in cars]
-        scale = maximum(maximum(c.fuel_g) for c in cells)
+        scale = maximum(c -> maximum(c.fuel_g; init = 0.0), cells)
         p = bsfc_map_plot(; title)
         for ((label, _), c, color) in zip(cars, cells, CAR_COLORS)
-            operating_points!(p, c; scale, color, label)
+            fuel_bubbles!(p, c; scale, color, label)
         end
         return p
     end
 
-    "The fuel figures of `cars` (as for `fuel_map_plot`) as a table."
+    "The fuel figures of `cars` (as for `fuel_map_plot`) as a table; — where there is none."
     function metrics_table(cars)
+        fmt(x, spec) = ismissing(x) ? "—" : Printf.format(Printf.Format(spec), x)
         rows = map(cars) do (label, op)
             f = fuel_metrics(op)
-            @sprintf("| %s | %.2f | %.0f | %.0f | %.0f %% | %.0f %% |", label, f.L_per_100km,
-                f.bsfc_mean, f.bsfc_cycle, 100 * f.near_line, 100 * f.idle)
+            pct(x) = ismissing(x) ? x : 100x
+            "| $label | $(fmt(f.L_per_100km, "%.2f")) | $(fmt(f.bsfc_mean, "%.0f")) | " *
+            "$(fmt(f.bsfc_cycle, "%.0f")) | $(fmt(pct(f.near_line), "%.0f %%")) | " *
+            "$(fmt(pct(f.idle), "%.0f %%")) |"
         end
         return Markdown.parse("""
         | car | L/100 km | fuel-weighted BSFC [g/kWh] | cycle BSFC [g/kWh] | near the line | idle |

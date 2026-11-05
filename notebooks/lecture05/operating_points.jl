@@ -1,16 +1,16 @@
 """
 Engine operating points of a car run, and the fuel figures the Lecture 5 hybrid is compared on.
 
-Notebook `01-operating-points.pluto.jl` draws them on the BSFC map,
-`scripts/export_lecture05_figures.jl` exports that figure, and `test/lecture05_plausibility.jl`
-checks the extraction against the map tables. Every car, conventional or hybrid, goes through
-the same functions, so their figures compare like for like.
+Notebook `01-operating-points.pluto.jl` draws them on the BSFC map of `bsfc_map.jl`, and
+`test/lecture05_plausibility.jl` checks the extraction against the map tables. Every car,
+conventional or hybrid, goes through the same functions, so their figures compare like for like.
 """
 module OperatingPoints
 
-export RHO_PETROL, LINE_FILE, P_MIN_KW, operating_points, fuel_metrics, line_bsfc, fuel_cells
+include(joinpath(@__DIR__, "..", "..", "scripts", "bsfc_line.jl"))
+using .BsfcLine: read_line, power_kw
 
-const LINE_FILE = normpath(@__DIR__, "..", "..", "assets", "data", "engine", "bsfc_line.csv")
+export RHO_PETROL, P_MIN_KW, operating_points, fuel_metrics, line_bsfc, fuel_cells
 
 "Petrol density [kg/L] (Hands-on 02)."
 const RHO_PETROL = 0.745
@@ -19,19 +19,11 @@ const RHO_PETROL = 0.745
 # burned there is counted as idle fuel rather than given a BSFC.
 const P_MIN_KW = 1.0
 
-"The best-BSFC line as (power [kW], BSFC [g/kWh]) columns."
-function read_line(path = LINE_FILE)
-    rows = [parse.(Float64, split(l, ',')) for l in readlines(path)[2:end] if !isempty(l)]
-    return getindex.(rows, 1), getindex.(rows, 4)
-end
+const LINE = read_line()
 
-"""
-    line_bsfc(P_kw; line = read_line())
-
-BSFC of the best-BSFC line at power `P_kw` [kW], linear between rows and clamped at its ends.
-"""
-function line_bsfc(P_kw; line = read_line())
-    P, b = line
+"BSFC [g/kWh] of the best-BSFC line at power `P_kw` [kW], linear between rows and clamped."
+function line_bsfc(P_kw)
+    P, b = LINE.power_kw, LINE.bsfc
     x = clamp(P_kw, first(P), last(P))
     k = clamp(searchsortedlast(P, x), 1, length(P) - 1)
     return b[k] + (x - P[k]) / (P[k+1] - P[k]) * (b[k+1] - b[k])
@@ -46,7 +38,7 @@ that each sample stands for `dt` seconds of the run and sums over samples are ti
 The keywords are the solution's symbolic variables for engine speed [rad/s], engine brake
 torque [N·m], fuel mass flow [kg/s] and vehicle speed [km/h]. Returns per-sample `t`, `rpm`,
 `torque`, `power_kw`, `fuel_g` (grams burned over the sample's interval) and `bsfc` [g/kWh,
-`NaN` below `P_MIN_KW`], with the run's `km` and `dt`.
+`NaN` at or below `P_MIN_KW`], with the run's `km` and `dt`.
 """
 function operating_points(sol; speed, torque, fuel, vehicle_speed, dt = 1.0)
     t0, t1 = first(sol.t), last(sol.t)
@@ -54,15 +46,15 @@ function operating_points(sol; speed, torque, fuel, vehicle_speed, dt = 1.0)
     t = t0 .+ dt .* ((1:n) .- 0.5)
     at(x) = collect(sol(t; idxs = x).u)
     w, tau, mdot, v = at(speed), at(torque), at(fuel), at(vehicle_speed)
-    power_kw = w .* tau ./ 1e3
-    fuel_g = mdot .* 1e3 .* dt
-    bsfc = [P > P_MIN_KW ? m * 3.6e6 / P : NaN for (P, m) in zip(power_kw, mdot)]
-    return (; t, rpm = w .* 30 ./ pi, torque = tau, power_kw, fuel_g, bsfc,
+    rpm = w .* 30 ./ pi
+    P = power_kw.(rpm, tau)
+    bsfc = [p > P_MIN_KW ? m * 3.6e6 / p : NaN for (p, m) in zip(P, mdot)]
+    return (; t, rpm, torque = tau, power_kw = P, fuel_g = mdot .* 1e3 .* dt, bsfc,
         km = sum(v) * dt / 3600, dt)
 end
 
 """
-    fuel_metrics(op; band = 10.0, line = read_line())
+    fuel_metrics(op; band = 10.0)
 
 The fuel figures of operating points `op`:
 
@@ -72,18 +64,23 @@ The fuel figures of operating points `op`:
 - `near_line`, the share of all fuel burned within `band` g/kWh of the best-BSFC line's BSFC at
   the same power;
 - `idle`, the share of all fuel burned at or below `P_MIN_KW`.
+
+A figure that has nothing to average, such as the BSFC of a run that burned no fuel, is
+`missing`.
 """
-function fuel_metrics(op; band = 10.0, line = read_line())
-    total = sum(op.fuel_g)
+function fuel_metrics(op; band = 10.0)
+    total = sum(op.fuel_g; init = 0.0)
     loaded = op.power_kw .> P_MIN_KW
     f, b, P = op.fuel_g[loaded], op.bsfc[loaded], op.power_kw[loaded]
-    near = b .<= line_bsfc.(P; line) .+ band
+    burned = sum(f; init = 0.0)
+    near = abs.(b .- line_bsfc.(P)) .<= band
+    share(x) = total > 0 ? x / total : missing
     return (; fuel_g = total, km = op.km,
         L_per_100km = 100 * total / 1e3 / RHO_PETROL / op.km,
-        bsfc_mean = sum(f .* b) / sum(f),
-        bsfc_cycle = sum(f) / (sum(P) * op.dt / 3600),
-        near_line = sum(f[near]) / total,
-        idle = 1 - sum(f) / total)
+        bsfc_mean = burned > 0 ? sum(f .* b) / burned : missing,
+        bsfc_cycle = burned > 0 ? burned / (sum(P) * op.dt / 3600) : missing,
+        near_line = share(sum(f[near]; init = 0.0)),
+        idle = share(total - burned))
 end
 
 """
@@ -91,7 +88,7 @@ end
 
 The fuel of `op` gathered into cells `drpm` rpm by `dtorque` N·m wide: per cell the
 fuel-weighted mean speed and torque and the grams burned there, largest cell first. Cells that
-burned nothing are left out.
+burned nothing are left out, so a run that burned no fuel has no cells.
 """
 function fuel_cells(op; drpm = 100.0, dtorque = 4.0)
     acc = Dict{Tuple{Int, Int}, NTuple{3, Float64}}()
@@ -103,8 +100,8 @@ function fuel_cells(op; drpm = 100.0, dtorque = 4.0)
     end
     cells = sort!([(rpm = sn / sg, torque = sT / sg, fuel_g = sg) for (sn, sT, sg) in values(acc)];
         by = c -> -c.fuel_g)
-    return (; rpm = getindex.(cells, :rpm), torque = getindex.(cells, :torque),
-        fuel_g = getindex.(cells, :fuel_g))
+    return (; rpm = Float64[c.rpm for c in cells], torque = Float64[c.torque for c in cells],
+        fuel_g = Float64[c.fuel_g for c in cells])
 end
 
 end # module
