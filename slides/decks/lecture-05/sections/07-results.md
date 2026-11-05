@@ -33,7 +33,7 @@ routeAlias: three-powertrains
 
 | Powertrain | L/100 km | MJ/100 km |
 |---|---:|---:|
-| conventional, Lecture 2 | 5.22 | 168.8 |
+| conventional, same planar car (H0) | <span class="todo">TODO</span> | <span class="todo">TODO</span> |
 | P2 hybrid, SoC-corrected | <span class="todo">TODO</span> | <span class="todo">TODO</span> |
 | battery-electric, Lecture 4 | — | 47.2 |
 
@@ -61,8 +61,9 @@ Produced by the charge-sustaining WLTC run, #113
 <!--
 The first comparison: the three powertrains on the same cycle.
 
-The conventional car, Lecture 2's: 5.22 liters per 100 kilometers, 168.8 megajoules per 100
-kilometers of petrol. The hybrid you finish today, with its fuel corrected for the change in the
+The conventional car is H0: the same planar car with the clutch closed and the machine off, so the
+three rows differ only in the powertrain. Its number comes from the reference run and is TODO; for
+scale, Lecture 2's car on its own bench burned 5.22 liters per 100 kilometers, 168.8 megajoules. The hybrid you finish today, with its fuel corrected for the change in the
 battery's charge: TODO until the reference run of issue 113. The battery-electric car of Lecture 4:
 no liters, 47.2 megajoules per 100 kilometers at the battery's terminals, from Lecture 4's wrap-up.
 

@@ -29,7 +29,7 @@ routeAlias: wltc-on-the-bsfc-map
 
 <div class="placeholder">
 
-**Figure: `01-operating-points-conventional.svg`**
+**Figure: `05-operating-points-conventional.svg`**
 
 Lecture 2's BSFC map with the conventional car's WLTC operating points on it, the best point
 starred, idle marked.
@@ -156,7 +156,7 @@ routeAlias: model-ladder
 
 | Level | Model | What it adds | Built in |
 |---|---|---|---|
-| H0 | Lecture 2's mapped-engine car | the conventional baseline, L/100 km on WLTC | reference |
+| H0 | H1 with K0 closed, machine off | the conventional baseline on the same planar car, L/100 km on WLTC | reference |
 | H1 | P2 powertrain | engine → K0 clutch → ≈ 30 kW machine → CVT → differential; ≈ 1.4 kWh battery | build 01 |
 | H2 | H1 + operating line | the CVT ratio holds the engine on its best-BSFC line | build 02 |
 | H3 | H2 + energy manager | modes inside an SoC window, with hysteresis; regen through Lecture 4's blending | build 03 |
@@ -170,8 +170,10 @@ H3. H4 shows that where the machine sits decides how much of each a hybrid can g
 <!--
 Here is the ladder we climb today, one rung per build.
 
-H0 is Lecture 2's car with its mapped engine: the conventional baseline, in liters per 100
-kilometers on the WLTC. You do not build it again; it is the reference.
+H0 is the conventional baseline, in liters per 100 kilometers on the WLTC. It is the P2 car with the
+clutch closed and the machine switched off: Lecture 2's engine and CVT on the same planar car,
+driveline and mass as the hybrid, so the difference you measure is the hybrid's alone. You do not
+build it; it is the reference run.
 
 H1, build 01, is the P2 powertrain. Lecture 2's engine, then the K0 disconnect clutch, then Lecture
 4's machine at about 30 kilowatts, then the CVT that the course already has, then the planar car's
