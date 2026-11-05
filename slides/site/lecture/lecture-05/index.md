@@ -578,7 +578,10 @@ EV transient error with `k=70`, `Ti=2` was 2.67 km/h after removing the brake ce
 `k=110`, `Ti=1` reduces it to 1.32 km/h. Use `mapped_limits=true`: during a CVT transient,
 the manager must not subtract engine torque above the mapped full-load envelope from the
 machine demand. Set `SoC_on=0.52`, `SoC_off=0.55` to leave room for late-cycle regen, and
-`P_line_max=30000` W to demonstrate boost on this cycle. Other manager defaults remain.
+`P_line_max=30000` W: it uses 4.08634 corrected L/100 km versus 4.10596 at
+60 kW. The respective final SoCs are 0.61221 and 0.61261, and boost times are
+71.91 s and zero. Keep the lower-fuel 30 kW cap. The default SoC window finishes
+at 0.64121, outside ±0.02 of 0.60, so the 0.52 / 0.55 overrides remain necessary.
 
 Electric mode carries low demand with K0 open. On-line mode starts the engine and follows
 the efficient-speed target. Charging raises engine load and generates the surplus. Boost
