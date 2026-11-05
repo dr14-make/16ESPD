@@ -93,13 +93,13 @@ Compare the connections and initial conditions with `Vehicle.P2Powertrain` and `
 | Quantity | Measured WLTC Low result |
 | --- | --- |
 | Duration | 589 s |
-| Maximum absolute speed error | 1.502735 km/h |
+| Maximum absolute speed error | 1.502829 km/h |
 | Distance | 3094.989 m |
 | Fuel | 0 |
-| SoC | 0.6 → 0.4008309 |
+| SoC | 0.6 → 0.3864 |
 | Maximum machine speed | 3545.66 rpm |
 
-These are reported reference measurements, not newly measured Studio results or full-WLTC results. The existing hybrid-drive dyno validates operation to 4000 rpm; its field-weakening corner is 1397.46 rpm. The Low run therefore uses field weakening while remaining within that tested speed range. Zero fuel is not zero energy consumption: the battery loses charge.
+These are reported reference measurements, not newly measured Studio results or full-WLTC results. The existing hybrid-drive dyno validates operation to 4000 rpm; its loaded field-weakening corner is 1412 rpm. The Low run therefore uses field weakening while remaining within that tested speed range. Zero fuel is not zero energy consumption: the battery loses charge.
 
 :::
 
@@ -181,10 +181,10 @@ numerical reference, not the unrehearsed Studio steps.
 
 Task #111 establishes the composition and fixed-mode checks. Task #112 will address the operating line through the distinct `variator` seam; task #113 will address the energy manager. Neither controller is part of this guide. Studio build steps still need rehearsal before this draft can be used as a verified classroom walkthrough.
 
-The unchanged variator schedules **1800–6000 rpm**, above the machine's 1397 rpm corner;
+The unchanged variator schedules **1800–6000 rpm**, above the machine's 1412 rpm loaded corner;
 field weakening supplies the constant-power region. Low reached 3546 rpm. The existing dyno
 tests through 4000 rpm, so the scheduled 6000 rpm endpoint is not validated here.
-An exploratory full electric run first exceeded the ±2 km/h band at **795.22 s**
-(58.57 km/h reference), reaching a 7.62 km/h maximum error. Its final SoC was negative:
+An exploratory full electric run first exceeded the ±2 km/h band at **795.3 s**
+(58.2 km/h reference), reaching a 6.4 km/h maximum error. Its final SoC was negative:
 the constant-voltage battery has no depletion cutoff, so this is a saturation diagnostic,
 not a usable full-cycle battery result.
