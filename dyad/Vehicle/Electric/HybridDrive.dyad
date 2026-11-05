@@ -1,0 +1,107 @@
+"""
+P2 hybrid electric drive with the ElectricDrive composition and interface (derived from Lecture 4).
+The 2011 Sonata anchors the 30 kW, 205 N.m and 270 V, 1.4 kWh defaults (ORNL-2011).
+ORNL also prints 105 N.m; 205 N.m is used because it matches 30 kW near 1400 rpm.
+Loss scaling is a teaching assumption, not a fit to the Sonata efficiency map. The battery's
+E Q_nom is nominal stored energy, not a restricted hybrid SoC-window energy. The ideal gear
+is unity for the P2 transmission input; no final-drive reduction is implied (assumed).
+"""
+component HybridDrive
+  "Machine torque request, positive motoring (derived; ElectricDrive interface)"
+  tau_ref = RealInput() {^tau_ref}
+  "Transmission input shaft (derived; ElectricDrive interface)"
+  spline = Spline() {^spline}
+  "Machine housing and gear case (derived; ElectricDrive interface)"
+  support = Spline() {^support}
+  "Battery state of charge (derived; Battery interface)"
+  SoC = RealOutput() {^SoC}
+  "Peak shaft torque (ORNL-2011)"
+  parameter T_max::Torque = 205.0
+  "Rated shaft power (ORNL-2011)"
+  parameter P_rated::Power = 30.0e3
+  "Corner speed, rated power divided by peak torque, approximately 1400 rpm (derived; ORNL-2011)"
+  parameter w_base::AngularVelocity = P_rated / T_max
+  "Machine design voltage, equal to nominal pack voltage (ORNL-2011)"
+  parameter V_nom::Voltage = 270.0
+  "Size factor relative to the Lecture 4 110 kW Leaf (derived; P_rated / 110 kW)"
+  parameter size_scale::Real = P_rated / 110.0e3
+  "Armature resistance; preserve rated copper-loss fraction at voltage-scaled current (derived; Leaf R times (V_nom/350)^2 / size_scale)"
+  parameter R::Resistance = 0.05 * (V_nom / 350.0) ^ 2 / size_scale
+  "Inductance preserving the Leaf 10 ms electrical time constant (derived; L = 0.01 R)"
+  parameter L::Inductance = 0.01 * R
+  "Rotor inertia (derived; Leaf 0.05 kg.m2 times rated-power size_scale, assumed similarity)"
+  parameter J::Inertia = 0.05 * size_scale
+  "Bearing friction torque (derived; Leaf 0.5 N.m times size_scale, assumed similarity)"
+  parameter T_f::Torque = 0.5 * size_scale
+  "Iron-loss torque (derived; Leaf 1 N.m times size_scale, assumed similarity)"
+  parameter K_i::Torque = 1.0 * size_scale
+  "Windage coefficient (derived; Leaf coefficient times size_scale, assumed similarity at equal speed)"
+  parameter k_w::Real = 300.0 / (10100.0 * pi / 30.0) ^ 3 * size_scale
+  "Constant shaft loss (derived; Leaf 200 W times size_scale, assumed similarity)"
+  parameter C::Power = 200.0 * size_scale
+  "Low-speed loss regularization, retained from Lecture 4 (assumed)"
+  parameter w_reg::AngularVelocity = 10.0
+  "Shaft loss torque at corner (derived; DCMachine formula)"
+  parameter tau_loss_base::Torque = T_f + K_i + k_w * w_base ^ 2 + C / w_base
+  "Torque/back-EMF constant (derived; DCMachine positive quadratic root at V_nom, T_max, w_base)"
+  parameter k::ElectricalTorqueConstant = (V_nom + sqrt(V_nom ^ 2 - 4.0 * w_base * R * (T_max + tau_loss_base))) / (2.0 * w_base)
+  "Converter current ceiling (derived; (T_max + corner losses) / k)"
+  parameter I_max::Current = (T_max + tau_loss_base) / k
+  "Maximum duty, no voltage boost (assumed; Lecture 4)"
+  parameter d_max::Real = 1.0
+  "Current-loop time constant (assumed; Lecture 4)"
+  parameter T_i::Time = 1.0e-3
+  "Converter conduction drop (assumed; Lecture 4)"
+  parameter V_on::Voltage = 1.2
+  "Switching frequency (assumed; Lecture 4 Leaf setting)"
+  parameter f_s::Frequency = 5.0e3
+  "Switching-edge duration (assumed; Lecture 4)"
+  parameter t_sw::Time = 1.0e-6
+  "Field/duty corner rounding (assumed; Lecture 4 numerical regularization)"
+  parameter eps::Real = 1.0e-4
+  "Pack open-circuit voltage, the machine design voltage (ORNL-2011 nominal voltage)"
+  parameter E::Voltage = V_nom
+  "Pack charge capacity, 1.4 kWh / E (derived; ORNL-2011)"
+  parameter Q_nom::ElectricCharge = 1.4e3 * 3600.0 / E
+  "Pack resistance (assumed: the Leaf pack's 0.1 Ohm scaled by series count, E/350; small high-power hybrid cells may sag more)"
+  parameter R0::Resistance = 0.1 * E / 350.0
+  "Initial SoC, mid-window for charge-sustaining operation (assumed)"
+  parameter SoC0::Real = 0.6
+  "Machine-to-transmission ratio, unity for a P2 input shaft (assumed)"
+  parameter ratio::Real = 1.0
+  "Auxiliary draw, climate control off (assumed; Lecture 4)"
+  parameter P_aux::Power = 300.0
+  "Auxiliary power-control time constant (assumed; Lecture 4)"
+  parameter T_aux::Time = 0.01
+  battery = VehicleSystemsComponents.Vehicle.Electric.Battery(E = E, Q_nom = Q_nom, R0 = R0, SoC0 = SoC0) {^battery}
+  aux = VehicleSystemsComponents.Vehicle.Electric.AuxLoad(P_aux = P_aux, T = T_aux) {^aux}
+  converter = VehicleSystemsComponents.Vehicle.Electric.Converter(I_max = I_max, d_max = d_max, T_i = T_i, V_on = V_on, f_s = f_s, t_sw = t_sw, eps = eps) {^converter}
+  machine = VehicleSystemsComponents.Vehicle.Electric.DCMachine(field_weakening = true, T_max = T_max, w_base = w_base, V_nom = V_nom, R = R, L = L, J = J, T_f = T_f, K_i = K_i, k_w = k_w, C = C, w_reg = w_reg, tau_loss_base = tau_loss_base, k = k) {^machine}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  reduction = RotationalComponents.Components.IdealGear(ratio = ratio) {^reduction}
+relations
+  connect(battery.p, converter.p_in, aux.p)
+  connect(battery.n, converter.n, aux.n, machine.n, ground.g)
+  connect(converter.p_out, machine.p)
+  connect(converter.field, machine.field)
+  connect(machine.spline, reduction.spline_a)
+  connect(reduction.spline_b, spline)
+  connect(machine.support, reduction.support, support)
+  connect(battery.SoC, SoC)
+  converter.i_ref = tau_ref / (converter.field * machine.k)
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/ElectricDrive.svg"}},
+  "_links": {
+    "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+    "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 400, "x2": 1050, "y2": 500}}}},
+    "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 788, "y1": 950, "x2": 888, "y2": 1050}}}},
+    "SoC": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}, "diagram": {"x1": 135, "y1": -50, "x2": 235, "y2": 50, "rot": 270}}}},
+    "battery": {"Dyad": {"placement": {"diagram": {"x1": 30, "y1": 390, "x2": 150, "y2": 510, "rot": 90}}}},
+    "aux": {"Dyad": {"placement": {"diagram": {"x1": 230, "y1": 390, "x2": 350, "y2": 510, "rot": 90}}}},
+    "converter": {"Dyad": {"placement": {"diagram": {"x1": 380, "y1": 360, "x2": 560, "y2": 540}}}},
+    "machine": {"Dyad": {"placement": {"diagram": {"x1": 640, "y1": 360, "x2": 820, "y2": 540}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 545, "y1": 720, "x2": 625, "y2": 800}}}},
+    "reduction": {"Dyad": {"placement": {"diagram": {"x1": 855, "y1": 405, "x2": 945, "y2": 495}}}}
+  }
+}
+end

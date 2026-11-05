@@ -128,3 +128,11 @@ replace it, at a stated engine-to-battery efficiency: a hybrid that ends the run
 than it started reports more fuel than it burned, one that ends with more reports less. The
 `Vehicle.SoCCorrectedFuel` block reports it in L/100 km and MJ/100 km beside the raw fuel.
 _Avoid_: charge-sustaining fuel, net fuel, equivalent fuel (that is only the battery's share)
+
+**Hybrid drive**:
+`Vehicle.Electric.HybridDrive` is the battery, average converter, DC-equivalent machine,
+auxiliaries, and ideal gear supplying a hybrid transmission input. It keeps `ElectricDrive`'s
+`tau_ref`, `spline`, `support`, and `SoC` interface, with forwardable 30 kW, 205 N·m and
+270 V, 1.4 kWh defaults from the 2011 Sonata Hybrid (ORNL-2011). Its default gear ratio is 1,
+not the BEV's final-drive reduction; it does not include the engine, K0 clutch, or energy manager.
+_Avoid_: hybrid powertrain, hybrid controller
