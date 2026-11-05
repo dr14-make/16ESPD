@@ -1,0 +1,181 @@
+"""
+Engine-generator: Lecture 2's mapped engine and a Lecture 4 DC-equivalent machine running as a
+generator on one shaft, with the converter that delivers its power to a DC bus at `p` and `n`.
+
+    engine -> shaft -> machine -> converter -> p, n
+    engine and machine housings -> support
+
+The unit takes two commands, the electrical power it delivers, `P_ref` [W], and the shaft speed,
+`N_ref` [rpm], and holds both with two loops that share the shaft:
+
+    tau_ref = -(P_ref + P_trim) / sqrt(w^2 + w_min^2)     T_P dP_trim/dt = P_ref - P_elec
+    pedal   = clamp(K_N (w_ref - w) + x_N)   dx_N/dt = K_N (w_ref - w) / T_N + (pedal - u) / T_aw
+
+The generator holds the power. Its torque request is the commanded power over the shaft speed,
+and an integrator trims it by the machine and converter losses, so the power at the pins, not
+at the shaft, settles on `P_ref`. The converter's current loop acts within milliseconds, and for
+any positive command the generator only brakes, so the unit never motors its engine and can
+feed a passive load. The engine holds the speed: it is the only source on the shaft, so it has
+to make up whatever the generator takes. More power demanded first slows the shaft, and the
+speed loop's PI opens the pedal until the engine torque matches. The pedal is clamped smoothly
+to [0, 1], and the clamp's excess is fed back into the integrator (back-calculation), so a
+command beyond full load does not wind the loop up. The power trim has no such guard: a command
+past the converter's current limit winds it up.
+
+`N_ref` is an engine speed, so a best-BSFC operating line (`Vehicle.OperatingLine`) can drive it
+from the power command. The bus at `p` and `n` has to set its own voltage: a battery does, and so
+does a capacitor across a load. Across a bare resistor the bus voltage is algebraic, and the
+converter's equations then also hold at a negative or a near-zero bus voltage, which the
+initialization can land on. The run starts at the commanded speed, with the generator current at
+its command and the engine at `pedal_start` and `p_m_start`; the loops settle the rest within a
+few seconds. The engine's brake-booster hose is capped. The generator's torque and power
+ratings follow `HybridDrive`'s scaling of the Lecture 4 Leaf machine, sized to the engine rather
+than to the Sonata's 30 kW: 30 kW cannot absorb the 34 kW the engine makes at its best-BSFC
+point. Source tags: (derived) computed from other numbers, method given; (assumed) the course's
+choice.
+"""
+component EngineGenerator
+  "Commanded electrical power delivered at the pins [W], positive generating (assumed command convention)"
+  P_ref = RealInput() {^P_ref}
+  "Commanded engine speed [rpm] (assumed; the OperatingLine output unit)"
+  N_ref = RealInput() {^N_ref}
+  "DC bus, positive rail (derived; Converter p_in)"
+  p = Pin() {^p}
+  "DC bus, negative rail (derived; Converter n)"
+  n = Pin() {^n}
+  "Engine mounts and generator housing (derived; MappedEngine and DCMachine support)"
+  support = Spline() {^support}
+  "Fuel mass flow [kg/s] (derived; MappedEngine output)"
+  mdot_fuel = RealOutput() {^mdot_fuel}
+  "Shaft speed [rpm] (derived; generator rotor speed)"
+  N = RealOutput() {^N}
+  "Electrical power delivered at the pins [W] (derived; bus voltage times current out of p)"
+  P_elec = RealOutput() {^P_elec}
+
+  "Generator peak shaft torque (derived; above the Lecture 2 engine's 150.2 N.m full-load peak, rounded up)"
+  parameter T_max::Torque = 160.0
+  "Generator rated shaft power (assumed; holds the best-BSFC line up to about 55 kW electrical)"
+  parameter P_rated::Power = 60.0e3
+  "Generator corner speed, rated power divided by peak torque, about 3580 rpm (derived)"
+  parameter w_base::AngularVelocity = P_rated / T_max
+  "Generator design voltage, the 270 V bus of HybridDrive (assumed; ORNL-2011 Sonata pack)"
+  parameter V_nom::Voltage = 270.0
+  "Size factor relative to the Lecture 4 110 kW Leaf (derived; P_rated / 110 kW)"
+  parameter size_scale::Real = P_rated / 110.0e3
+  "Armature resistance (derived; HybridDrive scaling, Leaf R times (V_nom/350)^2 / size_scale)"
+  parameter R::Resistance = 0.05 * (V_nom / 350.0) ^ 2 / size_scale
+  "Inductance preserving the Leaf 10 ms electrical time constant (derived; L = 0.01 R)"
+  parameter L::Inductance = 0.01 * R
+  "Rotor inertia (derived; Leaf 0.05 kg.m2 times size_scale, assumed similarity)"
+  parameter J::Inertia = 0.05 * size_scale
+  "Bearing friction torque (derived; Leaf 0.5 N.m times size_scale, assumed similarity)"
+  parameter T_f::Torque = 0.5 * size_scale
+  "Iron-loss torque (derived; Leaf 1 N.m times size_scale, assumed similarity)"
+  parameter K_i::Torque = 1.0 * size_scale
+  "Windage coefficient (derived; Leaf coefficient times size_scale, assumed similarity at equal speed)"
+  parameter k_w::Real = 300.0 / (10100.0 * pi / 30.0) ^ 3 * size_scale
+  "Constant shaft loss (derived; Leaf 200 W times size_scale, assumed similarity)"
+  parameter C::Power = 200.0 * size_scale
+  "Low-speed loss regularization, retained from Lecture 4 (assumed)"
+  parameter w_reg::AngularVelocity = 10.0
+  "Shaft loss torque at corner (derived; DCMachine formula)"
+  parameter tau_loss_base::Torque = T_f + K_i + k_w * w_base ^ 2 + C / w_base
+  "Torque/back-EMF constant (derived; DCMachine positive quadratic root at V_nom, T_max, w_base)"
+  parameter k::ElectricalTorqueConstant = (V_nom + sqrt(V_nom ^ 2 - 4.0 * w_base * R * (T_max + tau_loss_base))) / (2.0 * w_base)
+  "Converter current ceiling (derived; (T_max + corner losses) / k)"
+  parameter I_max::Current = (T_max + tau_loss_base) / k
+  "Maximum duty, no voltage boost (assumed; Lecture 4)"
+  parameter d_max::Real = 1.0
+  "Current-loop time constant (assumed; Lecture 4)"
+  parameter T_i::Time = 1.0e-3
+  "Converter conduction drop (assumed; Lecture 4)"
+  parameter V_on::Voltage = 1.2
+  "Switching frequency (assumed; Lecture 4 Leaf setting)"
+  parameter f_s::Frequency = 5.0e3
+  "Switching-edge duration (assumed; Lecture 4)"
+  parameter t_sw::Time = 1.0e-6
+  "Field/duty corner rounding (assumed; Lecture 4 numerical regularization)"
+  parameter eps::Real = 1.0e-4
+  "Power-trim time constant: the loss make-up settles in a few T_P (assumed)"
+  parameter T_P::Time = 0.2
+  "Speed below which the torque request stops rising as 1/w, keeping it finite at standstill (assumed)"
+  parameter w_min::AngularVelocity = 10.0
+  "Speed-loop gain, pedal per rad/s of speed error [s/rad] (assumed; tuned on the bench)"
+  parameter K_N::Real = 0.01
+  "Speed-loop integral time (assumed; tuned on the bench)"
+  parameter T_N::Time = 0.5
+  "Pedal anti-windup tracking time (assumed; shorter than T_N)"
+  parameter T_aw::Time = 0.1
+  "Pedal clamp rounding width (assumed; DisconnectClutch smooth clamp)"
+  parameter clamp_width::Real = 0.001
+  "Pedal at t = 0 (assumed; part load)"
+  parameter pedal_start::Real = 0.2
+  "Manifold pressure at t = 0 (assumed; part load)"
+  parameter p_m_start::Pressure = 50.0e3
+
+  engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine() {^engine}
+  machine = VehicleSystemsComponents.Vehicle.Electric.DCMachine(field_weakening = true, T_max = T_max, w_base = w_base, V_nom = V_nom, R = R, L = L, J = J, T_f = T_f, K_i = K_i, k_w = k_w, C = C, w_reg = w_reg, tau_loss_base = tau_loss_base, k = k) {^machine}
+  converter = VehicleSystemsComponents.Vehicle.Electric.Converter(I_max = I_max, d_max = d_max, T_i = T_i, V_on = V_on, f_s = f_s, t_sw = t_sw, eps = eps) {^converter}
+
+  "Shaft speed command [rad/s]"
+  variable w_ref::AngularVelocity
+  "Loss make-up added to the power command [W]"
+  variable P_trim::Power
+  "Generator torque request, positive motoring [N.m]"
+  variable tau_ref::Torque
+  "Speed-loop integrator state, in pedal units"
+  variable x_N::Real
+  "Speed-loop output before the clamp"
+  variable u::Real
+  "Pedal sent to the engine, 0 closed to 1 fully open"
+  variable pedal::Real
+relations
+  connect(engine.spline, machine.spline) {^shaft_wire}
+  connect(engine.support, machine.support, support) {^mount_wire}
+  connect(converter.p_out, machine.p) {^machine_wire}
+  connect(converter.field, machine.field) {^field_wire}
+  connect(converter.p_in, p) {^bus_p_wire}
+  connect(converter.n, machine.n, n) {^bus_n_wire}
+  connect(engine.mdot_fuel, mdot_fuel) {^fuel_wire}
+  w_ref = N_ref * pi / 30
+  T_P * der(P_trim) = P_ref - P_elec
+  tau_ref = -(P_ref + P_trim) / sqrt(machine.w ^ 2 + w_min ^ 2)
+  converter.i_ref = tau_ref / (converter.field * machine.k)
+  u = K_N * (w_ref - machine.w) + x_N
+  pedal = 0.5 * (1 + sqrt(u ^ 2 + clamp_width ^ 2) - sqrt((u - 1) ^ 2 + clamp_width ^ 2))
+  der(x_N) = K_N * (w_ref - machine.w) / T_N + (pedal - u) / T_aw
+  engine.pedal = pedal
+  N = machine.w * 30 / pi
+  P_elec = -(p.v - n.v) * p.i
+  initial engine.crankshaft.phi = 0.0
+  initial engine.crankshaft.w = w_ref
+  initial engine.air.manifold.p = p_m_start
+  initial converter.i_out = tau_ref / machine.k
+  initial P_trim = 0.0
+  initial x_N = pedal_start
+  guess converter.field = 1.0
+  guess converter.d = 0.5
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/MappedEngine.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
+  "_links": {
+    "P_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}, "diagram": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+    "N_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}, "diagram": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 950, "y1": 150, "x2": 1050, "y2": 250}, "diagram": {"iconName": "pos", "x1": 950, "y1": 150, "x2": 1050, "y2": 250}}}},
+    "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 950, "y1": 750, "x2": 1050, "y2": 850}, "diagram": {"iconName": "neg", "x1": 950, "y1": 750, "x2": 1050, "y2": 850}}}},
+    "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
+    "mdot_fuel": {"Dyad": {"placement": {"icon": {"x1": 150, "y1": -50, "x2": 250, "y2": 50, "rot": 270}, "diagram": {"x1": 150, "y1": -50, "x2": 250, "y2": 50, "rot": 270}}}},
+    "N": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}, "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}}}},
+    "P_elec": {"Dyad": {"placement": {"icon": {"x1": 750, "y1": -50, "x2": 850, "y2": 50, "rot": 270}, "diagram": {"x1": 750, "y1": -50, "x2": 850, "y2": 50, "rot": 270}}}},
+    "engine": {"Dyad": {"placement": {"diagram": {"x1": 120, "y1": 360, "x2": 300, "y2": 540}}}},
+    "machine": {"Dyad": {"placement": {"diagram": {"x1": 420, "y1": 360, "x2": 600, "y2": 540}}}},
+    "converter": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 360, "x2": 880, "y2": 540}}}},
+    "shaft_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "mount_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 210, "y": 800}], "E": -1}, {"S": 2, "M": [], "E": -1}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 510, "y": 800}]}},
+    "machine_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "field_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 900, "y": 486}, {"x": 900, "y": 600}, {"x": 640, "y": 600}], "E": 2}]}},
+    "bus_p_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 680, "y": 200}], "E": 2}]}},
+    "bus_n_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 790, "y": 800}], "E": -1}, {"S": 2, "M": [{"x": 620, "y": 800}], "E": -1}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 790, "y": 800}]}},
+    "fuel_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 300}], "E": 2}]}}
+  }
+}
+end

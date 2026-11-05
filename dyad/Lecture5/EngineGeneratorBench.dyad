@@ -1,0 +1,77 @@
+"""
+Engine-generator into a resistive DC load, stepped along the best-BSFC line (assumed bench).
+
+The power command climbs 10, 20, 32 and 50 kW, each held for 10 s with a 2 s ramp between, and
+the operating line turns each into the engine speed to hold: 1420, 2290, 3000 and 4100 rpm. The
+32 kW hold is the line's best-BSFC point. The line's rows are engine power and the command is
+electrical, so the engine runs 5 to 10 % above each row, at the row's speed; at 3000 rpm that
+costs 1.4 g/kWh against the line's 232.5 g/kWh minimum. The load is a resistor sized to put the
+bus at 270 V at that point, so the bus voltage rises with the power, sqrt(P R): 151 V at 10 kW,
+337 V at 50 kW. The generator's back-EMF stays under the bus at every point, so the field is
+never weakened. A DC-link capacitor across the resistor makes the bus voltage a state, started
+at the first point's voltage; without it the initialization can settle on a negative or
+near-zero bus. Into a resistor the unit can only generate: a zero power command leaves no bus.
+"""
+test component EngineGeneratorBench
+  "Bus voltage at the best-BSFC point, sets the load (assumed; HybridDrive's 270 V pack)"
+  parameter V_bus::Voltage = 270.0
+  "Best-BSFC electrical power, sets the load (derived; bsfc_line.csv minimum at 32 kW)"
+  parameter P_best::Power = 32.0e3
+  "Load resistance, V_bus^2 / P_best (derived)"
+  parameter R_load::Resistance = V_bus ^ 2 / P_best
+  "DC-link capacitance across the load (assumed; an inverter of this size carries about 1 mF)"
+  parameter C_link::Capacitance = 1.0e-3
+  "First power command (derived; bsfc_line.csv row)"
+  parameter P_1::Power = 10.0e3
+  "Second power command (derived; bsfc_line.csv row)"
+  parameter P_2::Power = 20.0e3
+  "Fourth power command (derived; bsfc_line.csv row)"
+  parameter P_4::Power = 50.0e3
+  "Hold at each point (assumed; several speed-loop settling times)"
+  parameter t_hold::Time = 10.0
+  "Ramp between points (assumed)"
+  parameter t_ramp::Time = 2.0
+  unit = VehicleSystemsComponents.Vehicle.EngineGenerator() {^unit}
+  line = VehicleSystemsComponents.Vehicle.OperatingLine() {^line}
+  step_2 = BlockComponents.Sources.Ramp(height = P_2 - P_1, offset = P_1, start_time = t_hold, duration = t_ramp) {^step_2}
+  step_3 = BlockComponents.Sources.Ramp(height = P_best - P_2, offset = 0.0, start_time = 2 * t_hold + t_ramp, duration = t_ramp) {^step_3}
+  step_4 = BlockComponents.Sources.Ramp(height = P_4 - P_best, offset = 0.0, start_time = 3 * t_hold + 2 * t_ramp, duration = t_ramp) {^step_4}
+  load = ElectricalComponents.Analog.Basic.Resistor(R = R_load) {^load}
+  link = ElectricalComponents.Analog.Basic.Capacitor(C = C_link) {^link}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  mounts = RotationalComponents.Components.Fixed() {^mounts}
+  "Power command [W]"
+  variable P_cmd::Power
+relations
+  P_cmd = step_2.y + step_3.y + step_4.y
+  unit.P_ref = P_cmd
+  line.P = P_cmd
+  connect(line.N, unit.N_ref) {^speed_wire}
+  connect(unit.p, load.p, link.p) {^p_wire}
+  connect(load.n, link.n, unit.n, ground.g) {^n_wire}
+  connect(unit.support, mounts.spline) {^mount_wire}
+  initial link.v = sqrt(P_1 * R_load)
+metadata {
+  "_links": {
+    "unit": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 300, "x2": 600, "y2": 500}}}},
+    "line": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 400, "x2": 300, "y2": 500}}}},
+    "step_2": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 150, "x2": 80, "y2": 230}}}},
+    "step_3": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 270, "x2": 80, "y2": 350}}}},
+    "step_4": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 390, "x2": 80, "y2": 470}}}},
+    "load": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 350, "x2": 850, "y2": 450, "rot": 90}}}},
+    "link": {"Dyad": {"placement": {"diagram": {"x1": 900, "y1": 350, "x2": 1000, "y2": 450, "rot": 90}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 760, "y1": 600, "x2": 840, "y2": 680}}}},
+    "mounts": {"Dyad": {"placement": {"diagram": {"x1": 460, "y1": 600, "x2": 540, "y2": 680}}}},
+    "speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "p_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 320}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 950, "y": 320}], "E": 3}], "junctions": [{"x": 800, "y": 320}]}},
+    "n_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": 2, "M": [{"x": 950, "y": 560}], "E": -1}, {"S": 3, "M": [{"x": 620, "y": 560}], "E": -1}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 800, "y": 560}]}},
+    "mount_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end
+
+"Engine-generator bench analysis (assumed bench)"
+analysis EngineGeneratorBenchTransient
+  extends TransientAnalysis(stop = 46.0, alg = ODEAlg.Rodas5P(), saveat = 0.05, tstops = [10.0, 12.0, 22.0, 24.0, 34.0, 36.0])
+  model = EngineGeneratorBench()
+end

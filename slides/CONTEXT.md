@@ -136,3 +136,12 @@ auxiliaries, and ideal gear supplying a hybrid transmission input. It keeps `Ele
 270 V, 1.4 kWh defaults from the 2011 Sonata Hybrid (ORNL-2011). Its default gear ratio is 1,
 not the BEV's final-drive reduction; it does not include the engine, K0 clutch, or energy manager.
 _Avoid_: hybrid powertrain, hybrid controller
+
+**Engine-generator**:
+`Vehicle.EngineGenerator` is Lecture 2's mapped engine and a Lecture 4 DC-equivalent machine
+running as a generator on one shaft, with its converter, delivering DC power at the pins `p` and
+`n`; engine mounts and generator housing share `support`. It takes a commanded electrical power
+and a commanded engine speed: the generator torque holds the power, the engine pedal holds the
+speed. It reports fuel mass flow, shaft speed and electrical power. It is the series hybrid's
+power unit, not the series hybrid, and holds no energy manager or SoC logic.
+_Avoid_: range extender (a sizing, not a part), APU, genset
