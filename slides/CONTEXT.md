@@ -137,6 +137,17 @@ auxiliaries, and ideal gear supplying a hybrid transmission input. It keeps `Ele
 not the BEV's final-drive reduction; it does not include the engine, K0 clutch, or energy manager.
 _Avoid_: hybrid powertrain, hybrid controller
 
+**Engine-generator**:
+`Vehicle.EngineGenerator` is Lecture 2's mapped engine and a Lecture 4 DC-equivalent machine
+running as a generator on one shaft, with its converter, delivering DC power at the pins `p` and
+`n`; engine mounts and generator housing share `support`. It takes a commanded electrical power
+and a commanded engine speed: the generator torque holds the power, the engine pedal holds the
+speed, and the generator unloads if the engine cannot keep up. It reports fuel mass flow, shaft
+speed, electrical power, and the engine power it needs, which can drive the best-BSFC operating
+line. It is the series hybrid's power unit, not the series hybrid, and holds no energy manager or
+SoC logic.
+_Avoid_: range extender (a sizing, not a part), APU, genset
+
 **P2 powertrain**:
 `Vehicle.P2Powertrain` composes the mapped engine, K0 disconnect clutch, `HybridDrive` and
 `ControlledVariator`: the machine shares the shaft after K0 and before the variator. The
@@ -157,3 +168,12 @@ pedal/manifold chain, not the PI output interpreted as physical engine torque. R
 actuator lag, K0 launch slip, idle and braking leave points off the line; the line is a target,
 not a guarantee or an energy manager.
 _Avoid_: optimal operating point (without the requested power), efficiency controller
+
+**Energy manager**:
+`Vehicle.EnergyManager` is the P2 hybrid's rule-based supervisor, a signal block with no physics.
+From the driver's torque demand at the transmission input, the shaft and engine speeds, vehicle
+speed and SoC it picks electric only, engine on the best-BSFC line, charge (a load-point shift up
+the line), boost, launch assist or regen through three continuous `HysteresisLatch` instances on
+demand power, demand torque, shaft speed and SoC, and requests engine power, engine torque, engine
+on, K0 engagement, machine torque and the friction brakes' share. It splits power by rule; it is not an optimizer (ECMS) and not a plant.
+_Avoid_: hybrid controller, supervisory controller, ECMS, power split device

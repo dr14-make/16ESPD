@@ -205,6 +205,14 @@ component.
 end
 
 
+include("EnergyManagerBenchTransient_definition.jl")
+include("EnergyManagerBench_definition.jl")
+include("EnergyManagerLowSoCBench_definition.jl")
+include("EnergyManagerLowSoCTransient_definition.jl")
+include("EngineGeneratorBatteryBenchTransient_definition.jl")
+include("EngineGeneratorBatteryBench_definition.jl")
+include("EngineGeneratorBenchTransient_definition.jl")
+include("EngineGeneratorBench_definition.jl")
 include("HybridDriveDynoTransient_definition.jl")
 include("HybridDriveDyno_definition.jl")
 include("OperatingLineBenchTransient_definition.jl")
