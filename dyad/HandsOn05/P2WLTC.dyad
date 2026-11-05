@@ -7,18 +7,22 @@ test component P2WLTC
   "Wheel radius (derived; planar benchmark)"
   parameter radius::Length = 0.31
   "PI gain, input-shaft N.m per km/h (assumed; BEV driver)"
-  parameter k::Real = 50.0
+  parameter k::Real = ifelse(electric, 50.0, 70.0)
   "PI integral time (assumed; BEV driver)"
   parameter Ti::Time = 2.0
   "Signed driver torque ceiling (assumed; hybrid machine peak)"
   parameter tau_max::Torque = 205.0
   "Initial wheel surface speed offset (assumed; MultibodyComponents #185)"
   parameter dv_wheel::Velocity = 0.01
+  "Center of K0 launch engagement [rpm] (assumed; CentrifugalClutch)"
+  parameter engage_rpm::Real = 1300.0
+  "Width of K0 launch engagement [rpm] (assumed; CentrifugalClutch)"
+  parameter engage_width_rpm::Real(min = eps(Float64)) = 120.0
   trace = VehicleSystemsComponents.Vehicle.DriveCycle() {^trace}
   driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_max) {^driver}
   no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
   kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
-  powertrain = VehicleSystemsComponents.HandsOn05.P2Powertrain(engine_stopped = electric, position_start = ifelse(electric, 0.0, 1.0)) {^powertrain}
+  powertrain = VehicleSystemsComponents.HandsOn05.P2Powertrain(engine_stopped = electric, position_start = 0.0, engine_speed_start = ifelse(electric, 0.0, 800.0 * pi / 30), drive(P_aux = ifelse(electric, 300.0, 0.0))) {^powertrain}
   differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
   mount = RotationalComponents.Components.Fixed() {^mount}
   straight = RotationalComponents.Components.Fixed() {^straight}
@@ -53,7 +57,7 @@ relations
     car.tau_fr = car.tau_fl
   else
     powertrain.engine_pedal = min(max(driver.y / 150.0, 0.0), 1.0)
-    powertrain.engage = 1.0
+    powertrain.engage = 0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm))
     powertrain.tau_ref = 0.0
     car.tau_fl = -min(driver.y, 0.0) * powertrain.variator.ratio / 2.0
     car.tau_fr = car.tau_fl

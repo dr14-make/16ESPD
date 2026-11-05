@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   P2ElectricWLTC(; name, electric, m, radius, k, Ti, tau_max, dv_wheel, __overrides)
+   P2ElectricWLTC(; name, electric, m, radius, k, Ti, tau_max, dv_wheel, engage_rpm, engage_width_rpm, __overrides)
 
 Electric-only fixed fixture (derived; P2WLTC with stopped engine).
 
@@ -16,12 +16,14 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
 | `electric`         | Electric-only fixed configuration; no mode switching (assumed; step 1)                         | --  |   true |
 | `m`         | Vehicle and road-load mass (assumed; shared planar benchmark)                         | kg  |   1500.0 |
 | `radius`         | Wheel radius (derived; planar benchmark)                         | m  |   0.31 |
-| `k`         | PI gain, input-shaft N.m per km/h (assumed; BEV driver)                         | --  |   50.0 |
+| `k`         | PI gain, input-shaft N.m per km/h (assumed; BEV driver)                         | --  |   ifelse(elec...50.0, 70.0) |
 | `Ti`         | PI integral time (assumed; BEV driver)                         | s  |   2.0 |
 | `tau_max`         | Signed driver torque ceiling (assumed; hybrid machine peak)                         | N.m  |   205.0 |
 | `dv_wheel`         | Initial wheel surface speed offset (assumed; MultibodyComponents #185)                         | m/s  |   0.01 |
+| `engage_rpm`         | Center of K0 launch engagement [rpm] (assumed; CentrifugalClutch)                         | --  |   1300.0 |
+| `engage_width_rpm`         | Width of K0 launch engagement [rpm] (assumed; CentrifugalClutch)                         | --  |   120.0 |
 """
-@component function P2ElectricWLTC(; name = nothing, var"electric"=true, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(50.0), var"Ti"=Float64(2.0), var"tau_max"=Float64(205.0), var"dv_wheel"=0.01, __overrides = Dict{String, Any}())
+@component function P2ElectricWLTC(; name = nothing, var"electric"=true, var"m"=Float64(1500.0), var"radius"=0.31, var"Ti"=Float64(2.0), var"tau_max"=Float64(205.0), var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"k"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -43,10 +45,15 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
   haskey(__overrides, "electric") && (electric = pop!(__overrides, "electric"))
   haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
   haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
-  haskey(__overrides, "k") && (k = pop!(__overrides, "k"))
   haskey(__overrides, "Ti") && (Ti = pop!(__overrides, "Ti"))
   haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
   haskey(__overrides, "dv_wheel") && (dv_wheel = pop!(__overrides, "dv_wheel"))
+  haskey(__overrides, "engage_rpm") && (engage_rpm = pop!(__overrides, "engage_rpm"))
+  haskey(__overrides, "engage_width_rpm") && (engage_width_rpm = pop!(__overrides, "engage_width_rpm"))
+  haskey(__overrides, "k") && (k = pop!(__overrides, "k"))
+
+  ### Deferred keyword defaults (defaults referencing other keyword arguments)
+  isnothing(k) && (k = ifelse(electric, 50.0, 70.0))
 
   ### Structural Parameters (functions)
 
@@ -79,6 +86,12 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
   __local__dv_wheel = dv_wheel
   append!(__params, @parameters (dv_wheel::Real), [description = "Initial wheel surface speed offset (assumed; MultibodyComponents #185)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, dv_wheel, __local__dv_wheel)
+  __local__engage_rpm = engage_rpm
+  append!(__params, @parameters (engage_rpm::Real), [description = "Center of K0 launch engagement [rpm] (assumed; CentrifugalClutch)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, engage_rpm, __local__engage_rpm)
+  __local__engage_width_rpm = engage_width_rpm
+  append!(__params, @parameters (engage_width_rpm::Real), [description = "Width of K0 launch engagement [rpm] (assumed; CentrifugalClutch)", bounds = (eps(Float64), Inf)])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, engage_width_rpm, __local__engage_width_rpm)
 
   ### Final Parameters (assignments)
 
@@ -106,7 +119,10 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
   push!(__systems, @named kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour(; __overrides = kmh_overrides))
   # Subcomponent powertrain of type VehicleSystemsComponents.Vehicle.P2Powertrain
   powertrain_overrides = __pop_subcomponent_overrides!(__overrides, "powertrain")
-  push!(__systems, @named powertrain = VehicleSystemsComponents.Vehicle.P2Powertrain(; engine_stopped=electric, position_start=ifelse(electric, 0.0, 1.0), __overrides = powertrain_overrides))
+  powertrain_dict = Dict{String, Any}()
+  powertrain_dict["drive.P_aux"] = ModelingToolkit.default_to_parentscope(ifelse(electric, 300.0, 0.0))
+  merge!(powertrain_dict, powertrain_overrides)
+  push!(__systems, @named powertrain = VehicleSystemsComponents.Vehicle.P2Powertrain(; engine_stopped=electric, position_start=Float64(0.0), engine_speed_start=ifelse(electric, 0.0, 800.0 * pi / 30), __overrides = powertrain_dict))
   # Subcomponent differential of type MultibodyComponents.PlanarMechanics.DifferentialGear
   differential_overrides = __pop_subcomponent_overrides!(__overrides, "differential")
   push!(__systems, @named differential = MultibodyComponents.PlanarMechanics.DifferentialGear(; __overrides = differential_overrides))
@@ -191,7 +207,7 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
     push!(__eqs, car.tau_fr ~ car.tau_fl)
   else
     push!(__eqs, powertrain.engine_pedal ~ min(max(driver.y / 150.0, 0.0), 1.0))
-    push!(__eqs, powertrain.engage ~ 1.0)
+    push!(__eqs, powertrain.engage ~ 0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)))
     push!(__eqs, powertrain.tau_ref ~ 0.0)
     push!(__eqs, car.tau_fl ~ -min(driver.y, 0.0) * powertrain.variator.ratio / 2.0)
     push!(__eqs, car.tau_fr ~ car.tau_fl)

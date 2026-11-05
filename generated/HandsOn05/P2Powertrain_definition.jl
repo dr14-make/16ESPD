@@ -5,12 +5,12 @@
 
 
 @doc Markdown.doc"""
-   P2Powertrain(; name, engine_stopped, position_start, __overrides)
+   P2Powertrain(; name, engine_stopped, position_start, engine_speed_start, __overrides)
 
 P2 transmission-input hybrid (derived; Lecture 5 S2, ORNL-2011 sizing).
 MappedEngine drives K0, then the HybridDrive shaft and ControlledVariator. Plan S2's existing
 CVT means the variator including final drive, not CVTDriveline's centrifugal launch clutch
-or ideal rolling wheel. The distinct `variator` child is the replacement seam for #112.
+or ideal rolling wheel. The distinct `variator` child permits a speed-commanded replacement.
 `engine_stopped` is a fixed test configuration, not an engine-start model.
 
 ## Parameters:
@@ -19,6 +19,7 @@ or ideal rolling wheel. The distinct `variator` child is the replacement seam fo
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `engine_stopped`         | Hold engine stopped with fuel cut for an electric-only fixture (assumed; no start dynamics)                         | --  |   false |
 | `position_start`         | Initial K0 position (assumed; fixed-mode bench)                         | --  |   0.0 |
+| `engine_speed_start`         | Initial running-engine speed [rad/s] (assumed; bench selects idle for launch)                         | rad/s  |   0.0 |
 
 ## Connectors
 
@@ -37,7 +38,7 @@ or ideal rolling wheel. The distinct `variator` child is the replacement seam fo
  * `E` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `i` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function P2Powertrain(; name = nothing, var"engine_stopped"=false, var"position_start"=Float64(0.0), __overrides = Dict{String, Any}())
+@component function P2Powertrain(; name = nothing, var"engine_stopped"=false, var"position_start"=Float64(0.0), var"engine_speed_start"=Float64(0.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -58,6 +59,7 @@ or ideal rolling wheel. The distinct `variator` child is the replacement seam fo
   ### Keyword argument overrides
   haskey(__overrides, "engine_stopped") && (engine_stopped = pop!(__overrides, "engine_stopped"))
   haskey(__overrides, "position_start") && (position_start = pop!(__overrides, "position_start"))
+  haskey(__overrides, "engine_speed_start") && (engine_speed_start = pop!(__overrides, "engine_speed_start"))
 
   ### Structural Parameters (functions)
 
@@ -75,6 +77,9 @@ or ideal rolling wheel. The distinct `variator` child is the replacement seam fo
   __local__position_start = position_start
   append!(__params, @parameters (position_start::Real), [description = "Initial K0 position (assumed; fixed-mode bench)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, position_start, __local__position_start)
+  __local__engine_speed_start = engine_speed_start
+  append!(__params, @parameters (engine_speed_start::Real), [description = "Initial running-engine speed [rad/s] (assumed; bench selects idle for launch)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, engine_speed_start, __local__engine_speed_start)
 
   ### Final Parameters (assignments)
 
@@ -154,7 +159,7 @@ or ideal rolling wheel. The distinct `variator` child is the replacement seam fo
   if engine_stopped
     push!(__eqs, connect(engine.spline, hold.spline))
   else
-    push!(__initialization_eqs, engine.crankshaft.w ~ 0.0)
+    push!(__initialization_eqs, engine.crankshaft.w ~ engine_speed_start)
     push!(__initialization_eqs, engine.crankshaft.phi ~ 0.0)
   end
 
