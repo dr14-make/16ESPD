@@ -3,11 +3,13 @@ Steady feed-forward inverse of the default Lecture 2 MappedEngine.
 
 The generated map in scripts/torque_to_pedal.jl inverts fired brake torque, steady
 manifold flow balance (capped vacuum take-off), throttle geometry and the 1.5 pedal
-exponent. It does not invert actuator dynamics, fuel cut, engine start or rev limiting.
-Use actual engine speed, not the operating-line target. Requests below zero clamp to
-zero fired torque, which is not closed pedal. Fuel permission is controlled separately
-by the start-stop powertrain. Requests above available torque saturate at the smallest pedal delivering
-full load. Calibration is valid only for the default engine/air/pedal parameters.
+exponent. Use actual engine speed, not the operating-line target. Nonpositive requests
+close the pedal; a smoothstep over the first 5 N.m blends into the fired-torque inverse.
+This also closes for every request below motored torque. FuelCutLogic alone decides
+whether closed pedal permits deceleration cut; below its resume speed idle air keeps
+the enabled engine firing. Engine stopping remains the fuel-enable's job.
+Requests above available torque saturate at the smallest pedal delivering full load.
+Calibration is valid only for the default engine/air/pedal parameters.
 """
 component TorqueToPedal
   "Requested fired engine brake torque [N.m]"
@@ -19,8 +21,10 @@ component TorqueToPedal
   structural parameter file::String = "dyad://VehicleSystemsComponents/data/engine/torque_to_pedal.csv"
   structural parameter dataset::DyadData.DyadInterpolationTable2D = DyadData.DyadInterpolationTable2D(file, axis1_name = "speed_rpm", axis2_name = "torque_Nm", data_name = "pedal")
   table = BlockComponents.Tables.InterpolatedTable(axis1 = dataset["speed_rpm"], axis2 = dataset["torque_Nm"], data = dataset["pedal"], interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension())
+  variable opening::Real
 relations
+  opening = min(max(tau / 5.0, 0.0), 1.0)
   table.u1 = min(max(omega * 30 / pi, 800.0), 6500.0)
   table.u2 = min(max(tau, 0.0), 180.0)
-  pedal = min(max(table.y, 0.0), 1.0)
+  pedal = opening^2 * (3.0 - 2.0 * opening) * min(max(table.y, 0.0), 1.0)
 end

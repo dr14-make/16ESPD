@@ -11,11 +11,13 @@ Steady feed-forward inverse of the default Lecture 2 MappedEngine.
 
 The generated map in scripts/torque_to_pedal.jl inverts fired brake torque, steady
 manifold flow balance (capped vacuum take-off), throttle geometry and the 1.5 pedal
-exponent. It does not invert actuator dynamics, fuel cut, engine start or rev limiting.
-Use actual engine speed, not the operating-line target. Requests below zero clamp to
-zero fired torque, which is not closed pedal. Fuel permission is controlled separately
-by the start-stop powertrain. Requests above available torque saturate at the smallest pedal delivering
-full load. Calibration is valid only for the default engine/air/pedal parameters.
+exponent. Use actual engine speed, not the operating-line target. Nonpositive requests
+close the pedal; a smoothstep over the first 5 N.m blends into the fired-torque inverse.
+This also closes for every request below motored torque. FuelCutLogic alone decides
+whether closed pedal permits deceleration cut; below its resume speed idle air keeps
+the enabled engine firing. Engine stopping remains the fuel-enable's job.
+Requests above available torque saturate at the smallest pedal delivering full load.
+Calibration is valid only for the default engine/air/pedal parameters.
 
 ## Parameters:
 
@@ -29,6 +31,12 @@ full load. Calibration is valid only for the default engine/air/pedal parameters
  * `tau` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `omega` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `pedal` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+
+## Variables
+
+| Name         | Description                         | Units  | 
+| ------------ | ----------------------------------- | ------ |
+| `opening`         |                          | --  |
 """
 @component function TorqueToPedal(; name = nothing, var"file"="dyad://VehicleSystemsComponents/data/engine/torque_to_pedal.csv", var"dataset"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -77,8 +85,12 @@ full load. Calibration is valid only for the default engine/air/pedal parameters
   append!(__vars, @variables (pedal(t)::Real), [output = true])
 
   ### Variables (declarations)
+  append!(__vars, @variables (opening(t)::Real))
 
   ### Variables (assignments)
+  __ovr_opening = pop!(__overrides, "opening", nothing); isnothing(__ovr_opening) || push!(__eqs, opening ~ __ovr_opening)
+  __ovr_opening__initial = pop!(__overrides, "opening.initial", nothing); isnothing(__ovr_opening__initial) || (__initial_conditions[opening] = __ovr_opening__initial)
+  __ovr_opening__guess = pop!(__overrides, "opening.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -92,6 +104,7 @@ full load. Calibration is valid only for the default engine/air/pedal parameters
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
+  isnothing(__ovr_opening__guess) || (__guesses[opening] = __ovr_opening__guess)
 
   ### Initialization Equations
 
@@ -99,9 +112,10 @@ full load. Calibration is valid only for the default engine/air/pedal parameters
   __assertions = []
 
   ### Equations
+  push!(__eqs, opening ~ min(max(tau / 5.0, 0.0), 1.0))
   push!(__eqs, table.u1 ~ min(max(omega * 30 / pi, 800.0), 6500.0))
   push!(__eqs, table.u2 ~ min(max(tau, 0.0), 180.0))
-  push!(__eqs, pedal ~ min(max(table.y, 0.0), 1.0))
+  push!(__eqs, pedal ~ opening ^ 2 * (3.0 - 2.0 * opening) * min(max(table.y, 0.0), 1.0))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

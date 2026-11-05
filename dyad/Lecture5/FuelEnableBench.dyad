@@ -24,3 +24,28 @@ analysis FuelEnableBenchTransient
   extends TransientAnalysis(stop = 18.0, dtmax = 0.02, alg = ODEAlg.Rodas5P())
   model = FuelEnableBench()
 end
+
+
+"Enabled engine idling with closed pedal and K0 open."
+component P2IdleBench
+  powertrain = VehicleSystemsComponents.Vehicle.P2Powertrain(start_stop = true)
+  load = RotationalComponents.Components.Inertia(J = 10.0)
+  mount = RotationalComponents.Components.Fixed()
+relations
+  powertrain.engine_on = 1.0
+  powertrain.engine_pedal = 0.0
+  powertrain.engine_torque_ref = 0.0
+  powertrain.engage = 0.0
+  powertrain.tau_ref = 0.0
+  powertrain.cvt_pedal = 0.0
+  connect(powertrain.spline, load.spline_a)
+  connect(powertrain.support, mount.spline)
+  initial load.w = 0.0
+  initial load.phi = 0.0
+  initial powertrain.drive.converter.i_out = 0.0
+end
+
+analysis P2IdleBenchTransient
+  extends TransientAnalysis(stop = 30.0, dtmax = 0.1, alg = ODEAlg.Rodas5P())
+  model = P2IdleBench()
+end

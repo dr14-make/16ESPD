@@ -861,6 +861,20 @@ end
 end
 
 
+@testset "Enabled P2 closed-pedal idle with K0 open" begin
+    r = VehicleSystemsComponents.Lecture5.P2IdleBenchTransient()
+    s, m = r.sol, symbolic_container(r)
+    ts = collect(20.0:0.1:30.0)
+    @test string(s.retcode) == "Success"
+    rpm = s(ts, idxs = m.powertrain.engine.N).u
+    fuel = s(ts, idxs = m.powertrain.mdot_fuel).u
+    @test all(750.0 .<= rpm .<= 850.0)
+    @test all(0.08e-3 .<= fuel .<= 0.12e-3)
+    @test maximum(abs.(s(ts, idxs = m.powertrain.position).u)) < 1e-9
+    @info "Enabled closed-pedal idle" rpm=extrema(rpm) fuel_kg_s=extrema(fuel)
+end
+
+
 include("torque_to_pedal.jl")
 
 @testset "Lecture 5 charge-sustaining hybrid WLTC" begin
