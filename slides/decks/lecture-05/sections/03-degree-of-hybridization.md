@@ -211,10 +211,17 @@ routeAlias: power-battery
 For each kWh it holds, the hybrid's pack gives about eight times the Leaf's power: its cells are
 built for **power rather than energy**.
 
-So its **internal resistance** matters: at 30 kW and 270 V, about 110 A flow through it. Our
-*R*₀ ≈ 0.077 Ω is **an assumption, not derived**, and likely optimistic: the *I*²*R* loss in our
-hybrid results may be understated. A 1.4 kWh pack of energy cells would have a far higher
-resistance; real hybrid packs use high-power cells, built for low resistance per Ah.
+So its **internal resistance** matters: at 30 kW about 110 A flow through it. Measured on new
+2011 Sonata packs (INL, 10 s pulse): ***R*₀ ≈ 0.33 Ω**, the value our model uses.
+
+<div class="tight">
+
+| at 110 A | *I*²*R* | battery efficiency |
+|---|---:|---:|
+| *R*₀ = 0.33 Ω | **4.0 kW** | 86.6 % |
+| round trip, charge then discharge | | **≈ 76 %** |
+
+</div>
 
 </div>
 <div>
@@ -245,15 +252,19 @@ kilowatts from 1.4 kilowatt-hours, about 21 per hour, a 21 C discharge. Lecture 
 kilowatts from 40 kilowatt-hours, about 2.75 C. The hybrid's pack has to give about eight times more
 power for each kilowatt-hour it holds. So hybrid cells are built for power rather than energy.
 
-And the pack's internal resistance matters. At 30 kilowatts and 270 volts about 110 amperes flow,
-and every one of them goes through R zero. Say plainly what ours is: an assumption, not a derived
-number. The model takes the Leaf pack's 0.1 ohm times 270 over 350 volts, about 0.077 ohm. But pack
-resistance goes as the series count times the cell resistance over the parallel count, and scaling
-by series count alone keeps the Leaf's strings of about 114 ampere-hours: that is a 31
-kilowatt-hour pack, not a 1.4 kilowatt-hour one of about 5 ampere-hours. A 5 ampere-hour pack of
-energy cells would have a far higher resistance; real hybrid packs use high-power cells built for low
-resistance per ampere-hour. We have no source for their number, so ours is unsourced and likely
-optimistic, and the resistive loss in our hybrid results may be understated.
+And the pack's internal resistance matters. At 30 kilowatts about 110 amperes flow, and every one
+of them goes through R zero. Idaho National Laboratory measured new 2011 Sonata Hybrid packs, the
+same 72-cell, 5.3 ampere-hour, 270 volt pack: 0.32 to 0.38 ohm at the end of a 10 second pulse in
+the middle of the charge window, on two cars at two labs. Our model uses 0.33 ohm, and with it
+reproduces INL's own pulse power. At 110 amperes that is 4 kilowatts of heat, 86.6 percent battery
+efficiency, and about 76 percent for a joule that goes in and comes back out. That is the round trip
+section 01 said every stored joule pays.
+
+A 10 second value includes slower polarization, so in a model without an RC branch it somewhat
+overstates the loss on short transients; 0.2 ohm is the sensitivity case. And note what it does to
+the machine: at 0.33 ohm the pack sags to about 220 volts at full power, so the model designs the
+30 kilowatt machine for 220 volts, not the 270 volt open-circuit value. The research note
+`docs/research_notes/Electric and hybrid vehicles/hybrid-pack-resistance.md` has the sources.
 
 The right side is from the batteries lecture, the summary table of slide 14; the deck calls its
 figures guidelines only. Read the two columns as a ratio: a typical Li-ion cell there gives 300 watts
