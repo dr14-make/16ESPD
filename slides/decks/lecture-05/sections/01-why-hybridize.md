@@ -39,8 +39,8 @@ routeAlias: wltc-on-the-bsfc-map
 
 | Engine power | ≤ 1 kW | 1–10 kW | 10–40 kW | > 40 kW |
 |---|---:|---:|---:|---:|
-| share of time | 42.5 % | 28.6 % | 28.7 % | 0.2 % |
-| share of fuel | 5.8 % | 26.1 % | 66.9 % | 1.2 % |
+| share of time | 42.6 % | 28.7 % | 28.5 % | 0.2 % |
+| share of fuel | 5.9 % | 26.2 % | 66.7 % | 1.2 % |
 
 **At every stop**: idling, burning fuel for no work at all.
 

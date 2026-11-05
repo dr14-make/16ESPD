@@ -276,21 +276,22 @@ Captured with the build guide, #112
 
 **Given:** the best-BSFC line as a data table (#200)
 
-<span class="todo">TODO: guide link · reference `dyad/HandsOn05/…`</span>
+[page: step 2](../lecture/lecture-05/#step-2) · reference `dyad/HandsOn05/P2OperatingLineWLTC.dyad`
 
 </div>
 <div class="stack">
 
-*Requested power → best-BSFC line → engine speed command → divided by the CVT's input speed from
-the wheels → CVT ratio command; the engine's torque from the power*
+*Pedal → requested power → best-BSFC line → engine speed command, floored at 1000 rpm → the CVT
+sets the ratio that holds it*
 
 ```julia
-# TODO: snippet from the build guide (#112)
+line.P = powertrain.engine_pedal * P_peak   # 85 kW
+N_target = max(line.N, N_locked)            # 1000 rpm
+powertrain.N_ref = N_target
 ```
 
-<div class="handson">✓ over the WLTC, the engine's operating points sit on the best-BSFC line of
-Lecture 2's map, within <span class="todo">TODO band</span> · L/100 km, engine only, on the line:
-<span class="todo">TODO</span></div>
+<div class="handson">✓ same car, driver and K0 as H0 · WLTC: <b>5.39</b> L/100 km against H0's
+<b>5.71</b>, <b>−5.5 %</b> · only 15 % of the fuel within ±150 rpm of the line</div>
 
 </div>
 </div>
@@ -299,17 +300,21 @@ Lecture 2's map, within <span class="todo">TODO band</span> · L/100 km, engine 
 Build 02: the operating line. The screenshot will show your P2 powertrain with the line between the
 requested power and the CVT; it is captured with the build guide, issue 112.
 
-The library gives you the best-BSFC line as a data table, from issue 200. You read the requested
-power from the driver, look up the engine speed on the line, divide by the CVT's input speed as the
-wheels set it, and command that ratio, clipped to the CVT's range. The engine's torque follows from
-the power.
+The library gives you the best-BSFC line as a data table. The powertrain gets a switch,
+speed_commanded, that swaps the pedal-scheduled CVT for one that holds a commanded engine speed.
+The driver's pedal becomes a power request, pedal times 85 kilowatts; the line turns that power
+into a speed, floored at 1000 revolutions per minute so the locked engine never drops below idle;
+the CVT holds that speed. Everything else is H0: the same car, driver, brakes and K0.
 
-The checkpoint, from the plan: over the WLTC, the engine's operating points sit on the best-BSFC line
-of Lecture 2's map, within a band the reference model fixes. That band, and the fuel figure of the
-engine alone on the line, are TODO until the reference model of issue 112 runs.
+The checkpoint: over the WLTC the car burns 5.39 liters per 100 kilometers, against H0's 5.71.
+That is 5.5 percent, with no electric machine at all, from moving the engine to lower speed and
+higher load.
 
-Compare that fuel figure with Lecture 2's 5.22 and its 4.93 estimate. It is the first of the three
-savings, alone.
+But be honest about why. The request is open loop: pedal times 85 kilowatts is not what the engine
+actually delivers, so the engine does not sit on the line. Only 15 percent of the fuel burns within
+150 revolutions per minute of it. The saving comes from running slower in general. Holding the
+engine on the line needs a controller that commands engine power directly: the energy manager of
+section 06.
 -->
 
 ---

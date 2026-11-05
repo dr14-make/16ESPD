@@ -27,7 +27,8 @@ routeAlias: lecture-summary
 - **03** DOH = P<sub>EM</sub> / (P<sub>EM</sub> + P<sub>ICE</sub>); today's car is a full hybrid.
 - **04** P0 and P1 turn with the engine; P2, P3, P4 sit behind a clutch. **The clutch matters
   more than the machine's power.**
-- **05** The CVT holds the engine on its best-BSFC line; the machine shifts the load.
+- **05** The CVT moves the engine toward its best-BSFC line: 5.5 % less fuel alone; the machine
+  shifts the load.
 - **06** Five rules, two latches, charge-sustaining within ± 2 %.
 - **07** The ranking P0 < P1 ≪ P2 ≈ P3 ≈ P4, each saving against a stated baseline.
 
@@ -46,7 +47,8 @@ hybrid switches between the two with a clutch. Your homework is a series hybrid.
 04: P0 and P1 turn with the engine; P2, P3 and P4 sit behind a clutch. The clutch matters more than
 the machine's power.
 
-05: the CVT holds the engine on its best-BSFC line, and the machine shifts the load.
+05: the CVT moves the engine toward its best-BSFC line, 5.5 percent less fuel on its own, and the
+machine shifts the load.
 
 06: five rules, two latches, and a result that is charge-sustaining within 2 percent.
 

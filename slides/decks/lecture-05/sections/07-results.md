@@ -33,14 +33,15 @@ routeAlias: three-powertrains
 
 | Powertrain | L/100 km | MJ/100 km |
 |---|---:|---:|
-| conventional, same planar car (H0) | 5.72 | 184.8 |
+| conventional, same planar car (H0) | 5.71 | 184.5 |
+| conventional, CVT on the operating line | 5.39 | 174.4 |
 | P2 hybrid, SoC-corrected | <span class="todo">TODO</span> | <span class="todo">TODO</span> |
 | battery-electric, Lecture 4 | — | 47.2 |
 
 </div>
 
 The hybrid hardware alone, the machine idling on the shaft, costs the conventional car
-**0.07 L/100 km, 1.3 %**: the hybrid earns that back before it saves anything.
+**about 0.07 L/100 km, 1.3 %**: the hybrid earns that back before it saves anything.
 
 MJ of petrol into the tank against MJ out of the battery's terminals: the energy each car draws
 from its store, not from the well or the grid.
@@ -64,8 +65,10 @@ Produced by the charge-sustaining WLTC run, #113
 <!--
 The first comparison: the three powertrains on the same cycle.
 
-The conventional car is H0: the same planar car with the clutch closed and the hybrid machine removed, so the
-three rows differ only in the powertrain: 5.72 liters per 100 kilometers, 184.8 megajoules. For
+The conventional car is H0: the same planar car, K0 locked once it moves and the hybrid machine removed, so the
+rows differ only in the powertrain: 5.71 liters per 100 kilometers, 184.5 megajoules. The second
+row is build 02: the same engine-only car with its CVT on the operating-line schedule, 5.39 liters,
+174.4 megajoules, 5.5 percent less with no electric machine. For
 scale, Lecture 2's car on its own, one-dimensional bench burned 5.22. The hybrid's hardware alone,
 its machine spinning idle on the shaft, would cost the same car 0.07 liters, 1.3 percent: the hybrid
 has to earn that back before it saves anything. The hybrid you finish today, with its fuel corrected for the change in the
@@ -267,8 +270,8 @@ power and the distance · then the three cars side by side*
 
 <div class="handson">✓ SoC at the end within <b>± 2 %</b> of capacity of its start:
 <span class="todo">TODO ΔSoC</span> · L/100 km: conventional on this bench
-<b>5.72</b> (Lecture 2: 5.22), hybrid SoC-corrected <span class="todo">TODO</span>
-· MJ/100 km: conventional <b>184.8</b>, hybrid <span class="todo">TODO</span>,
+<b>5.71</b> (Lecture 2: 5.22), hybrid SoC-corrected <span class="todo">TODO</span>
+· MJ/100 km: conventional <b>184.5</b>, hybrid <span class="todo">TODO</span>,
 battery-electric <b>47.2</b></div>
 
 </div>
@@ -285,7 +288,7 @@ in liters and in megajoules per 100 kilometers. Then you put the three cars side
 The checkpoint, from the plan. First the honesty check: the state of charge at the end must be
 within 2 percent of capacity of its start. Then the numbers: the SoC-corrected liters per 100
 kilometers for the conventional car and the hybrid, and megajoules per 100 kilometers for all three.
-The electric car's 47.2 is Lecture 4's. The conventional car's 5.72 is this bench's reference run;
+The electric car's 47.2 is Lecture 4's. The conventional car's 5.71 is this bench's reference run;
 Lecture 2's 5.22 is there to compare with. The hybrid's are TODO until the reference run.
 
 If your state of charge ends outside the band, the charge thresholds are too far apart or the charge
@@ -296,7 +299,7 @@ power too small for the cycle; the fuel figure is then not one to quote.
 
 ## Summary of section 07
 
-- Three powertrains on one car and one cycle: **184.8**, <span class="todo">TODO</span> and
+- Three powertrains on one car and one cycle: **184.5**, <span class="todo">TODO</span> and
   **47.2 MJ/100 km**.
 - Every saving is against a baseline: **say which**. Ours idles at stops.
 - The studies agree on the ranking, **P0 < P1 ≪ P2 ≈ P3 ≈ P4**, and so must we.
@@ -304,7 +307,7 @@ power too small for the cycle; the fuel figure is then not one to quote.
 ### Next: <Link to="wrap-up">→ 08, wrap-up</Link>
 
 <!--
-Section 07 in three lines. Three powertrains on one car and one cycle: 184.8 megajoules per 100
+Section 07 in three lines. Three powertrains on one car and one cycle: 184.5 megajoules per 100
 kilometers for the conventional car, the hybrid's number from your build 04, and 47.2 for the
 electric car. Every saving is against a baseline, so say which; ours idles at stops. And the three
 studies agree on the ranking, P0 below P1, far below P2, P3 and P4, and so must our table.
