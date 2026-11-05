@@ -5,8 +5,8 @@ The generated map in scripts/torque_to_pedal.jl inverts fired brake torque, stea
 manifold flow balance (capped vacuum take-off), throttle geometry and the 1.5 pedal
 exponent. It does not invert actuator dynamics, fuel cut, engine start or rev limiting.
 Use actual engine speed, not the operating-line target. Requests below zero clamp to
-zero fired torque (NOT closed pedal); engine-off/coast commands must gate pedal outside
-this block. Requests above available torque saturate at the smallest pedal delivering
+zero fired torque, which is not closed pedal. Fuel permission is controlled separately
+by the start-stop powertrain. Requests above available torque saturate at the smallest pedal delivering
 full load. Calibration is valid only for the default engine/air/pedal parameters.
 """
 component TorqueToPedal

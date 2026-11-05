@@ -13,6 +13,23 @@ const TTP = TorqueToPedalMap
         @test all(r -> length(r) == 1 + length(TTP.TORQUES), rows)
         @test all(r -> all(x -> 0 <= parse(Float64, x) <= 1, r[2:end]), rows)
     end
+    @testset "interpolated CSV reproduces torque" begin
+        rows = split.(readlines(TTP.MAP_FILE)[2:end], ',')
+        grid = [parse(Float64, rows[i][j+1]) for i in eachindex(rows), j in eachindex(TTP.TORQUES)]
+        errors = Float64[]
+        for n in (1025.0, 2525.0, 4025.0, 6025.0), tau in (20.5, 60.5, 100.5)
+            i = clamp(searchsortedlast(TTP.SPEEDS, n), 1, length(TTP.SPEEDS)-1)
+            j = searchsortedlast(TTP.TORQUES, tau)
+            a = (n - TTP.SPEEDS[i]) / (TTP.SPEEDS[i+1] - TTP.SPEEDS[i])
+            b = tau - TTP.TORQUES[j]
+            pedal = (1-a) * ((1-b)*grid[i,j] + b*grid[i,j+1]) + a * ((1-b)*grid[i+1,j] + b*grid[i+1,j+1])
+            actual = TTP.fired_torque(m, n, TTP.steady_pressure(n, pedal))
+            high = TTP.fired_torque(m, n, TTP.steady_pressure(n, 1.0))
+            push!(errors, abs(actual - min(tau, high)))
+        end
+        @test maximum(errors) < 0.5
+        @info "Interpolated torque inverse" max_error_Nm=maximum(errors)
+    end
     @testset "inverse reproduces reachable fired torque" begin
         for n in (800.0, 1250.0, 3000.0, 4500.0, 6400.0)
             low = TTP.fired_torque(m, n, TTP.steady_pressure(n, 0.0))

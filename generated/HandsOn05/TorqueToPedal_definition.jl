@@ -7,16 +7,22 @@
 @doc Markdown.doc"""
    TorqueToPedal(; name, file, dataset, __overrides)
 
-Reference feed-forward calibration for the Lecture 5 engine torque command.
-Connect tau [N.m], actual omega [rad/s], and gate pedal for engine-off/coast modes.
-The shared calibration keeps this reference synchronized with the library block.
+Steady feed-forward inverse of the default Lecture 2 MappedEngine.
+
+The generated map in scripts/torque_to_pedal.jl inverts fired brake torque, steady
+manifold flow balance (capped vacuum take-off), throttle geometry and the 1.5 pedal
+exponent. It does not invert actuator dynamics, fuel cut, engine start or rev limiting.
+Use actual engine speed, not the operating-line target. Requests below zero clamp to
+zero fired torque, which is not closed pedal. Fuel permission is controlled separately
+by the start-stop powertrain. Requests above available torque saturate at the smallest pedal delivering
+full load. Calibration is valid only for the default engine/air/pedal parameters.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `file`         |                          | --  |   "dyad://Veh..._pedal.csv" |
-| `dataset`         |                          | --  |   VehicleSyst...me="pedal") |
+| `dataset`         |                          | --  |   DyadData.Dy...me="pedal") |
 
 ## Connectors
 
@@ -47,7 +53,7 @@ The shared calibration keeps this reference synchronized with the library block.
   haskey(__overrides, "dataset") && (dataset = pop!(__overrides, "dataset"))
 
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
-  isnothing(dataset) && (dataset = VehicleSystemsComponents.DyadData.DyadInterpolationTable2D(file; axis1_name="speed_rpm", axis2_name="torque_Nm", data_name="pedal"))
+  isnothing(dataset) && (dataset = DyadData.DyadInterpolationTable2D(file; axis1_name="speed_rpm", axis2_name="torque_Nm", data_name="pedal"))
 
   ### Structural Parameters (functions)
 
@@ -80,7 +86,7 @@ The shared calibration keeps this reference synchronized with the library block.
   ### Components
   # Subcomponent table of type BlockComponents.Tables.InterpolatedTable
   table_overrides = __pop_subcomponent_overrides!(__overrides, "table")
-  push!(__systems, @named table = BlockComponents.Tables.InterpolatedTable(; axis1=dataset["speed_rpm"], axis2=dataset["torque_Nm"], data=dataset["pedal"], interpolation_dim1=VehicleSystemsComponents.BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2=VehicleSystemsComponents.BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), __overrides = table_overrides))
+  push!(__systems, @named table = BlockComponents.Tables.InterpolatedTable(; axis1=dataset["speed_rpm"], axis2=dataset["torque_Nm"], data=dataset["pedal"], interpolation_dim1=BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2=BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), __overrides = table_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -93,9 +99,9 @@ The shared calibration keeps this reference synchronized with the library block.
   __assertions = []
 
   ### Equations
-  push!(__eqs, table.u1 ~ VehicleSystemsComponents.min(VehicleSystemsComponents.max(omega * 30 / pi, 800.0), 6500.0))
-  push!(__eqs, table.u2 ~ VehicleSystemsComponents.min(VehicleSystemsComponents.max(tau, 0.0), 180.0))
-  push!(__eqs, pedal ~ VehicleSystemsComponents.min(VehicleSystemsComponents.max(table.y, 0.0), 1.0))
+  push!(__eqs, table.u1 ~ min(max(omega * 30 / pi, 800.0), 6500.0))
+  push!(__eqs, table.u2 ~ min(max(tau, 0.0), 180.0))
+  push!(__eqs, pedal ~ min(max(table.y, 0.0), 1.0))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

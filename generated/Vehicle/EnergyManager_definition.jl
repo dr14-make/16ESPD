@@ -73,7 +73,8 @@ it to the wheels through the variator ratio. `P_engine` feeds `OperatingLine`, `
 engine's torque command, `engine_on` its fuel enable and `engage` K0, both the engine latch.
 
 Defaults are sized for the 30 kW, 1.4 kWh Sonata-like `HybridDrive` and the Lecture 2 map's
-best-BSFC line.
+best-BSFC line. With `mapped_limits`, the torque split caps the engine share at its measured-speed
+full-load envelope during CVT transients; the power request remains the operating-line target.
 
 ## Parameters:
 
