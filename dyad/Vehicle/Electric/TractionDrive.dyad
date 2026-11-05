@@ -1,0 +1,105 @@
+"""
+Traction drive on an external DC bus: the average converter, a DC-equivalent machine and the
+single-speed reduction of `ElectricDrive`, without its battery and auxiliaries, so that several
+sources and loads can share one bus at `p` and `n`.
+
+    p, n -> converter -> machine -> reduction (ratio) -> spline
+    machine housing and gear case -> support
+
+`tau_ref` is the machine torque asked for, positive motoring, negative braking. As in
+`ElectricDrive`, the converter imposes a current and the drive divides the torque by the torque
+per ampere at the present field, `i_ref = tau_ref / (field k)`, so `tau_ref` is the torque
+delivered at any speed up to the current limit. A negative `tau_ref` returns power to the bus.
+
+The bus at `p` and `n` has to set its own voltage, a battery for instance. The drive does not
+ground `n`; whatever builds the bus does that once.
+
+The machine follows `HybridDrive`'s scaling of the Lecture 4 Leaf machine, sized for a compact
+series hybrid on the 270 V bus of `HybridDrive`: 80 kW and 250 N.m, base speed about 3060 rpm.
+At WLTC's 131 km/h the machine turns about 9200 rpm, three times base speed, inside the Leaf
+machine's 10100 rpm. Source tags: (Nissan) ZE1 specification sheet, catalog 1709; (derived)
+computed from other numbers, method given; (assumed) the course's choice.
+"""
+component TractionDrive
+  "Machine torque asked for, positive motoring [N.m]"
+  tau_ref = RealInput() {^tau_ref}
+  "DC bus, positive rail (derived; Converter p_in)"
+  p = Pin() {^p}
+  "DC bus, negative rail (derived; Converter n)"
+  n = Pin() {^n}
+  "Reduction output shaft, to the differential"
+  spline = Spline() {^spline}
+  "Machine housing and gear case"
+  support = Spline() {^support}
+  "Electrical power drawn from the bus [W], positive motoring (derived; bus voltage times current into p)"
+  P_elec = RealOutput() {^P_elec}
+
+  "Peak shaft torque, held from standstill to base speed (assumed)"
+  parameter T_max::Torque = 250.0
+  "Rated shaft power (assumed; a compact series hybrid's traction machine)"
+  parameter P_rated::Power = 80.0e3
+  "Corner speed, rated power divided by peak torque, about 3060 rpm (derived)"
+  parameter w_base::AngularVelocity = P_rated / T_max
+  "Machine design voltage, the 270 V bus of HybridDrive (assumed; ORNL-2011 Sonata pack)"
+  parameter V_nom::Voltage = 270.0
+  "Size factor relative to the Lecture 4 110 kW Leaf (derived; P_rated / 110 kW)"
+  parameter size_scale::Real = P_rated / 110.0e3
+  "Armature resistance (derived; Leaf scaling, Leaf R times (V_nom/350)^2 / size_scale)"
+  parameter R::Resistance = 0.05 * (V_nom / 350.0) ^ 2 / size_scale
+  "Inductance preserving the Leaf 10 ms electrical time constant (derived; L = 0.01 R)"
+  parameter L::Inductance = 0.01 * R
+  "Rotor inertia (derived; Leaf 0.05 kg.m2 times size_scale, assumed similarity)"
+  parameter J::Inertia = 0.05 * size_scale
+  "Bearing friction torque (derived; Leaf 0.5 N.m times size_scale, assumed similarity)"
+  parameter T_f::Torque = 0.5 * size_scale
+  "Iron-loss torque (derived; Leaf 1 N.m times size_scale, assumed similarity)"
+  parameter K_i::Torque = 1.0 * size_scale
+  "Windage coefficient (derived; Leaf coefficient times size_scale, assumed similarity at equal speed)"
+  parameter k_w::Real = 300.0 / (10100.0 * pi / 30.0) ^ 3 * size_scale
+  "Constant shaft loss (derived; Leaf 200 W times size_scale, assumed similarity)"
+  parameter C::Power = 200.0 * size_scale
+  "Low-speed loss regularization, retained from Lecture 4 (assumed)"
+  parameter w_reg::AngularVelocity = 10.0
+  "Single-speed reduction, machine to differential (Nissan)"
+  parameter ratio::Real = 8.193
+  "Maximum duty, no voltage boost (assumed; Lecture 4)"
+  parameter d_max::Real = 1.0
+  "Current-loop time constant (assumed; Lecture 4)"
+  parameter T_i::Time = 1.0e-3
+  "Converter conduction drop (assumed; Lecture 4)"
+  parameter V_on::Voltage = 1.2
+  "Switching frequency (assumed; Lecture 4 Leaf setting)"
+  parameter f_s::Frequency = 5.0e3
+  "Switching-edge duration (assumed; Lecture 4)"
+  parameter t_sw::Time = 1.0e-6
+  "Field/duty corner rounding (assumed; Lecture 4 numerical regularization)"
+  parameter eps::Real = 1.0e-4
+
+  machine = VehicleSystemsComponents.Vehicle.Electric.DCMachine(field_weakening = true, T_max = T_max, w_base = w_base, V_nom = V_nom, R = R, L = L, J = J, T_f = T_f, K_i = K_i, k_w = k_w, C = C, w_reg = w_reg) {^machine}
+  converter = VehicleSystemsComponents.Vehicle.Electric.Converter(I_max = (T_max + machine.tau_loss_base) / machine.k, d_max = d_max, T_i = T_i, V_on = V_on, f_s = f_s, t_sw = t_sw, eps = eps) {^converter}
+  reduction = RotationalComponents.Components.IdealGear(ratio = ratio) {^reduction}
+relations
+  connect(p, converter.p_in) {^bus_p_wire}
+  connect(n, converter.n, machine.n) {^bus_n_wire}
+  connect(converter.p_out, machine.p) {^machine_wire}
+  connect(converter.field, machine.field) {^field_wire}
+  connect(machine.spline, reduction.spline_a) {^shaft_wire}
+  connect(reduction.spline_b, spline) {^output_wire}
+  connect(machine.support, reduction.support, support) {^mount_wire}
+  converter.i_ref = tau_ref / (converter.field * machine.k)
+  P_elec = (p.v - n.v) * p.i
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/ElectricDrive.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
+  "_links": {
+    "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 150, "y1": -50, "x2": 250, "y2": 50}, "diagram": {"iconName": "pos", "x1": 150, "y1": -50, "x2": 250, "y2": 50}}}},
+    "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 150, "y1": 950, "x2": 250, "y2": 1050}, "diagram": {"iconName": "neg", "x1": 150, "y1": 950, "x2": 250, "y2": 1050}}}},
+    "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 400, "x2": 1050, "y2": 500}}}},
+    "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 788, "y1": 950, "x2": 888, "y2": 1050}}}},
+    "P_elec": {"Dyad": {"placement": {"icon": {"x1": 650, "y1": -50, "x2": 750, "y2": 50, "rot": 270}, "diagram": {"x1": 650, "y1": -50, "x2": 750, "y2": 50, "rot": 270}}}},
+    "converter": {"Dyad": {"placement": {"diagram": {"x1": 380, "y1": 360, "x2": 560, "y2": 540}}}},
+    "machine": {"Dyad": {"placement": {"diagram": {"x1": 640, "y1": 360, "x2": 820, "y2": 540}}}},
+    "reduction": {"Dyad": {"placement": {"diagram": {"x1": 855, "y1": 405, "x2": 945, "y2": 495}}}}
+  }
+}
+end

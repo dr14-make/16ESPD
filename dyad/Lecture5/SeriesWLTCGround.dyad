@@ -1,0 +1,146 @@
+"""
+Prepared ground for a series-hybrid WLTC run: the planar car with its road load, the WLTC
+trace, the PI driver, the torque split onto the front friction brakes and the SoC-corrected fuel
+meter, with no powertrain. A bench `extends` it and adds the powertrain.
+
+    trace -> driver -> split -> tau_motor (open)
+                             -> front friction brakes
+    differential.flange_b (open) -> front wheels
+    meter: speed wired; mdot_fuel and P_stored (open)
+
+What the extending bench has to provide:
+
+| Open end | Carries |
+|---|---|
+| `split.tau_motor` | traction-machine torque asked for, at the machine shaft [N.m] |
+| `differential.flange_b` | the reduction output that drives the front wheels |
+| `mount.spline` | a fixed housing for every powertrain support |
+| `meter.mdot_fuel` | the engine's fuel mass flow [kg/s] |
+| `meter.P_stored` | the power out of the battery's store, `E i` [W] |
+
+The driver, the split and the start are those of `Planar.PlanarBEVWLTC`: the driver's PI output
+is a machine torque in N.m per km/h of speed error, limited to the traction machine's peak
+torque `tau_max`; the split's `ratio` has to equal the traction drive's reduction, so that the
+friction brakes take the right wheel torque below `v_fade`. The wheels start `dv_wheel` ahead of
+the body (MultibodyComponents.jl#185). A run of the full cycle needs `optimize =
+OptimizationLevel.None()` on its analysis (four identical tire blocks; see docs/HANDOVER.md).
+"""
+partial component SeriesWLTCGround
+  "Vehicle mass, shared by the car and its road load (probe)"
+  parameter m::Mass = 1500.0
+  "Wheel radius (repository default)"
+  parameter radius::Length = 0.31
+  "Driver gain, machine torque per km/h of speed error (assumed; PlanarBEVWLTC)"
+  parameter k::Real = 50.0
+  "Driver integral time (assumed; PlanarBEVWLTC)"
+  parameter Ti::Time = 2.0
+  "Driver torque limit, the traction machine's peak torque (derived; TractionDrive T_max)"
+  parameter tau_max::Torque = 250.0
+  "Machine-to-differential reduction the split carries the brake torque through (derived; TractionDrive ratio)"
+  parameter ratio::Real = 8.193
+  "Speed below which the machine's braking share fades to zero, km/h (assumed; PlanarBEVWLTC)"
+  parameter v_fade::Real = 10.0
+  "Initial wheel surface speed above the body's, keeps the start off zero slip (assumed)"
+  parameter dv_wheel::Velocity = 0.01
+  trace = VehicleSystemsComponents.Vehicle.DriveCycle() {^trace}
+  driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_max) {^driver}
+  no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
+  kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
+  split = VehicleSystemsComponents.Vehicle.Electric.TorqueSplit(ratio = ratio, v_fade = v_fade) {^split}
+  differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
+  mount = RotationalComponents.Components.Fixed() {^mount}
+  straight = RotationalComponents.Components.Fixed() {^straight}
+  flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius) {^car}
+  motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
+  roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
+  meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel() {^meter}
+relations
+  connect(car.bus, motion.bus) {^bus_wire}
+  connect(trace.y, driver.u_s) {^trace_wire}
+  connect(motion.vx, kmh.u, meter.speed) {^speed_wire}
+  connect(kmh.y, driver.u_m, split.v) {^kmh_wire}
+  connect(no_ff.y, driver.u_ff) {^ff_wire}
+  connect(driver.y, split.tau_ref) {^demand_wire}
+  connect(split.tau_brake, car.tau_fl, car.tau_fr) {^brake_wire}
+  connect(differential.flange_left, car.spin_fl) {^left_wire}
+  connect(differential.flange_right, car.spin_fr) {^right_wire}
+  connect(car.steering, straight.spline) {^steer_wire}
+  connect(flat.y, roadload.grade) {^grade_wire}
+  connect(car.chassis, roadload.chassis) {^load_wire}
+  car.tau_rl = 0.0
+  car.tau_rr = 0.0
+  initial car.body.r = [0, 0]
+  initial car.body.v = [0, 0]
+  initial car.body.phi = 0.0
+  initial car.body.w = 0.0
+  initial car.fl.inertia.w = dv_wheel / radius
+  initial car.fr.inertia.w = dv_wheel / radius
+  initial car.rl.inertia.w = dv_wheel / radius
+  initial car.rr.inertia.w = dv_wheel / radius
+  initial car.fl.inertia.phi = 0.0
+  initial car.fr.inertia.phi = 0.0
+  initial car.rl.inertia.phi = 0.0
+  initial car.rr.inertia.phi = 0.0
+  initial car.fl.brake.tau_actual = 0.0
+  initial car.fr.brake.tau_actual = 0.0
+  initial car.rl.brake.tau_actual = 0.0
+  initial car.rr.brake.tau_actual = 0.0
+metadata {
+  "_links": {
+    "trace": {"Dyad": {"placement": {"diagram": {"x1": 20, "y1": 57, "x2": 100, "y2": 137}}}},
+    "driver": {"Dyad": {"placement": {"diagram": {"x1": 140, "y1": 70, "x2": 240, "y2": 170}}}},
+    "no_ff": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 10, "x2": 140, "y2": 50}}}},
+    "kmh": {"Dyad": {"placement": {"diagram": {"x1": 40, "y1": 190, "x2": 110, "y2": 260}}}},
+    "split": {"Dyad": {"placement": {"diagram": {"x1": 290, "y1": 70, "x2": 390, "y2": 170}}}},
+    "differential": {"Dyad": {"placement": {"diagram": {"x1": 560, "y1": 260, "x2": 640, "y2": 340}}}},
+    "mount": {"Dyad": {"placement": {"diagram": {"x1": 485, "y1": 190, "x2": 545, "y2": 240}}}},
+    "straight": {"Dyad": {"placement": {"diagram": {"x1": 605, "y1": 500, "x2": 655, "y2": 550, "rot": 180}}}},
+    "flat": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 880, "x2": 480, "y2": 920}}}},
+    "car": {"Dyad": {"placement": {"diagram": {"x1": 520, "y1": 600, "x2": 740, "y2": 820}}}},
+    "motion": {"Dyad": {"placement": {"diagram": {"x1": 775, "y1": 610, "x2": 975, "y2": 810}}}},
+    "roadload": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 865, "x2": 570, "y2": 935}}}},
+    "meter": {"Dyad": {"placement": {"diagram": {"x1": 800, "y1": 860, "x2": 900, "y2": 960}}}}
+  }
+}
+end
+
+"""
+The ground driven electric-only through the WLTC Low phase: `Vehicle.Electric.TractionDrive` on
+a battery of `HybridDrive`'s pack defaults, 270 V, 1.4 kWh and 0.33 Ohm, with the 12 V
+auxiliaries on the same bus and no engine, so the meter's fuel input is zero. It checks that the
+ground and the traction drive follow the trace; a charge-depleting run, not a series hybrid.
+"""
+test component SeriesGroundElectric
+  extends VehicleSystemsComponents.Lecture5.SeriesWLTCGround
+  "Pack open-circuit voltage (ORNL-2011; HybridDrive)"
+  parameter E_pack::Voltage = 270.0
+  "Pack capacity, 1.4 kWh / E_pack (derived; HybridDrive)"
+  parameter Q_pack::ElectricCharge = 1.4e3 * 3600.0 / E_pack
+  "Pack resistance (INL; HybridDrive)"
+  parameter R0_pack::Resistance = 0.33
+  "Initial SoC (assumed; HybridDrive)"
+  parameter SoC0::Real = 0.6
+  "Power drawn by the 12 V network (assumed; PlanarBEVWLTC)"
+  parameter P_aux::Power = 300.0
+  battery = VehicleSystemsComponents.Vehicle.Electric.Battery(E = E_pack, Q_nom = Q_pack, R0 = R0_pack, SoC0 = SoC0) {^battery}
+  aux = VehicleSystemsComponents.Vehicle.Electric.AuxLoad(P_aux = P_aux) {^aux}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  drive = VehicleSystemsComponents.Vehicle.Electric.TractionDrive(T_max = tau_max, ratio = ratio) {^drive}
+  no_fuel = BlockComponents.Sources.Constant(k = 0.0) {^no_fuel}
+relations
+  connect(battery.p, aux.p, drive.p)
+  connect(battery.n, aux.n, drive.n, ground.g)
+  connect(split.tau_motor, drive.tau_ref)
+  connect(drive.spline, differential.flange_b)
+  connect(drive.support, mount.spline)
+  connect(no_fuel.y, meter.mdot_fuel)
+  meter.P_stored = battery.E * battery.i
+  initial drive.converter.i_out = 0.0
+end
+
+"Electric-only WLTC Low phase on the series ground (derived; UNECE phase boundary 589 s)."
+analysis SeriesGroundElectricTransient
+  extends TransientAnalysis(stop = 589.0, alg = ODEAlg.Rodas5P(), dtmax = 1.0, optimize = OptimizationLevel.None())
+  model = SeriesGroundElectric()
+end

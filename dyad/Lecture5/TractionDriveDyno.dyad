@@ -1,0 +1,40 @@
+"""
+Traction-drive envelope bench (assumed; Lecture 4 dyno method). `Vehicle.Electric.TractionDrive`
+on a stiff 270 V bus, a battery with 1 mOhm and 100 kWh, so that the envelope is the drive's own
+and not the pack's sag; the series car's 0.33 Ohm pack could not deliver 80 kW at all. A
+saturated torque request exposes the current ceiling and field weakening. Hold 200 rpm for one
+second, ramp to 9500 rpm, above WLTC's 9200 rpm at the machine, in 20 seconds, then hold for one
+second.
+"""
+test component TractionDriveDyno
+  "Peak torque forwarded to the drive (assumed; TractionDrive)"
+  parameter T_max::Torque = 250.0
+  "Bus open-circuit voltage (assumed; HybridDrive's 270 V)"
+  parameter E_bus::Voltage = 270.0
+  "Initial dyno speed [rpm] (assumed; above loss regularization)"
+  parameter rpm_start::Real = 200.0
+  "Final dyno speed [rpm] (assumed; past WLTC's top machine speed)"
+  parameter rpm_end::Real = 9500.0
+  drive = VehicleSystemsComponents.Vehicle.Electric.TractionDrive(T_max = T_max, ratio = 1.0)
+  bus = VehicleSystemsComponents.Vehicle.Electric.Battery(E = E_bus, R0 = 1.0e-3, Q_nom = 100.0e3 * 3600.0 / E_bus, SoC0 = 0.5)
+  ground = ElectricalComponents.Analog.Basic.Ground()
+  request = BlockComponents.Sources.Constant(k = 2.0 * T_max)
+  speed = BlockComponents.Sources.Ramp(height = (rpm_end - rpm_start) * pi / 30.0, offset = rpm_start * pi / 30.0, start_time = 1.0, duration = 20.0)
+  dyno = RotationalComponents.Sources.VelocitySource()
+  mounts = RotationalComponents.Components.Fixed()
+relations
+  initial dyno.phi = 0.0
+  initial drive.converter.i_out = 0.0
+  connect(bus.p, drive.p)
+  connect(bus.n, drive.n, ground.g)
+  connect(request.y, drive.tau_ref)
+  connect(speed.y, dyno.w_ref)
+  connect(drive.spline, dyno.spline)
+  connect(drive.support, dyno.support, mounts.spline)
+end
+
+"Traction-drive dyno analysis (assumed; Lecture 4 method)"
+analysis TractionDriveDynoTransient
+  extends TransientAnalysis(stop = 22.0, alg = ODEAlg.Rodas5P(), saveat = 0.01, tstops = [1.0, 21.0])
+  model = TractionDriveDyno()
+end
