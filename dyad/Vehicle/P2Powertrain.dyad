@@ -20,7 +20,7 @@ component P2Powertrain
   structural parameter start_stop::Boolean = false
   "Engine latch, 0 off to 1 running"
   engine_on = RealInput() if start_stop
-  "Engine torque already subtracted from the machine command [N.m]"
+  "Manager's assumed engine torque subtracted from driving demand before its machine clamp [N.m]"
   engine_torque_ref = RealInput() if start_stop
   "Lower end of the smooth firing-speed band [rpm]"
   parameter firing_rpm::Real = 400.0
@@ -28,6 +28,7 @@ component P2Powertrain
   parameter firing_width::Real(min = eps(Float64)) = 300.0
   variable firing_fraction::Real
   variable start_compensation::Torque
+  variable machine_limit::Torque
   "Output to planar differential (derived; P2 layout)"
   spline = Spline() {^spline}
   "Stationary housing (assumed; planar bench)"
@@ -65,12 +66,13 @@ relations
   initial drive.machine.rotor.phi = 0.0
   connect(engine_pedal, engine.pedal)
   connect(engage, k0.engage)
+  machine_limit = min(drive.T_max, drive.P_rated / max(abs(drive.machine.w), 1.0))
   if start_stop
     firing_fraction = min(max((engine.N - firing_rpm) / firing_width, 0.0), 1.0)
     engine.fuel_enable = engine_on * firing_fraction^2 * (3.0 - 2.0 * firing_fraction)
     # Replace assumed engine delivery by the measured K0 torque, including crank drag.
     start_compensation = engine_torque_ref - k0.tau
-    drive.tau_ref = tau_ref + start_compensation
+    drive.tau_ref = min(max(tau_ref + start_compensation, -machine_limit), machine_limit)
   else
     firing_fraction = 1.0
     start_compensation = 0.0

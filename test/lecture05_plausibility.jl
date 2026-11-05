@@ -885,6 +885,10 @@ include("torque_to_pedal.jl")
     at(x) = s(ts, idxs = x).u
     integrate(y) = sum((y[1:end-1] .+ y[2:end]) ./ 2) * 0.05
     soc = at(m.powertrain.SoC)
+    ref = at(m.powertrain.drive.tau_ref)
+    limit = at(m.powertrain.machine_limit)
+    @test maximum(abs.(ref) .- limit) <= 1e-6
+
     @test abs(soc[end] - soc[1]) <= 0.02
     @test minimum(soc) >= 0.4
     @test maximum(soc) <= 0.8
