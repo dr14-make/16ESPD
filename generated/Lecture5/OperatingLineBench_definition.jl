@@ -5,16 +5,17 @@
 
 
 @doc Markdown.doc"""
-   OperatingLineBench(; name, wheel_rpm, P_start, P_hold, P_end, J_engine, i_start, __overrides)
+   OperatingLineBench(; name, wheel_rpm, P_start, P_hold, P_end, J_engine, i_overdrive, __overrides)
 
 CVT holding an engine on its best-BSFC line, on a dyno at fixed wheel speed (assumed bench).
 
 The requested power ramps from 1 kW to a 32 kW hold, then past peak power. The operating line
 turns it into a target engine speed, the variator commands the ratio that puts the input shaft
 there, and the engine stand-in delivers the requested power at whatever speed the shaft runs.
-At 450 wheel rpm the ratio range [2.8, 12] reaches 1260 to 5400 engine rpm: below 8 kW the
-line asks for less and the ratio sits at overdrive, above 80 kW it asks for more and the ratio
-sits at launch, and in between the input shaft follows the line through the actuator lag.
+At 450 wheel rpm the ratio range [2.8, 12] reaches 1260 to 5400 engine rpm. Below about 8 kW
+the line asks for less and the ratio sits at overdrive, above about 81 kW it asks for more and
+the ratio sits at launch, and in between the input shaft follows the line through the actuator
+lag. The variator's output-speed floor moves both thresholds slightly up.
 
 ## Parameters:
 
@@ -25,7 +26,7 @@ sits at launch, and in between the input shaft follows the line through the actu
 | `P_hold`         | Held power request (assumed; the line's best-BSFC point)                         | W  |   32.0e3 |
 | `P_end`         | Final power request (assumed; above the line's 85.6 kW peak)                         | W  |   86.0e3 |
 | `J_engine`         | Engine stand-in inertia (assumed for a 1.4 L petrol engine)                         | kg.m2  |   0.15 |
-| `i_start`         | Initial ratio, overdrive since the line's idle speed is below its reach (assumed)                         | --  |   2.8 |
+| `i_overdrive`         | Overdrive ratio, also the initial ratio since the line's idle speed is below its reach (assumed for a small-car belt CVT)                         | --  |   2.8 |
 
 ## Variables
 
@@ -33,7 +34,7 @@ sits at launch, and in between the input shaft follows the line through the actu
 | ------------ | ----------------------------------- | ------ |
 | `P_req`         | Requested engine power                         | W  |
 """
-@component function OperatingLineBench(; name = nothing, var"wheel_rpm"=Float64(450.0), var"P_start"=Float64(1000.0), var"P_hold"=Float64(32000.0), var"P_end"=Float64(86000.0), var"J_engine"=0.15, var"i_start"=2.8, __overrides = Dict{String, Any}())
+@component function OperatingLineBench(; name = nothing, var"wheel_rpm"=Float64(450.0), var"P_start"=Float64(1000.0), var"P_hold"=Float64(32000.0), var"P_end"=Float64(86000.0), var"J_engine"=0.15, var"i_overdrive"=2.8, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -57,7 +58,7 @@ sits at launch, and in between the input shaft follows the line through the actu
   haskey(__overrides, "P_hold") && (P_hold = pop!(__overrides, "P_hold"))
   haskey(__overrides, "P_end") && (P_end = pop!(__overrides, "P_end"))
   haskey(__overrides, "J_engine") && (J_engine = pop!(__overrides, "J_engine"))
-  haskey(__overrides, "i_start") && (i_start = pop!(__overrides, "i_start"))
+  haskey(__overrides, "i_overdrive") && (i_overdrive = pop!(__overrides, "i_overdrive"))
 
   ### Structural Parameters (functions)
 
@@ -87,9 +88,9 @@ sits at launch, and in between the input shaft follows the line through the actu
   __local__J_engine = J_engine
   append!(__params, @parameters (J_engine::Real), [description = "Engine stand-in inertia (assumed for a 1.4 L petrol engine)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, J_engine, __local__J_engine)
-  __local__i_start = i_start
-  append!(__params, @parameters (i_start::Real), [description = "Initial ratio, overdrive since the line's idle speed is below its reach (assumed)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, i_start, __local__i_start)
+  __local__i_overdrive = i_overdrive
+  append!(__params, @parameters (i_overdrive::Real), [description = "Overdrive ratio, also the initial ratio since the line's idle speed is below its reach (assumed for a small-car belt CVT)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, i_overdrive, __local__i_overdrive)
 
   ### Final Parameters (assignments)
 
@@ -118,7 +119,7 @@ sits at launch, and in between the input shaft follows the line through the actu
   push!(__systems, @named line = VehicleSystemsComponents.Vehicle.OperatingLine(; __overrides = line_overrides))
   # Subcomponent variator of type VehicleSystemsComponents.Vehicle.SpeedCommandedVariator
   variator_overrides = __pop_subcomponent_overrides!(__overrides, "variator")
-  push!(__systems, @named variator = VehicleSystemsComponents.Vehicle.SpeedCommandedVariator(; ratio_initial=i_start, __overrides = variator_overrides))
+  push!(__systems, @named variator = VehicleSystemsComponents.Vehicle.SpeedCommandedVariator(; i_overdrive=i_overdrive, ratio_initial=i_overdrive, __overrides = variator_overrides))
   # Subcomponent engine of type RotationalComponents.Sources.TorqueSource
   engine_overrides = __pop_subcomponent_overrides!(__overrides, "engine")
   push!(__systems, @named engine = RotationalComponents.Sources.TorqueSource(; __overrides = engine_overrides))

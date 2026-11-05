@@ -162,9 +162,10 @@ export OperatingLineBenchTransient__System
   # The requested power ramps from 1 kW to a 32 kW hold, then past peak power. The operating line
   # turns it into a target engine speed, the variator commands the ratio that puts the input shaft
   # there, and the engine stand-in delivers the requested power at whatever speed the shaft runs.
-  # At 450 wheel rpm the ratio range [2.8, 12] reaches 1260 to 5400 engine rpm: below 8 kW the
-  # line asks for less and the ratio sits at overdrive, above 80 kW it asks for more and the ratio
-  # sits at launch, and in between the input shaft follows the line through the actuator lag.
+  # At 450 wheel rpm the ratio range [2.8, 12] reaches 1260 to 5400 engine rpm. Below about 8 kW
+  # the line asks for less and the ratio sits at overdrive, above about 81 kW it asks for more and
+  # the ratio sits at launch, and in between the input shaft follows the line through the actuator
+  # lag. The variator's output-speed floor moves both thresholds slightly up.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture5.OperatingLineBench(; name=:OperatingLineBench)
   __system::System = OperatingLineBenchTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file", var"wheel_rpm"=var"wheel_rpm")
 end

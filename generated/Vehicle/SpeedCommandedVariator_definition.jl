@@ -14,7 +14,9 @@ wheel-side speed reduction, the requested ratio places the input shaft at the ta
 the actual ratio reaches it through a first-order lag. The target comes from a signal, such as an
 engine operating line, instead of the pedal schedule. Outside [i_overdrive, i_launch] the ratio
 saturates and the input speed leaves the target: below it at launch, above it at speed. The
-output speed floor biases the ratio low by sqrt(1 + (floor / N_b)^2), 0.6 % at 450 rpm.
+output speed floor reads the output speed as sqrt(N_b^2 + floor^2) and so holds the input
+shaft below the target by the factor N_b / sqrt(N_b^2 + floor^2) of the true output speed N_b,
+negligible at cruise and large near standstill.
 
 ## Parameters:
 
