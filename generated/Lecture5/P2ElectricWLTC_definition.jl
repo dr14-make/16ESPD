@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   P2ElectricWLTC(; name, electric, m, radius, k, Ti, tau_max, dv_wheel, engage_rpm, engage_width_rpm, __overrides)
+   P2ElectricWLTC(; name, electric, m, radius, k, Ti, tau_max, dv_wheel, engage_rpm, engage_width_rpm, tau_brake, brake_gain, lock_rpm, lock_width_rpm, __overrides)
 
 Electric-only fixed fixture (derived; P2WLTC with stopped engine).
 
@@ -18,12 +18,16 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
 | `radius`         | Wheel radius (derived; planar benchmark)                         | m  |   0.31 |
 | `k`         | PI gain, input-shaft N.m per km/h: 50 as the BEV driver for electric-only, 70 for engine-only launch through K0 (tuned to the tracking band)                         | --  |   ifelse(elec...50.0, 70.0) |
 | `Ti`         | PI integral time (assumed; BEV driver)                         | s  |   2.0 |
-| `tau_max`         | Signed driver torque ceiling (assumed; hybrid machine peak)                         | N.m  |   205.0 |
+| `tau_max`         | Positive driver ceiling [N.m], pedal saturation or machine peak                         | N.m  |   ifelse(elec...5.0, 150.0) |
 | `dv_wheel`         | Initial wheel surface speed offset (assumed; MultibodyComponents #185)                         | m/s  |   0.01 |
 | `engage_rpm`         | Center of K0 launch engagement [rpm] (assumed; CentrifugalClutch)                         | --  |   1300.0 |
 | `engage_width_rpm`         | Width of K0 launch engagement [rpm] (assumed; CentrifugalClutch)                         | --  |   120.0 |
+| `tau_brake`         | Negative PI limit [N.m], independent of propulsion saturation                         | N.m  |   205.0 |
+| `brake_gain`         | Total wheel brake torque per negative driver N.m, launch ratio reference                         | --  |   12.0 |
+| `lock_rpm`         | Center of machine-side K0 lock-up ramp [rpm]; open at 800 rpm idle, closed by 880 rpm                         | --  |   840.0 |
+| `lock_width_rpm`         | Width of machine-side K0 lock-up ramp [rpm]                         | --  |   12.0 |
 """
-@component function P2ElectricWLTC(; name = nothing, var"electric"=true, var"m"=Float64(1500.0), var"radius"=0.31, var"Ti"=Float64(2.0), var"tau_max"=Float64(205.0), var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"k"=nothing, __overrides = Dict{String, Any}())
+@component function P2ElectricWLTC(; name = nothing, var"electric"=true, var"m"=Float64(1500.0), var"radius"=0.31, var"Ti"=Float64(2.0), var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"tau_brake"=Float64(205.0), var"brake_gain"=Float64(12.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"k"=nothing, var"tau_max"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -46,14 +50,19 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
   haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
   haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
   haskey(__overrides, "Ti") && (Ti = pop!(__overrides, "Ti"))
-  haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
   haskey(__overrides, "dv_wheel") && (dv_wheel = pop!(__overrides, "dv_wheel"))
   haskey(__overrides, "engage_rpm") && (engage_rpm = pop!(__overrides, "engage_rpm"))
   haskey(__overrides, "engage_width_rpm") && (engage_width_rpm = pop!(__overrides, "engage_width_rpm"))
+  haskey(__overrides, "tau_brake") && (tau_brake = pop!(__overrides, "tau_brake"))
+  haskey(__overrides, "brake_gain") && (brake_gain = pop!(__overrides, "brake_gain"))
+  haskey(__overrides, "lock_rpm") && (lock_rpm = pop!(__overrides, "lock_rpm"))
+  haskey(__overrides, "lock_width_rpm") && (lock_width_rpm = pop!(__overrides, "lock_width_rpm"))
   haskey(__overrides, "k") && (k = pop!(__overrides, "k"))
+  haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
 
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
   isnothing(k) && (k = ifelse(electric, 50.0, 70.0))
+  isnothing(tau_max) && (tau_max = ifelse(electric, 205.0, 150.0))
 
   ### Structural Parameters (functions)
 
@@ -81,7 +90,7 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
   append!(__params, @parameters (Ti::Real), [description = "PI integral time (assumed; BEV driver)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, Ti, __local__Ti)
   __local__tau_max = tau_max
-  append!(__params, @parameters (tau_max::Real), [description = "Signed driver torque ceiling (assumed; hybrid machine peak)"])
+  append!(__params, @parameters (tau_max::Real), [description = "Positive driver ceiling [N.m], pedal saturation or machine peak"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, tau_max, __local__tau_max)
   __local__dv_wheel = dv_wheel
   append!(__params, @parameters (dv_wheel::Real), [description = "Initial wheel surface speed offset (assumed; MultibodyComponents #185)"])
@@ -92,6 +101,18 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
   __local__engage_width_rpm = engage_width_rpm
   append!(__params, @parameters (engage_width_rpm::Real), [description = "Width of K0 launch engagement [rpm] (assumed; CentrifugalClutch)", bounds = (eps(Float64), Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, engage_width_rpm, __local__engage_width_rpm)
+  __local__tau_brake = tau_brake
+  append!(__params, @parameters (tau_brake::Real), [description = "Negative PI limit [N.m], independent of propulsion saturation"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_brake, __local__tau_brake)
+  __local__brake_gain = brake_gain
+  append!(__params, @parameters (brake_gain::Real), [description = "Total wheel brake torque per negative driver N.m, launch ratio reference"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, brake_gain, __local__brake_gain)
+  __local__lock_rpm = lock_rpm
+  append!(__params, @parameters (lock_rpm::Real), [description = "Center of machine-side K0 lock-up ramp [rpm]; open at 800 rpm idle, closed by 880 rpm"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lock_rpm, __local__lock_rpm)
+  __local__lock_width_rpm = lock_width_rpm
+  append!(__params, @parameters (lock_width_rpm::Real), [description = "Width of machine-side K0 lock-up ramp [rpm]", bounds = (eps(Float64), Inf)])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lock_width_rpm, __local__lock_width_rpm)
 
   ### Final Parameters (assignments)
 
@@ -110,7 +131,7 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
   push!(__systems, @named trace = VehicleSystemsComponents.Vehicle.DriveCycle(; __overrides = trace_overrides))
   # Subcomponent driver of type BlockComponents.Continuous.LimPID
   driver_overrides = __pop_subcomponent_overrides!(__overrides, "driver")
-  push!(__systems, @named driver = BlockComponents.Continuous.LimPID(; with_D=false, k=k, Ti=Ti, y_max=tau_max, y_min=-tau_max, __overrides = driver_overrides))
+  push!(__systems, @named driver = BlockComponents.Continuous.LimPID(; with_D=false, k=k, Ti=Ti, y_max=tau_max, y_min=-tau_brake, __overrides = driver_overrides))
   # Subcomponent no_ff of type BlockComponents.Sources.Constant
   no_ff_overrides = __pop_subcomponent_overrides!(__overrides, "no_ff")
   push!(__systems, @named no_ff = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = no_ff_overrides))
@@ -185,7 +206,6 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
 
   ### Equations
   push!(__eqs, meter.P_stored ~ powertrain.E * powertrain.i)
-  push!(__eqs, powertrain.cvt_pedal ~ min(max(driver.y / 150.0, 0.0), 1.0))
   push!(__eqs, car.tau_rl ~ 0.0)
   push!(__eqs, car.tau_rr ~ 0.0)
   push!(__eqs, connect(car.bus, motion.bus))
@@ -205,16 +225,18 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
 
   ### Control Structures
   if electric
+    push!(__eqs, powertrain.cvt_pedal ~ min(max(driver.y / 150.0, 0.0), 1.0))
     push!(__eqs, powertrain.engine_pedal ~ 0.0)
     push!(__eqs, powertrain.engage ~ 0.0)
     push!(__eqs, connect(split.tau_motor, powertrain.tau_ref))
     push!(__eqs, car.tau_fl ~ split.tau_brake * powertrain.variator.ratio)
     push!(__eqs, car.tau_fr ~ car.tau_fl)
   else
-    push!(__eqs, powertrain.engine_pedal ~ min(max(driver.y / 150.0, 0.0), 1.0))
-    push!(__eqs, powertrain.engage ~ 0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)))
+    push!(__eqs, powertrain.engine_pedal ~ min(max(driver.y / tau_max, 0.0), 1.0))
+    push!(__eqs, powertrain.cvt_pedal ~ powertrain.engine_pedal)
+    push!(__eqs, powertrain.engage ~ max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
     push!(__eqs, powertrain.tau_ref ~ 0.0)
-    push!(__eqs, car.tau_fl ~ -min(driver.y, 0.0) * powertrain.variator.ratio / 2.0)
+    push!(__eqs, car.tau_fl ~ -min(driver.y, 0.0) * brake_gain / 2.0)
     push!(__eqs, car.tau_fr ~ car.tau_fl)
   end
 

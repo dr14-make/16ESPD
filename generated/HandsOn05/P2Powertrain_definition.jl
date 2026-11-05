@@ -5,18 +5,17 @@
 
 
 @doc Markdown.doc"""
-   P2Powertrain(; name, engine_stopped, position_start, engine_speed_start, __overrides)
+   P2Powertrain(; name, speed_commanded, engine_stopped, position_start, engine_speed_start, __overrides)
 
-P2 transmission-input hybrid (derived; Lecture 5 S2, ORNL-2011 sizing).
-MappedEngine drives K0, then the HybridDrive shaft and ControlledVariator. Plan S2's existing
-CVT means the variator including final drive, not CVTDriveline's centrifugal launch clutch
-or ideal rolling wheel. The distinct `variator` child permits a speed-commanded replacement.
-`engine_stopped` is a fixed test configuration, not an engine-start model.
+P2 transmission-input hybrid with a pedal- or speed-commanded total CVT ratio.
+MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to ground.
+`engine_stopped` holds the engine with fuel cut for fixed electric-only tests.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `speed_commanded`         | Select speed-commanded CVT scheduling                         | --  |   false |
 | `engine_stopped`         | Hold engine stopped with fuel cut for an electric-only fixture (assumed; no start dynamics)                         | --  |   false |
 | `position_start`         | Initial K0 position (assumed; fixed-mode bench)                         | --  |   0.0 |
 | `engine_speed_start`         | Initial running-engine speed [rad/s] (assumed; 800 rpm idle for launch)                         | rad/s  |   800.0 * pi / 30 |
@@ -27,6 +26,7 @@ or ideal rolling wheel. The distinct `variator` child permits a speed-commanded 
  * `engage` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `tau_ref` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `cvt_pedal` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `N_ref` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `spline` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `support` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `engine_speed` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
@@ -38,7 +38,7 @@ or ideal rolling wheel. The distinct `variator` child permits a speed-commanded 
  * `E` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `i` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function P2Powertrain(; name = nothing, var"engine_stopped"=false, var"position_start"=Float64(0.0), var"engine_speed_start"=800.0 * pi / 30, __overrides = Dict{String, Any}())
+@component function P2Powertrain(; name = nothing, var"speed_commanded"=false, var"engine_stopped"=false, var"position_start"=Float64(0.0), var"engine_speed_start"=800.0 * pi / 30, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -57,6 +57,7 @@ or ideal rolling wheel. The distinct `variator` child permits a speed-commanded 
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "speed_commanded") && (speed_commanded = pop!(__overrides, "speed_commanded"))
   haskey(__overrides, "engine_stopped") && (engine_stopped = pop!(__overrides, "engine_stopped"))
   haskey(__overrides, "position_start") && (position_start = pop!(__overrides, "position_start"))
   haskey(__overrides, "engine_speed_start") && (engine_speed_start = pop!(__overrides, "engine_speed_start"))
@@ -88,6 +89,7 @@ or ideal rolling wheel. The distinct `variator` child permits a speed-commanded 
   append!(__vars, @variables (engage(t)::Real), [input = true])
   append!(__vars, @variables (tau_ref(t)::Real), [input = true])
   append!(__vars, @variables (cvt_pedal(t)::Real), [input = true])
+  append!(__vars, @variables (N_ref(t)::Real), [input = true])
   append!(__vars, @variables (engine_speed(t)::Real), [output = true])
   append!(__vars, @variables (engine_torque(t)::Real), [output = true])
   append!(__vars, @variables (mdot_fuel(t)::Real), [output = true])
@@ -118,7 +120,14 @@ or ideal rolling wheel. The distinct `variator` child permits a speed-commanded 
   push!(__systems, @named drive = VehicleSystemsComponents.Vehicle.Electric.HybridDrive(; __overrides = drive_overrides))
   # Subcomponent variator of type VehicleSystemsComponents.Vehicle.ControlledVariator
   variator_overrides = __pop_subcomponent_overrides!(__overrides, "variator")
-  push!(__systems, @named variator = VehicleSystemsComponents.Vehicle.ControlledVariator(; __overrides = variator_overrides))
+  if !speed_commanded
+    push!(__systems, @named variator = VehicleSystemsComponents.Vehicle.ControlledVariator(; __overrides = variator_overrides))
+  end
+  # Subcomponent speed_variator of type VehicleSystemsComponents.Vehicle.SpeedCommandedVariator
+  speed_variator_overrides = __pop_subcomponent_overrides!(__overrides, "speed_variator")
+  if speed_commanded
+    push!(__systems, @named speed_variator = VehicleSystemsComponents.Vehicle.SpeedCommandedVariator(; __overrides = speed_variator_overrides))
+  end
   # Subcomponent hold of type RotationalComponents.Components.Fixed
   hold_overrides = __pop_subcomponent_overrides!(__overrides, "hold")
   if engine_stopped
@@ -145,17 +154,25 @@ or ideal rolling wheel. The distinct `variator` child permits a speed-commanded 
   push!(__eqs, connect(engine_pedal, engine.pedal))
   push!(__eqs, connect(engage, k0.engage))
   push!(__eqs, connect(tau_ref, drive.tau_ref))
-  push!(__eqs, connect(cvt_pedal, variator.pedal))
   push!(__eqs, connect(engine.spline, k0.spline_a))
-  push!(__eqs, connect(k0.spline_b, drive.spline, variator.spline_a))
-  push!(__eqs, connect(variator.spline_b, spline))
-  push!(__eqs, connect(engine.support, k0.support, drive.support, variator.support, support))
+  push!(__eqs, connect(engine.support, k0.support, drive.support, support))
   push!(__eqs, connect(engine.speed.w, engine_speed))
   push!(__eqs, connect(engine.tau_e, engine_torque))
   push!(__eqs, connect(engine.mdot_fuel, mdot_fuel))
   push!(__eqs, connect(drive.SoC, SoC))
 
   ### Control Structures
+  if speed_commanded
+    push!(__eqs, connect(N_ref, speed_variator.N_ref))
+    push!(__eqs, connect(k0.spline_b, drive.spline, speed_variator.spline_a))
+    push!(__eqs, connect(speed_variator.spline_b, spline))
+    push!(__eqs, connect(speed_variator.support, support))
+  else
+    push!(__eqs, connect(cvt_pedal, variator.pedal))
+    push!(__eqs, connect(k0.spline_b, drive.spline, variator.spline_a))
+    push!(__eqs, connect(variator.spline_b, spline))
+    push!(__eqs, connect(variator.support, support))
+  end
   if engine_stopped
     push!(__eqs, connect(engine.spline, hold.spline))
   else

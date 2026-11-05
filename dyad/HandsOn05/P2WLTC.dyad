@@ -10,16 +10,24 @@ test component P2WLTC
   parameter k::Real = ifelse(electric, 50.0, 70.0)
   "PI integral time (assumed; BEV driver)"
   parameter Ti::Time = 2.0
-  "Signed driver torque ceiling (assumed; hybrid machine peak)"
-  parameter tau_max::Torque = 205.0
+  "Positive driver ceiling [N.m], pedal saturation or machine peak"
+  parameter tau_max::Torque = ifelse(electric, 205.0, 150.0)
   "Initial wheel surface speed offset (assumed; MultibodyComponents #185)"
   parameter dv_wheel::Velocity = 0.01
   "Center of K0 launch engagement [rpm] (assumed; CentrifugalClutch)"
   parameter engage_rpm::Real = 1300.0
   "Width of K0 launch engagement [rpm] (assumed; CentrifugalClutch)"
   parameter engage_width_rpm::Real(min = eps(Float64)) = 120.0
+  "Negative PI limit [N.m], independent of propulsion saturation"
+  parameter tau_brake::Torque = 205.0
+  "Total wheel brake torque per negative driver N.m, launch ratio reference"
+  parameter brake_gain::Real = 12.0
+  "Center of machine-side K0 lock-up ramp [rpm]; open at 800 rpm idle, closed by 880 rpm"
+  parameter lock_rpm::Real = 840.0
+  "Width of machine-side K0 lock-up ramp [rpm]"
+  parameter lock_width_rpm::Real(min = eps(Float64)) = 12.0
   trace = VehicleSystemsComponents.Vehicle.DriveCycle() {^trace}
-  driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_max) {^driver}
+  driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_brake) {^driver}
   no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
   kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
   powertrain = VehicleSystemsComponents.HandsOn05.P2Powertrain(engine_stopped = electric, position_start = 0.0, drive(P_aux = ifelse(electric, 300.0, 0.0), T_f = ifelse(electric, 0.5 * (30.0e3 / 110.0e3), 0.0), K_i = ifelse(electric, 1.0 * (30.0e3 / 110.0e3), 0.0), k_w = ifelse(electric, 300.0 / (10100.0 * pi / 30.0) ^ 3 * (30.0e3 / 110.0e3), 0.0), C = ifelse(electric, 200.0 * (30.0e3 / 110.0e3), 0.0), J = ifelse(electric, 0.05 * (30.0e3 / 110.0e3), 0.0))) {^powertrain}
@@ -48,18 +56,19 @@ relations
   connect(driver.y, split.tau_ref)
   connect(powertrain.mdot_fuel, meter.mdot_fuel)
   meter.P_stored = powertrain.E * powertrain.i
-  powertrain.cvt_pedal = min(max(driver.y / 150.0, 0.0), 1.0)
   if electric
+    powertrain.cvt_pedal = min(max(driver.y / 150.0, 0.0), 1.0)
     powertrain.engine_pedal = 0.0
     powertrain.engage = 0.0
     connect(split.tau_motor, powertrain.tau_ref)
     car.tau_fl = split.tau_brake * powertrain.variator.ratio
     car.tau_fr = car.tau_fl
   else
-    powertrain.engine_pedal = min(max(driver.y / 150.0, 0.0), 1.0)
-    powertrain.engage = 0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm))
+    powertrain.engine_pedal = min(max(driver.y / tau_max, 0.0), 1.0)
+    powertrain.cvt_pedal = powertrain.engine_pedal
+    powertrain.engage = max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm)))
     powertrain.tau_ref = 0.0
-    car.tau_fl = -min(driver.y, 0.0) * powertrain.variator.ratio / 2.0
+    car.tau_fl = -min(driver.y, 0.0) * brake_gain / 2.0
     car.tau_fr = car.tau_fl
   end
   car.tau_rl = 0.0

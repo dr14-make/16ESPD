@@ -158,6 +158,18 @@ holds the engine stopped with fuel cut and K0 open; it is not engine-start logic
 In engine-only mode K0 launches the car on an engine-speed ramp.
 _Avoid_: hybrid drive (that is the electric subassembly), launch device, energy manager
 
+
+**Engine operating line**:
+The Lecture 2 map's lowest-BSFC engine speed at each brake power, stored in
+`assets/data/engine/bsfc_line.csv`. `Vehicle.OperatingLine` converts power in W to rpm;
+`SpeedCommandedVariator` tries to hold that speed with total ratio 12 to 2.8, including final
+drive. Lecture 5 step 2 requests pedal × 85 kW, independent of realized brake power,
+with a 1000 rpm floor and the same machine-side K0 lock-up ramp as H0, centered at 840 rpm, so
+K0 is open before the shaft falls to the 800 rpm idle. Ratio limits,
+actuator lag, K0 launch slip, idle and braking leave points off the line; the line is a target,
+not a guarantee or an energy manager.
+_Avoid_: optimal operating point (without the requested power), efficiency controller
+
 **Energy manager**:
 `Vehicle.EnergyManager` is the P2 hybrid's rule-based supervisor, a signal block with no physics.
 From the driver's torque demand at the transmission input, the shaft and engine speeds, vehicle
