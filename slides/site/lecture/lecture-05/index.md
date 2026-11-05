@@ -8,7 +8,7 @@ title: Lecture 5 — compose a P2 hybrid powertrain
 
 **Draft — Studio rehearsal unverified.** This guide describes task #111's reference composition and reported numerical checks, not a rehearsed Studio walkthrough. Do not treat the existence of an analysis as a passing run.
 
-**What you build.** A transmission-input P2 hybrid from existing library parts: mapped engine → disconnect clutch K0 → machine shaft → controlled variator → differential → front wheels. No new constitutive model, launch device, operating-line controller or energy manager is introduced.
+**What you build.** A transmission-input P2 hybrid from existing library parts: mapped engine → disconnect clutch K0 → machine shaft → controlled variator → differential → front wheels. Step 2 adds the existing operating-line lookup and speed-commanded variator; no new constitutive model or energy manager is introduced.
 
 **How each step works.** As in HandsOn04, use the instance names below, build the diagram, then compare with the checkpoint before going on. The parts tables give library paths; names in code use dots instead of ›. Parameters with physical units use **Real** in Studio's **Add parameter** form, with the unit entered separately.
 
@@ -17,6 +17,7 @@ title: Lecture 5 — compose a P2 hybrid powertrain
 - [1a · Wire the P2 powertrain](#step-1a)
 - [1b · Electric-only WLTC Low](#step-1b)
 - [1c · Engine-only WLTC through K0](#step-1c)
+- [2 · Hold the engine on its operating line](#step-2)
 
 ## 1a · Wire the P2 powertrain {#step-1a}
 
@@ -177,9 +178,356 @@ Compare the engine branch and initial conditions with `Lecture5.P2WLTC` and the 
 `HandsOn05` reference. Retain the electric branch unchanged. These measurements validate the
 numerical reference, not the unrehearsed Studio steps.
 
+
+## 2 · Hold the engine on its operating line {#step-2}
+
+#### Goal
+
+Replace the pedal-based CVT speed schedule with the Lecture 2 map's best-BSFC speed for the
+engine power. Keep the same engine, K0 launch, car, road load and front brakes. Measure fuel
+rather than assuming that an efficiency target saves fuel everywhere.
+
+#### Given
+
+Start from your step 1 engine-only composition. The reference siblings are
+`Vehicle.P2OperatingLinePowertrain` and `Lecture5.P2OperatingLineWLTC`; H0 remains unchanged.
+A sibling avoids adding an unused signal input to every existing H0/electric fixture. This is
+ordinary composition, not language-level replacement. The full answer is under `HandsOn05`.
+
+The driver PI still commands pedal `min(max(driver.y / 150, 0), 1)`. Its output is **not**
+physical engine torque: the progressive pedal, manifold and torque map intervene. Feed the
+line the positive brake power realized by that request:
+`max(engine_torque, 0) * max(engine_speed, 0)` W. This is measured-power feedback downstream
+of the driver's request, not a predictive wheel-power feedforward or a power-tracking engine
+controller. Do not substitute PI output times shaft speed; that produces a systematic line
+error with this engine's nonlinear pedal calibration.
+
+#### Parts
+
+Duplicate your step 1 powertrain as `P2OperatingLinePowertrain`, and your engine-only fixture
+as `P2OperatingLineWLTC`. Remove the unused electric branch and `TorqueSplit` from this fixture.
+
+| Name | Library path | Set |
+| --- | --- | --- |
+| `variator` | VehicleSystemsComponents › Vehicle › SpeedCommandedVariator | replace ControlledVariator; defaults: 12 → 2.8, 0.5 s lag, 50 rpm floor |
+| `line` | VehicleSystemsComponents › Vehicle › OperatingLine | default best-BSFC CSV |
+| `powertrain` | your P2OperatingLinePowertrain | `position_start = 0`; drive `P_aux = T_f = K_i = k_w = C = J = 0` |
+| `trace`, `driver`, `no_ff`, `kmh` | step 1 cycle, LimPID, Constant, ToKmPerHour | `k = 140`, `Ti = 2`, `y_max = 400`, `y_min = -400`, `with_D = false`; zero feedforward |
+| `car`, `motion`, `roadload` | Vehicle › Planar › PlanarCar, BusMotion, PlanarRoadLoad | mass 1500 kg, radius 0.31 m, flat road |
+| `differential` | MultibodyComponents › PlanarMechanics › DifferentialGear | unchanged |
+| `mount`, `straight` | RotationalComponents › Components › Fixed | unchanged |
+| `flat` | BlockComponents › Sources › Constant | zero grade |
+| `meter` | VehicleSystemsComponents › Vehicle › SoCCorrectedFuel | unchanged |
+
+The PI gain and ceiling are fixture settings, not engine or variator tuning. With the line's
+lower speeds and overdrive during braking, the old settings reached 3.295 km/h error;
+raising gain alone still reached 2.401 km/h. More negative PI authority is needed to command
+wheel braking through the lower instantaneous ratio. Positive pedal remains clamped at one.
+This changes the tracking controller, so the fuel comparison is not a fixed-controller A/B.
+
+#### Every connection
+
+Inside the sibling, rename `cvt_pedal` to RealInput `N_ref` (rpm), connect it to
+`variator.N_ref`, and retain **all** step 1 shaft, support, engine/machine commands and output
+connections. There is no `variator.pedal` on the new part. All mechanical signs and total
+ratio definitions are unchanged.
+
+In the fixture, wire:
+
+```dyad
+connect(car.bus, motion.bus)
+connect(trace.y, driver.u_s)
+connect(motion.vx, kmh.u, meter.speed)
+connect(kmh.y, driver.u_m)
+connect(no_ff.y, driver.u_ff)
+connect(powertrain.spline, differential.flange_b)
+connect(differential.flange_left, car.spin_fl)
+connect(differential.flange_right, car.spin_fr)
+connect(powertrain.support, mount.spline)
+connect(car.steering, straight.spline)
+connect(flat.y, roadload.grade)
+connect(car.chassis, roadload.chassis)
+connect(powertrain.mdot_fuel, meter.mdot_fuel)
+connect(line.N, powertrain.N_ref)
+```
+
+Add the signal equations (Studio's code view):
+
+```dyad
+meter.P_stored = powertrain.E * powertrain.i
+line.P = max(powertrain.engine_torque, 0.0) * max(powertrain.engine_speed, 0.0)
+powertrain.engine_pedal = min(max(driver.y / 150.0, 0.0), 1.0)
+powertrain.engage = 0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm))
+powertrain.tau_ref = 0.0
+car.tau_fl = -min(driver.y, 0.0) * powertrain.variator.ratio / 2.0
+car.tau_fr = car.tau_fl
+car.tau_rl = 0.0
+car.tau_rr = 0.0
+```
+
+Use `engage_rpm = 1300`, `engage_width_rpm = 120`. K0 approaches closed while driving but
+retains the launch ramp and opens at stops: permanently closing it against stopped wheels
+would stall the mapped engine. There are no events or state-dependent `if` branches.
+
+#### Initialization
+
+Retain step 1: body position and velocity `[0, 0]`, heading and yaw rate zero; all four wheel
+angles zero and angular speeds `dv_wheel / radius`, with `dv_wheel = 0.01` m/s; all four
+`brake.tau_actual` zero; `powertrain.drive.converter.i_out` zero. The powertrain initializes
+manifold pressure to 101325 Pa, rotor angle zero, engine crank angle zero and speed 800 rpm.
+The variator starts at ratio 12; K0 position starts at zero. Do not initialize the car at
+exact rolling rest: the stdlib wheel Jacobian has the known zero-slip singularity.
+
+#### Run and plot
+
+Add `P2OperatingLineWLTCTransient`, stop 1800 s, Rodas5P, `dtmax = 1`,
+`optimize = OptimizationLevel.None()`. Run it once from Studio, then open the Julia REPL:
+
+```julia
+using DyadInterface: symbolic_container
+using Plots
+r = MyCar.P2OperatingLineWLTCTransient()
+m, s = symbolic_container(r), r.sol
+t = 0:0.1:1800
+at(x) = s(t, idxs=x).u
+plot(t, [at(m.trace.y) 3.6 .* at(m.car.bus.vx)], label=["target" "actual"],
+     xlabel="Time [s]", ylabel="Speed [km/h]")
+scatter(at(m.powertrain.engine_speed) .* (30/pi), at(m.powertrain.engine_torque),
+        markersize=1, label="WLTC", xlabel="Engine speed [rpm]", ylabel="Torque [N·m]")
+# From the course checkout; otherwise select the same CSV in your local course library.
+rows = [parse.(Float64, split(l, ',')) for l in
+        readlines("assets/data/engine/bsfc_line.csv")[2:end]]
+line = reduce(vcat, permutedims.(rows))
+plot!(line[:,2], line[:,3], label="best-BSFC line", linewidth=2)
+plot(t, [at(m.powertrain.engine_speed) .* (30/pi) at(m.line.N)],
+     label=["engine" "target"], xlabel="Time [s]", ylabel="Speed [rpm]")
+plot(t, at(m.powertrain.variator.ratio), label="total ratio")
+plot(t, [at(m.meter.fuel_raw) at(m.meter.fuel_corr)],
+     label=["raw" "SoC-corrected"], ylabel="L/100 km")
+```
+
+::: tip Checkpoint 2 — numerical reference (not a Studio rehearsal)
+
+| Quantity | Full WLTC |
+| --- | --- |
+| Maximum speed error | 1.709587 km/h (<2) |
+| Distance | 23266.505 m |
+| Raw / corrected fuel | 5.449679 / 5.449679 L/100 km |
+| H0 pedal-schedule fuel | 5.715009 L/100 km |
+| Difference | −0.265330 L/100 km (−4.643%) |
+| Battery current / SoC | zero / 0.6 throughout |
+
+The lower speed, higher load moves part of the cycle toward better BSFC. The measured net
+fuel reduction includes the altered speed-controller response; it is not a universal hybrid
+saving and uses no machine assistance or regen.
+
+**Line band:** at actual brake power `P = torque * speed`, compare rpm with the CSV's
+linearly interpolated rpm, clamped to its endpoints. For positive demand and power ≥1 kW,
+with ratio command strictly inside `(2.801, 11.999)`, **95.876%** of samples are within
+**±500 rpm**. This is a dynamic tracking band, not a claim that every point lies on the line:
+maximum eligible deviation is about **1324 rpm** during transients. Ratio lag, crank
+acceleration, the output-speed floor and K0 slip remain in the model.
+
+Uniform 0.1 s samples over the entire cycle, with trapezoidal fuel weights:
+
+| Classification (exclusive) | All points | All fuel |
+| --- | --- | --- |
+| In range and within ±500 rpm | 24.021% | 45.945% |
+| Idle (<1 kW) or braking (nonpositive PI) | 45.631% | 8.303% |
+| Launch limit (command ≥11.999) | 1.555% | 3.456% |
+| Overdrive limit (command ≤2.801) | 27.760% | 39.722% |
+| In-range transient outside band | 1.033% | 2.573% |
+| Total off line | 75.979% | 54.055% |
+
+Idle/braking takes precedence over saturation in this table. Loaded launch saturation occurs
+below about 19.6 km/h; loaded overdrive saturation occurs from about 32.6 through 131.3 km/h,
+depending on power. The ratio is not a mode switch. Fuel fractions include fuel burned at
+idle and during transient fuel-cut recovery, not just positive-power intervals.
+
+:::
+
+#### Fell behind?
+
+The full pasteable solution follows: first the powertrain, then the fixture and analysis.
+They are ordinary library-part compositions, not wrappers around the reference answer.
+In your `MyCar`, change only the fixture's powertrain path from
+`VehicleSystemsComponents.HandsOn05.P2OperatingLinePowertrain` to
+`MyCar.P2OperatingLinePowertrain`. Keep the other library paths unchanged.
+
+
+```dyad
+"""
+P2 transmission-input hybrid (derived; Lecture 5 S2, ORNL-2011 sizing).
+MappedEngine drives K0, then the HybridDrive shaft and SpeedCommandedVariator. Plan S2's existing
+CVT means the variator including final drive, not CVTDriveline's centrifugal launch clutch
+or ideal rolling wheel. This sibling uses the distinct variator seam without changing H0.
+`engine_stopped` is a fixed test configuration, not an engine-start model.
+"""
+component P2OperatingLinePowertrain
+  "Engine pedal, 0 to 1 (derived; MappedEngine)"
+  engine_pedal = RealInput() {^engine_pedal}
+  "K0 engagement request (derived; DisconnectClutch)"
+  engage = RealInput() {^engage}
+  "Machine torque request [N.m] (derived; HybridDrive)"
+  tau_ref = RealInput() {^tau_ref}
+  "Target input speed [rpm] (derived; OperatingLine)"
+  N_ref = RealInput() {^N_ref}
+  "Output to planar differential (derived; P2 layout)"
+  spline = Spline() {^spline}
+  "Stationary housing (assumed; planar bench)"
+  support = Spline() {^support}
+  "Engine speed [rad/s] (derived; crank sensor)"
+  engine_speed = RealOutput() {^engine_speed}
+  "Engine brake torque [N.m] (derived; map)"
+  engine_torque = RealOutput() {^engine_torque}
+  "Fuel flow [kg/s] (derived; map)"
+  mdot_fuel = RealOutput() {^mdot_fuel}
+  "Net machine shaft torque [N.m] (derived; DCMachine)"
+  machine_torque = RealOutput() {^machine_torque}
+  "K0 actuator position (derived; actuator)"
+  position = RealOutput() {^position}
+  "Battery state of charge (derived; coulomb count)"
+  SoC = RealOutput() {^SoC}
+  "Battery open-circuit voltage [V] (derived; HybridDrive)"
+  E = RealOutput() {^E}
+  "Battery current, positive discharge [A] (derived; Battery)"
+  i = RealOutput() {^i}
+  "Hold engine stopped with fuel cut for an electric-only fixture (assumed; no start dynamics)"
+  structural parameter engine_stopped::Boolean = false
+  "Initial K0 position (assumed; fixed-mode bench)"
+  parameter position_start::Real = 0.0
+  "Initial running-engine speed [rad/s] (assumed; 800 rpm idle for launch)"
+  parameter engine_speed_start::AngularVelocity = 800.0 * pi / 30
+  engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(fuel_cut_rpm = ifelse(engine_stopped, -2.0, 1300.0), fuel_resume_rpm = ifelse(engine_stopped, -1.0, 1000.0)) {^engine}
+  k0 = VehicleSystemsComponents.Vehicle.DisconnectClutch(position_start = position_start) {^k0}
+  drive = VehicleSystemsComponents.Vehicle.Electric.HybridDrive() {^drive}
+  variator = VehicleSystemsComponents.Vehicle.SpeedCommandedVariator() {^variator}
+  hold = RotationalComponents.Components.Fixed() if engine_stopped {^hold}
+relations
+  initial engine.air.manifold.p = 101325.0
+  initial drive.machine.rotor.phi = 0.0
+  connect(engine_pedal, engine.pedal)
+  connect(engage, k0.engage)
+  connect(tau_ref, drive.tau_ref)
+  connect(N_ref, variator.N_ref)
+  connect(engine.spline, k0.spline_a)
+  connect(k0.spline_b, drive.spline, variator.spline_a)
+  connect(variator.spline_b, spline)
+  connect(engine.support, k0.support, drive.support, variator.support, support)
+  connect(engine.speed.w, engine_speed)
+  connect(engine.tau_e, engine_torque)
+  connect(engine.mdot_fuel, mdot_fuel)
+  connect(drive.SoC, SoC)
+  machine_torque = drive.machine.tau
+  position = k0.position
+  E = drive.battery.E
+  i = drive.battery.i
+  if engine_stopped
+    connect(engine.spline, hold.spline)
+  else
+    initial engine.crankshaft.w = engine_speed_start
+    initial engine.crankshaft.phi = 0.0
+  end
+metadata {"Dyad":{"icons":{"default":"dyad://VehicleSystemsComponents/Vehicle/CVTDriveline.svg"}},"_links":{"E":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":825,"y2":875},"icon":{"x1":950,"x2":1050,"y1":800,"y2":900}}}},"SoC":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":765,"y2":815},"icon":{"x1":950,"x2":1050,"y1":740,"y2":840}}}},"N_ref":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":285,"y2":335},"icon":{"x1":-50,"x2":50,"y1":260,"y2":360}}}},"drive":{"Dyad":{"placement":{"diagram":{"x1":450,"x2":550,"y1":400,"y2":500}}}},"engage":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":165,"y2":215},"icon":{"x1":-50,"x2":50,"y1":140,"y2":240}}}},"engine":{"Dyad":{"placement":{"diagram":{"x1":150,"x2":250,"y1":400,"y2":500}}}},"engine_pedal":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":105,"y2":155},"icon":{"x1":-50,"x2":50,"y1":80,"y2":180}}}},"engine_speed":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":465,"y2":515},"icon":{"x1":950,"x2":1050,"y1":440,"y2":540}}}},"engine_torque":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":525,"y2":575},"icon":{"x1":950,"x2":1050,"y1":500,"y2":600}}}},"hold":{"Dyad":{"placement":{"diagram":{"x1":750,"x2":850,"y1":400,"y2":500}}}},"i":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":885,"y2":935},"icon":{"x1":950,"x2":1050,"y1":860,"y2":960}}}},"k0":{"Dyad":{"placement":{"diagram":{"x1":300,"x2":400,"y1":400,"y2":500}}}},"machine_torque":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":645,"y2":695},"icon":{"x1":950,"x2":1050,"y1":620,"y2":720}}}},"mdot_fuel":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":585,"y2":635},"icon":{"x1":950,"x2":1050,"y1":560,"y2":660}}}},"position":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":705,"y2":755},"icon":{"x1":950,"x2":1050,"y1":680,"y2":780}}}},"spline":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":875,"y2":925},"icon":{"x1":950,"x2":1050,"y1":850,"y2":950}}}},"support":{"Dyad":{"placement":{"diagram":{"x1":450,"x2":550,"y1":950,"y2":1050},"icon":{"x1":450,"x2":550,"y1":950,"y2":1050}}}},"tau_ref":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":225,"y2":275},"icon":{"x1":-50,"x2":50,"y1":200,"y2":300}}}},"variator":{"Dyad":{"placement":{"diagram":{"x1":600,"x2":700,"y1":400,"y2":500}}}}}}
+end
+```
+
+```dyad
+"""
+Engine-only operating-line WLTC (derived; Lecture 5 step 2, P2WLTC).
+The PI commands engine pedal as in H0. Requested engine power is that driver's realized
+positive brake torque times positive crank speed, after the existing pedal, manifold and
+torque-map dynamics. The PI output is not physical engine torque: using it as torque would
+misplace the operating points because the pedal-to-torque chain is nonlinear. The line
+therefore follows the power actually requested through that chain, without an inverse map.
+K0 retains the smooth launch ramp: a permanently closed clutch would stall at standstill.
+Machine torque, losses, inertia and auxiliaries are zero, as in H0.
+"""
+test component P2OperatingLineWLTC
+  "Vehicle and road-load mass (assumed; shared planar benchmark)"
+  parameter m::Mass = 1500.0
+  "Wheel radius (derived; planar benchmark)"
+  parameter radius::Length = 0.31
+  "PI gain [N.m per km/h] (tuned; operating-line tracking band)"
+  parameter k::Real = 140.0
+  "PI integral time (assumed; BEV driver)"
+  parameter Ti::Time = 2.0
+  "Signed PI ceiling [N.m] (assumed; overdrive braking authority, pedal clamps at 150)"
+  parameter tau_max::Torque = 400.0
+  "Initial wheel surface speed offset (assumed; MultibodyComponents #185)"
+  parameter dv_wheel::Velocity = 0.01
+  "Center of K0 launch engagement [rpm] (assumed; CentrifugalClutch)"
+  parameter engage_rpm::Real = 1300.0
+  "Width of K0 launch engagement [rpm] (assumed; CentrifugalClutch)"
+  parameter engage_width_rpm::Real(min = eps(Float64)) = 120.0
+  trace = VehicleSystemsComponents.Vehicle.DriveCycle() {^trace}
+  driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_max) {^driver}
+  no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
+  kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
+  powertrain = VehicleSystemsComponents.HandsOn05.P2OperatingLinePowertrain(position_start = 0.0, drive(P_aux = 0.0, T_f = 0.0, K_i = 0.0, k_w = 0.0, C = 0.0, J = 0.0)) {^powertrain}
+  differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
+  mount = RotationalComponents.Components.Fixed() {^mount}
+  straight = RotationalComponents.Components.Fixed() {^straight}
+  flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius) {^car}
+  motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
+  roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
+  meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel() {^meter}
+  line = VehicleSystemsComponents.Vehicle.OperatingLine() {^line}
+relations
+  connect(car.bus, motion.bus)
+  connect(trace.y, driver.u_s)
+  connect(motion.vx, kmh.u, meter.speed)
+  connect(kmh.y, driver.u_m)
+  connect(no_ff.y, driver.u_ff)
+  connect(powertrain.spline, differential.flange_b)
+  connect(differential.flange_left, car.spin_fl)
+  connect(differential.flange_right, car.spin_fr)
+  connect(powertrain.support, mount.spline)
+  connect(car.steering, straight.spline)
+  connect(flat.y, roadload.grade)
+  connect(car.chassis, roadload.chassis)
+  connect(powertrain.mdot_fuel, meter.mdot_fuel)
+  meter.P_stored = powertrain.E * powertrain.i
+  line.P = max(powertrain.engine_torque, 0.0) * max(powertrain.engine_speed, 0.0)
+  connect(line.N, powertrain.N_ref)
+  powertrain.engine_pedal = min(max(driver.y / 150.0, 0.0), 1.0)
+  powertrain.engage = 0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm))
+  powertrain.tau_ref = 0.0
+  car.tau_fl = -min(driver.y, 0.0) * powertrain.variator.ratio / 2.0
+  car.tau_fr = car.tau_fl
+  car.tau_rl = 0.0
+  car.tau_rr = 0.0
+  initial car.body.r = [0, 0]
+  initial car.body.v = [0, 0]
+  initial car.body.phi = 0.0
+  initial car.body.w = 0.0
+  initial car.fl.inertia.w = dv_wheel / radius
+  initial car.fr.inertia.w = dv_wheel / radius
+  initial car.rl.inertia.w = dv_wheel / radius
+  initial car.rr.inertia.w = dv_wheel / radius
+  initial car.fl.inertia.phi = 0.0
+  initial car.fr.inertia.phi = 0.0
+  initial car.rl.inertia.phi = 0.0
+  initial car.rr.inertia.phi = 0.0
+  initial car.fl.brake.tau_actual = 0.0
+  initial car.fr.brake.tau_actual = 0.0
+  initial car.rl.brake.tau_actual = 0.0
+  initial car.rr.brake.tau_actual = 0.0
+  initial powertrain.drive.converter.i_out = 0.0
+metadata {"_links":{"trace":{"Dyad":{"placement":{"diagram":{"x1":20,"y1":57,"x2":100,"y2":137}}}},"driver":{"Dyad":{"placement":{"diagram":{"x1":140,"y1":70,"x2":240,"y2":170}}}},"no_ff":{"Dyad":{"placement":{"diagram":{"x1":100,"y1":10,"x2":140,"y2":50}}}},"kmh":{"Dyad":{"placement":{"diagram":{"x1":40,"y1":190,"x2":110,"y2":260}}}},"powertrain":{"Dyad":{"placement":{"diagram":{"x1":430,"y1":50,"x2":530,"y2":150}}}},"differential":{"Dyad":{"placement":{"diagram":{"x1":560,"y1":260,"x2":640,"y2":340}}}},"mount":{"Dyad":{"placement":{"diagram":{"x1":485,"y1":190,"x2":545,"y2":240}}}},"straight":{"Dyad":{"placement":{"diagram":{"x1":605,"y1":500,"x2":655,"y2":550,"rot":180}}}},"flat":{"Dyad":{"placement":{"diagram":{"x1":440,"y1":880,"x2":480,"y2":920}}}},"car":{"Dyad":{"placement":{"diagram":{"x1":520,"y1":600,"x2":740,"y2":820}}}},"motion":{"Dyad":{"placement":{"diagram":{"x1":775,"y1":610,"x2":975,"y2":810}}}},"roadload":{"Dyad":{"placement":{"diagram":{"x1":500,"y1":865,"x2":570,"y2":935}}}},"line":{"Dyad":{"placement":{"diagram":{"x1":290,"y1":70,"x2":390,"y2":170}}}}}}
+end
+
+"Full WLTC operating-line analysis (derived; Lecture 5 step 2)."
+analysis P2OperatingLineWLTCTransient
+  extends TransientAnalysis(stop = 1800.0, alg = ODEAlg.Rodas5P(), dtmax = 1.0, optimize = OptimizationLevel.None())
+  model = P2OperatingLineWLTC()
+end
+```
+
 ## Where this stops
 
-Task #111 establishes the composition and fixed-mode checks. Task #112 will address the operating line through the distinct `variator` seam; task #113 will address the energy manager. Neither controller is part of this guide. Studio build steps still need rehearsal before this draft can be used as a verified classroom walkthrough.
+Steps 1 and 2 establish the composition, fixed-mode checks and operating-line target. Task #113 will address the energy manager; it is not part of this guide. Studio build steps still need rehearsal before this draft can be used as a verified classroom walkthrough.
 
 The unchanged variator schedules **1800–6000 rpm**, above the machine's 1397 rpm corner;
 field weakening supplies the constant-power region. Low reached 3546 rpm. The existing dyno

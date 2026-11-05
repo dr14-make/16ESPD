@@ -146,3 +146,14 @@ so a speed-commanded variator can replace it; this is not a language-level `repl
 holds the engine stopped with fuel cut and K0 open; it is not engine-start logic or an energy manager.
 In engine-only mode K0 launches the car on an engine-speed ramp.
 _Avoid_: hybrid drive (that is the electric subassembly), launch device, energy manager
+
+
+**Engine operating line**:
+The Lecture 2 map's lowest-BSFC engine speed at each brake power, stored in
+`assets/data/engine/bsfc_line.csv`. `Vehicle.OperatingLine` converts power in W to rpm;
+`SpeedCommandedVariator` tries to hold that speed with total ratio 12 to 2.8, including final
+drive. Lecture 5 step 2 feeds realized positive brake power after the driver's nonlinear
+pedal/manifold chain, not the PI output interpreted as physical engine torque. Ratio limits,
+actuator lag, K0 launch slip, idle and braking leave points off the line; the line is a target,
+not a guarantee or an energy manager.
+_Avoid_: optimal operating point (without the requested power), efficiency controller
