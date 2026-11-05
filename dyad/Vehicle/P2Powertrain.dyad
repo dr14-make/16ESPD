@@ -38,8 +38,8 @@ component P2Powertrain
   structural parameter engine_stopped::Boolean = false
   "Initial K0 position (assumed; fixed-mode bench)"
   parameter position_start::Real = 0.0
-  "Initial running-engine speed [rad/s] (assumed; bench selects idle for launch)"
-  parameter engine_speed_start::AngularVelocity = 0.0
+  "Initial running-engine speed [rad/s] (assumed; 800 rpm idle for launch)"
+  parameter engine_speed_start::AngularVelocity = 800.0 * pi / 30
   engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(fuel_cut_rpm = ifelse(engine_stopped, -2.0, 1300.0), fuel_resume_rpm = ifelse(engine_stopped, -1.0, 1000.0)) {^engine}
   k0 = VehicleSystemsComponents.Vehicle.DisconnectClutch(position_start = position_start) {^k0}
   drive = VehicleSystemsComponents.Vehicle.Electric.HybridDrive() {^drive}
