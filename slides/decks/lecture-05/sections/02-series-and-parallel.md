@@ -18,55 +18,101 @@ build here, but the series hybrid is your homework.
 -->
 
 ---
-routeAlias: series-parallel
+routeAlias: series-hybrid
 ---
 
-## Two ways to join an engine and a motor
+## Series hybrid: only the motor drives
 
-<div class="diagram-wide">
-
-![Two block diagrams. Left, series: the engine turns a generator, which feeds a DC link; the battery is on the same link; the link feeds the motor, which alone drives the wheels; no shaft runs from the engine to the wheels. Right, parallel: the engine drives through the K0 clutch onto a shaft that the motor also drives, then through the transmission to the wheels; the battery feeds the motor.](/diagrams/02-series-parallel.svg)
-
-</div>
-
-<div class="grid grid-cols-2 gap-8 text-[0.9rem]">
+<div class="grid grid-cols-[1.1fr_1fr] gap-8 items-center">
 <div>
 
-**Series.** The motor drives; it is fed by the engine-generator, the battery, or both when extra
-power is needed. The battery charges from the engine, from regen, or from the grid in a plug-in.
+![Block diagram of a series hybrid. The engine turns a generator, mechanical to electrical, which feeds a DC link; the battery is on the same link, and in a plug-in the grid charges it; the link feeds the motor, electrical to mechanical, which alone drives the wheels, and regen goes back to the battery. No shaft runs from the engine to the wheels.](/diagrams/02-series.svg)
 
 </div>
-<div>
+<div class="text-[0.95rem]">
 
-**Parallel.** The engine drives through the transmission, the motor through the transmission or
-straight onto the wheels, or both at once.
+**Drives the wheels:** one or more electric motors, only.
+
+**Feeds the motor:** the engine-generator, the battery, or both when extra power is needed.
+
+**Charges the battery:** the engine through the generator, regenerative braking, and the grid in
+a plug-in.
+
+**The price:** every joule from the engine is converted twice, and the motor must drive the car
+alone, so it is full size.
+
+**Used in** diesel-electric locomotives, and all-terrain vehicles with a separately controlled
+motor in each wheel.
 
 </div>
 </div>
 
 <!--
-The two basic architectures, side by side.
+The first architecture, the series hybrid.
 
-Left, the series hybrid. The vehicle is driven by one or more electric motors only. The motor is
-fed from the engine and its generator, from the battery, or from both when extra power is needed.
-The battery is charged by the engine through the generator, by regenerative braking, and in a
-plug-in also from the grid. The orange lines are electrical, the black ones shafts: there is no
-shaft from the engine to the wheels. So the engine is completely free of the road: it can run at
-its best point whatever the car does, or stand still. The price is that every joule from the
-engine is converted twice, mechanical to electrical in the generator and back in the motor, and
-the motor must be big enough to drive the car alone. The original deck names where that is used:
-diesel-electric locomotives, and special all-terrain vehicles with a separately controlled motor in
-each wheel.
+The vehicle is driven by one or more electric motors, and only by them. Point at the drawing: the
+orange lines are electrical, the black ones shafts, and there is no shaft from the engine to the
+wheels. The engine only turns a generator.
 
-Right, the parallel hybrid. The vehicle is driven by the engine working directly through a
-transmission, by one or more electric motors working through the transmission or coupled directly
-to the wheels, or by both at once. There is a mechanical path from the engine to the wheels, so the
-engine's power reaches the road without being converted twice. The price is that the engine's speed
-is tied to the wheels through the transmission. The drawing already shows the clutch K0 between
-the engine and the motor; section 04 is about where exactly the motor sits, and why that clutch
-matters.
+The motor is fed from the engine and its generator, from the battery, or from both when extra power
+is needed. The battery is charged by the engine through the generator, by regenerative braking when
+the motor runs backwards as a generator, and in a plug-in also from the grid, the dashed box.
 
-Today you build a parallel hybrid.
+So the engine is completely free of the road: it can run at its best point whatever the car does, or
+stand still. The price is in the two labels above the generator and the motor: every joule from the
+engine is converted twice, mechanical to electrical and back. And the motor must be big enough to
+drive the car alone.
+
+The original deck names where that is used: diesel-electric locomotives, and special all-terrain
+vehicles with a separately controlled motor in each wheel. Keep the series hybrid in mind: it is your
+homework.
+-->
+
+---
+routeAlias: parallel-hybrid
+---
+
+## Parallel hybrid: both drive the wheels
+
+<div class="grid grid-cols-[1.1fr_1fr] gap-8 items-center">
+<div>
+
+![Block diagram of a parallel hybrid. The engine drives through the K0 clutch onto a shaft that the motor also drives, then through the transmission, whose ratio ties the engine speed to the wheels, to the wheels; the battery feeds the motor.](/diagrams/02-parallel.svg)
+
+</div>
+<div class="text-[0.95rem]">
+
+**Drives the wheels:** the engine directly through the transmission; one or more motors through
+the transmission or coupled directly to the wheels; or both at once.
+
+**The energy path:** the engine's power reaches the road mechanically, never converted twice. The
+motor helps; it need not carry the car, so it can be small.
+
+**The price:** the engine's speed is tied to the wheels through the transmission.
+
+**Used in** most passenger hybrids, and the car you build today.
+
+</div>
+</div>
+
+<!--
+The second architecture, the parallel hybrid.
+
+The vehicle is driven either by the engine working directly through a transmission, by one or more
+electric motors working through the transmission or coupled directly to the wheels, or by both at
+once. In the drawing the motor sits on the same shaft as the engine, before the transmission; a motor
+on the wheels is the other option, and we come back to it as P4.
+
+Point at the black line from the engine to the wheels: there is a mechanical path, so when the engine
+drives, its power reaches the road without being converted twice. And the motor only helps, so it can
+be much smaller than a series hybrid's.
+
+The price is under the transmission: the engine's speed is tied to the wheels through its ratio. The
+engine cannot simply sit at its best point.
+
+This is what most passenger hybrids are, and what you build today. The drawing already shows the
+clutch K0 between the engine and the motor; section 04 is about where exactly the motor sits, and
+why that clutch matters.
 -->
 
 ---
@@ -103,21 +149,19 @@ engine-generator with its mount and a WLTC bench; you wire the series layout and
 thermostat. <span class="todo">TODO: targets and page (#116)</span></div>
 
 <!--
-What each architecture costs.
+What each architecture costs, the last two slides side by side.
 
-The series hybrid's strength is that the engine is free of the road. It can run at any speed and
-torque, ideally at its single best point, or be off. Its weakness is the double conversion: every
-joule from the engine goes through the generator, the converter, and the motor before it reaches the
-wheels, a few percent lost each time, as you measured on Lecture 4's chain. And it needs three full
+The series hybrid's strength is that the engine is free of the road: any speed and torque, ideally
+its single best point, or off. Its weakness is the double conversion: generator, converter, motor,
+a few percent lost each time, as you measured on Lecture 4's chain. And it needs three full
 machines: an engine, a generator that takes all its power, and a motor that drives the car alone.
 It is simple to control: the engine is a power source that keeps the battery in a window, a
 thermostat.
 
-The parallel hybrid's strength is the single mechanical path: when the engine drives, its power
-goes to the wheels without being converted twice. And the machine can be small, because it only
-helps. Its weakness is that the engine's speed is tied to the wheel speed through the transmission.
-The last line is why our car is a good place to learn this: the CVT has a free ratio, so it gives
-back most of the speed freedom a series hybrid has. Section 05 uses exactly that.
+The parallel hybrid's strength is the single mechanical path, and a machine that can be small,
+because it only helps. Its weakness is the engine's speed tied to the wheels. The last line is why
+our car is a good place to learn this: the CVT has a free ratio, so it gives back most of the speed
+freedom a series hybrid has. Section 05 uses exactly that.
 
 The green box is the homework. The series hybrid is the same shape as the fuel-cell car of the extra
 pack, so you get it on prepared ground: the library ships an engine-generator part with its mount
