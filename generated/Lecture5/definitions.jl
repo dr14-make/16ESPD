@@ -207,3 +207,7 @@ end
 
 include("HybridDriveDynoTransient_definition.jl")
 include("HybridDriveDyno_definition.jl")
+include("P2ElectricWLTCTransient_definition.jl")
+include("P2ElectricWLTC_definition.jl")
+include("P2EngineWLTCTransient_definition.jl")
+include("P2WLTC_definition.jl")
