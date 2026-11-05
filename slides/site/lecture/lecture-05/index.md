@@ -155,9 +155,9 @@ H0 is Lecture 5's conventional baseline: Lecture 2's mapped engine and CVT on th
 | Duration | 1800 s |
 | Maximum absolute speed error | 1.546157 km/h |
 | Distance | 23266.587 m |
-| Raw fuel | 5.705422 L/100 km |
-| SoCCorrectedFuel `fuel_corr` | 5.705422 L/100 km |
-| Energy | 184.4734 MJ/100 km |
+| Raw fuel | 5.717536 L/100 km |
+| SoCCorrectedFuel `fuel_corr` | 5.717536 L/100 km |
+| Energy | 184.8651 MJ/100 km |
 | K0 slip energy, integrated over cycle | approximately 0.09805 MJ |
 | Peak engine torque on cycle / maximum K0 capacity | 120.509 / 229.885 N·m |
 
@@ -314,10 +314,10 @@ plot(t, [at(m.meter.fuel_raw) at(m.meter.fuel_corr)],
 | --- | --- |
 | Maximum speed error | 1.548864 km/h (<2) |
 | Distance | 23266.603 m |
-| Raw / corrected fuel | 5.392826 / 5.392826 L/100 km |
-| H0 pedal-schedule fuel | 5.705422 L/100 km |
+| Raw / corrected fuel | 5.437445 / 5.437445 L/100 km |
+| H0 pedal-schedule fuel | 5.717536 L/100 km |
 | Difference | −0.312596 L/100 km (−5.479%) |
-| Energy | 174.3662 MJ/100 km |
+| Energy | 175.8089 MJ/100 km |
 | Battery current / SoC | zero / 0.6 throughout |
 
 The lower speed, higher load moves part of the cycle toward better BSFC. The measured net
@@ -606,14 +606,20 @@ including engine-driven charging. These quantities have different measurement bo
 
 ## Step 4 — compare at equal battery charge
 
+H0, the line car and the hybrid share `k=110`, `Ti=1 s`. Against the previous
+70 / 2 s pins, H0 moves from 5.705422 to 5.717536 L/100 km (+0.21%) and the
+line car from 5.392826 to 5.437445 (+0.83%). Their maximum speed errors are
+1.165 and 1.165 km/h. The ±355.234 N·m limits apply only to the hybrid; H0
+and the line car retain their pedal-sized propulsion limits.
+
 Keep `meter.P_stored = powertrain.E * powertrain.i`: the correction uses stored energy,
 not terminal energy. Read the meter only after the complete 1800 s cycle. The hybrid starts
 at **0.60000**, finishes at **0.59395**, and stays between **0.51760** and **0.60000**.
 
 | Car | Raw L/100 km | SoC-corrected L/100 km | MJ/100 km |
 |---|---:|---:|---:|
-| Conventional H0 | 5.705 | 5.705 | 184.47 |
-| Step-2 line car | 5.393 | 5.393 | 174.37 |
+| Conventional H0 | 5.718 | 5.718 | 184.87 |
+| Step-2 line car | 5.437 | 5.437 | 175.81 |
 | Charge-sustaining P2 hybrid | 4.102 | 4.116 | 133.07 |
 | Lecture-4 BEV | — | — | 47.25 |
 

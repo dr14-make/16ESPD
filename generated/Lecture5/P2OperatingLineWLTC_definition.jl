@@ -16,8 +16,8 @@ The line target is floored above idle. Machine torque, losses and inertia are ze
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `m`         | Vehicle and road-load mass (assumed; shared planar benchmark)                         | kg  |   1500.0 |
 | `radius`         | Wheel radius (derived; planar benchmark)                         | m  |   0.31 |
-| `k`         | PI gain [N.m per km/h], shared with H0                         | --  |   70.0 |
-| `Ti`         | PI integral time (assumed; BEV driver)                         | s  |   2.0 |
+| `k`         | PI gain [N.m per km/h], shared with H0                         | --  |   110.0 |
+| `Ti`         | PI integral time (assumed; BEV driver)                         | s  |   1.0 |
 | `tau_max`         | Positive PI ceiling [N.m], pedal saturation                         | N.m  |   150.0 |
 | `dv_wheel`         | Initial wheel surface speed offset (assumed; MultibodyComponents #185)                         | m/s  |   0.01 |
 | `engage_rpm`         | Center of K0 launch engagement [rpm] (assumed; CentrifugalClutch)                         | --  |   1300.0 |
@@ -35,7 +35,7 @@ The line target is floored above idle. Machine torque, losses and inertia are ze
 | ------------ | ----------------------------------- | ------ |
 | `N_target`         | Commanded transmission input speed [rpm], line speed floored at N_locked                         | --  |
 """
-@component function P2OperatingLineWLTC(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(70.0), var"Ti"=Float64(2.0), var"tau_max"=Float64(150.0), var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"tau_brake"=Float64(205.0), var"brake_gain"=Float64(12.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"P_peak"=Float64(85000.0), var"N_locked"=Float64(1000.0), __overrides = Dict{String, Any}())
+@component function P2OperatingLineWLTC(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(110.0), var"Ti"=Float64(1.0), var"tau_max"=Float64(150.0), var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"tau_brake"=Float64(205.0), var"brake_gain"=Float64(12.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"P_peak"=Float64(85000.0), var"N_locked"=Float64(1000.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:

@@ -4,9 +4,9 @@ include("../scripts/bsfc_line.jl")
 using .BsfcLine
 
 const BSFC_LINE = read_line()
-const H0_L100 = 5.7054223
-const H0_MJ100 = 184.473420
-const LINE_L100 = 5.392826
+const H0_L100 = 5.71753646
+const H0_MJ100 = 184.86510643
+const LINE_L100 = 5.43744462
 const RPM_ENGINE_IDLE = 800.0
 
 # H0 is both a P2 fixed-mode check and the operating-line baseline; one 1800 s run serves both.

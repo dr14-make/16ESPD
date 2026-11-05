@@ -8,9 +8,9 @@ test component P2OperatingLineWLTC
   "Wheel radius (derived; planar benchmark)"
   parameter radius::Length = 0.31
   "PI gain [N.m per km/h], shared with H0"
-  parameter k::Real = 70.0
+  parameter k::Real = 110.0
   "PI integral time (assumed; BEV driver)"
-  parameter Ti::Time = 2.0
+  parameter Ti::Time = 1.0
   "Positive PI ceiling [N.m], pedal saturation"
   parameter tau_max::Torque = 150.0
   "Initial wheel surface speed offset (assumed; MultibodyComponents #185)"
