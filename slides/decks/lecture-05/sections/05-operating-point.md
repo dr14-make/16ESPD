@@ -27,7 +27,7 @@ routeAlias: best-bsfc-line
 
 ## One power, many operating points
 
-<div class="grid grid-cols-[1fr_1.3fr] gap-8 items-center">
+<div class="grid grid-cols-[1fr_2fr] gap-6 items-center">
 <div>
 
 $$
@@ -45,7 +45,7 @@ Best point of Lecture 2's map: **232 g/kWh** at 3000 rpm, 99 N·m.
 </div>
 <div>
 
-<img src="/figures/05-bsfc-line.svg" class="mx-auto" style="max-height: 20rem" alt="Lecture 2's BSFC map, brake torque against engine speed from 1000 to 6000 rpm, with BSFC contours from 235 to 500 g/kWh, the full-load curve, and dashed lines of constant power at 20, 40, 60 and 80 kW. The best-BSFC line runs from low speed and torque up through the minimum of 232 g/kWh at 3000 rpm, then follows the full-load curve to peak power."/>
+<img src="/figures/05-bsfc-line.svg" class="w-full" style="max-height: 26rem" alt="Lecture 2's BSFC map, brake torque against engine speed from 1000 to 6000 rpm, with BSFC contours from 235 to 500 g/kWh, the full-load curve, and dashed lines of constant power at 20, 40, 60 and 80 kW. The best-BSFC line runs from low speed and torque up through the minimum of 232 g/kWh at 3000 rpm, then follows the full-load curve to peak power."/>
 
 </div>
 </div>
