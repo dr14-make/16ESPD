@@ -1,0 +1,54 @@
+"""
+CVT holding an engine on its best-BSFC line, on a dyno at fixed wheel speed (assumed bench).
+
+The requested power ramps from 1 kW to a 32 kW hold, then past peak power. The operating line
+turns it into a target engine speed, the variator commands the ratio that puts the input shaft
+there, and the engine stand-in delivers the requested power at whatever speed the shaft runs.
+At 450 wheel rpm the ratio range [2.8, 12] reaches 1260 to 5400 engine rpm. Below about 8 kW
+the line asks for less and the ratio sits at overdrive, above about 81 kW it asks for more and
+the ratio sits at launch, and in between the input shaft follows the line through the actuator
+lag. The variator's output-speed floor moves both thresholds slightly up.
+"""
+component OperatingLineBench
+  "Dyno wheel-side speed [rpm] (assumed; about 50 km/h on a 0.3 m wheel)"
+  parameter wheel_rpm::Real = 450.0
+  "Initial power request (assumed; low end of the line)"
+  parameter P_start::Power = 1.0e3
+  "Held power request (assumed; the line's best-BSFC point)"
+  parameter P_hold::Power = 32.0e3
+  "Final power request (assumed; above the line's 85.6 kW peak)"
+  parameter P_end::Power = 86.0e3
+  "Engine stand-in inertia (assumed for a 1.4 L petrol engine)"
+  parameter J_engine::Inertia = 0.15
+  "Overdrive ratio, also the initial ratio since the line's idle speed is below its reach (assumed for a small-car belt CVT)"
+  parameter i_overdrive::Real = 2.8
+  rise = BlockComponents.Sources.Ramp(height = P_hold - P_start, offset = P_start, start_time = 2.0, duration = 31.0)
+  top = BlockComponents.Sources.Ramp(height = P_end - P_hold, offset = 0.0, start_time = 43.0, duration = 54.0)
+  line = VehicleSystemsComponents.Vehicle.OperatingLine()
+  variator = VehicleSystemsComponents.Vehicle.SpeedCommandedVariator(i_overdrive = i_overdrive, ratio_initial = i_overdrive)
+  engine = RotationalComponents.Sources.TorqueSource()
+  crank = RotationalComponents.Components.Inertia(J = J_engine)
+  dyno = RotationalComponents.Sources.ConstantVelocity(w_fixed = wheel_rpm * pi / 30)
+  mounts = RotationalComponents.Components.Fixed()
+  "Requested engine power"
+  variable P_req::Power
+relations
+  P_req = rise.y + top.y
+  line.P = P_req
+  connect(line.N, variator.N_ref)
+  engine.tau = P_req / variator.w_a
+  connect(engine.spline, crank.spline_a)
+  connect(crank.spline_b, variator.spline_a)
+  connect(variator.spline_b, dyno.spline)
+  connect(engine.support, variator.support, dyno.support, mounts.spline)
+  initial crank.phi = 0.0
+  initial dyno.phi = 0.0
+end
+
+"Operating-line bench analysis (assumed bench)"
+analysis OperatingLineBenchTransient
+  extends TransientAnalysis(stop = 102.0, alg = ODEAlg.Rodas5P(), saveat = 0.05, tstops = [2.0, 33.0, 43.0, 97.0])
+  "Dyno wheel-side speed [rpm] (assumed)"
+  parameter wheel_rpm::Real = 450.0
+  model = OperatingLineBench(wheel_rpm = wheel_rpm)
+end
