@@ -44,6 +44,9 @@ features:
     details: "180 min, built along in Dyad Studio<br>Why hybridize, series and parallel, the degree of hybridization, P0 to P4 and the decoupling clutch, the best-BSFC line on a CVT and the power split, a rule-based energy manager with hysteresis and ECMS in one slide, and the WLTC for three powertrains against the ICCT studies."
     link: /lecture-05/index.html
     target: _self
+  - title: "Lecture 5 build guide: a P2 hybrid of your own"
+    details: "Alongside the lecture<br>A P2 powertrain with the K0 clutch on the planar car, electric-only and engine-only WLTC runs, the engine held on its best-BSFC line by a speed-commanded CVT, a rule-based energy manager, and the charge-sustaining WLTC in L/100 km and MJ/100 km."
+    link: /lecture/lecture-05/
 ---
 
 ## Lecture 1, in two sessions
@@ -134,7 +137,8 @@ converter, the battery, the car, regen and the bill. They follow the
 7. [**Results**](./lecture-05/index.html#/results){target="_self"} — three powertrains, and the positions against the studies
 
 The students build a P2 hybrid along with the lecture, one step per section from 04 on: the
-powertrain, the operating line, the energy manager and the charge-sustaining WLTC.
+powertrain, the operating line, the energy manager and the charge-sustaining WLTC. They follow the
+[build guide](./lecture/lecture-05/); each build slide links to its step.
 
 ## For the lecturer
 
