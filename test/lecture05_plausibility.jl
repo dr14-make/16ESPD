@@ -366,3 +366,48 @@ using .OperatingPoints
     @test all(ismissing, (f_off.bsfc_mean, f_off.bsfc_cycle, f_off.near_line, f_off.idle))
     @info "Lecture 5 cruise operating point" rpm = op.rpm[k] torque = op.torque[k] f gap
 end
+
+@testset "P2 powertrain" begin
+    for (electric, analysis, stop) in (
+        (false, VehicleSystemsComponents.Lecture5.P2EngineWLTCTransient, 1800.0),
+        (true, VehicleSystemsComponents.Lecture5.P2ElectricWLTCTransient, 589.0))
+        run = analysis()
+        m, s = symbolic_container(run), run.sol
+        @test string(s.retcode) == "Success"
+        @test s.t[end] == stop
+        speed_error = maximum(abs, 3.6 .* s[m.car.bus.vx] .- s[m.trace.y])
+        trace_distance = sum(diff(s.t) .* (s[m.trace.y][1:end-1] .+ s[m.trace.y][2:end])) / 7.2
+        @test speed_error < 2.0
+        @test s[m.meter.s][end] ≈ trace_distance rtol=0.01
+        if electric
+            @test maximum(abs, s[m.powertrain.position]) < 1e-9
+            @test abs(s[m.meter.m_fuel][end]) < 1e-9
+            @test maximum(abs, s[m.powertrain.engine_speed]) < 1e-9
+            @test s[m.powertrain.SoC][end] < s[m.powertrain.SoC][1]
+            @test s[m.meter.E_batt][end] ≈ s.ps[m.powertrain.drive.battery.E] *
+                s.ps[m.powertrain.drive.battery.Q_nom] *
+                (s[m.powertrain.SoC][1] - s[m.powertrain.SoC][end]) rtol=1e-6
+        else
+            @test maximum(abs, s[m.powertrain.tau_ref]) == 0.0
+            @test s[m.powertrain.engine_speed][1] * 30 / pi ≈ 800.0
+            @test s[m.powertrain.position][1] == 0.0
+            @test s[m.meter.s][end] ≈ 23270.0 rtol=0.01
+            @test s[m.meter.s][end] ≈ trace_distance rtol=5e-4
+            rpm = s[m.powertrain.engine_speed] .* (30 / pi)
+            above_ramp = rpm .> s.ps[m.engage_rpm] + 5 * s.ps[m.engage_width_rpm]
+            @test any(above_ramp)
+            # Allow actuator lag while checking near-closure above the engagement ramp.
+            @test minimum(s[m.powertrain.position][above_ramp]) > 0.99
+            @test s[m.meter.fuel_raw][end] ≈ 5.787688 rtol=1e-3
+            @test s[m.meter.fuel_corr][end] == s[m.meter.fuel_raw][end]
+            @test s[m.meter.energy_corr][end] ≈ 187.1333 rtol=1e-3
+            @test maximum(abs, s[m.powertrain.i]) < 1e-9
+            @test maximum(s[m.powertrain.engine_torque]) < s.ps[m.powertrain.k0.tau_max]
+            loss = s[m.powertrain.k0.tau] .* s[m.powertrain.k0.w_slip]
+            @test minimum(loss) >= 0.0
+            slip_MJ = sum(diff(s.t) .* (loss[1:end-1] .+ loss[2:end])) / 2e6
+            @info "H0 K0" slip_MJ peak_engine_torque=maximum(s[m.powertrain.engine_torque]) capacity=s.ps[m.powertrain.k0.tau_max]
+        end
+        @info "P2 fixed-mode WLTC" electric speed_error distance=s[m.meter.s][end] raw_L100=s[m.meter.fuel_raw][end] corrected_L100=s[m.meter.fuel_corr][end] MJ100=s[m.meter.energy_corr][end] fuel_kg=s[m.meter.m_fuel][end] SoC_drop=s[m.powertrain.SoC][1]-s[m.powertrain.SoC][end]
+    end
+end

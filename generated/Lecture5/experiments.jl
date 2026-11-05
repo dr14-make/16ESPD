@@ -11,3 +11,5 @@ end
 
 include("HybridDriveDyno_experiment.jl")
 include("OperatingLineBench_experiment.jl")
+include("P2ElectricWLTC_experiment.jl")
+include("P2WLTC_experiment.jl")
