@@ -261,3 +261,51 @@ end
         @info "15 kW dyno" rpm=rpm0 torque=small.sol(t, idxs=s.machine.tau) power=small.sol(t, idxs=s.machine.P_mech)
     end
 end
+
+@testset "operating line" begin
+    rows = [parse.(Float64, split(l, ',')) for l in readlines(LINE_FILE)[2:end]]
+    power, rpm = getindex.(rows, 1), getindex.(rows, 2)
+
+    # The sweep request is (t - 10) kW, from -10 kW to 100 kW.
+    lookup = VehicleSystemsComponents.Vehicle.OperatingLineTransient()
+    @test string(lookup.sol.retcode) == "Success"
+    target(P_kW) = lookup.sol(P_kW + 10.0, idxs = symbolic_container(lookup).line.N)
+    @test target(32.0) ≈ 3000.0 atol = 1e-9
+    @test all(isapprox.(target.(power), rpm; atol = 1e-6))
+    @test all(target(P) ≈ first(rpm) for P in (-10.0, -1.0, 0.0, 0.5, first(power)))
+    @test all(target(P) ≈ last(rpm) for P in (last(power), 86.0, 100.0))
+
+    run = VehicleSystemsComponents.Lecture5.OperatingLineBenchTransient()
+    @test string(run.sol.retcode) == "Success"
+    m, s = symbolic_container(run), run.sol
+    v = m.variator
+    ts = collect(0.0:0.05:102.0)
+    at(x) = s(ts, idxs = x).u
+    N_a, N_t, ratio, cmd = at(v.N_a), at(m.line.N), at(v.ratio), at(v.i_command)
+    floor_bias = 450.0 / hypot(450.0, s.ps[v.output_rpm_floor])
+
+    @test all(2.8 - 1e-6 .<= ratio .<= 12.0 + 1e-6)
+
+    # Settled on the 32 kW hold: the line speed, low only by the output-speed floor's bias.
+    hold = 38.0 .<= ts .<= 43.0
+    @test all(abs.(N_a[hold] .- 3000.0) .< 20.0)
+    @test all(isapprox.(N_a[hold], 3000.0 * floor_bias; atol = 0.1))
+
+    # In range the input shaft trails the line by the actuator lag: at 1 kW/s it is at most
+    # 0.5 s times the line's steepest 340 rpm/kW plus the floor bias.
+    in_range = (2.8 + 1e-3 .< cmd .< 12.0 - 1e-3) .& (ts .>= 2.0)
+    lag = maximum(abs.(N_a[in_range] .- N_t[in_range]))
+    @test lag < 200.0
+
+    # Out of range the ratio sits at its limit: overdrive under the line's low end, launch
+    # past 5400 rpm, with the shaft on the side of the target the limit forces.
+    low = ts .<= 2.0
+    @test all(isapprox.(ratio[low], 2.8; atol = 1e-6))
+    @test all(isapprox.(N_a[low], 1260.0; atol = 1e-3))
+    @test all(N_a[low] .> N_t[low])
+    top = ts .>= 100.0
+    @test all(isapprox.(ratio[top], 12.0; atol = 1e-6))
+    @test all(isapprox.(N_a[top], 5400.0; atol = 1e-3))
+    @test all(N_a[top] .< N_t[top])
+    @info "Operating-line bench" settled_rpm = N_a[findlast(hold)] max_in_range_lag_rpm = lag low_rpm = N_a[1] top_rpm = N_a[end]
+end
