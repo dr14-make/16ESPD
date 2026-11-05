@@ -10,7 +10,7 @@ layout: section
 The best-BSFC line, the CVT that holds the engine on it, the machine that shifts the load, and
 the power-split hybrid that does it with a planetary gear.
 
-<span class="todo">TODO: notebook and script files (#115, #200)</span>
+`scripts/bsfc_line.jl` · <span class="todo">TODO: notebook file (#115)</span>
 
 <!--
 Section 05, moving the operating point. This is the first of the three savings from section 01, and
@@ -45,16 +45,7 @@ Best point of Lecture 2's map: **232 g/kWh** at 3000 rpm, 99 N·m.
 </div>
 <div>
 
-<div class="placeholder">
-
-**Figure: `05-best-bsfc-line.svg`**
-
-Lecture 2's BSFC map with lines of constant power and the best-BSFC line through it, from idle to
-peak power; the minimum starred.
-
-Produced by the best-BSFC line script, #200
-
-</div>
+<img src="/figures/05-bsfc-line.svg" class="mx-auto" style="max-height: 20rem" alt="Lecture 2's BSFC map, brake torque against engine speed from 1000 to 6000 rpm, with BSFC contours from 235 to 500 g/kWh, the full-load curve, and dashed lines of constant power at 20, 40, 60 and 80 kW. The best-BSFC line runs from low speed and torque up through the minimum of 232 g/kWh at 3000 rpm, then follows the full-load curve to peak power."/>
 
 </div>
 </div>

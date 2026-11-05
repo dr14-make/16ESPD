@@ -189,7 +189,7 @@ Less charge at the end, more fuel charged to the run.
 
 The conventional car's WLTC: **39.26 MJ** of fuel.
 
-η<sub>eb</sub>, engine to battery: <span class="todo">TODO: value and source (#199)</span>
+η<sub>eb</sub>, engine to battery: **0.30** = 0.347 · 0.90 · 0.97 (assumed)
 
 </div>
 </div>
@@ -207,8 +207,11 @@ minus at the end, divided by the engine-to-battery efficiency, the fuel's heatin
 density. With 43.4 megajoules per kilogram and 0.745 kilograms per liter, Lecture 4's petrol. The
 sign: less charge at the end, more fuel charged to the run.
 
-The library gives you this as a block, issue 199. Its engine-to-battery efficiency, eta e b, and the
-method it follows are stated there; until it lands, the value is a TODO.
+The library gives you this as a block, SoC-corrected fuel. It follows the linear correction of SAE
+J1711 and UN ECE R101, but where those take the slope from a regression over several tests, the
+block fixes it with an engine-to-battery efficiency of 0.30, assumed: the Lecture 2 engine on its
+best-BSFC line at a 15 kilowatt charging point, 34.7 percent, times 0.90 for the machine and inverter
+generating, times 0.97 for the battery's charging loss.
 
 The right column sizes the window. 2 percent of 1.4 kilowatt-hours is 0.028 kilowatt-hours, about
 0.1 megajoules. The conventional car burns 39.26 megajoules of fuel on the WLTC, the research note's
