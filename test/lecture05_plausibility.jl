@@ -381,3 +381,60 @@ end
     @test all(N_a[top] .< N_t[top])
     @info "Operating-line bench" settled_rpm = N_a[findlast(hold)] max_in_range_lag_rpm = lag lag_bound_rpm = bound dyno_power_W = P_dyno[end] low_rpm = N_a[1] top_rpm = N_a[end]
 end
+
+
+@testset "operating line on the P2 car" begin
+    for (name, folder) in (("P2OperatingLinePowertrain", "Vehicle"), ("P2OperatingLineWLTC", "Lecture5"))
+        source(dir) = read(joinpath(@__DIR__, "..", "dyad", dir, name * ".dyad"), String)
+        normalize(t) = replace(t, "VehicleSystemsComponents.HandsOn05.P2OperatingLinePowertrain" =>
+            "VehicleSystemsComponents.Vehicle.P2OperatingLinePowertrain")
+        @test normalize(source("HandsOn05")) == normalize(source(folder))
+    end
+    run = VehicleSystemsComponents.Lecture5.P2OperatingLineWLTCTransient()
+    m, s = symbolic_container(run), run.sol
+    @test string(s.retcode) == "Success"
+    @test s.t[end] == 1800.0
+    speed_error = maximum(abs, 3.6 .* s[m.car.bus.vx] .- s[m.trace.y])
+    @test speed_error < 2.0
+    trace_distance = sum(diff(s.t) .* (s[m.trace.y][1:end-1] .+ s[m.trace.y][2:end])) / 7.2
+    @test s[m.meter.s][end] ≈ trace_distance rtol=5e-4
+    @test maximum(abs, s[m.powertrain.tau_ref]) == 0.0
+    @test maximum(abs, s[m.powertrain.i]) < 1e-9
+    @test s[m.meter.fuel_corr][end] ≈ s[m.meter.fuel_raw][end] atol=1e-10
+
+    # Uniform samples avoid weighting points by adaptive solver effort. Fuel uses trapezoids.
+    ts = collect(0.0:0.1:1800.0)
+    at(x) = s(ts, idxs=x).u
+    rpm = at(m.powertrain.engine_speed) .* (30 / pi)
+    torque = at(m.powertrain.engine_torque)
+    power = rpm .* torque .* (pi / 30 / 1000)
+    target = [BsfcLine.lin(getindex.(LINE_ROWS, 1), getindex.(LINE_ROWS, 2), p) for p in power]
+    deviation = abs.(rpm .- target)
+    cmd = at(m.powertrain.variator.i_command)
+    ratio = at(m.powertrain.variator.ratio)
+    # Dense interpolation undershoots the 2.8 bound by 5.4e-6 at default solver tolerance.
+    @test all(2.8 - 1e-5 .<= ratio .<= 12.0 + 1e-5)
+    idle = (power .< 1.0) .| (at(m.driver.y) .<= 0.0)
+    launch = .!idle .& (cmd .>= 11.999)
+    overdrive = .!idle .& (cmd .<= 2.801)
+    eligible = .!idle .& .!launch .& .!overdrive
+    # Horizontal band in the speed–torque plane, evaluated at ACTUAL brake power.
+    # 0.5 s ratio lag, crank acceleration, floor bias and K0 slip cause transient departures.
+    on = eligible .& (deviation .<= 500.0)
+    @test sum(eligible) / length(ts) > 0.20
+    @test sum(on) / sum(eligible) > 0.95
+    fuel = at(m.powertrain.mdot_fuel)
+    fuel[1] /= 2
+    fuel[end] /= 2
+    @test sum(fuel[on]) / sum(fuel) > 0.44
+    for (label, mask) in (("on", on), ("off", .!on), ("idle/braking", idle),
+            ("launch", launch), ("overdrive", overdrive), ("in-range transient", eligible .& .!on))
+        @info "P2 operating points: $label" point_percent=100sum(mask)/length(ts) fuel_percent=100sum(fuel[mask])/sum(fuel)
+    end
+    baseline = VehicleSystemsComponents.Lecture5.P2EngineWLTCTransient()
+    bm = symbolic_container(baseline)
+    raw, h0 = s[m.meter.fuel_raw][end], baseline.sol[bm.meter.fuel_raw][end]
+    @test raw ≈ 5.44968 rtol=1e-3
+    @test h0 ≈ 5.715009 rtol=1e-3
+    @info "P2 operating-line WLTC" speed_error distance=s[m.meter.s][end] raw_L100=raw H0_L100=h0 difference=raw-h0 percent=100*(raw/h0-1)
+end

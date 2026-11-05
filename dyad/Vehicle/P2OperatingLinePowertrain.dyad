@@ -1,0 +1,74 @@
+"""
+P2 transmission-input hybrid (derived; Lecture 5 S2, ORNL-2011 sizing).
+MappedEngine drives K0, then the HybridDrive shaft and SpeedCommandedVariator. Plan S2's existing
+CVT means the variator including final drive, not CVTDriveline's centrifugal launch clutch
+or ideal rolling wheel. This sibling uses the distinct variator seam without changing H0.
+`engine_stopped` is a fixed test configuration, not an engine-start model.
+"""
+component P2OperatingLinePowertrain
+  "Engine pedal, 0 to 1 (derived; MappedEngine)"
+  engine_pedal = RealInput() {^engine_pedal}
+  "K0 engagement request (derived; DisconnectClutch)"
+  engage = RealInput() {^engage}
+  "Machine torque request [N.m] (derived; HybridDrive)"
+  tau_ref = RealInput() {^tau_ref}
+  "Target input speed [rpm] (derived; OperatingLine)"
+  N_ref = RealInput() {^N_ref}
+  "Output to planar differential (derived; P2 layout)"
+  spline = Spline() {^spline}
+  "Stationary housing (assumed; planar bench)"
+  support = Spline() {^support}
+  "Engine speed [rad/s] (derived; crank sensor)"
+  engine_speed = RealOutput() {^engine_speed}
+  "Engine brake torque [N.m] (derived; map)"
+  engine_torque = RealOutput() {^engine_torque}
+  "Fuel flow [kg/s] (derived; map)"
+  mdot_fuel = RealOutput() {^mdot_fuel}
+  "Net machine shaft torque [N.m] (derived; DCMachine)"
+  machine_torque = RealOutput() {^machine_torque}
+  "K0 actuator position (derived; actuator)"
+  position = RealOutput() {^position}
+  "Battery state of charge (derived; coulomb count)"
+  SoC = RealOutput() {^SoC}
+  "Battery open-circuit voltage [V] (derived; HybridDrive)"
+  E = RealOutput() {^E}
+  "Battery current, positive discharge [A] (derived; Battery)"
+  i = RealOutput() {^i}
+  "Hold engine stopped with fuel cut for an electric-only fixture (assumed; no start dynamics)"
+  structural parameter engine_stopped::Boolean = false
+  "Initial K0 position (assumed; fixed-mode bench)"
+  parameter position_start::Real = 0.0
+  "Initial running-engine speed [rad/s] (assumed; 800 rpm idle for launch)"
+  parameter engine_speed_start::AngularVelocity = 800.0 * pi / 30
+  engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(fuel_cut_rpm = ifelse(engine_stopped, -2.0, 1300.0), fuel_resume_rpm = ifelse(engine_stopped, -1.0, 1000.0)) {^engine}
+  k0 = VehicleSystemsComponents.Vehicle.DisconnectClutch(position_start = position_start) {^k0}
+  drive = VehicleSystemsComponents.Vehicle.Electric.HybridDrive() {^drive}
+  variator = VehicleSystemsComponents.Vehicle.SpeedCommandedVariator() {^variator}
+  hold = RotationalComponents.Components.Fixed() if engine_stopped {^hold}
+relations
+  initial engine.air.manifold.p = 101325.0
+  initial drive.machine.rotor.phi = 0.0
+  connect(engine_pedal, engine.pedal)
+  connect(engage, k0.engage)
+  connect(tau_ref, drive.tau_ref)
+  connect(N_ref, variator.N_ref)
+  connect(engine.spline, k0.spline_a)
+  connect(k0.spline_b, drive.spline, variator.spline_a)
+  connect(variator.spline_b, spline)
+  connect(engine.support, k0.support, drive.support, variator.support, support)
+  connect(engine.speed.w, engine_speed)
+  connect(engine.tau_e, engine_torque)
+  connect(engine.mdot_fuel, mdot_fuel)
+  connect(drive.SoC, SoC)
+  machine_torque = drive.machine.tau
+  position = k0.position
+  E = drive.battery.E
+  i = drive.battery.i
+  if engine_stopped
+    connect(engine.spline, hold.spline)
+  else
+    initial engine.crankshaft.w = engine_speed_start
+    initial engine.crankshaft.phi = 0.0
+  end
+metadata {"Dyad":{"icons":{"default":"dyad://VehicleSystemsComponents/Vehicle/CVTDriveline.svg"}},"_links":{"E":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":825,"y2":875},"icon":{"x1":950,"x2":1050,"y1":800,"y2":900}}}},"SoC":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":765,"y2":815},"icon":{"x1":950,"x2":1050,"y1":740,"y2":840}}}},"N_ref":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":285,"y2":335},"icon":{"x1":-50,"x2":50,"y1":260,"y2":360}}}},"drive":{"Dyad":{"placement":{"diagram":{"x1":450,"x2":550,"y1":400,"y2":500}}}},"engage":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":165,"y2":215},"icon":{"x1":-50,"x2":50,"y1":140,"y2":240}}}},"engine":{"Dyad":{"placement":{"diagram":{"x1":150,"x2":250,"y1":400,"y2":500}}}},"engine_pedal":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":105,"y2":155},"icon":{"x1":-50,"x2":50,"y1":80,"y2":180}}}},"engine_speed":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":465,"y2":515},"icon":{"x1":950,"x2":1050,"y1":440,"y2":540}}}},"engine_torque":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":525,"y2":575},"icon":{"x1":950,"x2":1050,"y1":500,"y2":600}}}},"hold":{"Dyad":{"placement":{"diagram":{"x1":750,"x2":850,"y1":400,"y2":500}}}},"i":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":885,"y2":935},"icon":{"x1":950,"x2":1050,"y1":860,"y2":960}}}},"k0":{"Dyad":{"placement":{"diagram":{"x1":300,"x2":400,"y1":400,"y2":500}}}},"machine_torque":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":645,"y2":695},"icon":{"x1":950,"x2":1050,"y1":620,"y2":720}}}},"mdot_fuel":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":585,"y2":635},"icon":{"x1":950,"x2":1050,"y1":560,"y2":660}}}},"position":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":705,"y2":755},"icon":{"x1":950,"x2":1050,"y1":680,"y2":780}}}},"spline":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":875,"y2":925},"icon":{"x1":950,"x2":1050,"y1":850,"y2":950}}}},"support":{"Dyad":{"placement":{"diagram":{"x1":450,"x2":550,"y1":950,"y2":1050},"icon":{"x1":450,"x2":550,"y1":950,"y2":1050}}}},"tau_ref":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":225,"y2":275},"icon":{"x1":-50,"x2":50,"y1":200,"y2":300}}}},"variator":{"Dyad":{"placement":{"diagram":{"x1":600,"x2":700,"y1":400,"y2":500}}}}}}
+end

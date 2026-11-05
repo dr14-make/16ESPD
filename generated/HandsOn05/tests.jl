@@ -17,6 +17,8 @@ end
 
 @testset "`VehicleSystemsComponents.HandsOn05`" begin
 include("P2ElectricWLTC_test.jl")
+include("P2OperatingLinePowertrain_test.jl")
+include("P2OperatingLineWLTC_test.jl")
 include("P2Powertrain_test.jl")
 include("P2WLTC_test.jl")
 end
