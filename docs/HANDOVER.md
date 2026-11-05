@@ -288,17 +288,19 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   the `generated` group passes only at exactly 3992 failures and no errors, and any other count,
   lower included, fails the run. When a Dyad release carries the fix, drop the setting, delete
   the `generated` line from `KNOWN_FAILURES`, and rerun the suite.
-- **The planar car stalls Rodas5P only from exact rest (MultibodyComponents.jl#185).**
-  `SlipBasedWheelJoint` adds `0.0001` outside `sqrt(v_slip_long^2 + v_slip_lat^2)`, so its
-  Jacobian is NaN when both slip speeds are exactly zero. `PlanarWLTC` started with body and
-  wheels at exact rest aborts at t = 0 (`dt forced below eps`, NaN rows on every wheel's `der(w)`),
-  with or without a creep target. Once the car has moved, the slip speeds do not return to exact
-  zero: braked to a stop they settle at round-off (1e-22 m/s longitudinal, 1e-20 m/s lateral)
-  and a 400 s park, every WLTC stop and a `dtmax = 0.01` run all finish. A free-rolling rear
-  wheel at constant speed does reach `v_slip_long == 0.0` exactly, and only the lateral round-off
-  keeps it off the NaN. The bench therefore starts the wheels `dv_wheel = 0.01` m/s ahead of the
-  body, as the Lecture 3 harnesses do, and carries no creep floor; the `planar_wltc` group's
-  `@test_broken` on an exact-rest start turns into an unexpected pass once the fix ships.
+- **The planar wheels use a local copy of the slip-based tire joint.**
+  `Vehicle.Planar.SlipWheelJoint` is MultibodyComponents 0.3.1's `SlipBasedWheelJoint`, which
+  regularizes the slip speed as `sqrt(v_slip_long^2 + v_slip_lat^2 + v_small^2)`. The 0.3.0 joint
+  bundled with Dyad 3.5.0 adds `0.0001` outside the square root instead, so its Jacobian is NaN
+  when both slip speeds are exactly zero (JuliaComputing/MultibodyComponents.jl#185): a car at
+  exact rest aborted at t = 0, and one held on the brake went `Unstable` after about 4.4 s once
+  its speeds underflowed (#194). MultibodyComponents is a non-upgradable stdlib in that Julia, so
+  the copy stays until Dyad bundles 0.3.1 or later; then `PlanarBrakedWheel` and
+  `RoadBrakedWheel` can go back to the upstream joint and the copy and
+  `licenses/MultibodyComponents.LICENSE` can be deleted. With the copy, exact-rest starts and
+  indefinite braked parking both run. The benches still start the wheels `dv_wheel = 0.01` m/s
+  ahead of the body, as the Lecture 3 harnesses do, because their reference results were
+  recorded that way; the `planar_wltc` group checks that an exact-rest start succeeds.
 - **`RoadLoad` cannot run backwards faster than 0.71 m/s.** Its stdlib `RollingResistance` uses
   the `Exp` regularization, `2 / (1 + exp(-v / (0.01 v0))) - 1` with `v0 = 0.1`, whose derivative
   is `Inf / Inf` once `exp(-v / 1e-3)` overflows at v < -0.71 m/s. A WLTC driver that brakes with
@@ -577,9 +579,8 @@ and phase is increase, yet pressure and rate remain zero. This traces the missin
 recovery to zero lock-pressure memory, rather than insufficient grip.
 
 **Low grip (road grip ×0.3):** rule ON reaches vx < 0.5 m/s 16.4 s after the pedal at
-190.445049116 m; minimum slip above 3 m/s is −0.0493111 front / −0.105156 rear. The default
-`stop = 28` run fails `Unstable` at 24.565 s during prolonged parking, consistent with the
-known tire singularity; the `stop = 20` rerun succeeds with the same stopping distance.
+190.445049116 m; minimum slip above 3 m/s is −0.0493111 front / −0.105156 rear. Parking
+after the stop is stable: a `stop = 40` run succeeds.
 HandsOn agrees at 190.472 m. Rule OFF with `stop = 12` succeeds
 numerically at 95.098241553 m, but minimum front slip −17.35917766 indicates reversed wheels:
 this is NOT a physical stopping-distance benchmark.

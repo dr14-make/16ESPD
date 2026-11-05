@@ -106,11 +106,10 @@ fade (under 4 % of braking energy). The meaningful motor-share goal is NOT met: 
 front-active withdrawal suppresses regen almost throughout; gross machine share is only
 0.839 %. WLTC reports recovered energy independently.
 
-**S9 — The standstill singularity is worked around on the bench.** `SlipBasedWheelJoint` puts its
-regularization outside the square root, so the Jacobian turns NaN when a parked car's slip velocity
-decays to exactly zero (JuliaComputing/MultibodyComponents.jl#185). The bench keeps the car off
-exact zero until a fixed release ships. FBDF reports success on a frozen car; benches use Rodas5P
-and check that the distance driven matches the cycle.
+**S9 — The car parks at exact zero.** The planar wheels' `SlipWheelJoint` regularizes the slip
+speed inside the square root, so the Jacobian stays finite when a parked car's slip velocity
+decays to exactly zero. FBDF reports success on a frozen car; benches use Rodas5P and check that
+the distance driven matches the cycle.
 
 **S10 — Numbers carry their provenance**, as in Lecture 2's S10: `(Nissan)`, `(ORNL)`, `(INL)`,
 `(EPA)`, `(EEA)`, `(EU)`, `(Audi)`, `(IEA)`, `(BNEF)`, `(ACEA)`, `(Toyota)`, `(ICCT)`, `(ADAC)`,
@@ -299,9 +298,8 @@ state **before** the ABS memory fix; they are history, not current expectations.
 - Low-grip benches: `Vehicle.Planar.PlanarBEVLowGripStopTransient()` and
   `HandsOn04.BEVLowGripStopTransient()` retain `withdraw = 1`, `stop = 28`. At road grip
   ×0.3, rule ON reaches vx < 0.5 m/s 16.4 s after the pedal at 190.445049116 m; minimum
-  slip above 3 m/s is −0.0493111 front / −0.105156 rear. The default 28 s run fails
-  `Unstable` at 24.565 s in prolonged parking, consistent with the known tire singularity;
-  rerun with `stop = 20` succeeds (HandsOn: 190.472 m). `withdraw = 0, stop = 12` succeeds numerically at
+  slip above 3 m/s is −0.0493111 front / −0.105156 rear. Parking after the stop
+  is stable: a `stop = 40` run succeeds (HandsOn: 190.472 m). `withdraw = 0, stop = 12` succeeds numerically at
   95.098241553 m but minimum front slip −17.35917766 means reversed wheels, NOT a physical
   benchmark. The rule is not traction control: machine-only light braking may lock a wheel
   without a friction demand for ABS to modulate.
