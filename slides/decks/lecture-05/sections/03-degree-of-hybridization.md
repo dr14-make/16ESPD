@@ -191,6 +191,70 @@ trade.
 -->
 
 ---
+routeAlias: power-battery
+---
+
+## A hybrid battery is a power battery
+
+<div class="grid grid-cols-2 gap-8 items-start">
+<div>
+
+<div class="tight">
+
+| | Power | Energy | Power / energy |
+|---|---:|---:|---:|
+| today's hybrid (2011 Sonata) | 30 kW | 1.4 kWh | **≈ 21 C** |
+| Lecture 4's Leaf | 110 kW | 40 kWh | ≈ 2.75 C |
+
+</div>
+
+For each kWh it holds, the hybrid's pack gives about eight times the Leaf's power: its cells are
+built for **power rather than energy**.
+
+So its **internal resistance** matters: at 30 kW and 270 V, about 110 A flow through it. Our
+*R*₀ ≈ 0.077 Ω is **assumed**: the Leaf pack's 0.1 Ω scaled to 270 V.
+
+</div>
+<div>
+
+**Batteries deck, summary table (guidelines only)**
+
+<div class="tight">
+
+| Chemistry | Wh/kg | W/kg |
+|---|---:|---:|
+| lead-acid | 30 | 250 |
+| NiCd | 50 | 150 |
+| NiMH | 65 | 200 |
+| Li-ion | 150 | 300 |
+
+</div>
+
+Li-ion in that table: 300 W/kg from 150 Wh/kg, **2 C**. A hybrid asks ten times that.
+
+</div>
+</div>
+
+<!--
+The battery from the last slide, seen from the side that matters for a hybrid: power.
+
+Divide the power the pack must give by the energy it holds. Today's car, after the 2011 Sonata: 30
+kilowatts from 1.4 kilowatt-hours, about 21 per hour, a 21 C discharge. Lecture 4's Leaf: 110
+kilowatts from 40 kilowatt-hours, about 2.75 C. The hybrid's pack has to give about eight times more
+power for each kilowatt-hour it holds. So hybrid cells are built for power rather than energy.
+
+And the pack's internal resistance matters. At 30 kilowatts and 270 volts about 110 amperes flow,
+and every one of them goes through R zero. Say plainly what ours is: an assumption. The model scales
+the Leaf pack's 0.1 ohm by the number of cells in series, 270 over 350 volts, so about 0.077 ohm; it
+is tagged assumed in the HybridDrive part, and small high-power cells may sag more than that.
+
+The right side is from the batteries lecture, the summary table of slide 14; the deck calls its
+figures guidelines only. Read the two columns as a ratio: a typical Li-ion cell there gives 300 watts
+per kilogram from 150 watt-hours per kilogram, about 2 C. A hybrid asks about ten times that, which is
+why a hybrid pack is not just a small electric-car pack.
+-->
+
+---
 
 ## Summary of section 03
 

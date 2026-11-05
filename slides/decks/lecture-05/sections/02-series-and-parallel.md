@@ -116,6 +116,54 @@ why that clutch matters.
 -->
 
 ---
+routeAlias: series-parallel-clutch
+---
+
+## Series-parallel: a series hybrid with a clutch
+
+<div class="grid grid-cols-[1.1fr_1fr] gap-8 items-center">
+<div>
+
+![The series hybrid's diagram with one addition: a clutch on the engine-generator shaft, closed at steady cruise, joins the engine's shaft to the motor's shaft above the wheels. With the clutch open it is a series hybrid; with it closed the engine drives the wheels directly.](/diagrams/02-series-parallel-clutch.svg)
+
+</div>
+<div class="text-[0.95rem]">
+
+**Low speed, clutch open:** a series hybrid. The engine turns the generator; the motor drives the
+wheels.
+
+**Steady cruise, clutch closed:** the engine drives the wheels directly. There, one mechanical path
+beats converting every joule twice.
+
+**Used in** Honda's current hybrids.
+
+**Against the power split** of <Link to="power-split">section 05</Link>: a few fixed modes,
+switched by a clutch, not a continuously variable split.
+
+</div>
+</div>
+
+<!--
+One layout sits between the two: the series-parallel hybrid with a clutch. Point at the drawing: it
+is the series diagram from two slides ago, with one clutch added on the engine's shaft, after the
+generator, leading to the wheel path.
+
+At low speed the clutch is open and the car is a series hybrid: the engine turns the generator, the
+motor alone drives the wheels, and the engine is free of the road, where that freedom pays most.
+
+At steady cruise the clutch closes and the engine drives the wheels directly. There the engine's
+speed tied to the wheels costs little, because the cruise point is steady, and the mechanical path
+saves the double conversion. So it takes the series hybrid's strength where the series is good and
+the parallel's where the parallel is good.
+
+Honda's current hybrids use this layout. No numbers on it today: our research notes have none.
+
+The last line is the contrast with the power-split hybrid of section 05, the Prius: there a planetary
+gear splits the engine's power continuously between a mechanical and an electrical path. Here a
+clutch switches between a few fixed modes.
+-->
+
+---
 routeAlias: series-or-parallel
 ---
 

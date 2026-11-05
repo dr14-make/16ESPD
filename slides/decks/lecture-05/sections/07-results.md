@@ -39,6 +39,9 @@ routeAlias: three-powertrains
 
 </div>
 
+The hybrid hardware alone, the machine idling on the shaft, costs the conventional car
+**0.07 L/100 km, 1.3 %**: the hybrid earns that back before it saves anything.
+
 MJ of petrol into the tank against MJ out of the battery's terminals: the energy each car draws
 from its store, not from the well or the grid.
 

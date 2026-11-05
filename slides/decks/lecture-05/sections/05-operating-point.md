@@ -109,6 +109,9 @@ line.
 
 The line alone, without a battery: **≈ 0.3 L/100 km** on this car, as an order of magnitude.
 
+Even steady cruise is off the line: at 90 km/h Lecture 2's CVT schedule runs the engine at 10.0 kW,
+2182 rpm, **264 g/kWh**; the line gives 10 kW at 1420 rpm, **242 g/kWh**: about **8 % less fuel**.
+
 </div>
 </div>
 
@@ -132,6 +135,11 @@ The table recalls Lecture 2's drive-cycles section. The same body and engine: an
 minimum-fuel line, estimated backward from the trace, 4.93 liters per 100 kilometers. The hands-on
 CVT, which held the engine at 1800 rpm or more and ran forward with a PID driver, 5.22. The two
 methods differ, so read the gap, about three tenths of a liter, as an order of magnitude.
+
+The last line under it is one point you can check by hand. At a steady 90 kilometers per hour the
+car needs about 10 kilowatts. Lecture 2's CVT schedule gives them at 2182 rpm, where the engine burns
+264 grams per kilowatt-hour; the best-BSFC line gives the same 10 kilowatts at 1420 rpm and 242 grams.
+Same power, about 8 percent less fuel, just by choosing the speed. Even steady cruise is off the line.
 
 The green box is the limit of this trick. A CVT gives one degree of freedom, the engine's speed. The
 power still has to equal what the road asks, so at low power the engine still runs on a poor part of
