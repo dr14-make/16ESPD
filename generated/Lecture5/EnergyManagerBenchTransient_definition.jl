@@ -6,7 +6,7 @@
 
 using DyadInterface
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@component function EnergyManagerBenchTransient__System(; name = nothing, var"alg"=ODEAlg.Rodas5P(), var"start"=0, var"stop"=900.0, var"abstol"=0.000001, var"reltol"=0.000001, var"saveat"=0.05, var"dtmax"=0.1, var"tstops"=[10.0, 15.0, 16.0, 28.0, 29.0, 34.0, 42.0, 47.0, 48.0, 60.0, 61.0, 64.0, 69.0, 74.0, 75.0, 87.0, 88.0, 91.0, 96.0, 99.0, 104.0, 107.0, 109.0, 112.0, 127.0, 130.0, 132.0, 135.0, 150.0, 155.0], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.Aggressive(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", __overrides = Dict{String, Any}())
+@component function EnergyManagerBenchTransient__System(; name = nothing, var"alg"=ODEAlg.Rodas5P(), var"start"=0, var"stop"=900.0, var"abstol"=0.000001, var"reltol"=0.000001, var"saveat"=0.05, var"dtmax"=0.1, var"tstops"=[10.0, 15.0, 16.0, 28.0, 29.0, 34.0, 42.0, 47.0, 48.0, 60.0, 61.0, 64.0, 66.0, 68.0, 71.0, 74.0, 75.0, 87.0, 88.0, 91.0, 96.0, 99.0, 104.0, 107.0, 109.0, 112.0, 127.0, 130.0, 132.0, 133.0, 137.0, 138.0, 150.0, 155.0], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.Aggressive(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -143,7 +143,7 @@ export EnergyManagerBenchTransient__System
   var"reltol"::Float64 = 0.000001
   var"saveat"::Float64 = 0.05
   var"dtmax"::Float64 = 0.1
-  var"tstops"::Array{Float64, 1} = [10.0, 15.0, 16.0, 28.0, 29.0, 34.0, 42.0, 47.0, 48.0, 60.0, 61.0, 64.0, 69.0, 74.0, 75.0, 87.0, 88.0, 91.0, 96.0, 99.0, 104.0, 107.0, 109.0, 112.0, 127.0, 130.0, 132.0, 135.0, 150.0, 155.0]
+  var"tstops"::Array{Float64, 1} = [10.0, 15.0, 16.0, 28.0, 29.0, 34.0, 42.0, 47.0, 48.0, 60.0, 61.0, 64.0, 66.0, 68.0, 71.0, 74.0, 75.0, 87.0, 88.0, 91.0, 96.0, 99.0, 104.0, 107.0, 109.0, 112.0, 127.0, 130.0, 132.0, 133.0, 137.0, 138.0, 150.0, 155.0]
   var"automatic_discontinuity_detection"::Bool = false
   var"optimize"::OptimizationLevel.Type = OptimizationLevel.Aggressive()
   var"progress"::Bool = true
@@ -167,10 +167,12 @@ export EnergyManagerBenchTransient__System
   # | 15-29 | 12 kW, dithered by 1.5 kW | engine starts once |
   # | 29-42 | 30 kW | engine on the line |
   # | 42-61 | 60 kW, dithered by 3 kW | boost engages once |
-  # | 61-69 | 75 kW | boost, machine adds 15 kW |
-  # | 69-88 | down to 8 kW, dithered by 1.5 kW | boost releases, engine stops once |
+  # | 61-66 | 75 kW | boost, machine adds 15 kW |
+  # | 66-71 | 110 kW | boost, machine saturated at 30 kW, engine above the line cap at 80 kW |
+  # | 71-88 | down to 8 kW, dithered by 1.5 kW | boost releases, engine stops once |
   # | 88-107 | -20 kW, then -50 kW | regen; past the 30 kW charge ceiling friction takes the rest |
-  # | 107-150 | -60 N.m while the car stops, then back to 60 km/h | regen fades out, friction holds |
+  # | 107-132 | -60 N.m while the car stops | regen fades out, friction holds |
+  # | 132-150 | 250 N.m at standstill, then back to 60 km/h | launch: engine starts for the 45 N.m beyond the machine, once |
   # | 150-900 | 6 kW | closed loop: electric drive empties the battery to SoC_on, the engine charges it to SoC_off |
   # 
   # The battery is a 1.4 kWh store (HybridDrive's) fed the machine's shaft power through a stated

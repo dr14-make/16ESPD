@@ -23,10 +23,12 @@ the engine and a stopped engine behind an open one. The segments:
 | 15-29 | 12 kW, dithered by 1.5 kW | engine starts once |
 | 29-42 | 30 kW | engine on the line |
 | 42-61 | 60 kW, dithered by 3 kW | boost engages once |
-| 61-69 | 75 kW | boost, machine adds 15 kW |
-| 69-88 | down to 8 kW, dithered by 1.5 kW | boost releases, engine stops once |
+| 61-66 | 75 kW | boost, machine adds 15 kW |
+| 66-71 | 110 kW | boost, machine saturated at 30 kW, engine above the line cap at 80 kW |
+| 71-88 | down to 8 kW, dithered by 1.5 kW | boost releases, engine stops once |
 | 88-107 | -20 kW, then -50 kW | regen; past the 30 kW charge ceiling friction takes the rest |
-| 107-150 | -60 N.m while the car stops, then back to 60 km/h | regen fades out, friction holds |
+| 107-132 | -60 N.m while the car stops | regen fades out, friction holds |
+| 132-150 | 250 N.m at standstill, then back to 60 km/h | launch: engine starts for the 45 N.m beyond the machine, once |
 | 150-900 | 6 kW | closed loop: electric drive empties the battery to SoC_on, the engine charges it to SoC_off |
 
 The battery is a 1.4 kWh store (HybridDrive's) fed the machine's shaft power through a stated

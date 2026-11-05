@@ -5,49 +5,68 @@
 
 
 @doc Markdown.doc"""
-   EnergyManager(; name, P_on, P_off, P_line_max, dP_boost, P_peak, P_chg, SoC_on, SoC_off, SoC_full, dSoC_full, T_max, P_max, P_regen, v_fade, w_idle, latch_time, __overrides)
+   EnergyManager(; name, P_on, P_off, P_line_max, dP_boost, P_peak, P_chg, SoC_on, SoC_off, SoC_full, dSoC_full, T_max, P_max, P_regen, v_fade, w_idle, w_on, w_off, tau_traction, dtau, dSoC_boost, latch_time, __overrides)
 
 Rule-based energy manager of a P2 hybrid: splits the driver's torque demand at the transmission
 input between engine, machine and friction brakes (derived; Lecture 5 S3). Signals only.
 
-Three continuous hysteresis latches pick the mode, from the demand power `P_dem = tau_dem w_shaft`
-and the battery state of charge:
+Three continuous hysteresis latches pick the mode, from the demand power `P_dem = tau_dem w_shaft`,
+the demand torque, the shaft speed and the battery state of charge:
 
-    engine: on  when P_dem > P_on  or charge,      off when P_dem < P_off and not charge
-    boost:  on  when P_dem > P_line_max,           off when P_dem < P_line_max - dP_boost
-    charge: on  when SoC < SoC_on,                 off when SoC > SoC_off
+    engine: on  when P_dem > P_on  or tau_drive > tau_lim          or charge and w_shaft > w_on
+            off when P_dem < P_off and tau_drive < tau_lim - dtau  and not (charge and w_shaft > w_off)
+    boost:  on  when P_dem > P_line_max,   off when P_dem < P_line_max - dP_boost
+    charge: on  when SoC < SoC_on,         off when SoC > SoC_off
 
 Each latch output is a fraction relaxing between 0 and 1 over `latch_time`, so the modes blend
-through it rather than switch, and a demand dithering inside a band moves no latch. The outputs
-follow from the latch fractions:
+through it rather than switch, and a demand dithering inside a band moves no latch. With
+`tau_drive = max(tau_dem, 0)`, `P_drive = tau_drive w_shaft`, the machine limit
+`tau_lim = min(T_max, P_max / |w_shaft|)` and `engine_on` the engine latch clamped to [0, 1]:
 
-    cap        = P_line_max + (1 - boost) (P_peak - P_line_max)
-    P_engine   = engine min(max(tau_drive w_shaft + charge P_chg, 0), cap)
-    tau_engine = P_engine / max(engine_speed, w_idle)
+    c          = charge gate_speed gate_traction
+    P_shift    = max(P_drive, min(P_drive + c P_chg, P_line_max))
+    cap        = (1 - boost) P_peak + boost min(P_peak, max(P_line_max, P_drive - a_boost tau_lim w_shaft))
+    tau_excess = max(tau_drive - tau_lim, 0)
+    P_engine   = engine_on min(max(min(P_shift, cap), tau_excess w_e), P_peak),   w_e = max(engine_speed, w_idle)
+    tau_engine = P_engine / w_e
     tau_assist = clamp(tau_drive - tau_engine, -tau_lim, tau_lim)
-    tau_regen  = min(tau_brake_demand, tau_regen_max)
     tau_machine  = tau_assist - tau_regen
-    tau_friction = tau_brake_demand - tau_regen
+    tau_friction = max(-tau_dem, 0) - tau_regen
 
-with `tau_drive = max(tau_dem, 0)`, `tau_brake_demand = max(-tau_dem, 0)` and the machine limit
-`tau_lim = min(T_max, P_max / |w_shaft|)`. The modes are what these give:
+The modes are what these give:
 
 - **Electric only** (engine off): the engine and K0 are released and the machine carries the
   whole demand, `tau_machine = tau_drive`, at standstill too.
 - **Engine on the line**: the engine is asked for the demand power, which `OperatingLine` turns
   into the best-BSFC speed. With K0 closed the shaft runs at engine speed, so `tau_engine =
   tau_drive` and the machine idles.
-- **Charge**: the engine is asked for the demand plus `P_chg`, a load-point shift up the line, and
-  the machine generates `P_chg / w`. A low battery forces the engine on whatever the demand.
-- **Boost**: the engine is capped at `P_line_max` and the machine adds the rest, up to its limit.
-  The latch sets exactly at the cap, so no torque jumps at engagement; it releases 5 kW lower,
-  where the engine alone covers the demand again.
+- **Charge**: the engine is asked for `P_chg` above the demand, a load-point shift up the line
+  that stops at `P_line_max`, and the machine generates the difference. A low battery forces the
+  engine on, but only once the shaft turns faster than `w_on`, so a locked K0 can hold the
+  engine above idle; below `w_off` it lets go, and at standstill a low battery never ties a
+  running engine to the wheels. The charge adder fades in with shaft speed over the same band
+  (`gate_speed`) and with the traction torque over `tau_traction` (`gate_traction`): while
+  braking regen charges the battery and the engine is asked for nothing.
+- **Boost**: the engine is capped at `P_line_max` and the machine adds the rest. Where the machine
+  saturates, the cap rises to cover what it cannot give, up to `P_peak`, so the delivered power is
+  the demand up to `P_peak` plus the machine limit. The latch sets exactly at `P_line_max`, so no
+  torque jumps at engagement, and releases `dP_boost` lower. The machine's share fades with SoC:
+  `a_boost` is 1 at `SoC_on` and above and falls smoothly to 0 at `SoC_on - dSoC_boost`, the
+  engine taking over. A depleted battery is not drained further, at the price of less
+  acceleration once the demand exceeds the engine's peak.
+- **Launch**: a demand torque beyond the machine's limit starts the engine, which is asked for
+  the excess `tau_excess` at no less than idle speed. Near standstill a P2 with a CVT and no
+  launch clutch launches on the machine; the engine's torque reaches the shaft only through a
+  slipping K0, which the plant models: this block asks for the torque and closes K0.
 - **Regen**: a braking demand goes to the machine first, then the friction brakes, by Lecture 4's
   `RegenBlend` rule: the ceiling is the smallest of the machine torque left after any generating,
   the charge power `P_regen / w`, and a fade to zero below `v_fade`. It takes the measured shaft
   speed, where `RegenBlend` estimates it through a fixed reduction a CVT does not have. A battery
-  near full takes less:
-  the ceiling falls smoothly to zero between `SoC_full - dSoC_full` and `SoC_full`.
+  near full takes less: the ceiling falls smoothly to zero between `SoC_full - dSoC_full` and
+  `SoC_full`.
+
+The fractions `ev`, `on_line`, `charging` and `boosting` partition the engine latch: electric
+when it is off, else boosting before charging before on the line, so they sum to 1.
 
 `tau_friction` is the friction brakes' share as torque at the transmission input; a bench carries
 it to the wheels through the variator ratio. `P_engine` feeds `OperatingLine`, `tau_engine` the
@@ -75,6 +94,11 @@ best-BSFC line.
 | `P_regen`         | Charge-power ceiling for regen (derived; machine rating)                         | W  |   30.0e3 |
 | `v_fade`         | Speed below which regen fades to zero, km/h (assumed; RegenBlend)                         | --  |   10.0 |
 | `w_idle`         | Engine speed floor for the torque request (derived; line idle 800 rpm)                         | rad/s  |   800.0 * pi / 30 |
+| `w_on`         | Shaft speed above which a low battery starts the engine (derived; 200 rpm above the line's 800 rpm idle, assumed margin)                         | rad/s  |   1000.0 * pi / 30 |
+| `w_off`         | Shaft speed below which a low battery lets the engine go (assumed; just above idle)                         | rad/s  |   850.0 * pi / 30 |
+| `tau_traction`         | Traction torque over which the charge adder fades in (assumed)                         | N.m  |   5.0 |
+| `dtau`         | Release band of the torque start below the machine limit (assumed)                         | N.m  |   20.0 |
+| `dSoC_boost`         | SoC band below SoC_on over which boost assist fades out (assumed)                         | --  |   0.05 |
 | `latch_time`         | Mode blend time (assumed; the K0 actuator's 0.15 s)                         | s  |   0.2 |
 
 ## Connectors
@@ -98,7 +122,17 @@ best-BSFC line.
 | `P_dem`         | Demand power [W]                         | W  |
 | `tau_drive`         | Driving part of the demand [N.m]                         | N.m  |
 | `tau_brake_demand`         | Braking part of the demand [N.m]                         | N.m  |
-| `cap`         | Engine power ceiling: P_line_max while boosting, else P_peak [W]                         | W  |
+| `P_drive`         | Driving demand power [W]                         | W  |
+| `P_shift`         | Engine request after the charge shift, which stops at P_line_max [W]                         | W  |
+| `cap`         | Engine power ceiling: P_peak, or while boosting what the machine cannot cover above P_line_max [W]                         | W  |
+| `tau_excess`         | Demand torque beyond the machine's limit [N.m]                         | N.m  |
+| `w_e`         | Engine speed floored at idle [rad/s]                         | rad/s  |
+| `x_speed`         | Position in the w_off to w_on band, 0 to 1                         | --  |
+| `gate_speed`         | Charge adder's shaft-speed gate, 0 to 1, a smoothstep in x_speed                         | --  |
+| `x_traction`         | Position in the traction band, 0 to 1                         | --  |
+| `gate_traction`         | Charge adder's traction gate, 0 to 1, a smoothstep in x_traction                         | --  |
+| `x_boost`         | Position in the boost SoC band, 0 to 1                         | --  |
+| `a_boost`         | Machine's boost allowance from SoC, 0 to 1, a smoothstep in x_boost                         | --  |
 | `tau_lim`         | Machine torque limit at the shaft speed [N.m]                         | N.m  |
 | `tau_assist`         | Machine share of the driving demand; negative generates [N.m]                         | N.m  |
 | `tau_regen_max`         | Machine braking ceiling [N.m]                         | N.m  |
@@ -111,7 +145,7 @@ best-BSFC line.
 | `charging`         | Charging fraction                         | --  |
 | `boosting`         | Boosting fraction                         | --  |
 """
-@component function EnergyManager(; name = nothing, var"P_on"=Float64(12000.0), var"P_off"=Float64(8000.0), var"P_line_max"=Float64(60000.0), var"dP_boost"=Float64(5000.0), var"P_peak"=Float64(85607.0), var"P_chg"=Float64(10000.0), var"SoC_on"=0.55, var"SoC_off"=0.6, var"SoC_full"=0.8, var"dSoC_full"=0.05, var"T_max"=Float64(205.0), var"P_max"=Float64(30000.0), var"P_regen"=Float64(30000.0), var"v_fade"=Float64(10.0), var"w_idle"=800.0 * pi / 30, var"latch_time"=0.2, __overrides = Dict{String, Any}())
+@component function EnergyManager(; name = nothing, var"P_on"=Float64(12000.0), var"P_off"=Float64(8000.0), var"P_line_max"=Float64(60000.0), var"dP_boost"=Float64(5000.0), var"P_peak"=Float64(85607.0), var"P_chg"=Float64(10000.0), var"SoC_on"=0.55, var"SoC_off"=0.6, var"SoC_full"=0.8, var"dSoC_full"=0.05, var"T_max"=Float64(205.0), var"P_max"=Float64(30000.0), var"P_regen"=Float64(30000.0), var"v_fade"=Float64(10.0), var"w_idle"=800.0 * pi / 30, var"w_on"=1000.0 * pi / 30, var"w_off"=850.0 * pi / 30, var"tau_traction"=Float64(5.0), var"dtau"=Float64(20.0), var"dSoC_boost"=0.05, var"latch_time"=0.2, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -145,6 +179,11 @@ best-BSFC line.
   haskey(__overrides, "P_regen") && (P_regen = pop!(__overrides, "P_regen"))
   haskey(__overrides, "v_fade") && (v_fade = pop!(__overrides, "v_fade"))
   haskey(__overrides, "w_idle") && (w_idle = pop!(__overrides, "w_idle"))
+  haskey(__overrides, "w_on") && (w_on = pop!(__overrides, "w_on"))
+  haskey(__overrides, "w_off") && (w_off = pop!(__overrides, "w_off"))
+  haskey(__overrides, "tau_traction") && (tau_traction = pop!(__overrides, "tau_traction"))
+  haskey(__overrides, "dtau") && (dtau = pop!(__overrides, "dtau"))
+  haskey(__overrides, "dSoC_boost") && (dSoC_boost = pop!(__overrides, "dSoC_boost"))
   haskey(__overrides, "latch_time") && (latch_time = pop!(__overrides, "latch_time"))
 
   ### Structural Parameters (functions)
@@ -205,6 +244,21 @@ best-BSFC line.
   __local__w_idle = w_idle
   append!(__params, @parameters (w_idle::Real), [description = "Engine speed floor for the torque request (derived; line idle 800 rpm)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, w_idle, __local__w_idle)
+  __local__w_on = w_on
+  append!(__params, @parameters (w_on::Real), [description = "Shaft speed above which a low battery starts the engine (derived; 200 rpm above the line's 800 rpm idle, assumed margin)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, w_on, __local__w_on)
+  __local__w_off = w_off
+  append!(__params, @parameters (w_off::Real), [description = "Shaft speed below which a low battery lets the engine go (assumed; just above idle)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, w_off, __local__w_off)
+  __local__tau_traction = tau_traction
+  append!(__params, @parameters (tau_traction::Real), [description = "Traction torque over which the charge adder fades in (assumed)", bounds = (eps(Float64), Inf)])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_traction, __local__tau_traction)
+  __local__dtau = dtau
+  append!(__params, @parameters (dtau::Real), [description = "Release band of the torque start below the machine limit (assumed)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, dtau, __local__dtau)
+  __local__dSoC_boost = dSoC_boost
+  append!(__params, @parameters (dSoC_boost::Real), [description = "SoC band below SoC_on over which boost assist fades out (assumed)", bounds = (eps(Float64), Inf)])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, dSoC_boost, __local__dSoC_boost)
   __local__latch_time = latch_time
   append!(__params, @parameters (latch_time::Real), [description = "Mode blend time (assumed; the K0 actuator's 0.15 s)", bounds = (eps(Float64), Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, latch_time, __local__latch_time)
@@ -228,7 +282,17 @@ best-BSFC line.
   append!(__vars, @variables (P_dem(t)::Real), [description = "Demand power [W]"])
   append!(__vars, @variables (tau_drive(t)::Real), [description = "Driving part of the demand [N.m]"])
   append!(__vars, @variables (tau_brake_demand(t)::Real), [description = "Braking part of the demand [N.m]"])
-  append!(__vars, @variables (cap(t)::Real), [description = "Engine power ceiling: P_line_max while boosting, else P_peak [W]"])
+  append!(__vars, @variables (P_drive(t)::Real), [description = "Driving demand power [W]"])
+  append!(__vars, @variables (P_shift(t)::Real), [description = "Engine request after the charge shift, which stops at P_line_max [W]"])
+  append!(__vars, @variables (cap(t)::Real), [description = "Engine power ceiling: P_peak, or while boosting what the machine cannot cover above P_line_max [W]"])
+  append!(__vars, @variables (tau_excess(t)::Real), [description = "Demand torque beyond the machine's limit [N.m]"])
+  append!(__vars, @variables (w_e(t)::Real), [description = "Engine speed floored at idle [rad/s]"])
+  append!(__vars, @variables (x_speed(t)::Real), [description = "Position in the w_off to w_on band, 0 to 1"])
+  append!(__vars, @variables (gate_speed(t)::Real), [description = "Charge adder's shaft-speed gate, 0 to 1, a smoothstep in x_speed"])
+  append!(__vars, @variables (x_traction(t)::Real), [description = "Position in the traction band, 0 to 1"])
+  append!(__vars, @variables (gate_traction(t)::Real), [description = "Charge adder's traction gate, 0 to 1, a smoothstep in x_traction"])
+  append!(__vars, @variables (x_boost(t)::Real), [description = "Position in the boost SoC band, 0 to 1"])
+  append!(__vars, @variables (a_boost(t)::Real), [description = "Machine's boost allowance from SoC, 0 to 1, a smoothstep in x_boost"])
   append!(__vars, @variables (tau_lim(t)::Real), [description = "Machine torque limit at the shaft speed [N.m]"])
   append!(__vars, @variables (tau_assist(t)::Real), [description = "Machine share of the driving demand; negative generates [N.m]"])
   append!(__vars, @variables (tau_regen_max(t)::Real), [description = "Machine braking ceiling [N.m]"])
@@ -251,9 +315,39 @@ best-BSFC line.
   __ovr_tau_brake_demand = pop!(__overrides, "tau_brake_demand", nothing); isnothing(__ovr_tau_brake_demand) || push!(__eqs, tau_brake_demand ~ __ovr_tau_brake_demand)
   __ovr_tau_brake_demand__initial = pop!(__overrides, "tau_brake_demand.initial", nothing); isnothing(__ovr_tau_brake_demand__initial) || (__initial_conditions[tau_brake_demand] = __ovr_tau_brake_demand__initial)
   __ovr_tau_brake_demand__guess = pop!(__overrides, "tau_brake_demand.guess", nothing)
+  __ovr_P_drive = pop!(__overrides, "P_drive", nothing); isnothing(__ovr_P_drive) || push!(__eqs, P_drive ~ __ovr_P_drive)
+  __ovr_P_drive__initial = pop!(__overrides, "P_drive.initial", nothing); isnothing(__ovr_P_drive__initial) || (__initial_conditions[P_drive] = __ovr_P_drive__initial)
+  __ovr_P_drive__guess = pop!(__overrides, "P_drive.guess", nothing)
+  __ovr_P_shift = pop!(__overrides, "P_shift", nothing); isnothing(__ovr_P_shift) || push!(__eqs, P_shift ~ __ovr_P_shift)
+  __ovr_P_shift__initial = pop!(__overrides, "P_shift.initial", nothing); isnothing(__ovr_P_shift__initial) || (__initial_conditions[P_shift] = __ovr_P_shift__initial)
+  __ovr_P_shift__guess = pop!(__overrides, "P_shift.guess", nothing)
   __ovr_cap = pop!(__overrides, "cap", nothing); isnothing(__ovr_cap) || push!(__eqs, cap ~ __ovr_cap)
   __ovr_cap__initial = pop!(__overrides, "cap.initial", nothing); isnothing(__ovr_cap__initial) || (__initial_conditions[cap] = __ovr_cap__initial)
   __ovr_cap__guess = pop!(__overrides, "cap.guess", nothing)
+  __ovr_tau_excess = pop!(__overrides, "tau_excess", nothing); isnothing(__ovr_tau_excess) || push!(__eqs, tau_excess ~ __ovr_tau_excess)
+  __ovr_tau_excess__initial = pop!(__overrides, "tau_excess.initial", nothing); isnothing(__ovr_tau_excess__initial) || (__initial_conditions[tau_excess] = __ovr_tau_excess__initial)
+  __ovr_tau_excess__guess = pop!(__overrides, "tau_excess.guess", nothing)
+  __ovr_w_e = pop!(__overrides, "w_e", nothing); isnothing(__ovr_w_e) || push!(__eqs, w_e ~ __ovr_w_e)
+  __ovr_w_e__initial = pop!(__overrides, "w_e.initial", nothing); isnothing(__ovr_w_e__initial) || (__initial_conditions[w_e] = __ovr_w_e__initial)
+  __ovr_w_e__guess = pop!(__overrides, "w_e.guess", nothing)
+  __ovr_x_speed = pop!(__overrides, "x_speed", nothing); isnothing(__ovr_x_speed) || push!(__eqs, x_speed ~ __ovr_x_speed)
+  __ovr_x_speed__initial = pop!(__overrides, "x_speed.initial", nothing); isnothing(__ovr_x_speed__initial) || (__initial_conditions[x_speed] = __ovr_x_speed__initial)
+  __ovr_x_speed__guess = pop!(__overrides, "x_speed.guess", nothing)
+  __ovr_gate_speed = pop!(__overrides, "gate_speed", nothing); isnothing(__ovr_gate_speed) || push!(__eqs, gate_speed ~ __ovr_gate_speed)
+  __ovr_gate_speed__initial = pop!(__overrides, "gate_speed.initial", nothing); isnothing(__ovr_gate_speed__initial) || (__initial_conditions[gate_speed] = __ovr_gate_speed__initial)
+  __ovr_gate_speed__guess = pop!(__overrides, "gate_speed.guess", nothing)
+  __ovr_x_traction = pop!(__overrides, "x_traction", nothing); isnothing(__ovr_x_traction) || push!(__eqs, x_traction ~ __ovr_x_traction)
+  __ovr_x_traction__initial = pop!(__overrides, "x_traction.initial", nothing); isnothing(__ovr_x_traction__initial) || (__initial_conditions[x_traction] = __ovr_x_traction__initial)
+  __ovr_x_traction__guess = pop!(__overrides, "x_traction.guess", nothing)
+  __ovr_gate_traction = pop!(__overrides, "gate_traction", nothing); isnothing(__ovr_gate_traction) || push!(__eqs, gate_traction ~ __ovr_gate_traction)
+  __ovr_gate_traction__initial = pop!(__overrides, "gate_traction.initial", nothing); isnothing(__ovr_gate_traction__initial) || (__initial_conditions[gate_traction] = __ovr_gate_traction__initial)
+  __ovr_gate_traction__guess = pop!(__overrides, "gate_traction.guess", nothing)
+  __ovr_x_boost = pop!(__overrides, "x_boost", nothing); isnothing(__ovr_x_boost) || push!(__eqs, x_boost ~ __ovr_x_boost)
+  __ovr_x_boost__initial = pop!(__overrides, "x_boost.initial", nothing); isnothing(__ovr_x_boost__initial) || (__initial_conditions[x_boost] = __ovr_x_boost__initial)
+  __ovr_x_boost__guess = pop!(__overrides, "x_boost.guess", nothing)
+  __ovr_a_boost = pop!(__overrides, "a_boost", nothing); isnothing(__ovr_a_boost) || push!(__eqs, a_boost ~ __ovr_a_boost)
+  __ovr_a_boost__initial = pop!(__overrides, "a_boost.initial", nothing); isnothing(__ovr_a_boost__initial) || (__initial_conditions[a_boost] = __ovr_a_boost__initial)
+  __ovr_a_boost__guess = pop!(__overrides, "a_boost.guess", nothing)
   __ovr_tau_lim = pop!(__overrides, "tau_lim", nothing); isnothing(__ovr_tau_lim) || push!(__eqs, tau_lim ~ __ovr_tau_lim)
   __ovr_tau_lim__initial = pop!(__overrides, "tau_lim.initial", nothing); isnothing(__ovr_tau_lim__initial) || (__initial_conditions[tau_lim] = __ovr_tau_lim__initial)
   __ovr_tau_lim__guess = pop!(__overrides, "tau_lim.guess", nothing)
@@ -309,7 +403,17 @@ best-BSFC line.
   isnothing(__ovr_P_dem__guess) || (__guesses[P_dem] = __ovr_P_dem__guess)
   isnothing(__ovr_tau_drive__guess) || (__guesses[tau_drive] = __ovr_tau_drive__guess)
   isnothing(__ovr_tau_brake_demand__guess) || (__guesses[tau_brake_demand] = __ovr_tau_brake_demand__guess)
+  isnothing(__ovr_P_drive__guess) || (__guesses[P_drive] = __ovr_P_drive__guess)
+  isnothing(__ovr_P_shift__guess) || (__guesses[P_shift] = __ovr_P_shift__guess)
   isnothing(__ovr_cap__guess) || (__guesses[cap] = __ovr_cap__guess)
+  isnothing(__ovr_tau_excess__guess) || (__guesses[tau_excess] = __ovr_tau_excess__guess)
+  isnothing(__ovr_w_e__guess) || (__guesses[w_e] = __ovr_w_e__guess)
+  isnothing(__ovr_x_speed__guess) || (__guesses[x_speed] = __ovr_x_speed__guess)
+  isnothing(__ovr_gate_speed__guess) || (__guesses[gate_speed] = __ovr_gate_speed__guess)
+  isnothing(__ovr_x_traction__guess) || (__guesses[x_traction] = __ovr_x_traction__guess)
+  isnothing(__ovr_gate_traction__guess) || (__guesses[gate_traction] = __ovr_gate_traction__guess)
+  isnothing(__ovr_x_boost__guess) || (__guesses[x_boost] = __ovr_x_boost__guess)
+  isnothing(__ovr_a_boost__guess) || (__guesses[a_boost] = __ovr_a_boost__guess)
   isnothing(__ovr_tau_lim__guess) || (__guesses[tau_lim] = __ovr_tau_lim__guess)
   isnothing(__ovr_tau_assist__guess) || (__guesses[tau_assist] = __ovr_tau_assist__guess)
   isnothing(__ovr_tau_regen_max__guess) || (__guesses[tau_regen_max] = __ovr_tau_regen_max__guess)
@@ -331,16 +435,28 @@ best-BSFC line.
   push!(__eqs, P_dem ~ tau_dem * w_shaft)
   push!(__eqs, tau_drive ~ max(tau_dem, 0.0))
   push!(__eqs, tau_brake_demand ~ max(-tau_dem, 0.0))
-  push!(__eqs, engine.set ~ ifelse((P_dem > P_on) | (charge.y > 0.5), 1.0, 0.0))
-  push!(__eqs, engine.reset ~ ifelse((P_dem < P_off) & (charge.y < 0.5), 1.0, 0.0))
+  push!(__eqs, P_drive ~ tau_drive * max(w_shaft, 0.0))
+  push!(__eqs, tau_lim ~ min(T_max, P_max / max(abs(w_shaft), 1.0)))
+  push!(__eqs, engine.set ~ ifelse(((P_dem > P_on) | (tau_drive > tau_lim)) | (((charge.y > 0.5) & (w_shaft > w_on))), 1.0, 0.0))
+  push!(__eqs, engine.reset ~ ifelse(((P_dem < P_off) & (tau_drive < tau_lim - dtau)) & (((charge.y <= 0.5) | (w_shaft <= w_off))), 1.0, 0.0))
   push!(__eqs, boost.set ~ ifelse(P_dem > P_line_max, 1.0, 0.0))
   push!(__eqs, boost.reset ~ ifelse(P_dem < P_line_max - dP_boost, 1.0, 0.0))
   push!(__eqs, charge.set ~ ifelse(SoC < SoC_on, 1.0, 0.0))
   push!(__eqs, charge.reset ~ ifelse(SoC > SoC_off, 1.0, 0.0))
-  push!(__eqs, cap ~ P_line_max + (1.0 - boost.y) * (P_peak - P_line_max))
-  push!(__eqs, P_engine ~ engine.y * min(max(tau_drive * w_shaft + charge.y * P_chg, 0.0), cap))
-  push!(__eqs, tau_engine ~ P_engine / max(engine_speed, w_idle))
-  push!(__eqs, tau_lim ~ min(T_max, P_max / max(abs(w_shaft), 1.0)))
+  push!(__eqs, engine_on ~ min(max(engine.y, 0.0), 1.0))
+  push!(__eqs, engage ~ engine_on)
+  push!(__eqs, x_speed ~ min(max((w_shaft - w_off) / (w_on - w_off), 0.0), 1.0))
+  push!(__eqs, gate_speed ~ x_speed ^ 2 * (3.0 - 2.0 * x_speed))
+  push!(__eqs, x_traction ~ min(max(tau_drive / tau_traction, 0.0), 1.0))
+  push!(__eqs, gate_traction ~ x_traction ^ 2 * (3.0 - 2.0 * x_traction))
+  push!(__eqs, P_shift ~ max(P_drive, min(P_drive + charge.y * gate_speed * gate_traction * P_chg, P_line_max)))
+  push!(__eqs, x_boost ~ min(max((SoC - SoC_on + dSoC_boost) / dSoC_boost, 0.0), 1.0))
+  push!(__eqs, a_boost ~ x_boost ^ 2 * (3.0 - 2.0 * x_boost))
+  push!(__eqs, cap ~ (1.0 - boost.y) * P_peak + boost.y * min(P_peak, max(P_line_max, P_drive - a_boost * tau_lim * max(w_shaft, 0.0))))
+  push!(__eqs, tau_excess ~ max(tau_drive - tau_lim, 0.0))
+  push!(__eqs, w_e ~ max(engine_speed, w_idle))
+  push!(__eqs, P_engine ~ engine_on * min(max(min(P_shift, cap), tau_excess * w_e), P_peak))
+  push!(__eqs, tau_engine ~ P_engine / w_e)
   push!(__eqs, tau_assist ~ min(max(tau_drive - tau_engine, -tau_lim), tau_lim))
   push!(__eqs, fade ~ min(max(v / v_fade, 0.0), 1.0))
   push!(__eqs, soc_x ~ min(max((SoC - SoC_full + dSoC_full) / dSoC_full, 0.0), 1.0))
@@ -349,12 +465,10 @@ best-BSFC line.
   push!(__eqs, tau_regen ~ min(tau_brake_demand, tau_regen_max))
   push!(__eqs, tau_machine ~ tau_assist - tau_regen)
   push!(__eqs, tau_friction ~ tau_brake_demand - tau_regen)
-  push!(__eqs, engine_on ~ min(max(engine.y, 0.0), 1.0))
-  push!(__eqs, engage ~ engine_on)
-  push!(__eqs, ev ~ 1.0 - engine.y)
-  push!(__eqs, on_line ~ engine.y * (1.0 - charge.y) * (1.0 - boost.y))
-  push!(__eqs, charging ~ engine.y * charge.y)
-  push!(__eqs, boosting ~ engine.y * boost.y)
+  push!(__eqs, ev ~ 1.0 - engine_on)
+  push!(__eqs, boosting ~ engine_on * boost.y)
+  push!(__eqs, charging ~ engine_on * (1.0 - boost.y) * charge.y)
+  push!(__eqs, on_line ~ engine_on * (1.0 - boost.y) * (1.0 - charge.y))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -15,10 +15,12 @@ the engine and a stopped engine behind an open one. The segments:
 | 15-29 | 12 kW, dithered by 1.5 kW | engine starts once |
 | 29-42 | 30 kW | engine on the line |
 | 42-61 | 60 kW, dithered by 3 kW | boost engages once |
-| 61-69 | 75 kW | boost, machine adds 15 kW |
-| 69-88 | down to 8 kW, dithered by 1.5 kW | boost releases, engine stops once |
+| 61-66 | 75 kW | boost, machine adds 15 kW |
+| 66-71 | 110 kW | boost, machine saturated at 30 kW, engine above the line cap at 80 kW |
+| 71-88 | down to 8 kW, dithered by 1.5 kW | boost releases, engine stops once |
 | 88-107 | -20 kW, then -50 kW | regen; past the 30 kW charge ceiling friction takes the rest |
-| 107-150 | -60 N.m while the car stops, then back to 60 km/h | regen fades out, friction holds |
+| 107-132 | -60 N.m while the car stops | regen fades out, friction holds |
+| 132-150 | 250 N.m at standstill, then back to 60 km/h | launch: engine starts for the 45 N.m beyond the machine, once |
 | 150-900 | 6 kW | closed loop: electric drive empties the battery to SoC_on, the engine charges it to SoC_off |
 
 The battery is a 1.4 kWh store (HybridDrive's) fed the machine's shaft power through a stated
@@ -88,6 +90,30 @@ end
 
 "Energy-manager bench through every mode and the closed SoC loop (assumed bench)"
 analysis EnergyManagerBenchTransient
-  extends TransientAnalysis(stop = 900.0, alg = ODEAlg.Rodas5P(), saveat = 0.05, dtmax = 0.1, tstops = [10.0, 15.0, 16.0, 28.0, 29.0, 34.0, 42.0, 47.0, 48.0, 60.0, 61.0, 64.0, 69.0, 74.0, 75.0, 87.0, 88.0, 91.0, 96.0, 99.0, 104.0, 107.0, 109.0, 112.0, 127.0, 130.0, 132.0, 135.0, 150.0, 155.0])
+  extends TransientAnalysis(stop = 900.0, alg = ODEAlg.Rodas5P(), saveat = 0.05, dtmax = 0.1, tstops = [10.0, 15.0, 16.0, 28.0, 29.0, 34.0, 42.0, 47.0, 48.0, 60.0, 61.0, 64.0, 66.0, 68.0, 71.0, 74.0, 75.0, 87.0, 88.0, 91.0, 96.0, 99.0, 104.0, 107.0, 109.0, 112.0, 127.0, 130.0, 132.0, 133.0, 137.0, 138.0, 150.0, 155.0])
   model = EnergyManagerBench()
+end
+
+"""
+Energy manager with a depleted battery (assumed bench): the charge latch is set from the start.
+
+| time [s] | demand | rule |
+|---|---|---|
+| 0-10 | none, at standstill | a low battery does not start the engine on a stopped shaft |
+| 10-26 | 30 N.m launch to 60 km/h | electric launch; the engine starts past w_on, the charge adder fades in |
+| 26-36 | 80 kW | boost latched, but the machine's share faded out with SoC: the engine covers it |
+| 36-46 | 6 kW | charging, engine 10 kW above the demand |
+| 46-56 | 55 kW | the charge shift stops at the 60 kW line cap |
+| 56-70 | -20 kW | braking: no charge adder, the engine asked for nothing, regen takes it all |
+
+`SoC0 = 0.5` sits at the bottom of the boost fade, as after a long climb.
+"""
+test component EnergyManagerLowSoCBench
+  extends VehicleSystemsComponents.Lecture5.EnergyManagerBench(file = "dyad://VehicleSystemsComponents/data/lecture05/energy_manager_low_soc.csv", SoC0 = 0.5)
+end
+
+"Energy-manager bench with a depleted battery (assumed bench)"
+analysis EnergyManagerLowSoCTransient
+  extends TransientAnalysis(stop = 70.0, alg = ODEAlg.Rodas5P(), saveat = 0.05, dtmax = 0.1, tstops = [10.0, 11.0, 26.0, 28.0, 36.0, 38.0, 46.0, 48.0, 56.0, 58.0, 66.0, 68.0])
+  model = EnergyManagerLowSoCBench()
 end

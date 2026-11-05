@@ -579,10 +579,18 @@ end
         k30 = findfirst(==(30.0), BSFC_LINE.power_kw)
         @test all(isapprox.(at(m.line.N)[line], BSFC_LINE.rpm[k30]; atol = 1e-6))
         # Boost: the engine is held at the line cap and the machine adds the remaining 15 kW.
-        @test settled(at(M.boosting), 64.5, 69.0, 1.0)
-        boost = within(64.5, 69.0)
+        @test settled(at(M.boosting), 64.5, 66.0, 1.0)
+        boost = within(64.5, 66.0)
         @test all(isapprox.(P_e[boost], P_line_max; rtol = 1e-6))
         @test all(isapprox.(tau_m[boost] .* w[boost], 15.0e3; rtol = 1e-6))
+        # At 110 kW the machine saturates at P_max and the engine rises past the line cap to
+        # cover the rest: the demand is delivered up to P_peak plus the machine limit.
+        sat = within(68.5, 71.0)
+        P_dem = tau_dem .* w
+        @test all(isapprox.(tau_m[sat] .* w[sat], P_max; rtol = 1e-6))
+        @test all(isapprox.(P_e[sat], 110.0e3 - P_max; rtol = 1e-6))
+        @test all(isapprox.(P_e[sat] .+ tau_m[sat] .* w[sat],
+            min.(P_dem[sat], p(M.P_peak) + P_max); rtol = 1e-6))
         # Back to electric after the demand falls below P_off.
         @test settled(eng, 77.0, 88.0, 0.0)
         # Regen: the machine takes 20 kW whole; of 50 kW it takes its 30 kW ceiling and the
@@ -596,6 +604,13 @@ end
         stop = within(127.5, 130.0)
         @test all(abs.(tau_m[stop]) .< 1e-9)
         @test all(isapprox.(fric[stop], 60.0; atol = 1e-9))
+        # Launch: 250 N.m at standstill starts the engine for the 45 N.m the machine cannot
+        # give, at idle speed; K0 closes and the plant's K0 slip carries it to the shaft.
+        launch = within(134.5, 137.0)
+        @test settled(eng, 134.5, 137.0, 1.0)
+        @test all(isapprox.(tau_m[launch], T_max; atol = 1e-9))
+        @test all(isapprox.(tau_e[launch], 250.0 - T_max; rtol = 1e-3))
+        @test all(isapprox.(at(M.engage)[launch], 1.0; atol = 1e-3))
         # Charge: a low battery starts the engine at 6 kW demand, the engine runs P_chg above it
         # and the machine generates P_chg.
         charging = at(M.charging) .> 0.999
@@ -614,8 +629,9 @@ end
         # ramped window that crosses it.
         on_off = switches(eng)
         boost_switches = switches(bst)
-        @test count(t -> t < 150.0, on_off) == 2
+        @test count(t -> t < 150.0, on_off) == 4
         @test 15.0 < on_off[1] < 29.0 && 74.0 < on_off[2] < 88.0
+        @test 132.0 < on_off[3] < 133.5 && 136.0 < on_off[4] < 138.0
         @test length(boost_switches) == 2
         @test 47.0 < boost_switches[1] < 61.0 && 69.0 < boost_switches[2] < 74.0
         @test isempty(filter(t -> t < 150.0, switches(chg)))
@@ -623,7 +639,6 @@ end
         # Settled after about seven latch times past the switch.
         @test settled(eng, 18.0, 29.0, 1.0)
         @test settled(bst, 50.0, 61.0, 1.0)
-        @test settled(eng, 77.0, 88.0, 0.0)
         # In the SoC loop each charge switch moves the engine once, and no mode switches faster
         # than the battery can move SoC across its band: discharge at 6 kW, charge at P_chg.
         loop_charge = filter(>(150.0), switches(chg))
@@ -651,6 +666,8 @@ end
         @test all(fric .>= -1e-9)
         @test all(fric .<= max.(-tau_dem, 0.0) .+ 1e-9)
         @test all(tau_e .>= -1e-9)
+        modes = at(M.ev) .+ at(M.on_line) .+ at(M.charging) .+ at(M.boosting)
+        @test all(isapprox.(modes, 1.0; atol = 1e-12))
     end
 
     @testset "SoC stays in its window once the loop closes" begin
@@ -663,4 +680,53 @@ end
     end
 
     @info "Energy manager bench" engine_switches = switches(eng) boost_switches = switches(bst) charge_switches = switches(chg) SoC_loop = extrema(soc[ts .>= 300.0]) SoC_max = maximum(soc) tau_machine = extrema(tau_m) P_engine_max = maximum(P_e)
+
+    @testset "depleted battery" begin
+        low = VehicleSystemsComponents.Lecture5.EnergyManagerLowSoCTransient()
+        @test string(low.sol.retcode) == "Success"
+        lm, ls = symbolic_container(low), low.sol
+        LM = lm.manager
+        lts = collect(0.0:0.05:70.0)
+        lp(x) = ls.ps[x]
+        lat(x) = ls(lts, idxs = x).u
+        lwithin(a, b) = a .<= lts .<= b
+        on, w, P_e = lat(LM.engine_on), lat(LM.w_shaft), lat(LM.P_engine)
+        tau_m, fric, soc = lat(LM.tau_machine), lat(LM.tau_friction), lat(lm.SoC)
+        P_m = tau_m .* w
+        @test all(lat(LM.charge.y) .> 1 - 1e-6)
+        # At standstill a low battery leaves the engine off and K0 open.
+        still = lwithin(0.0, 10.0)
+        @test all(on[still] .< 1e-9) && all(lat(LM.engage)[still] .< 1e-9) && all(P_e[still] .< 1e-9)
+        # On the launch the engine stays off below w_off and starts once, above w_on.
+        @test all(on[lwithin(0.0, 26.0) .&& w .< lp(LM.w_off)] .< 1e-6)
+        lswitches(y) = lts[findall(i -> (y[i] - 0.5) * (y[i+1] - 0.5) < 0, 1:length(y)-1)]
+        starts = lswitches(lat(LM.engine.y))
+        @test length(starts) == 1
+        @test ls(starts[1], idxs = LM.w_shaft) >= lp(LM.w_on)
+        # Boost latched at 80 kW, but SoC below SoC_on fades the machine's share by a_boost.
+        boost = lwithin(31.0, 36.0)
+        x = clamp.((soc[boost] .- lp(LM.SoC_on) .+ lp(LM.dSoC_boost)) ./ lp(LM.dSoC_boost), 0.0, 1.0)
+        a = x .^ 2 .* (3 .- 2 .* x)
+        @test all(lat(LM.boost.y)[boost] .> 1 - 1e-6)
+        @test all(soc[boost] .< lp(LM.SoC_on))
+        @test all(isapprox.(P_m[boost], a .* lp(LM.P_max); rtol = 1e-6))
+        @test all(isapprox.(P_e[boost] .+ P_m[boost], 80.0e3; rtol = 1e-6))
+        @test maximum(P_m[boost]) < 0.25 * lp(LM.P_max)
+        # Charging at 6 kW: the engine runs P_chg above the demand.
+        charge = lwithin(40.0, 46.0)
+        @test all(isapprox.(P_e[charge], 6.0e3 + lp(LM.P_chg); rtol = 1e-6))
+        @test all(isapprox.(P_m[charge], -lp(LM.P_chg); rtol = 1e-6))
+        # At 55 kW the charge shift stops at the line cap.
+        cap = lwithin(50.0, 56.0)
+        @test all(isapprox.(P_e[cap], lp(LM.P_line_max); rtol = 1e-6))
+        @test all(isapprox.(P_m[cap], 55.0e3 - lp(LM.P_line_max); rtol = 1e-6))
+        # Braking with the engine on: no charge adder, regen takes the whole 20 kW.
+        brake = lwithin(60.0, 66.0)
+        @test all(on[brake] .> 1 - 1e-6)
+        @test all(abs.(P_e[brake]) .< 1e-6)
+        @test all(isapprox.(P_m[brake], -20.0e3; rtol = 1e-6))
+        @test all(abs.(fric[brake]) .< 1e-9)
+        @test all(-1e-9 .<= P_e .<= lp(LM.P_peak) + 1e-6)
+        @info "Energy manager, depleted battery" engine_start = starts boost_share = extrema(a) SoC = extrema(soc)
+    end
 end
