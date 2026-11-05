@@ -27,16 +27,7 @@ routeAlias: wltc-on-the-bsfc-map
 <div class="grid grid-cols-[1.4fr_1fr] gap-8 items-center">
 <div>
 
-<div class="placeholder">
-
-**Figure: `05-operating-points-conventional.svg`**
-
-Lecture 2's BSFC map with the conventional car's WLTC operating points on it, the best point
-starred, idle marked.
-
-Produced by the operating-points notebook, #115
-
-</div>
+<img src="/figures/05-operating-points-conventional.svg" class="w-full" style="max-height: 24rem" alt="Lecture 2's BSFC map with the conventional car's WLTC operating points as bubbles sized by the fuel burned there. Nearly all the fuel lies on one diagonal band from about 2300 rpm at 10 N·m to 3600 rpm at 110 N·m, set by the CVT's pedal schedule, at higher speed and lower torque than the best-BSFC line, in the 250 to 350 g/kWh region."/>
 
 </div>
 <div>
@@ -55,9 +46,12 @@ Produced by the operating-points notebook, #115
 </div>
 
 <!--
-The figure will be Lecture 2's fuel map, brake-specific fuel consumption over engine speed and
-torque, with every point the conventional car visits on the WLTC on top. The operating-points
-notebook of issue 115 makes it.
+The figure is Lecture 2's fuel map, brake-specific fuel consumption over engine speed and torque,
+with every point the conventional car visits on the WLTC on top, each bubble sized by the fuel
+burned there. Nearly all of it lies on one diagonal band that the CVT's pedal schedule sets, from
+about 2300 rpm at light load to 3600 rpm at 110 newton meters: faster and lighter-loaded than the
+best-BSFC line, in the 250 to 350 gram region. Only a third of the fuel is burned within 10 grams
+per kilowatt-hour of the line. That gap is what the operating line and the hybrid recover.
 
 The right column has the numbers that figure will show. At its best point the engine turns 35.7
 percent of the fuel's energy into shaft work: 232 grams of petrol per kilowatt-hour, at 3000 rpm and
