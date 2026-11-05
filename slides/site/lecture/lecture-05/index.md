@@ -124,8 +124,9 @@ H0 is Lecture 5's conventional baseline: Lecture 2's mapped engine and CVT on th
    separate launch clutch: in engine-only mode K0 does that job. Closing it from rest would
    pull the engine down to the stopped wheels, where the map supplies no launch torque.
 2. Add bench parameters `engage_rpm = 1300.0` and `engage_width_rpm = 120.0` (rpm), matching
-   `CentrifugalClutch`. Add `lock_rpm = 700`, `lock_width_rpm = 50` for H0,
-   and `brake_gain = 12`. Set the PI to `k = 70`, `Ti = 2`, `y_max = 150`, `y_min = -205`. Feed `powertrain.engine_speed` (rad/s) into the smooth engagement signal:
+   `CentrifugalClutch`. Add the machine-side lock-up ramp `lock_rpm = 840`,
+   `lock_width_rpm = 12` (rpm): the request is 0.001 at the 800 rpm idle and 0.999 at 880 rpm,
+   so K0 opens before a decelerating shaft drags the engine below idle. Add `brake_gain = 12`. Set the PI to `k = 70`, `Ti = 2`, `y_max = 150`, `y_min = -205`. Feed `powertrain.engine_speed` (rad/s) into the smooth engagement signal:
 
    ```dyad
    powertrain.engage = max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm)))
@@ -135,7 +136,8 @@ H0 is Lecture 5's conventional baseline: Lecture 2's mapped engine and CVT on th
    above the ramp. No state-triggered branch or event is needed. At the final idle stop K0
    opens again, rather than remaining closed against stopped wheels.
 3. Keep `tau_ref = 0.0`; engine and CVT pedals follow
-   `min(max(driver.y / 150.0, 0.0), 1.0)`. Use the engine-only front brake split:
+   `min(max(driver.y / tau_max, 0.0), 1.0)`, so pedal saturation stays equal to the PI's
+   positive limit if you override `tau_max`. Use the engine-only front brake split:
 
    ```dyad
    car.tau_fl = -min(driver.y, 0.0) * brake_gain / 2.0
@@ -151,20 +153,22 @@ H0 is Lecture 5's conventional baseline: Lecture 2's mapped engine and CVT on th
 | Quantity | Full WLTC result |
 | --- | --- |
 | Duration | 1800 s |
-| Maximum absolute speed error | 1.548514 km/h |
-| Distance | 23266.595 m |
-| Raw fuel | 5.699330 L/100 km |
-| SoCCorrectedFuel `fuel_corr` | 5.699330 L/100 km |
-| Energy | 184.2764 MJ/100 km |
-| K0 slip energy, integrated over cycle | approximately 0.08902 MJ |
+| Maximum absolute speed error | 1.546157 km/h |
+| Distance | 23266.587 m |
+| Raw fuel | 5.705422 L/100 km |
+| SoCCorrectedFuel `fuel_corr` | 5.705422 L/100 km |
+| Energy | 184.4734 MJ/100 km |
+| K0 slip energy, integrated over cycle | approximately 0.09805 MJ |
 | Peak engine torque on cycle / maximum K0 capacity | 120.509 / 229.885 N·m |
 
 H0 removes the absent machine's bearing friction, iron loss, windage, constant loss and rotor
 inertia through bench-level drive modifiers (`T_f = K_i = k_w = C = J = 0`). The same P2
 composition remains; electric-only retains the hybrid defaults.
 
-Battery current is zero and SoC stays at 0.6, so raw and corrected fuel are equal. K0 position
-stays above 0.99 once speed exceeds 10 km/h.
+Battery current is zero and SoC stays at 0.6, so raw and corrected fuel are equal. On level
+stretches of the trace above 12 km/h, K0 position stays above 0.99. Wherever K0 position exceeds
+0.5 the engine turns at 789.9 rpm or more: the lock-up ramp opens K0 before a stopping shaft
+drags the engine below idle.
 The map's full-load peak is 150.234 N·m, also below K0's 230 N·m nominal capacity
 (229.885 N·m after endpoint rounding). Slip heat is mechanical launch loss, not a separately
 measured fuel increment; its fuel cost is already included in H0's consumption.
@@ -204,9 +208,8 @@ Use the shared `P2Powertrain` with its structural speed-command option. Create o
 
 | Name | Library path | Set |
 | --- | --- | --- |
-| `variator` | VehicleSystemsComponents › Vehicle › SpeedCommandedVariator | replace ControlledVariator; defaults: 12 → 2.8, 0.5 s lag, 50 rpm floor |
 | `line` | VehicleSystemsComponents › Vehicle › OperatingLine | default best-BSFC CSV |
-| `powertrain` | P2Powertrain(speed_commanded = true) | `position_start = 0`; drive `P_aux = T_f = K_i = k_w = C = J = 0` |
+| `powertrain` | P2Powertrain(speed_commanded = true) | `position_start = 0`; drive `P_aux = T_f = K_i = k_w = C = J = 0`; its internal `speed_variator` (SpeedCommandedVariator) keeps defaults: 12 → 2.8, 0.5 s lag, 50 rpm floor |
 | `trace`, `driver`, `no_ff`, `kmh` | step 1 cycle, LimPID, Constant, ToKmPerHour | `k = 70`, `Ti = 2`, `y_max = 150`, `y_min = -205`, `with_D = false`; zero feedforward |
 | `car`, `motion`, `roadload` | Vehicle › Planar › PlanarCar, BusMotion, PlanarRoadLoad | mass 1500 kg, radius 0.31 m, flat road |
 | `differential` | MultibodyComponents › PlanarMechanics › DifferentialGear | unchanged |
@@ -220,7 +223,9 @@ not the instantaneous variator ratio. Propulsion saturation therefore matches pe
 
 #### Every connection
 
-The shared powertrain connects the selected variator to the same shafts and housing.
+`speed_commanded = true` replaces the powertrain's internal `variator` with `speed_variator`
+and its `cvt_pedal` input with `N_ref`; the powertrain connects it to the same shafts and
+housing. The fixture adds no variator of its own; it drives `powertrain.N_ref`.
 
 In the fixture, wire:
 
@@ -238,16 +243,18 @@ connect(car.steering, straight.spline)
 connect(flat.y, roadload.grade)
 connect(car.chassis, roadload.chassis)
 connect(powertrain.mdot_fuel, meter.mdot_fuel)
-powertrain.N_ref = max(line.N, N_locked)
 ```
 
-Add the signal equations (Studio's code view):
+Declare `variable N_target::Real`, the commanded input speed, and add the signal equations
+(Studio's code view):
 
 ```dyad
 meter.P_stored = powertrain.E * powertrain.i
 line.P = powertrain.engine_pedal * P_peak
-powertrain.engine_pedal = min(max(driver.y / 150.0, 0.0), 1.0)
-powertrain.engage = max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm)))
+N_target = max(line.N, N_locked)
+powertrain.N_ref = N_target
+powertrain.engine_pedal = min(max(driver.y / tau_max, 0.0), 1.0)
+powertrain.engage = max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.speed_variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm)))
 powertrain.tau_ref = 0.0
 car.tau_fl = -min(driver.y, 0.0) * brake_gain / 2.0
 car.tau_fr = car.tau_fl
@@ -255,9 +262,11 @@ car.tau_rl = 0.0
 car.tau_rr = 0.0
 ```
 
-Use `engage_rpm = 1300`, `engage_width_rpm = 120`, `lock_rpm = 600`,
-`lock_width_rpm = 50` rpm; use `speed_variator.w_a` in this fixture's lock-up equation.
-The larger ramp retains launch slip but closes K0 on shaft speed once moving. At stops
+Use `engage_rpm = 1300`, `engage_width_rpm = 120`, `lock_rpm = 840`,
+`lock_width_rpm = 12` rpm, the same as H0, so the two benches differ only in the CVT schedule.
+The machine-side ramp reads `speed_variator.w_a`, the shaft speed `variator.w_a` gives in H0.
+The launch ramp retains launch slip; the machine-side ramp closes K0 on shaft speed once
+moving and opens it before the shaft falls to idle. At stops
 both requests fall. No events or state-dependent branches are used. The 1000 rpm
 `N_locked` floor is above 800 rpm idle and replaces the line's rows below 1000 rpm;
 those requests no longer target the unconstrained line minimum. `P_peak = 85000` W.
@@ -292,8 +301,8 @@ rows = [parse.(Float64, split(l, ',')) for l in
         readlines("assets/data/engine/bsfc_line.csv")[2:end]]
 line = reduce(vcat, permutedims.(rows))
 plot!(line[:,2], line[:,3], label="best-BSFC line", linewidth=2)
-plot(t, [at(m.powertrain.engine_speed) .* (30/pi) at(m.line.N)],
-     label=["engine" "target"], xlabel="Time [s]", ylabel="Speed [rpm]")
+plot(t, [at(m.powertrain.engine_speed) .* (30/pi) at(m.N_target)],
+     label=["engine" "commanded max(line.N, N_locked)"], xlabel="Time [s]", ylabel="Speed [rpm]")
 plot(t, at(m.powertrain.speed_variator.ratio), label="total ratio")
 plot(t, [at(m.meter.fuel_raw) at(m.meter.fuel_corr)],
      label=["raw" "SoC-corrected"], ylabel="L/100 km")
@@ -303,23 +312,23 @@ plot(t, [at(m.meter.fuel_raw) at(m.meter.fuel_corr)],
 
 | Quantity | Full WLTC |
 | --- | --- |
-| Maximum speed error | 1.554470 km/h (<2) |
-| Distance | 23266.626 m |
-| Raw / corrected fuel | 5.383413 / 5.383413 L/100 km |
-| H0 pedal-schedule fuel | 5.699330 L/100 km |
-| Difference | −0.315917 L/100 km (−5.543%) |
-| Energy | 174.0619 MJ/100 km |
+| Maximum speed error | 1.548864 km/h (<2) |
+| Distance | 23266.603 m |
+| Raw / corrected fuel | 5.392826 / 5.392826 L/100 km |
+| H0 pedal-schedule fuel | 5.705422 L/100 km |
+| Difference | −0.312596 L/100 km (−5.479%) |
+| Energy | 174.3662 MJ/100 km |
 | Battery current / SoC | zero / 0.6 throughout |
 
 The lower speed, higher load moves part of the cycle toward better BSFC. The measured net
-fuel reduction uses the same driver and brake mapping as H0; it is not a universal hybrid
+fuel reduction uses the same driver, brake mapping and K0 lock-up as H0; it is not a universal hybrid
 saving and uses no machine assistance or regen.
 
 **Line band:** compare actual engine rpm against CSV rpm at actual brake power, within
 **±150 rpm**. This fixed rpm band avoids a broad tolerance on the steep line sections.
-For positive demand, power ≥1 kW and command inside `(2.801, 11.999)`, only **12.45%**
+For positive demand, power ≥1 kW and command inside `(2.801, 11.999)`, only **12.46%**
 of eligible points meet it. Maximum in-range deviation outside launch saturation is
-**1522.15 rpm**, bounded by 1600 rpm in the test. Including overdrive saturation, the maximum
+**1522.16 rpm**, bounded by 1600 rpm in the test. Including overdrive saturation, the maximum
 outside launches is 2304.48 rpm (test bound 2400 rpm). The open-loop pedal calibration is
 not an inverse engine map; most points are not on the line.
 
@@ -327,16 +336,20 @@ Uniform 0.1 s samples, trapezoidal fuel weights:
 
 | Classification | All points | All fuel |
 | --- | --- | --- |
-| In range, within ±150 rpm | 4.639% | 15.148% |
-| Idle/braking | 44.336% | 7.838% |
-| Launch limit | 3.094% | 3.950% |
-| Overdrive limit | 15.316% | 25.458% |
-| In range, outside band | 32.615% | 47.606% |
-| Total off line | 95.361% | 84.852% |
+| In range, within ±150 rpm | 4.644% | 15.131% |
+| Idle/braking | 44.475% | 7.903% |
+| Launch limit | 2.933% | 3.997% |
+| Overdrive limit | 15.321% | 25.416% |
+| In range, outside band | 32.626% | 47.553% |
+| Total off line | 95.356% | 84.869% |
 
-Idle/braking takes precedence over saturation. Above 10 km/h, K0 position stays above
-0.99: unlocked time and associated fuel are both zero; maximum regularized slip is
-0.29936 rad/s. This residual slip is not an open clutch.
+Idle/braking takes precedence over saturation. On level stretches of the trace above 12 km/h,
+K0 position stays above 0.99 (lowest 0.99896); where it is closed, the maximum regularized slip
+is 0.29939 rad/s, which is not an open clutch. Decelerating, the variator's 0.5 s ratio lag
+lets the shaft fall below the 1000 rpm floor, and below about 11 km/h its 50 rpm output-speed
+floor holds the shaft under 880 rpm, so K0 opens before the engine is dragged below idle:
+38.3 s above 10 km/h, with 4.8 g of fuel burned meanwhile. Wherever K0 position exceeds 0.5, the
+engine turns at 788.2 rpm or more.
 
 :::
 
@@ -429,7 +442,7 @@ relations
     initial engine.crankshaft.w = engine_speed_start
     initial engine.crankshaft.phi = 0.0
   end
-metadata {"Dyad":{"icons":{"default":"dyad://VehicleSystemsComponents/Vehicle/CVTDriveline.svg"}},"_links":{"E":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":825,"y2":875},"icon":{"x1":950,"x2":1050,"y1":800,"y2":900}}}},"SoC":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":765,"y2":815},"icon":{"x1":950,"x2":1050,"y1":740,"y2":840}}}},"cvt_pedal":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":285,"y2":335},"icon":{"x1":-50,"x2":50,"y1":260,"y2":360}}}},"drive":{"Dyad":{"placement":{"diagram":{"x1":450,"x2":550,"y1":400,"y2":500}}}},"engage":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":165,"y2":215},"icon":{"x1":-50,"x2":50,"y1":140,"y2":240}}}},"engine":{"Dyad":{"placement":{"diagram":{"x1":150,"x2":250,"y1":400,"y2":500}}}},"engine_pedal":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":105,"y2":155},"icon":{"x1":-50,"x2":50,"y1":80,"y2":180}}}},"engine_speed":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":465,"y2":515},"icon":{"x1":950,"x2":1050,"y1":440,"y2":540}}}},"engine_torque":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":525,"y2":575},"icon":{"x1":950,"x2":1050,"y1":500,"y2":600}}}},"hold":{"Dyad":{"placement":{"diagram":{"x1":750,"x2":850,"y1":400,"y2":500}}}},"i":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":885,"y2":935},"icon":{"x1":950,"x2":1050,"y1":860,"y2":960}}}},"k0":{"Dyad":{"placement":{"diagram":{"x1":300,"x2":400,"y1":400,"y2":500}}}},"machine_torque":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":645,"y2":695},"icon":{"x1":950,"x2":1050,"y1":620,"y2":720}}}},"mdot_fuel":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":585,"y2":635},"icon":{"x1":950,"x2":1050,"y1":560,"y2":660}}}},"position":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":705,"y2":755},"icon":{"x1":950,"x2":1050,"y1":680,"y2":780}}}},"spline":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":875,"y2":925},"icon":{"x1":950,"x2":1050,"y1":850,"y2":950}}}},"support":{"Dyad":{"placement":{"diagram":{"x1":450,"x2":550,"y1":950,"y2":1050},"icon":{"x1":450,"x2":550,"y1":950,"y2":1050}}}},"tau_ref":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":225,"y2":275},"icon":{"x1":-50,"x2":50,"y1":200,"y2":300}}}},"variator":{"Dyad":{"placement":{"diagram":{"x1":600,"x2":700,"y1":400,"y2":500}}}}}}
+metadata {"Dyad":{"icons":{"default":"dyad://VehicleSystemsComponents/Vehicle/CVTDriveline.svg"}},"_links":{"E":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":825,"y2":875},"icon":{"x1":950,"x2":1050,"y1":800,"y2":900}}}},"SoC":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":765,"y2":815},"icon":{"x1":950,"x2":1050,"y1":740,"y2":840}}}},"cvt_pedal":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":285,"y2":335},"icon":{"x1":-50,"x2":50,"y1":260,"y2":360}}}},"N_ref":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":385,"y2":435},"icon":{"x1":-50,"x2":50,"y1":360,"y2":460}}}},"drive":{"Dyad":{"placement":{"diagram":{"x1":450,"x2":550,"y1":400,"y2":500}}}},"engage":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":165,"y2":215},"icon":{"x1":-50,"x2":50,"y1":140,"y2":240}}}},"engine":{"Dyad":{"placement":{"diagram":{"x1":150,"x2":250,"y1":400,"y2":500}}}},"engine_pedal":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":105,"y2":155},"icon":{"x1":-50,"x2":50,"y1":80,"y2":180}}}},"engine_speed":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":465,"y2":515},"icon":{"x1":950,"x2":1050,"y1":440,"y2":540}}}},"engine_torque":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":525,"y2":575},"icon":{"x1":950,"x2":1050,"y1":500,"y2":600}}}},"hold":{"Dyad":{"placement":{"diagram":{"x1":750,"x2":850,"y1":400,"y2":500}}}},"i":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":885,"y2":935},"icon":{"x1":950,"x2":1050,"y1":860,"y2":960}}}},"k0":{"Dyad":{"placement":{"diagram":{"x1":300,"x2":400,"y1":400,"y2":500}}}},"machine_torque":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":645,"y2":695},"icon":{"x1":950,"x2":1050,"y1":620,"y2":720}}}},"mdot_fuel":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":585,"y2":635},"icon":{"x1":950,"x2":1050,"y1":560,"y2":660}}}},"position":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":705,"y2":755},"icon":{"x1":950,"x2":1050,"y1":680,"y2":780}}}},"spline":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":875,"y2":925},"icon":{"x1":950,"x2":1050,"y1":850,"y2":950}}}},"support":{"Dyad":{"placement":{"diagram":{"x1":450,"x2":550,"y1":950,"y2":1050},"icon":{"x1":450,"x2":550,"y1":950,"y2":1050}}}},"tau_ref":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":225,"y2":275},"icon":{"x1":-50,"x2":50,"y1":200,"y2":300}}}},"variator":{"Dyad":{"placement":{"diagram":{"x1":600,"x2":700,"y1":400,"y2":500}}}},"speed_variator":{"Dyad":{"placement":{"diagram":{"x1":600,"x2":700,"y1":550,"y2":650}}}}}}
 end
 ```
 
@@ -459,10 +472,10 @@ test component P2OperatingLineWLTC
   parameter tau_brake::Torque = 205.0
   "Total wheel brake torque per negative driver N.m, launch ratio reference"
   parameter brake_gain::Real = 12.0
-  "Center of machine-side K0 lock-up ramp [rpm]"
-  parameter lock_rpm::Real = 600.0
+  "Center of machine-side K0 lock-up ramp [rpm]; open at 800 rpm idle, closed by 880 rpm"
+  parameter lock_rpm::Real = 840.0
   "Width of machine-side K0 lock-up ramp [rpm]"
-  parameter lock_width_rpm::Real = 50.0
+  parameter lock_width_rpm::Real(min = eps(Float64)) = 12.0
   trace = VehicleSystemsComponents.Vehicle.DriveCycle() {^trace}
   driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_brake) {^driver}
   no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
@@ -481,6 +494,8 @@ test component P2OperatingLineWLTC
   "Minimum locked engine speed [rpm]; replaces lower line rows"
   parameter N_locked::Real = 1000.0
   line = VehicleSystemsComponents.Vehicle.OperatingLine() {^line}
+  "Commanded transmission input speed [rpm], line speed floored at N_locked"
+  variable N_target::Real
 relations
   connect(car.bus, motion.bus)
   connect(trace.y, driver.u_s)
@@ -497,8 +512,9 @@ relations
   connect(powertrain.mdot_fuel, meter.mdot_fuel)
   meter.P_stored = powertrain.E * powertrain.i
   line.P = powertrain.engine_pedal * P_peak
-  powertrain.N_ref = max(line.N, N_locked)
-  powertrain.engine_pedal = min(max(driver.y / 150.0, 0.0), 1.0)
+  N_target = max(line.N, N_locked)
+  powertrain.N_ref = N_target
+  powertrain.engine_pedal = min(max(driver.y / tau_max, 0.0), 1.0)
   powertrain.engage = max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.speed_variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm)))
   powertrain.tau_ref = 0.0
   car.tau_fl = -min(driver.y, 0.0) * brake_gain / 2.0

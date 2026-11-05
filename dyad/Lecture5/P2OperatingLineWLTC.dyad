@@ -23,10 +23,10 @@ test component P2OperatingLineWLTC
   parameter tau_brake::Torque = 205.0
   "Total wheel brake torque per negative driver N.m, launch ratio reference"
   parameter brake_gain::Real = 12.0
-  "Center of machine-side K0 lock-up ramp [rpm]"
-  parameter lock_rpm::Real = 600.0
+  "Center of machine-side K0 lock-up ramp [rpm]; open at 800 rpm idle, closed by 880 rpm"
+  parameter lock_rpm::Real = 840.0
   "Width of machine-side K0 lock-up ramp [rpm]"
-  parameter lock_width_rpm::Real = 50.0
+  parameter lock_width_rpm::Real(min = eps(Float64)) = 12.0
   trace = VehicleSystemsComponents.Vehicle.DriveCycle() {^trace}
   driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_brake) {^driver}
   no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
@@ -45,6 +45,8 @@ test component P2OperatingLineWLTC
   "Minimum locked engine speed [rpm]; replaces lower line rows"
   parameter N_locked::Real = 1000.0
   line = VehicleSystemsComponents.Vehicle.OperatingLine() {^line}
+  "Commanded transmission input speed [rpm], line speed floored at N_locked"
+  variable N_target::Real
 relations
   connect(car.bus, motion.bus)
   connect(trace.y, driver.u_s)
@@ -61,8 +63,9 @@ relations
   connect(powertrain.mdot_fuel, meter.mdot_fuel)
   meter.P_stored = powertrain.E * powertrain.i
   line.P = powertrain.engine_pedal * P_peak
-  powertrain.N_ref = max(line.N, N_locked)
-  powertrain.engine_pedal = min(max(driver.y / 150.0, 0.0), 1.0)
+  N_target = max(line.N, N_locked)
+  powertrain.N_ref = N_target
+  powertrain.engine_pedal = min(max(driver.y / tau_max, 0.0), 1.0)
   powertrain.engage = max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.speed_variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm)))
   powertrain.tau_ref = 0.0
   car.tau_fl = -min(driver.y, 0.0) * brake_gain / 2.0

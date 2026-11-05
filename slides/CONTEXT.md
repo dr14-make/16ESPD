@@ -164,7 +164,8 @@ The Lecture 2 map's lowest-BSFC engine speed at each brake power, stored in
 `assets/data/engine/bsfc_line.csv`. `Vehicle.OperatingLine` converts power in W to rpm;
 `SpeedCommandedVariator` tries to hold that speed with total ratio 12 to 2.8, including final
 drive. Lecture 5 step 2 requests pedal × 85 kW, independent of realized brake power,
-with a 1000 rpm floor and a machine-side K0 lock-up ramp centered at 600 rpm. Ratio limits,
+with a 1000 rpm floor and the same machine-side K0 lock-up ramp as H0, centered at 840 rpm, so
+K0 is open before the shaft falls to the 800 rpm idle. Ratio limits,
 actuator lag, K0 launch slip, idle and braking leave points off the line; the line is a target,
 not a guarantee or an energy manager.
 _Avoid_: optimal operating point (without the requested power), efficiency controller

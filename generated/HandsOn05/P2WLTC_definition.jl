@@ -24,10 +24,10 @@ Planar P2 fixed-mode WLTC fixture (derived; PlanarBEVWLTC, Lecture 5 step 1).
 | `engage_width_rpm`         | Width of K0 launch engagement [rpm] (assumed; CentrifugalClutch)                         | --  |   120.0 |
 | `tau_brake`         | Negative PI limit [N.m], independent of propulsion saturation                         | N.m  |   205.0 |
 | `brake_gain`         | Total wheel brake torque per negative driver N.m, launch ratio reference                         | --  |   12.0 |
-| `lock_rpm`         | Center of machine-side K0 lock-up ramp [rpm]                         | --  |   700.0 |
-| `lock_width_rpm`         | Width of machine-side K0 lock-up ramp [rpm]                         | --  |   50.0 |
+| `lock_rpm`         | Center of machine-side K0 lock-up ramp [rpm]; open at 800 rpm idle, closed by 880 rpm                         | --  |   840.0 |
+| `lock_width_rpm`         | Width of machine-side K0 lock-up ramp [rpm]                         | --  |   12.0 |
 """
-@component function P2WLTC(; name = nothing, var"electric"=false, var"m"=Float64(1500.0), var"radius"=0.31, var"Ti"=Float64(2.0), var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"tau_brake"=Float64(205.0), var"brake_gain"=Float64(12.0), var"lock_rpm"=Float64(700.0), var"lock_width_rpm"=Float64(50.0), var"k"=nothing, var"tau_max"=nothing, __overrides = Dict{String, Any}())
+@component function P2WLTC(; name = nothing, var"electric"=false, var"m"=Float64(1500.0), var"radius"=0.31, var"Ti"=Float64(2.0), var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"tau_brake"=Float64(205.0), var"brake_gain"=Float64(12.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"k"=nothing, var"tau_max"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -108,10 +108,10 @@ Planar P2 fixed-mode WLTC fixture (derived; PlanarBEVWLTC, Lecture 5 step 1).
   append!(__params, @parameters (brake_gain::Real), [description = "Total wheel brake torque per negative driver N.m, launch ratio reference"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, brake_gain, __local__brake_gain)
   __local__lock_rpm = lock_rpm
-  append!(__params, @parameters (lock_rpm::Real), [description = "Center of machine-side K0 lock-up ramp [rpm]"])
+  append!(__params, @parameters (lock_rpm::Real), [description = "Center of machine-side K0 lock-up ramp [rpm]; open at 800 rpm idle, closed by 880 rpm"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, lock_rpm, __local__lock_rpm)
   __local__lock_width_rpm = lock_width_rpm
-  append!(__params, @parameters (lock_width_rpm::Real), [description = "Width of machine-side K0 lock-up ramp [rpm]"])
+  append!(__params, @parameters (lock_width_rpm::Real), [description = "Width of machine-side K0 lock-up ramp [rpm]", bounds = (eps(Float64), Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, lock_width_rpm, __local__lock_width_rpm)
 
   ### Final Parameters (assignments)
@@ -206,7 +206,6 @@ Planar P2 fixed-mode WLTC fixture (derived; PlanarBEVWLTC, Lecture 5 step 1).
 
   ### Equations
   push!(__eqs, meter.P_stored ~ powertrain.E * powertrain.i)
-  push!(__eqs, powertrain.cvt_pedal ~ min(max(driver.y / 150.0, 0.0), 1.0))
   push!(__eqs, car.tau_rl ~ 0.0)
   push!(__eqs, car.tau_rr ~ 0.0)
   push!(__eqs, connect(car.bus, motion.bus))
@@ -226,13 +225,15 @@ Planar P2 fixed-mode WLTC fixture (derived; PlanarBEVWLTC, Lecture 5 step 1).
 
   ### Control Structures
   if electric
+    push!(__eqs, powertrain.cvt_pedal ~ min(max(driver.y / 150.0, 0.0), 1.0))
     push!(__eqs, powertrain.engine_pedal ~ 0.0)
     push!(__eqs, powertrain.engage ~ 0.0)
     push!(__eqs, connect(split.tau_motor, powertrain.tau_ref))
     push!(__eqs, car.tau_fl ~ split.tau_brake * powertrain.variator.ratio)
     push!(__eqs, car.tau_fr ~ car.tau_fl)
   else
-    push!(__eqs, powertrain.engine_pedal ~ min(max(driver.y / 150.0, 0.0), 1.0))
+    push!(__eqs, powertrain.engine_pedal ~ min(max(driver.y / tau_max, 0.0), 1.0))
+    push!(__eqs, powertrain.cvt_pedal ~ powertrain.engine_pedal)
     push!(__eqs, powertrain.engage ~ max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
     push!(__eqs, powertrain.tau_ref ~ 0.0)
     push!(__eqs, car.tau_fl ~ -min(driver.y, 0.0) * brake_gain / 2.0)
