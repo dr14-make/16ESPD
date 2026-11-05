@@ -1,9 +1,7 @@
 """
-P2 transmission-input hybrid (derived; Lecture 5 S2, ORNL-2011 sizing).
-MappedEngine drives K0, then the HybridDrive shaft and ControlledVariator. Plan S2's existing
-CVT means the variator including final drive, not CVTDriveline's centrifugal launch clutch
-or ideal rolling wheel. The distinct `variator` child permits a speed-commanded replacement.
-`engine_stopped` is a fixed test configuration, not an engine-start model.
+P2 transmission-input hybrid with a pedal- or speed-commanded total CVT ratio.
+MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to ground.
+`engine_stopped` holds the engine with fuel cut for fixed electric-only tests.
 """
 component P2Powertrain
   "Engine pedal, 0 to 1 (derived; MappedEngine)"
@@ -13,7 +11,11 @@ component P2Powertrain
   "Machine torque request [N.m] (derived; HybridDrive)"
   tau_ref = RealInput() {^tau_ref}
   "Variator speed-schedule pedal (derived; ControlledVariator)"
-  cvt_pedal = RealInput() {^cvt_pedal}
+  cvt_pedal = RealInput() if !speed_commanded {^cvt_pedal}
+  "Target transmission input speed [rpm]"
+  N_ref = RealInput() if speed_commanded {^N_ref}
+  "Select speed-commanded CVT scheduling"
+  structural parameter speed_commanded::Boolean = false
   "Output to planar differential (derived; P2 layout)"
   spline = Spline() {^spline}
   "Stationary housing (assumed; planar bench)"
@@ -43,7 +45,8 @@ component P2Powertrain
   engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(fuel_cut_rpm = ifelse(engine_stopped, -2.0, 1300.0), fuel_resume_rpm = ifelse(engine_stopped, -1.0, 1000.0)) {^engine}
   k0 = VehicleSystemsComponents.Vehicle.DisconnectClutch(position_start = position_start) {^k0}
   drive = VehicleSystemsComponents.Vehicle.Electric.HybridDrive() {^drive}
-  variator = VehicleSystemsComponents.Vehicle.ControlledVariator() {^variator}
+  variator = VehicleSystemsComponents.Vehicle.ControlledVariator() if !speed_commanded {^variator}
+  speed_variator = VehicleSystemsComponents.Vehicle.SpeedCommandedVariator() if speed_commanded {^speed_variator}
   hold = RotationalComponents.Components.Fixed() if engine_stopped {^hold}
 relations
   initial engine.air.manifold.p = 101325.0
@@ -51,11 +54,19 @@ relations
   connect(engine_pedal, engine.pedal)
   connect(engage, k0.engage)
   connect(tau_ref, drive.tau_ref)
-  connect(cvt_pedal, variator.pedal)
+  if speed_commanded
+    connect(N_ref, speed_variator.N_ref)
+    connect(k0.spline_b, drive.spline, speed_variator.spline_a)
+    connect(speed_variator.spline_b, spline)
+    connect(speed_variator.support, support)
+  else
+    connect(cvt_pedal, variator.pedal)
+    connect(k0.spline_b, drive.spline, variator.spline_a)
+    connect(variator.spline_b, spline)
+    connect(variator.support, support)
+  end
   connect(engine.spline, k0.spline_a)
-  connect(k0.spline_b, drive.spline, variator.spline_a)
-  connect(variator.spline_b, spline)
-  connect(engine.support, k0.support, drive.support, variator.support, support)
+  connect(engine.support, k0.support, drive.support, support)
   connect(engine.speed.w, engine_speed)
   connect(engine.tau_e, engine_torque)
   connect(engine.mdot_fuel, mdot_fuel)

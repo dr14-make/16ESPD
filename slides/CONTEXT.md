@@ -163,8 +163,8 @@ _Avoid_: hybrid drive (that is the electric subassembly), launch device, energy 
 The Lecture 2 map's lowest-BSFC engine speed at each brake power, stored in
 `assets/data/engine/bsfc_line.csv`. `Vehicle.OperatingLine` converts power in W to rpm;
 `SpeedCommandedVariator` tries to hold that speed with total ratio 12 to 2.8, including final
-drive. Lecture 5 step 2 feeds realized positive brake power after the driver's nonlinear
-pedal/manifold chain, not the PI output interpreted as physical engine torque. Ratio limits,
+drive. Lecture 5 step 2 requests pedal × 85 kW, independent of realized brake power,
+with a 1000 rpm floor and a machine-side K0 lock-up ramp centered at 600 rpm. Ratio limits,
 actuator lag, K0 launch slip, idle and braking leave points off the line; the line is a target,
 not a guarantee or an energy manager.
 _Avoid_: optimal operating point (without the requested power), efficiency controller

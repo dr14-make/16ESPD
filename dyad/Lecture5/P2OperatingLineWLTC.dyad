@@ -1,35 +1,37 @@
 """
-Engine-only operating-line WLTC (derived; Lecture 5 step 2, P2WLTC).
-The PI commands engine pedal as in H0. Requested engine power is that driver's realized
-positive brake torque times positive crank speed, after the existing pedal, manifold and
-torque-map dynamics. The PI output is not physical engine torque: using it as torque would
-misplace the operating points because the pedal-to-torque chain is nonlinear. The line
-therefore follows the power actually requested through that chain, without an inverse map.
-K0 retains the smooth launch ramp: a permanently closed clutch would stall at standstill.
-Machine torque, losses, inertia and auxiliaries are zero, as in H0.
+Engine-only operating-line WLTC with pedal-based power demand and shaft-speed K0 lock-up.
+The line target is floored above idle. Machine torque, losses and inertia are zero.
 """
 test component P2OperatingLineWLTC
   "Vehicle and road-load mass (assumed; shared planar benchmark)"
   parameter m::Mass = 1500.0
   "Wheel radius (derived; planar benchmark)"
   parameter radius::Length = 0.31
-  "PI gain [N.m per km/h] (tuned; operating-line tracking band)"
-  parameter k::Real = 140.0
+  "PI gain [N.m per km/h], shared with H0"
+  parameter k::Real = 70.0
   "PI integral time (assumed; BEV driver)"
   parameter Ti::Time = 2.0
-  "Signed PI ceiling [N.m] (assumed; overdrive braking authority, pedal clamps at 150)"
-  parameter tau_max::Torque = 400.0
+  "Positive PI ceiling [N.m], pedal saturation"
+  parameter tau_max::Torque = 150.0
   "Initial wheel surface speed offset (assumed; MultibodyComponents #185)"
   parameter dv_wheel::Velocity = 0.01
   "Center of K0 launch engagement [rpm] (assumed; CentrifugalClutch)"
   parameter engage_rpm::Real = 1300.0
   "Width of K0 launch engagement [rpm] (assumed; CentrifugalClutch)"
   parameter engage_width_rpm::Real(min = eps(Float64)) = 120.0
+  "Negative PI limit [N.m], independent of propulsion saturation"
+  parameter tau_brake::Torque = 205.0
+  "Total wheel brake torque per negative driver N.m, launch ratio reference"
+  parameter brake_gain::Real = 12.0
+  "Center of machine-side K0 lock-up ramp [rpm]"
+  parameter lock_rpm::Real = 600.0
+  "Width of machine-side K0 lock-up ramp [rpm]"
+  parameter lock_width_rpm::Real = 50.0
   trace = VehicleSystemsComponents.Vehicle.DriveCycle() {^trace}
-  driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_max) {^driver}
+  driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_brake) {^driver}
   no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
   kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
-  powertrain = VehicleSystemsComponents.Vehicle.P2OperatingLinePowertrain(position_start = 0.0, drive(P_aux = 0.0, T_f = 0.0, K_i = 0.0, k_w = 0.0, C = 0.0, J = 0.0)) {^powertrain}
+  powertrain = VehicleSystemsComponents.Vehicle.P2Powertrain(speed_commanded = true, position_start = 0.0, drive(P_aux = 0.0, T_f = 0.0, K_i = 0.0, k_w = 0.0, C = 0.0, J = 0.0)) {^powertrain}
   differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
   mount = RotationalComponents.Components.Fixed() {^mount}
   straight = RotationalComponents.Components.Fixed() {^straight}
@@ -38,6 +40,10 @@ test component P2OperatingLineWLTC
   motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
   roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
   meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel() {^meter}
+  "Full-pedal requested power [W], mapped engine peak"
+  parameter P_peak::Power = 85000.0
+  "Minimum locked engine speed [rpm]; replaces lower line rows"
+  parameter N_locked::Real = 1000.0
   line = VehicleSystemsComponents.Vehicle.OperatingLine() {^line}
 relations
   connect(car.bus, motion.bus)
@@ -54,12 +60,12 @@ relations
   connect(car.chassis, roadload.chassis)
   connect(powertrain.mdot_fuel, meter.mdot_fuel)
   meter.P_stored = powertrain.E * powertrain.i
-  line.P = max(powertrain.engine_torque, 0.0) * max(powertrain.engine_speed, 0.0)
-  connect(line.N, powertrain.N_ref)
+  line.P = powertrain.engine_pedal * P_peak
+  powertrain.N_ref = max(line.N, N_locked)
   powertrain.engine_pedal = min(max(driver.y / 150.0, 0.0), 1.0)
-  powertrain.engage = 0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm))
+  powertrain.engage = max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.speed_variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm)))
   powertrain.tau_ref = 0.0
-  car.tau_fl = -min(driver.y, 0.0) * powertrain.variator.ratio / 2.0
+  car.tau_fl = -min(driver.y, 0.0) * brake_gain / 2.0
   car.tau_fr = car.tau_fl
   car.tau_rl = 0.0
   car.tau_rr = 0.0

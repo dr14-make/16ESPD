@@ -5,16 +5,10 @@
 
 
 @doc Markdown.doc"""
-   P2OperatingLineWLTC(; name, m, radius, k, Ti, tau_max, dv_wheel, engage_rpm, engage_width_rpm, __overrides)
+   P2OperatingLineWLTC(; name, m, radius, k, Ti, tau_max, dv_wheel, engage_rpm, engage_width_rpm, tau_brake, brake_gain, lock_rpm, lock_width_rpm, P_peak, N_locked, __overrides)
 
-Engine-only operating-line WLTC (derived; Lecture 5 step 2, P2WLTC).
-The PI commands engine pedal as in H0. Requested engine power is that driver's realized
-positive brake torque times positive crank speed, after the existing pedal, manifold and
-torque-map dynamics. The PI output is not physical engine torque: using it as torque would
-misplace the operating points because the pedal-to-torque chain is nonlinear. The line
-therefore follows the power actually requested through that chain, without an inverse map.
-K0 retains the smooth launch ramp: a permanently closed clutch would stall at standstill.
-Machine torque, losses, inertia and auxiliaries are zero, as in H0.
+Engine-only operating-line WLTC with pedal-based power demand and shaft-speed K0 lock-up.
+The line target is floored above idle. Machine torque, losses and inertia are zero.
 
 ## Parameters:
 
@@ -22,14 +16,20 @@ Machine torque, losses, inertia and auxiliaries are zero, as in H0.
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `m`         | Vehicle and road-load mass (assumed; shared planar benchmark)                         | kg  |   1500.0 |
 | `radius`         | Wheel radius (derived; planar benchmark)                         | m  |   0.31 |
-| `k`         | PI gain [N.m per km/h] (tuned; operating-line tracking band)                         | --  |   140.0 |
+| `k`         | PI gain [N.m per km/h], shared with H0                         | --  |   70.0 |
 | `Ti`         | PI integral time (assumed; BEV driver)                         | s  |   2.0 |
-| `tau_max`         | Signed PI ceiling [N.m] (assumed; overdrive braking authority, pedal clamps at 150)                         | N.m  |   400.0 |
+| `tau_max`         | Positive PI ceiling [N.m], pedal saturation                         | N.m  |   150.0 |
 | `dv_wheel`         | Initial wheel surface speed offset (assumed; MultibodyComponents #185)                         | m/s  |   0.01 |
 | `engage_rpm`         | Center of K0 launch engagement [rpm] (assumed; CentrifugalClutch)                         | --  |   1300.0 |
 | `engage_width_rpm`         | Width of K0 launch engagement [rpm] (assumed; CentrifugalClutch)                         | --  |   120.0 |
+| `tau_brake`         | Negative PI limit [N.m], independent of propulsion saturation                         | N.m  |   205.0 |
+| `brake_gain`         | Total wheel brake torque per negative driver N.m, launch ratio reference                         | --  |   12.0 |
+| `lock_rpm`         | Center of machine-side K0 lock-up ramp [rpm]                         | --  |   600.0 |
+| `lock_width_rpm`         | Width of machine-side K0 lock-up ramp [rpm]                         | --  |   50.0 |
+| `P_peak`         | Full-pedal requested power [W], mapped engine peak                         | W  |   85000.0 |
+| `N_locked`         | Minimum locked engine speed [rpm]; replaces lower line rows                         | --  |   1000.0 |
 """
-@component function P2OperatingLineWLTC(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(140.0), var"Ti"=Float64(2.0), var"tau_max"=Float64(400.0), var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), __overrides = Dict{String, Any}())
+@component function P2OperatingLineWLTC(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(70.0), var"Ti"=Float64(2.0), var"tau_max"=Float64(150.0), var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"tau_brake"=Float64(205.0), var"brake_gain"=Float64(12.0), var"lock_rpm"=Float64(600.0), var"lock_width_rpm"=Float64(50.0), var"P_peak"=Float64(85000.0), var"N_locked"=Float64(1000.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -56,6 +56,12 @@ Machine torque, losses, inertia and auxiliaries are zero, as in H0.
   haskey(__overrides, "dv_wheel") && (dv_wheel = pop!(__overrides, "dv_wheel"))
   haskey(__overrides, "engage_rpm") && (engage_rpm = pop!(__overrides, "engage_rpm"))
   haskey(__overrides, "engage_width_rpm") && (engage_width_rpm = pop!(__overrides, "engage_width_rpm"))
+  haskey(__overrides, "tau_brake") && (tau_brake = pop!(__overrides, "tau_brake"))
+  haskey(__overrides, "brake_gain") && (brake_gain = pop!(__overrides, "brake_gain"))
+  haskey(__overrides, "lock_rpm") && (lock_rpm = pop!(__overrides, "lock_rpm"))
+  haskey(__overrides, "lock_width_rpm") && (lock_width_rpm = pop!(__overrides, "lock_width_rpm"))
+  haskey(__overrides, "P_peak") && (P_peak = pop!(__overrides, "P_peak"))
+  haskey(__overrides, "N_locked") && (N_locked = pop!(__overrides, "N_locked"))
 
   ### Structural Parameters (functions)
 
@@ -77,13 +83,13 @@ Machine torque, losses, inertia and auxiliaries are zero, as in H0.
   append!(__params, @parameters (radius::Real), [description = "Wheel radius (derived; planar benchmark)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__k = k
-  append!(__params, @parameters (k::Real), [description = "PI gain [N.m per km/h] (tuned; operating-line tracking band)"])
+  append!(__params, @parameters (k::Real), [description = "PI gain [N.m per km/h], shared with H0"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, k, __local__k)
   __local__Ti = Ti
   append!(__params, @parameters (Ti::Real), [description = "PI integral time (assumed; BEV driver)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, Ti, __local__Ti)
   __local__tau_max = tau_max
-  append!(__params, @parameters (tau_max::Real), [description = "Signed PI ceiling [N.m] (assumed; overdrive braking authority, pedal clamps at 150)"])
+  append!(__params, @parameters (tau_max::Real), [description = "Positive PI ceiling [N.m], pedal saturation"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, tau_max, __local__tau_max)
   __local__dv_wheel = dv_wheel
   append!(__params, @parameters (dv_wheel::Real), [description = "Initial wheel surface speed offset (assumed; MultibodyComponents #185)"])
@@ -94,6 +100,24 @@ Machine torque, losses, inertia and auxiliaries are zero, as in H0.
   __local__engage_width_rpm = engage_width_rpm
   append!(__params, @parameters (engage_width_rpm::Real), [description = "Width of K0 launch engagement [rpm] (assumed; CentrifugalClutch)", bounds = (eps(Float64), Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, engage_width_rpm, __local__engage_width_rpm)
+  __local__tau_brake = tau_brake
+  append!(__params, @parameters (tau_brake::Real), [description = "Negative PI limit [N.m], independent of propulsion saturation"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_brake, __local__tau_brake)
+  __local__brake_gain = brake_gain
+  append!(__params, @parameters (brake_gain::Real), [description = "Total wheel brake torque per negative driver N.m, launch ratio reference"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, brake_gain, __local__brake_gain)
+  __local__lock_rpm = lock_rpm
+  append!(__params, @parameters (lock_rpm::Real), [description = "Center of machine-side K0 lock-up ramp [rpm]"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lock_rpm, __local__lock_rpm)
+  __local__lock_width_rpm = lock_width_rpm
+  append!(__params, @parameters (lock_width_rpm::Real), [description = "Width of machine-side K0 lock-up ramp [rpm]"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lock_width_rpm, __local__lock_width_rpm)
+  __local__P_peak = P_peak
+  append!(__params, @parameters (P_peak::Real), [description = "Full-pedal requested power [W], mapped engine peak"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, P_peak, __local__P_peak)
+  __local__N_locked = N_locked
+  append!(__params, @parameters (N_locked::Real), [description = "Minimum locked engine speed [rpm]; replaces lower line rows"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, N_locked, __local__N_locked)
 
   ### Final Parameters (assignments)
 
@@ -112,14 +136,14 @@ Machine torque, losses, inertia and auxiliaries are zero, as in H0.
   push!(__systems, @named trace = VehicleSystemsComponents.Vehicle.DriveCycle(; __overrides = trace_overrides))
   # Subcomponent driver of type BlockComponents.Continuous.LimPID
   driver_overrides = __pop_subcomponent_overrides!(__overrides, "driver")
-  push!(__systems, @named driver = BlockComponents.Continuous.LimPID(; with_D=false, k=k, Ti=Ti, y_max=tau_max, y_min=-tau_max, __overrides = driver_overrides))
+  push!(__systems, @named driver = BlockComponents.Continuous.LimPID(; with_D=false, k=k, Ti=Ti, y_max=tau_max, y_min=-tau_brake, __overrides = driver_overrides))
   # Subcomponent no_ff of type BlockComponents.Sources.Constant
   no_ff_overrides = __pop_subcomponent_overrides!(__overrides, "no_ff")
   push!(__systems, @named no_ff = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = no_ff_overrides))
   # Subcomponent kmh of type VehicleSystemsComponents.Vehicle.ToKmPerHour
   kmh_overrides = __pop_subcomponent_overrides!(__overrides, "kmh")
   push!(__systems, @named kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour(; __overrides = kmh_overrides))
-  # Subcomponent powertrain of type VehicleSystemsComponents.Vehicle.P2OperatingLinePowertrain
+  # Subcomponent powertrain of type VehicleSystemsComponents.Vehicle.P2Powertrain
   powertrain_overrides = __pop_subcomponent_overrides!(__overrides, "powertrain")
   powertrain_dict = Dict{String, Any}()
   powertrain_dict["drive.P_aux"] = ModelingToolkit.default_to_parentscope(0.0)
@@ -129,7 +153,7 @@ Machine torque, losses, inertia and auxiliaries are zero, as in H0.
   powertrain_dict["drive.C"] = ModelingToolkit.default_to_parentscope(0.0)
   powertrain_dict["drive.J"] = ModelingToolkit.default_to_parentscope(0.0)
   merge!(powertrain_dict, powertrain_overrides)
-  push!(__systems, @named powertrain = VehicleSystemsComponents.Vehicle.P2OperatingLinePowertrain(; position_start=Float64(0.0), __overrides = powertrain_dict))
+  push!(__systems, @named powertrain = VehicleSystemsComponents.Vehicle.P2Powertrain(; speed_commanded=true, position_start=Float64(0.0), __overrides = powertrain_dict))
   # Subcomponent differential of type MultibodyComponents.PlanarMechanics.DifferentialGear
   differential_overrides = __pop_subcomponent_overrides!(__overrides, "differential")
   push!(__systems, @named differential = MultibodyComponents.PlanarMechanics.DifferentialGear(; __overrides = differential_overrides))
@@ -187,11 +211,12 @@ Machine torque, losses, inertia and auxiliaries are zero, as in H0.
 
   ### Equations
   push!(__eqs, meter.P_stored ~ powertrain.E * powertrain.i)
-  push!(__eqs, line.P ~ max(powertrain.engine_torque, 0.0) * max(powertrain.engine_speed, 0.0))
+  push!(__eqs, line.P ~ powertrain.engine_pedal * P_peak)
+  push!(__eqs, powertrain.N_ref ~ max(line.N, N_locked))
   push!(__eqs, powertrain.engine_pedal ~ min(max(driver.y / 150.0, 0.0), 1.0))
-  push!(__eqs, powertrain.engage ~ 0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)))
+  push!(__eqs, powertrain.engage ~ max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.speed_variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
   push!(__eqs, powertrain.tau_ref ~ 0.0)
-  push!(__eqs, car.tau_fl ~ -min(driver.y, 0.0) * powertrain.variator.ratio / 2.0)
+  push!(__eqs, car.tau_fl ~ -min(driver.y, 0.0) * brake_gain / 2.0)
   push!(__eqs, car.tau_fr ~ car.tau_fl)
   push!(__eqs, car.tau_rl ~ 0.0)
   push!(__eqs, car.tau_rr ~ 0.0)
@@ -208,7 +233,6 @@ Machine torque, losses, inertia and auxiliaries are zero, as in H0.
   push!(__eqs, connect(flat.y, roadload.grade))
   push!(__eqs, connect(car.chassis, roadload.chassis))
   push!(__eqs, connect(powertrain.mdot_fuel, meter.mdot_fuel))
-  push!(__eqs, connect(line.N, powertrain.N_ref))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

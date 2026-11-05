@@ -208,7 +208,6 @@ end
 include("P2ElectricWLTCTransient_definition.jl")
 include("P2ElectricWLTC_definition.jl")
 include("P2EngineWLTCTransient_definition.jl")
-include("P2OperatingLinePowertrain_definition.jl")
 include("P2OperatingLineWLTCTransient_definition.jl")
 include("P2OperatingLineWLTC_definition.jl")
 include("P2Powertrain_definition.jl")
