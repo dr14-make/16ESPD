@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   HybridDrive(; name, T_max, P_rated, w_base, V_nom, size_scale, R, L, J, T_f, K_i, k_w, C, w_reg, tau_loss_base, k, I_max, d_max, T_i, V_on, f_s, t_sw, eps, E, Q_nom, R0, SoC0, ratio, P_aux, T_aux, __overrides)
+   HybridDrive(; name, T_max, P_rated, w_base, V_nom, V_design, size_scale, R, L, J, T_f, K_i, k_w, C, w_reg, tau_loss_base, k, I_max, d_max, T_i, V_on, f_s, t_sw, eps, E, Q_nom, R0, SoC0, ratio, P_aux, T_aux, __overrides)
 
 P2 hybrid electric drive with the ElectricDrive composition and interface (derived from Lecture 4).
 The 2011 Sonata anchors the 30 kW, 205 N.m and 270 V, 1.4 kWh defaults (ORNL-2011).
@@ -21,9 +21,10 @@ is unity for the P2 transmission input; no final-drive reduction is implied (ass
 | `T_max`         | Peak shaft torque (ORNL-2011)                         | N.m  |   205.0 |
 | `P_rated`         | Rated shaft power (ORNL-2011)                         | W  |   30.0e3 |
 | `w_base`         | Corner speed, rated power divided by peak torque, approximately 1400 rpm (derived; ORNL-2011)                         | rad/s  |   P_rated / T_max |
-| `V_nom`         | Machine design voltage, equal to nominal pack voltage (ORNL-2011)                         | V  |   270.0 |
+| `V_nom`         | Nominal pack voltage (ORNL-2011)                         | V  |   270.0 |
+| `V_design`         | Machine design voltage: the 2011 Sonata pack's terminal voltage at rated input, (270 + sqrt(270^2 - 4 * 0.33 * 33.3e3)) / 2 for 30 kW at about 90 % drive efficiency (derived; ORNL-2011, INL)                         | V  |   220.0 |
 | `size_scale`         | Size factor relative to the Lecture 4 110 kW Leaf (derived; P_rated / 110 kW)                         | --  |   P_rated / 110.0e3 |
-| `R`         | Armature resistance; preserve rated copper-loss fraction at voltage-scaled current (derived; Leaf R times (V_nom/350)^2 / size_scale)                         | Ω  |   0.05 * (V_n... size_scale |
+| `R`         | Armature resistance; preserve rated copper-loss fraction at voltage-scaled current (derived; Leaf R times (V_design/350)^2 / size_scale)                         | Ω  |   0.05 * (V_d... size_scale |
 | `L`         | Inductance preserving the Leaf 10 ms electrical time constant (derived; L = 0.01 R)                         | H  |   0.01 * R |
 | `J`         | Rotor inertia (derived; Leaf 0.05 kg.m2 times rated-power size_scale, assumed similarity)                         | kg.m2  |   0.05 * size_scale |
 | `T_f`         | Bearing friction torque (derived; Leaf 0.5 N.m times size_scale, assumed similarity)                         | N.m  |   0.5 * size_scale |
@@ -32,7 +33,7 @@ is unity for the P2 transmission input; no final-drive reduction is implied (ass
 | `C`         | Constant shaft loss (derived; Leaf 200 W times size_scale, assumed similarity)                         | W  |   200.0 * size_scale |
 | `w_reg`         | Low-speed loss regularization, retained from Lecture 4 (assumed)                         | rad/s  |   10.0 |
 | `tau_loss_base`         | Shaft loss torque at corner (derived; DCMachine formula)                         | N.m  |   T_f + K_i +... C / w_base |
-| `k`         | Torque/back-EMF constant (derived; DCMachine positive quadratic root at V_nom, T_max, w_base)                         | N.m/A  |   (V_nom + sq...0 * w_base) |
+| `k`         | Torque/back-EMF constant (derived; DCMachine positive quadratic root at V_design, T_max, w_base)                         | N.m/A  |   (V_design +...0 * w_base) |
 | `I_max`         | Converter current ceiling (derived; (T_max + corner losses) / k)                         | A  |   (T_max + ta...s_base) / k |
 | `d_max`         | Maximum duty, no voltage boost (assumed; Lecture 4)                         | --  |   1.0 |
 | `T_i`         | Current-loop time constant (assumed; Lecture 4)                         | s  |   1.0e-3 |
@@ -40,9 +41,9 @@ is unity for the P2 transmission input; no final-drive reduction is implied (ass
 | `f_s`         | Switching frequency (assumed; Lecture 4 Leaf setting)                         | Hz  |   5.0e3 |
 | `t_sw`         | Switching-edge duration (assumed; Lecture 4)                         | s  |   1.0e-6 |
 | `eps`         | Field/duty corner rounding (assumed; Lecture 4 numerical regularization)                         | --  |   1.0e-4 |
-| `E`         | Pack open-circuit voltage, the machine design voltage (ORNL-2011 nominal voltage)                         | V  |   V_nom |
+| `E`         | Pack open-circuit voltage (ORNL-2011 nominal voltage)                         | V  |   V_nom |
 | `Q_nom`         | Pack charge capacity, 1.4 kWh / E (derived; ORNL-2011)                         | C  |   1.4e3 * 3600.0 / E |
-| `R0`         | Pack resistance (assumed: the Leaf pack's 0.1 Ohm scaled by series count, E/350; small high-power hybrid cells may sag more)                         | Ω  |   0.1 * E / 350.0 |
+| `R0`         | Pack resistance, 10 s pulse at 30-60 % depth of discharge on a new 2011 Sonata Hybrid pack, scaled by series count (INL/EXT-14-32109, INL/EXT-13-29679)                         | Ω  |   0.33 * E / 270.0 |
 | `SoC0`         | Initial SoC, mid-window for charge-sustaining operation (assumed)                         | --  |   0.6 |
 | `ratio`         | Machine-to-transmission ratio, unity for a P2 input shaft (assumed)                         | --  |   1.0 |
 | `P_aux`         | Auxiliary draw, climate control off (assumed; Lecture 4)                         | W  |   300.0 |
@@ -55,7 +56,7 @@ is unity for the P2 transmission input; no final-drive reduction is implied (ass
  * `support` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `SoC` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function HybridDrive(; name = nothing, var"T_max"=Float64(205.0), var"P_rated"=Float64(30000.0), var"V_nom"=Float64(270.0), var"w_reg"=Float64(10.0), var"d_max"=Float64(1.0), var"T_i"=0.001, var"V_on"=1.2, var"f_s"=Float64(5000.0), var"t_sw"=0.000001, var"eps"=0.0001, var"SoC0"=0.6, var"ratio"=Float64(1.0), var"P_aux"=Float64(300.0), var"T_aux"=0.01, var"w_base"=nothing, var"size_scale"=nothing, var"E"=nothing, var"R"=nothing, var"J"=nothing, var"T_f"=nothing, var"K_i"=nothing, var"k_w"=nothing, var"C"=nothing, var"Q_nom"=nothing, var"R0"=nothing, var"L"=nothing, var"tau_loss_base"=nothing, var"k"=nothing, var"I_max"=nothing, __overrides = Dict{String, Any}())
+@component function HybridDrive(; name = nothing, var"T_max"=Float64(205.0), var"P_rated"=Float64(30000.0), var"V_nom"=Float64(270.0), var"V_design"=Float64(220.0), var"w_reg"=Float64(10.0), var"d_max"=Float64(1.0), var"T_i"=0.001, var"V_on"=1.2, var"f_s"=Float64(5000.0), var"t_sw"=0.000001, var"eps"=0.0001, var"SoC0"=0.6, var"ratio"=Float64(1.0), var"P_aux"=Float64(300.0), var"T_aux"=0.01, var"w_base"=nothing, var"size_scale"=nothing, var"E"=nothing, var"R"=nothing, var"J"=nothing, var"T_f"=nothing, var"K_i"=nothing, var"k_w"=nothing, var"C"=nothing, var"Q_nom"=nothing, var"R0"=nothing, var"L"=nothing, var"tau_loss_base"=nothing, var"k"=nothing, var"I_max"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -77,6 +78,7 @@ is unity for the P2 transmission input; no final-drive reduction is implied (ass
   haskey(__overrides, "T_max") && (T_max = pop!(__overrides, "T_max"))
   haskey(__overrides, "P_rated") && (P_rated = pop!(__overrides, "P_rated"))
   haskey(__overrides, "V_nom") && (V_nom = pop!(__overrides, "V_nom"))
+  haskey(__overrides, "V_design") && (V_design = pop!(__overrides, "V_design"))
   haskey(__overrides, "w_reg") && (w_reg = pop!(__overrides, "w_reg"))
   haskey(__overrides, "d_max") && (d_max = pop!(__overrides, "d_max"))
   haskey(__overrides, "T_i") && (T_i = pop!(__overrides, "T_i"))
@@ -108,17 +110,17 @@ is unity for the P2 transmission input; no final-drive reduction is implied (ass
   isnothing(w_base) && (w_base = P_rated / T_max)
   isnothing(size_scale) && (size_scale = P_rated / 110000.0)
   isnothing(E) && (E = V_nom)
-  isnothing(R) && (R = 0.05 * (V_nom / 350.0) ^ 2 / size_scale)
+  isnothing(R) && (R = 0.05 * (V_design / 350.0) ^ 2 / size_scale)
   isnothing(J) && (J = 0.05 * size_scale)
   isnothing(T_f) && (T_f = 0.5 * size_scale)
   isnothing(K_i) && (K_i = 1.0 * size_scale)
   isnothing(k_w) && (k_w = 300.0 / (10100.0 * pi / 30.0) ^ 3 * size_scale)
   isnothing(C) && (C = 200.0 * size_scale)
   isnothing(Q_nom) && (Q_nom = 1400.0 * 3600.0 / E)
-  isnothing(R0) && (R0 = 0.1 * E / 350.0)
+  isnothing(R0) && (R0 = 0.33 * E / 270.0)
   isnothing(L) && (L = 0.01 * R)
   isnothing(tau_loss_base) && (tau_loss_base = T_f + K_i + k_w * w_base ^ 2 + C / w_base)
-  isnothing(k) && (k = (V_nom + sqrt(V_nom ^ 2 - 4.0 * w_base * R * (T_max + tau_loss_base))) / (2.0 * w_base))
+  isnothing(k) && (k = (V_design + sqrt(V_design ^ 2 - 4.0 * w_base * R * (T_max + tau_loss_base))) / (2.0 * w_base))
   isnothing(I_max) && (I_max = (T_max + tau_loss_base) / k)
 
   ### Structural Parameters (functions)
@@ -144,13 +146,16 @@ is unity for the P2 transmission input; no final-drive reduction is implied (ass
   append!(__params, @parameters (w_base::Real), [description = "Corner speed, rated power divided by peak torque, approximately 1400 rpm (derived; ORNL-2011)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, w_base, __local__w_base)
   __local__V_nom = V_nom
-  append!(__params, @parameters (V_nom::Real), [description = "Machine design voltage, equal to nominal pack voltage (ORNL-2011)"])
+  append!(__params, @parameters (V_nom::Real), [description = "Nominal pack voltage (ORNL-2011)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, V_nom, __local__V_nom)
+  __local__V_design = V_design
+  append!(__params, @parameters (V_design::Real), [description = "Machine design voltage: the 2011 Sonata pack's terminal voltage at rated input, (270 + sqrt(270^2 - 4 * 0.33 * 33.3e3)) / 2 for 30 kW at about 90 % drive efficiency (derived; ORNL-2011, INL)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, V_design, __local__V_design)
   __local__size_scale = size_scale
   append!(__params, @parameters (size_scale::Real), [description = "Size factor relative to the Lecture 4 110 kW Leaf (derived; P_rated / 110 kW)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, size_scale, __local__size_scale)
   __local__R = R
-  append!(__params, @parameters (R::Real), [description = "Armature resistance; preserve rated copper-loss fraction at voltage-scaled current (derived; Leaf R times (V_nom/350)^2 / size_scale)"])
+  append!(__params, @parameters (R::Real), [description = "Armature resistance; preserve rated copper-loss fraction at voltage-scaled current (derived; Leaf R times (V_design/350)^2 / size_scale)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, R, __local__R)
   __local__L = L
   append!(__params, @parameters (L::Real), [description = "Inductance preserving the Leaf 10 ms electrical time constant (derived; L = 0.01 R)"])
@@ -177,7 +182,7 @@ is unity for the P2 transmission input; no final-drive reduction is implied (ass
   append!(__params, @parameters (tau_loss_base::Real), [description = "Shaft loss torque at corner (derived; DCMachine formula)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, tau_loss_base, __local__tau_loss_base)
   __local__k = k
-  append!(__params, @parameters (k::Real), [description = "Torque/back-EMF constant (derived; DCMachine positive quadratic root at V_nom, T_max, w_base)"])
+  append!(__params, @parameters (k::Real), [description = "Torque/back-EMF constant (derived; DCMachine positive quadratic root at V_design, T_max, w_base)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, k, __local__k)
   __local__I_max = I_max
   append!(__params, @parameters (I_max::Real), [description = "Converter current ceiling (derived; (T_max + corner losses) / k)"])
@@ -201,13 +206,13 @@ is unity for the P2 transmission input; no final-drive reduction is implied (ass
   append!(__params, @parameters (eps::Real), [description = "Field/duty corner rounding (assumed; Lecture 4 numerical regularization)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, eps, __local__eps)
   __local__E = E
-  append!(__params, @parameters (E::Real), [description = "Pack open-circuit voltage, the machine design voltage (ORNL-2011 nominal voltage)"])
+  append!(__params, @parameters (E::Real), [description = "Pack open-circuit voltage (ORNL-2011 nominal voltage)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, E, __local__E)
   __local__Q_nom = Q_nom
   append!(__params, @parameters (Q_nom::Real), [description = "Pack charge capacity, 1.4 kWh / E (derived; ORNL-2011)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, Q_nom, __local__Q_nom)
   __local__R0 = R0
-  append!(__params, @parameters (R0::Real), [description = "Pack resistance (assumed: the Leaf pack's 0.1 Ohm scaled by series count, E/350; small high-power hybrid cells may sag more)"])
+  append!(__params, @parameters (R0::Real), [description = "Pack resistance, 10 s pulse at 30-60 % depth of discharge on a new 2011 Sonata Hybrid pack, scaled by series count (INL/EXT-14-32109, INL/EXT-13-29679)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, R0, __local__R0)
   __local__SoC0 = SoC0
   append!(__params, @parameters (SoC0::Real), [description = "Initial SoC, mid-window for charge-sustaining operation (assumed)"])
@@ -249,7 +254,7 @@ is unity for the P2 transmission input; no final-drive reduction is implied (ass
   push!(__systems, @named converter = VehicleSystemsComponents.Vehicle.Electric.Converter(; I_max=I_max, d_max=d_max, T_i=T_i, V_on=V_on, f_s=f_s, t_sw=t_sw, eps=eps, __overrides = converter_overrides))
   # Subcomponent machine of type VehicleSystemsComponents.Vehicle.Electric.DCMachine
   machine_overrides = __pop_subcomponent_overrides!(__overrides, "machine")
-  push!(__systems, @named machine = VehicleSystemsComponents.Vehicle.Electric.DCMachine(; field_weakening=true, T_max=T_max, w_base=w_base, V_nom=V_nom, R=R, L=L, J=J, T_f=T_f, K_i=K_i, k_w=k_w, C=C, w_reg=w_reg, tau_loss_base=tau_loss_base, k=k, __overrides = machine_overrides))
+  push!(__systems, @named machine = VehicleSystemsComponents.Vehicle.Electric.DCMachine(; field_weakening=true, T_max=T_max, w_base=w_base, V_nom=V_design, R=R, L=L, J=J, T_f=T_f, K_i=K_i, k_w=k_w, C=C, w_reg=w_reg, tau_loss_base=tau_loss_base, k=k, __overrides = machine_overrides))
   # Subcomponent ground of type ElectricalComponents.Analog.Basic.Ground
   ground_overrides = __pop_subcomponent_overrides!(__overrides, "ground")
   push!(__systems, @named ground = ElectricalComponents.Analog.Basic.Ground(; __overrides = ground_overrides))

@@ -26,7 +26,7 @@ held bounded by its back-calculation. Back at 30 kW it recovers within the hold.
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `E_bus`         | Pack open-circuit voltage (assumed; HybridDrive's 270 V, ORNL-2011)                         | V  |   270.0 |
 | `Q_bus`         | Pack capacity, 10 kWh / E_bus (assumed; SoC drift negligible over the run)                         | C  |   10.0e3 * 3600.0 / E_bus |
-| `R_bus`         | Pack resistance (derived; HybridDrive's Leaf pack 0.1 Ohm scaled by E_bus / 350)                         | Ω  |   0.1 * E_bus / 350.0 |
+| `R_bus`         | Pack resistance: the 2011 Sonata pack's 0.33 Ohm at 270 V and 5.3 Ah, with strings in parallel for Q_bus (derived; INL 10 s pulse)                         | Ω  |   0.33 * (E_b....0) / Q_bus |
 | `P_1`         | First power command (assumed)                         | W  |   10.0e3 |
 | `P_2`         | Second power command (assumed)                         | W  |   20.0e3 |
 | `P_3`         | Third power command, the line's best-BSFC point (derived; EngineGeneratorBench)                         | W  |   30.0e3 |
@@ -75,7 +75,7 @@ held bounded by its back-calculation. Back at 30 kW it recovers within the hold.
 
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
   isnothing(Q_bus) && (Q_bus = 10000.0 * 3600.0 / E_bus)
-  isnothing(R_bus) && (R_bus = 0.1 * E_bus / 350.0)
+  isnothing(R_bus) && (R_bus = 0.33 * (E_bus / 270.0) * (1400.0 * 3600.0 / 270.0) / Q_bus)
 
   ### Structural Parameters (functions)
 
@@ -97,7 +97,7 @@ held bounded by its back-calculation. Back at 30 kW it recovers within the hold.
   append!(__params, @parameters (Q_bus::Real), [description = "Pack capacity, 10 kWh / E_bus (assumed; SoC drift negligible over the run)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, Q_bus, __local__Q_bus)
   __local__R_bus = R_bus
-  append!(__params, @parameters (R_bus::Real), [description = "Pack resistance (derived; HybridDrive's Leaf pack 0.1 Ohm scaled by E_bus / 350)"])
+  append!(__params, @parameters (R_bus::Real), [description = "Pack resistance: the 2011 Sonata pack's 0.33 Ohm at 270 V and 5.3 Ah, with strings in parallel for Q_bus (derived; INL 10 s pulse)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, R_bus, __local__R_bus)
   __local__P_1 = P_1
   append!(__params, @parameters (P_1::Real), [description = "First power command (assumed)"])

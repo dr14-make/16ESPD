@@ -5,12 +5,13 @@
 
 
 @doc Markdown.doc"""
-   HybridDriveDyno(; name, P_rated, T_max, rpm_start, rpm_end, __overrides)
+   HybridDriveDyno(; name, P_rated, T_max, V_design, rpm_start, rpm_end, __overrides)
 
 Battery-fed hybrid drive envelope bench (assumed; Lecture 4 dyno method). A saturated torque
 request exposes the current ceiling and field weakening. Hold 200 rpm for one second, ramp
 to 4000 rpm in 20 seconds, then hold for one second. Rotor acceleration costs J dw/dt;
-pack resistance shifts the observed corner below the nominal-voltage design corner.
+the machine is designed at the pack's loaded voltage, so the corner sits near the design corner at
+full power.
 
 ## Parameters:
 
@@ -18,10 +19,11 @@ pack resistance shifts the observed corner below the nominal-voltage design corn
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `P_rated`         | Rated machine power forwarded to the drive (ORNL-2011)                         | W  |   30.0e3 |
 | `T_max`         | Peak torque forwarded to the drive (ORNL-2011)                         | N.m  |   205.0 |
+| `V_design`         | Machine design voltage forwarded to the drive: the pack's terminal voltage at rated input (derived; HybridDrive)                         | V  |   220.0 |
 | `rpm_start`         | Initial dyno speed [rpm] (assumed; above loss regularization)                         | --  |   200.0 |
 | `rpm_end`         | Final dyno speed [rpm] (assumed; tests field weakening)                         | --  |   4000.0 |
 """
-@component function HybridDriveDyno(; name = nothing, var"P_rated"=Float64(30000.0), var"T_max"=Float64(205.0), var"rpm_start"=Float64(200.0), var"rpm_end"=Float64(4000.0), __overrides = Dict{String, Any}())
+@component function HybridDriveDyno(; name = nothing, var"P_rated"=Float64(30000.0), var"T_max"=Float64(205.0), var"V_design"=Float64(220.0), var"rpm_start"=Float64(200.0), var"rpm_end"=Float64(4000.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -42,6 +44,7 @@ pack resistance shifts the observed corner below the nominal-voltage design corn
   ### Keyword argument overrides
   haskey(__overrides, "P_rated") && (P_rated = pop!(__overrides, "P_rated"))
   haskey(__overrides, "T_max") && (T_max = pop!(__overrides, "T_max"))
+  haskey(__overrides, "V_design") && (V_design = pop!(__overrides, "V_design"))
   haskey(__overrides, "rpm_start") && (rpm_start = pop!(__overrides, "rpm_start"))
   haskey(__overrides, "rpm_end") && (rpm_end = pop!(__overrides, "rpm_end"))
 
@@ -64,6 +67,9 @@ pack resistance shifts the observed corner below the nominal-voltage design corn
   __local__T_max = T_max
   append!(__params, @parameters (T_max::Real), [description = "Peak torque forwarded to the drive (ORNL-2011)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, T_max, __local__T_max)
+  __local__V_design = V_design
+  append!(__params, @parameters (V_design::Real), [description = "Machine design voltage forwarded to the drive: the pack's terminal voltage at rated input (derived; HybridDrive)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, V_design, __local__V_design)
   __local__rpm_start = rpm_start
   append!(__params, @parameters (rpm_start::Real), [description = "Initial dyno speed [rpm] (assumed; above loss regularization)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, rpm_start, __local__rpm_start)
@@ -85,7 +91,7 @@ pack resistance shifts the observed corner below the nominal-voltage design corn
   ### Components
   # Subcomponent drive of type VehicleSystemsComponents.Vehicle.Electric.HybridDrive
   drive_overrides = __pop_subcomponent_overrides!(__overrides, "drive")
-  push!(__systems, @named drive = VehicleSystemsComponents.Vehicle.Electric.HybridDrive(; P_rated=P_rated, T_max=T_max, __overrides = drive_overrides))
+  push!(__systems, @named drive = VehicleSystemsComponents.Vehicle.Electric.HybridDrive(; P_rated=P_rated, T_max=T_max, V_design=V_design, __overrides = drive_overrides))
   # Subcomponent request of type BlockComponents.Sources.Constant
   request_overrides = __pop_subcomponent_overrides!(__overrides, "request")
   push!(__systems, @named request = BlockComponents.Sources.Constant(; k=2.0 * T_max, __overrides = request_overrides))

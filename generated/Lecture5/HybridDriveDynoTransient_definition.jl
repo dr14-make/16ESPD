@@ -6,7 +6,7 @@
 
 using DyadInterface
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@component function HybridDriveDynoTransient__System(; name = nothing, var"alg"=ODEAlg.Rodas5P(), var"start"=0, var"stop"=22.0, var"abstol"=0.000001, var"reltol"=0.000001, var"saveat"=0.01, var"dtmax"=0, var"tstops"=[1.0, 21.0], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.Aggressive(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", var"P_rated"=30000.0, var"T_max"=205.0, var"rpm_start"=200.0, var"rpm_end"=4000.0, __overrides = Dict{String, Any}())
+@component function HybridDriveDynoTransient__System(; name = nothing, var"alg"=ODEAlg.Rodas5P(), var"start"=0, var"stop"=22.0, var"abstol"=0.000001, var"reltol"=0.000001, var"saveat"=0.01, var"dtmax"=0, var"tstops"=[1.0, 21.0], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.Aggressive(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", var"P_rated"=30000.0, var"T_max"=205.0, var"V_design"=220.0, var"rpm_start"=200.0, var"rpm_end"=4000.0, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -42,6 +42,7 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   haskey(__overrides, "log_file") && (log_file = pop!(__overrides, "log_file"))
   haskey(__overrides, "P_rated") && (P_rated = pop!(__overrides, "P_rated"))
   haskey(__overrides, "T_max") && (T_max = pop!(__overrides, "T_max"))
+  haskey(__overrides, "V_design") && (V_design = pop!(__overrides, "V_design"))
   haskey(__overrides, "rpm_start") && (rpm_start = pop!(__overrides, "rpm_start"))
   haskey(__overrides, "rpm_end") && (rpm_end = pop!(__overrides, "rpm_end"))
 
@@ -109,6 +110,9 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   __local__T_max = T_max
   append!(__params, @parameters (T_max::Float64), [description = "Peak machine torque (ORNL-2011)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, T_max, __local__T_max)
+  __local__V_design = V_design
+  append!(__params, @parameters (V_design::Float64), [description = "Machine design voltage (derived; HybridDrive)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, V_design, __local__V_design)
   __local__rpm_start = rpm_start
   append!(__params, @parameters (rpm_start::Float64), [description = "Initial dyno speed [rpm] (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, rpm_start, __local__rpm_start)
@@ -130,7 +134,7 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   ### Components
   # Subcomponent model of type VehicleSystemsComponents.Lecture5.HybridDriveDyno
   model_overrides = __pop_subcomponent_overrides!(__overrides, "model")
-  push!(__systems, @named model = VehicleSystemsComponents.Lecture5.HybridDriveDyno(; P_rated=P_rated, T_max=T_max, rpm_start=rpm_start, rpm_end=rpm_end, __overrides = model_overrides))
+  push!(__systems, @named model = VehicleSystemsComponents.Lecture5.HybridDriveDyno(; P_rated=P_rated, T_max=T_max, V_design=V_design, rpm_start=rpm_start, rpm_end=rpm_end, __overrides = model_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -171,6 +175,8 @@ export HybridDriveDynoTransient__System
   var"P_rated"::Float64 = 30000.0
   # Peak machine torque (ORNL-2011)
   var"T_max"::Float64 = 205.0
+  # Machine design voltage (derived; HybridDrive)
+  var"V_design"::Float64 = 220.0
   # Initial dyno speed [rpm] (assumed)
   var"rpm_start"::Float64 = 200.0
   # Final dyno speed [rpm] (assumed)
@@ -178,9 +184,10 @@ export HybridDriveDynoTransient__System
   # Battery-fed hybrid drive envelope bench (assumed; Lecture 4 dyno method). A saturated torque
   # request exposes the current ceiling and field weakening. Hold 200 rpm for one second, ramp
   # to 4000 rpm in 20 seconds, then hold for one second. Rotor acceleration costs J dw/dt;
-  # pack resistance shifts the observed corner below the nominal-voltage design corner.
+  # the machine is designed at the pack's loaded voltage, so the corner sits near the design corner at
+  # full power.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture5.HybridDriveDyno(; name=:HybridDriveDyno)
-  __system::System = HybridDriveDynoTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file", var"P_rated"=var"P_rated", var"T_max"=var"T_max", var"rpm_start"=var"rpm_start", var"rpm_end"=var"rpm_end")
+  __system::System = HybridDriveDynoTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file", var"P_rated"=var"P_rated", var"T_max"=var"T_max", var"V_design"=var"V_design", var"rpm_start"=var"rpm_start", var"rpm_end"=var"rpm_end")
 end
 
 function __dyad_base_analysis_spec(spec::HybridDriveDynoTransient__Spec)
@@ -188,6 +195,7 @@ function __dyad_base_analysis_spec(spec::HybridDriveDynoTransient__Spec)
   no_namespace_model = toggle_namespacing(spec.model, false)
   push!(overrides, no_namespace_model.P_rated => spec.var"P_rated")
   push!(overrides, no_namespace_model.T_max => spec.var"T_max")
+  push!(overrides, no_namespace_model.V_design => spec.var"V_design")
   push!(overrides, no_namespace_model.rpm_start => spec.var"rpm_start")
   push!(overrides, no_namespace_model.rpm_end => spec.var"rpm_end")
   merge!(overrides, spec.__overrides)

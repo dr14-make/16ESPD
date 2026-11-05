@@ -151,14 +151,8 @@ export P2OperatingLineWLTCTransient__System
   var"specialization"::SpecializationLevel.Type = SpecializationLevel.Despecialize()
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
-  # Engine-only operating-line WLTC (derived; Lecture 5 step 2, P2WLTC).
-  # The PI commands engine pedal as in H0. Requested engine power is that driver's realized
-  # positive brake torque times positive crank speed, after the existing pedal, manifold and
-  # torque-map dynamics. The PI output is not physical engine torque: using it as torque would
-  # misplace the operating points because the pedal-to-torque chain is nonlinear. The line
-  # therefore follows the power actually requested through that chain, without an inverse map.
-  # K0 retains the smooth launch ramp: a permanently closed clutch would stall at standstill.
-  # Machine torque, losses, inertia and auxiliaries are zero, as in H0.
+  # Engine-only operating-line WLTC with pedal-based power demand and shaft-speed K0 lock-up.
+  # The line target is floored above idle. Machine torque, losses and inertia are zero.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture5.P2OperatingLineWLTC(; name=:P2OperatingLineWLTC)
   __system::System = P2OperatingLineWLTCTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file")
 end
