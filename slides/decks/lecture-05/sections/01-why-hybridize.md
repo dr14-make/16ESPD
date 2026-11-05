@@ -34,11 +34,13 @@ routeAlias: wltc-on-the-bsfc-map
 
 **At its best**: 35.7 % brake efficiency, **232 g/kWh**, at 3000 rpm and 99 N·m.
 
-**Over the WLTC**: 29.5 % of the fuel's energy reaches the crank as positive work.
+**Over the WLTC**: 30.2 % of the fuel's energy reaches the crank as work, a cycle BSFC of
+**275 g/kWh**. Only a third of the fuel burns within 10 g/kWh of the best-BSFC line.
 
-| Phase | Low | Medium | High | Extra High |
+| Engine power | ≤ 1 kW | 1–10 kW | 10–40 kW | > 40 kW |
 |---|---:|---:|---:|---:|
-| crank work ÷ fuel | 21.8 % | 28.2 % | 30.3 % | 33.0 % |
+| share of time | 42.5 % | 28.6 % | 28.7 % | 0.2 % |
+| share of fuel | 5.8 % | 26.1 % | 66.9 % | 1.2 % |
 
 **At every stop**: idling, burning fuel for no work at all.
 
@@ -58,12 +60,13 @@ percent of the fuel's energy into shaft work: 232 grams of petrol per kilowatt-h
 99 newton meters. That is the star on Lecture 2's efficiency map, in the engine-and-cycles section of
 that deck.
 
-Over the whole WLTC it gets 29.5 percent: the positive work at the crank, 11.59 megajoules, divided
-by the fuel's energy, 39.26 megajoules. That number and the phase split are derived in the research
-note's headline table from the Lecture 2 WLTC reference bench. By phase: 21.8 percent in Low, 28.2
-in Medium, 30.3 in High, 33.0 in Extra High. The slow phase is the worst, because the car needs
-little power there and the engine makes little power badly: a nearly closed throttle to pump
-against, and friction that is a large share of a small output.
+Over the whole WLTC, on the conventional reference run, it gets 30.2 percent: 275 grams per
+kilowatt-hour of crank work over the cycle, against 232 at the star. The table splits the cycle by
+engine power. Four tenths of the time the engine idles or barely pulls, and burns only 6 percent of
+the fuel there. Two thirds of the fuel goes in at 10 to 40 kilowatts, on the band the CVT's pedal
+schedule sets, faster and lighter-loaded than the best-BSFC line. Only a third of all the fuel is
+burned within 10 grams per kilowatt-hour of that line. Light load is where the engine does worst:
+a nearly closed throttle to pump against, and friction that is a large share of a small output.
 
 And the engine idles at every stop. The WLTC's Low phase is full of stops, and every second of idle
 burns fuel with nothing to show for it.
@@ -191,8 +194,8 @@ how much of each a hybrid can get at all.
 
 ## Summary of section 01
 
-- Lecture 2's engine: **232 g/kWh** at its best, **29.5 %** over the WLTC, worst in the Low phase,
-  and idling at every stop.
+- Lecture 2's engine: **232 g/kWh** at its best, **30.2 %** over the WLTC, two thirds of its fuel
+  off the best-BSFC line, and idling at every stop.
 - A hybrid saves fuel three ways: **move the operating point**, **stop instead of idling**,
   **bring the braking back**.
 - Every joule through the battery pays the round trip; the energy manager decides when it is
@@ -201,8 +204,9 @@ how much of each a hybrid can get at all.
 ### Next: how the engine and the machine are connected. <Link to="series-and-parallel">→ 02, series and parallel</Link>
 
 <!--
-Section 01 in three lines. Lecture 2's engine is 232 grams per kilowatt-hour at its best and 29.5
-percent efficient over the WLTC, worst in the slow Low phase, and it idles at every stop. A hybrid
+Section 01 in three lines. Lecture 2's engine is 232 grams per kilowatt-hour at its best and 30.2
+percent efficient over the WLTC, with two thirds of its fuel burned off the best-BSFC line, and it
+idles at every stop. A hybrid
 saves fuel three ways: by moving the operating point, by stopping instead of idling, and by bringing
 the braking back. And every joule that goes through the battery pays the round trip, so something
 has to decide when that is worth it; that is the energy manager of section 06.

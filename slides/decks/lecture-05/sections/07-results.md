@@ -33,7 +33,7 @@ routeAlias: three-powertrains
 
 | Powertrain | L/100 km | MJ/100 km |
 |---|---:|---:|
-| conventional, same planar car (H0) | <span class="todo">TODO</span> | <span class="todo">TODO</span> |
+| conventional, same planar car (H0) | 5.72 | 184.8 |
 | P2 hybrid, SoC-corrected | <span class="todo">TODO</span> | <span class="todo">TODO</span> |
 | battery-electric, Lecture 4 | — | 47.2 |
 
@@ -62,8 +62,10 @@ Produced by the charge-sustaining WLTC run, #113
 The first comparison: the three powertrains on the same cycle.
 
 The conventional car is H0: the same planar car with the clutch closed and the machine off, so the
-three rows differ only in the powertrain. Its number comes from the reference run and is TODO; for
-scale, Lecture 2's car on its own bench burned 5.22 liters per 100 kilometers, 168.8 megajoules. The hybrid you finish today, with its fuel corrected for the change in the
+three rows differ only in the powertrain: 5.72 liters per 100 kilometers, 184.8 megajoules. For
+scale, Lecture 2's car on its own, one-dimensional bench burned 5.22. The hybrid's hardware alone,
+its machine spinning idle on the shaft, would cost the same car 0.07 liters, 1.3 percent: the hybrid
+has to earn that back before it saves anything. The hybrid you finish today, with its fuel corrected for the change in the
 battery's charge: TODO until the reference run of issue 113. The battery-electric car of Lecture 4:
 no liters, 47.2 megajoules per 100 kilometers at the battery's terminals, from Lecture 4's wrap-up.
 
@@ -261,8 +263,8 @@ power and the distance · then the three cars side by side*
 
 <div class="handson">✓ SoC at the end within <b>± 2 %</b> of capacity of its start:
 <span class="todo">TODO ΔSoC</span> · L/100 km: conventional on this bench
-<span class="todo">TODO</span> (Lecture 2: 5.22), hybrid SoC-corrected <span class="todo">TODO</span>
-· MJ/100 km: conventional <span class="todo">TODO</span>, hybrid <span class="todo">TODO</span>,
+<b>5.72</b> (Lecture 2: 5.22), hybrid SoC-corrected <span class="todo">TODO</span>
+· MJ/100 km: conventional <b>184.8</b>, hybrid <span class="todo">TODO</span>,
 battery-electric <b>47.2</b></div>
 
 </div>
@@ -279,8 +281,8 @@ in liters and in megajoules per 100 kilometers. Then you put the three cars side
 The checkpoint, from the plan. First the honesty check: the state of charge at the end must be
 within 2 percent of capacity of its start. Then the numbers: the SoC-corrected liters per 100
 kilometers for the conventional car and the hybrid, and megajoules per 100 kilometers for all three.
-The electric car's 47.2 is Lecture 4's. The conventional car's number on this bench comes from the
-reference run and is still TODO; Lecture 2's 5.22 is there to compare with. The hybrid's are TODO until the reference run.
+The electric car's 47.2 is Lecture 4's. The conventional car's 5.72 is this bench's reference run;
+Lecture 2's 5.22 is there to compare with. The hybrid's are TODO until the reference run.
 
 If your state of charge ends outside the band, the charge thresholds are too far apart or the charge
 power too small for the cycle; the fuel figure is then not one to quote.
