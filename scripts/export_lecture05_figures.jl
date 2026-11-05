@@ -1,11 +1,20 @@
 """
 Writes the Lecture 5 deck's engine figures into `slides/decks/lecture-05/public/figures/`.
 
-    julia +dyad-3.5.0 --project=. scripts/export_lecture05_figures.jl
+    julia +dyad-3.5.0 --project=. scripts/export_lecture05_figures.jl [figure ...]
 
 `05-bsfc-line`: BSFC contours of the Lecture 2 mapped engine over speed and brake torque, under
 its full-load curve, with the best-BSFC operating line of `scripts/bsfc_line.jl` and a few
 constant-power curves. Computed from the map tables, with no Dyad model.
+
+The figures in `NOTEBOOK_FIGURES` come from running their notebook in
+`notebooks/lecture05/` top to bottom with its controls at their defaults, in a module of its
+own: a notebook assigns the global `VehicleSystemsComponents`, which would collide with the
+package `setup()` loads into `Main`. A notebook figure that is still `nothing` is skipped with a
+warning. Figure names as arguments export only those.
+
+The notebooks include this file for `bsfc_map_plot` and `operating_points!`, so both figures
+draw the map the same way.
 """
 module Lecture05Figures
 
@@ -59,7 +68,13 @@ function contour_pieces(rpm, torque, Z, F, level)
     return pieces
 end
 
-function bsfc_line_plot()
+"""
+    bsfc_map_plot(; title = "BSFC contours [g/kWh]")
+
+The engine's BSFC contours, full-load curve, best-BSFC line with the map's minimum marked, and
+the 20–80 kW constant-power curves.
+"""
+function bsfc_map_plot(; title = "BSFC contours [g/kWh]")
     m = load_maps()
     line = operating_line(m)
     best = global_min_bsfc(m)
@@ -68,7 +83,7 @@ function bsfc_line_plot()
     Z, F = bsfc_grid(m, rpm, torque)
 
     p = plot(; size = (1280, 620), xlims = (RPM_IDLE, RPM_MAX), ylims = (0, 160),
-        title = "BSFC contours [g/kWh]", xlabel = "engine speed [rpm]", ylabel = "brake torque [N·m]",
+        title, xlabel = "engine speed [rpm]", ylabel = "brake torque [N·m]",
         legend = :bottomright,
         grid = true, gridalpha = 0.25)
     for P in (20, 40, 60, 80)
@@ -97,12 +112,63 @@ function bsfc_line_plot()
     return p
 end
 
-function main()
+bsfc_line_plot() = bsfc_map_plot()
+
+# The largest bubble's diameter [px]; areas scale with grams, so it is the largest cell's.
+const BUBBLE_MAX = 34.0
+
+"""
+    operating_points!(p, cells; scale = maximum(cells.fuel_g), color = LINE_COLOR, label)
+
+Draw fuel `cells` (`rpm`, `torque`, `fuel_g`, as `OperatingPoints.fuel_cells` gives them) on
+`p` as bubbles whose area is the fuel burned in the cell. Give every car on one figure the same
+`scale` [g], the grams a `BUBBLE_MAX` bubble stands for, so equal areas mean equal fuel.
+"""
+function operating_points!(p, cells; scale = maximum(cells.fuel_g), color = LINE_COLOR, label)
+    ms = BUBBLE_MAX .* sqrt.(cells.fuel_g ./ scale)
+    scatter!(p, cells.rpm, cells.torque; markersize = ms, color, markeralpha = 0.45,
+        markerstrokecolor = color, markerstrokewidth = 1, label)
+    return p
+end
+
+const NOTEBOOKS = joinpath(ROOT, "notebooks", "lecture05")
+const NOTEBOOK_FIGURES = Dict(
+    "01-operating-points.pluto.jl" => ["05-operating-points-conventional" => :conventional_plot],
+)
+
+function export_notebook(notebook, figures)
+    mod = Core.eval(Main, :(module $(Symbol("Notebook_", replace(notebook, r"\W" => "_"))) end))
+    Base.include(mod, joinpath(NOTEBOOKS, notebook))
+    for (name, plot) in figures
+        p = Core.eval(mod, plot)
+        if p === nothing
+            @warn "$name: the notebook's `$plot` is `nothing`; not exported"
+            continue
+        end
+        path = Base.invokelatest(save_svg, p, joinpath(OUT, "$name.svg"))
+        println("wrote $(relpath(path, ROOT))")
+    end
+end
+
+function main(wanted = String[])
+    known = ["05-bsfc-line"; [n for fs in values(NOTEBOOK_FIGURES) for (n, _) in fs]]
+    unknown = setdiff(wanted, known)
+    isempty(unknown) || error("no such figure: $(join(sort!(unknown), ", "))")
+    want(name) = isempty(wanted) || name in wanted
     mkpath(OUT)
-    path = save_svg(bsfc_line_plot(), joinpath(OUT, "05-bsfc-line.svg"))
-    println("wrote $(relpath(path, ROOT))")
+    if want("05-bsfc-line")
+        path = save_svg(bsfc_line_plot(), joinpath(OUT, "05-bsfc-line.svg"))
+        println("wrote $(relpath(path, ROOT))")
+    end
+    for (notebook, figures) in sort!(collect(NOTEBOOK_FIGURES))
+        figures = filter(f -> want(first(f)), figures)
+        isempty(figures) || export_notebook(notebook, figures)
+    end
 end
 
 end # module
 
-Lecture05Figures.main()
+# A notebook that includes this file gets its own copy of the module, not the program's.
+if abspath(PROGRAM_FILE) == (@__FILE__) && parentmodule(Lecture05Figures) === Main
+    Lecture05Figures.main(ARGS)
+end
