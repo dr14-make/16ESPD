@@ -6,7 +6,7 @@ title: Lecture 5 — compose a P2 hybrid powertrain
 
 # Lecture 5: compose a P2 hybrid powertrain
 
-**Draft — Studio rehearsal unverified.** This guide describes task #111's reference composition and reported numerical checks, not a rehearsed Studio walkthrough. The electric-only Low checkpoint has measured results; the engine-only checkpoint is **blocked**. Do not treat the existence of an analysis as a passing run.
+**Draft — Studio rehearsal unverified.** This guide describes task #111's reference composition and reported numerical checks, not a rehearsed Studio walkthrough. Do not treat the existence of an analysis as a passing run.
 
 **What you build.** A transmission-input P2 hybrid from existing library parts: mapped engine → disconnect clutch K0 → machine shaft → controlled variator → differential → front wheels. No new constitutive model, launch device, operating-line controller or energy manager is introduced.
 
@@ -16,7 +16,7 @@ title: Lecture 5 — compose a P2 hybrid powertrain
 
 - [1a · Wire the P2 powertrain](#step-1a)
 - [1b · Electric-only WLTC Low](#step-1b)
-- [1c · Engine-only WLTC — blocked](#step-1c)
+- [1c · Engine-only WLTC through K0](#step-1c)
 
 ## 1a · Wire the P2 powertrain {#step-1a}
 
@@ -36,7 +36,7 @@ Create your own `P2Powertrain` component and expose the same interface. Place:
 | `variator` | VehicleSystemsComponents › Vehicle › ControlledVariator | existing speed schedule and final drive |
 | `hold` | RotationalComponents › Components › Fixed | present only when `engine_stopped` |
 
-Add structural Boolean `engine_stopped = false` and Real `position_start = 0.0`. `variator` must remain a distinct child: it is the replacement seam for #112, **not** a Dyad language-level `replaceable` feature. `ControlledVariator` already includes the final drive. Do not substitute `CVTDriveline`: that assembly also contains a centrifugal launch clutch and an ideal rolling wheel.
+Add structural Boolean `engine_stopped = false`, Real `position_start = 0.0`, and angular velocity `engine_speed_start = 0.0` rad/s. `variator` must remain a distinct child: it is the replacement seam for #112, **not** a Dyad language-level `replaceable` feature. `ControlledVariator` already includes the final drive. Do not substitute `CVTDriveline`: that assembly also contains a centrifugal launch clutch and an ideal rolling wheel.
 
 #### Do this
 
@@ -52,9 +52,9 @@ Add structural Boolean `engine_stopped = false` and Real `position_start = 0.0`.
    The machine shares the transmission-input shaft; it is not another gear in series.
 2. Wire `engine_pedal` to `engine.pedal`, `engage` to `k0.engage`, `tau_ref` to `drive.tau_ref`, and `cvt_pedal` to `variator.pedal`.
 3. Export `engine.speed.w`, `engine.tau_e` and `engine.mdot_fuel`; `drive.machine.tau`; `k0.position`; `drive.SoC`; and `drive.battery.E` and `drive.battery.i` to the corresponding outputs above.
-4. Reproduce the reference initialization: engine manifold pressure `101325.0` Pa and machine rotor angle `0.0`. With `engine_stopped = false`, initialize engine crankshaft speed and angle to `0.0`.
+4. Reproduce the reference initialization: engine manifold pressure `101325.0` Pa and machine rotor angle `0.0`. With `engine_stopped = false`, initialize engine crankshaft speed to `engine_speed_start` and angle to `0.0`.
 5. For the fixed electric fixture only, conditionally place `hold` and connect `engine.spline` to `hold.spline`. Set `MappedEngine`'s `fuel_cut_rpm = -2.0` and `fuel_resume_rpm = -1.0` in this configuration; otherwise retain `1300.0` and `1000.0`. At zero pedal and held zero speed, the electric fixture initializes `cut = 1`, so fuel is cut without events. This is a fixed test configuration, not engine stopping, starting or mode-switching logic.
-6. Create your own `P2WLTC` fixture using the reference `Lecture5.P2WLTC` for the planar car, road load, cycle and driver. Keep structural Boolean `electric = false`, mass `m = 1500.0` kg and `dv_wheel = 0.01` m/s. Pass `engine_stopped = electric` and `position_start = ifelse(electric, 0.0, 1.0)` to `powertrain`.
+6. Create your own `P2WLTC` fixture using the reference `Lecture5.P2WLTC` for the planar car, road load, cycle and driver. Keep structural Boolean `electric = false`, mass `m = 1500.0` kg and `dv_wheel = 0.01` m/s. Pass `engine_stopped = electric`, `position_start = 0.0` and `engine_speed_start = ifelse(electric, 0.0, 800.0 * pi / 30)` to `powertrain`. Keep PI gain `k = 50.0` in electric mode; use `70.0` in engine-only mode, with `Ti = 2.0` s in both. Set the nested `powertrain.drive.P_aux` to `300.0` W in electric mode and `0.0` in engine-only mode so the conventional baseline draws no battery energy.
 7. Wire `powertrain.spline` to `differential.flange_b`, and the differential's `flange_left` and `flange_right` to `car.spin_fl` and `car.spin_fr`. Ground `powertrain.support` with `mount`, a `RotationalComponents.Components.Fixed`. Retain the reference's straight steering, flat road, speed feedback and wheel/brake initial conditions.
 
 ::: tip Checkpoint 1a — wiring
@@ -107,36 +107,69 @@ These are reported reference measurements, not newly measured Studio results or 
 
 Compare with `Lecture5.P2ElectricWLTC` and `Lecture5.P2ElectricWLTCTransient`, then inspect the electric branch of `P2WLTC`. A successful Low run does not validate electric operation for all 1800 s.
 
-## 1c · Engine-only WLTC — BLOCKED {#step-1c}
+## 1c · Engine-only WLTC through K0 {#step-1c}
 
 #### Given
 
-`Lecture5.P2EngineWLTCTransient` selects `P2WLTC()` with structural `electric = false` and requests the full **1800 s** cycle. Its solver settings are also `Rodas5P`, `dtmax = 1.0`, and `OptimizationLevel.None()`. K0 is commanded closed and starts at position 1; machine torque is zero.
+H0 is Lecture 5's conventional baseline: Lecture 2's mapped engine and CVT on the same
+1500 kg planar car as the hybrid. Compare hybrid results against this H0, not Lecture 2's
+5.22 L/100 km from a different 1D bench (quoted only for scale).
+`Lecture5.P2EngineWLTCTransient` runs `P2WLTC(electric = false)` for **1800 s**, with
+`Rodas5P`, `dtmax = 1.0` and `OptimizationLevel.None()`.
 
 #### Do this
 
-1. Inspect the engine branch: engine and CVT pedals follow `min(max(driver.y / 150.0, 0.0), 1.0)`, `engage = 1.0`, and `tau_ref = 0.0`.
-2. Notice that the engine-only braking equation is different from the split output:
+1. Start the engine at **800 rpm** and K0 at `position_start = 0.0`. The P2 layout has no
+   separate launch clutch: in engine-only mode K0 does that job. Closing it from rest would
+   pull the engine down to the stopped wheels, where the map supplies no launch torque.
+2. Add bench parameters `engage_rpm = 1300.0` and `engage_width_rpm = 120.0` (rpm), matching
+   `CentrifugalClutch`. Feed `powertrain.engine_speed` (rad/s) into the smooth engagement signal:
+
+   ```dyad
+   powertrain.engage = 0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm))
+   ```
+
+   K0's existing actuator follows this request; it slips during launch and approaches closed
+   above the ramp. No state-triggered branch or event is needed. At the final idle stop K0
+   opens again, rather than remaining closed against stopped wheels.
+3. Keep `tau_ref = 0.0`; engine and CVT pedals follow
+   `min(max(driver.y / 150.0, 0.0), 1.0)`. Use the engine-only front brake split:
 
    ```dyad
    car.tau_fl = -min(driver.y, 0.0) * powertrain.variator.ratio / 2.0
    car.tau_fr = car.tau_fl
    ```
 
-   Here division by two is explicit because `driver.y`, not `split.tau_brake`, supplies the brake request.
-3. Record the launch limitation below. Do not tune a fictitious passing result, add a launch device, or report fuel per distance from a stalled run.
+   Division by two is explicit because `driver.y`, not `split.tau_brake`, supplies the request.
+4. Plot target and actual speed, engine rpm, K0 position and slip, raw and corrected fuel.
+   Confirm the full cycle follows within ±2 km/h and covers the cycle distance.
 
-::: warning Checkpoint 1c — blocked, not passed
+::: tip Checkpoint 1c — measured H0 reference run
 
-The existing full-load engine map gives zero torque at rest. With K0 closed, the 230 N·m clutch load stalls the engine; even a trial initial engine speed of 800 rpm did not solve the launch problem. The reference composition therefore **does not pass the engine-only WLTC checkpoint**. Defining a full-cycle analysis is not a completed full-cycle simulation.
+| Quantity | Full WLTC result |
+| --- | --- |
+| Duration | 1800 s |
+| Maximum absolute speed error | 1.695469 km/h |
+| Distance | 23266.573 m |
+| Raw fuel | 5.787688 L/100 km |
+| SoCCorrectedFuel `fuel_corr` | 5.787688 L/100 km |
+| Energy | 187.1333 MJ/100 km |
+| K0 slip energy, integrated over cycle | approximately 0.11084 MJ |
+| Peak engine torque on cycle / nominal K0 capacity | 120.496 / 230 N·m |
 
-There is no valid raw consumption comparison against H0's **5.22 L/100 km**. Do not invent an engine-only fuel result or compare the electric Low run's zero fuel with that full-cycle baseline.
+Battery current is zero and SoC stays at 0.6, so raw and corrected fuel are equal. K0 position
+is above 0.9969 whenever engine speed exceeds 1900 rpm in this run, allowing actuator lag.
+The map's full-load peak is 150.234 N·m, also below K0's 230 N·m nominal capacity
+(229.885 N·m after endpoint rounding). Slip heat is mechanical launch loss, not a separately
+measured fuel increment; its fuel cost is already included in H0's consumption.
 
 :::
 
 #### Fell behind?
 
-The reference engine fixture has the same limitation. Preserve this blocked checkpoint rather than presenting it as a solution. Resolving launch needs a separate modeling decision; this task adds no constitutive model or launch device.
+Compare the engine branch and initial conditions with `Lecture5.P2WLTC` and the self-contained
+`HandsOn05` reference. Retain the electric branch unchanged. These measurements validate the
+numerical reference, not the unrehearsed Studio steps.
 
 ## Where this stops
 
