@@ -16,7 +16,7 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
 | `electric`         | Electric-only fixed configuration; no mode switching (assumed; step 1)                         | --  |   true |
 | `m`         | Vehicle and road-load mass (assumed; shared planar benchmark)                         | kg  |   1500.0 |
 | `radius`         | Wheel radius (derived; planar benchmark)                         | m  |   0.31 |
-| `k`         | PI gain, input-shaft N.m per km/h (assumed; BEV driver)                         | --  |   ifelse(elec...50.0, 70.0) |
+| `k`         | PI gain, input-shaft N.m per km/h: 50 as the BEV driver for electric-only, 70 for engine-only launch through K0 (tuned to the tracking band)                         | --  |   ifelse(elec...50.0, 70.0) |
 | `Ti`         | PI integral time (assumed; BEV driver)                         | s  |   2.0 |
 | `tau_max`         | Signed driver torque ceiling (assumed; hybrid machine peak)                         | N.m  |   205.0 |
 | `dv_wheel`         | Initial wheel surface speed offset (assumed; MultibodyComponents #185)                         | m/s  |   0.01 |
@@ -75,7 +75,7 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
   append!(__params, @parameters (radius::Real), [description = "Wheel radius (derived; planar benchmark)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__k = k
-  append!(__params, @parameters (k::Real), [description = "PI gain, input-shaft N.m per km/h (assumed; BEV driver)"])
+  append!(__params, @parameters (k::Real), [description = "PI gain, input-shaft N.m per km/h: 50 as the BEV driver for electric-only, 70 for engine-only launch through K0 (tuned to the tracking band)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, k, __local__k)
   __local__Ti = Ti
   append!(__params, @parameters (Ti::Real), [description = "PI integral time (assumed; BEV driver)"])
@@ -121,8 +121,13 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
   powertrain_overrides = __pop_subcomponent_overrides!(__overrides, "powertrain")
   powertrain_dict = Dict{String, Any}()
   powertrain_dict["drive.P_aux"] = ModelingToolkit.default_to_parentscope(ifelse(electric, 300.0, 0.0))
+  powertrain_dict["drive.T_f"] = ModelingToolkit.default_to_parentscope(ifelse(electric, 0.5 * (30000.0 / 110000.0), 0.0))
+  powertrain_dict["drive.K_i"] = ModelingToolkit.default_to_parentscope(ifelse(electric, 1.0 * (30000.0 / 110000.0), 0.0))
+  powertrain_dict["drive.k_w"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(ifelse(electric, 300.0 / (10100.0 * pi / 30.0) ^ 3 * (30000.0 / 110000.0), 0.0)))
+  powertrain_dict["drive.C"] = ModelingToolkit.default_to_parentscope(ifelse(electric, 200.0 * (30000.0 / 110000.0), 0.0))
+  powertrain_dict["drive.J"] = ModelingToolkit.default_to_parentscope(ifelse(electric, 0.05 * (30000.0 / 110000.0), 0.0))
   merge!(powertrain_dict, powertrain_overrides)
-  push!(__systems, @named powertrain = VehicleSystemsComponents.HandsOn05.P2Powertrain(; engine_stopped=electric, position_start=Float64(0.0), engine_speed_start=ifelse(electric, 0.0, 800.0 * pi / 30), __overrides = powertrain_dict))
+  push!(__systems, @named powertrain = VehicleSystemsComponents.HandsOn05.P2Powertrain(; engine_stopped=electric, position_start=Float64(0.0), __overrides = powertrain_dict))
   # Subcomponent differential of type MultibodyComponents.PlanarMechanics.DifferentialGear
   differential_overrides = __pop_subcomponent_overrides!(__overrides, "differential")
   push!(__systems, @named differential = MultibodyComponents.PlanarMechanics.DifferentialGear(; __overrides = differential_overrides))

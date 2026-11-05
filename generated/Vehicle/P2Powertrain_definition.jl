@@ -19,7 +19,7 @@ or ideal rolling wheel. The distinct `variator` child permits a speed-commanded 
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `engine_stopped`         | Hold engine stopped with fuel cut for an electric-only fixture (assumed; no start dynamics)                         | --  |   false |
 | `position_start`         | Initial K0 position (assumed; fixed-mode bench)                         | --  |   0.0 |
-| `engine_speed_start`         | Initial running-engine speed [rad/s] (assumed; bench selects idle for launch)                         | rad/s  |   0.0 |
+| `engine_speed_start`         | Initial running-engine speed [rad/s] (assumed; 800 rpm idle for launch)                         | rad/s  |   800.0 * pi / 30 |
 
 ## Connectors
 
@@ -38,7 +38,7 @@ or ideal rolling wheel. The distinct `variator` child permits a speed-commanded 
  * `E` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `i` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function P2Powertrain(; name = nothing, var"engine_stopped"=false, var"position_start"=Float64(0.0), var"engine_speed_start"=Float64(0.0), __overrides = Dict{String, Any}())
+@component function P2Powertrain(; name = nothing, var"engine_stopped"=false, var"position_start"=Float64(0.0), var"engine_speed_start"=800.0 * pi / 30, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -78,7 +78,7 @@ or ideal rolling wheel. The distinct `variator` child permits a speed-commanded 
   append!(__params, @parameters (position_start::Real), [description = "Initial K0 position (assumed; fixed-mode bench)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, position_start, __local__position_start)
   __local__engine_speed_start = engine_speed_start
-  append!(__params, @parameters (engine_speed_start::Real), [description = "Initial running-engine speed [rad/s] (assumed; bench selects idle for launch)"])
+  append!(__params, @parameters (engine_speed_start::Real), [description = "Initial running-engine speed [rad/s] (assumed; 800 rpm idle for launch)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, engine_speed_start, __local__engine_speed_start)
 
   ### Final Parameters (assignments)
