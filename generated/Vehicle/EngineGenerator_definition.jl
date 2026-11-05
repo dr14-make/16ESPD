@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   EngineGenerator(; name, T_max, P_rated, w_base, V_nom, size_scale, R, L, J, T_f, K_i, k_w, C, w_reg, tau_loss_base, k, I_max, d_max, T_i, V_on, f_s, t_sw, eps, T_P, w_min, K_N, T_N, T_aw, clamp_width, pedal_start, p_m_start, __overrides)
+   EngineGenerator(; name, T_max, P_rated, w_base, V_nom, size_scale, R, L, J, T_f, K_i, k_w, C, w_reg, d_max, T_i, V_on, f_s, t_sw, eps, T_P, dw_unload, T_aw_P, w_min, K_N, T_N, T_aw, clamp_width, pedal_start, p_m_start, __overrides)
 
 Engine-generator: Lecture 2's mapped engine and a Lecture 4 DC-equivalent machine running as a
 generator on one shaft, with the converter that delivers its power to a DC bus at `p` and `n`.
@@ -16,31 +16,46 @@ generator on one shaft, with the converter that delivers its power to a DC bus a
 The unit takes two commands, the electrical power it delivers, `P_ref` [W], and the shaft speed,
 `N_ref` [rpm], and holds both with two loops that share the shaft:
 
-    tau_ref = -(P_ref + P_trim) / sqrt(w^2 + w_min^2)     T_P dP_trim/dt = P_ref - P_elec
+    tau_ref = -unload P_em / sqrt(w^2 + w_min^2)        P_em = P_ref + P_trim
+    unload  = clamp((w - w_ref + dw_unload) / (dw_unload / 2))
+    dP_trim/dt = (P_ref - P_elec) / T_P + (P_held - P_em) / T_aw_P
     pedal   = clamp(K_N (w_ref - w) + x_N)   dx_N/dt = K_N (w_ref - w) / T_N + (pedal - u) / T_aw
 
-The generator holds the power. Its torque request is the commanded power over the shaft speed,
-and an integrator trims it by the machine and converter losses, so the power at the pins, not
-at the shaft, settles on `P_ref`. The converter's current loop acts within milliseconds, and for
-any positive command the generator only brakes, so the unit never motors its engine and can
-feed a passive load. The engine holds the speed: it is the only source on the shaft, so it has
-to make up whatever the generator takes. More power demanded first slows the shaft, and the
+The generator holds the power. Its torque request is the air-gap power it has to convert over
+the shaft speed: the command plus an integrator, `P_trim`, that makes up the copper and converter
+losses, so the power at the pins, not at the air gap, settles on `P_ref`. The converter's current
+loop acts within milliseconds, and for any positive command the generator only brakes, so the
+unit never motors its engine and can feed a passive load. Past the converter's current limit, or
+while unloading (below), the generator converts less than `P_em`; that power, `P_held`, is fed
+back into the trim (back-calculation), so the trim stays bounded and lets go as soon as the
+command is back in reach. The engine holds the speed: it is the only source on the shaft, so it
+has to make up whatever the generator takes. More power demanded first slows the shaft, and the
 speed loop's PI opens the pedal until the engine torque matches. The pedal is clamped smoothly
-to [0, 1], and the clamp's excess is fed back into the integrator (back-calculation), so a
-command beyond full load does not wind the loop up. The power trim has no such guard: a command
-past the converter's current limit winds it up.
+to [0, 1], with the same back-calculation, so a command beyond full load does not wind the loop
+up either.
 
-`N_ref` is an engine speed, so a best-BSFC operating line (`Vehicle.OperatingLine`) can drive it
-from the power command. The bus at `p` and `n` has to set its own voltage: a battery does, and so
-does a capacitor across a load. Across a bare resistor the bus voltage is algebraic, and the
-converter's equations then also hold at a negative or a near-zero bus voltage, which the
-initialization can land on. The run starts at the commanded speed, with the generator current at
-its command and the engine at `pedal_start` and `p_m_start`; the loops settle the rest within a
-few seconds. The engine's brake-booster hose is capped. The generator's torque and power
-ratings follow `HybridDrive`'s scaling of the Lecture 4 Leaf machine, sized to the engine rather
-than to the Sonata's 30 kW: 30 kW cannot absorb the 34 kW the engine makes at its best-BSFC
-point. Source tags: (derived) computed from other numbers, method given; (assumed) the course's
-choice.
+`N_ref` is an engine speed. `P_shaft`, the engine power the unit needs in steady state, `P_em`
+plus the generator's friction, iron, windage and constant losses, is an output, so a best-BSFC
+operating line (`Vehicle.OperatingLine`) driven from it puts the engine on the line whatever the
+generator's losses.
+
+The power has priority only while the engine keeps up. The generator's current limit is worth
+more torque than the engine's full load, so a command the engine cannot make would pull the
+shaft down to a stall. Once the shaft falls more than `dw_unload / 2` below its command, `unload`
+backs the generator off, to nothing at `dw_unload` below; the unit then delivers what the engine
+makes at full load, a little under the commanded speed.
+
+The bus at `p` and `n` has to set its own voltage: a battery does, and so does a capacitor across
+a load. Across a bare resistor the bus voltage is algebraic, and the converter's equations then
+also hold at a negative or a near-zero bus voltage, which the initialization can land on. The run
+starts delivering its command at the commanded speed, with the generator current at its command
+and the engine at `pedal_start` and `p_m_start`; the speed loop settles within a few seconds. The
+engine's brake-booster hose is capped.
+
+The generator follows `HybridDrive`'s scaling of the Lecture 4 Leaf machine, sized to the engine
+rather than to the Sonata's 30 kW: 30 kW cannot absorb the engine's 32 kW best-BSFC point at
+3000 rpm with any margin, nor the 50 kW further up the line. Source tags: (derived) computed from
+other numbers, method given; (assumed) the course's choice.
 
 ## Parameters:
 
@@ -59,9 +74,6 @@ choice.
 | `k_w`         | Windage coefficient (derived; Leaf coefficient times size_scale, assumed similarity at equal speed)                         | --  |   300.0 / (10... size_scale |
 | `C`         | Constant shaft loss (derived; Leaf 200 W times size_scale, assumed similarity)                         | W  |   200.0 * size_scale |
 | `w_reg`         | Low-speed loss regularization, retained from Lecture 4 (assumed)                         | rad/s  |   10.0 |
-| `tau_loss_base`         | Shaft loss torque at corner (derived; DCMachine formula)                         | N.m  |   T_f + K_i +... C / w_base |
-| `k`         | Torque/back-EMF constant (derived; DCMachine positive quadratic root at V_nom, T_max, w_base)                         | N.m/A  |   (V_nom + sq...0 * w_base) |
-| `I_max`         | Converter current ceiling (derived; (T_max + corner losses) / k)                         | A  |   (T_max + ta...s_base) / k |
 | `d_max`         | Maximum duty, no voltage boost (assumed; Lecture 4)                         | --  |   1.0 |
 | `T_i`         | Current-loop time constant (assumed; Lecture 4)                         | s  |   1.0e-3 |
 | `V_on`         | Converter conduction drop (assumed; Lecture 4)                         | V  |   1.2 |
@@ -69,6 +81,8 @@ choice.
 | `t_sw`         | Switching-edge duration (assumed; Lecture 4)                         | s  |   1.0e-6 |
 | `eps`         | Field/duty corner rounding (assumed; Lecture 4 numerical regularization)                         | --  |   1.0e-4 |
 | `T_P`         | Power-trim time constant: the loss make-up settles in a few T_P (assumed)                         | s  |   0.2 |
+| `dw_unload`         | Under-speed band: the generator unloads as the shaft falls from half of it to all of it below command, 190 rpm (assumed; beyond the speed loop's excursions on the bench's ramps)                         | rad/s  |   20.0 |
+| `T_aw_P`         | Power-trim anti-windup tracking time (assumed; shorter than T_P)                         | s  |   0.05 |
 | `w_min`         | Speed below which the torque request stops rising as 1/w, keeping it finite at standstill (assumed)                         | rad/s  |   10.0 |
 | `K_N`         | Speed-loop gain, pedal per rad/s of speed error [s/rad] (assumed; tuned on the bench)                         | --  |   0.01 |
 | `T_N`         | Speed-loop integral time (assumed; tuned on the bench)                         | s  |   0.5 |
@@ -87,6 +101,7 @@ choice.
  * `mdot_fuel` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `N` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `P_elec` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `P_shaft` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
 ## Variables
 
@@ -95,11 +110,15 @@ choice.
 | `w_ref`         | Shaft speed command [rad/s]                         | rad/s  |
 | `P_trim`         | Loss make-up added to the power command [W]                         | W  |
 | `tau_ref`         | Generator torque request, positive motoring [N.m]                         | N.m  |
+| `a_unload`         | Shaft speed lag, scaled so that 0 is fully unloaded and 1 fully loaded                         | --  |
+| `unload`         | Generator load fraction, 1 normally, falling to 0 when the shaft lags its command                         | --  |
+| `P_em`         | Air-gap power the generator is asked to convert, command plus loss trim [W]                         | W  |
+| `P_held`         | Air-gap power the generator converts at the converter's limited current [W]                         | W  |
 | `x_N`         | Speed-loop integrator state, in pedal units                         | --  |
 | `u`         | Speed-loop output before the clamp                         | --  |
 | `pedal`         | Pedal sent to the engine, 0 closed to 1 fully open                         | --  |
 """
-@component function EngineGenerator(; name = nothing, var"T_max"=Float64(160.0), var"P_rated"=Float64(60000.0), var"V_nom"=Float64(270.0), var"w_reg"=Float64(10.0), var"d_max"=Float64(1.0), var"T_i"=0.001, var"V_on"=1.2, var"f_s"=Float64(5000.0), var"t_sw"=0.000001, var"eps"=0.0001, var"T_P"=0.2, var"w_min"=Float64(10.0), var"K_N"=0.01, var"T_N"=0.5, var"T_aw"=0.1, var"clamp_width"=0.001, var"pedal_start"=0.2, var"p_m_start"=Float64(50000.0), var"w_base"=nothing, var"size_scale"=nothing, var"R"=nothing, var"J"=nothing, var"T_f"=nothing, var"K_i"=nothing, var"k_w"=nothing, var"C"=nothing, var"L"=nothing, var"tau_loss_base"=nothing, var"k"=nothing, var"I_max"=nothing, __overrides = Dict{String, Any}())
+@component function EngineGenerator(; name = nothing, var"T_max"=Float64(160.0), var"P_rated"=Float64(60000.0), var"V_nom"=Float64(270.0), var"w_reg"=Float64(10.0), var"d_max"=Float64(1.0), var"T_i"=0.001, var"V_on"=1.2, var"f_s"=Float64(5000.0), var"t_sw"=0.000001, var"eps"=0.0001, var"T_P"=0.2, var"dw_unload"=Float64(20.0), var"T_aw_P"=0.05, var"w_min"=Float64(10.0), var"K_N"=0.01, var"T_N"=0.5, var"T_aw"=0.1, var"clamp_width"=0.001, var"pedal_start"=0.2, var"p_m_start"=Float64(50000.0), var"w_base"=nothing, var"size_scale"=nothing, var"R"=nothing, var"J"=nothing, var"T_f"=nothing, var"K_i"=nothing, var"k_w"=nothing, var"C"=nothing, var"L"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -129,6 +148,8 @@ choice.
   haskey(__overrides, "t_sw") && (t_sw = pop!(__overrides, "t_sw"))
   haskey(__overrides, "eps") && (eps = pop!(__overrides, "eps"))
   haskey(__overrides, "T_P") && (T_P = pop!(__overrides, "T_P"))
+  haskey(__overrides, "dw_unload") && (dw_unload = pop!(__overrides, "dw_unload"))
+  haskey(__overrides, "T_aw_P") && (T_aw_P = pop!(__overrides, "T_aw_P"))
   haskey(__overrides, "w_min") && (w_min = pop!(__overrides, "w_min"))
   haskey(__overrides, "K_N") && (K_N = pop!(__overrides, "K_N"))
   haskey(__overrides, "T_N") && (T_N = pop!(__overrides, "T_N"))
@@ -145,9 +166,6 @@ choice.
   haskey(__overrides, "k_w") && (k_w = pop!(__overrides, "k_w"))
   haskey(__overrides, "C") && (C = pop!(__overrides, "C"))
   haskey(__overrides, "L") && (L = pop!(__overrides, "L"))
-  haskey(__overrides, "tau_loss_base") && (tau_loss_base = pop!(__overrides, "tau_loss_base"))
-  haskey(__overrides, "k") && (k = pop!(__overrides, "k"))
-  haskey(__overrides, "I_max") && (I_max = pop!(__overrides, "I_max"))
 
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
   isnothing(w_base) && (w_base = P_rated / T_max)
@@ -159,9 +177,6 @@ choice.
   isnothing(k_w) && (k_w = 300.0 / (10100.0 * pi / 30.0) ^ 3 * size_scale)
   isnothing(C) && (C = 200.0 * size_scale)
   isnothing(L) && (L = 0.01 * R)
-  isnothing(tau_loss_base) && (tau_loss_base = T_f + K_i + k_w * w_base ^ 2 + C / w_base)
-  isnothing(k) && (k = (V_nom + sqrt(V_nom ^ 2 - 4.0 * w_base * R * (T_max + tau_loss_base))) / (2.0 * w_base))
-  isnothing(I_max) && (I_max = (T_max + tau_loss_base) / k)
 
   ### Structural Parameters (functions)
 
@@ -215,15 +230,6 @@ choice.
   __local__w_reg = w_reg
   append!(__params, @parameters (w_reg::Real), [description = "Low-speed loss regularization, retained from Lecture 4 (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, w_reg, __local__w_reg)
-  __local__tau_loss_base = tau_loss_base
-  append!(__params, @parameters (tau_loss_base::Real), [description = "Shaft loss torque at corner (derived; DCMachine formula)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_loss_base, __local__tau_loss_base)
-  __local__k = k
-  append!(__params, @parameters (k::Real), [description = "Torque/back-EMF constant (derived; DCMachine positive quadratic root at V_nom, T_max, w_base)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, k, __local__k)
-  __local__I_max = I_max
-  append!(__params, @parameters (I_max::Real), [description = "Converter current ceiling (derived; (T_max + corner losses) / k)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, I_max, __local__I_max)
   __local__d_max = d_max
   append!(__params, @parameters (d_max::Real), [description = "Maximum duty, no voltage boost (assumed; Lecture 4)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, d_max, __local__d_max)
@@ -245,6 +251,12 @@ choice.
   __local__T_P = T_P
   append!(__params, @parameters (T_P::Real), [description = "Power-trim time constant: the loss make-up settles in a few T_P (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, T_P, __local__T_P)
+  __local__dw_unload = dw_unload
+  append!(__params, @parameters (dw_unload::Real), [description = "Under-speed band: the generator unloads as the shaft falls from half of it to all of it below command, 190 rpm (assumed; beyond the speed loop's excursions on the bench's ramps)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, dw_unload, __local__dw_unload)
+  __local__T_aw_P = T_aw_P
+  append!(__params, @parameters (T_aw_P::Real), [description = "Power-trim anti-windup tracking time (assumed; shorter than T_P)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_aw_P, __local__T_aw_P)
   __local__w_min = w_min
   append!(__params, @parameters (w_min::Real), [description = "Speed below which the torque request stops rising as 1/w, keeping it finite at standstill (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, w_min, __local__w_min)
@@ -275,11 +287,16 @@ choice.
   append!(__vars, @variables (mdot_fuel(t)::Real), [output = true])
   append!(__vars, @variables (N(t)::Real), [output = true])
   append!(__vars, @variables (P_elec(t)::Real), [output = true])
+  append!(__vars, @variables (P_shaft(t)::Real), [output = true])
 
   ### Variables (declarations)
   append!(__vars, @variables (w_ref(t)::Real), [description = "Shaft speed command [rad/s]"])
   append!(__vars, @variables (P_trim(t)::Real), [description = "Loss make-up added to the power command [W]"])
   append!(__vars, @variables (tau_ref(t)::Real), [description = "Generator torque request, positive motoring [N.m]"])
+  append!(__vars, @variables (a_unload(t)::Real), [description = "Shaft speed lag, scaled so that 0 is fully unloaded and 1 fully loaded"])
+  append!(__vars, @variables (unload(t)::Real), [description = "Generator load fraction, 1 normally, falling to 0 when the shaft lags its command"])
+  append!(__vars, @variables (P_em(t)::Real), [description = "Air-gap power the generator is asked to convert, command plus loss trim [W]"])
+  append!(__vars, @variables (P_held(t)::Real), [description = "Air-gap power the generator converts at the converter's limited current [W]"])
   append!(__vars, @variables (x_N(t)::Real), [description = "Speed-loop integrator state, in pedal units"])
   append!(__vars, @variables (u(t)::Real), [description = "Speed-loop output before the clamp"])
   append!(__vars, @variables (pedal(t)::Real), [description = "Pedal sent to the engine, 0 closed to 1 fully open"])
@@ -294,6 +311,18 @@ choice.
   __ovr_tau_ref = pop!(__overrides, "tau_ref", nothing); isnothing(__ovr_tau_ref) || push!(__eqs, tau_ref ~ __ovr_tau_ref)
   __ovr_tau_ref__initial = pop!(__overrides, "tau_ref.initial", nothing); isnothing(__ovr_tau_ref__initial) || (__initial_conditions[tau_ref] = __ovr_tau_ref__initial)
   __ovr_tau_ref__guess = pop!(__overrides, "tau_ref.guess", nothing)
+  __ovr_a_unload = pop!(__overrides, "a_unload", nothing); isnothing(__ovr_a_unload) || push!(__eqs, a_unload ~ __ovr_a_unload)
+  __ovr_a_unload__initial = pop!(__overrides, "a_unload.initial", nothing); isnothing(__ovr_a_unload__initial) || (__initial_conditions[a_unload] = __ovr_a_unload__initial)
+  __ovr_a_unload__guess = pop!(__overrides, "a_unload.guess", nothing)
+  __ovr_unload = pop!(__overrides, "unload", nothing); isnothing(__ovr_unload) || push!(__eqs, unload ~ __ovr_unload)
+  __ovr_unload__initial = pop!(__overrides, "unload.initial", nothing); isnothing(__ovr_unload__initial) || (__initial_conditions[unload] = __ovr_unload__initial)
+  __ovr_unload__guess = pop!(__overrides, "unload.guess", nothing)
+  __ovr_P_em = pop!(__overrides, "P_em", nothing); isnothing(__ovr_P_em) || push!(__eqs, P_em ~ __ovr_P_em)
+  __ovr_P_em__initial = pop!(__overrides, "P_em.initial", nothing); isnothing(__ovr_P_em__initial) || (__initial_conditions[P_em] = __ovr_P_em__initial)
+  __ovr_P_em__guess = pop!(__overrides, "P_em.guess", nothing)
+  __ovr_P_held = pop!(__overrides, "P_held", nothing); isnothing(__ovr_P_held) || push!(__eqs, P_held ~ __ovr_P_held)
+  __ovr_P_held__initial = pop!(__overrides, "P_held.initial", nothing); isnothing(__ovr_P_held__initial) || (__initial_conditions[P_held] = __ovr_P_held__initial)
+  __ovr_P_held__guess = pop!(__overrides, "P_held.guess", nothing)
   __ovr_x_N = pop!(__overrides, "x_N", nothing); isnothing(__ovr_x_N) || push!(__eqs, x_N ~ __ovr_x_N)
   __ovr_x_N__initial = pop!(__overrides, "x_N.initial", nothing); isnothing(__ovr_x_N__initial) || (__initial_conditions[x_N] = __ovr_x_N__initial)
   __ovr_x_N__guess = pop!(__overrides, "x_N.guess", nothing)
@@ -316,10 +345,10 @@ choice.
   push!(__systems, @named engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(; __overrides = engine_overrides))
   # Subcomponent machine of type VehicleSystemsComponents.Vehicle.Electric.DCMachine
   machine_overrides = __pop_subcomponent_overrides!(__overrides, "machine")
-  push!(__systems, @named machine = VehicleSystemsComponents.Vehicle.Electric.DCMachine(; field_weakening=true, T_max=T_max, w_base=w_base, V_nom=V_nom, R=R, L=L, J=J, T_f=T_f, K_i=K_i, k_w=k_w, C=C, w_reg=w_reg, tau_loss_base=tau_loss_base, k=k, __overrides = machine_overrides))
+  push!(__systems, @named machine = VehicleSystemsComponents.Vehicle.Electric.DCMachine(; field_weakening=true, T_max=T_max, w_base=w_base, V_nom=V_nom, R=R, L=L, J=J, T_f=T_f, K_i=K_i, k_w=k_w, C=C, w_reg=w_reg, __overrides = machine_overrides))
   # Subcomponent converter of type VehicleSystemsComponents.Vehicle.Electric.Converter
   converter_overrides = __pop_subcomponent_overrides!(__overrides, "converter")
-  push!(__systems, @named converter = VehicleSystemsComponents.Vehicle.Electric.Converter(; I_max=I_max, d_max=d_max, T_i=T_i, V_on=V_on, f_s=f_s, t_sw=t_sw, eps=eps, __overrides = converter_overrides))
+  push!(__systems, @named converter = VehicleSystemsComponents.Vehicle.Electric.Converter(; I_max=(T_max + machine.tau_loss_base) / machine.k, d_max=d_max, T_i=T_i, V_on=V_on, f_s=f_s, t_sw=t_sw, eps=eps, __overrides = converter_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -327,9 +356,15 @@ choice.
   ### Guesses
   __guesses[converter.field] = (1.0)
   __guesses[converter.d] = (0.5)
+  __guesses[p.v] = (V_nom)
+  __guesses[engine.crankshaft.w] = (200.0)
   isnothing(__ovr_w_ref__guess) || (__guesses[w_ref] = __ovr_w_ref__guess)
   isnothing(__ovr_P_trim__guess) || (__guesses[P_trim] = __ovr_P_trim__guess)
   isnothing(__ovr_tau_ref__guess) || (__guesses[tau_ref] = __ovr_tau_ref__guess)
+  isnothing(__ovr_a_unload__guess) || (__guesses[a_unload] = __ovr_a_unload__guess)
+  isnothing(__ovr_unload__guess) || (__guesses[unload] = __ovr_unload__guess)
+  isnothing(__ovr_P_em__guess) || (__guesses[P_em] = __ovr_P_em__guess)
+  isnothing(__ovr_P_held__guess) || (__guesses[P_held] = __ovr_P_held__guess)
   isnothing(__ovr_x_N__guess) || (__guesses[x_N] = __ovr_x_N__guess)
   isnothing(__ovr_u__guess) || (__guesses[u] = __ovr_u__guess)
   isnothing(__ovr_pedal__guess) || (__guesses[pedal] = __ovr_pedal__guess)
@@ -338,8 +373,8 @@ choice.
   push!(__initialization_eqs, engine.crankshaft.phi ~ 0.0)
   push!(__initialization_eqs, engine.crankshaft.w ~ w_ref)
   push!(__initialization_eqs, engine.air.manifold.p ~ p_m_start)
-  push!(__initialization_eqs, converter.i_out ~ tau_ref / machine.k)
-  push!(__initialization_eqs, P_trim ~ 0.0)
+  push!(__initialization_eqs, converter.i_out ~ converter.i_cmd)
+  push!(__initialization_eqs, P_elec ~ P_ref)
   push!(__initialization_eqs, x_N ~ pedal_start)
 
   ### Assertions
@@ -347,8 +382,13 @@ choice.
 
   ### Equations
   push!(__eqs, w_ref ~ N_ref * pi / 30)
-  push!(__eqs, T_P * ModelingToolkit.D_nounits(P_trim) ~ P_ref - P_elec)
-  push!(__eqs, tau_ref ~ -(P_ref + P_trim) / sqrt(machine.w ^ 2 + w_min ^ 2))
+  push!(__eqs, P_em ~ P_ref + P_trim)
+  push!(__eqs, P_shaft ~ P_em + machine.P_fric + machine.P_iron + machine.P_wind + machine.P_const)
+  push!(__eqs, a_unload ~ (machine.w - w_ref + dw_unload) / (dw_unload / 2))
+  push!(__eqs, unload ~ 0.5 * (1 + sqrt(a_unload ^ 2 + clamp_width ^ 2) - sqrt((a_unload - 1) ^ 2 + clamp_width ^ 2)))
+  push!(__eqs, tau_ref ~ -unload * P_em / sqrt(machine.w ^ 2 + w_min ^ 2))
+  push!(__eqs, P_held ~ -converter.i_cmd * converter.field * machine.k * sqrt(machine.w ^ 2 + w_min ^ 2))
+  push!(__eqs, ModelingToolkit.D_nounits(P_trim) ~ (P_ref - P_elec) / T_P + (P_held - P_em) / T_aw_P)
   push!(__eqs, converter.i_ref ~ tau_ref / (converter.field * machine.k))
   push!(__eqs, u ~ K_N * (w_ref - machine.w) + x_N)
   push!(__eqs, pedal ~ 0.5 * (1 + sqrt(u ^ 2 + clamp_width ^ 2) - sqrt((u - 1) ^ 2 + clamp_width ^ 2)))

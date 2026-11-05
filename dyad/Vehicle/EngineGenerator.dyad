@@ -8,31 +8,46 @@ generator on one shaft, with the converter that delivers its power to a DC bus a
 The unit takes two commands, the electrical power it delivers, `P_ref` [W], and the shaft speed,
 `N_ref` [rpm], and holds both with two loops that share the shaft:
 
-    tau_ref = -(P_ref + P_trim) / sqrt(w^2 + w_min^2)     T_P dP_trim/dt = P_ref - P_elec
+    tau_ref = -unload P_em / sqrt(w^2 + w_min^2)        P_em = P_ref + P_trim
+    unload  = clamp((w - w_ref + dw_unload) / (dw_unload / 2))
+    dP_trim/dt = (P_ref - P_elec) / T_P + (P_held - P_em) / T_aw_P
     pedal   = clamp(K_N (w_ref - w) + x_N)   dx_N/dt = K_N (w_ref - w) / T_N + (pedal - u) / T_aw
 
-The generator holds the power. Its torque request is the commanded power over the shaft speed,
-and an integrator trims it by the machine and converter losses, so the power at the pins, not
-at the shaft, settles on `P_ref`. The converter's current loop acts within milliseconds, and for
-any positive command the generator only brakes, so the unit never motors its engine and can
-feed a passive load. The engine holds the speed: it is the only source on the shaft, so it has
-to make up whatever the generator takes. More power demanded first slows the shaft, and the
+The generator holds the power. Its torque request is the air-gap power it has to convert over
+the shaft speed: the command plus an integrator, `P_trim`, that makes up the copper and converter
+losses, so the power at the pins, not at the air gap, settles on `P_ref`. The converter's current
+loop acts within milliseconds, and for any positive command the generator only brakes, so the
+unit never motors its engine and can feed a passive load. Past the converter's current limit, or
+while unloading (below), the generator converts less than `P_em`; that power, `P_held`, is fed
+back into the trim (back-calculation), so the trim stays bounded and lets go as soon as the
+command is back in reach. The engine holds the speed: it is the only source on the shaft, so it
+has to make up whatever the generator takes. More power demanded first slows the shaft, and the
 speed loop's PI opens the pedal until the engine torque matches. The pedal is clamped smoothly
-to [0, 1], and the clamp's excess is fed back into the integrator (back-calculation), so a
-command beyond full load does not wind the loop up. The power trim has no such guard: a command
-past the converter's current limit winds it up.
+to [0, 1], with the same back-calculation, so a command beyond full load does not wind the loop
+up either.
 
-`N_ref` is an engine speed, so a best-BSFC operating line (`Vehicle.OperatingLine`) can drive it
-from the power command. The bus at `p` and `n` has to set its own voltage: a battery does, and so
-does a capacitor across a load. Across a bare resistor the bus voltage is algebraic, and the
-converter's equations then also hold at a negative or a near-zero bus voltage, which the
-initialization can land on. The run starts at the commanded speed, with the generator current at
-its command and the engine at `pedal_start` and `p_m_start`; the loops settle the rest within a
-few seconds. The engine's brake-booster hose is capped. The generator's torque and power
-ratings follow `HybridDrive`'s scaling of the Lecture 4 Leaf machine, sized to the engine rather
-than to the Sonata's 30 kW: 30 kW cannot absorb the 34 kW the engine makes at its best-BSFC
-point. Source tags: (derived) computed from other numbers, method given; (assumed) the course's
-choice.
+`N_ref` is an engine speed. `P_shaft`, the engine power the unit needs in steady state, `P_em`
+plus the generator's friction, iron, windage and constant losses, is an output, so a best-BSFC
+operating line (`Vehicle.OperatingLine`) driven from it puts the engine on the line whatever the
+generator's losses.
+
+The power has priority only while the engine keeps up. The generator's current limit is worth
+more torque than the engine's full load, so a command the engine cannot make would pull the
+shaft down to a stall. Once the shaft falls more than `dw_unload / 2` below its command, `unload`
+backs the generator off, to nothing at `dw_unload` below; the unit then delivers what the engine
+makes at full load, a little under the commanded speed.
+
+The bus at `p` and `n` has to set its own voltage: a battery does, and so does a capacitor across
+a load. Across a bare resistor the bus voltage is algebraic, and the converter's equations then
+also hold at a negative or a near-zero bus voltage, which the initialization can land on. The run
+starts delivering its command at the commanded speed, with the generator current at its command
+and the engine at `pedal_start` and `p_m_start`; the speed loop settles within a few seconds. The
+engine's brake-booster hose is capped.
+
+The generator follows `HybridDrive`'s scaling of the Lecture 4 Leaf machine, sized to the engine
+rather than to the Sonata's 30 kW: 30 kW cannot absorb the engine's 32 kW best-BSFC point at
+3000 rpm with any margin, nor the 50 kW further up the line. Source tags: (derived) computed from
+other numbers, method given; (assumed) the course's choice.
 """
 component EngineGenerator
   "Commanded electrical power delivered at the pins [W], positive generating (assumed command convention)"
@@ -51,6 +66,8 @@ component EngineGenerator
   N = RealOutput() {^N}
   "Electrical power delivered at the pins [W] (derived; bus voltage times current out of p)"
   P_elec = RealOutput() {^P_elec}
+  "Engine power the unit needs in steady state: air-gap power plus the generator's shaft losses [W] (derived)"
+  P_shaft = RealOutput() {^P_shaft}
 
   "Generator peak shaft torque (derived; above the Lecture 2 engine's 150.2 N.m full-load peak, rounded up)"
   parameter T_max::Torque = 160.0
@@ -78,12 +95,6 @@ component EngineGenerator
   parameter C::Power = 200.0 * size_scale
   "Low-speed loss regularization, retained from Lecture 4 (assumed)"
   parameter w_reg::AngularVelocity = 10.0
-  "Shaft loss torque at corner (derived; DCMachine formula)"
-  parameter tau_loss_base::Torque = T_f + K_i + k_w * w_base ^ 2 + C / w_base
-  "Torque/back-EMF constant (derived; DCMachine positive quadratic root at V_nom, T_max, w_base)"
-  parameter k::ElectricalTorqueConstant = (V_nom + sqrt(V_nom ^ 2 - 4.0 * w_base * R * (T_max + tau_loss_base))) / (2.0 * w_base)
-  "Converter current ceiling (derived; (T_max + corner losses) / k)"
-  parameter I_max::Current = (T_max + tau_loss_base) / k
   "Maximum duty, no voltage boost (assumed; Lecture 4)"
   parameter d_max::Real = 1.0
   "Current-loop time constant (assumed; Lecture 4)"
@@ -98,6 +109,10 @@ component EngineGenerator
   parameter eps::Real = 1.0e-4
   "Power-trim time constant: the loss make-up settles in a few T_P (assumed)"
   parameter T_P::Time = 0.2
+  "Under-speed band: the generator unloads as the shaft falls from half of it to all of it below command, 190 rpm (assumed; beyond the speed loop's excursions on the bench's ramps)"
+  parameter dw_unload::AngularVelocity = 20.0
+  "Power-trim anti-windup tracking time (assumed; shorter than T_P)"
+  parameter T_aw_P::Time = 0.05
   "Speed below which the torque request stops rising as 1/w, keeping it finite at standstill (assumed)"
   parameter w_min::AngularVelocity = 10.0
   "Speed-loop gain, pedal per rad/s of speed error [s/rad] (assumed; tuned on the bench)"
@@ -114,8 +129,8 @@ component EngineGenerator
   parameter p_m_start::Pressure = 50.0e3
 
   engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine() {^engine}
-  machine = VehicleSystemsComponents.Vehicle.Electric.DCMachine(field_weakening = true, T_max = T_max, w_base = w_base, V_nom = V_nom, R = R, L = L, J = J, T_f = T_f, K_i = K_i, k_w = k_w, C = C, w_reg = w_reg, tau_loss_base = tau_loss_base, k = k) {^machine}
-  converter = VehicleSystemsComponents.Vehicle.Electric.Converter(I_max = I_max, d_max = d_max, T_i = T_i, V_on = V_on, f_s = f_s, t_sw = t_sw, eps = eps) {^converter}
+  machine = VehicleSystemsComponents.Vehicle.Electric.DCMachine(field_weakening = true, T_max = T_max, w_base = w_base, V_nom = V_nom, R = R, L = L, J = J, T_f = T_f, K_i = K_i, k_w = k_w, C = C, w_reg = w_reg) {^machine}
+  converter = VehicleSystemsComponents.Vehicle.Electric.Converter(I_max = (T_max + machine.tau_loss_base) / machine.k, d_max = d_max, T_i = T_i, V_on = V_on, f_s = f_s, t_sw = t_sw, eps = eps) {^converter}
 
   "Shaft speed command [rad/s]"
   variable w_ref::AngularVelocity
@@ -123,6 +138,14 @@ component EngineGenerator
   variable P_trim::Power
   "Generator torque request, positive motoring [N.m]"
   variable tau_ref::Torque
+  "Shaft speed lag, scaled so that 0 is fully unloaded and 1 fully loaded"
+  variable a_unload::Real
+  "Generator load fraction, 1 normally, falling to 0 when the shaft lags its command"
+  variable unload::Real
+  "Air-gap power the generator is asked to convert, command plus loss trim [W]"
+  variable P_em::Power
+  "Air-gap power the generator converts at the converter's limited current [W]"
+  variable P_held::Power
   "Speed-loop integrator state, in pedal units"
   variable x_N::Real
   "Speed-loop output before the clamp"
@@ -138,8 +161,13 @@ relations
   connect(converter.n, machine.n, n) {^bus_n_wire}
   connect(engine.mdot_fuel, mdot_fuel) {^fuel_wire}
   w_ref = N_ref * pi / 30
-  T_P * der(P_trim) = P_ref - P_elec
-  tau_ref = -(P_ref + P_trim) / sqrt(machine.w ^ 2 + w_min ^ 2)
+  P_em = P_ref + P_trim
+  P_shaft = P_em + machine.P_fric + machine.P_iron + machine.P_wind + machine.P_const
+  a_unload = (machine.w - w_ref + dw_unload) / (dw_unload / 2)
+  unload = 0.5 * (1 + sqrt(a_unload ^ 2 + clamp_width ^ 2) - sqrt((a_unload - 1) ^ 2 + clamp_width ^ 2))
+  tau_ref = -unload * P_em / sqrt(machine.w ^ 2 + w_min ^ 2)
+  P_held = -converter.i_cmd * converter.field * machine.k * sqrt(machine.w ^ 2 + w_min ^ 2)
+  der(P_trim) = (P_ref - P_elec) / T_P + (P_held - P_em) / T_aw_P
   converter.i_ref = tau_ref / (converter.field * machine.k)
   u = K_N * (w_ref - machine.w) + x_N
   pedal = 0.5 * (1 + sqrt(u ^ 2 + clamp_width ^ 2) - sqrt((u - 1) ^ 2 + clamp_width ^ 2))
@@ -150,11 +178,13 @@ relations
   initial engine.crankshaft.phi = 0.0
   initial engine.crankshaft.w = w_ref
   initial engine.air.manifold.p = p_m_start
-  initial converter.i_out = tau_ref / machine.k
-  initial P_trim = 0.0
+  initial converter.i_out = converter.i_cmd
+  initial P_elec = P_ref
   initial x_N = pedal_start
   guess converter.field = 1.0
   guess converter.d = 0.5
+  guess p.v = V_nom
+  guess engine.crankshaft.w = 200.0
 metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/MappedEngine.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
   "_links": {
@@ -165,7 +195,8 @@ metadata {
     "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
     "mdot_fuel": {"Dyad": {"placement": {"icon": {"x1": 150, "y1": -50, "x2": 250, "y2": 50, "rot": 270}, "diagram": {"x1": 150, "y1": -50, "x2": 250, "y2": 50, "rot": 270}}}},
     "N": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}, "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}}}},
-    "P_elec": {"Dyad": {"placement": {"icon": {"x1": 750, "y1": -50, "x2": 850, "y2": 50, "rot": 270}, "diagram": {"x1": 750, "y1": -50, "x2": 850, "y2": 50, "rot": 270}}}},
+    "P_elec": {"Dyad": {"placement": {"icon": {"x1": 650, "y1": -50, "x2": 750, "y2": 50, "rot": 270}, "diagram": {"x1": 650, "y1": -50, "x2": 750, "y2": 50, "rot": 270}}}},
+    "P_shaft": {"Dyad": {"placement": {"icon": {"x1": 850, "y1": -50, "x2": 950, "y2": 50, "rot": 270}, "diagram": {"x1": 850, "y1": -50, "x2": 950, "y2": 50, "rot": 270}}}},
     "engine": {"Dyad": {"placement": {"diagram": {"x1": 120, "y1": 360, "x2": 300, "y2": 540}}}},
     "machine": {"Dyad": {"placement": {"diagram": {"x1": 420, "y1": 360, "x2": 600, "y2": 540}}}},
     "converter": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 360, "x2": 880, "y2": 540}}}},

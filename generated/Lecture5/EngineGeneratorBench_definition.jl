@@ -5,32 +5,32 @@
 
 
 @doc Markdown.doc"""
-   EngineGeneratorBench(; name, V_bus, P_best, R_load, C_link, P_1, P_2, P_4, t_hold, t_ramp, __overrides)
+   EngineGeneratorBench(; name, V_bus, P_1, P_2, P_3, P_4, R_load, C_link, t_hold, t_ramp, __overrides)
 
 Engine-generator into a resistive DC load, stepped along the best-BSFC line (assumed bench).
 
-The power command climbs 10, 20, 32 and 50 kW, each held for 10 s with a 2 s ramp between, and
-the operating line turns each into the engine speed to hold: 1420, 2290, 3000 and 4100 rpm. The
-32 kW hold is the line's best-BSFC point. The line's rows are engine power and the command is
-electrical, so the engine runs 5 to 10 % above each row, at the row's speed; at 3000 rpm that
-costs 1.4 g/kWh against the line's 232.5 g/kWh minimum. The load is a resistor sized to put the
-bus at 270 V at that point, so the bus voltage rises with the power, sqrt(P R): 151 V at 10 kW,
-337 V at 50 kW. The generator's back-EMF stays under the bus at every point, so the field is
-never weakened. A DC-link capacitor across the resistor makes the bus voltage a state, started
-at the first point's voltage; without it the initialization can settle on a negative or
-near-zero bus. Into a resistor the unit can only generate: a zero power command leaves no bus.
+The electrical power command climbs 10, 20, 30 and 50 kW, each held for `t_hold` with a
+`t_ramp` ramp between. The operating line is fed the unit's `P_shaft`, the engine power the
+command needs once the generator and converter losses are paid, so the engine sits on the line:
+the 30 kW hold puts it at 32 kW and 3000 rpm, the line's best-BSFC point. The load is a resistor
+sized to put the bus at 270 V at that point, so the bus voltage rises with the power, sqrt(P R):
+156 V at 10 kW, 349 V at 50 kW. The generator's back-EMF stays under the bus at every point, so
+the field is never weakened. A DC-link capacitor across the resistor makes the bus voltage a
+state, started at the first point's voltage, which the unit delivers from t = 0; without it the
+initialization can settle on a negative or near-zero bus. Into a resistor the unit can only
+generate: a zero power command leaves no bus.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `V_bus`         | Bus voltage at the best-BSFC point, sets the load (assumed; HybridDrive's 270 V pack)                         | V  |   270.0 |
-| `P_best`         | Best-BSFC electrical power, sets the load (derived; bsfc_line.csv minimum at 32 kW)                         | W  |   32.0e3 |
-| `R_load`         | Load resistance, V_bus^2 / P_best (derived)                         | Ω  |   V_bus ^ 2 / P_best |
+| `P_1`         | First power command (assumed)                         | W  |   10.0e3 |
+| `P_2`         | Second power command (assumed)                         | W  |   20.0e3 |
+| `P_3`         | Third power command, the line's 32 kW best-BSFC point after about 6 % generator and converter loss (derived from this bench)                         | W  |   30.0e3 |
+| `P_4`         | Fourth power command (assumed)                         | W  |   50.0e3 |
+| `R_load`         | Load resistance, V_bus^2 / P_3 (derived)                         | Ω  |   V_bus ^ 2 / P_3 |
 | `C_link`         | DC-link capacitance across the load (assumed; an inverter of this size carries about 1 mF)                         | F  |   1.0e-3 |
-| `P_1`         | First power command (derived; bsfc_line.csv row)                         | W  |   10.0e3 |
-| `P_2`         | Second power command (derived; bsfc_line.csv row)                         | W  |   20.0e3 |
-| `P_4`         | Fourth power command (derived; bsfc_line.csv row)                         | W  |   50.0e3 |
 | `t_hold`         | Hold at each point (assumed; several speed-loop settling times)                         | s  |   10.0 |
 | `t_ramp`         | Ramp between points (assumed)                         | s  |   2.0 |
 
@@ -40,7 +40,7 @@ near-zero bus. Into a resistor the unit can only generate: a zero power command 
 | ------------ | ----------------------------------- | ------ |
 | `P_cmd`         | Power command [W]                         | W  |
 """
-@component function EngineGeneratorBench(; name = nothing, var"V_bus"=Float64(270.0), var"P_best"=Float64(32000.0), var"C_link"=0.001, var"P_1"=Float64(10000.0), var"P_2"=Float64(20000.0), var"P_4"=Float64(50000.0), var"t_hold"=Float64(10.0), var"t_ramp"=Float64(2.0), var"R_load"=nothing, __overrides = Dict{String, Any}())
+@component function EngineGeneratorBench(; name = nothing, var"V_bus"=Float64(270.0), var"P_1"=Float64(10000.0), var"P_2"=Float64(20000.0), var"P_3"=Float64(30000.0), var"P_4"=Float64(50000.0), var"C_link"=0.001, var"t_hold"=Float64(10.0), var"t_ramp"=Float64(2.0), var"R_load"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -60,17 +60,17 @@ near-zero bus. Into a resistor the unit can only generate: a zero power command 
 
   ### Keyword argument overrides
   haskey(__overrides, "V_bus") && (V_bus = pop!(__overrides, "V_bus"))
-  haskey(__overrides, "P_best") && (P_best = pop!(__overrides, "P_best"))
-  haskey(__overrides, "C_link") && (C_link = pop!(__overrides, "C_link"))
   haskey(__overrides, "P_1") && (P_1 = pop!(__overrides, "P_1"))
   haskey(__overrides, "P_2") && (P_2 = pop!(__overrides, "P_2"))
+  haskey(__overrides, "P_3") && (P_3 = pop!(__overrides, "P_3"))
   haskey(__overrides, "P_4") && (P_4 = pop!(__overrides, "P_4"))
+  haskey(__overrides, "C_link") && (C_link = pop!(__overrides, "C_link"))
   haskey(__overrides, "t_hold") && (t_hold = pop!(__overrides, "t_hold"))
   haskey(__overrides, "t_ramp") && (t_ramp = pop!(__overrides, "t_ramp"))
   haskey(__overrides, "R_load") && (R_load = pop!(__overrides, "R_load"))
 
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
-  isnothing(R_load) && (R_load = V_bus ^ 2 / P_best)
+  isnothing(R_load) && (R_load = V_bus ^ 2 / P_3)
 
   ### Structural Parameters (functions)
 
@@ -88,24 +88,24 @@ near-zero bus. Into a resistor the unit can only generate: a zero power command 
   __local__V_bus = V_bus
   append!(__params, @parameters (V_bus::Real), [description = "Bus voltage at the best-BSFC point, sets the load (assumed; HybridDrive's 270 V pack)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, V_bus, __local__V_bus)
-  __local__P_best = P_best
-  append!(__params, @parameters (P_best::Real), [description = "Best-BSFC electrical power, sets the load (derived; bsfc_line.csv minimum at 32 kW)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, P_best, __local__P_best)
+  __local__P_1 = P_1
+  append!(__params, @parameters (P_1::Real), [description = "First power command (assumed)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, P_1, __local__P_1)
+  __local__P_2 = P_2
+  append!(__params, @parameters (P_2::Real), [description = "Second power command (assumed)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, P_2, __local__P_2)
+  __local__P_3 = P_3
+  append!(__params, @parameters (P_3::Real), [description = "Third power command, the line's 32 kW best-BSFC point after about 6 % generator and converter loss (derived from this bench)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, P_3, __local__P_3)
+  __local__P_4 = P_4
+  append!(__params, @parameters (P_4::Real), [description = "Fourth power command (assumed)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, P_4, __local__P_4)
   __local__R_load = R_load
-  append!(__params, @parameters (R_load::Real), [description = "Load resistance, V_bus^2 / P_best (derived)"])
+  append!(__params, @parameters (R_load::Real), [description = "Load resistance, V_bus^2 / P_3 (derived)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, R_load, __local__R_load)
   __local__C_link = C_link
   append!(__params, @parameters (C_link::Real), [description = "DC-link capacitance across the load (assumed; an inverter of this size carries about 1 mF)", bounds = (0, Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, C_link, __local__C_link)
-  __local__P_1 = P_1
-  append!(__params, @parameters (P_1::Real), [description = "First power command (derived; bsfc_line.csv row)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, P_1, __local__P_1)
-  __local__P_2 = P_2
-  append!(__params, @parameters (P_2::Real), [description = "Second power command (derived; bsfc_line.csv row)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, P_2, __local__P_2)
-  __local__P_4 = P_4
-  append!(__params, @parameters (P_4::Real), [description = "Fourth power command (derived; bsfc_line.csv row)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, P_4, __local__P_4)
   __local__t_hold = t_hold
   append!(__params, @parameters (t_hold::Real), [description = "Hold at each point (assumed; several speed-loop settling times)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, t_hold, __local__t_hold)
@@ -140,10 +140,10 @@ near-zero bus. Into a resistor the unit can only generate: a zero power command 
   push!(__systems, @named step_2 = BlockComponents.Sources.Ramp(; height=P_2 - P_1, offset=P_1, start_time=t_hold, duration=t_ramp, __overrides = step_2_overrides))
   # Subcomponent step_3 of type BlockComponents.Sources.Ramp
   step_3_overrides = __pop_subcomponent_overrides!(__overrides, "step_3")
-  push!(__systems, @named step_3 = BlockComponents.Sources.Ramp(; height=P_best - P_2, offset=Float64(0.0), start_time=2 * t_hold + t_ramp, duration=t_ramp, __overrides = step_3_overrides))
+  push!(__systems, @named step_3 = BlockComponents.Sources.Ramp(; height=P_3 - P_2, offset=Float64(0.0), start_time=2 * t_hold + t_ramp, duration=t_ramp, __overrides = step_3_overrides))
   # Subcomponent step_4 of type BlockComponents.Sources.Ramp
   step_4_overrides = __pop_subcomponent_overrides!(__overrides, "step_4")
-  push!(__systems, @named step_4 = BlockComponents.Sources.Ramp(; height=P_4 - P_best, offset=Float64(0.0), start_time=3 * t_hold + 2 * t_ramp, duration=t_ramp, __overrides = step_4_overrides))
+  push!(__systems, @named step_4 = BlockComponents.Sources.Ramp(; height=P_4 - P_3, offset=Float64(0.0), start_time=3 * t_hold + 2 * t_ramp, duration=t_ramp, __overrides = step_4_overrides))
   # Subcomponent load of type ElectricalComponents.Analog.Basic.Resistor
   load_overrides = __pop_subcomponent_overrides!(__overrides, "load")
   push!(__systems, @named load = ElectricalComponents.Analog.Basic.Resistor(; R=R_load, __overrides = load_overrides))
@@ -172,7 +172,7 @@ near-zero bus. Into a resistor the unit can only generate: a zero power command 
   ### Equations
   push!(__eqs, P_cmd ~ step_2.y + step_3.y + step_4.y)
   push!(__eqs, unit.P_ref ~ P_cmd)
-  push!(__eqs, line.P ~ P_cmd)
+  push!(__eqs, connect(unit.P_shaft, line.P))
   push!(__eqs, connect(line.N, unit.N_ref))
   push!(__eqs, connect(unit.p, load.p, link.p))
   push!(__eqs, connect(load.n, link.n, unit.n, ground.g))

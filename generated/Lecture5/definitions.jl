@@ -205,6 +205,8 @@ component.
 end
 
 
+include("EngineGeneratorBatteryBenchTransient_definition.jl")
+include("EngineGeneratorBatteryBench_definition.jl")
 include("EngineGeneratorBenchTransient_definition.jl")
 include("EngineGeneratorBench_definition.jl")
 include("HybridDriveDynoTransient_definition.jl")

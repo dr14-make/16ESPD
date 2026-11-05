@@ -153,16 +153,16 @@ export EngineGeneratorBenchTransient__System
   var"log_file"::String = ""
   # Engine-generator into a resistive DC load, stepped along the best-BSFC line (assumed bench).
   # 
-  # The power command climbs 10, 20, 32 and 50 kW, each held for 10 s with a 2 s ramp between, and
-  # the operating line turns each into the engine speed to hold: 1420, 2290, 3000 and 4100 rpm. The
-  # 32 kW hold is the line's best-BSFC point. The line's rows are engine power and the command is
-  # electrical, so the engine runs 5 to 10 % above each row, at the row's speed; at 3000 rpm that
-  # costs 1.4 g/kWh against the line's 232.5 g/kWh minimum. The load is a resistor sized to put the
-  # bus at 270 V at that point, so the bus voltage rises with the power, sqrt(P R): 151 V at 10 kW,
-  # 337 V at 50 kW. The generator's back-EMF stays under the bus at every point, so the field is
-  # never weakened. A DC-link capacitor across the resistor makes the bus voltage a state, started
-  # at the first point's voltage; without it the initialization can settle on a negative or
-  # near-zero bus. Into a resistor the unit can only generate: a zero power command leaves no bus.
+  # The electrical power command climbs 10, 20, 30 and 50 kW, each held for `t_hold` with a
+  # `t_ramp` ramp between. The operating line is fed the unit's `P_shaft`, the engine power the
+  # command needs once the generator and converter losses are paid, so the engine sits on the line:
+  # the 30 kW hold puts it at 32 kW and 3000 rpm, the line's best-BSFC point. The load is a resistor
+  # sized to put the bus at 270 V at that point, so the bus voltage rises with the power, sqrt(P R):
+  # 156 V at 10 kW, 349 V at 50 kW. The generator's back-EMF stays under the bus at every point, so
+  # the field is never weakened. A DC-link capacitor across the resistor makes the bus voltage a
+  # state, started at the first point's voltage, which the unit delivers from t = 0; without it the
+  # initialization can settle on a negative or near-zero bus. Into a resistor the unit can only
+  # generate: a zero power command leaves no bus.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture5.EngineGeneratorBench(; name=:EngineGeneratorBench)
   __system::System = EngineGeneratorBenchTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file")
 end

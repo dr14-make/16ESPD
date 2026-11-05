@@ -322,49 +322,117 @@ end
 end
 
 @testset "engine-generator" begin
-    run = VehicleSystemsComponents.Lecture5.EngineGeneratorBenchTransient()
-    @test string(run.sol.retcode) == "Success"
-    m, s = symbolic_container(run), run.sol
-    u = m.unit
-    p(x) = s.ps[x]
     H_u = 43.4e6
-    line_rpm(P_kW) = LINE_ROWS[findfirst(r -> r[1] == P_kW, LINE_ROWS)][2]
-    # The last 3 s of each 10 s hold, after the loops have settled.
-    hold_end = (p(m.t_hold), 2p(m.t_hold) + p(m.t_ramp), 3p(m.t_hold) + 2p(m.t_ramp),
-        4p(m.t_hold) + 3p(m.t_ramp))
-    commands = (p(m.P_1), p(m.P_2), p(m.P_best), p(m.P_4))
-    ts_all = collect(0.0:0.05:hold_end[end])
-    @test all(s(ts_all, idxs = u.converter.field).u .> 1 - 1e-6)
-    for (t_end, P) in zip(hold_end, commands)
-        ts = collect(t_end - 3.0:0.05:t_end)
+    maps = load_maps()
+    trapz(t, y) = sum((y[1:end-1] .+ y[2:end]) ./ 2 .* diff(t))
+    # Best-BSFC line speed for an engine power, as OperatingLine interpolates it.
+    line_power, line_speed = getindex.(LINE_ROWS, 1), getindex.(LINE_ROWS, 2)
+    function line_rpm(P_kW)
+        P_kW <= first(line_power) && return first(line_speed)
+        P_kW >= last(line_power) && return last(line_speed)
+        k = searchsortedlast(line_power, P_kW)
+        w = (P_kW - line_power[k]) / (line_power[k+1] - line_power[k])
+        return line_speed[k] + w * (line_speed[k+1] - line_speed[k])
+    end
+    # Hold k ends at k t_hold + (k - 1) t_ramp; the analyses write their stop time out for the
+    # bench defaults, so check those are the defaults in force.
+    hold_ends(m, s, n) = (@test s.ps[m.t_hold] == 10.0 && s.ps[m.t_ramp] == 2.0;
+        @test s.t[end] ≈ n * s.ps[m.t_hold] + (n - 1) * s.ps[m.t_ramp];
+        [k * s.ps[m.t_hold] + (k - 1) * s.ps[m.t_ramp] for k in 1:n])
+    # Last 3 s of a hold, on the saved 0.05 s grid.
+    window(s, t_end) = filter(t -> t_end - 3.0 - 1e-9 <= t <= t_end + 1e-9, s.t)
+    function check_hold(u, s, t_end, P)
+        ts = window(s, t_end)
         at(x) = s(ts, idxs = x).u
-        rpm = line_rpm(P / 1e3)
-        P_el, N, mdot = at(u.P_elec), at(u.N), at(u.mdot_fuel)
+        P_el, N, N_ref, P_shaft = at(u.P_elec), at(u.N), at(u.N_ref), at(u.P_shaft)
         @test all(isapprox.(P_el, P; rtol = 1e-3))
-        @test all(isapprox.(N, rpm; atol = 1.0))
-        P_shaft = at(u.engine.tau_e) .* at(u.machine.w)
-        bsfc = mdot[end] * 3.6e9 / P_shaft[end]
-        @info "Engine-generator hold" P_cmd_kW = P / 1e3 P_elec_kW = P_el[end] / 1e3 N_cmd_rpm = rpm N_rpm = N[end] mdot_fuel_g_s = 1e3mdot[end] P_shaft_kW = P_shaft[end] / 1e3 bsfc_g_kWh = bsfc bus_V = at(u.converter.v_in)[end] eta_system = P_el[end] / (mdot[end] * H_u)
+        @test all(isapprox.(N, N_ref; atol = 1.0))
+        # The line is fed the engine power the unit needs, so the engine sits on the line.
+        P_eng = at(u.engine.tau_e) .* at(u.machine.w)
+        @test all(isapprox.(N, line_rpm.(P_eng ./ 1e3); atol = 5.0))
+        @test all(isapprox.(P_shaft, P_eng; rtol = 5e-3))
+        return (; ts, P_el, N, P_eng, mdot = at(u.mdot_fuel), v = at(u.converter.v_in),
+            field = at(u.converter.field))
     end
 
-    # Best-BSFC hold: system efficiency as electrical energy out over fuel energy in, and its
-    # split into engine and generator-plus-converter shares. The 232.5 g/kWh line minimum is
-    # 35.7 % at H_u; the electrical command puts the engine slightly above that point.
-    ts = collect(hold_end[3] - 3.0:0.01:hold_end[3])
-    best(x) = s(ts, idxs = x).u
-    trapz(y) = sum((y[1:end-1] .+ y[2:end]) ./ 2 .* diff(ts))
-    E_el, E_fuel = trapz(best(u.P_elec)), H_u * trapz(best(u.mdot_fuel))
-    E_shaft = trapz(best(u.engine.tau_e) .* best(u.machine.w))
-    eta_sys, eta_eng, eta_gen = E_el / E_fuel, E_shaft / E_fuel, E_el / E_shaft
-    @test eta_sys ≈ eta_eng * eta_gen
-    @test 0.350 < eta_eng < 3.6e6 / (232.5e-3 * H_u)
-    @test 0.92 < eta_gen < 0.96
-    @test 0.32 < eta_sys < 0.345
-    # In steady state the shaft power is the electrical output plus every loss on the way.
-    t = hold_end[3]
-    value(x) = s(t, idxs = x)
-    P_mach, P_conv = value(u.machine.P_loss), value(u.converter.P_loss)
-    @test value(u.engine.tau_e) * value(u.machine.w) ≈ value(u.P_elec) + P_mach + P_conv rtol = 1e-4
-    @test value(u.converter.v_in) ≈ p(m.V_bus) rtol = 1e-3
-    @info "Engine-generator best point" eta_system = eta_sys eta_engine = eta_eng eta_generator_converter = eta_gen machine_loss_W = P_mach converter_loss_W = P_conv copper_loss_W = value(u.machine.P_cu)
+    @testset "resistive load" begin
+        run = VehicleSystemsComponents.Lecture5.EngineGeneratorBenchTransient()
+        @test string(run.sol.retcode) == "Success"
+        m, s = symbolic_container(run), run.sol
+        u = m.unit
+        ends = hold_ends(m, s, 4)
+        commands = (s.ps[m.P_1], s.ps[m.P_2], s.ps[m.P_3], s.ps[m.P_4])
+        @test all(s[u.converter.field] .> 1 - 1e-6)
+        for (t_end, P) in zip(ends, commands)
+            h = check_hold(u, s, t_end, P)
+            @info "Engine-generator, resistive load" P_cmd_kW = P / 1e3 P_elec_kW = h.P_el[end] / 1e3 N_rpm = h.N[end] P_engine_kW = h.P_eng[end] / 1e3 mdot_fuel_g_s = 1e3h.mdot[end] bsfc_g_kWh = h.mdot[end] * 3.6e9 / h.P_eng[end] bus_V = h.v[end] eta_system = h.P_el[end] / (h.mdot[end] * H_u)
+        end
+
+        # The 30 kW hold puts the engine on the line's best-BSFC row, 32 kW at 3000 rpm.
+        h = check_hold(u, s, ends[3], commands[3])
+        @test all(isapprox.(h.N, 3000.0; atol = 1.0))
+        @test all(31.0 .< h.P_eng ./ 1e3 .< 33.0)
+        @test h.v[end] ≈ s.ps[m.V_bus] rtol = 1e-3
+
+        # System efficiency as electrical energy out over fuel energy in, and its two shares,
+        # each checked against what produces it: the engine's against the Lecture 2 map's BSFC
+        # at the held speed and torque, the generator's against its own loss signals.
+        ts = h.ts
+        at(x) = s(ts, idxs = x).u
+        E_el, E_fuel = trapz(ts, h.P_el), H_u * trapz(ts, h.mdot)
+        E_shaft = trapz(ts, h.P_eng)
+        E_loss = trapz(ts, at(u.machine.P_loss) .+ at(u.converter.P_loss))
+        eta_sys, eta_eng, eta_gen = E_el / E_fuel, E_shaft / E_fuel, E_el / E_shaft
+        point = bsfc_at(maps, h.N[end], s(ts[end], idxs = u.engine.tau_e))
+        @test point !== nothing
+        eta_map = 3.6e6 / (point.bsfc * 1e-3 * H_u)
+        @test eta_eng ≈ eta_map rtol = 0.01
+        @test point.bsfc ≈ last(LINE_ROWS[findfirst(r -> r[1] == 32.0, LINE_ROWS)]) rtol = 0.005
+        @test eta_gen ≈ E_el / (E_el + E_loss) rtol = 1e-3
+        @test 0.92 < eta_gen < 0.96
+        @test 0.32 < eta_sys < 0.345
+        @info "Engine-generator best point" P_engine_kW = h.P_eng[end] / 1e3 N_rpm = h.N[end] bsfc_sim = h.mdot[end] * 3.6e9 / h.P_eng[end] bsfc_map = point.bsfc eta_system = eta_sys eta_engine = eta_eng eta_generator_converter = eta_gen machine_loss_W = s(ts[end], idxs = u.machine.P_loss) converter_loss_W = s(ts[end], idxs = u.converter.P_loss)
+    end
+
+    @testset "battery bus" begin
+        run = VehicleSystemsComponents.Lecture5.EngineGeneratorBatteryBenchTransient()
+        @test string(run.sol.retcode) == "Success"
+        m, s = symbolic_container(run), run.sol
+        u, b = m.unit, m.battery
+        p(x) = s.ps[x]
+        ends = hold_ends(m, s, 6)
+        commands = (p(m.P_1), p(m.P_2), p(m.P_3), p(m.P_4), p(m.P_5), p(m.P_6))
+        for k in (1, 2, 3, 4, 6)
+            h = check_hold(u, s, ends[k], commands[k])
+            # The battery takes the delivered power less its own resistive loss.
+            ts = h.ts
+            stored = p(b.E) * p(b.Q_nom) * (s(ts[end], idxs = b.SoC) - s(ts[1], idxs = b.SoC))
+            i = s(ts, idxs = b.i).u
+            @test stored ≈ trapz(ts, h.P_el .- p(b.R0) .* i .^ 2) rtol = 1e-3
+            @test stored > 0
+            @info "Engine-generator, battery bus" P_cmd_kW = commands[k] / 1e3 P_elec_kW = h.P_el[end] / 1e3 N_rpm = h.N[end] P_engine_kW = h.P_eng[end] / 1e3 mdot_fuel_g_s = 1e3h.mdot[end] bus_V = h.v[end] field = h.field[end] eta_system = h.P_el[end] / (h.mdot[end] * H_u)
+        end
+        # 50 kW on the line runs above the generator's full-field speed for this bus.
+        h4 = check_hold(u, s, ends[4], commands[4])
+        @test all(0.9 .< h4.field .< 0.99)
+        @test all(s(window(s, ends[3]), idxs = u.converter.field).u .> 1 - 1e-6)
+
+        # 70 kW is past the engine's full load at the line's top speed: the generator unloads,
+        # the unit delivers the engine's full load just under the commanded speed, and the
+        # power trim stays bounded instead of winding up.
+        ts = window(s, ends[5])
+        at(x) = s(ts, idxs = x).u
+        N_lag = at(u.N_ref) .- at(u.N)
+        @test all(at(u.pedal) .> 0.99)
+        @test all(at(u.P_elec) .< commands[5] - 1e3)
+        @test all(at(u.P_elec) .> 55e3)
+        @test all(0.0 .< N_lag .< p(u.dw_unload) * 30 / pi)
+        @test all(abs.(at(u.P_trim)) .< 5e3)
+        @test maximum(at(u.N)) - minimum(at(u.N)) < 1.0
+        @info "Engine-generator past full load" P_cmd_kW = commands[5] / 1e3 P_elec_kW = at(u.P_elec)[end] / 1e3 N_ref_rpm = at(u.N_ref)[end] N_rpm = at(u.N)[end] P_trim_W = at(u.P_trim)[end] current_A = at(u.converter.i_out)[end] I_max_A = p(u.converter.I_max)
+        # Recovery: back on 30 kW the hold is settled from 3 s after the ramp ends.
+        late = filter(t -> ends[5] + p(m.t_ramp) + 3.0 <= t <= ends[6] + 1e-9, s.t)
+        @test all(isapprox.(s(late, idxs = u.P_elec).u, commands[6]; rtol = 1e-3))
+        @test all(isapprox.(s(late, idxs = u.N).u, 3000.0; atol = 1.0))
+    end
 end

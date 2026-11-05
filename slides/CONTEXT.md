@@ -142,6 +142,8 @@ _Avoid_: hybrid powertrain, hybrid controller
 running as a generator on one shaft, with its converter, delivering DC power at the pins `p` and
 `n`; engine mounts and generator housing share `support`. It takes a commanded electrical power
 and a commanded engine speed: the generator torque holds the power, the engine pedal holds the
-speed. It reports fuel mass flow, shaft speed and electrical power. It is the series hybrid's
-power unit, not the series hybrid, and holds no energy manager or SoC logic.
+speed, and the generator unloads if the engine cannot keep up. It reports fuel mass flow, shaft
+speed, electrical power, and the engine power it needs, which can drive the best-BSFC operating
+line. It is the series hybrid's power unit, not the series hybrid, and holds no energy manager or
+SoC logic.
 _Avoid_: range extender (a sizing, not a part), APU, genset
