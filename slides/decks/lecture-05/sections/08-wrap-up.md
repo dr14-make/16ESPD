@@ -22,7 +22,8 @@ routeAlias: lecture-summary
 
 - **01** Lecture 2's engine: 232 g/kWh at best, 30.2 % over the WLTC. A hybrid moves the point,
   stops the engine, and brings the braking back.
-- **02** Series: the motor alone drives. Parallel: both drive. Your homework is a series.
+- **02** Series: the motor alone drives. Parallel: both drive. Series-parallel: a clutch switches
+  between them. Your homework is a series.
 - **03** DOH = P<sub>EM</sub> / (P<sub>EM</sub> + P<sub>ICE</sub>); today's car is a full hybrid.
 - **04** P0 and P1 turn with the engine; P2, P3, P4 sit behind a clutch. **The clutch matters
   more than the machine's power.**
@@ -37,8 +38,8 @@ The whole lecture, one line per section.
 the WLTC. A hybrid saves fuel by moving the operating point, stopping the engine, and bringing the
 braking back.
 
-02: in a series hybrid the motor alone drives; in a parallel hybrid both do. Your homework is a
-series hybrid.
+02: in a series hybrid the motor alone drives; in a parallel hybrid both do; a series-parallel
+hybrid switches between the two with a clutch. Your homework is a series hybrid.
 
 03: the degree of hybridization is the machine's share of the power; today's car is a full hybrid.
 
