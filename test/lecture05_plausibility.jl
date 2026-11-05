@@ -197,7 +197,7 @@ end
     @test maximum(torque) ≈ 205.0 rtol = 0.05
     @test maximum(power) ≈ 30e3 rtol = 0.05
     # Report a reproducible loaded corner: first sample with >0.1% field weakening.
-    corner = rpm[findfirst(<(0.999), field)]
+    corner = something(findfirst(<(0.999), field), lastindex(rpm)) |> i -> rpm[i]
     @test 1300 < corner < 1450
     @info "30 kW hybrid envelope" peak_torque=maximum(torque) peak_power=maximum(power) nominal_corner_rpm=ps[d.w_base]*30/pi loaded_corner_rpm=corner energy_kWh=ps[d.battery.E]*ps[d.battery.Q_nom]/3.6e6
     for rpm0 in (200, 700, 1400, 2000, 3000, 4000)
@@ -230,7 +230,7 @@ end
     small_field = small.sol(ts, idxs=s.converter.field).u
     @test maximum(small_torque) ≈ 102.5 rtol=0.05
     @test maximum(small_power) ≈ 15e3 rtol=0.05
-    small_corner = small_rpm[findfirst(<(0.999), small_field)]
+    small_corner = something(findfirst(<(0.999), small_field), lastindex(small_rpm)) |> i -> small_rpm[i]
     @test 1300 < small_corner < 1450
     @info "15 kW hybrid envelope" peak_torque=maximum(small_torque) peak_power=maximum(small_power) loaded_corner_rpm=small_corner
     for rpm0 in (200, 700, 1400, 2000, 3000, 4000)

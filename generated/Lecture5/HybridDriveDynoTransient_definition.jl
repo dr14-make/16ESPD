@@ -107,7 +107,7 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   append!(__params, @parameters (P_rated::Float64), [description = "Rated machine power (ORNL-2011)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, P_rated, __local__P_rated)
   __local__T_max = T_max
-  append!(__params, @parameters (T_max::Float64), [description = "Peak machine torque (ORNL-2011; 205 N.m rather than inconsistent 105 N.m)"])
+  append!(__params, @parameters (T_max::Float64), [description = "Peak machine torque (ORNL-2011)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, T_max, __local__T_max)
   __local__rpm_start = rpm_start
   append!(__params, @parameters (rpm_start::Float64), [description = "Initial dyno speed [rpm] (assumed)"])
@@ -169,7 +169,7 @@ export HybridDriveDynoTransient__System
   var"log_file"::String = ""
   # Rated machine power (ORNL-2011)
   var"P_rated"::Float64 = 30000.0
-  # Peak machine torque (ORNL-2011; 205 N.m rather than inconsistent 105 N.m)
+  # Peak machine torque (ORNL-2011)
   var"T_max"::Float64 = 205.0
   # Initial dyno speed [rpm] (assumed)
   var"rpm_start"::Float64 = 200.0

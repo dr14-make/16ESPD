@@ -7,7 +7,7 @@ pack resistance shifts the observed corner below the nominal-voltage design corn
 component HybridDriveDyno
   "Rated machine power forwarded to the drive (ORNL-2011)"
   parameter P_rated::Power = 30.0e3
-  "Peak torque forwarded to the drive (ORNL-2011; 205 N.m resolves the 105/205 inconsistency)"
+  "Peak torque forwarded to the drive (ORNL-2011)"
   parameter T_max::Torque = 205.0
   "Initial dyno speed [rpm] (assumed; above loss regularization)"
   parameter rpm_start::Real = 200.0
@@ -32,7 +32,7 @@ analysis HybridDriveDynoTransient
   extends TransientAnalysis(stop = 22.0, alg = ODEAlg.Rodas5P(), saveat = 0.01, tstops = [1.0, 21.0])
   "Rated machine power (ORNL-2011)"
   parameter P_rated::Power = 30.0e3
-  "Peak machine torque (ORNL-2011; 205 N.m rather than inconsistent 105 N.m)"
+  "Peak machine torque (ORNL-2011)"
   parameter T_max::Torque = 205.0
   "Initial dyno speed [rpm] (assumed)"
   parameter rpm_start::Real = 200.0

@@ -8,14 +8,14 @@ is unity for the P2 transmission input; no final-drive reduction is implied (ass
 """
 component HybridDrive
   "Machine torque request, positive motoring (derived; ElectricDrive interface)"
-  tau_ref = RealInput()
+  tau_ref = RealInput() {^tau_ref}
   "Transmission input shaft (derived; ElectricDrive interface)"
-  spline = Spline()
+  spline = Spline() {^spline}
   "Machine housing and gear case (derived; ElectricDrive interface)"
-  support = Spline()
+  support = Spline() {^support}
   "Battery state of charge (derived; Battery interface)"
-  SoC = RealOutput()
-  "Peak shaft torque; choose 205 over ORNL's inconsistent 105 N.m to match 30 kW at 1400 rpm (ORNL-2011)"
+  SoC = RealOutput() {^SoC}
+  "Peak shaft torque (ORNL-2011)"
   parameter T_max::Torque = 205.0
   "Rated shaft power (ORNL-2011)"
   parameter P_rated::Power = 30.0e3
@@ -51,20 +51,20 @@ component HybridDrive
   parameter d_max::Real = 1.0
   "Current-loop time constant (assumed; Lecture 4)"
   parameter T_i::Time = 1.0e-3
-  "Converter conduction drop; retained teaching model, not Sonata calibration (assumed; Lecture 4)"
+  "Converter conduction drop (assumed; Lecture 4)"
   parameter V_on::Voltage = 1.2
-  "Switching frequency; retained Leaf setting, not Sonata measurement (assumed; Lecture 4)"
+  "Switching frequency (assumed; Lecture 4 Leaf setting)"
   parameter f_s::Frequency = 5.0e3
   "Switching-edge duration (assumed; Lecture 4)"
   parameter t_sw::Time = 1.0e-6
   "Field/duty corner rounding (assumed; Lecture 4 numerical regularization)"
   parameter eps::Real = 1.0e-4
-  "Pack open-circuit voltage (ORNL-2011 nominal voltage)"
-  parameter E::Voltage = 270.0
-  "Pack charge capacity, 1.4 kWh / 270 V (derived; ORNL-2011)"
+  "Pack open-circuit voltage, the machine design voltage (ORNL-2011 nominal voltage)"
+  parameter E::Voltage = V_nom
+  "Pack charge capacity, 1.4 kWh / E (derived; ORNL-2011)"
   parameter Q_nom::ElectricCharge = 1.4e3 * 3600.0 / E
-  "Pack resistance (assumed; Leaf 0.1 Ohm times 270/350, same cell resistance and parallel count, series count scaled with voltage; hybrid cell power capability unverified)"
-  parameter R0::Resistance = 0.1 * 270.0 / 350.0
+  "Pack resistance (assumed: the Leaf pack's 0.1 Ohm scaled by series count, E/350; small high-power hybrid cells may sag more)"
+  parameter R0::Resistance = 0.1 * E / 350.0
   "Initial SoC, mid-window for charge-sustaining operation (assumed)"
   parameter SoC0::Real = 0.6
   "Machine-to-transmission ratio, unity for a P2 input shaft (assumed)"
@@ -73,12 +73,12 @@ component HybridDrive
   parameter P_aux::Power = 300.0
   "Auxiliary power-control time constant (assumed; Lecture 4)"
   parameter T_aux::Time = 0.01
-  battery = VehicleSystemsComponents.Vehicle.Electric.Battery(E = E, Q_nom = Q_nom, R0 = R0, SoC0 = SoC0)
-  aux = VehicleSystemsComponents.Vehicle.Electric.AuxLoad(P_aux = P_aux, T = T_aux)
-  converter = VehicleSystemsComponents.Vehicle.Electric.Converter(I_max = I_max, d_max = d_max, T_i = T_i, V_on = V_on, f_s = f_s, t_sw = t_sw, eps = eps)
-  machine = VehicleSystemsComponents.Vehicle.Electric.DCMachine(field_weakening = true, T_max = T_max, w_base = w_base, V_nom = V_nom, R = R, L = L, J = J, T_f = T_f, K_i = K_i, k_w = k_w, C = C, w_reg = w_reg, tau_loss_base = tau_loss_base, k = k)
-  ground = ElectricalComponents.Analog.Basic.Ground()
-  reduction = RotationalComponents.Components.IdealGear(ratio = ratio)
+  battery = VehicleSystemsComponents.Vehicle.Electric.Battery(E = E, Q_nom = Q_nom, R0 = R0, SoC0 = SoC0) {^battery}
+  aux = VehicleSystemsComponents.Vehicle.Electric.AuxLoad(P_aux = P_aux, T = T_aux) {^aux}
+  converter = VehicleSystemsComponents.Vehicle.Electric.Converter(I_max = I_max, d_max = d_max, T_i = T_i, V_on = V_on, f_s = f_s, t_sw = t_sw, eps = eps) {^converter}
+  machine = VehicleSystemsComponents.Vehicle.Electric.DCMachine(field_weakening = true, T_max = T_max, w_base = w_base, V_nom = V_nom, R = R, L = L, J = J, T_f = T_f, K_i = K_i, k_w = k_w, C = C, w_reg = w_reg, tau_loss_base = tau_loss_base, k = k) {^machine}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  reduction = RotationalComponents.Components.IdealGear(ratio = ratio) {^reduction}
 relations
   connect(battery.p, converter.p_in, aux.p)
   connect(battery.n, converter.n, aux.n, machine.n, ground.g)
@@ -89,4 +89,19 @@ relations
   connect(machine.support, reduction.support, support)
   connect(battery.SoC, SoC)
   converter.i_ref = tau_ref / (converter.field * machine.k)
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/ElectricDrive.svg"}},
+  "_links": {
+    "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+    "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 400, "x2": 1050, "y2": 500}}}},
+    "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 788, "y1": 950, "x2": 888, "y2": 1050}}}},
+    "SoC": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}, "diagram": {"x1": 135, "y1": -50, "x2": 235, "y2": 50, "rot": 270}}}},
+    "battery": {"Dyad": {"placement": {"diagram": {"x1": 30, "y1": 390, "x2": 150, "y2": 510, "rot": 90}}}},
+    "aux": {"Dyad": {"placement": {"diagram": {"x1": 230, "y1": 390, "x2": 350, "y2": 510, "rot": 90}}}},
+    "converter": {"Dyad": {"placement": {"diagram": {"x1": 380, "y1": 360, "x2": 560, "y2": 540}}}},
+    "machine": {"Dyad": {"placement": {"diagram": {"x1": 640, "y1": 360, "x2": 820, "y2": 540}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 545, "y1": 720, "x2": 625, "y2": 800}}}},
+    "reduction": {"Dyad": {"placement": {"diagram": {"x1": 855, "y1": 405, "x2": 945, "y2": 495}}}}
+  }
+}
 end

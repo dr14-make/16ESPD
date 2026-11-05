@@ -17,7 +17,7 @@ pack resistance shifts the observed corner below the nominal-voltage design corn
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `P_rated`         | Rated machine power forwarded to the drive (ORNL-2011)                         | W  |   30.0e3 |
-| `T_max`         | Peak torque forwarded to the drive (ORNL-2011; 205 N.m resolves the 105/205 inconsistency)                         | N.m  |   205.0 |
+| `T_max`         | Peak torque forwarded to the drive (ORNL-2011)                         | N.m  |   205.0 |
 | `rpm_start`         | Initial dyno speed [rpm] (assumed; above loss regularization)                         | --  |   200.0 |
 | `rpm_end`         | Final dyno speed [rpm] (assumed; tests field weakening)                         | --  |   4000.0 |
 """
@@ -62,7 +62,7 @@ pack resistance shifts the observed corner below the nominal-voltage design corn
   append!(__params, @parameters (P_rated::Real), [description = "Rated machine power forwarded to the drive (ORNL-2011)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, P_rated, __local__P_rated)
   __local__T_max = T_max
-  append!(__params, @parameters (T_max::Real), [description = "Peak torque forwarded to the drive (ORNL-2011; 205 N.m resolves the 105/205 inconsistency)"])
+  append!(__params, @parameters (T_max::Real), [description = "Peak torque forwarded to the drive (ORNL-2011)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, T_max, __local__T_max)
   __local__rpm_start = rpm_start
   append!(__params, @parameters (rpm_start::Real), [description = "Initial dyno speed [rpm] (assumed; above loss regularization)"])
