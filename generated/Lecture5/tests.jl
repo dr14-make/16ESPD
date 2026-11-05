@@ -16,6 +16,8 @@ end
 
 
 @testset "`VehicleSystemsComponents.Lecture5`" begin
+include("EngineGeneratorBatteryBench_test.jl")
+include("EngineGeneratorBench_test.jl")
 include("HybridDriveDyno_test.jl")
 include("OperatingLineBench_test.jl")
 include("P2ElectricWLTC_test.jl")
