@@ -103,11 +103,11 @@ end
     @test _wltc_traces(fine).x[end] ≈ x[end] rtol = 1e-5
 end
 
-@testset "Planar WLTC: an exact-rest start hits MultibodyComponents.jl#185" begin
-    # The bench starts the wheels `dv_wheel` ahead of the body. From exact rest every slip speed
-    # is zero and the joint's Jacobian is NaN at t = 0. When this passes, the upstream fix has
-    # shipped and `dv_wheel` can go.
+@testset "Planar WLTC: an exact-rest start runs" begin
+    # From exact rest every slip speed is zero at t = 0, where the tire's slip-speed norm is
+    # regularized inside its square root.
     rest = _PL.PlanarWLTCTransient(stop = 20.0,
         model = _PL.PlanarWLTC(name = :PlanarWLTC, dv_wheel = 0.0))
-    @test_broken string(rest.sol.retcode) == "Success"
+    @test string(rest.sol.retcode) == "Success"
+    @test rest.sol.t[end] == 20.0
 end

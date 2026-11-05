@@ -17,7 +17,8 @@ hills_run(file) = run_analysis(TransientAnalysisSpec(name = :hills_acceptance,
         # at nodes and 2.301e-4 at midpoints; 6e-4 allows an 8% margin at the join.
         ("hill_z.crg", 220.0:1.0:420.0, 0.0, 0.0, hill_slope, 6e-4),
         ("hill_across_z.crg", 220.0:1.0:420.0, pi/2, -280.0, hill_slope, 6e-4),
-        ("ramp_z.crg", 0.0:250.0:500.0, 0.0, 0.0, x -> 0.02, 1e-12))
+        ("ramp_z.crg", 0.0:250.0:500.0, 0.0, 0.0, x -> 0.02, 1e-12),
+        ("ramp_hold_z.crg", -250.0:250.0:250.0, 0.0, 0.0, x -> 0.02, 1e-12))
         slope = VehicleSystemsComponents.road_height(HEIGHT_ASSETS * file)
         for psi in (0.0, pi/2, pi, pi/4), between in (false, true)
             points = between ? (axis[1:end-1] .+ step(axis)/2) : axis
@@ -136,6 +137,28 @@ end
     ramp_grade_error = maximum(abs.(ramp_run.sol(times; idxs=ramp_sys.vehicle.roadload.grade) .- 0.02))
     @info "Slope-channel ramp grade" ramp_grade_error
     @test ramp_grade_error < 1e-12
+end
+
+@testset "Brake held at standstill on a 2% grade for 60 s" begin
+    held = run_analysis(TransientAnalysisSpec(name = :ramp_hold,
+        model = VehicleSystemsComponents.PlanarBEVOnRoad(name = :ramp_hold,
+            height_file = HEIGHT_ASSETS * "ramp_hold_z.crg",
+            table = "dyad://VehicleSystemsComponents/drivers/brake_hold.csv"),
+        stop = 60.0, dtmax = 0.005, progress = false, optimize = OptimizationLevel.None()))
+    hs, sol = symbolic_container(held), held.sol
+    @test string(sol.retcode) == "Success"
+    @test sol.t[end] ≈ 60.0
+    @test all(u -> all(isfinite, u), sol.u)
+    @test all(==(1.0), sol[hs.driver.brake_signal])
+    grade = sol(30.0; idxs = hs.vehicle.roadload.grade)
+    vx = sol(30.0:1.0:60.0; idxs = hs.vehicle.motion.vx)
+    drift = sol(60.0; idxs = hs.vehicle.car.bus.x)
+    @info "Ramp brake hold" grade vx_end = vx[end] drift
+    @test grade ≈ 0.02 atol = 1e-9
+    # A slip tire holds a grade only by creeping; 294 N of grade force at mu = 1 and the brake's
+    # 1 rad/s regularization predict a few mm/s backwards; 1.5 mm/s measured.
+    @test all(v -> -0.005 < v <= 0.0, vx)
+    @test -0.3 < drift <= 0.0
 end
 
 @testset "Height loading remains headless" begin
