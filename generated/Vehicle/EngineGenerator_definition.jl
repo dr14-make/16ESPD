@@ -66,7 +66,7 @@ other numbers, method given; (assumed) the course's choice.
 | `w_base`         | Generator corner speed, rated power divided by peak torque, about 3580 rpm (derived)                         | rad/s  |   P_rated / T_max |
 | `V_nom`         | Generator design voltage, the 270 V bus of HybridDrive (assumed; ORNL-2011 Sonata pack)                         | V  |   270.0 |
 | `size_scale`         | Size factor relative to the Lecture 4 110 kW Leaf (derived; P_rated / 110 kW)                         | --  |   P_rated / 110.0e3 |
-| `R`         | Armature resistance (derived; HybridDrive scaling, Leaf R times (V_nom/350)^2 / size_scale)                         | Ω  |   0.05 * (V_n... size_scale |
+| `R`         | Armature resistance (derived; Leaf scaling, Leaf R times (V_nom/350)^2 / size_scale)                         | Ω  |   0.05 * (V_n... size_scale |
 | `L`         | Inductance preserving the Leaf 10 ms electrical time constant (derived; L = 0.01 R)                         | H  |   0.01 * R |
 | `J`         | Rotor inertia (derived; Leaf 0.05 kg.m2 times size_scale, assumed similarity)                         | kg.m2  |   0.05 * size_scale |
 | `T_f`         | Bearing friction torque (derived; Leaf 0.5 N.m times size_scale, assumed similarity)                         | N.m  |   0.5 * size_scale |
@@ -207,7 +207,7 @@ other numbers, method given; (assumed) the course's choice.
   append!(__params, @parameters (size_scale::Real), [description = "Size factor relative to the Lecture 4 110 kW Leaf (derived; P_rated / 110 kW)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, size_scale, __local__size_scale)
   __local__R = R
-  append!(__params, @parameters (R::Real), [description = "Armature resistance (derived; HybridDrive scaling, Leaf R times (V_nom/350)^2 / size_scale)"])
+  append!(__params, @parameters (R::Real), [description = "Armature resistance (derived; Leaf scaling, Leaf R times (V_nom/350)^2 / size_scale)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, R, __local__R)
   __local__L = L
   append!(__params, @parameters (L::Real), [description = "Inductance preserving the Leaf 10 ms electrical time constant (derived; L = 0.01 R)"])

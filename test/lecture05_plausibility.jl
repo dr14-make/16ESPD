@@ -197,17 +197,21 @@ end
     ps = run.sol.ps
     @test ps[d.machine.T_max] == 205.0
     @test ps[d.machine.w_base] * 30 / pi ≈ 1397.458 atol = 0.001
-    @test ps[d.machine.V_nom] == 270.0
+    @test ps[d.V_nom] == 270.0
+    # The machine is designed at the pack's terminal voltage at rated input, not its open circuit.
+    Vd = 220.0
+    @test ps[d.machine.V_nom] == Vd
+    @test Vd ≈ (270 + sqrt(270^2 - 4 * 0.33 * 30e3 / 0.9)) / 2 rtol = 1e-3
     @test ps[d.battery.E] * ps[d.battery.Q_nom] / 3.6e6 ≈ 1.4 rtol = 0.05
     @test run.sol[d.SoC][1] ≈ 0.6
-    @test ps[d.battery.R0] ≈ 0.1 * 270 / 350
+    @test ps[d.battery.R0] ≈ 0.33
     @test ps[d.reduction.ratio] == 1.0
     # Independent Leaf-based scaling and the unchanged machine's quadratic design equation.
     scale = 30 / 110
-    R = 0.05 * (270 / 350)^2 / scale
+    R = 0.05 * (Vd / 350)^2 / scale
     w = 30e3 / 205
     losses = (0.5 + 1.0) * scale + 300 / (10100pi / 30)^3 * scale * w^2 + 200scale / w
-    k = (270 + sqrt(270^2 - 4w * R * (205 + losses))) / (2w)
+    k = (Vd + sqrt(Vd^2 - 4w * R * (205 + losses))) / (2w)
     for (p, expected) in ((d.machine.R, R), (d.machine.L, 0.01R),
             (d.machine.J, 0.05scale), (d.machine.T_f, 0.5scale),
             (d.machine.K_i, scale), (d.machine.k_w, 300 / (10100pi / 30)^3 * scale),
@@ -240,14 +244,21 @@ end
 
     # ICCT-2022 Fig. 6 compares 15 kW positions. Halve torque, not speed, to keep the
     # transmission-input speed range fixed; this is a sizing comparison, not a measured map.
-    small = VehicleSystemsComponents.Lecture5.HybridDriveDynoTransient(P_rated=15e3, T_max=102.5)
+    # Half the power sags the pack less: design at its own loaded voltage, 15 kW at about 90 %.
+    Vd_small = 248.0
+    @test Vd_small ≈ (270 + sqrt(270^2 - 4 * 0.33 * 15e3 / 0.9)) / 2 rtol = 1e-3
+    small = VehicleSystemsComponents.Lecture5.HybridDriveDynoTransient(P_rated=15e3, T_max=102.5, V_design=Vd_small)
     @test string(small.sol.retcode) == "Success"
     s = symbolic_container(small).drive
     @test small.sol.ps[s.machine.w_base] ≈ ps[d.machine.w_base]
     @test small.sol.ps[s.machine.T_max] == 102.5
     @test small.sol.ps[s.machine.C] ≈ ps[d.machine.C] / 2
-    @test small.sol.ps[s.machine.R] ≈ 2 * ps[d.machine.R]
-    @test small.sol.ps[s.converter.I_max] ≈ ps[d.converter.I_max] / 2
+    R_small = 0.05 * (Vd_small / 350)^2 / (scale / 2)
+    losses_small = losses / 2
+    k_small = (Vd_small + sqrt(Vd_small^2 - 4w * R_small * (102.5 + losses_small))) / (2w)
+    @test small.sol.ps[s.machine.R] ≈ R_small rtol = 1e-12
+    @test small.sol.ps[s.machine.k] ≈ k_small rtol = 1e-12
+    @test small.sol.ps[s.converter.I_max] ≈ (102.5 + losses_small) / k_small rtol = 1e-12
     @test small.sol.ps[s.battery.E] * small.sol.ps[s.battery.Q_nom] / 3.6e6 ≈ 1.4
     small_torque = small.sol(ts, idxs=s.machine.tau).u
     small_power = small.sol(ts, idxs=s.machine.P_mech).u
@@ -313,7 +324,7 @@ end
             for p in (d.T_f, d.K_i, d.k_w, d.C, d.J, d.tau_loss_base)
                 @test s.ps[p] == 0.0
             end
-            w, R, V, T = (s.ps[p] for p in (d.w_base, d.R, d.V_nom, d.T_max))
+            w, R, V, T = (s.ps[p] for p in (d.w_base, d.R, d.V_design, d.T_max))
             @test s.ps[d.k] ≈ (V + sqrt(V^2 - 4w * R * T)) / (2w) rtol=1e-12
             @test s[d.machine.i][1] == 0.0
             loss = s[m.powertrain.k0.tau] .* s[m.powertrain.k0.w_slip]

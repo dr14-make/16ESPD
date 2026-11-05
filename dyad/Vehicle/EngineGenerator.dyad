@@ -79,7 +79,7 @@ component EngineGenerator
   parameter V_nom::Voltage = 270.0
   "Size factor relative to the Lecture 4 110 kW Leaf (derived; P_rated / 110 kW)"
   parameter size_scale::Real = P_rated / 110.0e3
-  "Armature resistance (derived; HybridDrive scaling, Leaf R times (V_nom/350)^2 / size_scale)"
+  "Armature resistance (derived; Leaf scaling, Leaf R times (V_nom/350)^2 / size_scale)"
   parameter R::Resistance = 0.05 * (V_nom / 350.0) ^ 2 / size_scale
   "Inductance preserving the Leaf 10 ms electrical time constant (derived; L = 0.01 R)"
   parameter L::Inductance = 0.01 * R
