@@ -136,3 +136,13 @@ auxiliaries, and ideal gear supplying a hybrid transmission input. It keeps `Ele
 270 V, 1.4 kWh defaults from the 2011 Sonata Hybrid (ORNL-2011). Its default gear ratio is 1,
 not the BEV's final-drive reduction; it does not include the engine, K0 clutch, or energy manager.
 _Avoid_: hybrid powertrain, hybrid controller
+
+**P2 powertrain**:
+`Vehicle.P2Powertrain` composes the mapped engine, K0 disconnect clutch, `HybridDrive` and
+`ControlledVariator`: the machine shares the shaft after K0 and before the variator. The
+variator includes the final drive, but no launch clutch; the output feeds the car's differential
+and the support is grounded. Its distinct `variator` child is the #112 replacement seam, not a
+language-level `replaceable` feature. Lecture 5's fixed electric fixture holds the engine stopped
+with fuel cut and K0 open; it is not engine-start logic or the #113 energy manager. The measured
+589 s electric Low check does not establish an engine-only launch: that checkpoint remains blocked.
+_Avoid_: hybrid drive (that is the electric subassembly), launch device, energy manager
