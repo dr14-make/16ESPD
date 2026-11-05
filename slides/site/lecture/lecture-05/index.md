@@ -93,13 +93,13 @@ Compare the connections and initial conditions with `Vehicle.P2Powertrain` and `
 | Quantity | Measured WLTC Low result |
 | --- | --- |
 | Duration | 589 s |
-| Maximum absolute speed error | 1.502735 km/h |
+| Maximum absolute speed error | 1.502844 km/h |
 | Distance | 3094.989 m |
 | Fuel | 0 |
-| SoC | 0.6 → 0.4008309 |
+| SoC | 0.6 → 0.3862 |
 | Maximum machine speed | 3545.66 rpm |
 
-These are reported reference measurements, not newly measured Studio results or full-WLTC results. The existing hybrid-drive dyno validates operation to 4000 rpm; its field-weakening corner is 1397.46 rpm. The Low run therefore uses field weakening while remaining within that tested speed range. Zero fuel is not zero energy consumption: the battery loses charge.
+These are reported reference measurements, not newly measured Studio results or full-WLTC results. The existing hybrid-drive dyno validates operation to 4000 rpm; its loaded field-weakening corner is 1379 rpm. The Low run therefore uses field weakening while remaining within that tested speed range. Zero fuel is not zero energy consumption: the battery loses charge.
 
 :::
 

@@ -100,8 +100,8 @@ test component EngineGeneratorBatteryBench
   parameter E_bus::Voltage = 270.0
   "Pack capacity, 10 kWh / E_bus (assumed; SoC drift negligible over the run)"
   parameter Q_bus::ElectricCharge = 10.0e3 * 3600.0 / E_bus
-  "Pack resistance (derived; HybridDrive's Leaf pack 0.1 Ohm scaled by E_bus / 350)"
-  parameter R_bus::Resistance = 0.1 * E_bus / 350.0
+  "Pack resistance (derived; HybridDrive's 2011 Sonata pack, 0.33 Ohm at 270 V, INL 10 s pulse)"
+  parameter R_bus::Resistance = 0.33 * E_bus / 270.0
   "First power command (assumed)"
   parameter P_1::Power = 10.0e3
   "Second power command (assumed)"

@@ -197,17 +197,20 @@ end
     ps = run.sol.ps
     @test ps[d.machine.T_max] == 205.0
     @test ps[d.machine.w_base] * 30 / pi ≈ 1397.458 atol = 0.001
-    @test ps[d.machine.V_nom] == 270.0
+    @test ps[d.V_nom] == 270.0
+    # The machine is designed at the pack's terminal voltage at rated power, under R0's sag.
+    Vd = (270 + sqrt(270^2 - 4 * 0.33 * 30e3)) / 2
+    @test ps[d.machine.V_nom] ≈ Vd rtol = 1e-12
     @test ps[d.battery.E] * ps[d.battery.Q_nom] / 3.6e6 ≈ 1.4 rtol = 0.05
     @test run.sol[d.SoC][1] ≈ 0.6
-    @test ps[d.battery.R0] ≈ 0.1 * 270 / 350
+    @test ps[d.battery.R0] ≈ 0.33
     @test ps[d.reduction.ratio] == 1.0
     # Independent Leaf-based scaling and the unchanged machine's quadratic design equation.
     scale = 30 / 110
-    R = 0.05 * (270 / 350)^2 / scale
+    R = 0.05 * (Vd / 350)^2 / scale
     w = 30e3 / 205
     losses = (0.5 + 1.0) * scale + 300 / (10100pi / 30)^3 * scale * w^2 + 200scale / w
-    k = (270 + sqrt(270^2 - 4w * R * (205 + losses))) / (2w)
+    k = (Vd + sqrt(Vd^2 - 4w * R * (205 + losses))) / (2w)
     for (p, expected) in ((d.machine.R, R), (d.machine.L, 0.01R),
             (d.machine.J, 0.05scale), (d.machine.T_f, 0.5scale),
             (d.machine.K_i, scale), (d.machine.k_w, 300 / (10100pi / 30)^3 * scale),
@@ -246,8 +249,12 @@ end
     @test small.sol.ps[s.machine.w_base] ≈ ps[d.machine.w_base]
     @test small.sol.ps[s.machine.T_max] == 102.5
     @test small.sol.ps[s.machine.C] ≈ ps[d.machine.C] / 2
-    @test small.sol.ps[s.machine.R] ≈ 2 * ps[d.machine.R]
-    @test small.sol.ps[s.converter.I_max] ≈ ps[d.converter.I_max] / 2
+    # Half the rated power sags the pack less, so the small machine's design voltage is higher.
+    Vd_small = (270 + sqrt(270^2 - 4 * 0.33 * 15e3)) / 2
+    @test small.sol.ps[s.machine.V_nom] ≈ Vd_small rtol = 1e-12
+    @test small.sol.ps[s.machine.R] ≈ 0.05 * (Vd_small / 350)^2 / (scale / 2) rtol = 1e-12
+    @test small.sol.ps[s.converter.I_max] ≈
+        (102.5 + small.sol.ps[s.machine.tau_loss_base]) / small.sol.ps[s.machine.k] rtol = 1e-12
     @test small.sol.ps[s.battery.E] * small.sol.ps[s.battery.Q_nom] / 3.6e6 ≈ 1.4
     small_torque = small.sol(ts, idxs=s.machine.tau).u
     small_power = small.sol(ts, idxs=s.machine.P_mech).u
@@ -313,7 +320,7 @@ end
             for p in (d.T_f, d.K_i, d.k_w, d.C, d.J, d.tau_loss_base)
                 @test s.ps[p] == 0.0
             end
-            w, R, V, T = (s.ps[p] for p in (d.w_base, d.R, d.V_nom, d.T_max))
+            w, R, V, T = (s.ps[p] for p in (d.w_base, d.R, d.V_design, d.T_max))
             @test s.ps[d.k] ≈ (V + sqrt(V^2 - 4w * R * T)) / (2w) rtol=1e-12
             @test s[d.machine.i][1] == 0.0
             loss = s[m.powertrain.k0.tau] .* s[m.powertrain.k0.w_slip]
@@ -473,9 +480,11 @@ end
             @test stored > 0
             @info "Engine-generator, battery bus" P_cmd_kW = commands[k] / 1e3 P_elec_kW = h.P_el[end] / 1e3 N_rpm = h.N[end] P_engine_kW = h.P_eng[end] / 1e3 mdot_fuel_g_s = 1e3h.mdot[end] bus_V = h.v[end] field = h.field[end] eta_system = h.P_el[end] / (h.mdot[end] * H_u)
         end
-        # 50 kW on the line runs above the generator's full-field speed for this bus.
+        # Charging at 50 kW lifts the bus through the pack's resistance, so the generator
+        # keeps full field at 4100 rpm on a battery, unlike on the resistive bench.
         h4 = check_hold(u, s, ends[4], commands[4])
-        @test all(0.9 .< h4.field .< 0.99)
+        @test all(h4.field .> 0.999)
+        @test all(h4.v .> 310.0)
         @test all(s(window(s, ends[3]), idxs = u.converter.field).u .> 1 - 1e-6)
 
         # 70 kW is past the engine's full load at the line's top speed: the generator unloads,

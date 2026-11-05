@@ -21,12 +21,14 @@ component HybridDrive
   parameter P_rated::Power = 30.0e3
   "Corner speed, rated power divided by peak torque, approximately 1400 rpm (derived; ORNL-2011)"
   parameter w_base::AngularVelocity = P_rated / T_max
-  "Machine design voltage, equal to nominal pack voltage (ORNL-2011)"
+  "Nominal pack voltage (ORNL-2011)"
   parameter V_nom::Voltage = 270.0
+  "Machine design voltage: the pack's terminal voltage at rated power, so the drive keeps its rating under the pack's sag (derived; E, R0, P_rated)"
+  parameter V_design::Voltage = (E + sqrt(E ^ 2 - 4.0 * R0 * P_rated)) / 2.0
   "Size factor relative to the Lecture 4 110 kW Leaf (derived; P_rated / 110 kW)"
   parameter size_scale::Real = P_rated / 110.0e3
-  "Armature resistance; preserve rated copper-loss fraction at voltage-scaled current (derived; Leaf R times (V_nom/350)^2 / size_scale)"
-  parameter R::Resistance = 0.05 * (V_nom / 350.0) ^ 2 / size_scale
+  "Armature resistance; preserve rated copper-loss fraction at voltage-scaled current (derived; Leaf R times (V_design/350)^2 / size_scale)"
+  parameter R::Resistance = 0.05 * (V_design / 350.0) ^ 2 / size_scale
   "Inductance preserving the Leaf 10 ms electrical time constant (derived; L = 0.01 R)"
   parameter L::Inductance = 0.01 * R
   "Rotor inertia (derived; Leaf 0.05 kg.m2 times rated-power size_scale, assumed similarity)"
@@ -43,8 +45,8 @@ component HybridDrive
   parameter w_reg::AngularVelocity = 10.0
   "Shaft loss torque at corner (derived; DCMachine formula)"
   parameter tau_loss_base::Torque = T_f + K_i + k_w * w_base ^ 2 + C / w_base
-  "Torque/back-EMF constant (derived; DCMachine positive quadratic root at V_nom, T_max, w_base)"
-  parameter k::ElectricalTorqueConstant = (V_nom + sqrt(V_nom ^ 2 - 4.0 * w_base * R * (T_max + tau_loss_base))) / (2.0 * w_base)
+  "Torque/back-EMF constant (derived; DCMachine positive quadratic root at V_design, T_max, w_base)"
+  parameter k::ElectricalTorqueConstant = (V_design + sqrt(V_design ^ 2 - 4.0 * w_base * R * (T_max + tau_loss_base))) / (2.0 * w_base)
   "Converter current ceiling (derived; (T_max + corner losses) / k)"
   parameter I_max::Current = (T_max + tau_loss_base) / k
   "Maximum duty, no voltage boost (assumed; Lecture 4)"
@@ -63,8 +65,8 @@ component HybridDrive
   parameter E::Voltage = V_nom
   "Pack charge capacity, 1.4 kWh / E (derived; ORNL-2011)"
   parameter Q_nom::ElectricCharge = 1.4e3 * 3600.0 / E
-  "Pack resistance (assumed: the Leaf pack's 0.1 Ohm scaled by series count, E/350; small high-power hybrid cells may sag more)"
-  parameter R0::Resistance = 0.1 * E / 350.0
+  "Pack resistance, 10 s pulse at 30-60 % depth of discharge on a new 2011 Sonata Hybrid pack, scaled by series count (INL/EXT-14-32109, INL/EXT-13-29679)"
+  parameter R0::Resistance = 0.33 * E / 270.0
   "Initial SoC, mid-window for charge-sustaining operation (assumed)"
   parameter SoC0::Real = 0.6
   "Machine-to-transmission ratio, unity for a P2 input shaft (assumed)"
@@ -76,7 +78,7 @@ component HybridDrive
   battery = VehicleSystemsComponents.Vehicle.Electric.Battery(E = E, Q_nom = Q_nom, R0 = R0, SoC0 = SoC0) {^battery}
   aux = VehicleSystemsComponents.Vehicle.Electric.AuxLoad(P_aux = P_aux, T = T_aux) {^aux}
   converter = VehicleSystemsComponents.Vehicle.Electric.Converter(I_max = I_max, d_max = d_max, T_i = T_i, V_on = V_on, f_s = f_s, t_sw = t_sw, eps = eps) {^converter}
-  machine = VehicleSystemsComponents.Vehicle.Electric.DCMachine(field_weakening = true, T_max = T_max, w_base = w_base, V_nom = V_nom, R = R, L = L, J = J, T_f = T_f, K_i = K_i, k_w = k_w, C = C, w_reg = w_reg, tau_loss_base = tau_loss_base, k = k) {^machine}
+  machine = VehicleSystemsComponents.Vehicle.Electric.DCMachine(field_weakening = true, T_max = T_max, w_base = w_base, V_nom = V_design, R = R, L = L, J = J, T_f = T_f, K_i = K_i, k_w = k_w, C = C, w_reg = w_reg, tau_loss_base = tau_loss_base, k = k) {^machine}
   ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
   reduction = RotationalComponents.Components.IdealGear(ratio = ratio) {^reduction}
 relations
