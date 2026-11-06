@@ -17,7 +17,7 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
 | `m`         | Vehicle and road-load mass (assumed; shared planar benchmark)                         | kg  |   1500.0 |
 | `radius`         | Wheel radius (derived; planar benchmark)                         | m  |   0.31 |
 | `k`         | PI gain, input-shaft N.m per km/h: 50 for the electric fixture, 110 shared by the engine and hybrid comparisons                         | --  |   ifelse(elec...0.0, 110.0) |
-| `Ti`         | PI integral time (assumed; BEV driver)                         | s  |   ifelse(elec..., 2.0, 1.0) |
+| `Ti`         | PI integral time: 2 s for the electric fixture, 1 s for the shared Lecture 5 driver (assumed)                         | s  |   ifelse(elec..., 2.0, 1.0) |
 | `tau_max`         | Positive driver ceiling [N.m], pedal saturation or machine peak                         | N.m  |   ifelse(elec...5.0, 150.0) |
 | `dv_wheel`         | Initial wheel surface speed offset (assumed; MultibodyComponents #185)                         | m/s  |   0.01 |
 | `engage_rpm`         | Center of K0 launch engagement [rpm] (assumed; CentrifugalClutch)                         | --  |   1300.0 |
@@ -88,7 +88,7 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
   append!(__params, @parameters (k::Real), [description = "PI gain, input-shaft N.m per km/h: 50 for the electric fixture, 110 shared by the engine and hybrid comparisons"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, k, __local__k)
   __local__Ti = Ti
-  append!(__params, @parameters (Ti::Real), [description = "PI integral time (assumed; BEV driver)"])
+  append!(__params, @parameters (Ti::Real), [description = "PI integral time: 2 s for the electric fixture, 1 s for the shared Lecture 5 driver (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, Ti, __local__Ti)
   __local__tau_max = tau_max
   append!(__params, @parameters (tau_max::Real), [description = "Positive driver ceiling [N.m], pedal saturation or machine peak"])

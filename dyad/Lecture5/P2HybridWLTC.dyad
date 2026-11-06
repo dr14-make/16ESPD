@@ -10,12 +10,12 @@ test component P2HybridWLTC
   parameter radius::Length = 0.31
   "PI gain [N.m per km/h] (assumed; shared WLTC driver)"
   parameter k::Real = 110.0
-  "PI integral time (assumed; BEV driver)"
+  "PI integral time (assumed; shared Lecture 5 driver)"
   parameter Ti::Time = 1.0
-  "Positive PI ceiling: mapped engine peak torque plus hybrid machine peak (derived)"
+  "Signed driver ceiling [N.m]: Engine full-load peak 150.233567 (full_load.csv rounds to 150.234) plus HybridDrive default T_max 205"
   parameter tau_max::Torque = 150.233567 + 205.0
   "Negative PI limit including friction demand at the transmission input [N.m]"
-  parameter tau_brake::Torque = 355.233567
+  parameter tau_brake::Torque = tau_max
   "Initial wheel surface speed offset (assumed; MultibodyComponents #185)"
   parameter dv_wheel::Velocity = 0.01
   "Center of K0 launch engagement [rpm] (assumed; step 2)"

@@ -18,9 +18,9 @@ The electric-mode CVT target follows demand power to avoid starting against an i
 | `m`         | Vehicle and road-load mass (assumed; shared planar benchmark)                         | kg  |   1500.0 |
 | `radius`         | Wheel radius (derived; planar benchmark)                         | m  |   0.31 |
 | `k`         | PI gain [N.m per km/h] (assumed; shared WLTC driver)                         | --  |   110.0 |
-| `Ti`         | PI integral time (assumed; BEV driver)                         | s  |   1.0 |
-| `tau_max`         | Positive PI ceiling: mapped engine peak torque plus hybrid machine peak (derived)                         | N.m  |   150.233567 + 205.0 |
-| `tau_brake`         | Negative PI limit including friction demand at the transmission input [N.m]                         | N.m  |   355.233567 |
+| `Ti`         | PI integral time (assumed; shared Lecture 5 driver)                         | s  |   1.0 |
+| `tau_max`         | Signed driver ceiling [N.m]: Engine full-load peak 150.233567 (full_load.csv rounds to 150.234) plus HybridDrive default T_max 205                         | N.m  |   150.233567 + 205.0 |
+| `tau_brake`         | Negative PI limit including friction demand at the transmission input [N.m]                         | N.m  |   tau_max |
 | `dv_wheel`         | Initial wheel surface speed offset (assumed; MultibodyComponents #185)                         | m/s  |   0.01 |
 | `engage_rpm`         | Center of K0 launch engagement [rpm] (assumed; step 2)                         | --  |   1300.0 |
 | `engage_width_rpm`         | Width of K0 launch engagement [rpm] (assumed; step 2)                         | --  |   120.0 |
@@ -37,7 +37,7 @@ The electric-mode CVT target follows demand power to avoid starting against an i
 | `E_regen`         | Requested regenerative braking energy at the machine shaft [J], excludes load-point charging                         | J  |
 | `E_friction`         | Actual wheel friction-brake dissipation [J]                         | J  |
 """
-@component function P2HybridWLTC(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(110.0), var"Ti"=Float64(1.0), var"tau_max"=150.233567 + 205.0, var"tau_brake"=355.233567, var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"N_locked"=Float64(1000.0), __overrides = Dict{String, Any}())
+@component function P2HybridWLTC(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(110.0), var"Ti"=Float64(1.0), var"tau_max"=150.233567 + 205.0, var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"N_locked"=Float64(1000.0), var"tau_brake"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -61,13 +61,16 @@ The electric-mode CVT target follows demand power to avoid starting against an i
   haskey(__overrides, "k") && (k = pop!(__overrides, "k"))
   haskey(__overrides, "Ti") && (Ti = pop!(__overrides, "Ti"))
   haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
-  haskey(__overrides, "tau_brake") && (tau_brake = pop!(__overrides, "tau_brake"))
   haskey(__overrides, "dv_wheel") && (dv_wheel = pop!(__overrides, "dv_wheel"))
   haskey(__overrides, "engage_rpm") && (engage_rpm = pop!(__overrides, "engage_rpm"))
   haskey(__overrides, "engage_width_rpm") && (engage_width_rpm = pop!(__overrides, "engage_width_rpm"))
   haskey(__overrides, "lock_rpm") && (lock_rpm = pop!(__overrides, "lock_rpm"))
   haskey(__overrides, "lock_width_rpm") && (lock_width_rpm = pop!(__overrides, "lock_width_rpm"))
   haskey(__overrides, "N_locked") && (N_locked = pop!(__overrides, "N_locked"))
+  haskey(__overrides, "tau_brake") && (tau_brake = pop!(__overrides, "tau_brake"))
+
+  ### Deferred keyword defaults (defaults referencing other keyword arguments)
+  isnothing(tau_brake) && (tau_brake = tau_max)
 
   ### Structural Parameters (functions)
 
@@ -92,10 +95,10 @@ The electric-mode CVT target follows demand power to avoid starting against an i
   append!(__params, @parameters (k::Real), [description = "PI gain [N.m per km/h] (assumed; shared WLTC driver)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, k, __local__k)
   __local__Ti = Ti
-  append!(__params, @parameters (Ti::Real), [description = "PI integral time (assumed; BEV driver)"])
+  append!(__params, @parameters (Ti::Real), [description = "PI integral time (assumed; shared Lecture 5 driver)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, Ti, __local__Ti)
   __local__tau_max = tau_max
-  append!(__params, @parameters (tau_max::Real), [description = "Positive PI ceiling: mapped engine peak torque plus hybrid machine peak (derived)"])
+  append!(__params, @parameters (tau_max::Real), [description = "Signed driver ceiling [N.m]: Engine full-load peak 150.233567 (full_load.csv rounds to 150.234) plus HybridDrive default T_max 205"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, tau_max, __local__tau_max)
   __local__tau_brake = tau_brake
   append!(__params, @parameters (tau_brake::Real), [description = "Negative PI limit including friction demand at the transmission input [N.m]"])

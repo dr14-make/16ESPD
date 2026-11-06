@@ -13,7 +13,7 @@ include("bsfc_line.jl")
 
 const ROOT = BsfcLine.ROOT
 const MAP_FILE = joinpath(ROOT, "assets", "data", "engine", "torque_to_pedal.csv")
-const SPEEDS = sort!(unique!([800.0; collect(850.0:50.0:6500.0)]))
+const SPEEDS = collect(800.0:50.0:6500.0)
 const TORQUES = collect(0.0:1.0:180.0)
 
 # Literal defaults from Throttle, CylinderAirflow, AirPath and PedalMap.
@@ -69,8 +69,8 @@ function fired_torque(m, n, p)
 end
 
 "Invert the first rising torque crossing, then area, plate angle and progressive pedal."
-function inverse_pedal(m, n, request)
-    p_lo, p_hi = steady_pressure(n, 0.0), steady_pressure(n, 1.0)
+function inverse_pedal(m, n, request,
+                       p_lo = steady_pressure(n, 0.0), p_hi = steady_pressure(n, 1.0))
     target = clamp(request, fired_torque(m, n, p_lo), fired_torque(m, n, p_hi))
     # The first crossing chooses the smallest throttle on the full-load torque plateau.
     lo, hi = p_lo, p_hi
@@ -94,9 +94,10 @@ function render_map(m = BsfcLine.load_maps())
     io = IOBuffer()
     println(io, "speed_rpm,", join(TORQUES, ','))
     for n in SPEEDS
+        p_lo, p_hi = steady_pressure(n, 0.0), steady_pressure(n, 1.0)
         @printf(io, "%.1f", n)
         for tau in TORQUES
-            @printf(io, ",%.9f", inverse_pedal(m, n, tau))
+            @printf(io, ",%.9f", inverse_pedal(m, n, tau, p_lo, p_hi))
         end
         println(io)
     end

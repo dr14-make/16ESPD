@@ -9,7 +9,7 @@ test component P2OperatingLineWLTC
   parameter radius::Length = 0.31
   "PI gain [N.m per km/h], shared with H0"
   parameter k::Real = 110.0
-  "PI integral time (assumed; BEV driver)"
+  "PI integral time (assumed; shared Lecture 5 driver)"
   parameter Ti::Time = 1.0
   "Positive PI ceiling [N.m], pedal saturation"
   parameter tau_max::Torque = 150.0

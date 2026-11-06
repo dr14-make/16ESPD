@@ -17,7 +17,7 @@ The line target is floored above idle. Machine torque, losses and inertia are ze
 | `m`         | Vehicle and road-load mass (assumed; shared planar benchmark)                         | kg  |   1500.0 |
 | `radius`         | Wheel radius (derived; planar benchmark)                         | m  |   0.31 |
 | `k`         | PI gain [N.m per km/h], shared with H0                         | --  |   110.0 |
-| `Ti`         | PI integral time (assumed; BEV driver)                         | s  |   1.0 |
+| `Ti`         | PI integral time (assumed; shared Lecture 5 driver)                         | s  |   1.0 |
 | `tau_max`         | Positive PI ceiling [N.m], pedal saturation                         | N.m  |   150.0 |
 | `dv_wheel`         | Initial wheel surface speed offset (assumed; MultibodyComponents #185)                         | m/s  |   0.01 |
 | `engage_rpm`         | Center of K0 launch engagement [rpm] (assumed; CentrifugalClutch)                         | --  |   1300.0 |
@@ -92,7 +92,7 @@ The line target is floored above idle. Machine torque, losses and inertia are ze
   append!(__params, @parameters (k::Real), [description = "PI gain [N.m per km/h], shared with H0"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, k, __local__k)
   __local__Ti = Ti
-  append!(__params, @parameters (Ti::Real), [description = "PI integral time (assumed; BEV driver)"])
+  append!(__params, @parameters (Ti::Real), [description = "PI integral time (assumed; shared Lecture 5 driver)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, Ti, __local__Ti)
   __local__tau_max = tau_max
   append!(__params, @parameters (tau_max::Real), [description = "Positive PI ceiling [N.m], pedal saturation"])
