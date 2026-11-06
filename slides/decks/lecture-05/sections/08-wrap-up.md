@@ -89,7 +89,8 @@ routeAlias: known-limits
 
 - **No stepped gearbox**, no shift logic: the CVT's ratio is free. A stepped gearbox is in the
   extra pack.
-- **No engine start dynamics** and no start fuel: every restart is free.
+- **Starts are warm**: K0 cranks the engine, fuel fades in from 400 to 700 rpm, the slip is paid;
+  no cold-start enrichment or warm-up, and the manager puts no price on a start.
 - **No emissions beyond fuel**: the catalyst cooling down during electric driving is not modeled.
 - **P4 is not torque vectoring**: it drives the rear flanges through its own reduction.
 
@@ -103,8 +104,12 @@ There is no stepped gearbox and no shift logic: the CVT's ratio is free. The Son
 six-speed automatic, and the studies of section 07 use dual-clutch and manual gearboxes; the stepped
 gearbox is in the extra pack.
 
-There are no engine start dynamics and no fuel to start the engine: every restart is free. A real
-energy manager penalizes starts, which is one more reason for hysteresis.
+Engine starts are in the model, but only warm ones. K0 closes and cranks the engine while the
+machine makes up the torque the clutch takes from the shaft; fuel fades in between 400 and 700
+revolutions per minute; and the clutch's slip heat is paid for, 111 kilojoules over the WLTC run
+with its 44 starts. What is missing: the fuel always comes from the warm engine's steady-state map,
+so there is no cold-start enrichment and no warm-up. And our energy manager puts no price on a
+start; only its hysteresis keeps them apart. A real energy manager penalizes starts.
 
 There are no emissions beyond fuel. In particular the catalyst cools down while the car drives
 electrically, and a cold catalyst at restart costs emissions; we do not model it.
