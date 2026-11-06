@@ -1,22 +1,26 @@
 """
 Traction-drive envelope bench (assumed; Lecture 4 dyno method). `Vehicle.Electric.TractionDrive`
-on a stiff 270 V bus, a battery with 1 mOhm and 100 kWh, so that the envelope is the drive's own
-and not the pack's sag; the series car's 0.33 Ohm pack could not deliver 80 kW at all. A
-saturated torque request exposes the current ceiling and field weakening. Hold 200 rpm for one
-second, ramp to 9500 rpm, above WLTC's 9200 rpm at the machine, in 20 seconds, then hold for one
-second.
+on a battery bus at `HybridDrive`'s 270 V. With the defaults, 1 mOhm and 100 kWh, the bus is
+stiff and the envelope is the drive's own; `TractionDrivePackDynoTransient` runs it on the
+homework's 1.4 kWh, 0.33 Ohm pack instead, which limits it. A saturated torque request exposes
+the current ceiling and field weakening. Hold 200 rpm for one second, ramp to 9500 rpm, above
+WLTC's 9200 rpm at the machine, in 20 seconds, then hold for one second.
 """
 test component TractionDriveDyno
   "Peak torque forwarded to the drive (assumed; TractionDrive)"
   parameter T_max::Torque = 250.0
   "Bus open-circuit voltage (assumed; HybridDrive's 270 V)"
   parameter E_bus::Voltage = 270.0
+  "Bus series resistance (assumed; 1 mOhm, a stiff bus)"
+  parameter R0_bus::Resistance = 1.0e-3
+  "Bus capacity (assumed; 100 kWh, no SoC drift that matters)"
+  parameter Q_bus::ElectricCharge = 100.0e3 * 3600.0 / E_bus
   "Initial dyno speed [rpm] (assumed; above loss regularization)"
   parameter rpm_start::Real = 200.0
   "Final dyno speed [rpm] (assumed; past WLTC's top machine speed)"
   parameter rpm_end::Real = 9500.0
   drive = VehicleSystemsComponents.Vehicle.Electric.TractionDrive(T_max = T_max, ratio = 1.0)
-  bus = VehicleSystemsComponents.Vehicle.Electric.Battery(E = E_bus, R0 = 1.0e-3, Q_nom = 100.0e3 * 3600.0 / E_bus, SoC0 = 0.5)
+  bus = VehicleSystemsComponents.Vehicle.Electric.Battery(E = E_bus, R0 = R0_bus, Q_nom = Q_bus, SoC0 = 0.6)
   ground = ElectricalComponents.Analog.Basic.Ground()
   request = BlockComponents.Sources.Constant(k = 2.0 * T_max)
   speed = BlockComponents.Sources.Ramp(height = (rpm_end - rpm_start) * pi / 30.0, offset = rpm_start * pi / 30.0, start_time = 1.0, duration = 20.0)
@@ -37,4 +41,15 @@ end
 analysis TractionDriveDynoTransient
   extends TransientAnalysis(stop = 22.0, alg = ODEAlg.Rodas5P(), saveat = 0.01, tstops = [1.0, 21.0])
   model = TractionDriveDyno()
+end
+
+"""
+The traction-drive dyno on the homework's pack alone, HybridDrive's 270 V, 1.4 kWh and 0.33 Ohm:
+the envelope a series car's traction drive has while its engine-generator delivers nothing.
+"""
+analysis TractionDrivePackDynoTransient
+  extends TransientAnalysis(stop = 22.0, alg = ODEAlg.Rodas5P(), saveat = 0.01, tstops = [1.0, 21.0])
+  parameter R0_bus::Resistance = 0.33
+  parameter Q_bus::ElectricCharge = 1.4e3 * 3600.0 / 270.0
+  model = TractionDriveDyno(R0_bus = R0_bus, Q_bus = Q_bus)
 end

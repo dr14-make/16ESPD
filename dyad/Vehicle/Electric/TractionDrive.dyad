@@ -6,22 +6,35 @@ sources and loads can share one bus at `p` and `n`.
     p, n -> converter -> machine -> reduction (ratio) -> spline
     machine housing and gear case -> support
 
-`tau_ref` is the machine torque asked for, positive motoring, negative braking. As in
-`ElectricDrive`, the converter imposes a current and the drive divides the torque by the torque
-per ampere at the present field, `i_ref = tau_ref / (field k)`, so `tau_ref` is the torque
-delivered at any speed up to the current limit. A negative `tau_ref` returns power to the bus.
+`tau_ref` is the electromagnetic torque asked of the machine, positive motoring, negative
+braking. As in `ElectricDrive`, the converter imposes a current and the drive divides the torque
+by the torque per ampere at the present field, `i_ref = tau_ref / (field k)`, so the machine's
+`tau_em` follows `tau_ref` at any speed up to the current limit. The shaft gets `tau_em` less the
+machine's friction, iron, windage and constant losses, and the rotor's `J dw/dt`. A negative
+`tau_ref` returns power to the bus.
 
 The bus at `p` and `n` has to set its own voltage, a battery for instance. The drive does not
 ground `n`; whatever builds the bus does that once.
 
-The machine follows `HybridDrive`'s scaling of the Lecture 4 Leaf machine, sized for a compact
-series hybrid on the 270 V bus of `HybridDrive`: 80 kW and 250 N.m, base speed about 3060 rpm.
-At WLTC's 131 km/h the machine turns about 9200 rpm, three times base speed, inside the Leaf
-machine's 10100 rpm. Source tags: (Nissan) ZE1 specification sheet, catalog 1709; (derived)
-computed from other numbers, method given; (assumed) the course's choice.
+The machine follows `HybridDrive`'s scaling of the Lecture 4 Leaf machine and, like
+`HybridDrive`, is designed at the voltage the 2011 Sonata pack sags to under load, 220 V: there
+it gives 250 N.m up to its 3060 rpm corner and 80 kW above. What it delivers depends on the bus
+(`Lecture5.TractionDriveDyno`, measured):
+
+| Bus | Peak shaft power | Corner |
+|---|---|---|
+| stiff 270 V | 98 kW, the 80 kW scaled by 270/220 | 3780 rpm |
+| the homework pack alone, 270 V behind 0.33 Ohm | 49.6 kW | 1910 rpm |
+
+On the pack alone the drive is limited by the pack, not by the machine: the pack gives at most
+E^2 / (4 R0) = 55 kW, at half its open-circuit voltage, and the drive runs close to that point,
+55 kW drawn with the bus at 142 V. More takes a second source on the bus, such as an
+engine-generator. At WLTC's 131 km/h the machine turns about 9200 rpm, inside the Leaf machine's
+10100 rpm. Source tags: (Nissan) ZE1 specification sheet, catalog 1709; (derived) computed from
+other numbers, method given; (assumed) the course's choice.
 """
 component TractionDrive
-  "Machine torque asked for, positive motoring [N.m]"
+  "Electromagnetic torque asked of the machine, positive motoring [N.m]"
   tau_ref = RealInput() {^tau_ref}
   "DC bus, positive rail (derived; Converter p_in)"
   p = Pin() {^p}
@@ -34,18 +47,18 @@ component TractionDrive
   "Electrical power drawn from the bus [W], positive motoring (derived; bus voltage times current into p)"
   P_elec = RealOutput() {^P_elec}
 
-  "Peak shaft torque, held from standstill to base speed (assumed)"
+  "Peak electromagnetic torque, held from standstill to base speed (assumed)"
   parameter T_max::Torque = 250.0
-  "Rated shaft power (assumed; a compact series hybrid's traction machine)"
+  "Rated shaft power at V_design (assumed; a compact series hybrid's traction machine)"
   parameter P_rated::Power = 80.0e3
   "Corner speed, rated power divided by peak torque, about 3060 rpm (derived)"
   parameter w_base::AngularVelocity = P_rated / T_max
-  "Machine design voltage, the 270 V bus of HybridDrive (assumed; ORNL-2011 Sonata pack)"
-  parameter V_nom::Voltage = 270.0
+  "Machine design voltage: HybridDrive's, the 2011 Sonata pack's terminal voltage at about 33 kW drawn (derived; HybridDrive V_design)"
+  parameter V_design::Voltage = 220.0
   "Size factor relative to the Lecture 4 110 kW Leaf (derived; P_rated / 110 kW)"
   parameter size_scale::Real = P_rated / 110.0e3
-  "Armature resistance (derived; Leaf scaling, Leaf R times (V_nom/350)^2 / size_scale)"
-  parameter R::Resistance = 0.05 * (V_nom / 350.0) ^ 2 / size_scale
+  "Armature resistance (derived; Leaf scaling, Leaf R times (V_design/350)^2 / size_scale)"
+  parameter R::Resistance = 0.05 * (V_design / 350.0) ^ 2 / size_scale
   "Inductance preserving the Leaf 10 ms electrical time constant (derived; L = 0.01 R)"
   parameter L::Inductance = 0.01 * R
   "Rotor inertia (derived; Leaf 0.05 kg.m2 times size_scale, assumed similarity)"
@@ -75,7 +88,7 @@ component TractionDrive
   "Field/duty corner rounding (assumed; Lecture 4 numerical regularization)"
   parameter eps::Real = 1.0e-4
 
-  machine = VehicleSystemsComponents.Vehicle.Electric.DCMachine(field_weakening = true, T_max = T_max, w_base = w_base, V_nom = V_nom, R = R, L = L, J = J, T_f = T_f, K_i = K_i, k_w = k_w, C = C, w_reg = w_reg) {^machine}
+  machine = VehicleSystemsComponents.Vehicle.Electric.DCMachine(field_weakening = true, T_max = T_max, w_base = w_base, V_nom = V_design, R = R, L = L, J = J, T_f = T_f, K_i = K_i, k_w = k_w, C = C, w_reg = w_reg) {^machine}
   converter = VehicleSystemsComponents.Vehicle.Electric.Converter(I_max = (T_max + machine.tau_loss_base) / machine.k, d_max = d_max, T_i = T_i, V_on = V_on, f_s = f_s, t_sw = t_sw, eps = eps) {^converter}
   reduction = RotationalComponents.Components.IdealGear(ratio = ratio) {^reduction}
 relations

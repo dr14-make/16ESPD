@@ -5,14 +5,14 @@
 
 
 @doc Markdown.doc"""
-   TractionDriveDyno(; name, T_max, E_bus, rpm_start, rpm_end, __overrides)
+   TractionDriveDyno(; name, T_max, E_bus, R0_bus, Q_bus, rpm_start, rpm_end, __overrides)
 
 Traction-drive envelope bench (assumed; Lecture 4 dyno method). `Vehicle.Electric.TractionDrive`
-on a stiff 270 V bus, a battery with 1 mOhm and 100 kWh, so that the envelope is the drive's own
-and not the pack's sag; the series car's 0.33 Ohm pack could not deliver 80 kW at all. A
-saturated torque request exposes the current ceiling and field weakening. Hold 200 rpm for one
-second, ramp to 9500 rpm, above WLTC's 9200 rpm at the machine, in 20 seconds, then hold for one
-second.
+on a battery bus at `HybridDrive`'s 270 V. With the defaults, 1 mOhm and 100 kWh, the bus is
+stiff and the envelope is the drive's own; `TractionDrivePackDynoTransient` runs it on the
+homework's 1.4 kWh, 0.33 Ohm pack instead, which limits it. A saturated torque request exposes
+the current ceiling and field weakening. Hold 200 rpm for one second, ramp to 9500 rpm, above
+WLTC's 9200 rpm at the machine, in 20 seconds, then hold for one second.
 
 ## Parameters:
 
@@ -20,10 +20,12 @@ second.
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `T_max`         | Peak torque forwarded to the drive (assumed; TractionDrive)                         | N.m  |   250.0 |
 | `E_bus`         | Bus open-circuit voltage (assumed; HybridDrive's 270 V)                         | V  |   270.0 |
+| `R0_bus`         | Bus series resistance (assumed; 1 mOhm, a stiff bus)                         | Ω  |   1.0e-3 |
+| `Q_bus`         | Bus capacity (assumed; 100 kWh, no SoC drift that matters)                         | C  |   100.0e3 * 3600.0 / E_bus |
 | `rpm_start`         | Initial dyno speed [rpm] (assumed; above loss regularization)                         | --  |   200.0 |
 | `rpm_end`         | Final dyno speed [rpm] (assumed; past WLTC's top machine speed)                         | --  |   9500.0 |
 """
-@component function TractionDriveDyno(; name = nothing, var"T_max"=Float64(250.0), var"E_bus"=Float64(270.0), var"rpm_start"=Float64(200.0), var"rpm_end"=Float64(9500.0), __overrides = Dict{String, Any}())
+@component function TractionDriveDyno(; name = nothing, var"T_max"=Float64(250.0), var"E_bus"=Float64(270.0), var"R0_bus"=0.001, var"rpm_start"=Float64(200.0), var"rpm_end"=Float64(9500.0), var"Q_bus"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -44,8 +46,13 @@ second.
   ### Keyword argument overrides
   haskey(__overrides, "T_max") && (T_max = pop!(__overrides, "T_max"))
   haskey(__overrides, "E_bus") && (E_bus = pop!(__overrides, "E_bus"))
+  haskey(__overrides, "R0_bus") && (R0_bus = pop!(__overrides, "R0_bus"))
   haskey(__overrides, "rpm_start") && (rpm_start = pop!(__overrides, "rpm_start"))
   haskey(__overrides, "rpm_end") && (rpm_end = pop!(__overrides, "rpm_end"))
+  haskey(__overrides, "Q_bus") && (Q_bus = pop!(__overrides, "Q_bus"))
+
+  ### Deferred keyword defaults (defaults referencing other keyword arguments)
+  isnothing(Q_bus) && (Q_bus = 100000.0 * 3600.0 / E_bus)
 
   ### Structural Parameters (functions)
 
@@ -66,6 +73,12 @@ second.
   __local__E_bus = E_bus
   append!(__params, @parameters (E_bus::Real), [description = "Bus open-circuit voltage (assumed; HybridDrive's 270 V)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, E_bus, __local__E_bus)
+  __local__R0_bus = R0_bus
+  append!(__params, @parameters (R0_bus::Real), [description = "Bus series resistance (assumed; 1 mOhm, a stiff bus)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R0_bus, __local__R0_bus)
+  __local__Q_bus = Q_bus
+  append!(__params, @parameters (Q_bus::Real), [description = "Bus capacity (assumed; 100 kWh, no SoC drift that matters)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Q_bus, __local__Q_bus)
   __local__rpm_start = rpm_start
   append!(__params, @parameters (rpm_start::Real), [description = "Initial dyno speed [rpm] (assumed; above loss regularization)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, rpm_start, __local__rpm_start)
@@ -90,7 +103,7 @@ second.
   push!(__systems, @named drive = VehicleSystemsComponents.Vehicle.Electric.TractionDrive(; T_max=T_max, ratio=Float64(1.0), __overrides = drive_overrides))
   # Subcomponent bus of type VehicleSystemsComponents.Vehicle.Electric.Battery
   bus_overrides = __pop_subcomponent_overrides!(__overrides, "bus")
-  push!(__systems, @named bus = VehicleSystemsComponents.Vehicle.Electric.Battery(; E=E_bus, R0=0.001, Q_nom=100000.0 * 3600.0 / E_bus, SoC0=0.5, __overrides = bus_overrides))
+  push!(__systems, @named bus = VehicleSystemsComponents.Vehicle.Electric.Battery(; E=E_bus, R0=R0_bus, Q_nom=Q_bus, SoC0=0.6, __overrides = bus_overrides))
   # Subcomponent ground of type ElectricalComponents.Analog.Basic.Ground
   ground_overrides = __pop_subcomponent_overrides!(__overrides, "ground")
   push!(__systems, @named ground = ElectricalComponents.Analog.Basic.Ground(; __overrides = ground_overrides))

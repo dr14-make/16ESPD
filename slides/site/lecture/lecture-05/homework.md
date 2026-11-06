@@ -59,7 +59,9 @@ input wired. These are the ends it leaves open for you:
 
 Its parameters, which you leave at their defaults: driver `k = 50` N·m per km/h, `Ti = 2` s,
 `tau_max = 250` N·m (the traction machine's peak torque); split `ratio = 8.193` (the traction
-drive's reduction) and `v_fade = 10` km/h. The wheels start 0.01 m/s ahead of the body, as on
+drive's reduction) and `v_fade = 10` km/h. `tau_max` and `ratio` have to equal your traction
+drive's `T_max` and `ratio`, and nothing checks it for you; see the
+[TractionDrive](#traction-drive) interface. The wheels start 0.01 m/s ahead of the body, as on
 every planar bench.
 
 `Lecture5.SeriesGroundElectric` is the ground driven electric-only through WLTC Low, with no
@@ -70,13 +72,21 @@ engine: use it to see that the ground and the traction drive run, not as a serie
 All of them are in `VehicleSystemsComponents`. Read each part's docstring in Studio for the
 full contract; the interfaces are:
 
-### `Vehicle.Electric.TractionDrive`
+### `Vehicle.Electric.TractionDrive` {#traction-drive}
 
-Converter, an 80 kW, 250 N·m DC-equivalent machine and the 8.193 reduction, on an external bus.
+Converter, a DC-equivalent machine and the 8.193 reduction, on an external bus. Create it from
+the ground's parameters, `TractionDrive(T_max = tau_max, ratio = ratio)`, so that the driver's
+limit and the brake split match the drive.
+
+The machine gives 250 N·m and is rated 80 kW at 220 V, but what it delivers depends on the bus.
+On the homework pack alone it gets at most about 50 kW at the shaft: the pack cannot give more
+than E²/(4 R0) = 55 kW, and its voltage falls to about 140 V when it does. More traction power
+has to come from the engine-generator on the same bus. `Lecture5.TractionDrivePackDynoTransient`
+shows the envelope on the pack alone.
 
 | Port | Meaning |
 | --- | --- |
-| `tau_ref` (input) | machine torque asked for [N·m], positive driving, negative braking into the bus |
+| `tau_ref` (input) | electromagnetic torque asked of the machine [N·m], positive driving, negative braking into the bus; the shaft gets it less the machine's losses |
 | `p`, `n` | DC bus pins; the drive does not ground `n` |
 | `spline` | reduction output shaft |
 | `support` | machine housing and gear case |
@@ -127,8 +137,9 @@ relaxes toward the latched value with `latch_time`. You may use it, or write you
 
 ## Rules {#rules}
 
-- No events and no `if` on states: the thermostat is built from continuous parts and smooth
-  functions, as every controller in the course library is.
+- No events: no `when` clauses and no event handling. Switch through a continuous latch, such
+  as `HysteresisLatch`, and smooth blends (`tanh`, a smooth clamp), as every controller in the
+  course library does.
 - The thermostat decides the engine-generator's power command only. The driver, the split and
   the brakes stay as the ground has them.
 - "Off" is `P_ref = 0`: the engine idles. Its idle fuel counts, and it is part of what you
@@ -145,7 +156,8 @@ Your run has to meet every row.
 | Speed tracking | trace minus car speed within ±2 km/h everywhere (WLTP's band) |
 | Charge sustaining | SoC at the end within ±0.02 of its start, 0.6 |
 | Pack window | SoC between 0.25 and 0.85 throughout |
-| SoC-corrected fuel | at most 5.60 L/100 km and at most 181 MJ/100 km |
+| SoC-corrected fuel | at most 5.60 L/100 km, which is 181.1 MJ/100 km at the meter's 0.745 kg/L and 43.4 MJ/kg |
+| Matches the ground | your drive's `T_max` and `ratio` equal the ground's `tau_max` and `ratio` |
 | Thermostat | at most 30 engine-generator starts; every on and every off period at least 5 s |
 
 For comparison, H0 on the same car burns 5.7 L/100 km and the Lecture 4 BEV draws 47 MJ/100 km at
@@ -181,6 +193,8 @@ s[m.meter.energy_corr][end]                      # MJ/100 km
 soc = at(m.battery.SoC)
 soc[end] - soc[1], extrema(soc)                  # charge sustaining, pack window
 maximum(abs.(at(m.trace.y) .- at(m.kmh.y)))      # km/h
+s.ps[m.drive.machine.T_max] == s.ps[m.tau_max]   # your drive's name in place of drive
+s.ps[m.drive.reduction.ratio] == s.ps[m.ratio]
 ```
 
 Count starts and on and off periods from the power the engine-generator delivers: call it on

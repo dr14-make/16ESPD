@@ -152,11 +152,11 @@ export TractionDriveDynoTransient__System
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
   # Traction-drive envelope bench (assumed; Lecture 4 dyno method). `Vehicle.Electric.TractionDrive`
-  # on a stiff 270 V bus, a battery with 1 mOhm and 100 kWh, so that the envelope is the drive's own
-  # and not the pack's sag; the series car's 0.33 Ohm pack could not deliver 80 kW at all. A
-  # saturated torque request exposes the current ceiling and field weakening. Hold 200 rpm for one
-  # second, ramp to 9500 rpm, above WLTC's 9200 rpm at the machine, in 20 seconds, then hold for one
-  # second.
+  # on a battery bus at `HybridDrive`'s 270 V. With the defaults, 1 mOhm and 100 kWh, the bus is
+  # stiff and the envelope is the drive's own; `TractionDrivePackDynoTransient` runs it on the
+  # homework's 1.4 kWh, 0.33 Ohm pack instead, which limits it. A saturated torque request exposes
+  # the current ceiling and field weakening. Hold 200 rpm for one second, ramp to 9500 rpm, above
+  # WLTC's 9200 rpm at the machine, in 20 seconds, then hold for one second.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture5.TractionDriveDyno(; name=:TractionDriveDyno)
   __system::System = TractionDriveDynoTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file")
 end

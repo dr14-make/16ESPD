@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TractionDrive(; name, T_max, P_rated, w_base, V_nom, size_scale, R, L, J, T_f, K_i, k_w, C, w_reg, ratio, d_max, T_i, V_on, f_s, t_sw, eps, __overrides)
+   TractionDrive(; name, T_max, P_rated, w_base, V_design, size_scale, R, L, J, T_f, K_i, k_w, C, w_reg, ratio, d_max, T_i, V_on, f_s, t_sw, eps, __overrides)
 
 Traction drive on an external DC bus: the average converter, a DC-equivalent machine and the
 single-speed reduction of `ElectricDrive`, without its battery and auxiliaries, so that several
@@ -14,30 +14,43 @@ sources and loads can share one bus at `p` and `n`.
     p, n -> converter -> machine -> reduction (ratio) -> spline
     machine housing and gear case -> support
 
-`tau_ref` is the machine torque asked for, positive motoring, negative braking. As in
-`ElectricDrive`, the converter imposes a current and the drive divides the torque by the torque
-per ampere at the present field, `i_ref = tau_ref / (field k)`, so `tau_ref` is the torque
-delivered at any speed up to the current limit. A negative `tau_ref` returns power to the bus.
+`tau_ref` is the electromagnetic torque asked of the machine, positive motoring, negative
+braking. As in `ElectricDrive`, the converter imposes a current and the drive divides the torque
+by the torque per ampere at the present field, `i_ref = tau_ref / (field k)`, so the machine's
+`tau_em` follows `tau_ref` at any speed up to the current limit. The shaft gets `tau_em` less the
+machine's friction, iron, windage and constant losses, and the rotor's `J dw/dt`. A negative
+`tau_ref` returns power to the bus.
 
 The bus at `p` and `n` has to set its own voltage, a battery for instance. The drive does not
 ground `n`; whatever builds the bus does that once.
 
-The machine follows `HybridDrive`'s scaling of the Lecture 4 Leaf machine, sized for a compact
-series hybrid on the 270 V bus of `HybridDrive`: 80 kW and 250 N.m, base speed about 3060 rpm.
-At WLTC's 131 km/h the machine turns about 9200 rpm, three times base speed, inside the Leaf
-machine's 10100 rpm. Source tags: (Nissan) ZE1 specification sheet, catalog 1709; (derived)
-computed from other numbers, method given; (assumed) the course's choice.
+The machine follows `HybridDrive`'s scaling of the Lecture 4 Leaf machine and, like
+`HybridDrive`, is designed at the voltage the 2011 Sonata pack sags to under load, 220 V: there
+it gives 250 N.m up to its 3060 rpm corner and 80 kW above. What it delivers depends on the bus
+(`Lecture5.TractionDriveDyno`, measured):
+
+| Bus | Peak shaft power | Corner |
+|---|---|---|
+| stiff 270 V | 98 kW, the 80 kW scaled by 270/220 | 3780 rpm |
+| the homework pack alone, 270 V behind 0.33 Ohm | 49.6 kW | 1910 rpm |
+
+On the pack alone the drive is limited by the pack, not by the machine: the pack gives at most
+E^2 / (4 R0) = 55 kW, at half its open-circuit voltage, and the drive runs close to that point,
+55 kW drawn with the bus at 142 V. More takes a second source on the bus, such as an
+engine-generator. At WLTC's 131 km/h the machine turns about 9200 rpm, inside the Leaf machine's
+10100 rpm. Source tags: (Nissan) ZE1 specification sheet, catalog 1709; (derived) computed from
+other numbers, method given; (assumed) the course's choice.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `T_max`         | Peak shaft torque, held from standstill to base speed (assumed)                         | N.m  |   250.0 |
-| `P_rated`         | Rated shaft power (assumed; a compact series hybrid's traction machine)                         | W  |   80.0e3 |
+| `T_max`         | Peak electromagnetic torque, held from standstill to base speed (assumed)                         | N.m  |   250.0 |
+| `P_rated`         | Rated shaft power at V_design (assumed; a compact series hybrid's traction machine)                         | W  |   80.0e3 |
 | `w_base`         | Corner speed, rated power divided by peak torque, about 3060 rpm (derived)                         | rad/s  |   P_rated / T_max |
-| `V_nom`         | Machine design voltage, the 270 V bus of HybridDrive (assumed; ORNL-2011 Sonata pack)                         | V  |   270.0 |
+| `V_design`         | Machine design voltage: HybridDrive's, the 2011 Sonata pack's terminal voltage at about 33 kW drawn (derived; HybridDrive V_design)                         | V  |   220.0 |
 | `size_scale`         | Size factor relative to the Lecture 4 110 kW Leaf (derived; P_rated / 110 kW)                         | --  |   P_rated / 110.0e3 |
-| `R`         | Armature resistance (derived; Leaf scaling, Leaf R times (V_nom/350)^2 / size_scale)                         | Ω  |   0.05 * (V_n... size_scale |
+| `R`         | Armature resistance (derived; Leaf scaling, Leaf R times (V_design/350)^2 / size_scale)                         | Ω  |   0.05 * (V_d... size_scale |
 | `L`         | Inductance preserving the Leaf 10 ms electrical time constant (derived; L = 0.01 R)                         | H  |   0.01 * R |
 | `J`         | Rotor inertia (derived; Leaf 0.05 kg.m2 times size_scale, assumed similarity)                         | kg.m2  |   0.05 * size_scale |
 | `T_f`         | Bearing friction torque (derived; Leaf 0.5 N.m times size_scale, assumed similarity)                         | N.m  |   0.5 * size_scale |
@@ -62,7 +75,7 @@ computed from other numbers, method given; (assumed) the course's choice.
  * `support` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `P_elec` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function TractionDrive(; name = nothing, var"T_max"=Float64(250.0), var"P_rated"=Float64(80000.0), var"V_nom"=Float64(270.0), var"w_reg"=Float64(10.0), var"ratio"=8.193, var"d_max"=Float64(1.0), var"T_i"=0.001, var"V_on"=1.2, var"f_s"=Float64(5000.0), var"t_sw"=0.000001, var"eps"=0.0001, var"w_base"=nothing, var"size_scale"=nothing, var"R"=nothing, var"J"=nothing, var"T_f"=nothing, var"K_i"=nothing, var"k_w"=nothing, var"C"=nothing, var"L"=nothing, __overrides = Dict{String, Any}())
+@component function TractionDrive(; name = nothing, var"T_max"=Float64(250.0), var"P_rated"=Float64(80000.0), var"V_design"=Float64(220.0), var"w_reg"=Float64(10.0), var"ratio"=8.193, var"d_max"=Float64(1.0), var"T_i"=0.001, var"V_on"=1.2, var"f_s"=Float64(5000.0), var"t_sw"=0.000001, var"eps"=0.0001, var"w_base"=nothing, var"size_scale"=nothing, var"R"=nothing, var"J"=nothing, var"T_f"=nothing, var"K_i"=nothing, var"k_w"=nothing, var"C"=nothing, var"L"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -83,7 +96,7 @@ computed from other numbers, method given; (assumed) the course's choice.
   ### Keyword argument overrides
   haskey(__overrides, "T_max") && (T_max = pop!(__overrides, "T_max"))
   haskey(__overrides, "P_rated") && (P_rated = pop!(__overrides, "P_rated"))
-  haskey(__overrides, "V_nom") && (V_nom = pop!(__overrides, "V_nom"))
+  haskey(__overrides, "V_design") && (V_design = pop!(__overrides, "V_design"))
   haskey(__overrides, "w_reg") && (w_reg = pop!(__overrides, "w_reg"))
   haskey(__overrides, "ratio") && (ratio = pop!(__overrides, "ratio"))
   haskey(__overrides, "d_max") && (d_max = pop!(__overrides, "d_max"))
@@ -105,7 +118,7 @@ computed from other numbers, method given; (assumed) the course's choice.
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
   isnothing(w_base) && (w_base = P_rated / T_max)
   isnothing(size_scale) && (size_scale = P_rated / 110000.0)
-  isnothing(R) && (R = 0.05 * (V_nom / 350.0) ^ 2 / size_scale)
+  isnothing(R) && (R = 0.05 * (V_design / 350.0) ^ 2 / size_scale)
   isnothing(J) && (J = 0.05 * size_scale)
   isnothing(T_f) && (T_f = 0.5 * size_scale)
   isnothing(K_i) && (K_i = 1.0 * size_scale)
@@ -127,22 +140,22 @@ computed from other numbers, method given; (assumed) the course's choice.
 
   ### Symbolic Parameters
   __local__T_max = T_max
-  append!(__params, @parameters (T_max::Real), [description = "Peak shaft torque, held from standstill to base speed (assumed)"])
+  append!(__params, @parameters (T_max::Real), [description = "Peak electromagnetic torque, held from standstill to base speed (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, T_max, __local__T_max)
   __local__P_rated = P_rated
-  append!(__params, @parameters (P_rated::Real), [description = "Rated shaft power (assumed; a compact series hybrid's traction machine)"])
+  append!(__params, @parameters (P_rated::Real), [description = "Rated shaft power at V_design (assumed; a compact series hybrid's traction machine)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, P_rated, __local__P_rated)
   __local__w_base = w_base
   append!(__params, @parameters (w_base::Real), [description = "Corner speed, rated power divided by peak torque, about 3060 rpm (derived)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, w_base, __local__w_base)
-  __local__V_nom = V_nom
-  append!(__params, @parameters (V_nom::Real), [description = "Machine design voltage, the 270 V bus of HybridDrive (assumed; ORNL-2011 Sonata pack)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, V_nom, __local__V_nom)
+  __local__V_design = V_design
+  append!(__params, @parameters (V_design::Real), [description = "Machine design voltage: HybridDrive's, the 2011 Sonata pack's terminal voltage at about 33 kW drawn (derived; HybridDrive V_design)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, V_design, __local__V_design)
   __local__size_scale = size_scale
   append!(__params, @parameters (size_scale::Real), [description = "Size factor relative to the Lecture 4 110 kW Leaf (derived; P_rated / 110 kW)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, size_scale, __local__size_scale)
   __local__R = R
-  append!(__params, @parameters (R::Real), [description = "Armature resistance (derived; Leaf scaling, Leaf R times (V_nom/350)^2 / size_scale)"])
+  append!(__params, @parameters (R::Real), [description = "Armature resistance (derived; Leaf scaling, Leaf R times (V_design/350)^2 / size_scale)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, R, __local__R)
   __local__L = L
   append!(__params, @parameters (L::Real), [description = "Inductance preserving the Leaf 10 ms electrical time constant (derived; L = 0.01 R)"])
@@ -207,7 +220,7 @@ computed from other numbers, method given; (assumed) the course's choice.
   push!(__systems, @named support = __Dyad__Spline())
   # Subcomponent machine of type VehicleSystemsComponents.Vehicle.Electric.DCMachine
   machine_overrides = __pop_subcomponent_overrides!(__overrides, "machine")
-  push!(__systems, @named machine = VehicleSystemsComponents.Vehicle.Electric.DCMachine(; field_weakening=true, T_max=T_max, w_base=w_base, V_nom=V_nom, R=R, L=L, J=J, T_f=T_f, K_i=K_i, k_w=k_w, C=C, w_reg=w_reg, __overrides = machine_overrides))
+  push!(__systems, @named machine = VehicleSystemsComponents.Vehicle.Electric.DCMachine(; field_weakening=true, T_max=T_max, w_base=w_base, V_nom=V_design, R=R, L=L, J=J, T_f=T_f, K_i=K_i, k_w=k_w, C=C, w_reg=w_reg, __overrides = machine_overrides))
   # Subcomponent converter of type VehicleSystemsComponents.Vehicle.Electric.Converter
   converter_overrides = __pop_subcomponent_overrides!(__overrides, "converter")
   push!(__systems, @named converter = VehicleSystemsComponents.Vehicle.Electric.Converter(; I_max=(T_max + machine.tau_loss_base) / machine.k, d_max=d_max, T_i=T_i, V_on=V_on, f_s=f_s, t_sw=t_sw, eps=eps, __overrides = converter_overrides))

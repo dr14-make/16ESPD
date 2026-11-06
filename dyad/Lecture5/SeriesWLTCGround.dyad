@@ -21,8 +21,10 @@ What the extending bench has to provide:
 The driver, the split and the start are those of `Planar.PlanarBEVWLTC`: the driver's PI output
 is a machine torque in N.m per km/h of speed error, limited to the traction machine's peak
 torque `tau_max`; the split's `ratio` has to equal the traction drive's reduction, so that the
-friction brakes take the right wheel torque below `v_fade`. The wheels start `dv_wheel` ahead of
-the body (MultibodyComponents.jl#185). A run of the full cycle needs `optimize =
+friction brakes take the right wheel torque below `v_fade`. Both have to match the traction
+drive, and nothing checks it: build the drive from the ground's own parameters,
+`TractionDrive(T_max = tau_max, ratio = ratio)`, so they cannot drift apart. The wheels start
+`dv_wheel` ahead of the body (MultibodyComponents.jl#185). A run of the full cycle needs `optimize =
 OptimizationLevel.None()` on its analysis (four identical tire blocks; see docs/HANDOVER.md).
 """
 partial component SeriesWLTCGround
