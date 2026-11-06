@@ -4,7 +4,9 @@ include("../scripts/bsfc_line.jl")
 using .BsfcLine
 
 const BSFC_LINE = read_line()
-const H0_L100 = 5.71753646
+# The machine-size sweep's baseline is H0's pinned fuel; one constant serves the sweep and these tests.
+include("../scripts/machine_size_sweep.jl")
+const H0_L100 = MachineSizeSweep.H0_L100
 const H0_MJ100 = 184.86510643
 const LINE_L100 = 5.43744462
 const RPM_ENGINE_IDLE = 800.0
@@ -1062,14 +1064,27 @@ include("torque_to_pedal.jl")
     @test [r.name for r in phases] == [first.(WLTC_PHASES); "WLTC"]
     @test sum(r.km * r.L_per_100km for r in phases[1:4]) / phases[end].km ≈ phases[end].L_per_100km rtol = 1e-9
     @test phases[end].L_per_100km ≈ corrected rtol = 1e-6
+    # Each phase's distance against the trace's own integral over the same seconds; the car
+    # trails the trace by at most 1.7 km/h, a fraction of a percent of each phase's distance.
+    trace = split.(readlines(joinpath(pkgdir(VehicleSystemsComponents), "assets", "data",
+        "drive_cycles", "wltc_class3b.csv"))[2:end], ',')
+    t_trace, v_trace = (parse.(Float64, getindex.(trace, k)) for k in 1:2)
+    function trace_km(a, b)
+        k = (t_trace .>= a) .& (t_trace .<= b)
+        t, v = t_trace[k], v_trace[k] ./ 3.6
+        sum((v[1:end-1] .+ v[2:end]) ./ 2 .* diff(t)) / 1e3
+    end
+    for (r, (_, a, b)) in zip(phases, [WLTC_PHASES; [("WLTC", 0.0, 1800.0)]])
+        @test r.km ≈ trace_km(a, b) rtol = 0.005
+    end
+    @test trace_km(0.0, 1800.0) ≈ 23.266 rtol = 1e-3
+    @test_throws ErrorException phase_fuel(s, m.meter; phases = WLTC_PHASES[1:3])
     @info "Hybrid operating points" on_share phases
     @info "Start compensation envelope" start_excess_time start_excess_peak start_speed_error max_ref=maximum(abs.(ref)) limit_excess=maximum(abs.(ref) .- limit) nonpositive_fuel charge_J=last(s[m.E_charge])
     @info "Engine line tracking" mean_power_error max_power_error line_fuel_share
     @info "Guide derived hybrid figures" saving_percent=100*(1-corrected/H0_L100) SoC_gain_percentage_points=100*(last(soc)-first(soc)) slip_J_per_start=integrate(slip)/length(starts)
     @info "Charge-sustaining WLTC" corrected raw=last(s[m.meter.fuel_raw]) hybrid_MJ100=last(s[m.meter.energy_corr]) conventional_MJ100=H0_MJ100 BEV_MJ100=47.25 SoC=(first(soc),last(soc),minimum(soc),maximum(soc)) starts=length(starts) starts_per_km=length(starts)/km mean_on=sum(durations)/length(durations) min_on=minimum(durations) slip_J=integrate(slip) max_error regen_J=last(s[m.E_regen]) friction_J=last(s[m.E_friction]) mode_seconds=integrate.(modes) mode_fuel_kg=[integrate(x .* at(m.powertrain.mdot_fuel)) for x in modes]
 end
-
-include("../scripts/machine_size_sweep.jl")
 
 # The sweep takes five WLTC runs, so the suite checks its pinned file instead of rerunning it.
 @testset "Lecture 5 machine-size sweep" begin
@@ -1079,13 +1094,17 @@ include("../scripts/machine_size_sweep.jl")
         @test hash == S.inputs_hash()
         @test read(S.OUT, String) == S.render(rows, hash)
         @test [r.P_rated for r in rows] == 1e3 .* S.SIZES_KW
-        @test S.H0_L100 == H0_L100
     end
     @testset "each size derives its envelope from P_rated" begin
         @test all(r -> isapprox(r.T_max, S.torque_limit(r.P_rated); atol = 5e-5), rows)
+        # The constants the derivation starts from are the default model's.
+        @test S.W_CORNER * 30 / pi ≈ 1397.458 atol = 0.001
         @test S.torque_limit(30e3) ≈ 205.0 rtol = 1e-12
         @test S.design_voltage(30e3) ≈ 220.0 rtol = 1e-12
         @test S.design_voltage(15e3) ≈ 248.0 rtol = 1e-3
+        @test S.FULL_LOAD_PEAK ≈ 150.233567 atol = 1e-9
+        @test S.TAU_BRAKE ≈ 205.0 + 150.233567 atol = 1e-9
+        @test S.P_ENGINE_PEAK == 85.607e3
         @test all(r -> isapprox(r.saving_vs_H0_pct, 100 * (1 - r.fuel_corr / H0_L100);
             atol = 1e-3), rows)
     end
