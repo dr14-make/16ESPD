@@ -74,14 +74,14 @@ percent less than H0. Its raw fuel is 4.11 liters; it ends with a little more ch
 started, so the correction takes a few hundredths off. The battery-electric car of Lecture 4:
 no liters, 47.2 megajoules per 100 kilometers at the battery's terminals, from Lecture 4's wrap-up.
 
-Be careful what the megajoule column compares. For the two fuel cars it is the petrol's heating
-value going into the engine; for the electric car it is the electricity coming out of the battery's
-terminals. It is the energy each car draws from its own store. It is not well-to-wheel: it leaves
-out the refinery, the power station, the grid and the charger. That is the same caveat as in
-Lecture 4.
+Be careful what the megajoule column compares. For the three fuel rows it is the petrol's heating
+value going into the engine, the hybrid's corrected for its change of charge; for the electric car
+it is the electricity coming out of the battery's terminals. It is the energy each car draws from
+its own store. It is not well-to-wheel: it leaves out the refinery, the power station, the grid and
+the charger. That is the same caveat as in Lecture 4.
 
-The figure will show the three by WLTC phase, once the reference run of issue 113 has produced
-the split.
+The table has the reference run's totals. The figure, the same three cars split by WLTC phase, is
+still to be drawn from that run.
 -->
 
 ---
@@ -118,12 +118,12 @@ gearbox.
 
 Ours: Lecture 2's engine and CVT, idling at every stop. So ours is closest to Chalmers.
 
-The green box is why it matters. A baseline without stop/start lets every hybrid also take the credit
-for stopping the engine: in Chalmers' own numbers, a 12 volt stop/start alone saves 5.0 percent on
-the WLTC. Against a baseline that idles, our savings will read high next to Schaeffler and
-Braunschweig. And our CVT can move the engine toward the line without a battery, 4.9 percent in build 02,
-which a stepped gearbox cannot, so part of the operating-point saving is already the CVT's. The plan therefore compares our table for
-ranking and order of magnitude, not to the percent.
+The green box is why it matters. A baseline without stop/start lets every hybrid also take the
+credit for stopping the engine: in Chalmers' own numbers, a 12 volt stop/start alone saves 5.0
+percent on the WLTC. Against a baseline that idles, our savings will read high next to Schaeffler
+and Braunschweig. And our CVT can move the engine toward the line without a battery, 4.9 percent in
+build 02, which a stepped gearbox cannot, so part of the operating-point saving is already the
+CVT's. The plan therefore compares our table for ranking and order of magnitude, not to the percent.
 -->
 
 ---
@@ -260,13 +260,14 @@ Captured with the build guide, #113
 </div>
 <div class="stack">
 
-*The full hybrid on the WLTC bench · the fuel block on the fuel flow, the battery's stored
-power and the distance · then the three cars side by side*
+*Nothing new to wire: the fuel block is on the bench already · run the full 1800 s, read the
+meter at the end · then the three cars side by side*
 
 ```txt
-connect(powertrain.mdot_fuel, meter.mdot_fuel)
-connect(motion.vx, kmh.u, meter.speed)
-meter.P_stored = powertrain.E * powertrain.i   # stored, not terminal
+# keep, already on the bench: stored power, not terminal
+meter.P_stored = powertrain.E * powertrain.i
+# read at t = 1800 s
+meter.fuel_raw   meter.fuel_corr   meter.energy_corr
 ```
 
 <div class="handson">✓ SoC at the end within <b>± 2 %</b> of capacity of its start:
@@ -281,8 +282,9 @@ battery-electric <b>47.2</b></div>
 <!--
 Build 04: the charge-sustaining WLTC. The screenshot comes with the build guide of issue 113.
 
-You put your full hybrid, with its operating line and its energy manager, on the WLTC bench, and add
-the library's fuel block from issue 199. It reads the engine's fuel flow, the power into and out of
+Your hybrid bench already carries the library's fuel block from issue 199, wired since the first
+build; step 4 adds nothing to it. You run the full 1800 seconds and read the meter only at the end.
+The block reads the engine's fuel flow, the power into and out of
 the battery's store, open-circuit voltage times current, and the distance. Stored, not terminal:
 the terminal power would count the battery's resistance loss as charge it never holds. The block
 reports the raw fuel, the net battery energy and the SoC-corrected fuel, in liters and in

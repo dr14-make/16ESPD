@@ -579,7 +579,7 @@ Start from `P2OperatingLineWLTC`, naming the new bench `P2HybridWLTC`. Restore t
 `HybridDrive` defaults: its losses, inertia, 30 kW machine and 1.4 kWh battery are included.
 The reference solution is in `HandsOn05.P2HybridWLTC`.
 
-Add `Vehicle.EnergyManager` as `manager` and `HandsOn05.TorqueToPedal` as `map`.
+Add `Vehicle.EnergyManager` as `manager` and `Vehicle.TorqueToPedal` as `map`.
 Set `manager.mapped_limits = true`. The driver's signed demand is at the transmission
 input, not the wheels. Keep the chassis, differential, supports, road load, meter and initial
 conditions from step 2. Replace the step-2 signal wiring with the following.

@@ -194,8 +194,8 @@ from one of these; the block diagrams are drawn by hand.
 The middle column is what the course library gives you, so you spend the build on the hybrid and
 not on parts: the K0 clutch with its actuator, the machine and battery at hybrid size, the best-BSFC
 line as a data table, the block that corrects fuel for the change in battery charge, the energy
-manager with its five rules and the engine's inverse map that turns its torque into a pedal, the benches
-for the other four positions, and the ground for the series homework.
+manager with its five rules and the engine's inverse map that turns its torque into a pedal, the
+benches for the other four positions, and the ground for the series homework.
 
 The right column is what you build in your own `MyCar`, on a new branch, `handson-05`: the P2
 powertrain, the operating line, the energy manager, and the charge-sustaining WLTC, as the

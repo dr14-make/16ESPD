@@ -73,12 +73,13 @@ routeAlias: what-you-measured
 </div>
 
 <!--
-What you measured, one row per step, with the reference model's checkpoint numbers. Step 01, the P2 powertrain, following the WLTC engine only and electric only. Step
-02, the operating line: 5.44 liters against H0's 5.72, with only 17 percent of the fuel near the
-line. Step 03, the modes switching without chatter: 44 engine starts over the WLTC, none shorter
-than 1.9 seconds, and the state of charge between 0.513 and 0.613. Step 04, the charge-sustaining
-WLTC: the state of charge back at 0.612 from 0.600, and the hybrid at 4.09 corrected liters and
-132.1 megajoules per 100 kilometers, 28.5 percent less than H0.
+What you measured, one row per step, with the reference model's checkpoint numbers. Step 01, the P2
+powertrain, following the WLTC engine only and electric only. Step 02, the operating line: 5.44
+liters against H0's 5.72, with only 17 percent of the fuel near the line. Step 03, the modes
+switching without chatter: 44 engine starts over the WLTC, none shorter than 1.9 seconds, and the
+state of charge between 0.513 and 0.613. Step 04, the charge-sustaining WLTC: the state of charge
+back at 0.612 from 0.600, and the hybrid at 4.09 corrected liters and 132.1 megajoules per 100
+kilometers, 28.5 percent less than H0.
 -->
 
 ---
@@ -89,7 +90,7 @@ routeAlias: known-limits
 
 - **No stepped gearbox**, no shift logic: the CVT's ratio is free. A stepped gearbox is in the
   extra pack.
-- **Starts are warm**: K0 cranks the engine, fuel fades in from 400 to 700 rpm, the slip is paid;
+- **Starts are warm**: K0 cranks the engine, fuel fades in from 400 to 700 rpm, the slip counts;
   no cold-start enrichment or warm-up, and the manager puts no price on a start.
 - **No emissions beyond fuel**: the catalyst cooling down during electric driving is not modeled.
 - **P4 is not torque vectoring**: it drives the rear flanges through its own reduction.
@@ -106,8 +107,8 @@ gearbox is in the extra pack.
 
 Engine starts are in the model, but only warm ones. K0 closes and cranks the engine while the
 machine makes up the torque the clutch takes from the shaft; fuel fades in between 400 and 700
-revolutions per minute; and the clutch's slip heat is paid for, 111 kilojoules over the WLTC run
-with its 44 starts. What is missing: the fuel always comes from the warm engine's steady-state map,
+revolutions per minute; and the clutch's slip heat while it cranks is in the energy balance, not
+left out. What is missing: the fuel always comes from the warm engine's steady-state map,
 so there is no cold-start enrichment and no warm-up. And our energy manager puts no price on a
 start; only its hysteresis keeps them apart. A real energy manager penalizes starts.
 

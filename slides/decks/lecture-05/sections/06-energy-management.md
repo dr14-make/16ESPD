@@ -105,11 +105,11 @@ the line for full load.
 Five, charge: when the state of charge is low, the engine runs on its line above the demand and the
 machine generates the rest. That is load-point raising from section 05, used to refill the battery.
 
-The thresholds, from the library's energy manager. P ev is itself a pair: the engine starts above
-12 kilowatts of demand and stops below 8; between them it stays as it was. The line's upper end is
-60 kilowatts by default; the WLTC bench caps it at 30, which burns less fuel, 4.086 against 4.106
-liters. Charging switches on below 0.55 state of charge and off above 0.60 by default; the bench
-moves the window down to 0.52 and 0.55, to leave room for regen late in the cycle.
+The thresholds, from the library's energy manager. P ev is itself a pair: the engine starts above 12
+kilowatts of demand and stops below 8; between them it stays as it was. The line's upper end is 60
+kilowatts by default; the WLTC bench sets it to 30, a choice of the bench. Charging switches on
+below 0.55 state of charge and off above 0.60 by default; the bench moves the window down to 0.52
+and 0.55, to leave room for regen late in the cycle.
 -->
 
 ---
@@ -307,9 +307,9 @@ Captured with the build guide, #113
 </div>
 
 **Given:** `Vehicle.EnergyManager`, built on Lecture 2's `HysteresisLatch` and Lecture 4's regen
-blending · `TorqueToPedal`, the engine's inverse map
+blending · `Vehicle.TorqueToPedal`, the engine's inverse map
 
-[page: step 3](../lecture/lecture-05/#step-3) · reference `dyad/HandsOn05/P2HybridWLTC.dyad`, `dyad/HandsOn05/TorqueToPedal.dyad`
+[page: step 3](../lecture/lecture-05/#step-3) · reference `dyad/HandsOn05/P2HybridWLTC.dyad`
 
 </div>
 <div class="stack">
@@ -318,16 +318,17 @@ blending · `TorqueToPedal`, the engine's inverse map
 torque and a machine torque · the inverse map turns the engine's into a pedal · engine-on, K0 and
 the CVT's speed target from its modes · its friction share through the CVT ratio*
 
+`manager`, set in Studio: `mapped_limits` true · `SoC_on` 0.52 · `SoC_off` 0.55 ·
+`P_line_max` 30 kW
+
 ```txt
-manager = EnergyManager(mapped_limits = true, SoC_on = 0.52,
-                        SoC_off = 0.55, P_line_max = 30.0e3)
 N_target = max(manager.engine_on * line.N
                + (1.0 - manager.engine_on) * demand_line.N, N_locked)
 ```
 
 <div class="handson">✓ over the WLTC the modes switch without chatter: <b>44</b> engine starts, the
-shortest on for <b>1.9 s</b> · SoC <b>0.513–0.613</b>: charging stops at 0.55, regen adds the
-rest · speed error <b>1.32</b> km/h</div>
+shortest on for <b>1.9 s</b> · SoC from 0.600 down to <b>0.513</b>, back up to <b>0.613</b> ·
+speed error <b>1.32</b> km/h</div>
 
 </div>
 </div>
@@ -343,14 +344,17 @@ You put the full hybrid drive back, with its losses, its 30 kilowatts and its 1.
 The manager takes the driver's demand and splits it into an engine torque and a machine torque; an
 inverse engine map turns the engine's torque into a pedal. Its modes switch the engine on, close K0
 and pick the CVT's speed target, and its friction-brake share goes to the wheels through the CVT's
-ratio. The snippet sets the bench's thresholds and the speed target: the line when the engine runs,
+ratio. Above the snippet, the manager's four parameters you set in Studio: the mapped torque
+limits, and the bench's thresholds. The snippet is the speed target: the line when the engine runs,
 a second line on the demand when it does not.
 
 The checkpoint: over the WLTC the modes switch without chatter, and the state of charge stays in its
 window. The reference run starts the engine 44 times, and the shortest run of the engine is 1.9
-seconds, so no start is chatter. The state of charge stays between 0.513 and 0.613: just under the
-window's bottom on the way in, and above its top, 0.55, only because regen keeps charging after the
-engine has stopped. And the car still follows the cycle within 1.32 kilometers per hour.
+seconds, so no start is chatter. The state of charge starts at 0.600, above the window, so the
+manager does not charge at first; electric driving and boost draw it down to 0.513, just under the
+window's bottom. From there engine charging and regen bring it back up, 3.92 megajoules into the
+battery over the run, to at most 0.613, and it ends at 0.612. And the car still follows the cycle
+within 1.32 kilometers per hour.
 
 If you see the engine start and stop several times within a second, a latch is missing or its two
 thresholds are the same.
