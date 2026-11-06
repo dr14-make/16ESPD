@@ -36,20 +36,47 @@ end
     gap = minimum(savings) - p0.saving_H0_pct
     @test gap >= 5.0
     @test maximum(savings) - minimum(savings) <= gap / 2
-    @test p0.E_regen_MJ < p2.E_regen_MJ
-    @test p2.E_regen_MJ < min(p3.E_regen_MJ, p4.E_regen_MJ)
+    @test p0.E_recovered_MJ < p2.E_recovered_MJ
+    @test p2.E_recovered_MJ < min(p3.E_recovered_MJ, p4.E_recovered_MJ)
     @test p3.electric_drive_s > 0
     @test p4.electric_drive_s > 0
-    @test p2.fuel_corr_L100 ≈ 4.086344 atol = 1e-5 rtol = 0
+    @test p2.fuel_corr_L100 ≈ 4.0863417765 atol = 1e-9 rtol = 0
 
     @testset "P4 live run matches pin" begin
         run = VehicleSystemsComponents.Lecture5.P4HybridWLTCTransient()
         live = PPositionTable.metrics(run, "P4")
         for column in (:fuel_raw_L100, :fuel_corr_L100, :energy_MJ100,
-                :E_regen_MJ, :SoC_start, :SoC_end, :max_speed_error_kmh)
+                :E_regen_MJ, :E_recovered_MJ, :SoC_start, :SoC_end, :max_speed_error_kmh)
             @test getproperty(live, column) ≈ getproperty(p4, column) rtol = 1e-5 atol = 1e-7
         end
         @test live.starts == p4.starts
         @test live.electric_drive_s ≈ p4.electric_drive_s atol = 0.1
     end
+end
+@testset "Compiled position bench shared defaults" begin
+    using ModelingToolkit
+    L = VehicleSystemsComponents.Lecture5
+    reference = L.P2HybridWLTC(name = :reference)
+    comparison = L.OutputHybridWLTC(name = :comparison)
+    function shared_defaults(a, b; exclude = Set{Symbol}())
+        da, db = ModelingToolkit.defaults(a), ModelingToolkit.defaults(b)
+        pa = Dict(Symbol(ModelingToolkit.getname(p)) => p for p in ModelingToolkit.parameters(a))
+        pb = Dict(Symbol(ModelingToolkit.getname(p)) => p for p in ModelingToolkit.parameters(b))
+        for name in intersect(keys(pa), keys(pb))
+            name in exclude && continue
+            va, vb = da[pa[name]], db[pb[name]]
+            for _ in 1:20
+                va = ModelingToolkit.Symbolics.substitute(va, da)
+                vb = ModelingToolkit.Symbolics.substitute(vb, db)
+            end
+            @test isequal(va, vb)
+        end
+    end
+    shared_defaults(reference, comparison; exclude = Set([:tau_max, :tau_brake]))
+    for field in (:driver, :manager, :car, :roadload, :meter, :line, :demand_line)
+        shared_defaults(getproperty(reference, field), getproperty(comparison, field);
+            exclude = field == :driver ? Set([:y_max, :y_min]) : Set{Symbol}())
+    end
+    shared_defaults(reference.powertrain.drive, comparison.powertrain.drive; exclude = Set([:ratio]))
+    @test ModelingToolkit.defaults(reference.powertrain.drive)[reference.powertrain.drive.SoC0] == 0.6
 end

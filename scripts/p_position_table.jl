@@ -16,11 +16,12 @@ const COLUMNS = (:position, :P_rated_kW, :fuel_raw_L100, :fuel_corr_L100, :energ
 function definitions_hash(position)
     benches = Dict("P0" => "CoupledHybridWLTC", "P2" => "P2HybridWLTC",
         "P3" => "OutputHybridWLTC", "P4" => "P4HybridWLTC")
-    files = String[]
-    for (dir, _, names) in walkdir(joinpath(ROOT, "generated/Vehicle"))
-        append!(files, [joinpath(dir, n) for n in names if endswith(n, "_definition.jl")])
-    end
+    family = position == "P0" ? "CoupledHybridPowertrain" : position == "P2" ? "P2Powertrain" : "OutputHybridPowertrain"
+    vehicle = [family, "EnergyManager", "Electric/HybridDrive", "BeltDrive",
+        "Engine/MappedEngine", "DisconnectClutch", "SoCCorrectedFuel"]
+    files = [joinpath(ROOT, "generated/Vehicle", n * "_definition.jl") for n in vehicle]
     names = [benches[position], benches[position] * "Transient"]
+    position != "P2" && push!(files, joinpath(ROOT, "dyad/Lecture5/HybridPositionWLTC.dyad"))
     position == "P4" && push!(names, "OutputHybridWLTC")
     append!(files, [joinpath(ROOT, "generated/Lecture5", n * "_definition.jl") for n in names])
     io = IOBuffer()
