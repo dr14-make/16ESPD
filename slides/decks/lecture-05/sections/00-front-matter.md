@@ -159,6 +159,7 @@ layout: center
 - `Electric.HybridDrive`: the 30 kW machine and 1.4 kWh battery
 - `assets/data/engine/bsfc_line.csv`: the best-BSFC operating line
 - `SoCCorrectedFuel`: the SoC-corrected fuel calculation
+- `EnergyManager`: the five rules; `TorqueToPedal`: the engine's inverse map
 - the P0, P1, P3 and P4 benches (#114)
 - the series-hybrid homework ground (#116)
 
@@ -174,7 +175,7 @@ Your `MyCar`, branch `handson-05`:
 - step 03: the rule-based energy manager
 - step 04: the charge-sustaining WLTC
 
-<span class="todo">TODO: component names (#111–#113)</span>
+Components: `P2Powertrain`, `P2WLTC`, `P2OperatingLineWLTC`, `P2HybridWLTC`
 
 Reference answers: `dyad/HandsOn05/`.
 
@@ -194,11 +195,13 @@ from one of these; the block diagrams are drawn by hand.
 
 The middle column is what the course library gives you, so you spend the build on the hybrid and
 not on parts: the K0 clutch with its actuator, the machine and battery at hybrid size, the best-BSFC
-line as a data table, the block that corrects fuel for the change in battery charge, the benches
-for the other four positions, and the ground for the series homework.
+line as a data table, the block that corrects fuel for the change in battery charge, the energy
+manager with its five rules and the engine's inverse map that turns its torque into a pedal, the
+benches for the other four positions, and the ground for the series homework.
 
 The right column is what you build in your own `MyCar`, on a new branch, `handson-05`: the P2
-powertrain, the operating line, the energy manager, and the charge-sustaining WLTC. The reference
+powertrain, the operating line, the energy manager, and the charge-sustaining WLTC, as the
+components `P2Powertrain`, `P2WLTC`, `P2OperatingLineWLTC` and `P2HybridWLTC`. The reference
 answers are in `dyad/HandsOn05`.
 -->
 

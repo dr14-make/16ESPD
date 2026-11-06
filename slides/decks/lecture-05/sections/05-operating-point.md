@@ -282,8 +282,8 @@ N_target = max(line.N, N_locked)            # 1000 rpm
 powertrain.N_ref = N_target
 ```
 
-<div class="handson">✓ same car, driver and K0 as H0 · WLTC: <b>5.39</b> L/100 km against H0's
-<b>5.71</b>, <b>−5.5 %</b> · only 15 % of the fuel within ±150 rpm of the line</div>
+<div class="handson">✓ same car, driver and K0 as H0 · WLTC: <b>5.44</b> L/100 km against H0's
+<b>5.72</b>, <b>−4.9 %</b> · only 17 % of the fuel within ±150 rpm of the line</div>
 
 </div>
 </div>
@@ -298,12 +298,12 @@ The driver's pedal becomes a power request, pedal times 85 kilowatts; the line t
 into a speed, floored at 1000 revolutions per minute so the locked engine never drops below idle;
 the CVT holds that speed. Everything else is H0: the same car, driver, brakes and K0.
 
-The checkpoint: over the WLTC the car burns 5.39 liters per 100 kilometers, against H0's 5.71.
-That is 5.5 percent, with no electric machine at all, from moving the engine to lower speed and
+The checkpoint: over the WLTC the car burns 5.44 liters per 100 kilometers, against H0's 5.72.
+That is 4.9 percent, with no electric machine at all, from moving the engine to lower speed and
 higher load.
 
 But be honest about why. The request is open loop: pedal times 85 kilowatts is not what the engine
-actually delivers, so the engine does not sit on the line. Only 15 percent of the fuel burns within
+actually delivers, so the engine does not sit on the line. Only 17 percent of the fuel burns within
 150 revolutions per minute of it. The saving comes from running slower in general. Holding the
 engine on the line needs a controller that commands engine power directly: the energy manager of
 section 06.
