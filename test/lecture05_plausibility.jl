@@ -365,9 +365,12 @@ end
             loss = s[m.powertrain.k0.tau] .* s[m.powertrain.k0.w_slip]
             @test minimum(loss) >= 0.0
             slip_MJ = sum(diff(s.t) .* (loss[1:end-1] .+ loss[2:end])) / 2e6
-            @info "H0 K0" slip_MJ peak_engine_torque=maximum(s[m.powertrain.engine_torque]) capacity engaged_min_rpm
+            cruise_min_position = k0_cruise_min_position(m, s)
+            @info "H0 K0" slip_MJ peak_engine_torque=maximum(s[m.powertrain.engine_torque]) capacity engaged_min_rpm cruise_min_position SoC=extrema(s[m.powertrain.SoC]) duration=last(s.t)
+            @test s[m.meter.fuel_raw][end] ≈ H0_L100 atol=1e-5 rtol=0
+            @test s[m.meter.energy_corr][end] ≈ H0_MJ100 atol=5e-4 rtol=0
         end
-        @info "P2 fixed-mode WLTC" electric speed_error distance=s[m.meter.s][end] raw_L100=s[m.meter.fuel_raw][end] corrected_L100=s[m.meter.fuel_corr][end] MJ100=s[m.meter.energy_corr][end] fuel_kg=s[m.meter.m_fuel][end] SoC_drop=s[m.powertrain.SoC][1]-s[m.powertrain.SoC][end]
+        @info "P2 fixed-mode WLTC" electric speed_error distance=s[m.meter.s][end] raw_L100=s[m.meter.fuel_raw][end] corrected_L100=s[m.meter.fuel_corr][end] MJ100=s[m.meter.energy_corr][end] fuel_kg=s[m.meter.m_fuel][end] SoC_drop=s[m.powertrain.SoC][1]-s[m.powertrain.SoC][end] peak_shaft_rpm=maximum(s[m.powertrain.drive.machine.w])*30/pi
     end
 end
 
@@ -491,7 +494,7 @@ end
     end
     raw = s[m.meter.fuel_raw][end]
     h0 = h0_run().sol[symbolic_container(h0_run()).meter.fuel_raw][end]
-    @test raw ≈ LINE_L100 rtol=1e-3
+    @test raw ≈ LINE_L100 atol=1e-5 rtol=0
     # Same driver, brakes and K0 lock-up as H0: only the CVT schedule differs.
     @test raw < 0.96h0
     @info "P2 operating-line WLTC" speed_error distance=s[m.meter.s][end] raw_L100=raw MJ100=s[m.meter.energy_corr][end] H0_L100=h0 difference=raw-h0 percent=100*(raw/h0-1)
@@ -982,7 +985,7 @@ include("torque_to_pedal.jl")
     @test maximum(soc) <= 0.8
     corrected = last(s[m.meter.fuel_corr])
     @test corrected < H0_L100
-    @test corrected ≈ 4.086344 atol = 0.025
+    @test corrected ≈ 4.086344 atol = 1e-5 rtol = 0
     @test last(s[m.meter.energy_corr]) ≈ 132.12377 atol = 0.9
     on = at(m.manager.engine_on) .> 0.5
     starts = findall(diff(on) .== 1)
@@ -1035,7 +1038,12 @@ include("torque_to_pedal.jl")
     start_excess_time = integrate(Float64.(starting .& (excess .> 0.01)))
     start_excess_peak = maximum(excess[starting])
     start_speed_error = maximum(abs.(3.6 .* at(m.car.bus.vx) .- at(m.trace.y))[starting])
+    @test 0.0 <= nonpositive_fuel <= 0.005
+    @test 0.0 <= start_excess_time <= 3.0
+    @test 0.0 <= start_excess_peak <= 130.0
+    @test start_speed_error <= 1.1
     @info "Start compensation envelope" start_excess_time start_excess_peak start_speed_error max_ref=maximum(abs.(ref)) limit_excess=maximum(abs.(ref) .- limit) nonpositive_fuel charge_J=last(s[m.E_charge])
     @info "Engine line tracking" mean_power_error max_power_error line_fuel_share
+    @info "Guide derived hybrid figures" saving_percent=100*(1-corrected/H0_L100) SoC_gain_percentage_points=100*(last(soc)-first(soc)) slip_J_per_start=integrate(slip)/length(starts)
     @info "Charge-sustaining WLTC" corrected raw=last(s[m.meter.fuel_raw]) hybrid_MJ100=last(s[m.meter.energy_corr]) conventional_MJ100=H0_MJ100 BEV_MJ100=47.25 SoC=(first(soc),last(soc),minimum(soc),maximum(soc)) starts=length(starts) starts_per_km=length(starts)/km mean_on=sum(durations)/length(durations) min_on=minimum(durations) slip_J=integrate(slip) max_error regen_J=last(s[m.E_regen]) friction_J=last(s[m.E_friction]) mode_seconds=integrate.(modes) mode_fuel_kg=[integrate(x .* at(m.powertrain.mdot_fuel)) for x in modes]
 end
