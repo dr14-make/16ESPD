@@ -18,6 +18,20 @@ using .PPositionTable
 end
 
 
+@testset "Generated position dependency closure" begin
+    files = PPositionTable.definition_files("P2HybridWLTC")
+    names = basename.(files)
+    for name in ("SpeedCommandedVariator", "DriveCycle", "PlanarCar", "PlanarRoadLoad",
+            "HysteresisLatch", "ToKmPerHour", "TorqueToPedal", "OperatingLine")
+        @test name * "_definition.jl" in names
+    end
+    @test !("BeltDrive_definition.jl" in names)
+    @test "BeltDrive_definition.jl" in basename.(PPositionTable.definition_files("CoupledHybridWLTC"))
+    @test occursin("BlockComponents.Continuous.LimPID", read(only(filter(
+        f -> basename(f) == "P2HybridWLTC_definition.jl", files)), String))
+end
+
+
 @testset "Lecture 5 position table" begin
     rows = PPositionTable.read_table()
     @test getproperty.(rows, :position) == ["P0", "P1", "P2", "P3", "P4"]
@@ -59,11 +73,13 @@ end
     using ModelingToolkit
     L = VehicleSystemsComponents.Lecture5
     reference = L.P2HybridWLTC(name = :reference)
-    comparison = L.OutputHybridWLTC(name = :comparison)
+    comparisons = (L.OutputHybridWLTC(name = :output),
+        L.CoupledHybridWLTC(name = :coupled), L.P1HybridWLTC(name = :p1),
+        L.P4HybridWLTC(name = :p4))
     function values_for(model)
         merge(ModelingToolkit.initial_conditions(model), ModelingToolkit.bindings(model))
     end
-    function resolved(model, p)
+    function resolved_value(model, p)
         d = values_for(model)
         localname = replace(string(p), string(ModelingToolkit.getname(model)) * "₊" => ""; count = 1)
         key = only(filter(k -> string(k) == localname, collect(keys(d))))
@@ -71,18 +87,49 @@ end
         for _ in 1:20
             value = ModelingToolkit.Symbolics.substitute(value, d)
         end
-        parse(Float64, string(value))
+        value
     end
-    paths = Tuple[(p,) for p in (:m, :radius, :k, :Ti, :dv_wheel, :engage_rpm,
-        :engage_width_rpm, :lock_rpm, :lock_width_rpm, :N_locked)]
+    resolved(model, p) = parse(Float64, string(resolved_value(model, p)))
+    paths = Tuple[(p,) for p in (:m, :radius, :k, :Ti, :tau_brake, :dv_wheel,
+        :engage_rpm, :engage_width_rpm, :lock_rpm, :lock_width_rpm, :N_locked)]
     append!(paths, [(:manager, p) for p in (:SoC_on, :SoC_off, :SoC_full,
-        :dSoC_full, :P_line_max, :P_on, :P_off, :P_chg, :P_max, :P_regen, :v_fade)])
-    append!(paths, [(:driver, :k), (:driver, :Ti), (:car, :m), (:car, :radius),
-        (:roadload, :m), (:powertrain, :drive, :SoC0)])
-    for path in paths
-        parameter(model) = foldl(getproperty, path; init = model)
-        @test resolved(reference, parameter(reference)) ≈ resolved(comparison, parameter(comparison))
+        :dSoC_full, :P_line_max, :P_on, :P_off, :P_chg, :P_max, :P_regen, :v_fade,
+        :tau_coupled_on, :tau_coupled_off, :dP_boost, :P_peak, :P_dis,
+        :SoC_dis_on, :SoC_dis_off, :T_max, :w_idle, :w_on, :w_off,
+        :tau_traction, :dtau, :dSoC_boost, :latch_time)])
+    append!(paths, [(:driver, :k), (:driver, :Ti), (:driver, :y_min),
+        (:car, :m), (:car, :radius), (:roadload, :m), (:powertrain, :drive, :SoC0)])
+    for comparison in comparisons
+        @testset "$(ModelingToolkit.getname(comparison)) shared defaults" begin
+            for path in paths
+                parameter(model) = foldl(getproperty, path; init = model)
+                @test resolved(reference, parameter(reference)) ≈ resolved(comparison, parameter(comparison))
+            end
+        end
     end
-    @test resolved(reference, reference.tau_brake) == resolved(reference, reference.tau_max)
-    @test resolved(comparison, comparison.tau_brake) == resolved(comparison, comparison.tau_max)
+    peak_rows = split.(readlines(joinpath(@__DIR__, "../data/engine/full_load.csv"))[2:end], ',')
+    full_load_peak = maximum(parse(Float64, row[2]) for row in peak_rows)
+    @test resolved(reference, reference.tau_max) ≈ 355.233567 atol = 1e-9 rtol = 0
+    @test resolved(reference, reference.tau_max) ≈
+        full_load_peak + resolved(reference, reference.powertrain.drive.T_max) atol = 1e-9 rtol = 0
+    for model in (reference, comparisons...)
+        @testset "$(ModelingToolkit.getname(model)) ceilings" begin
+            @test resolved(model, model.tau_brake) ≈ 355.233567 atol = 1e-9 rtol = 0
+            @test resolved(model, model.driver.y_min) ≈ -355.233567 atol = 1e-9 rtol = 0
+            @test resolved(model, model.driver.y_max) ≈ resolved(model, model.tau_max)
+            interpolator = ModelingToolkit.Symbolics.value(resolved_value(model,
+                model.powertrain.engine.torque_map.full_load.table.interpolator))
+            @test maximum(interpolator.obj[].u) ≈ full_load_peak atol = 1e-9 rtol = 0
+            if model !== reference
+                @test resolved(model, model.tau_engine_peak) ≈ full_load_peak atol = 1e-9 rtol = 0
+                machine = resolved(model, model.T_max)
+                if model === comparisons[1] || model === comparisons[4]
+                    machine *= resolved(model, model.reduction) / resolved(model, model.i_launch)
+                else
+                    machine *= resolved(model, model.i_crank) * resolved(model, model.eta_crank)
+                end
+                @test resolved(model, model.tau_max) ≈ full_load_peak + machine atol = 1e-9 rtol = 0
+            end
+        end
+    end
 end
