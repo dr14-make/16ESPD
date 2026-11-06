@@ -20,7 +20,8 @@ through it rather than switch, and a demand dithering inside a band moves no lat
     cap        = (1 - boost) P_peak + boost min(P_peak, max(P_line_max, P_drive - a_boost tau_lim w_shaft))
     tau_excess = max(tau_drive - tau_lim, 0)
     P_engine   = engine_on min(max(min(P_shift, cap), tau_excess w_e), P_peak),   w_e = max(engine_speed, w_idle)
-    tau_engine = P_engine / w_e
+    tau_engine = P_engine / w_e                                  without mapped_limits
+    tau_engine = min(P_engine / w_e, max(available_torque, 0))   with mapped_limits
     tau_assist = clamp(tau_drive - tau_engine, -tau_lim, tau_lim)
     tau_machine  = tau_assist - tau_regen
     tau_friction = max(-tau_dem, 0) - tau_regen

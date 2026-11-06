@@ -12,7 +12,7 @@ title: Lecture 5 — compose a P2 hybrid powertrain
 
 **How each step works.** As in HandsOn04, use the instance names below, build the diagram, then compare with the checkpoint before going on. The parts tables give library paths; names in code use dots instead of ›. Parameters with physical units use **Real** in Studio's **Add parameter** form, with the unit entered separately.
 
-**Fell behind?** The reference answers under `dyad/HandsOn05/` are self-contained copies of the `P2Powertrain.dyad` and `P2WLTC.dyad` compositions, with references between them localized to `HandsOn05`. They still use the existing library parts. Compare them with `Vehicle.P2Powertrain` and `Lecture5.P2WLTC`; do not claim that a wrapper around those answers is your own composition.
+**Fell behind?** The reference answers under `dyad/HandsOn05/` are self-contained copies of the `P2Powertrain.dyad`, `P2WLTC.dyad`, `P2OperatingLineWLTC.dyad`, `P2HybridWLTC.dyad` and `TorqueToPedal.dyad` compositions, with references between them localized to `HandsOn05`. They still use the existing library parts. Compare them with `Vehicle.P2Powertrain`, `Lecture5.P2WLTC`, `Lecture5.P2OperatingLineWLTC`, `Lecture5.P2HybridWLTC` and `Vehicle.TorqueToPedal`; do not claim that a wrapper around those answers is your own composition.
 
 - [1a · Wire the P2 powertrain](#step-1a)
 - [1b · Electric-only WLTC Low](#step-1b)
@@ -505,7 +505,7 @@ test component P2OperatingLineWLTC
   driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_brake) {^driver}
   no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
   kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
-  powertrain = VehicleSystemsComponents.Vehicle.P2Powertrain(speed_commanded = true, position_start = 0.0, drive(P_aux = 0.0, T_f = 0.0, K_i = 0.0, k_w = 0.0, C = 0.0, J = 0.0)) {^powertrain}
+  powertrain = VehicleSystemsComponents.HandsOn05.P2Powertrain(speed_commanded = true, position_start = 0.0, drive(P_aux = 0.0, T_f = 0.0, K_i = 0.0, k_w = 0.0, C = 0.0, J = 0.0)) {^powertrain}
   differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
   mount = RotationalComponents.Components.Fixed() {^mount}
   straight = RotationalComponents.Components.Fixed() {^straight}
@@ -579,7 +579,7 @@ Start from `P2OperatingLineWLTC`, naming the new bench `P2HybridWLTC`. Restore t
 `HybridDrive` defaults: its losses, inertia, 30 kW machine and 1.4 kWh battery are included.
 The reference solution is in `HandsOn05.P2HybridWLTC`.
 
-Add `Vehicle.EnergyManager` as `manager` and `Vehicle.TorqueToPedal` as `map`.
+Add `Vehicle.EnergyManager` as `manager` and `HandsOn05.TorqueToPedal` as `map`.
 Set `manager.mapped_limits = true`. The driver's signed demand is at the transmission
 input, not the wheels. Keep the chassis, differential, supports, road load, meter and initial
 conditions from step 2. Replace the step-2 signal wiring with the following.
@@ -628,8 +628,8 @@ powertrain's public output, not an internal engine block.
   between assumed engine torque and measured K0 transmission, including cranking drag,
   then clamps the sum to the machine torque/power envelope. Over the first 3 s
   of starts, the unclamped excess peaks at 123.34 N·m for 2.65 s total; the
-  maximum speed error there is 0.984 km/h. The final request peaks at 205 N·m
-  and stays within its envelope (test tolerance 1e-6 N·m). No start inhibition
+  maximum speed error there is 0.984 km/h. The final request peaks at 205 N·m.
+  No start inhibition
   is needed for the measured tracking band.
 - Multiply `manager.engage` by the maximum of step 2's engine launch and shaft lock-up
   ramps. Fuel permission rises smoothly from 400 to 700 rpm; with fuel off, regularized
