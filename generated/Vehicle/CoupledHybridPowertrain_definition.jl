@@ -54,7 +54,7 @@ Connect support to a stationary reference; spline goes to an external differenti
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
 | `machine_limit`         |                          | N.m  |
-| `start_compensation`         |                          | N.m  |
+| `start_compensation`         | Machine-side cranking deficit [N.m], gated by engine_on and the smooth unfired fraction; never cancels fuel-cut drag                         | N.m  |
 | `firing_fraction`         | Linear firing-band fraction (derived: measured engine rpm)                         | --  |
 """
 @component function CoupledHybridPowertrain(; name = nothing, var"speed_commanded"=false, var"i_crank"=2.5, var"eta_crank"=0.96, var"P_rated"=Float64(30000.0), var"T_max"=Float64(43.0), var"firing_rpm"=Float64(400.0), var"firing_width"=Float64(300.0), var"engine_speed_start"=Float64(0.0), var"position_start"=Float64(0.0), __overrides = Dict{String, Any}())
@@ -146,7 +146,7 @@ Connect support to a stationary reference; spline goes to an external differenti
 
   ### Variables (declarations)
   append!(__vars, @variables (machine_limit(t)::Real))
-  append!(__vars, @variables (start_compensation(t)::Real))
+  append!(__vars, @variables (start_compensation(t)::Real), [description = "Machine-side cranking deficit [N.m], gated by engine_on and the smooth unfired fraction; never cancels fuel-cut drag"])
   append!(__vars, @variables (firing_fraction(t)::Real), [description = "Linear firing-band fraction (derived: measured engine rpm)"])
 
   ### Variables (assignments)
@@ -208,7 +208,7 @@ Connect support to a stationary reference; spline goes to an external differenti
 
   ### Equations
   push!(__eqs, machine_limit ~ min(drive.T_max, drive.P_rated / max(abs(drive.machine.w), 1.0)))
-  push!(__eqs, start_compensation ~ (engine_torque_ref - engine.tau_e) / i_crank)
+  push!(__eqs, start_compensation ~ min(max(engine_on, 0.0), 1.0) * (1.0 - firing_fraction ^ 2 * (3.0 - 2.0 * firing_fraction)) * (engine_torque_ref - engine.tau_e) / i_crank)
   push!(__eqs, drive.tau_ref ~ min(max(tau_ref + start_compensation, -machine_limit), machine_limit))
   push!(__eqs, firing_fraction ~ min(max((engine.N - firing_rpm) / firing_width, 0.0), 1.0))
   push!(__eqs, engine.fuel_enable ~ engine_on * firing_fraction ^ 2 * (3.0 - 2.0 * firing_fraction))

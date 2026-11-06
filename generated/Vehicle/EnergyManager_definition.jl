@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   EnergyManager(; name, geared_limit, electric_drive, mapped_limits, P_on, P_off, P_line_max, dP_boost, P_peak, P_chg, P_dis, SoC_dis_on, SoC_dis_off, SoC_on, SoC_off, SoC_full, dSoC_full, T_max, P_max, P_regen, v_fade, w_idle, w_on, w_off, tau_traction, dtau, dSoC_boost, latch_time, __overrides)
+   EnergyManager(; name, geared_limit, electric_drive, mapped_limits, P_on, P_off, tau_coupled_on, tau_coupled_off, P_line_max, dP_boost, P_peak, P_chg, P_dis, SoC_dis_on, SoC_dis_off, SoC_on, SoC_off, SoC_full, dSoC_full, T_max, P_max, P_regen, v_fade, w_idle, w_on, w_off, tau_traction, dtau, dSoC_boost, latch_time, __overrides)
 
 Rule-based energy manager of a P2 hybrid: splits the driver's torque demand at the transmission
 input between engine, machine and friction brakes (derived; Lecture 5 S3). Signals only.
@@ -89,6 +89,8 @@ fuel during braking; a conditional high-SoC discharge latch lowers the engine lo
 | `mapped_limits`         | Limit the torque split to the mapped engine envelope during CVT transients                         | --  |   false |
 | `P_on`         | Engine start threshold on demand power (derived; line BSFC 240 g/kWh at 12 kW, 3 % above its minimum)                         | W  |   12.0e3 |
 | `P_off`         | Engine stop threshold on demand power (derived; below 8 kW line BSFC climbs from 247 g/kWh to 361 at 2 kW)                         | W  |   8.0e3 |
+| `tau_coupled_on`         | Crank-coupled traction set threshold [N.m], only without electric drive (assumed; 5 N.m deadband above PI zero crossings)                         | N.m  |   5.0 |
+| `tau_coupled_off`         | Crank-coupled braking reset threshold [N.m], only without electric drive (assumed; symmetric 5 N.m deadband)                         | N.m  |   -5.0 |
 | `P_line_max`         | Engine power cap while boosting (derived; line BSFC 248 g/kWh at 59 kW, 276 at 69 kW)                         | W  |   60.0e3 |
 | `dP_boost`         | Boost release band below P_line_max (assumed)                         | W  |   5.0e3 |
 | `P_peak`         | Engine peak power, the top of the line (derived; bsfc_line.csv)                         | W  |   85.607e3 |
@@ -158,7 +160,7 @@ fuel during braking; a conditional high-SoC discharge latch lowers the engine lo
 | `charging`         | Charging fraction                         | --  |
 | `boosting`         | Boosting fraction                         | --  |
 """
-@component function EnergyManager(; name = nothing, var"geared_limit"=false, var"electric_drive"=true, var"mapped_limits"=false, var"P_on"=Float64(12000.0), var"P_off"=Float64(8000.0), var"P_line_max"=Float64(60000.0), var"dP_boost"=Float64(5000.0), var"P_peak"=Float64(85607.0), var"P_chg"=Float64(10000.0), var"P_dis"=Float64(10000.0), var"SoC_dis_on"=0.62, var"SoC_dis_off"=0.6, var"SoC_on"=0.55, var"SoC_off"=0.6, var"SoC_full"=0.8, var"dSoC_full"=0.05, var"T_max"=Float64(205.0), var"P_max"=Float64(30000.0), var"P_regen"=Float64(30000.0), var"v_fade"=Float64(10.0), var"w_idle"=800.0 * pi / 30, var"w_on"=1000.0 * pi / 30, var"w_off"=850.0 * pi / 30, var"tau_traction"=Float64(5.0), var"dtau"=Float64(20.0), var"dSoC_boost"=0.05, var"latch_time"=0.2, __overrides = Dict{String, Any}())
+@component function EnergyManager(; name = nothing, var"geared_limit"=false, var"electric_drive"=true, var"mapped_limits"=false, var"P_on"=Float64(12000.0), var"P_off"=Float64(8000.0), var"tau_coupled_on"=Float64(5.0), var"tau_coupled_off"=-5.0, var"P_line_max"=Float64(60000.0), var"dP_boost"=Float64(5000.0), var"P_peak"=Float64(85607.0), var"P_chg"=Float64(10000.0), var"P_dis"=Float64(10000.0), var"SoC_dis_on"=0.62, var"SoC_dis_off"=0.6, var"SoC_on"=0.55, var"SoC_off"=0.6, var"SoC_full"=0.8, var"dSoC_full"=0.05, var"T_max"=Float64(205.0), var"P_max"=Float64(30000.0), var"P_regen"=Float64(30000.0), var"v_fade"=Float64(10.0), var"w_idle"=800.0 * pi / 30, var"w_on"=1000.0 * pi / 30, var"w_off"=850.0 * pi / 30, var"tau_traction"=Float64(5.0), var"dtau"=Float64(20.0), var"dSoC_boost"=0.05, var"latch_time"=0.2, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -182,6 +184,8 @@ fuel during braking; a conditional high-SoC discharge latch lowers the engine lo
   haskey(__overrides, "mapped_limits") && (mapped_limits = pop!(__overrides, "mapped_limits"))
   haskey(__overrides, "P_on") && (P_on = pop!(__overrides, "P_on"))
   haskey(__overrides, "P_off") && (P_off = pop!(__overrides, "P_off"))
+  haskey(__overrides, "tau_coupled_on") && (tau_coupled_on = pop!(__overrides, "tau_coupled_on"))
+  haskey(__overrides, "tau_coupled_off") && (tau_coupled_off = pop!(__overrides, "tau_coupled_off"))
   haskey(__overrides, "P_line_max") && (P_line_max = pop!(__overrides, "P_line_max"))
   haskey(__overrides, "dP_boost") && (dP_boost = pop!(__overrides, "dP_boost"))
   haskey(__overrides, "P_peak") && (P_peak = pop!(__overrides, "P_peak"))
@@ -224,6 +228,12 @@ fuel during braking; a conditional high-SoC discharge latch lowers the engine lo
   __local__P_off = P_off
   append!(__params, @parameters (P_off::Real), [description = "Engine stop threshold on demand power (derived; below 8 kW line BSFC climbs from 247 g/kWh to 361 at 2 kW)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, P_off, __local__P_off)
+  __local__tau_coupled_on = tau_coupled_on
+  append!(__params, @parameters (tau_coupled_on::Real), [description = "Crank-coupled traction set threshold [N.m], only without electric drive (assumed; 5 N.m deadband above PI zero crossings)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_coupled_on, __local__tau_coupled_on)
+  __local__tau_coupled_off = tau_coupled_off
+  append!(__params, @parameters (tau_coupled_off::Real), [description = "Crank-coupled braking reset threshold [N.m], only without electric drive (assumed; symmetric 5 N.m deadband)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_coupled_off, __local__tau_coupled_off)
   __local__P_line_max = P_line_max
   append!(__params, @parameters (P_line_max::Real), [description = "Engine power cap while boosting (derived; line BSFC 248 g/kWh at 59 kW, 276 at 69 kW)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, P_line_max, __local__P_line_max)
@@ -508,8 +518,8 @@ fuel during braking; a conditional high-SoC discharge latch lowers the engine lo
     push!(__eqs, engine.set ~ ifelse(((P_dem > P_on) | (tau_drive > tau_lim)) | (((charge.y > 0.5) & (w_shaft > w_on))), 1.0, 0.0))
     push!(__eqs, engine.reset ~ ifelse(((P_dem < P_off) & (tau_drive < tau_lim - dtau)) & (((charge.y <= 0.5) | (w_shaft <= w_off))), 1.0, 0.0))
   else
-    push!(__eqs, engine.set ~ ifelse(tau_dem > 0.0, 1.0, 0.0))
-    push!(__eqs, engine.reset ~ ifelse(tau_dem <= 0.0, 1.0, 0.0))
+    push!(__eqs, engine.set ~ ifelse(tau_dem > tau_coupled_on, 1.0, 0.0))
+    push!(__eqs, engine.reset ~ ifelse(tau_dem < tau_coupled_off, 1.0, 0.0))
   end
   if !electric_drive
     push!(__eqs, discharge.set ~ ifelse(SoC > SoC_dis_on, 1.0, 0.0))

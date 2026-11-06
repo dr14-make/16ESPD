@@ -109,6 +109,10 @@ component EnergyManager
   parameter P_on::Power = 12.0e3
   "Engine stop threshold on demand power (derived; below 8 kW line BSFC climbs from 247 g/kWh to 361 at 2 kW)"
   parameter P_off::Power = 8.0e3
+  "Crank-coupled traction set threshold [N.m], only without electric drive (assumed; 5 N.m deadband above PI zero crossings)"
+  parameter tau_coupled_on::Torque = 5.0
+  "Crank-coupled braking reset threshold [N.m], only without electric drive (assumed; symmetric 5 N.m deadband)"
+  parameter tau_coupled_off::Torque = -5.0
   "Engine power cap while boosting (derived; line BSFC 248 g/kWh at 59 kW, 276 at 69 kW)"
   parameter P_line_max::Power = 60.0e3
   "Boost release band below P_line_max (assumed)"
@@ -222,8 +226,8 @@ relations
     engine.set = ifelse(P_dem > P_on or tau_drive > tau_lim or (charge.y > 0.5 and w_shaft > w_on), 1.0, 0.0)
     engine.reset = ifelse(P_dem < P_off and tau_drive < tau_lim - dtau and (charge.y <= 0.5 or w_shaft <= w_off), 1.0, 0.0)
   else
-    engine.set = ifelse(tau_dem > 0.0, 1.0, 0.0)
-    engine.reset = ifelse(tau_dem <= 0.0, 1.0, 0.0)
+    engine.set = ifelse(tau_dem > tau_coupled_on, 1.0, 0.0)
+    engine.reset = ifelse(tau_dem < tau_coupled_off, 1.0, 0.0)
   end
   boost.set = ifelse(P_dem > P_line_max, 1.0, 0.0)
   boost.reset = ifelse(P_dem < P_line_max - dP_boost, 1.0, 0.0)

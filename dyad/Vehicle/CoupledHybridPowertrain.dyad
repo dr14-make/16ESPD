@@ -11,8 +11,10 @@ component CoupledHybridPowertrain
   engage = RealInput()
   tau_ref = RealInput()
   engine_on = RealInput()
+  "Cranking torque target [N.m]; compensates the target minus actual engine torque only while latched on below firing"
   engine_torque_ref = RealInput()
   variable machine_limit::Torque
+  "Machine-side cranking deficit [N.m], gated by engine_on and the smooth unfired fraction; never cancels fuel-cut drag"
   variable start_compensation::Torque
   "Select the existing speed-commanded CVT instead of pedal scheduling (assumed comparison option)"
   structural parameter speed_commanded::Boolean = false
@@ -62,7 +64,7 @@ relations
   connect(engine_pedal, engine.pedal)
   connect(engage, k0.engage)
   machine_limit = min(drive.T_max, drive.P_rated / max(abs(drive.machine.w), 1.0))
-  start_compensation = (engine_torque_ref - engine.tau_e) / i_crank
+  start_compensation = min(max(engine_on, 0.0), 1.0) * (1.0 - firing_fraction^2 * (3.0 - 2.0 * firing_fraction)) * (engine_torque_ref - engine.tau_e) / i_crank
   drive.tau_ref = min(max(tau_ref + start_compensation, -machine_limit), machine_limit)
   firing_fraction = min(max((engine.N - firing_rpm) / firing_width, 0.0), 1.0)
   engine.fuel_enable = engine_on * firing_fraction^2 * (3.0 - 2.0 * firing_fraction)
