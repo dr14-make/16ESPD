@@ -9,13 +9,13 @@ layout: section
 
 Where Lecture 2's engine spends the WLTC on its fuel map, and the three ways a hybrid saves fuel.
 
-<span class="todo">TODO: notebook file (#115)</span>
+`notebooks/lecture05/01-operating-points.pluto.jl`
 
 <!--
 Section 01, why hybridize. Before we add a single part, we look at where Lecture 2's engine spends
 the WLTC on its own fuel map, and see that it spends most of it far from where it is efficient.
 That gap is what a hybrid goes after, in three ways. The figure comes from the operating-points
-notebook, still to be written under issue 115.
+notebook.
 -->
 
 ---

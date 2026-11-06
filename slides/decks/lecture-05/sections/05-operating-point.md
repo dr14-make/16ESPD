@@ -10,15 +10,15 @@ layout: section
 The best-BSFC line, the CVT that moves the engine toward it, the machine that shifts the load, and
 the power-split hybrid that does it with a planetary gear.
 
-`scripts/bsfc_line.jl` · <span class="todo">TODO: notebook file (#115)</span>
+`scripts/bsfc_line.jl` · `notebooks/lecture05/01-operating-points.pluto.jl`
 
 <!--
 Section 05, moving the operating point. This is the first of the three savings from section 01, and
 the one that explains most of a hybrid's gain when the engine runs. For each power the engine can
 give, there is a best speed; the CVT can put it there; the machine can shift the engine's load up or
 down; and the power-split hybrid, the Prius, does all of it with one planetary gear. You build the
-operating line at the end, build 02. The figures come from the best-BSFC line script of issue 200
-and the operating-points notebook of issue 115.
+operating line at the end, build 02. The figures come from the best-BSFC line script and the
+operating-points notebook.
 -->
 
 ---
@@ -167,16 +167,7 @@ $$
 </div>
 <div>
 
-<div class="placeholder">
-
-**Figure: `05-operating-points.svg`**
-
-Lecture 2's BSFC map with the WLTC operating points of the conventional car and of the P2 hybrid,
-side by side or overlaid; the hybrid's points gathered along the line, with fewer at low load.
-
-Produced by the operating-points notebook, #115
-
-</div>
+<img src="/figures/05-operating-points.svg" class="w-full" style="max-height: 24rem" alt="Lecture 2's BSFC map with the WLTC operating points of the conventional car in red and the P2 hybrid in green, as bubbles sized by the fuel burned there on one scale. The conventional car's fuel lies on a diagonal band from about 2300 rpm at 10 N·m to 3600 rpm at 110 N·m, in the 250 to 350 g/kWh region. The hybrid's fuel gathers along the best-BSFC line between 1500 and 3000 rpm, its largest bubble at the map's 232 g/kWh minimum, and the low-load region below 40 N·m is nearly empty."/>
 
 </div>
 </div>
@@ -192,8 +183,9 @@ and spend the stored energy. Lower the load: when the driver asks for more than 
 end, let the machine boost, so the engine stays on its line instead of going to full load.
 
 Together they gather the engine's points where it is efficient and empty the poor region at low
-load. The figure, from the operating-points notebook of issue 115, will show exactly that: the
-conventional car's WLTC points spread over the lower map, the hybrid's gathered along the line.
+load. The figure, from the operating-points notebook, shows exactly that: the conventional car's
+WLTC fuel on its diagonal band through the 250 to 350 gram region, the hybrid's gathered along the
+line, most of it near the map's best point, and the low-load corner nearly empty.
 
 Remember the catch of section 01: each joule stored to run the engine better later pays the round
 trip through the battery twice. Raising the load pays only where the engine's gain is larger than

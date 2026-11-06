@@ -35,7 +35,7 @@ routeAlias: three-powertrains
 |---|---:|---:|
 | conventional, same planar car (H0) | 5.71 | 184.5 |
 | conventional, CVT on the operating line | 5.39 | 174.4 |
-| P2 hybrid, SoC-corrected | <span class="todo">TODO</span> | <span class="todo">TODO</span> |
+| P2 hybrid, SoC-corrected | 4.09 | 132.1 |
 | battery-electric, Lecture 4 | — | 47.2 |
 
 </div>
@@ -49,15 +49,7 @@ from its store, not from the well or the grid.
 </div>
 <div>
 
-<div class="placeholder">
-
-**Figure: `07-three-powertrains.svg`**
-
-WLTC energy per 100 km for the three cars, by phase, the hybrid SoC-corrected.
-
-Produced by the charge-sustaining WLTC run, #113
-
-</div>
+<img src="/figures/07-three-powertrains.svg" class="w-full" style="max-height: 24rem" alt="WLTC fuel in L/100 km by phase for the conventional car, the same car with its CVT on the best-BSFC line, and the P2 hybrid SoC-corrected. Low: 7.13, 6.63 and 3.52. Medium: 5.77, 5.32 and 3.41. High: 5.12, 4.82 and 3.73. Extra High: 5.68, 5.59 and 5.00. Whole cycle: 5.72, 5.44 and 4.09. The hybrid saves most in the Low phase, about half, and least in Extra High."/>
 
 </div>
 </div>
@@ -72,7 +64,7 @@ row is build 02: the same engine-only car with its CVT on the operating-line sch
 scale, Lecture 2's car on its own, one-dimensional bench burned 5.22. The hybrid's hardware alone,
 its machine spinning idle on the shaft, would cost the same car about 0.07 liters, about 1 percent: the hybrid
 has to earn that back before it saves anything. The hybrid you finish today, with its fuel corrected for the change in the
-battery's charge: TODO until the reference run of issue 113. The battery-electric car of Lecture 4:
+battery's charge: 4.09 liters, 132.1 megajoules, 28.5 percent less than H0. The battery-electric car of Lecture 4:
 no liters, 47.2 megajoules per 100 kilometers at the battery's terminals, from Lecture 4's wrap-up.
 
 Be careful what the megajoule column compares. For the two fuel cars it is the petrol's heating
@@ -81,8 +73,11 @@ terminals. It is the energy each car draws from its own store. It is not well-to
 out the refinery, the power station, the grid and the charger. That is the same caveat as in
 Lecture 4.
 
-The figure will show the three by WLTC phase, once the reference run of issue 113 has produced
-the split.
+The figure splits the three fuel cars by WLTC phase. Each phase is charged its own fuel, and for
+the hybrid the fuel equivalent of the battery energy it drew there, so its phases add up to the
+4.09. The hybrid halves the Low phase, 7.13 down to 3.52, where it drives electrically and the
+conventional car idles and creeps; in Extra High, where the engine is loaded anyway, it saves about
+12 percent. The line car gains 6 to 8 percent in the first three phases and under 2 in Extra High.
 -->
 
 ---

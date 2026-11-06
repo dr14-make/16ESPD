@@ -140,8 +140,10 @@ layout: center
 
 `notebooks/lecture05/` <span class="todo">TODO: file names</span>
 
-- operating points: Lecture 2's engine on its BSFC map, conventional against P2 on WLTC (#115)
-- degree of hybridization: P2 machine 8–40 kW against fuel saving (#115)
+- `01-operating-points.pluto.jl`: Lecture 2's engine on its BSFC map, conventional against P2
+  on WLTC
+- `03-machine-size.pluto.jl`: degree of hybridization, the P2 machine 8–40 kW against fuel
+  saving
 - P-position table: fuel, recovered energy and modes per position (#114)
 
 `scripts/bsfc_line.jl`: the best-BSFC line over the map
