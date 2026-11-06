@@ -70,22 +70,24 @@ end
 """
     fuel_metrics(op; band = 10.0)
 
-The fuel figures of operating points `op`:
+The fuel figures of operating points `op`, over its `fueled` samples only, the same samples
+`fuel_cells` draws, so the figures and the map count the same fuel:
 
 - `L_per_100km`, from the fuel burned and the distance driven;
 - `bsfc_mean`, the fuel-weighted mean BSFC [g/kWh] over the samples above `P_MIN_KW`;
 - `bsfc_cycle`, fuel above `P_MIN_KW` over the engine work there [g/kWh];
-- `near_line`, the share of all fuel burned within `band` g/kWh of the best-BSFC line's BSFC at
+- `near_line`, the share of the fuel burned within `band` g/kWh of the best-BSFC line's BSFC at
   the same power;
-- `idle`, the share of all fuel burned at or below `P_MIN_KW`;
+- `idle`, the share of the fuel burned at or below `P_MIN_KW`;
 - `fueled_time`, the share of the run's time the engine was fueled (`fueled`).
 
 A figure that has nothing to average, such as the BSFC of a run that burned no fuel, is
 `missing`.
 """
 function fuel_metrics(op; band = 10.0)
-    total = sum(op.fuel_g; init = 0.0)
-    loaded = op.power_kw .> P_MIN_KW
+    on = fueled(op)
+    total = sum(op.fuel_g[on]; init = 0.0)
+    loaded = on .& (op.power_kw .> P_MIN_KW)
     f, b, P = op.fuel_g[loaded], op.bsfc[loaded], op.power_kw[loaded]
     burned = sum(f; init = 0.0)
     near = abs.(b .- line_bsfc.(P)) .<= band
@@ -96,7 +98,7 @@ function fuel_metrics(op; band = 10.0)
         bsfc_cycle = burned > 0 ? burned / (sum(P) * op.dt / 3600) : missing,
         near_line = share(sum(f[near]; init = 0.0)),
         idle = share(total - burned),
-        fueled_time = sum(fueled(op); init = 0) / max(length(op.fuel_g), 1))
+        fueled_time = sum(on; init = 0) / max(length(op.fuel_g), 1))
 end
 
 """
@@ -129,9 +131,13 @@ SoC-corrected fuel [L/100 km] of each phase of a run metered by a `Vehicle.SoCCo
 burned in it plus the fuel equivalent of the battery energy drawn in it, at the meter's own
 `eta_eb`, `H_u` and `rho_f`, over the distance driven in it; the phases weighted by distance
 sum to the run's corrected fuel. Returns a vector of `(; name, km, L_per_100km)`, the whole run
-last as `"WLTC"`.
+last as `"WLTC"`. The run must span exactly the phases, from the first one's start to the last
+one's end.
 """
 function phase_fuel(sol, meter; phases = WLTC_PHASES)
+    span = (first(phases)[2], last(phases)[3])
+    (first(sol.t), last(sol.t)) == span ||
+        error("run spans $(extrema(sol.t)) s, the phases $(span) s")
     eta, H_u, rho = (sol.ps[getproperty(meter, k)] for k in (:eta_eb, :H_u, :rho_f))
     at(x, t) = sol(t; idxs = x)
     rows = map([phases; ("WLTC", first(sol.t), last(sol.t))]) do (name, a, b)

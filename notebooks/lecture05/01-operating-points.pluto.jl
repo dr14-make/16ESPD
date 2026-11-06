@@ -69,16 +69,18 @@ From the samples:
   samples above $(P_MIN_KW) kW. It answers "a typical gram of this car's fuel was burned at
   what BSFC?";
 - **cycle BSFC**: the same fuel over the engine work it delivered;
-- **near the line**: the share of all fuel burned within 10 g/kWh of the best-BSFC line's BSFC
+- **near the line**: the share of the fuel burned within 10 g/kWh of the best-BSFC line's BSFC
   at the same power. A CVT that held the engine exactly on the line would score 100 % less the
   idle share; this is the number the hybrid is compared on;
 - **idle**: the share burned at or below $(P_MIN_KW) kW, idling at stops and creeping, where
   BSFC has no finite value;
 - **engine fueled**: the share of the run's time the engine burned fuel at all.
 
-Only fueled samples are operating points: a hybrid's engine standing still while the machine
-drives adds no bubble and no fuel. A run that burns no fuel draws no bubbles and shows — for
-every figure it has nothing to average over.
+Only fueled samples, burning more than $(FUEL_MIN_KG_S * 1e3) g/s, are operating points, and
+the map and every figure count the same ones: a hybrid's engine standing still while the
+machine drives adds no bubble and no fuel. The few milligrams below that floor, the fuel flow
+fading as the engine stops, are left out of both. A run that burns no fuel draws no bubbles and
+shows — for every figure it has nothing to average over.
 """
 
 # ╔═╡ 7de0c0a5-a781-4f55-9800-9205b4317d82
