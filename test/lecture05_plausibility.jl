@@ -730,6 +730,7 @@ using .OperatingPoints
     @test f.bsfc_mean ≈ op.bsfc[k] rtol = 0.01
     @test f.bsfc_cycle ≈ f.bsfc_mean rtol = 0.01
     @test f.idle == 0
+    @test f.fueled_time == 1
 
     gap = op.bsfc[k] - line_bsfc(op.power_kw[k])
     @test gap > 0
@@ -742,6 +743,7 @@ using .OperatingPoints
     f_off = fuel_metrics(off)
     @test f_off.L_per_100km == 0
     @test all(ismissing, (f_off.bsfc_mean, f_off.bsfc_cycle, f_off.near_line, f_off.idle))
+    @test f_off.fueled_time == 0
     @info "Lecture 5 cruise operating point" rpm = op.rpm[k] torque = op.torque[k] f gap
 end
 
@@ -1047,8 +1049,55 @@ include("torque_to_pedal.jl")
     @test 0.0 <= start_excess_time <= 3.0
     @test 0.0 <= start_excess_peak <= 130.0
     @test start_speed_error <= 1.1
+    # The operating-points notebook's hybrid figures: fueled samples only, and phases that
+    # sum to the meter's SoC-corrected fuel.
+    op = operating_points(s; speed = m.powertrain.engine_speed, torque = m.powertrain.engine_torque,
+        fuel = m.powertrain.mdot_fuel, vehicle_speed = m.kmh.y)
+    on_share = fuel_metrics(op).fueled_time
+    @test 0.1 < on_share < 0.9
+    @test sum(fuel_cells(op).fuel_g) ≈ sum(op.fuel_g[fueled(op)]) rtol = 1e-12
+    # Below the floor is only the tail of the fuel flow fading at each stop, 9e-6 of the fuel.
+    @test sum(op.fuel_g[fueled(op)]) ≈ sum(op.fuel_g) rtol = 1e-4
+    phases = phase_fuel(s, m.meter)
+    @test [r.name for r in phases] == [first.(WLTC_PHASES); "WLTC"]
+    @test sum(r.km * r.L_per_100km for r in phases[1:4]) / phases[end].km ≈ phases[end].L_per_100km rtol = 1e-9
+    @test phases[end].L_per_100km ≈ corrected rtol = 1e-6
+    @info "Hybrid operating points" on_share phases
     @info "Start compensation envelope" start_excess_time start_excess_peak start_speed_error max_ref=maximum(abs.(ref)) limit_excess=maximum(abs.(ref) .- limit) nonpositive_fuel charge_J=last(s[m.E_charge])
     @info "Engine line tracking" mean_power_error max_power_error line_fuel_share
     @info "Guide derived hybrid figures" saving_percent=100*(1-corrected/H0_L100) SoC_gain_percentage_points=100*(last(soc)-first(soc)) slip_J_per_start=integrate(slip)/length(starts)
     @info "Charge-sustaining WLTC" corrected raw=last(s[m.meter.fuel_raw]) hybrid_MJ100=last(s[m.meter.energy_corr]) conventional_MJ100=H0_MJ100 BEV_MJ100=47.25 SoC=(first(soc),last(soc),minimum(soc),maximum(soc)) starts=length(starts) starts_per_km=length(starts)/km mean_on=sum(durations)/length(durations) min_on=minimum(durations) slip_J=integrate(slip) max_error regen_J=last(s[m.E_regen]) friction_J=last(s[m.E_friction]) mode_seconds=integrate.(modes) mode_fuel_kg=[integrate(x .* at(m.powertrain.mdot_fuel)) for x in modes]
+end
+
+include("../scripts/machine_size_sweep.jl")
+
+# The sweep takes five WLTC runs, so the suite checks its pinned file instead of rerunning it.
+@testset "Lecture 5 machine-size sweep" begin
+    S = MachineSizeSweep
+    rows, hash = S.read_sweep()
+    @testset "the file is current and is what the script writes" begin
+        @test hash == S.inputs_hash()
+        @test read(S.OUT, String) == S.render(rows, hash)
+        @test [r.P_rated for r in rows] == 1e3 .* S.SIZES_KW
+        @test S.H0_L100 == H0_L100
+    end
+    @testset "each size derives its envelope from P_rated" begin
+        @test all(r -> isapprox(r.T_max, S.torque_limit(r.P_rated); atol = 5e-5), rows)
+        @test S.torque_limit(30e3) ≈ 205.0 rtol = 1e-12
+        @test S.design_voltage(30e3) ≈ 220.0 rtol = 1e-12
+        @test S.design_voltage(15e3) ≈ 248.0 rtol = 1e-3
+        @test all(r -> isapprox(r.saving_vs_H0_pct, 100 * (1 - r.fuel_corr / H0_L100);
+            atol = 1e-3), rows)
+    end
+    @testset "the 30 kW row is the charge-sustaining pin" begin
+        ours = only(filter(r -> r.P_rated == 30e3, rows))
+        @test ours.fuel_corr ≈ 4.086344 atol = 1e-4 rtol = 0
+        @test ours.flag == "ok"
+    end
+    @testset "a larger machine saves more, up to 30 kW" begin
+        upto30 = filter(r -> r.P_rated <= 30e3, rows)
+        @test issorted([r.saving_vs_H0_pct for r in upto30])
+        @test all(r -> r.saving_vs_H0_pct > 0, rows)
+    end
+    @info "Machine-size sweep" rows
 end
