@@ -9,6 +9,7 @@ if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Lecture5
 end
 
 
+include("CoupledHybridWLTC_experiment.jl")
 include("EnergyManagerBench_experiment.jl")
 include("EnergyManagerLowSoCBench_experiment.jl")
 include("EngineGeneratorBatteryBench_experiment.jl")
@@ -16,10 +17,13 @@ include("EngineGeneratorBench_experiment.jl")
 include("FuelEnableBench_experiment.jl")
 include("HybridDriveDyno_experiment.jl")
 include("OperatingLineBench_experiment.jl")
+include("OutputHybridWLTC_experiment.jl")
+include("P1HybridWLTC_experiment.jl")
 include("P2ElectricWLTC_experiment.jl")
 include("P2HybridWLTC_experiment.jl")
 include("P2IdleBench_experiment.jl")
 include("P2OperatingLineWLTC_experiment.jl")
 include("P2WLTC_experiment.jl")
+include("P4HybridWLTC_experiment.jl")
 include("SeriesGroundElectric_experiment.jl")
 include("TractionDriveDyno_experiment.jl")

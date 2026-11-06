@@ -16,6 +16,7 @@ end
 
 
 @testset "`VehicleSystemsComponents.Lecture5`" begin
+include("CoupledHybridWLTC_test.jl")
 include("EnergyManagerBench_test.jl")
 include("EnergyManagerLowSoCBench_test.jl")
 include("EngineGeneratorBatteryBench_test.jl")
@@ -23,11 +24,14 @@ include("EngineGeneratorBench_test.jl")
 include("FuelEnableBench_test.jl")
 include("HybridDriveDyno_test.jl")
 include("OperatingLineBench_test.jl")
+include("OutputHybridWLTC_test.jl")
+include("P1HybridWLTC_test.jl")
 include("P2ElectricWLTC_test.jl")
 include("P2HybridWLTC_test.jl")
 include("P2IdleBench_test.jl")
 include("P2OperatingLineWLTC_test.jl")
 include("P2WLTC_test.jl")
+include("P4HybridWLTC_test.jl")
 include("SeriesGroundElectric_test.jl")
 include("TractionDriveDyno_test.jl")
 end

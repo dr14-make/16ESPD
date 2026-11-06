@@ -1,0 +1,70 @@
+"""
+Rigid, bidirectional fixed-ratio belt for a crank-coupled machine.
+`ratio = w_a / w_b` relative to the housing; a is the machine, b the crank.
+Spline torques enter the component. For P_a >= 0, tau_b = -ratio*eta*tau_a;
+for P_a < 0, tau_b = -ratio*tau_a/eta. Thus either direction dissipates power.
+This smooth constant-efficiency law is a teaching assumption, not a belt map:
+no compliance, slip, torque limit, preload loss or standstill drag is represented.
+Power direction is regularized with tanh(P_a / P_reg).
+"""
+component BeltDrive
+  spline_a = Spline()
+  spline_b = Spline()
+  support = Spline()
+  "Machine/crank speed ratio (assumed: illustrative P0 pulley ratio)"
+  parameter ratio::Real(min = eps(Float64)) = 2.5
+  "Efficiency in either power direction (assumed: illustrative belt, not measured)"
+  parameter eta::Real(min = eps(Float64), max = 1.0) = 0.96
+  "Power-direction regularization (assumed; smooth transition near zero transmitted power)"
+  parameter P_reg::Power(min = eps(Float64)) = 10.0
+  "Machine speed relative to housing (derived: connector angles)"
+  variable w_a::AngularVelocity
+  "Crank speed relative to housing (derived: connector angles)"
+  variable w_b::AngularVelocity
+  "Power entering machine-side port (derived: torque times relative speed)"
+  variable P_a::Power
+  "Dissipated mechanical power, nonnegative in both directions (derived: port balance)"
+  P_loss = RealOutput()
+relations
+  spline_a.phi - support.phi = ratio * (spline_b.phi - support.phi)
+  w_a = der(spline_a.phi) - der(support.phi)
+  w_b = der(spline_b.phi) - der(support.phi)
+  P_a = spline_a.tau * w_a
+  spline_b.tau = -ratio * spline_a.tau * eta ^ tanh(P_a / P_reg)
+  support.tau = -spline_a.tau - spline_b.tau
+  P_loss = P_a + spline_b.tau * w_b
+end
+
+"""
+Constant-speed bidirectional belt power bench. With demand=40 and w=100,
+expected P_loss=160 W, crank load=-96 N.m for ratio=2.5, eta=0.96.
+With demand=-40, expected P_loss=166.667 W and crank load=104.167 N.m.
+Change w to -100 as well to exercise reverse rotation. The speed source
+absorbs or supplies the balancing power; this is not a free-accelerating bench.
+"""
+test component TestBeltDrive
+  "Machine-side torque (assumed test stimulus; negate for crank-to-machine power)"
+  parameter demand::Torque = 40.0
+  "Machine speed (assumed test operating point)"
+  parameter w::AngularVelocity = 100.0
+  drive = RotationalComponents.Sources.ConstantTorque(tau_constant = demand)
+  speed = RotationalComponents.Sources.ConstantVelocity(w_fixed = w / 2.5)
+  inertia = RotationalComponents.Components.Inertia(J = 0.1)
+  belt = VehicleSystemsComponents.Vehicle.BeltDrive()
+  fixed = RotationalComponents.Components.Fixed()
+  "Power entering crank-side termination (derived; negative when it supplies power)"
+  variable P_load::Power
+relations
+  connect(drive.spline, inertia.spline_a)
+  connect(inertia.spline_b, belt.spline_a)
+  initial inertia.phi = 0.0
+  connect(speed.spline, belt.spline_b)
+  connect(drive.support, speed.support, belt.support, fixed.spline)
+  P_load = -belt.spline_b.tau * belt.w_b
+end
+
+"Belt power balance fixture (assumed: steady imposed speed and torque)."
+analysis BeltDriveTransient
+  extends TransientAnalysis(stop = 0.1, saveat = 0.01)
+  model = TestBeltDrive()
+end
