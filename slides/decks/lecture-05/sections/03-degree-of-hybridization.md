@@ -48,7 +48,7 @@ Our P2: DOH = 30 kW / (30 kW + 85.6 kW) ≈ **26 %**
 </div>
 <div>
 
-<img src="/figures/03-doh-sweep.svg" class="w-full" style="max-height: 24rem" alt="WLTC fuel saving of the P2 hybrid against the conventional car, SoC-corrected, for machines of 8, 15, 22, 30 and 40 kW: 22.2, 25.3, 27.6, 28.5 and 27.7 percent. The saving rises steeply to about 22 kW and flattens; 15 kW is marked at 25.3 percent, DOH 15 percent, and 30 kW at 28.5 percent, DOH 26 percent. The 8 kW point is hollow: that run falls 2.3 km/h behind the trace and does not end charge-sustaining."/>
+<img src="/figures/03-doh-sweep.svg" class="w-full" style="max-height: 24rem" alt="WLTC fuel saving of the P2 hybrid against the conventional car, SoC-corrected, for machines of 8, 15, 22, 30 and 40 kW: 22.2, 25.3, 27.6, 28.5 and 28.4 percent. The saving rises by 3.1 and 2.3 points from 8 to 22 kW, then by 0.9 to 30 kW, and 40 kW saves no more than 30 kW; 15 kW is marked at 25.3 percent, DOH 15 percent, and 30 kW at 28.5 percent, DOH 26 percent. The 8 kW point is hollow: that run falls 2.3 km/h behind the trace and does not end charge-sustaining."/>
 
 </div>
 </div>
@@ -78,8 +78,9 @@ The figure on the right is the sweep: the same P2 car and energy manager with ma
 kilowatts, the WLTC fuel saving, SoC-corrected, against machine power. The ICCT review expects the
 saving to grow with power, and says going from 15 to 20 or 30 kilowatts adds 5 to 10 percent on P2,
 P3 and P4, in its own words. Ours grows from 25.3 percent at 15 kilowatts to 28.5 at 30, about 3
-points, and then flattens: 40 kilowatts saves 27.7. Past the point where the machine covers the
-regen and the low-power driving, more power buys nothing. The 8 kilowatt point is hollow: with the
+points, most of it by 22 kilowatts, and then it is flat: 40 kilowatts saves 28.4, no more than 30.
+Past the point where the machine covers the regen and the low-power driving, more power buys
+nothing. The 8 kilowatt point is hollow: with the
 manager left as it is, that machine falls behind the trace and does not end charge-sustaining.
 -->
 
