@@ -14,15 +14,16 @@ const COLUMNS = (:position, :P_rated_kW, :fuel_raw_L100, :fuel_corr_L100, :energ
 
 "Fingerprint the generated vehicle physics and the position's bench and analysis definitions."
 function definitions_hash(position)
-    benches = Dict("P0" => "CoupledHybridWLTC", "P2" => "P2HybridWLTC",
+    benches = Dict("P0" => "CoupledHybridWLTC", "P1" => "P1HybridWLTC", "P2" => "P2HybridWLTC",
         "P3" => "OutputHybridWLTC", "P4" => "P4HybridWLTC")
-    family = position == "P0" ? "CoupledHybridPowertrain" : position == "P2" ? "P2Powertrain" : "OutputHybridPowertrain"
+    family = position in ("P0", "P1") ? "CoupledHybridPowertrain" : position == "P2" ? "P2Powertrain" : "OutputHybridPowertrain"
     vehicle = [family, "EnergyManager", "Electric/HybridDrive", "BeltDrive",
         "Engine/MappedEngine", "DisconnectClutch", "SoCCorrectedFuel"]
     files = [joinpath(ROOT, "generated/Vehicle", n * "_definition.jl") for n in vehicle]
     names = [benches[position], benches[position] * "Transient"]
     position != "P2" && push!(files, joinpath(ROOT, "dyad/Lecture5/HybridPositionWLTC.dyad"))
     position == "P4" && push!(names, "OutputHybridWLTC")
+    position == "P1" && push!(names, "CoupledHybridWLTC")
     append!(files, [joinpath(ROOT, "generated/Lecture5", n * "_definition.jl") for n in names])
     io = IOBuffer()
     for f in sort!(unique(files))
@@ -83,7 +84,7 @@ end
 
 function generate()
     L = Main.VehicleSystemsComponents.Lecture5
-    cases = [("P0", L.CoupledHybridWLTCTransient), ("P2", L.P2HybridWLTCTransient),
+    cases = [("P0", L.CoupledHybridWLTCTransient), ("P1", L.P1HybridWLTCTransient), ("P2", L.P2HybridWLTCTransient),
         ("P3", L.OutputHybridWLTCTransient), ("P4", L.P4HybridWLTCTransient)]
     mkpath(dirname(TABLE))
     open(TABLE, "w") do io

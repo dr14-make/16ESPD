@@ -1,0 +1,10 @@
+"P1 direct-crank 30 kW hybrid WLTC; ideal crank coupling and 540 N.m K0 capacity."
+test component P1HybridWLTC
+  extends CoupledHybridWLTC(i_crank = 1.0, eta_crank = 1.0, T_max = 205.0, k0_capacity = 540.0)
+end
+
+"Full WLTC P1 position analysis with the shared solver and duration."
+analysis P1HybridWLTCTransient
+  extends TransientAnalysis(stop = 1800.0, alg = ODEAlg.Rodas5P(), dtmax = 1.0, optimize = OptimizationLevel.None())
+  model = P1HybridWLTC()
+end

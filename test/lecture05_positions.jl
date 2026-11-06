@@ -20,7 +20,7 @@ end
 
 @testset "Lecture 5 position table" begin
     rows = PPositionTable.read_table()
-    @test getproperty.(rows, :position) == ["P0", "P2", "P3", "P4"]
+    @test getproperty.(rows, :position) == ["P0", "P1", "P2", "P3", "P4"]
     for row in rows
         @test row.definitions_sha256 == PPositionTable.definitions_hash(row.position)
         @test row.P_rated_kW == 30.0
@@ -31,7 +31,9 @@ end
         @test row.saving_H0_pct ≈ 100 * (1 - row.fuel_corr_L100 / PPositionTable.H0)
         @test row.saving_line_pct ≈ 100 * (1 - row.fuel_corr_L100 / PPositionTable.LINE)
     end
-    p0, p2, p3, p4 = rows
+    p0, p1, p2, p3, p4 = rows
+    @test p0.saving_H0_pct < p1.saving_H0_pct
+    @test p2.saving_H0_pct - p1.saving_H0_pct >= 5.0
     savings = [r.saving_H0_pct for r in (p2, p3, p4)]
     gap = minimum(savings) - p0.saving_H0_pct
     @test gap >= 5.0

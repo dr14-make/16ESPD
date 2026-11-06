@@ -19,7 +19,7 @@ end
 md"""
 # Lecture 5 — Where the electric machine sits
 
-A pinned WLTC comparison of **P0, P2, P3 and P4**, each with a **30 kW** machine
+A pinned WLTC comparison of **P0, P1, P2, P3 and P4**, each with a **30 kW** machine
 and a **270 V** battery. This notebook reads `assets/data/lecture05/p_positions.csv`;
 it does not run models. Raw fuel is the cycle's measured fuel; corrected fuel accounts
 for the change in battery charge. Savings below always use **corrected** fuel, so drawing
@@ -27,6 +27,7 @@ down the battery is not counted as free fuel saving.
 
 - **P0:** machine coupled to the engine; recuperation must also turn the engine, and there
   is no engine-off electric drive.
+- **P1:** direct-crank machine, ideal coupling (ratio and efficiency 1), 540 N·m K0; no electric drive.
 - **P2:** machine downstream of the engine-disconnect clutch, upstream of the transmission;
   electric drive can use the transmission ratios.
 - **P3:** machine at the transmission output; engine-off drive without the transmission's
@@ -39,8 +40,8 @@ down the battery is not counted as free fuel saving.
 # ╔═╡ 3ca9a892-ae41-4a91-9e24-957c7297f303
 begin
     position_rows = read_table()
-    @assert Set(r.position for r in position_rows) == Set(["P0", "P2", "P3", "P4"])
-    @assert length(position_rows) == 4
+    @assert Set(r.position for r in position_rows) == Set(["P0", "P1", "P2", "P3", "P4"])
+    @assert length(position_rows) == 5
     @assert all(r.P_rated_kW == 30 for r in position_rows)
     sort!(position_rows; by = r -> r.position)
 end
@@ -104,7 +105,7 @@ end
 # ╔═╡ 3ca9a892-ae41-4a91-9e24-957c7297f308
 position_table_plot = let
     n = length(table_headers)
-    p = plot(; xlims = (0.5, n + 0.5), ylims = (0, 6), size = (1600, 440),
+    p = plot(; xlims = (0.5, n + 0.5), ylims = (-1, 6), size = (1800, 500),
         axis = false, ticks = false, legend = false, grid = false,
         title = "WLTC • 30 kW / 270 V • corrected-fuel savings", titlefontsize = 16)
     for (j, header) in enumerate(table_headers)
@@ -116,7 +117,7 @@ position_table_plot = let
             annotate!(p, j, 5.4 - i, text(value, 12, :black, :center))
         end
     end
-    annotate!(p, (n + 1) / 2, 0.35,
+    annotate!(p, (n + 1) / 2, -0.65,
         text("Fuel: L/100 km • Stored: battery recovery during braking; Req.: requested regen • Electric: engine-off drive", 10, :gray, :center))
     p
 end
@@ -128,6 +129,7 @@ md"""
 | Position | Available modes |
 |---|---|
 | P0 | Stop/start, line, load-point charging, belt-limited assist, regen with engine drag |
+| P1 | Stop/start, line, load-point charging, direct-crank assist, regen with engine drag |
 | P2 | Stop/start, electric drive, sailing, line, charging, boost, engine-decoupled regen |
 | P3 | Starter-assisted stop/start, electric drive, sailing, line, charging, boost, engine-decoupled regen |
 | P4 | Starter-assisted stop/start, rear electric drive, sailing, line, charging, boost, engine-decoupled regen |
@@ -136,7 +138,7 @@ Recovered energy (`E_recovered_MJ`) integrates positive battery stored-power inf
 negative driver demand, excluding engine-driven charging in traction. `E_regen_MJ` is
 requested regen before machine, converter and belt losses. Neither is fuel saving by itself. Electric-drive time counts
 engine-off operation above 1 km/h with drive torque above 1 N·m. Starts count engine speed crossing the firing band's lower edge upward after being below it,
-including the initial cranking start. Fuel resumptions count engine-latch rising edges separately. P0 has no engine-off electric drive.
+including the initial cranking start. Fuel resumptions count engine-latch rising edges separately. P0 and P1 have no engine-off electric drive.
 
 The energy meter is charge-corrected MJ/100 km. SoC endpoints and maximum absolute WLTC
 speed error make battery use and trace tracking visible alongside fuel consumption.
