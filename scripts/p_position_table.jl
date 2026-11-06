@@ -31,7 +31,7 @@ function definitions_hash(position)
 end
 
 function metrics(run, position; P_rated_kW = 30.0)
-    m = Main.DyadInterface.symbolic_container(run)
+    m = Main.symbolic_container(run)
     s = run.sol
     string(s.retcode) == "Success" && s.t[end] == 1800.0 || error("incomplete $position run")
     ts = collect(0.0:0.05:1800.0)
@@ -61,7 +61,7 @@ end
 "Measure the line car's low-power fuel share; this is a proxy, not a stop/start simulation."
 function generate_baselines(L)
     run = Base.invokelatest(L.P2OperatingLineWLTCTransient)
-    m, s = Main.DyadInterface.symbolic_container(run), run.sol
+    m, s = Main.symbolic_container(run), run.sol
     string(s.retcode) == "Success" || error("line baseline failed")
     ts = collect(0.0:0.05:1800.0)
     at(x) = s(ts, idxs = x).u
