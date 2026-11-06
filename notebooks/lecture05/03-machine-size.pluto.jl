@@ -14,7 +14,8 @@ begin
     VehicleSystemsComponents = setup(backend = :plotly)
     using Plots, Printf
     include(joinpath(@__DIR__, "..", "..", "scripts", "machine_size_sweep.jl"))
-    using .MachineSizeSweep: read_sweep, H0_L100, SOC_BAND, SPEED_ERROR_MAX, W_CORNER
+    using .MachineSizeSweep: read_sweep, doh, H0_L100, P_ENGINE_PEAK, SOC_BAND,
+        SPEED_ERROR_MAX, W_CORNER
 end
 
 # ╔═╡ 46b5778d-b745-403c-bfd1-d577d805f4b7
@@ -23,7 +24,8 @@ md"""
 
 The degree of hybridization is the machine's share of the car's power,
 ``\mathrm{DOH} = P_{EM} / (P_{EM} + P_{ICE})``. The P2 hybrid of notebook 01 has a 30 kW
-machine beside Lecture 2's 85.6 kW engine, DOH ≈ 26 %. This notebook asks what the machine's
+machine beside Lecture 2's $(round(P_ENGINE_PEAK / 1e3; digits = 1)) kW engine,
+DOH ≈ $(round(Int, 100doh(30e3))) %. This notebook asks what the machine's
 size buys over WLTC: the same car and energy manager with machines from 8 to 40 kW, each
 compared on its SoC-corrected fuel against the conventional car's
 $(round(H0_L100; digits = 2)) L/100 km.
@@ -43,12 +45,15 @@ Only the machine. For a machine rated ``P``:
   machine: a smaller machine has less torque over the same speed range;
 - the machine is designed at the pack's terminal voltage when it draws its rated power, as
   the 30 kW one is: a smaller machine sags the pack less;
-- the energy manager's machine limits ``T_{max}`` and ``P_{max}`` are the drive's;
-- the driver's torque ceiling is the machine's ``T_{max}`` plus the engine's full-load peak,
-  so a smaller machine also lowers what the driver can ask for.
+- the energy manager's machine limits ``T_{max}`` and ``P_{max}`` are the drive's, and so is
+  its ceiling on regenerative power, ``P_{regen} = P``;
+- the driver's drive-torque ceiling is the machine's ``T_{max}`` plus the engine's full-load
+  peak, so a smaller machine also lowers what the driver can ask for. Its braking ceiling,
+  friction and regen together, is the same at every size.
 
-The pack, 1.4 kWh, and every threshold of the energy manager stay as they are: the manager
-is not retuned per size. A run that does not end within $(SOC_BAND) of its starting SoC, or
+The pack, 1.4 kWh, and every other setting of the energy manager stay as they are: its
+demand-power thresholds, charging power and the engine line's cap belong to the strategy and
+the engine, not the machine, and the manager is not retuned per size. A run that does not end within $(SOC_BAND) of its starting SoC, or
 falls more than $(SPEED_ERROR_MAX) km/h behind the trace, is still listed, flagged.
 """
 
@@ -60,7 +65,7 @@ let
     rows = map(sweep) do r
         P = r.P_rated / 1e3
         "| $(@sprintf("%.0f", P)) | $(@sprintf("%.1f", r.T_max)) | " *
-        "$(@sprintf("%.0f %%", 100P / (P + 85.6))) | $(@sprintf("%.3f", r.fuel_raw)) | " *
+        "$(@sprintf("%.0f %%", 100doh(1e3P))) | $(@sprintf("%.3f", r.fuel_raw)) | " *
         "$(@sprintf("%.3f", r.fuel_corr)) | $(@sprintf("%.1f", r.energy_corr)) | " *
         "$(@sprintf("%.1f %%", r.saving_vs_H0_pct)) | $(@sprintf("%.3f", r.SoC_end)) | " *
         "$(@sprintf("%.2f", r.max_speed_error)) | $(r.starts) | $(r.flag) |"
@@ -99,32 +104,32 @@ doh_plot = let
     for (Pi, yi) in zip(P, y)
         Pi in (15.0, 30.0) || continue
         annotate!(p, Pi, yi + 0.06 * maximum(y), text(@sprintf("%.0f kW: %.1f %%, DOH %.0f %%",
-            Pi, yi, 100Pi / (Pi + 85.6)), 17, :black, :bottom))
+            Pi, yi, 100doh(1e3Pi)), 17, :black, :bottom))
     end
     p
 end
 
 # ╔═╡ 428264eb-8a3a-48cf-97b7-692a9315cd56
 let
-    by(P) = only(filter(r -> r.P_rated == 1e3P, sweep))
-    pct(r) = round(r.saving_vs_H0_pct; digits = 1)
-    tiny, small, ours, big = by(8), by(15), by(30), by(40)
+    P = [r.P_rated / 1e3 for r in sweep]
+    y = [r.saving_vs_H0_pct for r in sweep]
+    f1(x) = round(x; digits = 1)
+    best = argmax(y)
+    steps = join(["$(f1(P[k])) → $(f1(P[k+1])) kW: $(y[k+1] >= y[k] ? "+" : "−")" *
+                  "$(f1(abs(y[k+1] - y[k]))) points" for k in 1:length(P)-1], "; ")
+    flagged = [r for r in sweep if r.flag != "ok"]
+    flag_text = isempty(flagged) ? "Every run ends charge-sustaining and follows the trace." :
+        join(["The $(f1(r.P_rated / 1e3)) kW run is flagged ($(r.flag)): it ends at SoC " *
+              "$(round(r.SoC_end; digits = 3)) and falls up to " *
+              "$(round(r.max_speed_error; digits = 1)) km/h behind the trace. Its saving is " *
+              "SoC-corrected, but a manager tuned for that machine would be needed for a fair " *
+              "number." for r in flagged], " ")
     md"""
-    The saving rises steeply at first and then flattens: $(pct(small)) % at 15 kW,
-    $(pct(ours)) % at 30 kW, and no more at 40 kW, $(pct(big)) %. Past about 20 kW the
-    machine can already carry the low-power driving where the engine is worst and take back
-    most of the braking; the manager's 30 kW regenerative-power limit and its fixed
-    thresholds, not the machine, then decide what is recovered, while the machine's own drag
-    losses keep growing with its size.
-
-    The 8 kW machine is flagged: with the same manager it falls
-    $(round(tiny.max_speed_error; digits = 1)) km/h behind the trace and ends the cycle at SoC
-    $(round(tiny.SoC_end; digits = 3)), outside the charge-sustaining band. Its
-    $(pct(tiny)) % is SoC-corrected, but a manager tuned for that machine would be needed for a
-    fair number.
+    The largest saving is $(f1(y[best])) % at $(f1(P[best])) kW. Size by size the saving
+    moves $steps. $flag_text
 
     The file was written from inputs hashing to `$(first(sweep_hash, 12))…`; the Lecture 5
-    tests check that hash against the current generated code and data.
+    tests check that hash against the current code, generated definitions, data and manifest.
     """
 end
 
