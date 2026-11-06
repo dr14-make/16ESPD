@@ -94,11 +94,11 @@ Compare the connections and initial conditions with `Vehicle.P2Powertrain` and `
 | Quantity | Measured WLTC Low result |
 | --- | --- |
 | Duration | 589 s |
-| Maximum absolute speed error | 1.502829 km/h |
+| Maximum absolute speed error | 1.502821 km/h |
 | Distance | 3094.989 m |
 | Fuel | 0 |
 | SoC | 0.6 → 0.3864 |
-| Maximum machine speed | 3545.66 rpm |
+| Maximum machine speed | 3545.67 rpm |
 
 These are reported reference measurements, not newly measured Studio results or full-WLTC results. The existing hybrid-drive dyno validates operation to 4000 rpm; its loaded field-weakening corner is 1412 rpm. The Low run therefore uses field weakening while remaining within that tested speed range. Zero fuel is not zero energy consumption: the battery loses charge.
 
@@ -153,13 +153,13 @@ H0 is Lecture 5's conventional baseline: Lecture 2's mapped engine and CVT on th
 | Quantity | Full WLTC result |
 | --- | --- |
 | Duration | 1800 s |
-| Maximum absolute speed error | 1.165241 km/h |
-| Distance | 23266.587 m |
+| Maximum absolute speed error | 1.167674 km/h |
+| Distance | 23266.405 m |
 | Raw fuel | 5.717536 L/100 km |
 | SoCCorrectedFuel `fuel_corr` | 5.717536 L/100 km |
 | Energy | 184.8651 MJ/100 km |
-| K0 slip energy, integrated over cycle | approximately 0.09805 MJ |
-| Peak engine torque on cycle / maximum K0 capacity | 120.509 / 229.885 N·m |
+| K0 slip energy, integrated over cycle | approximately 0.11248 MJ |
+| Peak engine torque on cycle / maximum K0 capacity | 123.367 / 229.885 N·m |
 
 H0 removes the absent machine's bearing friction, iron loss, windage, constant loss and rotor
 inertia through bench-level drive modifiers (`T_f = K_i = k_w = C = J = 0`). The same P2
@@ -167,7 +167,7 @@ composition remains; electric-only retains the hybrid defaults.
 
 Battery current is zero and SoC stays at 0.6, so raw and corrected fuel are equal. On level
 stretches of the trace above 12 km/h, K0 position stays above 0.99. Wherever K0 position exceeds
-0.5 the engine turns at 789.9 rpm or more: the lock-up ramp opens K0 before a stopping shaft
+0.5 the engine turns at 792.1 rpm or more: the lock-up ramp opens K0 before a stopping shaft
 drags the engine below idle.
 The map's full-load peak is 150.234 N·m, also below K0's 230 N·m nominal capacity
 (229.885 N·m after endpoint rounding). Slip heat is mechanical launch loss, not a separately
@@ -312,11 +312,11 @@ plot(t, [at(m.meter.fuel_raw) at(m.meter.fuel_corr)],
 
 | Quantity | Full WLTC |
 | --- | --- |
-| Maximum speed error | 1.164972 km/h (<2) |
-| Distance | 23266.603 m |
+| Maximum speed error | 1.167550 km/h (<2) |
+| Distance | 23266.405 m |
 | Raw / corrected fuel | 5.437445 / 5.437445 L/100 km |
 | H0 pedal-schedule fuel | 5.717536 L/100 km |
-| Difference | −0.312596 L/100 km (−5.479%) |
+| Difference | −0.280092 L/100 km (−4.899%) |
 | Energy | 175.8089 MJ/100 km |
 | Battery current / SoC | zero / 0.6 throughout |
 
@@ -326,30 +326,30 @@ saving and uses no machine assistance or regen.
 
 **Line band:** compare actual engine rpm against CSV rpm at actual brake power, within
 **±150 rpm**. This fixed rpm band avoids a broad tolerance on the steep line sections.
-For positive demand, power ≥1 kW and command inside `(2.801, 11.999)`, only **12.46%**
+For positive demand, power ≥1 kW and command inside `(2.801, 11.999)`, only **16.16%**
 of eligible points meet it. Maximum in-range deviation outside launch saturation is
-**1522.16 rpm**, bounded by 1600 rpm in the test. Including overdrive saturation, the maximum
-outside launches is 2304.48 rpm (test bound 2400 rpm). The open-loop pedal calibration is
+**1502.88 rpm**, bounded by 1600 rpm in the test. Including overdrive saturation, the maximum
+outside launches is 2304.89 rpm (test bound 2400 rpm). The open-loop pedal calibration is
 not an inverse engine map; most points are not on the line.
 
 Uniform 0.1 s samples, trapezoidal fuel weights:
 
 | Classification | All points | All fuel |
 | --- | --- | --- |
-| In range, within ±150 rpm | 4.644% | 15.131% |
-| Idle/braking | 44.475% | 7.903% |
-| Launch limit | 2.933% | 3.997% |
-| Overdrive limit | 15.321% | 25.416% |
-| In range, outside band | 32.626% | 47.553% |
-| Total off line | 95.356% | 84.869% |
+| In range, within ±150 rpm | 5.455% | 16.566% |
+| Idle/braking | 47.120% | 8.668% |
+| Launch limit | 3.661% | 6.038% |
+| Overdrive limit | 15.460% | 25.359% |
+| In range, outside band | 28.304% | 43.369% |
+| Total off line | 94.545% | 83.434% |
 
 Idle/braking takes precedence over saturation. On level stretches of the trace above 12 km/h,
-K0 position stays above 0.99 (lowest 0.99896); where it is closed, the maximum regularized slip
-is 0.29939 rad/s, which is not an open clutch. Decelerating, the variator's 0.5 s ratio lag
+K0 position stays above 0.99 (lowest 0.99380); where it is closed, the maximum regularized slip
+is 0.29890 rad/s, which is not an open clutch. Decelerating, the variator's 0.5 s ratio lag
 lets the shaft fall below the 1000 rpm floor, and below about 11 km/h its 50 rpm output-speed
 floor holds the shaft under 880 rpm, so K0 opens before the engine is dragged below idle:
-38.3 s above 10 km/h, with 4.8 g of fuel burned meanwhile. Wherever K0 position exceeds 0.5, the
-engine turns at 788.2 rpm or more.
+37.4 s above 10 km/h, with 4.7 g of fuel burned meanwhile. Wherever K0 position exceeds 0.5, the
+engine turns at 814.8 rpm or more.
 
 :::
 
@@ -377,6 +377,19 @@ component P2Powertrain
   N_ref = RealInput() if speed_commanded {^N_ref}
   "Select speed-commanded CVT scheduling"
   structural parameter speed_commanded::Boolean = false
+  "Enable fuel-controlled clutch starts"
+  structural parameter start_stop::Boolean = false
+  "Engine latch, 0 off to 1 running"
+  engine_on = RealInput() if start_stop
+  "Manager's assumed engine torque subtracted from driving demand before its machine clamp [N.m]"
+  engine_torque_ref = RealInput() if start_stop
+  "Lower end of the smooth firing-speed band [rpm]"
+  parameter firing_rpm::Real = 400.0
+  "Width of the firing-speed band [rpm]"
+  parameter firing_width::Real(min = eps(Float64)) = 300.0
+  variable firing_fraction::Real if start_stop
+  variable start_compensation::Torque if start_stop
+  variable machine_limit::Torque if start_stop
   "Output to planar differential (derived; P2 layout)"
   spline = Spline() {^spline}
   "Stationary housing (assumed; planar bench)"
@@ -385,6 +398,8 @@ component P2Powertrain
   engine_speed = RealOutput() {^engine_speed}
   "Engine brake torque [N.m] (derived; map)"
   engine_torque = RealOutput() {^engine_torque}
+  "Available full-load engine torque at the measured speed [N.m]"
+  available_torque = RealOutput() {^available_torque}
   "Fuel flow [kg/s] (derived; map)"
   mdot_fuel = RealOutput() {^mdot_fuel}
   "Net machine shaft torque [N.m] (derived; DCMachine)"
@@ -403,7 +418,7 @@ component P2Powertrain
   parameter position_start::Real = 0.0
   "Initial running-engine speed [rad/s] (assumed; 800 rpm idle for launch)"
   parameter engine_speed_start::AngularVelocity = 800.0 * pi / 30
-  engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(fuel_cut_rpm = ifelse(engine_stopped, -2.0, 1300.0), fuel_resume_rpm = ifelse(engine_stopped, -1.0, 1000.0)) {^engine}
+  engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(fuel_controlled = start_stop, fuel_cut_rpm = ifelse(engine_stopped, -2.0, 1300.0), fuel_resume_rpm = ifelse(engine_stopped, -1.0, 1000.0)) {^engine}
   k0 = VehicleSystemsComponents.Vehicle.DisconnectClutch(position_start = position_start) {^k0}
   drive = VehicleSystemsComponents.Vehicle.Electric.HybridDrive() {^drive}
   variator = VehicleSystemsComponents.Vehicle.ControlledVariator() if !speed_commanded {^variator}
@@ -414,7 +429,16 @@ relations
   initial drive.machine.rotor.phi = 0.0
   connect(engine_pedal, engine.pedal)
   connect(engage, k0.engage)
-  connect(tau_ref, drive.tau_ref)
+  if start_stop
+    machine_limit = min(drive.T_max, drive.P_rated / max(abs(drive.machine.w), 1.0))
+    firing_fraction = min(max((engine.N - firing_rpm) / firing_width, 0.0), 1.0)
+    engine.fuel_enable = engine_on * firing_fraction^2 * (3.0 - 2.0 * firing_fraction)
+    # Replace assumed engine delivery by the measured K0 torque, including crank drag.
+    start_compensation = engine_torque_ref - k0.tau
+    drive.tau_ref = min(max(tau_ref + start_compensation, -machine_limit), machine_limit)
+  else
+    connect(tau_ref, drive.tau_ref)
+  end
   if speed_commanded
     connect(N_ref, speed_variator.N_ref)
     connect(k0.spline_b, drive.spline, speed_variator.spline_a)
@@ -430,6 +454,7 @@ relations
   connect(engine.support, k0.support, drive.support, support)
   connect(engine.speed.w, engine_speed)
   connect(engine.tau_e, engine_torque)
+  connect(engine.torque_map.full_load.y, available_torque)
   connect(engine.mdot_fuel, mdot_fuel)
   connect(drive.SoC, SoC)
   machine_torque = drive.machine.tau
@@ -458,7 +483,7 @@ test component P2OperatingLineWLTC
   parameter radius::Length = 0.31
   "PI gain [N.m per km/h], shared with H0"
   parameter k::Real = 110.0
-  "PI integral time (assumed; BEV driver)"
+  "PI integral time (assumed; shared Lecture 5 driver)"
   parameter Ti::Time = 1.0
   "Positive PI ceiling [N.m], pedal saturation"
   parameter tau_max::Torque = 150.0
@@ -480,7 +505,7 @@ test component P2OperatingLineWLTC
   driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_brake) {^driver}
   no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
   kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
-  powertrain = VehicleSystemsComponents.HandsOn05.P2Powertrain(speed_commanded = true, position_start = 0.0, drive(P_aux = 0.0, T_f = 0.0, K_i = 0.0, k_w = 0.0, C = 0.0, J = 0.0)) {^powertrain}
+  powertrain = VehicleSystemsComponents.Vehicle.P2Powertrain(speed_commanded = true, position_start = 0.0, drive(P_aux = 0.0, T_f = 0.0, K_i = 0.0, k_w = 0.0, C = 0.0, J = 0.0)) {^powertrain}
   differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
   mount = RotationalComponents.Components.Fixed() {^mount}
   straight = RotationalComponents.Components.Fixed() {^straight}
@@ -614,15 +639,12 @@ powertrain's public output, not an internal engine block.
 - In electric mode, a second `OperatingLine` follows positive demand power. Blend its
   speed toward the engine-request line using `engine_on`, then floor the target at 1000 rpm.
 
-Set the signed driver limits to ±355.234 N·m: 150.234 engine plus 205 machine. The measured
-EV transient error with `k=70`, `Ti=2` was 2.67 km/h after removing the brake ceiling;
-`k=110`, `Ti=1` reduces it to 1.32 km/h. Use `mapped_limits=true`: during a CVT transient,
+Set the signed driver limits to ±355.234 N·m: 150.234 engine plus 205 machine. Use the shared Lecture 5 driver, `k=110`, `Ti=1`; its maximum error is 1.32 km/h. Use `mapped_limits=true`: during a CVT transient,
 the manager must not subtract engine torque above the mapped full-load envelope from the
 machine demand. Set `SoC_on=0.52`, `SoC_off=0.55` to leave room for late-cycle regen, and
-`P_line_max=30000` W: it uses 4.08634 corrected L/100 km versus 4.10596 at
-60 kW. The respective final SoCs are 0.61221 and 0.61261, and boost times are
-71.91 s and zero. Keep the lower-fuel 30 kW cap. The default SoC window finishes
-at 0.64121, outside ±0.02 of 0.60, so the 0.52 / 0.55 overrides remain necessary.
+`P_line_max=30000` W. With these settings the run uses 4.08634 corrected L/100 km,
+finishes at SoC 0.61221 and uses all four modes. These measurements apply to the
+specified cap and SoC window, not the manager's defaults.
 
 Electric mode carries low demand with K0 open. On-line mode starts the engine and follows
 the efficient-speed target. Charging raises engine load and generates the surplus. Boost
@@ -643,10 +665,9 @@ including engine-driven charging. These quantities have different measurement bo
 
 ## Step 4 — compare at equal battery charge
 
-H0, the line car and the hybrid share `k=110`, `Ti=1 s`. Against the previous
-70 / 2 s pins, H0 moves from 5.705422 to 5.717536 L/100 km (+0.21%) and the
-line car from 5.392826 to 5.437445 (+0.83%). Their maximum speed errors are
-1.165 and 1.165 km/h. The ±355.234 N·m limits apply only to the hybrid; H0
+H0, the line car and the hybrid share `k=110`, `Ti=1 s`. H0 uses
+5.717536 L/100 km and the line car 5.437445 L/100 km. Their maximum speed errors are
+1.168 and 1.168 km/h. The ±355.234 N·m limits apply only to the hybrid; H0
 and the line car retain their pedal-sized propulsion limits.
 
 Keep `meter.P_stored = powertrain.E * powertrain.i`: the correction uses stored energy,
@@ -667,7 +688,7 @@ These are vehicle energy inputs, not a well-to-wheel comparison.
 The hybrid ends **1.22 percentage points** above its starting SoC, within ±2 percentage
 points. Its corrected fuel is **28.53%** below H0. Outside the first 3 s of each start,
 on-line-mode engine power has mean absolute error **171 W**, maximum **3264 W**. Across
-the whole run, **58.95%** of fuel is burned within ±150 rpm of the line, versus step 2's 15%.
+the whole run, **58.95%** of fuel is burned within ±150 rpm of the line, versus step 2's 16.57%.
 The inverse map needs no PI trim; steady analytic torque round trips are within 1e-7 N·m.
 :::
 
@@ -681,7 +702,5 @@ The [homework](./homework) takes the same car to a series hybrid.
 The unchanged variator schedules **1800–6000 rpm**, above the machine's 1412 rpm loaded corner;
 field weakening supplies the constant-power region. Low reached 3546 rpm. The existing dyno
 tests through 4000 rpm, so the scheduled 6000 rpm endpoint is not validated here.
-An exploratory full electric run first exceeded the ±2 km/h band at **795.3 s**
-(58.2 km/h reference), reaching a 6.4 km/h maximum error. Its final SoC was negative:
-the constant-voltage battery has no depletion cutoff, so this is a saturation diagnostic,
-not a usable full-cycle battery result.
+The electric-only fixture validates Low only. The constant-voltage battery has no depletion
+cutoff, so it is not a usable full-cycle battery model.
