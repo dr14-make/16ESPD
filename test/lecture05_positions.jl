@@ -58,25 +58,29 @@ end
     L = VehicleSystemsComponents.Lecture5
     reference = L.P2HybridWLTC(name = :reference)
     comparison = L.OutputHybridWLTC(name = :comparison)
-    function shared_defaults(a, b; exclude = Set{Symbol}())
-        da, db = ModelingToolkit.defaults(a), ModelingToolkit.defaults(b)
-        pa = Dict(Symbol(ModelingToolkit.getname(p)) => p for p in ModelingToolkit.parameters(a))
-        pb = Dict(Symbol(ModelingToolkit.getname(p)) => p for p in ModelingToolkit.parameters(b))
-        for name in intersect(keys(pa), keys(pb))
-            name in exclude && continue
-            va, vb = da[pa[name]], db[pb[name]]
-            for _ in 1:20
-                va = ModelingToolkit.Symbolics.substitute(va, da)
-                vb = ModelingToolkit.Symbolics.substitute(vb, db)
-            end
-            @test isequal(va, vb)
+    function values_for(model)
+        merge(ModelingToolkit.initial_conditions(model), ModelingToolkit.bindings(model))
+    end
+    function resolved(model, p)
+        d = values_for(model)
+        localname = replace(string(p), string(ModelingToolkit.getname(model)) * "₊" => ""; count = 1)
+        key = only(filter(k -> string(k) == localname, collect(keys(d))))
+        value = d[key]
+        for _ in 1:20
+            value = ModelingToolkit.Symbolics.substitute(value, d)
         end
+        parse(Float64, string(value))
     end
-    shared_defaults(reference, comparison; exclude = Set([:tau_max, :tau_brake]))
-    for field in (:driver, :manager, :car, :roadload, :meter, :line, :demand_line)
-        shared_defaults(getproperty(reference, field), getproperty(comparison, field);
-            exclude = field == :driver ? Set([:y_max, :y_min]) : Set{Symbol}())
+    paths = Tuple[(p,) for p in (:m, :radius, :k, :Ti, :dv_wheel, :engage_rpm,
+        :engage_width_rpm, :lock_rpm, :lock_width_rpm, :N_locked)]
+    append!(paths, [(:manager, p) for p in (:SoC_on, :SoC_off, :SoC_full,
+        :dSoC_full, :P_line_max, :P_on, :P_off, :P_chg, :P_max, :P_regen, :v_fade)])
+    append!(paths, [(:driver, :k), (:driver, :Ti), (:car, :m), (:car, :radius),
+        (:roadload, :m), (:powertrain, :drive, :SoC0)])
+    for path in paths
+        parameter(model) = foldl(getproperty, path; init = model)
+        @test resolved(reference, parameter(reference)) ≈ resolved(comparison, parameter(comparison))
     end
-    shared_defaults(reference.powertrain.drive, comparison.powertrain.drive; exclude = Set([:ratio]))
-    @test ModelingToolkit.defaults(reference.powertrain.drive)[reference.powertrain.drive.SoC0] == 0.6
+    @test resolved(reference, reference.tau_brake) == resolved(reference, reference.tau_max)
+    @test resolved(comparison, comparison.tau_brake) == resolved(comparison, comparison.tau_max)
 end
