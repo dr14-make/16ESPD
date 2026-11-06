@@ -1,0 +1,10 @@
+"P4 rear-axle machine hybrid WLTC (derived; output hybrid with through-the-road coupling)."
+test component P4HybridWLTC
+  extends OutputHybridWLTC(rear = true)
+end
+
+"Full WLTC P4 position analysis (derived; shared duration and solver)."
+analysis P4HybridWLTCTransient
+  extends TransientAnalysis(stop = 1800.0, alg = ODEAlg.Rodas5P(), dtmax = 1.0, optimize = OptimizationLevel.None())
+  model = P4HybridWLTC()
+end

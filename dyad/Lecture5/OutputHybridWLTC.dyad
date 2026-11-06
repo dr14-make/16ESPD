@@ -1,0 +1,46 @@
+"""
+P3 output-coupled hybrid WLTC; rear=true selects the P4 through-the-road plant.
+The manager retains CVT-input torque coordinates. The plant converts its machine
+command to the physical output-side shaft and accounts for starter power separately.
+"""
+test component OutputHybridWLTC
+  extends HybridPositionWLTC
+  "Rear machine axle selector (derived; P3 false, P4 true)"
+  structural parameter rear::Boolean = false
+  "Machine-to-wheel reduction (derived; Lecture 4 electric driveline benchmark)"
+  parameter reduction::Real(min = eps(Float64)) = 8.193
+  "Separate engine-starter electrical efficiency (assumed; starter accounting)"
+  parameter eta_start::Real(min = eps(Float64)) = 0.7
+  rear_differential = MultibodyComponents.PlanarMechanics.DifferentialGear() if rear
+  powertrain = VehicleSystemsComponents.Vehicle.OutputHybridPowertrain(speed_commanded = true, rear = rear, i_output = reduction)
+relations
+  manager.w_shaft = powertrain.speed_variator.w_a
+  manager.T_lim = powertrain.drive.T_max * reduction / ratio
+  connect(powertrain.SoC, manager.SoC)
+  connect(powertrain.engine_speed, manager.engine_speed, map.omega)
+  connect(powertrain.available_torque, manager.available_torque)
+  connect(manager.tau_engine, powertrain.engine_torque_ref)
+  connect(map.pedal, powertrain.engine_pedal)
+  connect(manager.engine_on, powertrain.engine_on)
+  # The plant, not this bench, changes the CVT-input command to machine-shaft torque.
+  connect(manager.tau_machine, powertrain.tau_ref)
+  powertrain.N_ref = N_target
+  powertrain.engage = manager.engage * max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.speed_variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm)))
+  connect(powertrain.spline, differential.flange_b)
+  if rear
+    connect(powertrain.rear_spline, rear_differential.flange_b)
+    connect(rear_differential.flange_left, car.spin_rl)
+    connect(rear_differential.flange_right, car.spin_rr)
+  end
+  connect(powertrain.support, mount.spline)
+  connect(powertrain.mdot_fuel, meter.mdot_fuel)
+  ratio = powertrain.speed_variator.ratio
+  P_stored = powertrain.E * powertrain.i + powertrain.P_start / eta_start
+  initial powertrain.drive.converter.i_out = 0.0
+end
+
+"Full WLTC P3 position analysis (derived; shared duration and solver)."
+analysis OutputHybridWLTCTransient
+  extends TransientAnalysis(stop = 1800.0, alg = ODEAlg.Rodas5P(), dtmax = 1.0, optimize = OptimizationLevel.None())
+  model = OutputHybridWLTC()
+end

@@ -1,0 +1,42 @@
+"P0 crank-coupled hybrid WLTC (derived; position comparison against the driver)."
+test component CoupledHybridWLTC
+  extends HybridPositionWLTC(electric_drive = false)
+  "Machine-to-crank speed ratio (assumed; P0 belt design)"
+  parameter i_crank::Real(min = eps(Float64)) = 2.5
+  "Crank belt efficiency (assumed; P0 belt design)"
+  parameter eta_crank::Real = 0.96
+  "P0 peak machine torque [N.m] (assumed; 43 N.m starter-generator sizing)"
+  parameter T_max::Torque = 43.0
+  "K0 capacity [N.m] (derived; 390 N.m accommodates combined crank-side torque)"
+  parameter k0_capacity::Torque = 390.0
+  powertrain = VehicleSystemsComponents.Vehicle.CoupledHybridPowertrain(speed_commanded = true, i_crank = i_crank, eta_crank = eta_crank, T_max = T_max, k0(tau_max = k0_capacity))
+  "Fuel-cut engine motoring dissipation [J] (derived; map closed-throttle drag)"
+  variable E_drag::Energy
+relations
+  manager.w_shaft = powertrain.engine_speed
+  manager.T_lim = powertrain.drive.T_max * i_crank
+  connect(powertrain.SoC, manager.SoC)
+  connect(powertrain.engine_speed, manager.engine_speed, map.omega)
+  connect(powertrain.available_torque, manager.available_torque)
+  connect(manager.tau_engine, powertrain.engine_torque_ref)
+  connect(map.pedal, powertrain.engine_pedal)
+  connect(manager.engine_on, powertrain.engine_on)
+  # The belt applies losses physically; the PI driver supplies the resulting torque deficit.
+  powertrain.tau_ref = manager.tau_machine / i_crank
+  powertrain.N_ref = N_target
+  powertrain.engage = max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.speed_variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm)))
+  connect(powertrain.spline, differential.flange_b)
+  connect(powertrain.support, mount.spline)
+  connect(powertrain.mdot_fuel, meter.mdot_fuel)
+  ratio = powertrain.speed_variator.ratio
+  P_stored = powertrain.E * powertrain.i
+  der(E_drag) = max(-powertrain.engine.torque_blend.motored * powertrain.engine.cut_fraction * powertrain.engine_speed, 0.0)
+  initial E_drag = 0.0
+  initial powertrain.drive.converter.i_out = 0.0
+end
+
+"Full WLTC P0 position analysis (derived; shared duration and solver)."
+analysis CoupledHybridWLTCTransient
+  extends TransientAnalysis(stop = 1800.0, alg = ODEAlg.Rodas5P(), dtmax = 1.0, optimize = OptimizationLevel.None())
+  model = CoupledHybridWLTC()
+end
