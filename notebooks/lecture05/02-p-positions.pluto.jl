@@ -71,7 +71,7 @@ begin
         isapprox(row.fuel_L100, line_fuel; atol = 1e-5, rtol = 0) || error("Line pin mismatch")
         0 <= row.idle_fuel_L100 < row.fuel_L100 || error("Invalid idle fuel")
         (; fuel_L100 = row.fuel_L100 - row.idle_fuel_L100,
-            idle_fuel_L100 = row.idle_fuel_L100, definitions_sha256 = row.definitions_sha256)
+            idle_fuel_L100 = row.idle_fuel_L100)
     end
     idle_baseline = measured_idle_baseline(joinpath(@__DIR__, "..", "..",
         "assets", "data", "lecture05", "baselines.csv"))
@@ -84,7 +84,6 @@ begin
     md"""
     Measured line idle fuel: **$(fmt(idle_baseline.idle_fuel_L100; digits = 4)) L/100 km**.
     Line-minus-idle proxy: **$(fmt(idle_baseline.fuel_L100; digits = 4)) L/100 km**.
-    Definition fingerprint: `$(idle_baseline.definitions_sha256)`.
     """
 end
 
@@ -138,7 +137,8 @@ Recovered energy (`E_recovered_MJ`) integrates positive battery stored-power inf
 negative driver demand, excluding engine-driven charging in traction. `E_regen_MJ` is
 requested regen before machine, converter and belt losses. Neither is fuel saving by itself. Electric-drive time counts
 engine-off operation above 1 km/h with drive torque above 1 N·m. Starts count engine speed crossing the firing band's lower edge upward after being below it,
-including the initial cranking start. Fuel resumptions count engine-latch rising edges separately. P0 and P1 have no engine-off electric drive.
+including the initial cranking start. Fuel resumptions count engine-latch rising edges separately.
+P0/P1 disable electric-drive mode; measured engine-unlatched traction can still occur in the manager's torque deadband.
 
 The energy meter is charge-corrected MJ/100 km. SoC endpoints and maximum absolute WLTC
 speed error make battery use and trace tracking visible alongside fuel consumption.
