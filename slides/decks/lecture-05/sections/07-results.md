@@ -48,15 +48,7 @@ from its store, not from the well or the grid.
 </div>
 <div>
 
-<div class="placeholder">
-
-**Figure: `07-three-powertrains.svg`**
-
-WLTC energy per 100 km for the three cars, by phase, the hybrid SoC-corrected.
-
-Produced by the charge-sustaining WLTC run, #113
-
-</div>
+<img src="/figures/07-three-powertrains.svg" class="w-full" style="max-height: 24rem" alt="WLTC fuel in L/100 km by phase for the conventional car, the same car with its CVT on the best-BSFC line, and the P2 hybrid SoC-corrected. Low: 7.13, 6.63 and 3.52. Medium: 5.77, 5.32 and 3.41. High: 5.12, 4.82 and 3.73. Extra High: 5.68, 5.59 and 5.00. Whole cycle: 5.72, 5.44 and 4.09. The hybrid saves most in the Low phase, about half, and least in Extra High."/>
 
 </div>
 </div>
@@ -80,8 +72,11 @@ it is the electricity coming out of the battery's terminals. It is the energy ea
 its own store. It is not well-to-wheel: it leaves out the refinery, the power station, the grid and
 the charger. That is the same caveat as in Lecture 4.
 
-The table has the reference run's totals. The figure, the same three cars split by WLTC phase, is
-still to be drawn from that run.
+The figure splits the three fuel cars by WLTC phase. Each phase is charged its own fuel, and for
+the hybrid the fuel equivalent of the battery energy it drew there, so its phases add up to the
+4.09. The hybrid halves the Low phase, 7.13 down to 3.52, where it drives electrically and the
+conventional car idles and creeps; in Extra High, where the engine is loaded anyway, it saves about
+12 percent. The line car gains 6 to 8 percent in the first three phases and under 2 in Extra High.
 -->
 
 ---

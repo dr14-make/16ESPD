@@ -10,7 +10,8 @@ module OperatingPoints
 include(joinpath(@__DIR__, "..", "..", "scripts", "bsfc_line.jl"))
 using .BsfcLine: read_line, power_kw
 
-export RHO_PETROL, P_MIN_KW, operating_points, fuel_metrics, line_bsfc, fuel_cells
+export RHO_PETROL, P_MIN_KW, FUEL_MIN_KG_S, WLTC_PHASES, operating_points, fuel_metrics,
+    line_bsfc, fuel_cells, fueled, phase_fuel
 
 "Petrol density [kg/L] (Hands-on 02)."
 const RHO_PETROL = 0.745
@@ -19,7 +20,18 @@ const RHO_PETROL = 0.745
 # burned there is counted as idle fuel rather than given a BSFC.
 const P_MIN_KW = 1.0
 
+# A stopped engine's fuel flow settles at solver round-off, below 1e-9 kg/s; idle burns about
+# 1e-4 kg/s. Samples below this floor are an engine that is off, not an operating point.
+const FUEL_MIN_KG_S = 1e-6
+
+"WLTC class 3b phases: name, start and end [s]."
+const WLTC_PHASES = [("Low", 0.0, 589.0), ("Medium", 589.0, 1022.0), ("High", 1022.0, 1477.0),
+    ("Extra High", 1477.0, 1800.0)]
+
 const LINE = read_line()
+
+"Which samples of operating points `op` the engine was fueled in."
+fueled(op) = op.fuel_g .> FUEL_MIN_KG_S * 1e3 * op.dt
 
 "BSFC [g/kWh] of the best-BSFC line at power `P_kw` [kW], linear between rows and clamped."
 function line_bsfc(P_kw)
@@ -58,21 +70,24 @@ end
 """
     fuel_metrics(op; band = 10.0)
 
-The fuel figures of operating points `op`:
+The fuel figures of operating points `op`, over its `fueled` samples only, the same samples
+`fuel_cells` draws, so the figures and the map count the same fuel:
 
 - `L_per_100km`, from the fuel burned and the distance driven;
 - `bsfc_mean`, the fuel-weighted mean BSFC [g/kWh] over the samples above `P_MIN_KW`;
 - `bsfc_cycle`, fuel above `P_MIN_KW` over the engine work there [g/kWh];
-- `near_line`, the share of all fuel burned within `band` g/kWh of the best-BSFC line's BSFC at
+- `near_line`, the share of the fuel burned within `band` g/kWh of the best-BSFC line's BSFC at
   the same power;
-- `idle`, the share of all fuel burned at or below `P_MIN_KW`.
+- `idle`, the share of the fuel burned at or below `P_MIN_KW`;
+- `fueled_time`, the share of the run's time the engine was fueled (`fueled`).
 
 A figure that has nothing to average, such as the BSFC of a run that burned no fuel, is
 `missing`.
 """
 function fuel_metrics(op; band = 10.0)
-    total = sum(op.fuel_g; init = 0.0)
-    loaded = op.power_kw .> P_MIN_KW
+    on = fueled(op)
+    total = sum(op.fuel_g[on]; init = 0.0)
+    loaded = on .& (op.power_kw .> P_MIN_KW)
     f, b, P = op.fuel_g[loaded], op.bsfc[loaded], op.power_kw[loaded]
     burned = sum(f; init = 0.0)
     near = abs.(b .- line_bsfc.(P)) .<= band
@@ -82,20 +97,22 @@ function fuel_metrics(op; band = 10.0)
         bsfc_mean = burned > 0 ? sum(f .* b) / burned : missing,
         bsfc_cycle = burned > 0 ? burned / (sum(P) * op.dt / 3600) : missing,
         near_line = share(sum(f[near]; init = 0.0)),
-        idle = share(total - burned))
+        idle = share(total - burned),
+        fueled_time = sum(on; init = 0) / max(length(op.fuel_g), 1))
 end
 
 """
     fuel_cells(op; drpm = 100.0, dtorque = 4.0)
 
 The fuel of `op` gathered into cells `drpm` rpm by `dtorque` N·m wide: per cell the
-fuel-weighted mean speed and torque and the grams burned there, largest cell first. Cells that
-burned nothing are left out, so a run that burned no fuel has no cells.
+fuel-weighted mean speed and torque and the grams burned there, largest cell first. Only
+`fueled` samples count, so a hybrid's engine-off time adds no cells and a run that burned no
+fuel has none.
 """
 function fuel_cells(op; drpm = 100.0, dtorque = 4.0)
     acc = Dict{Tuple{Int, Int}, NTuple{3, Float64}}()
-    for (n, T, g) in zip(op.rpm, op.torque, op.fuel_g)
-        g > 0 || continue
+    for (n, T, g, on) in zip(op.rpm, op.torque, op.fuel_g, fueled(op))
+        on || continue
         key = (floor(Int, n / drpm), floor(Int, T / dtorque))
         sn, sT, sg = get(acc, key, (0.0, 0.0, 0.0))
         acc[key] = (sn + g * n, sT + g * T, sg + g)
@@ -104,6 +121,32 @@ function fuel_cells(op; drpm = 100.0, dtorque = 4.0)
         by = c -> -c.fuel_g)
     return (; rpm = Float64[c.rpm for c in cells], torque = Float64[c.torque for c in cells],
         fuel_g = Float64[c.fuel_g for c in cells])
+end
+
+"""
+    phase_fuel(sol, meter; phases = WLTC_PHASES)
+
+SoC-corrected fuel [L/100 km] of each phase of a run metered by a `Vehicle.SoCCorrectedFuel`
+`meter` (its symbolic subsystem in `sol`), and of the whole run. Each phase is charged the fuel
+burned in it plus the fuel equivalent of the battery energy drawn in it, at the meter's own
+`eta_eb`, `H_u` and `rho_f`, over the distance driven in it; the phases weighted by distance
+sum to the run's corrected fuel. Returns a vector of `(; name, km, L_per_100km)`, the whole run
+last as `"WLTC"`. The run must span exactly the phases, from the first one's start to the last
+one's end.
+"""
+function phase_fuel(sol, meter; phases = WLTC_PHASES)
+    span = (first(phases)[2], last(phases)[3])
+    (first(sol.t), last(sol.t)) == span ||
+        error("run spans $(extrema(sol.t)) s, the phases $(span) s")
+    eta, H_u, rho = (sol.ps[getproperty(meter, k)] for k in (:eta_eb, :H_u, :rho_f))
+    at(x, t) = sol(t; idxs = x)
+    rows = map([phases; ("WLTC", first(sol.t), last(sol.t))]) do (name, a, b)
+        d(x) = at(x, b) - at(x, a)
+        m = d(meter.m_fuel) + d(meter.E_batt) / (eta * H_u)
+        km = d(meter.s) / 1e3
+        (; name, km, L_per_100km = 100 * m / rho * 1e3 / km)
+    end
+    return rows
 end
 
 end # module

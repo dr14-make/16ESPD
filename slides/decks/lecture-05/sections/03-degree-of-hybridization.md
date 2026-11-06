@@ -9,13 +9,12 @@ layout: section
 
 How much of the power is electric, from a micro hybrid to a plug-in, and what it costs.
 
-<span class="todo">TODO: notebook file (#115)</span>
+`notebooks/lecture05/03-machine-size.pluto.jl`
 
 <!--
 Section 03, the degree of hybridization: how much of the car's power is electric. It runs from a
 micro hybrid, which only stops the engine, to a plug-in, which drives for a while on the grid's
-energy. Then what drives the cost. The sweep figure comes from the degree-of-hybridization
-notebook of issue 115.
+energy. Then what drives the cost. The sweep figure comes from the machine-size notebook.
 -->
 
 ---
@@ -49,16 +48,7 @@ Our P2: DOH = 30 kW / (30 kW + 85.6 kW) ≈ **26 %**
 </div>
 <div>
 
-<div class="placeholder">
-
-**Figure: `03-doh-sweep.svg`**
-
-WLTC fuel saving of the P2 hybrid against machine power, 8 to 40 kW, the 15 kW and 30 kW cases
-marked.
-
-Produced by the degree-of-hybridization notebook, #115
-
-</div>
+<img src="/figures/03-doh-sweep.svg" class="w-full" style="max-height: 24rem" alt="WLTC fuel saving of the P2 hybrid against the conventional car, SoC-corrected, for machines of 8, 15, 22, 30 and 40 kW: 22.2, 25.3, 27.6, 28.5 and 28.4 percent. The saving rises by 3.1 and 2.3 points from 8 to 22 kW, then by 0.9 to 30 kW, and 40 kW saves no more than 30 kW; 15 kW is marked at 25.3 percent, DOH 15 percent, and 30 kW at 28.5 percent, DOH 26 percent. The 8 kW point is hollow: that run falls 2.3 km/h behind the trace and does not end charge-sustaining."/>
 
 </div>
 </div>
@@ -84,11 +74,14 @@ Our P2 has a 30 kilowatt machine, so its DOH is 30 over 30 plus the engine's pea
 map peaks at 85.6 kilowatts, at about 6000 rpm, the top of the best-BSFC line. So the DOH is about 26
 percent, a full hybrid.
 
-The figure on the right will be the sweep: the same P2 car with machines from 8 to 40 kilowatts, the
-WLTC fuel saving against machine power. The ICCT review expects the saving to grow with power, and
-says going from 15 to 20 or 30 kilowatts adds 5 to 10 percent on P2, P3 and P4, in its own words. Watch
-whether ours flattens: past the point where the machine covers the regen and the low-power driving,
-more power buys little.
+The figure on the right is the sweep: the same P2 car and energy manager with machines from 8 to 40
+kilowatts, the WLTC fuel saving, SoC-corrected, against machine power. The ICCT review expects the
+saving to grow with power, and says going from 15 to 20 or 30 kilowatts adds 5 to 10 percent on P2,
+P3 and P4, in its own words. Ours grows from 25.3 percent at 15 kilowatts to 28.5 at 30, about 3
+points, most of it by 22 kilowatts, and then it is flat: 40 kilowatts saves 28.4, no more than 30.
+Past the point where the machine covers the regen and the low-power driving, more power buys
+nothing. The 8 kilowatt point is hollow: with the
+manager left as it is, that machine falls behind the trace and does not end charge-sustaining.
 -->
 
 ---
