@@ -36,6 +36,7 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
  * `support` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `engine_speed` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `engine_torque` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `available_torque` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `mdot_fuel` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `machine_torque` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `position` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
@@ -116,6 +117,7 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
   append!(__vars, @variables (engine_torque_ref(t)::Real), [input = true])
   append!(__vars, @variables (engine_speed(t)::Real), [output = true])
   append!(__vars, @variables (engine_torque(t)::Real), [output = true])
+  append!(__vars, @variables (available_torque(t)::Real), [output = true])
   append!(__vars, @variables (mdot_fuel(t)::Real), [output = true])
   append!(__vars, @variables (machine_torque(t)::Real), [output = true])
   append!(__vars, @variables (position(t)::Real), [output = true])
@@ -124,20 +126,32 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
   append!(__vars, @variables (i(t)::Real), [output = true])
 
   ### Variables (declarations)
-  append!(__vars, @variables (firing_fraction(t)::Real))
-  append!(__vars, @variables (start_compensation(t)::Real))
-  append!(__vars, @variables (machine_limit(t)::Real))
+  if start_stop
+    append!(__vars, @variables (firing_fraction(t)::Real))
+  end
+  if start_stop
+    append!(__vars, @variables (start_compensation(t)::Real))
+  end
+  if start_stop
+    append!(__vars, @variables (machine_limit(t)::Real))
+  end
 
   ### Variables (assignments)
-  __ovr_firing_fraction = pop!(__overrides, "firing_fraction", nothing); isnothing(__ovr_firing_fraction) || push!(__eqs, firing_fraction ~ __ovr_firing_fraction)
-  __ovr_firing_fraction__initial = pop!(__overrides, "firing_fraction.initial", nothing); isnothing(__ovr_firing_fraction__initial) || (__initial_conditions[firing_fraction] = __ovr_firing_fraction__initial)
-  __ovr_firing_fraction__guess = pop!(__overrides, "firing_fraction.guess", nothing)
-  __ovr_start_compensation = pop!(__overrides, "start_compensation", nothing); isnothing(__ovr_start_compensation) || push!(__eqs, start_compensation ~ __ovr_start_compensation)
-  __ovr_start_compensation__initial = pop!(__overrides, "start_compensation.initial", nothing); isnothing(__ovr_start_compensation__initial) || (__initial_conditions[start_compensation] = __ovr_start_compensation__initial)
-  __ovr_start_compensation__guess = pop!(__overrides, "start_compensation.guess", nothing)
-  __ovr_machine_limit = pop!(__overrides, "machine_limit", nothing); isnothing(__ovr_machine_limit) || push!(__eqs, machine_limit ~ __ovr_machine_limit)
-  __ovr_machine_limit__initial = pop!(__overrides, "machine_limit.initial", nothing); isnothing(__ovr_machine_limit__initial) || (__initial_conditions[machine_limit] = __ovr_machine_limit__initial)
-  __ovr_machine_limit__guess = pop!(__overrides, "machine_limit.guess", nothing)
+  if start_stop
+    __ovr_firing_fraction = pop!(__overrides, "firing_fraction", nothing); isnothing(__ovr_firing_fraction) || push!(__eqs, firing_fraction ~ __ovr_firing_fraction)
+    __ovr_firing_fraction__initial = pop!(__overrides, "firing_fraction.initial", nothing); isnothing(__ovr_firing_fraction__initial) || (__initial_conditions[firing_fraction] = __ovr_firing_fraction__initial)
+    __ovr_firing_fraction__guess = pop!(__overrides, "firing_fraction.guess", nothing)
+  end
+  if start_stop
+    __ovr_start_compensation = pop!(__overrides, "start_compensation", nothing); isnothing(__ovr_start_compensation) || push!(__eqs, start_compensation ~ __ovr_start_compensation)
+    __ovr_start_compensation__initial = pop!(__overrides, "start_compensation.initial", nothing); isnothing(__ovr_start_compensation__initial) || (__initial_conditions[start_compensation] = __ovr_start_compensation__initial)
+    __ovr_start_compensation__guess = pop!(__overrides, "start_compensation.guess", nothing)
+  end
+  if start_stop
+    __ovr_machine_limit = pop!(__overrides, "machine_limit", nothing); isnothing(__ovr_machine_limit) || push!(__eqs, machine_limit ~ __ovr_machine_limit)
+    __ovr_machine_limit__initial = pop!(__overrides, "machine_limit.initial", nothing); isnothing(__ovr_machine_limit__initial) || (__initial_conditions[machine_limit] = __ovr_machine_limit__initial)
+    __ovr_machine_limit__guess = pop!(__overrides, "machine_limit.guess", nothing)
+  end
 
   ### Constants
   __constants = Any[]
@@ -174,9 +188,15 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
-  isnothing(__ovr_firing_fraction__guess) || (__guesses[firing_fraction] = __ovr_firing_fraction__guess)
-  isnothing(__ovr_start_compensation__guess) || (__guesses[start_compensation] = __ovr_start_compensation__guess)
-  isnothing(__ovr_machine_limit__guess) || (__guesses[machine_limit] = __ovr_machine_limit__guess)
+  if start_stop
+    isnothing(__ovr_firing_fraction__guess) || (__guesses[firing_fraction] = __ovr_firing_fraction__guess)
+  end
+  if start_stop
+    isnothing(__ovr_start_compensation__guess) || (__guesses[start_compensation] = __ovr_start_compensation__guess)
+  end
+  if start_stop
+    isnothing(__ovr_machine_limit__guess) || (__guesses[machine_limit] = __ovr_machine_limit__guess)
+  end
 
   ### Initialization Equations
   push!(__initialization_eqs, engine.air.manifold.p ~ 101325.0)
@@ -186,7 +206,6 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
   __assertions = []
 
   ### Equations
-  push!(__eqs, machine_limit ~ min(drive.T_max, drive.P_rated / max(abs(drive.machine.w), 1.0)))
   push!(__eqs, machine_torque ~ drive.machine.tau)
   push!(__eqs, position ~ k0.position)
   push!(__eqs, E ~ drive.battery.E)
@@ -197,18 +216,18 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
   push!(__eqs, connect(engine.support, k0.support, drive.support, support))
   push!(__eqs, connect(engine.speed.w, engine_speed))
   push!(__eqs, connect(engine.tau_e, engine_torque))
+  push!(__eqs, connect(engine.torque_map.full_load.y, available_torque))
   push!(__eqs, connect(engine.mdot_fuel, mdot_fuel))
   push!(__eqs, connect(drive.SoC, SoC))
 
   ### Control Structures
   if start_stop
+    push!(__eqs, machine_limit ~ min(drive.T_max, drive.P_rated / max(abs(drive.machine.w), 1.0)))
     push!(__eqs, firing_fraction ~ min(max((engine.N - firing_rpm) / firing_width, 0.0), 1.0))
     push!(__eqs, engine.fuel_enable ~ engine_on * firing_fraction ^ 2 * (3.0 - 2.0 * firing_fraction))
     push!(__eqs, start_compensation ~ engine_torque_ref - k0.tau)
     push!(__eqs, drive.tau_ref ~ min(max(tau_ref + start_compensation, -machine_limit), machine_limit))
   else
-    push!(__eqs, firing_fraction ~ 1.0)
-    push!(__eqs, start_compensation ~ 0.0)
     push!(__eqs, connect(tau_ref, drive.tau_ref))
   end
   if speed_commanded

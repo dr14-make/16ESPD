@@ -255,7 +255,7 @@ The electric-mode CVT target follows demand power to avoid starting against an i
   push!(__eqs, connect(driver.y, manager.tau_dem))
   push!(__eqs, connect(powertrain.SoC, manager.SoC))
   push!(__eqs, connect(powertrain.engine_speed, manager.engine_speed, map.omega))
-  push!(__eqs, connect(powertrain.engine.torque_map.full_load.y, manager.available_torque))
+  push!(__eqs, connect(powertrain.available_torque, manager.available_torque))
   push!(__eqs, connect(manager.P_engine, line.P))
   push!(__eqs, connect(manager.tau_engine, map.tau, powertrain.engine_torque_ref))
   push!(__eqs, connect(map.pedal, powertrain.engine_pedal))

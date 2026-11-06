@@ -555,9 +555,45 @@ Start from `P2OperatingLineWLTC`, naming the new bench `P2HybridWLTC`. Restore t
 The reference solution is in `HandsOn05.P2HybridWLTC`.
 
 Add `Vehicle.EnergyManager` as `manager` and `Vehicle.TorqueToPedal` as `map`.
-Connect `driver.y` to `manager.tau_dem`, machine-shaft speed to `manager.w_shaft`, vehicle
-speed in km/h to `manager.v`, and measured engine speed and SoC to their manager inputs.
-The driver's signed demand is at the transmission input, not the wheels.
+Set `manager.mapped_limits = true`. The driver's signed demand is at the transmission
+input, not the wheels. Keep the chassis, differential, supports, road load, meter and initial
+conditions from step 2. Replace the step-2 signal wiring with the following.
+
+### Every connection changed or added in step 3
+
+| From | To |
+| --- | --- |
+| `driver.y` | `manager.tau_dem` |
+| `powertrain.SoC` | `manager.SoC` |
+| `powertrain.engine_speed` | `manager.engine_speed`, `map.omega` |
+| `powertrain.available_torque` | `manager.available_torque` |
+| `kmh.y` | `driver.u_m`, `manager.v` |
+| `manager.P_engine` | `line.P` |
+| `manager.tau_engine` | `map.tau`, `powertrain.engine_torque_ref` |
+| `map.pedal` | `powertrain.engine_pedal` |
+| `manager.engine_on` | `powertrain.engine_on` |
+| `manager.tau_machine` | `powertrain.tau_ref` |
+
+In the Relations editor, set the remaining signal equations (replace the old line target,
+engagement and brake equations rather than keeping both):
+
+```dyad
+manager.w_shaft = powertrain.speed_variator.w_a
+demand_line.P = manager.P_drive
+N_target = max(manager.engine_on * line.N + (1.0 - manager.engine_on) * demand_line.N, N_locked)
+powertrain.N_ref = N_target
+powertrain.engage = manager.engage * max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.speed_variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm)))
+car.tau_fl = manager.tau_friction * powertrain.speed_variator.ratio / 2.0
+car.tau_fr = car.tau_fl
+car.tau_rl = 0.0
+car.tau_rr = 0.0
+```
+
+Add a second `Vehicle.OperatingLine` named `demand_line` and declare
+`variable N_target::Real`. Set `powertrain.start_stop = true`,
+`powertrain.engine_speed_start = 0.0` and `powertrain.position_start = 0.0`.
+The available-torque connection is required when mapped limits are enabled; it uses the
+powertrain's public output, not an internal engine block.
 
 - Feed `manager.P_engine` to `line.P`. Feed `manager.tau_engine` to `map.tau`, measured
   engine speed to `map.omega`, and `map.pedal` to the engine pedal.

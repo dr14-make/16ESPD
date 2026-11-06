@@ -26,9 +26,9 @@ component P2Powertrain
   parameter firing_rpm::Real = 400.0
   "Width of the firing-speed band [rpm]"
   parameter firing_width::Real(min = eps(Float64)) = 300.0
-  variable firing_fraction::Real
-  variable start_compensation::Torque
-  variable machine_limit::Torque
+  variable firing_fraction::Real if start_stop
+  variable start_compensation::Torque if start_stop
+  variable machine_limit::Torque if start_stop
   "Output to planar differential (derived; P2 layout)"
   spline = Spline() {^spline}
   "Stationary housing (assumed; planar bench)"
@@ -37,6 +37,8 @@ component P2Powertrain
   engine_speed = RealOutput() {^engine_speed}
   "Engine brake torque [N.m] (derived; map)"
   engine_torque = RealOutput() {^engine_torque}
+  "Available full-load engine torque at the measured speed [N.m]"
+  available_torque = RealOutput() {^available_torque}
   "Fuel flow [kg/s] (derived; map)"
   mdot_fuel = RealOutput() {^mdot_fuel}
   "Net machine shaft torque [N.m] (derived; DCMachine)"
@@ -66,16 +68,14 @@ relations
   initial drive.machine.rotor.phi = 0.0
   connect(engine_pedal, engine.pedal)
   connect(engage, k0.engage)
-  machine_limit = min(drive.T_max, drive.P_rated / max(abs(drive.machine.w), 1.0))
   if start_stop
+    machine_limit = min(drive.T_max, drive.P_rated / max(abs(drive.machine.w), 1.0))
     firing_fraction = min(max((engine.N - firing_rpm) / firing_width, 0.0), 1.0)
     engine.fuel_enable = engine_on * firing_fraction^2 * (3.0 - 2.0 * firing_fraction)
     # Replace assumed engine delivery by the measured K0 torque, including crank drag.
     start_compensation = engine_torque_ref - k0.tau
     drive.tau_ref = min(max(tau_ref + start_compensation, -machine_limit), machine_limit)
   else
-    firing_fraction = 1.0
-    start_compensation = 0.0
     connect(tau_ref, drive.tau_ref)
   end
   if speed_commanded
@@ -93,6 +93,7 @@ relations
   connect(engine.support, k0.support, drive.support, support)
   connect(engine.speed.w, engine_speed)
   connect(engine.tau_e, engine_torque)
+  connect(engine.torque_map.full_load.y, available_torque)
   connect(engine.mdot_fuel, mdot_fuel)
   connect(drive.SoC, SoC)
   machine_torque = drive.machine.tau

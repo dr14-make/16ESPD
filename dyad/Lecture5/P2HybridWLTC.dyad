@@ -63,7 +63,7 @@ relations
   manager.w_shaft = powertrain.speed_variator.w_a
   connect(powertrain.SoC, manager.SoC)
   connect(powertrain.engine_speed, manager.engine_speed, map.omega)
-  connect(powertrain.engine.torque_map.full_load.y, manager.available_torque)
+  connect(powertrain.available_torque, manager.available_torque)
   connect(manager.P_engine, line.P)
   connect(manager.tau_engine, map.tau, powertrain.engine_torque_ref)
   connect(map.pedal, powertrain.engine_pedal)
