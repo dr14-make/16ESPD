@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   EnergyManager(; name, mapped_limits, P_on, P_off, P_line_max, dP_boost, P_peak, P_chg, SoC_on, SoC_off, SoC_full, dSoC_full, T_max, P_max, P_regen, v_fade, w_idle, w_on, w_off, tau_traction, dtau, dSoC_boost, latch_time, __overrides)
+   EnergyManager(; name, geared_limit, electric_drive, mapped_limits, P_on, P_off, P_line_max, dP_boost, P_peak, P_chg, P_dis, SoC_dis_on, SoC_dis_off, SoC_on, SoC_off, SoC_full, dSoC_full, T_max, P_max, P_regen, v_fade, w_idle, w_on, w_off, tau_traction, dtau, dSoC_boost, latch_time, __overrides)
 
 Rule-based energy manager of a P2 hybrid: splits the driver's torque demand at the transmission
 input between engine, machine and friction brakes (derived; Lecture 5 S3). Signals only.
@@ -76,11 +76,16 @@ engine's torque command, `engine_on` its fuel enable and `engage` K0, both the e
 Defaults are sized for the 30 kW, 1.4 kWh Sonata-like `HybridDrive` and the Lecture 2 map's
 best-BSFC line. With `mapped_limits`, the torque split caps the engine share at its measured-speed
 full-load envelope during CVT transients; the power request remains the operating-line target.
+`geared_limit` accepts the machine torque envelope referred to the transmission input and
+retains the power ceiling. Disabling `electric_drive` runs the engine in traction and cuts
+fuel during braking; a conditional high-SoC discharge latch lowers the engine load request.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `geared_limit`         | Use a machine torque limit referred through the gearing (derived; Lecture 5 geared-machine architecture)                         | --  |   false |
+| `electric_drive`         | Allow electric-only traction; otherwise run the engine in traction and release it while braking (assumed; architecture option)                         | --  |   true |
 | `mapped_limits`         | Limit the torque split to the mapped engine envelope during CVT transients                         | --  |   false |
 | `P_on`         | Engine start threshold on demand power (derived; line BSFC 240 g/kWh at 12 kW, 3 % above its minimum)                         | W  |   12.0e3 |
 | `P_off`         | Engine stop threshold on demand power (derived; below 8 kW line BSFC climbs from 247 g/kWh to 361 at 2 kW)                         | W  |   8.0e3 |
@@ -88,6 +93,9 @@ full-load envelope during CVT transients; the power request remains the operatin
 | `dP_boost`         | Boost release band below P_line_max (assumed)                         | W  |   5.0e3 |
 | `P_peak`         | Engine peak power, the top of the line (derived; bsfc_line.csv)                         | W  |   85.607e3 |
 | `P_chg`         | Charging power added to the demand (assumed; lifts WLTC's 5-20 kW demand into the 233-239 g/kWh stretch at 15-30 kW)                         | W  |   10.0e3 |
+| `P_dis`         | Discharging power subtracted from the demand in charge-sustaining operation (assumed; symmetric with P_chg)                         | W  |   10.0e3 |
+| `SoC_dis_on`         | SoC above which discharge starts (assumed; charge-sustaining upper band)                         | --  |   0.62 |
+| `SoC_dis_off`         | SoC below which discharge stops (assumed; charge-sustaining target)                         | --  |   0.60 |
 | `SoC_on`         | SoC below which the engine charges the battery (assumed; 5 % under the start)                         | --  |   0.55 |
 | `SoC_off`         | SoC above which charging stops (assumed; HybridDrive's SoC0)                         | --  |   0.6 |
 | `SoC_full`         | SoC at which regen stops (assumed)                         | --  |   0.8 |
@@ -106,6 +114,7 @@ full-load envelope during CVT transients; the power request remains the operatin
 
 ## Connectors
 
+ * `T_lim` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `available_torque` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `tau_dem` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `w_shaft` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
@@ -149,7 +158,7 @@ full-load envelope during CVT transients; the power request remains the operatin
 | `charging`         | Charging fraction                         | --  |
 | `boosting`         | Boosting fraction                         | --  |
 """
-@component function EnergyManager(; name = nothing, var"mapped_limits"=false, var"P_on"=Float64(12000.0), var"P_off"=Float64(8000.0), var"P_line_max"=Float64(60000.0), var"dP_boost"=Float64(5000.0), var"P_peak"=Float64(85607.0), var"P_chg"=Float64(10000.0), var"SoC_on"=0.55, var"SoC_off"=0.6, var"SoC_full"=0.8, var"dSoC_full"=0.05, var"T_max"=Float64(205.0), var"P_max"=Float64(30000.0), var"P_regen"=Float64(30000.0), var"v_fade"=Float64(10.0), var"w_idle"=800.0 * pi / 30, var"w_on"=1000.0 * pi / 30, var"w_off"=850.0 * pi / 30, var"tau_traction"=Float64(5.0), var"dtau"=Float64(20.0), var"dSoC_boost"=0.05, var"latch_time"=0.2, __overrides = Dict{String, Any}())
+@component function EnergyManager(; name = nothing, var"geared_limit"=false, var"electric_drive"=true, var"mapped_limits"=false, var"P_on"=Float64(12000.0), var"P_off"=Float64(8000.0), var"P_line_max"=Float64(60000.0), var"dP_boost"=Float64(5000.0), var"P_peak"=Float64(85607.0), var"P_chg"=Float64(10000.0), var"P_dis"=Float64(10000.0), var"SoC_dis_on"=0.62, var"SoC_dis_off"=0.6, var"SoC_on"=0.55, var"SoC_off"=0.6, var"SoC_full"=0.8, var"dSoC_full"=0.05, var"T_max"=Float64(205.0), var"P_max"=Float64(30000.0), var"P_regen"=Float64(30000.0), var"v_fade"=Float64(10.0), var"w_idle"=800.0 * pi / 30, var"w_on"=1000.0 * pi / 30, var"w_off"=850.0 * pi / 30, var"tau_traction"=Float64(5.0), var"dtau"=Float64(20.0), var"dSoC_boost"=0.05, var"latch_time"=0.2, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -168,6 +177,8 @@ full-load envelope during CVT transients; the power request remains the operatin
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "geared_limit") && (geared_limit = pop!(__overrides, "geared_limit"))
+  haskey(__overrides, "electric_drive") && (electric_drive = pop!(__overrides, "electric_drive"))
   haskey(__overrides, "mapped_limits") && (mapped_limits = pop!(__overrides, "mapped_limits"))
   haskey(__overrides, "P_on") && (P_on = pop!(__overrides, "P_on"))
   haskey(__overrides, "P_off") && (P_off = pop!(__overrides, "P_off"))
@@ -175,6 +186,9 @@ full-load envelope during CVT transients; the power request remains the operatin
   haskey(__overrides, "dP_boost") && (dP_boost = pop!(__overrides, "dP_boost"))
   haskey(__overrides, "P_peak") && (P_peak = pop!(__overrides, "P_peak"))
   haskey(__overrides, "P_chg") && (P_chg = pop!(__overrides, "P_chg"))
+  haskey(__overrides, "P_dis") && (P_dis = pop!(__overrides, "P_dis"))
+  haskey(__overrides, "SoC_dis_on") && (SoC_dis_on = pop!(__overrides, "SoC_dis_on"))
+  haskey(__overrides, "SoC_dis_off") && (SoC_dis_off = pop!(__overrides, "SoC_dis_off"))
   haskey(__overrides, "SoC_on") && (SoC_on = pop!(__overrides, "SoC_on"))
   haskey(__overrides, "SoC_off") && (SoC_off = pop!(__overrides, "SoC_off"))
   haskey(__overrides, "SoC_full") && (SoC_full = pop!(__overrides, "SoC_full"))
@@ -222,6 +236,15 @@ full-load envelope during CVT transients; the power request remains the operatin
   __local__P_chg = P_chg
   append!(__params, @parameters (P_chg::Real), [description = "Charging power added to the demand (assumed; lifts WLTC's 5-20 kW demand into the 233-239 g/kWh stretch at 15-30 kW)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, P_chg, __local__P_chg)
+  __local__P_dis = P_dis
+  append!(__params, @parameters (P_dis::Real), [description = "Discharging power subtracted from the demand in charge-sustaining operation (assumed; symmetric with P_chg)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, P_dis, __local__P_dis)
+  __local__SoC_dis_on = SoC_dis_on
+  append!(__params, @parameters (SoC_dis_on::Real), [description = "SoC above which discharge starts (assumed; charge-sustaining upper band)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, SoC_dis_on, __local__SoC_dis_on)
+  __local__SoC_dis_off = SoC_dis_off
+  append!(__params, @parameters (SoC_dis_off::Real), [description = "SoC below which discharge stops (assumed; charge-sustaining target)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, SoC_dis_off, __local__SoC_dis_off)
   __local__SoC_on = SoC_on
   append!(__params, @parameters (SoC_on::Real), [description = "SoC below which the engine charges the battery (assumed; 5 % under the start)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, SoC_on, __local__SoC_on)
@@ -271,6 +294,7 @@ full-load envelope during CVT transients; the power request remains the operatin
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
+  append!(__vars, @variables (T_lim(t)::Real), [input = true])
   append!(__vars, @variables (available_torque(t)::Real), [input = true])
   append!(__vars, @variables (tau_dem(t)::Real), [input = true])
   append!(__vars, @variables (w_shaft(t)::Real), [input = true])
@@ -401,6 +425,11 @@ full-load envelope during CVT transients; the power request remains the operatin
   # Subcomponent charge of type VehicleSystemsComponents.Vehicle.Engine.HysteresisLatch
   charge_overrides = __pop_subcomponent_overrides!(__overrides, "charge")
   push!(__systems, @named charge = VehicleSystemsComponents.Vehicle.Engine.HysteresisLatch(; latch_time=latch_time, __overrides = charge_overrides))
+  # Subcomponent discharge of type VehicleSystemsComponents.Vehicle.Engine.HysteresisLatch
+  discharge_overrides = __pop_subcomponent_overrides!(__overrides, "discharge")
+  if !electric_drive
+    push!(__systems, @named discharge = VehicleSystemsComponents.Vehicle.Engine.HysteresisLatch(; latch_time=latch_time, __overrides = discharge_overrides))
+  end
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -442,9 +471,6 @@ full-load envelope during CVT transients; the power request remains the operatin
   push!(__eqs, tau_drive ~ max(tau_dem, 0.0))
   push!(__eqs, tau_brake_demand ~ max(-tau_dem, 0.0))
   push!(__eqs, P_drive ~ tau_drive * max(w_shaft, 0.0))
-  push!(__eqs, tau_lim ~ min(T_max, P_max / max(abs(w_shaft), 1.0)))
-  push!(__eqs, engine.set ~ ifelse(((P_dem > P_on) | (tau_drive > tau_lim)) | (((charge.y > 0.5) & (w_shaft > w_on))), 1.0, 0.0))
-  push!(__eqs, engine.reset ~ ifelse(((P_dem < P_off) & (tau_drive < tau_lim - dtau)) & (((charge.y <= 0.5) | (w_shaft <= w_off))), 1.0, 0.0))
   push!(__eqs, boost.set ~ ifelse(P_dem > P_line_max, 1.0, 0.0))
   push!(__eqs, boost.reset ~ ifelse(P_dem < P_line_max - dP_boost, 1.0, 0.0))
   push!(__eqs, charge.set ~ ifelse(SoC < SoC_on, 1.0, 0.0))
@@ -455,7 +481,6 @@ full-load envelope during CVT transients; the power request remains the operatin
   push!(__eqs, gate_speed ~ x_speed ^ 2 * (3.0 - 2.0 * x_speed))
   push!(__eqs, x_traction ~ min(max(tau_drive / tau_traction, 0.0), 1.0))
   push!(__eqs, gate_traction ~ x_traction ^ 2 * (3.0 - 2.0 * x_traction))
-  push!(__eqs, P_shift ~ max(P_drive, min(P_drive + charge.y * gate_speed * gate_traction * P_chg, P_line_max)))
   push!(__eqs, x_boost ~ min(max((SoC - SoC_on + dSoC_boost) / dSoC_boost, 0.0), 1.0))
   push!(__eqs, a_boost ~ x_boost ^ 2 * (3.0 - 2.0 * x_boost))
   push!(__eqs, cap ~ (1.0 - boost.y) * P_peak + boost.y * min(P_peak, max(P_line_max, P_drive - a_boost * tau_lim * max(w_shaft, 0.0))))
@@ -466,7 +491,6 @@ full-load envelope during CVT transients; the power request remains the operatin
   push!(__eqs, fade ~ min(max(v / v_fade, 0.0), 1.0))
   push!(__eqs, soc_x ~ min(max((SoC - SoC_full + dSoC_full) / dSoC_full, 0.0), 1.0))
   push!(__eqs, soc_allow ~ 1.0 - soc_x ^ 2 * (3.0 - 2.0 * soc_x))
-  push!(__eqs, tau_regen_max ~ soc_allow * min(tau_lim + min(tau_assist, 0.0), min(P_regen / max(abs(w_shaft), 1.0), fade * T_max)))
   push!(__eqs, tau_regen ~ min(tau_brake_demand, tau_regen_max))
   push!(__eqs, tau_machine ~ tau_assist - tau_regen)
   push!(__eqs, tau_friction ~ tau_brake_demand - tau_regen)
@@ -476,10 +500,34 @@ full-load envelope during CVT transients; the power request remains the operatin
   push!(__eqs, on_line ~ engine_on * (1.0 - boost.y) * (1.0 - charge.y))
 
   ### Control Structures
+  if geared_limit
+    push!(__eqs, tau_lim ~ min(max(T_lim, 0.0), P_max / max(abs(w_shaft), 1.0)))
+  else
+    push!(__eqs, tau_lim ~ min(T_max, P_max / max(abs(w_shaft), 1.0)))
+  end
+  if electric_drive
+    push!(__eqs, engine.set ~ ifelse(((P_dem > P_on) | (tau_drive > tau_lim)) | (((charge.y > 0.5) & (w_shaft > w_on))), 1.0, 0.0))
+    push!(__eqs, engine.reset ~ ifelse(((P_dem < P_off) & (tau_drive < tau_lim - dtau)) & (((charge.y <= 0.5) | (w_shaft <= w_off))), 1.0, 0.0))
+  else
+    push!(__eqs, engine.set ~ ifelse(tau_dem > 0.0, 1.0, 0.0))
+    push!(__eqs, engine.reset ~ ifelse(tau_dem <= 0.0, 1.0, 0.0))
+  end
+  if !electric_drive
+    push!(__eqs, discharge.set ~ ifelse(SoC > SoC_dis_on, 1.0, 0.0))
+    push!(__eqs, discharge.reset ~ ifelse(SoC < SoC_dis_off, 1.0, 0.0))
+    push!(__eqs, P_shift ~ max(0.0, max(P_drive, min(P_drive + charge.y * gate_speed * gate_traction * P_chg, P_line_max)) - discharge.y * gate_speed * gate_traction * P_dis))
+  else
+    push!(__eqs, P_shift ~ max(P_drive, min(P_drive + charge.y * gate_speed * gate_traction * P_chg, P_line_max)))
+  end
   if mapped_limits
     push!(__eqs, tau_engine ~ min(P_engine / w_e, max(available_torque, 0.0)))
   else
     push!(__eqs, tau_engine ~ P_engine / w_e)
+  end
+  if geared_limit
+    push!(__eqs, tau_regen_max ~ soc_allow * min(tau_lim + min(tau_assist, 0.0), min(P_regen / max(abs(w_shaft), 1.0), fade * max(T_lim, 0.0))))
+  else
+    push!(__eqs, tau_regen_max ~ soc_allow * min(tau_lim + min(tau_assist, 0.0), min(P_regen / max(abs(w_shaft), 1.0), fade * T_max)))
   end
 
   # Return completely constructed System
