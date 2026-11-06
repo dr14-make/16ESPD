@@ -346,13 +346,14 @@ end
             @test minimum(s[m.powertrain.position][above_ramp]) > 0.99
             engaged_min_rpm = k0_engaged_min_rpm(m, s)
             @test engaged_min_rpm > RPM_ENGINE_IDLE - 20.0
-            @test s[m.meter.fuel_raw][end] ≈ H0_L100 rtol=1e-3
+            @test s[m.meter.fuel_raw][end] ≈ H0_L100 atol=1e-5 rtol=0
             @test s[m.meter.fuel_corr][end] ≈ s[m.meter.fuel_raw][end] atol=1e-10
-            @test s[m.meter.energy_corr][end] ≈ H0_MJ100 rtol=1e-3
+            @test s[m.meter.energy_corr][end] ≈ H0_MJ100 atol=5e-4 rtol=0
             @test maximum(abs, s[m.powertrain.i]) < 1e-9
             capacity = maximum(s[m.powertrain.k0.tau_capacity])
             @test maximum(s[m.powertrain.engine_torque]) < capacity
-            @test k0_cruise_min_position(m, s) > 0.99
+            cruise_min_position = k0_cruise_min_position(m, s)
+            @test cruise_min_position > 0.99
             locked = s[m.powertrain.position] .> 0.99
             @test all(s[m.powertrain.engine_torque][locked] .< s[m.powertrain.k0.tau_capacity][locked])
             d = m.powertrain.drive
@@ -365,10 +366,7 @@ end
             loss = s[m.powertrain.k0.tau] .* s[m.powertrain.k0.w_slip]
             @test minimum(loss) >= 0.0
             slip_MJ = sum(diff(s.t) .* (loss[1:end-1] .+ loss[2:end])) / 2e6
-            cruise_min_position = k0_cruise_min_position(m, s)
             @info "H0 K0" slip_MJ peak_engine_torque=maximum(s[m.powertrain.engine_torque]) capacity engaged_min_rpm cruise_min_position SoC=extrema(s[m.powertrain.SoC]) duration=last(s.t)
-            @test s[m.meter.fuel_raw][end] ≈ H0_L100 atol=1e-5 rtol=0
-            @test s[m.meter.energy_corr][end] ≈ H0_MJ100 atol=5e-4 rtol=0
         end
         @info "P2 fixed-mode WLTC" electric speed_error distance=s[m.meter.s][end] raw_L100=s[m.meter.fuel_raw][end] corrected_L100=s[m.meter.fuel_corr][end] MJ100=s[m.meter.energy_corr][end] fuel_kg=s[m.meter.m_fuel][end] SoC_drop=s[m.powertrain.SoC][1]-s[m.powertrain.SoC][end] peak_shaft_rpm=maximum(s[m.powertrain.drive.machine.w])*30/pi
     end
@@ -978,7 +976,14 @@ include("torque_to_pedal.jl")
     soc = at(m.powertrain.SoC)
     ref = at(m.powertrain.drive.tau_ref)
     limit = at(m.powertrain.machine_limit)
-    @test maximum(abs.(ref) .- limit) <= 1e-6
+    # The bench copies these envelopes as literals; a drive or engine change must move them too.
+    drive, manager = m.powertrain.drive, m.manager
+    @test s.ps[manager.T_max] == s.ps[drive.T_max]
+    @test s.ps[manager.P_max] == s.ps[drive.P_rated]
+    # The problem stores the table's interpolator inside a FunctionWrapper; obj[] is the table.
+    full_load = s.ps[m.powertrain.engine.torque_map.full_load.table.interpolator].obj[]
+    full_load_peak = maximum(full_load.u)
+    @test s.ps[m.tau_max] ≈ s.ps[drive.T_max] + full_load_peak atol = 1e-9 rtol = 0
 
     @test abs(soc[end] - soc[1]) <= 0.02
     @test minimum(soc) >= 0.4
@@ -986,7 +991,7 @@ include("torque_to_pedal.jl")
     corrected = last(s[m.meter.fuel_corr])
     @test corrected < H0_L100
     @test corrected ≈ 4.086344 atol = 1e-5 rtol = 0
-    @test last(s[m.meter.energy_corr]) ≈ 132.12377 atol = 0.9
+    @test last(s[m.meter.energy_corr]) ≈ 132.1236886596 atol = 5e-4 rtol = 0
     on = at(m.manager.engine_on) .> 0.5
     starts = findall(diff(on) .== 1)
     stops = findall(diff(on) .== -1)
