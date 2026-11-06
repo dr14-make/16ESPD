@@ -27,9 +27,9 @@ routeAlias: lecture-summary
 - **03** DOH = P<sub>EM</sub> / (P<sub>EM</sub> + P<sub>ICE</sub>); today's car is a full hybrid.
 - **04** P0 and P1 turn with the engine; P2, P3, P4 sit behind a clutch. **The clutch matters
   more than the machine's power.**
-- **05** The CVT moves the engine toward its best-BSFC line: 5.5 % less fuel alone; the machine
+- **05** The CVT moves the engine toward its best-BSFC line: 4.9 % less fuel alone; the machine
   shifts the load.
-- **06** Five rules, two latches, charge-sustaining within ± 2 %.
+- **06** Five rules, three latches, charge-sustaining within ± 2 %.
 - **07** The ranking P0 < P1 ≪ P2 ≈ P3 ≈ P4, each saving against a stated baseline.
 
 <!--
@@ -47,10 +47,10 @@ hybrid switches between the two with a clutch. Your homework is a series hybrid.
 04: P0 and P1 turn with the engine; P2, P3 and P4 sit behind a clutch. The clutch matters more than
 the machine's power.
 
-05: the CVT moves the engine toward its best-BSFC line, 5.5 percent less fuel on its own, and the
+05: the CVT moves the engine toward its best-BSFC line, 4.9 percent less fuel on its own, and the
 machine shifts the load.
 
-06: five rules, two latches, and a result that is charge-sustaining within 2 percent.
+06: five rules, three latches, and a result that is charge-sustaining within 2 percent.
 
 07: the ranking P0 below P1, far below P2, P3 and P4, and every saving stated against its baseline.
 -->
@@ -65,20 +65,20 @@ routeAlias: what-you-measured
 
 | Step | You built | You measured |
 |---|---|---|
-| 01 | the P2 powertrain | engine only 1.55 km/h, electric only on Low 1.50 km/h worst speed error |
-| 02 | the operating line | 5.39 against H0's 5.71 L/100 km, 15 % of the fuel within ±150 rpm of the line |
-| 03 | the energy manager | modes without chatter, SoC in its window: <span class="todo">TODO</span> |
-| 04 | the charge-sustaining WLTC | SoC-corrected L/100 km and MJ/100 km: <span class="todo">TODO</span> |
+| 01 | the P2 powertrain | engine only 1.17 km/h, electric only on Low 1.50 km/h worst speed error |
+| 02 | the operating line | 5.44 against H0's 5.72 L/100 km, 17 % of the fuel within ±150 rpm of the line |
+| 03 | the energy manager | 44 engine starts, none shorter than 1.9 s; SoC 0.513–0.613 |
+| 04 | the charge-sustaining WLTC | SoC 0.600 → 0.612; 4.09 L/100 km, 132.1 MJ/100 km, −28.5 % against H0 |
 
 </div>
 
 <!--
-What you measured, one row per step, with the checkpoint numbers once the reference model has
-produced them. Step 01, the P2 powertrain, following the WLTC engine only and electric only. Step
-02, the operating line: 5.39 liters against H0's 5.71, with only 15 percent of the fuel near the
-line. Step 03, the modes switching without chatter and the
-state of charge in its window. Step 04, the charge-sustaining WLTC, in corrected liters and in
-megajoules per 100 kilometers.
+What you measured, one row per step, with the reference model's checkpoint numbers. Step 01, the P2 powertrain, following the WLTC engine only and electric only. Step
+02, the operating line: 5.44 liters against H0's 5.72, with only 17 percent of the fuel near the
+line. Step 03, the modes switching without chatter: 44 engine starts over the WLTC, none shorter
+than 1.9 seconds, and the state of charge between 0.513 and 0.613. Step 04, the charge-sustaining
+WLTC: the state of charge back at 0.612 from 0.600, and the hybrid at 4.09 corrected liters and
+132.1 megajoules per 100 kilometers, 28.5 percent less than H0.
 -->
 
 ---

@@ -573,7 +573,7 @@ analysis P2OperatingLineWLTCTransient
 end
 ```
 
-## Step 3 — let the energy manager split the demand
+## 3 · Let the energy manager split the demand {#step-3}
 
 Start from `P2OperatingLineWLTC`, naming the new bench `P2HybridWLTC`. Restore the full
 `HybridDrive` defaults: its losses, inertia, 30 kW machine and 1.4 kWh battery are included.
@@ -663,7 +663,7 @@ actual friction-brake dissipation is **0.0536 MJ**. The battery accepts **3.920 
 including engine-driven charging. These quantities have different measurement boundaries.
 :::
 
-## Step 4 — compare at equal battery charge
+## 4 · Compare at equal battery charge {#step-4}
 
 H0, the line car and the hybrid share `k=110`, `Ti=1 s`. H0 uses
 5.717536 L/100 km and the line car 5.437445 L/100 km. Their maximum speed errors are

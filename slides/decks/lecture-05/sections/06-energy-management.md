@@ -78,7 +78,9 @@ routeAlias: rules
 4. **Boost** when the demand exceeds the line.
 5. **Charge** when SoC is low: the engine above the demand.
 
-Thresholds <span class="todo">TODO: P<sub>ev</sub>, P<sub>line,max</sub>, SoC on/off (#113)</span>
+Thresholds: P<sub>ev</sub> engine on above **12 kW**, off below **8 kW** ·
+P<sub>line,max</sub> **60 kW**, on the WLTC bench **30 kW** · SoC on/off **0.55 / 0.60**, on the
+bench **0.52 / 0.55**
 
 </div>
 </div>
@@ -103,8 +105,11 @@ the line for full load.
 Five, charge: when the state of charge is low, the engine runs on its line above the demand and the
 machine generates the rest. That is load-point raising from section 05, used to refill the battery.
 
-The thresholds, P ev, the line's upper end, and the two state-of-charge levels, come from the
-reference model of issue 113 and are TODO.
+The thresholds, from the library's energy manager. P ev is itself a pair: the engine starts above
+12 kilowatts of demand and stops below 8; between them it stays as it was. The line's upper end is
+60 kilowatts by default; the WLTC bench caps it at 30, which burns less fuel, 4.086 against 4.106
+liters. Charging switches on below 0.55 state of charge and off above 0.60 by default; the bench
+moves the window down to 0.52 and 0.55, to leave room for regen late in the cycle.
 -->
 
 ---
@@ -140,7 +145,8 @@ The same for the engine's start against P<sub>ev</sub>.
 - The window keeps the battery away from both ends: room to take regen above, reserve to boost
   below.
 
-<span class="todo">TODO: SoC<sub>on</sub>, SoC<sub>off</sub>, the window (#113)</span>
+Default SoC<sub>on</sub> **0.55**, SoC<sub>off</sub> **0.60**, the start. On the WLTC bench
+**0.52 / 0.55**: room above for late regen.
 
 </div>
 </div>
@@ -160,8 +166,9 @@ settled decision S7, continuous latches without events, so the solver does not h
 restart at every switch.
 
 The window itself keeps the battery away from both ends: room above the top to take a regen event,
-and reserve below the bottom for electric driving and boost. The two levels come from the reference
-model, issue 113.
+and reserve below the bottom for electric driving and boost. The library's defaults charge below
+0.55 and stop at 0.60, which is where the battery starts. The WLTC bench moves the window down, to
+0.52 and 0.55, so the battery has room above it for the regen late in the cycle.
 -->
 
 ---
@@ -292,29 +299,35 @@ routeAlias: build-energy-manager
 
 **Screenshot: `step03-energy-manager.png`**
 
-The energy manager in Studio: demand, SoC and speeds in; the two latches; engine on, K0, engine
+The energy manager in Studio: demand, SoC and speeds in; the three latches; engine on, K0, engine
 torque and machine torque out.
 
 Captured with the build guide, #113
 
 </div>
 
-**Given:** Lecture 2's `HysteresisLatch`, Lecture 4's regen blending
+**Given:** `Vehicle.EnergyManager`, built on Lecture 2's `HysteresisLatch` and Lecture 4's regen
+blending · `TorqueToPedal`, the engine's inverse map
 
-<span class="todo">TODO: guide link · reference `dyad/HandsOn05/…`</span>
+[page: step 3](../lecture/lecture-05/#step-3) · reference `dyad/HandsOn05/P2HybridWLTC.dyad`, `dyad/HandsOn05/TorqueToPedal.dyad`
 
 </div>
 <div class="stack">
 
-*Two latches, SoC and demand · five modes as rules · the demand split into an engine torque and
-a machine torque · K0 and engine-on from the modes · regen through the blending*
+*The full hybrid drive back on the shaft · the manager splits the driver's demand into an engine
+torque and a machine torque · the inverse map turns the engine's into a pedal · engine-on, K0 and
+the CVT's speed target from its modes · its friction share through the CVT ratio*
 
-```julia
-# TODO: snippet from the build guide (#113)
+```txt
+manager = EnergyManager(mapped_limits = true, SoC_on = 0.52,
+                        SoC_off = 0.55, P_line_max = 30.0e3)
+N_target = max(manager.engine_on * line.N
+               + (1.0 - manager.engine_on) * demand_line.N, N_locked)
 ```
 
-<div class="handson">✓ over the WLTC the modes switch without chatter: <span class="todo">TODO
-mode changes</span> · SoC stays in its window: <span class="todo">TODO min–max</span></div>
+<div class="handson">✓ over the WLTC the modes switch without chatter: <b>44</b> engine starts, the
+shortest on for <b>1.9 s</b> · SoC <b>0.513–0.613</b>: charging stops at 0.55, regen adds the
+rest · speed error <b>1.32</b> km/h</div>
 
 </div>
 </div>
@@ -323,14 +336,21 @@ mode changes</span> · SoC stays in its window: <span class="todo">TODO min–ma
 Build 03: the energy manager. The screenshot will show it in Studio, captured with the build guide
 of issue 113.
 
-What you build, in the italic line. Two latches from Lecture 2: one on the state of charge for
-charging, one on the demand for starting the engine. The five modes as rules. The demand split, which
-turns the mode and the demand into an engine torque and a machine torque. The clutch and the
-engine-on command from the modes. And regen through Lecture 4's blending, which you already have.
+The library gives you the rules as one block, the energy manager: three of Lecture 2's latches, on
+the demand for starting the engine, on the line's cap for boost, and on the state of charge for
+charging, and Lecture 4's regen blending. What you build, in the italic line, is the car around it.
+You put the full hybrid drive back, with its losses, its 30 kilowatts and its 1.4 kilowatt-hours.
+The manager takes the driver's demand and splits it into an engine torque and a machine torque; an
+inverse engine map turns the engine's torque into a pedal. Its modes switch the engine on, close K0
+and pick the CVT's speed target, and its friction-brake share goes to the wheels through the CVT's
+ratio. The snippet sets the bench's thresholds and the speed target: the line when the engine runs,
+a second line on the demand when it does not.
 
-The checkpoint, from the plan: over the WLTC the modes switch without chatter, and the state of
-charge stays in its window. The number of mode changes and the state of charge's minimum and maximum
-come from the reference model and are TODO.
+The checkpoint: over the WLTC the modes switch without chatter, and the state of charge stays in its
+window. The reference run starts the engine 44 times, and the shortest run of the engine is 1.9
+seconds, so no start is chatter. The state of charge stays between 0.513 and 0.613: just under the
+window's bottom on the way in, and above its top, 0.55, only because regen keeps charging after the
+engine has stopped. And the car still follows the cycle within 1.32 kilometers per hour.
 
 If you see the engine start and stop several times within a second, a latch is missing or its two
 thresholds are the same.
