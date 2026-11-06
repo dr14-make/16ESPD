@@ -1,0 +1,116 @@
+"""
+Output-coupled 30 kW hybrid. `rear=false` is P3: machine joins the front
+CVT output. `rear=true` is P4: machine drives only `rear_spline`; the engine
+still drives front `spline`. Each output is wheel-speed, before an external
+unity-ratio axle differential. P4 therefore requires a separate rear differential
+in the vehicle fixture, not a connection of front and rear shafts inside this model.
+CVT defaults already include the front final drive; i_output is the separate
+machine-to-wheel reduction, not another front engine final drive.
+
+An ideal separate starter accelerates the crank while K0 request is gated by
+firing_fraction, so traction machine torque is not used for push-starting.
+Starter mechanical work P_start must be included in the fixture's stored-energy meter
+at its assumed electrical efficiency; no starter current or solenoid dynamics are modeled.
+"""
+component OutputHybridPowertrain
+  "Place the electric branch on a separate rear axle (assumed structural P3/P4 selection)"
+  structural parameter rear::Boolean = false
+  "Select speed-commanded CVT scheduling (assumed comparison option)"
+  structural parameter speed_commanded::Boolean = false
+  engine_pedal = RealInput()
+  engine_on = RealInput()
+  engage = RealInput()
+  tau_ref = RealInput()
+  engine_torque_ref = RealInput()
+  variable machine_limit::Torque
+  variable start_compensation::Torque
+  cvt_pedal = RealInput() if !speed_commanded
+  N_ref = RealInput() if speed_commanded
+  "Front wheel-speed output; connect an external differential"
+  spline = Spline()
+  "P4 rear wheel-speed output; connect a separate external rear differential"
+  rear_spline = Spline() if rear
+  support = Spline()
+  engine_speed = RealOutput()
+  engine_torque = RealOutput()
+  available_torque = RealOutput()
+  mdot_fuel = RealOutput()
+  machine_torque = RealOutput()
+  position = RealOutput()
+  SoC = RealOutput()
+  E = RealOutput()
+  i = RealOutput()
+  "Starter mechanical power [W], for the fixture energy meter (derived; torque times crank speed)"
+  P_start = RealOutput()
+  "Machine/wheel speed ratio (derived; Lecture 4 Leaf reduction)"
+  parameter i_output::Real(min = eps(Float64)) = 8.193
+  "Machine rated power (ORNL-2011 Sonata anchor, common HybridDrive comparison basis)"
+  parameter P_rated::Power = 30.0e3
+  "Machine peak torque (ORNL-2011 Sonata anchor, common HybridDrive comparison basis)"
+  parameter T_max::Torque = 205.0
+  "Lower firing speed [rpm] (assumed; same as P2Powertrain)"
+  parameter firing_rpm::Real = 400.0
+  "Firing speed band [rpm] (assumed; same as P2Powertrain)"
+  parameter firing_width::Real(min = eps(Float64)) = 300.0
+  "Ideal starter crank torque (assumed: exceeds engine motoring drag, not a fitted starter)"
+  parameter starter_torque::Torque(min = 0.0) = 50.0
+  "Initial crank speed (assumed stopped fixture)"
+  parameter engine_speed_start::AngularVelocity = 0.0
+  "Initial K0 position (assumed open to avoid initial push-start)"
+  parameter position_start::Real = 0.0
+  "Linear fraction across firing band (derived: engine rpm)"
+  variable firing_fraction::Real
+  "Starter activation fraction (derived: engine request times unfired fraction)"
+  variable start_fraction::Real
+  engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(fuel_controlled = true)
+  k0 = VehicleSystemsComponents.Vehicle.DisconnectClutch(position_start = position_start)
+  drive = VehicleSystemsComponents.Vehicle.Electric.HybridDrive(P_rated = P_rated, T_max = T_max, ratio = i_output)
+  starter = RotationalComponents.Sources.TorqueSource()
+  variator = VehicleSystemsComponents.Vehicle.ControlledVariator() if !speed_commanded
+  speed_variator = VehicleSystemsComponents.Vehicle.SpeedCommandedVariator() if speed_commanded
+relations
+  initial engine.air.manifold.p = 101325.0
+  initial engine.crankshaft.w = engine_speed_start
+  initial engine.crankshaft.phi = 0.0
+  connect(engine_pedal, engine.pedal)
+  machine_limit = min(drive.T_max, drive.P_rated / max(abs(drive.machine.w), 1.0))
+  start_compensation = engine_torque_ref - k0.tau
+  if speed_commanded
+    drive.tau_ref = min(max((tau_ref + start_compensation) * speed_variator.ratio / i_output, -machine_limit), machine_limit)
+  else
+    drive.tau_ref = min(max((tau_ref + start_compensation) * variator.ratio / i_output, -machine_limit), machine_limit)
+  end
+  firing_fraction = min(max((engine.N - firing_rpm) / firing_width, 0.0), 1.0)
+  engine.fuel_enable = engine_on * firing_fraction^2 * (3.0 - 2.0 * firing_fraction)
+  k0.engage = engage * firing_fraction
+  start_fraction = min(max(engine_on, 0.0), 1.0) * (1.0 - firing_fraction)
+  starter.tau = starter_torque * start_fraction
+  P_start = max(starter.tau * engine.speed.w, 0.0)
+  connect(engine.spline, k0.spline_a, starter.spline)
+  if speed_commanded
+    connect(N_ref, speed_variator.N_ref)
+    connect(k0.spline_b, speed_variator.spline_a)
+    connect(speed_variator.spline_b, spline)
+    connect(speed_variator.support, support)
+  else
+    connect(cvt_pedal, variator.pedal)
+    connect(k0.spline_b, variator.spline_a)
+    connect(variator.spline_b, spline)
+    connect(variator.support, support)
+  end
+  if rear
+    connect(drive.spline, rear_spline)
+  else
+    connect(drive.spline, spline)
+  end
+  connect(engine.support, k0.support, starter.support, drive.support, support)
+  engine_speed = engine.speed.w
+  engine_torque = engine.tau_e
+  available_torque = engine.torque_map.full_load.y
+  mdot_fuel = engine.mdot_fuel
+  machine_torque = drive.machine.tau
+  position = k0.position
+  SoC = drive.SoC
+  E = drive.battery.E
+  i = drive.battery.i
+end
