@@ -12,7 +12,7 @@ begin
     plotly()
     default(fontfamily = "sans-serif", background_color = :white)
     include(joinpath(@__DIR__, "..", "..", "scripts", "p_position_table.jl"))
-    using .PPositionTable: read_table
+    using .PPositionTable: H0, LINE, read_table
 end
 
 # ╔═╡ 3ca9a892-ae41-4a91-9e24-957c7297f302
@@ -38,8 +38,6 @@ down the battery is not counted as free fuel saving.
 
 # ╔═╡ 3ca9a892-ae41-4a91-9e24-957c7297f303
 begin
-    H0 = 5.71753646
-    LINE = 5.43744462
     position_rows = read_table()
     @assert Set(r.position for r in position_rows) == Set(["P0", "P2", "P3", "P4"])
     @assert length(position_rows) == 4
@@ -61,37 +59,18 @@ For a reference fuel consumption ``F_b``, saving is ``100(1-F_{corr}/F_b)``.
    This is a **proxy**, not a simulated stop-start reference: removing
    idle fuel does not reproduce restarts, auxiliaries, clutch transients or a changed trajectory.
 
-Both engine-only references have **no stop-start**. The third denominator remains pending
-until `assets/data/lecture05/baselines.csv` provides a `line` row with fields
-`baseline,fuel_L100,idle_fuel_L100,definitions_sha256`. No assumed idle percentage is used.
+Both engine-only references have **no stop-start**. The measured idle share ships in
+`assets/data/lecture05/baselines.csv`; no assumed idle percentage is used.
 """
 
 # ╔═╡ 3ca9a892-ae41-4a91-9e24-957c7297f305
 begin
     function measured_idle_baseline(path; line_fuel = LINE)
-        pending(message) = (; fuel_L100 = missing, idle_fuel_L100 = missing,
-            definitions_sha256 = missing, pending = message)
-        isfile(path) || return pending("Pending: measured line idle fuel has not been supplied.")
-        lines = filter(!isempty, readlines(path))
-        isempty(lines) && return pending("Pending: baselines.csv is empty.")
-        names = Symbol.(strip.(split(first(lines), ',')))
-        required = [:baseline, :fuel_L100, :idle_fuel_L100, :definitions_sha256]
-        all(in(names), required) || error("baselines.csv requires $(join(required, ','))")
-        rows = [NamedTuple{Tuple(names)}(Tuple(strip.(split(s, ','; keepempty = true))))
-            for s in lines[2:end]]
-        candidates = filter(r -> lowercase(r.baseline) == "line", rows)
-        isempty(candidates) && return pending("Pending: baselines.csv has no line row.")
-        length(candidates) == 1 || error("baselines.csv must have one line row")
-        row = only(candidates)
-        fuel = tryparse(Float64, row.fuel_L100)
-        idle = tryparse(Float64, row.idle_fuel_L100)
-        (fuel === nothing || idle === nothing || isempty(row.definitions_sha256)) &&
-            return pending("Pending: line fuel, measured idle fuel and definition fingerprint are required.")
-        isapprox(fuel, line_fuel; atol = 1e-5, rtol = 0) ||
-            error("Measured line baseline does not match the pinned LINE fuel")
-        0 <= idle < fuel || error("Measured line idle fuel must satisfy 0 ≤ idle < fuel")
-        (; fuel_L100 = fuel - idle, idle_fuel_L100 = idle,
-            definitions_sha256 = row.definitions_sha256, pending = nothing)
+        row = only(filter(r -> r.baseline == "line", read_table(path)))
+        isapprox(row.fuel_L100, line_fuel; atol = 1e-5, rtol = 0) || error("Line pin mismatch")
+        0 <= row.idle_fuel_L100 < row.fuel_L100 || error("Invalid idle fuel")
+        (; fuel_L100 = row.fuel_L100 - row.idle_fuel_L100,
+            idle_fuel_L100 = row.idle_fuel_L100, definitions_sha256 = row.definitions_sha256)
     end
     idle_baseline = measured_idle_baseline(joinpath(@__DIR__, "..", "..",
         "assets", "data", "lecture05", "baselines.csv"))
@@ -100,9 +79,7 @@ begin
 end
 
 # ╔═╡ 3ca9a892-ae41-4a91-9e24-957c7297f306
-if idle_baseline.pending !== nothing
-    md"**Line-minus-idle baseline: $(idle_baseline.pending)**"
-else
+begin
     md"""
     Measured line idle fuel: **$(fmt(idle_baseline.idle_fuel_L100; digits = 4)) L/100 km**.
     Line-minus-idle proxy: **$(fmt(idle_baseline.fuel_L100; digits = 4)) L/100 km**.
@@ -113,11 +90,11 @@ end
 # ╔═╡ 3ca9a892-ae41-4a91-9e24-957c7297f307
 begin
     table_headers = ["Position / kW", "Raw fuel", "Corr. fuel", "vs H0 %", "vs Line %",
-        "vs Line−idle %", "Regen MJ", "Electric s", "Starts"]
+        "vs Line−idle %", "Stored MJ", "Req. MJ", "Electric s", "Starts"]
     table_values = [["$(r.position) / $(fmt(r.P_rated_kW; digits = 0))",
         fmt(r.fuel_raw_L100), fmt(r.fuel_corr_L100),
         fmt(saving(r.fuel_corr_L100, H0)), fmt(saving(r.fuel_corr_L100, LINE)),
-        fmt(saving(r.fuel_corr_L100, idle_baseline.fuel_L100)), fmt(r.E_regen_MJ),
+        fmt(saving(r.fuel_corr_L100, idle_baseline.fuel_L100)), fmt(r.E_recovered_MJ), fmt(r.E_regen_MJ),
         fmt(r.electric_drive_s; digits = 1), fmt(r.starts; digits = 0)] for r in position_rows]
     Markdown.parse("| " * join(table_headers, " | ") * " |\n|" *
         join(fill("---", length(table_headers)), "|") * "|\n" *
@@ -140,7 +117,7 @@ position_table_plot = let
         end
     end
     annotate!(p, (n + 1) / 2, 0.35,
-        text("Fuel: L/100 km • Regen: recovered cycle energy • Electric: engine-off drive • —: pending measured idle baseline", 10, :gray, :center))
+        text("Fuel: L/100 km • Stored: battery recovery during braking; Req.: requested regen • Electric: engine-off drive", 10, :gray, :center))
     p
 end
 
@@ -155,10 +132,11 @@ md"""
 | P3 | Starter-assisted stop/start, electric drive, sailing, line, charging, boost, engine-decoupled regen |
 | P4 | Starter-assisted stop/start, rear electric drive, sailing, line, charging, boost, engine-decoupled regen |
 
-Recovered energy is the cycle integral `E_regen_MJ`, not a fuel saving by itself: losses,
-engine operating points and battery charge balance intervene. Electric-drive time counts
-engine-off operation above 1 km/h with drive torque above 1 N·m. Starts count engine-off to
-engine-on transitions, not an assumed initial start. P0 has no engine-off electric drive.
+Recovered energy (`E_recovered_MJ`) integrates positive battery stored-power inflow during
+negative driver demand, excluding engine-driven charging in traction. `E_regen_MJ` is
+requested regen before machine, converter and belt losses. Neither is fuel saving by itself. Electric-drive time counts
+engine-off operation above 1 km/h with drive torque above 1 N·m. Starts count engine speed crossing the firing band's lower edge upward after being below it,
+including the initial cranking start. Fuel resumptions count engine-latch rising edges separately. P0 has no engine-off electric drive.
 
 The energy meter is charge-corrected MJ/100 km. SoC endpoints and maximum absolute WLTC
 speed error make battery use and trace tracking visible alongside fuel consumption.
@@ -186,7 +164,7 @@ not confidence intervals for this model or a single equal-power experiment.
 - Here: **30 kW, 270 V**, the same teaching car with different machine positions, compared
   with its own **no-stop-start** engine baselines. Power, voltage, transmission, control,
   battery and reference fuel all differ. The line-minus-idle number only probes denominator
-  sensitivity; it must not be relabelled a stop-start simulation or a like-for-like ICCT result.
+  sensitivity; it must not be relabeled a stop-start simulation or a like-for-like ICCT result.
 
 Source: Dornoff et al., *Mild-hybrid vehicles: a near term technology trend for CO₂ emissions
 reduction*, July 2022, [ICCT white paper](https://theicct.org/wp-content/uploads/2022/07/mild-hybrid-emissions-jul22.pdf),
