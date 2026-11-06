@@ -9,7 +9,12 @@
 module TorqueToPedalMap
 
 using Printf
-include("bsfc_line.jl")
+# Reuse a BsfcLine the caller already loaded, so the test suite holds one copy of its maps.
+if isdefined(Main, :BsfcLine)
+    const BsfcLine = Main.BsfcLine
+else
+    include("bsfc_line.jl")
+end
 
 const ROOT = BsfcLine.ROOT
 const MAP_FILE = joinpath(ROOT, "assets", "data", "engine", "torque_to_pedal.csv")
