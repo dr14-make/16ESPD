@@ -22,14 +22,14 @@ row whose run does not end charge-sustaining (`SOC_BAND`) or does not follow the
 
 Every default this file derives from is read from the default model's parameters
 (`DEFAULTS`); the 30 kW size runs that model unchanged. The first line of the file records the
-SHA-256 of the code, generated definitions, data and manifest the runs read, so a test can tell
-when the file is stale; the suite does not rerun the sweep. The file is rewritten after every
-size, so sizes named as arguments rerun only those and keep the other rows while the hash still
-matches.
+SHA-256 of the code, generated definitions and data the runs read and of the packages resolved,
+so a test can tell when the file is stale; the suite does not rerun the sweep. The file is
+rewritten after every size, so sizes named as arguments rerun only those and keep the other rows
+while the hash still matches.
 """
 module MachineSizeSweep
 
-using Printf, SHA
+using Printf, SHA, TOML
 using VehicleSystemsComponents: Lecture5
 using DyadInterface: symbolic_container
 using ModelingToolkit: initial_conditions
@@ -81,7 +81,21 @@ torque_limit(P) = P / W_CORNER
 doh(P) = P / (P + P_ENGINE_PEAK)
 
 """
-The files the runs read: the library's code and manifest, the compiled Vehicle components, the
+The resolved packages of the project's `Manifest.toml`, one sorted line per package with its
+version or source. The manifest is not committed and setting up a notebook rewrites it, so its
+bytes are not hashed: only what was resolved.
+"""
+function resolved_packages(path = joinpath(ROOT, "Manifest.toml"))
+    fields = ("uuid", "version", "git-tree-sha1", "repo-url", "repo-rev", "repo-subdir", "path")
+    lines = String[]
+    for (name, entries) in TOML.parsefile(path)["deps"], e in entries
+        push!(lines, join([name; [string(get(e, f, "")) for f in fields]], " "))
+    end
+    return join(sort!(lines), "\n")
+end
+
+"""
+The files the runs read: the library's code, the compiled Vehicle components, the
 bench and the data tables. Only component definitions count, so a component added to the
 library or a test generated for one leaves the hash alone.
 """
@@ -93,7 +107,6 @@ function input_files()
     src = joinpath(ROOT, "src")
     append!(files, joinpath.(src, filter(endswith(".jl"), readdir(src))))
     append!(files, joinpath.(ROOT, [
-        "Manifest.toml",
         "generated/internals.jl",
         "generated/Lecture5/module.jl",
         "generated/Lecture5/types.jl",
@@ -106,13 +119,17 @@ function input_files()
     return sort!(files)
 end
 
-"SHA-256 over the input files' repository paths and contents, independent of checkout location."
+"""
+SHA-256 over the input files' repository paths and contents, independent of checkout location,
+and the resolved packages.
+"""
 function inputs_hash()
     ctx = SHA.SHA256_CTX()
     for f in input_files()
         SHA.update!(ctx, codeunits(relpath(f, ROOT) * "\n"))
         SHA.update!(ctx, read(f))
     end
+    SHA.update!(ctx, codeunits(resolved_packages()))
     return bytes2hex(SHA.digest!(ctx))
 end
 
