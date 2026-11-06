@@ -488,7 +488,6 @@ fuel during braking; a conditional high-SoC discharge latch lowers the engine lo
   push!(__eqs, w_e ~ max(engine_speed, w_idle))
   push!(__eqs, P_engine ~ engine_on * min(max(min(P_shift, cap), tau_excess * w_e), P_peak))
   push!(__eqs, tau_assist ~ min(max(tau_drive - tau_engine, -tau_lim), tau_lim))
-  push!(__eqs, fade ~ min(max(v / v_fade, 0.0), 1.0))
   push!(__eqs, soc_x ~ min(max((SoC - SoC_full + dSoC_full) / dSoC_full, 0.0), 1.0))
   push!(__eqs, soc_allow ~ 1.0 - soc_x ^ 2 * (3.0 - 2.0 * soc_x))
   push!(__eqs, tau_regen ~ min(tau_brake_demand, tau_regen_max))
@@ -523,6 +522,11 @@ fuel during braking; a conditional high-SoC discharge latch lowers the engine lo
     push!(__eqs, tau_engine ~ min(P_engine / w_e, max(available_torque, 0.0)))
   else
     push!(__eqs, tau_engine ~ P_engine / w_e)
+  end
+  if electric_drive
+    push!(__eqs, fade ~ min(max(v / v_fade, 0.0), 1.0))
+  else
+    push!(__eqs, fade ~ min(max(v / v_fade, 0.0), 1.0) * min(max(w_shaft / w_off, 0.0), 1.0))
   end
   if geared_limit
     push!(__eqs, tau_regen_max ~ soc_allow * min(tau_lim + min(tau_assist, 0.0), min(P_regen / max(abs(w_shaft), 1.0), fade * max(T_lim, 0.0))))

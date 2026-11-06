@@ -201,6 +201,7 @@ Connect support to a stationary reference; spline goes to an external differenti
   push!(__initialization_eqs, engine.air.manifold.p ~ 101325.0)
   push!(__initialization_eqs, engine.crankshaft.w ~ engine_speed_start)
   push!(__initialization_eqs, engine.crankshaft.phi ~ 0.0)
+  push!(__initialization_eqs, k0.spline_b.phi ~ 0.0)
 
   ### Assertions
   __assertions = []
