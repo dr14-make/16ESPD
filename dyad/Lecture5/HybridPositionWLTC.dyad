@@ -13,20 +13,22 @@ partial component HybridPositionWLTC
   "PI integral time (assumed; shared WLTC driver)"
   parameter Ti::Time = 1.0
   "Driver ceiling [N.m] (derived; engine peak plus machine torque referred to CVT input; output machines use launch ratio)"
-  parameter tau_max::Torque = 150.233567 + 205.0
-  "Negative PI ceiling at transmission input (assumed; shared brake demand)"
-  parameter tau_brake::Torque = tau_max
+  parameter tau_max::Torque = tau_engine_peak + 205.0
+  "Engine peak torque (derived; full-load table peak)"
+  parameter tau_engine_peak::Torque = 150.233567
+  "Negative PI ceiling at transmission input (derived; P2 engine peak plus 205 N.m machine torque)"
+  parameter tau_brake::Torque = tau_engine_peak + 205.0
   "Initial wheel surface speed offset (assumed; MultibodyComponents #185)"
   parameter dv_wheel::Velocity = 0.01
-  "Center of K0 launch engagement [rpm] (assumed; P2 step 2)"
+  "Center of K0 launch engagement [rpm] (assumed; shared P2 launch calibration)"
   parameter engage_rpm::Real = 1300.0
-  "Width of K0 launch engagement [rpm] (assumed; P2 step 2)"
+  "Width of K0 launch engagement [rpm] (assumed; shared P2 launch calibration)"
   parameter engage_width_rpm::Real(min = eps(Float64)) = 120.0
-  "Center of machine-side K0 lock-up [rpm] (assumed; P2 step 2)"
+  "Center of machine-side K0 lock-up [rpm] (assumed; shared P2 launch calibration)"
   parameter lock_rpm::Real = 840.0
-  "Width of machine-side K0 lock-up [rpm] (assumed; P2 step 2)"
+  "Width of machine-side K0 lock-up [rpm] (assumed; shared P2 launch calibration)"
   parameter lock_width_rpm::Real(min = eps(Float64)) = 12.0
-  "Minimum transmission target [rpm] (assumed; P2 step 2)"
+  "Minimum transmission target [rpm] (assumed; shared P2 launch calibration)"
   parameter N_locked::Real = 1000.0
   "Permit electric-only operation (derived; false for crank-coupled P0)"
   structural parameter electric_drive::Boolean = true

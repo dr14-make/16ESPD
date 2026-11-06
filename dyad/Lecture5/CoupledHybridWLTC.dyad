@@ -1,6 +1,9 @@
-"P0 crank-coupled hybrid WLTC (derived; position comparison against the driver)."
+"""
+P0 crank-coupled hybrid WLTC with a drive-side crank torque limit including belt efficiency.
+EnergyManager shares this conservative limit between drive and regeneration.
+"""
 test component CoupledHybridWLTC
-  extends HybridPositionWLTC(electric_drive = false, tau_max = 150.233567 + T_max * i_crank * eta_crank)
+  extends HybridPositionWLTC(electric_drive = false, tau_max = tau_engine_peak + T_max * i_crank * eta_crank)
   "Machine/crank ratio (assumed; illustrative P0 pulley sizing)"
   parameter i_crank::Real = 2.5
   "Belt efficiency (assumed; illustrative P0 belt)"
@@ -12,7 +15,7 @@ test component CoupledHybridWLTC
   powertrain = VehicleSystemsComponents.Vehicle.CoupledHybridPowertrain(speed_commanded = true, i_crank = i_crank, eta_crank = eta_crank, T_max = T_max, k0(tau_max = k0_capacity))
 relations
   manager.w_shaft = powertrain.engine_speed
-  manager.T_lim = powertrain.drive.T_max * powertrain.i_crank
+  manager.T_lim = powertrain.drive.T_max * powertrain.i_crank * powertrain.eta_crank
   connect(powertrain.SoC, manager.SoC)
   connect(powertrain.engine_speed, manager.engine_speed, map.omega)
   connect(powertrain.available_torque, manager.available_torque)
