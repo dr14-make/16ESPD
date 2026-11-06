@@ -1,6 +1,6 @@
 """
 Shared planar WLTC driver, road, brakes and energy accounting for the position benches.
-Driver and brake limits retain the P2 benchmark; position-dependent plants supply
+Driver limits reflect crank-equivalent machine torque; position-dependent plants supply
 shaft speed, ratio and stored power without introducing structural branches on states.
 """
 partial component HybridPositionWLTC
@@ -12,7 +12,7 @@ partial component HybridPositionWLTC
   parameter k::Real = 110.0
   "PI integral time (assumed; shared WLTC driver)"
   parameter Ti::Time = 1.0
-  "Signed driver ceiling [N.m] (derived; engine full-load peak plus HybridDrive default 205 N.m)"
+  "Driver ceiling [N.m] (derived; engine peak plus machine torque referred to CVT input; output machines use launch ratio)"
   parameter tau_max::Torque = 150.233567 + 205.0
   "Negative PI ceiling at transmission input (assumed; shared brake demand)"
   parameter tau_brake::Torque = tau_max

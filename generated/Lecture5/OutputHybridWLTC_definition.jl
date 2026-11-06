@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   OutputHybridWLTC(; name, electric_drive, rear, m, radius, k, Ti, tau_max, tau_brake, dv_wheel, engage_rpm, engage_width_rpm, lock_rpm, lock_width_rpm, N_locked, reduction, eta_start, __overrides)
+   OutputHybridWLTC(; name, electric_drive, rear, m, radius, k, Ti, tau_max, tau_brake, dv_wheel, engage_rpm, engage_width_rpm, lock_rpm, lock_width_rpm, N_locked, reduction, eta_start, T_max, i_launch, __overrides)
 
 P3 output-coupled hybrid WLTC; rear=true selects the P4 through-the-road plant.
 The manager retains CVT-input torque coordinates. The plant converts its machine
@@ -21,7 +21,7 @@ command to the physical output-side shaft and accounts for starter power separat
 | `radius`         | Wheel radius (derived; shared planar benchmark)                         | m  |   0.31 |
 | `k`         | PI gain [N.m per km/h] (assumed; shared WLTC driver)                         | --  |   110.0 |
 | `Ti`         | PI integral time (assumed; shared WLTC driver)                         | s  |   1.0 |
-| `tau_max`         | Signed driver ceiling [N.m] (derived; engine full-load peak plus HybridDrive default 205 N.m)                         | N.m  |   150.233567 + 205.0 |
+| `tau_max`         | Driver ceiling [N.m] (derived; engine peak plus machine torque referred to CVT input; output machines use launch ratio)                         | N.m  |   150.233567 ... / i_launch |
 | `tau_brake`         | Negative PI ceiling at transmission input (assumed; shared brake demand)                         | N.m  |   tau_max |
 | `dv_wheel`         | Initial wheel surface speed offset (assumed; MultibodyComponents #185)                         | m/s  |   0.01 |
 | `engage_rpm`         | Center of K0 launch engagement [rpm] (assumed; P2 step 2)                         | --  |   1300.0 |
@@ -31,6 +31,8 @@ command to the physical output-side shaft and accounts for starter power separat
 | `N_locked`         | Minimum transmission target [rpm] (assumed; P2 step 2)                         | --  |   1000.0 |
 | `reduction`         | Machine-to-wheel reduction (derived; Lecture 4 electric driveline benchmark)                         | --  |   8.193 |
 | `eta_start`         | Separate engine-starter electrical efficiency (assumed; starter accounting)                         | --  |   0.7 |
+| `T_max`         | Machine peak torque (ORNL-2011 Sonata comparison anchor)                         | N.m  |   205.0 |
+| `i_launch`         | Launch CVT ratio (derived; SpeedCommandedVariator benchmark)                         | --  |   12.0 |
 
 ## Variables
 
@@ -43,7 +45,7 @@ command to the physical output-side shaft and accounts for starter power separat
 | `E_regen`         | Requested regenerative energy in the manager torque frame [J]                         | J  |
 | `E_friction`         | Actual four-wheel friction-brake dissipation [J]                         | J  |
 """
-@component function OutputHybridWLTC(; name = nothing, var"electric_drive"=true, var"rear"=false, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(110.0), var"Ti"=Float64(1.0), var"tau_max"=150.233567 + 205.0, var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"N_locked"=Float64(1000.0), var"reduction"=8.193, var"eta_start"=0.7, var"tau_brake"=nothing, __overrides = Dict{String, Any}())
+@component function OutputHybridWLTC(; name = nothing, var"electric_drive"=true, var"rear"=false, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(110.0), var"Ti"=Float64(1.0), var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"N_locked"=Float64(1000.0), var"reduction"=8.193, var"eta_start"=0.7, var"T_max"=Float64(205.0), var"i_launch"=Float64(12.0), var"tau_max"=nothing, var"tau_brake"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -68,7 +70,6 @@ command to the physical output-side shaft and accounts for starter power separat
   haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
   haskey(__overrides, "k") && (k = pop!(__overrides, "k"))
   haskey(__overrides, "Ti") && (Ti = pop!(__overrides, "Ti"))
-  haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
   haskey(__overrides, "dv_wheel") && (dv_wheel = pop!(__overrides, "dv_wheel"))
   haskey(__overrides, "engage_rpm") && (engage_rpm = pop!(__overrides, "engage_rpm"))
   haskey(__overrides, "engage_width_rpm") && (engage_width_rpm = pop!(__overrides, "engage_width_rpm"))
@@ -77,9 +78,13 @@ command to the physical output-side shaft and accounts for starter power separat
   haskey(__overrides, "N_locked") && (N_locked = pop!(__overrides, "N_locked"))
   haskey(__overrides, "reduction") && (reduction = pop!(__overrides, "reduction"))
   haskey(__overrides, "eta_start") && (eta_start = pop!(__overrides, "eta_start"))
+  haskey(__overrides, "T_max") && (T_max = pop!(__overrides, "T_max"))
+  haskey(__overrides, "i_launch") && (i_launch = pop!(__overrides, "i_launch"))
+  haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
   haskey(__overrides, "tau_brake") && (tau_brake = pop!(__overrides, "tau_brake"))
 
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
+  isnothing(tau_max) && (tau_max = 150.233567 + T_max * reduction / i_launch)
   isnothing(tau_brake) && (tau_brake = tau_max)
 
   ### Structural Parameters (functions)
@@ -108,7 +113,7 @@ command to the physical output-side shaft and accounts for starter power separat
   append!(__params, @parameters (Ti::Real), [description = "PI integral time (assumed; shared WLTC driver)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, Ti, __local__Ti)
   __local__tau_max = tau_max
-  append!(__params, @parameters (tau_max::Real), [description = "Signed driver ceiling [N.m] (derived; engine full-load peak plus HybridDrive default 205 N.m)"])
+  append!(__params, @parameters (tau_max::Real), [description = "Driver ceiling [N.m] (derived; engine peak plus machine torque referred to CVT input; output machines use launch ratio)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, tau_max, __local__tau_max)
   __local__tau_brake = tau_brake
   append!(__params, @parameters (tau_brake::Real), [description = "Negative PI ceiling at transmission input (assumed; shared brake demand)"])
@@ -137,6 +142,12 @@ command to the physical output-side shaft and accounts for starter power separat
   __local__eta_start = eta_start
   append!(__params, @parameters (eta_start::Real), [description = "Separate engine-starter electrical efficiency (assumed; starter accounting)", bounds = (eps(Float64), Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, eta_start, __local__eta_start)
+  __local__T_max = T_max
+  append!(__params, @parameters (T_max::Real), [description = "Machine peak torque (ORNL-2011 Sonata comparison anchor)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_max, __local__T_max)
+  __local__i_launch = i_launch
+  append!(__params, @parameters (i_launch::Real), [description = "Launch CVT ratio (derived; SpeedCommandedVariator benchmark)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, i_launch, __local__i_launch)
 
   ### Final Parameters (assignments)
 
@@ -229,7 +240,10 @@ command to the physical output-side shaft and accounts for starter power separat
   end
   # Subcomponent powertrain of type VehicleSystemsComponents.Vehicle.OutputHybridPowertrain
   powertrain_overrides = __pop_subcomponent_overrides!(__overrides, "powertrain")
-  push!(__systems, @named powertrain = VehicleSystemsComponents.Vehicle.OutputHybridPowertrain(; speed_commanded=true, rear=rear, i_output=reduction, __overrides = powertrain_overrides))
+  powertrain_dict = Dict{String, Any}()
+  powertrain_dict["speed_variator.i_launch"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(i_launch))
+  merge!(powertrain_dict, powertrain_overrides)
+  push!(__systems, @named powertrain = VehicleSystemsComponents.Vehicle.OutputHybridPowertrain(; speed_commanded=true, rear=rear, i_output=reduction, T_max=T_max, __overrides = powertrain_dict))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))

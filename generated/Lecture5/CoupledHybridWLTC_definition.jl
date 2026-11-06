@@ -18,7 +18,7 @@ P0 crank-coupled hybrid WLTC (derived; position comparison against the driver).
 | `radius`         | Wheel radius (derived; shared planar benchmark)                         | m  |   0.31 |
 | `k`         | PI gain [N.m per km/h] (assumed; shared WLTC driver)                         | --  |   110.0 |
 | `Ti`         | PI integral time (assumed; shared WLTC driver)                         | s  |   1.0 |
-| `tau_max`         | Signed driver ceiling [N.m] (derived; engine full-load peak plus HybridDrive default 205 N.m)                         | N.m  |   150.233567 + 205.0 |
+| `tau_max`         | Driver ceiling [N.m] (derived; engine peak plus machine torque referred to CVT input; output machines use launch ratio)                         | N.m  |   150.233567 ...* eta_crank |
 | `tau_brake`         | Negative PI ceiling at transmission input (assumed; shared brake demand)                         | N.m  |   tau_max |
 | `dv_wheel`         | Initial wheel surface speed offset (assumed; MultibodyComponents #185)                         | m/s  |   0.01 |
 | `engage_rpm`         | Center of K0 launch engagement [rpm] (assumed; P2 step 2)                         | --  |   1300.0 |
@@ -26,9 +26,9 @@ P0 crank-coupled hybrid WLTC (derived; position comparison against the driver).
 | `lock_rpm`         | Center of machine-side K0 lock-up [rpm] (assumed; P2 step 2)                         | --  |   840.0 |
 | `lock_width_rpm`         | Width of machine-side K0 lock-up [rpm] (assumed; P2 step 2)                         | --  |   12.0 |
 | `N_locked`         | Minimum transmission target [rpm] (assumed; P2 step 2)                         | --  |   1000.0 |
-| `i_crank`         | Machine-to-crank speed ratio (assumed; P0 belt design)                         | --  |   2.5 |
-| `eta_crank`         | Crank belt efficiency (assumed; P0 belt design)                         | --  |   0.96 |
-| `T_max`         | P0 peak machine torque [N.m] (assumed; 43 N.m starter-generator sizing)                         | N.m  |   43.0 |
+| `i_crank`         | Machine/crank ratio (assumed; illustrative P0 pulley sizing)                         | --  |   2.5 |
+| `eta_crank`         | Belt efficiency (assumed; illustrative P0 belt)                         | --  |   0.96 |
+| `T_max`         | Machine peak torque (ORNL-2012 Hyundai HSG)                         | N.m  |   43.0 |
 | `k0_capacity`         | K0 capacity [N.m] (derived; 390 N.m accommodates combined crank-side torque)                         | N.m  |   390.0 |
 
 ## Variables
@@ -41,9 +41,8 @@ P0 crank-coupled hybrid WLTC (derived; position comparison against the driver).
 | `E_charge`         | Stored-energy charging integral [J]; includes regen and load-point charging                         | J  |
 | `E_regen`         | Requested regenerative energy in the manager torque frame [J]                         | J  |
 | `E_friction`         | Actual four-wheel friction-brake dissipation [J]                         | J  |
-| `E_drag`         | Fuel-cut engine motoring dissipation [J] (derived; map closed-throttle drag)                         | J  |
 """
-@component function CoupledHybridWLTC(; name = nothing, var"electric_drive"=false, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(110.0), var"Ti"=Float64(1.0), var"tau_max"=150.233567 + 205.0, var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"N_locked"=Float64(1000.0), var"i_crank"=2.5, var"eta_crank"=0.96, var"T_max"=Float64(43.0), var"k0_capacity"=Float64(390.0), var"tau_brake"=nothing, __overrides = Dict{String, Any}())
+@component function CoupledHybridWLTC(; name = nothing, var"electric_drive"=false, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(110.0), var"Ti"=Float64(1.0), var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"N_locked"=Float64(1000.0), var"i_crank"=2.5, var"eta_crank"=0.96, var"T_max"=Float64(43.0), var"k0_capacity"=Float64(390.0), var"tau_max"=nothing, var"tau_brake"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -67,7 +66,6 @@ P0 crank-coupled hybrid WLTC (derived; position comparison against the driver).
   haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
   haskey(__overrides, "k") && (k = pop!(__overrides, "k"))
   haskey(__overrides, "Ti") && (Ti = pop!(__overrides, "Ti"))
-  haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
   haskey(__overrides, "dv_wheel") && (dv_wheel = pop!(__overrides, "dv_wheel"))
   haskey(__overrides, "engage_rpm") && (engage_rpm = pop!(__overrides, "engage_rpm"))
   haskey(__overrides, "engage_width_rpm") && (engage_width_rpm = pop!(__overrides, "engage_width_rpm"))
@@ -78,9 +76,11 @@ P0 crank-coupled hybrid WLTC (derived; position comparison against the driver).
   haskey(__overrides, "eta_crank") && (eta_crank = pop!(__overrides, "eta_crank"))
   haskey(__overrides, "T_max") && (T_max = pop!(__overrides, "T_max"))
   haskey(__overrides, "k0_capacity") && (k0_capacity = pop!(__overrides, "k0_capacity"))
+  haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
   haskey(__overrides, "tau_brake") && (tau_brake = pop!(__overrides, "tau_brake"))
 
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
+  isnothing(tau_max) && (tau_max = 150.233567 + T_max * i_crank * eta_crank)
   isnothing(tau_brake) && (tau_brake = tau_max)
 
   ### Structural Parameters (functions)
@@ -109,7 +109,7 @@ P0 crank-coupled hybrid WLTC (derived; position comparison against the driver).
   append!(__params, @parameters (Ti::Real), [description = "PI integral time (assumed; shared WLTC driver)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, Ti, __local__Ti)
   __local__tau_max = tau_max
-  append!(__params, @parameters (tau_max::Real), [description = "Signed driver ceiling [N.m] (derived; engine full-load peak plus HybridDrive default 205 N.m)"])
+  append!(__params, @parameters (tau_max::Real), [description = "Driver ceiling [N.m] (derived; engine peak plus machine torque referred to CVT input; output machines use launch ratio)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, tau_max, __local__tau_max)
   __local__tau_brake = tau_brake
   append!(__params, @parameters (tau_brake::Real), [description = "Negative PI ceiling at transmission input (assumed; shared brake demand)"])
@@ -133,13 +133,13 @@ P0 crank-coupled hybrid WLTC (derived; position comparison against the driver).
   append!(__params, @parameters (N_locked::Real), [description = "Minimum transmission target [rpm] (assumed; P2 step 2)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, N_locked, __local__N_locked)
   __local__i_crank = i_crank
-  append!(__params, @parameters (i_crank::Real), [description = "Machine-to-crank speed ratio (assumed; P0 belt design)", bounds = (eps(Float64), Inf)])
+  append!(__params, @parameters (i_crank::Real), [description = "Machine/crank ratio (assumed; illustrative P0 pulley sizing)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, i_crank, __local__i_crank)
   __local__eta_crank = eta_crank
-  append!(__params, @parameters (eta_crank::Real), [description = "Crank belt efficiency (assumed; P0 belt design)"])
+  append!(__params, @parameters (eta_crank::Real), [description = "Belt efficiency (assumed; illustrative P0 belt)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, eta_crank, __local__eta_crank)
   __local__T_max = T_max
-  append!(__params, @parameters (T_max::Real), [description = "P0 peak machine torque [N.m] (assumed; 43 N.m starter-generator sizing)"])
+  append!(__params, @parameters (T_max::Real), [description = "Machine peak torque (ORNL-2012 Hyundai HSG)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, T_max, __local__T_max)
   __local__k0_capacity = k0_capacity
   append!(__params, @parameters (k0_capacity::Real), [description = "K0 capacity [N.m] (derived; 390 N.m accommodates combined crank-side torque)"])
@@ -156,7 +156,6 @@ P0 crank-coupled hybrid WLTC (derived; position comparison against the driver).
   append!(__vars, @variables (E_charge(t)::Real), [description = "Stored-energy charging integral [J]; includes regen and load-point charging"])
   append!(__vars, @variables (E_regen(t)::Real), [description = "Requested regenerative energy in the manager torque frame [J]"])
   append!(__vars, @variables (E_friction(t)::Real), [description = "Actual four-wheel friction-brake dissipation [J]"])
-  append!(__vars, @variables (E_drag(t)::Real), [description = "Fuel-cut engine motoring dissipation [J] (derived; map closed-throttle drag)"])
 
   ### Variables (assignments)
   __ovr_ratio = pop!(__overrides, "ratio", nothing); isnothing(__ovr_ratio) || push!(__eqs, ratio ~ __ovr_ratio)
@@ -177,9 +176,6 @@ P0 crank-coupled hybrid WLTC (derived; position comparison against the driver).
   __ovr_E_friction = pop!(__overrides, "E_friction", nothing); isnothing(__ovr_E_friction) || push!(__eqs, E_friction ~ __ovr_E_friction)
   __ovr_E_friction__initial = pop!(__overrides, "E_friction.initial", nothing); isnothing(__ovr_E_friction__initial) || (__initial_conditions[E_friction] = __ovr_E_friction__initial)
   __ovr_E_friction__guess = pop!(__overrides, "E_friction.guess", nothing)
-  __ovr_E_drag = pop!(__overrides, "E_drag", nothing); isnothing(__ovr_E_drag) || push!(__eqs, E_drag ~ __ovr_E_drag)
-  __ovr_E_drag__initial = pop!(__overrides, "E_drag.initial", nothing); isnothing(__ovr_E_drag__initial) || (__initial_conditions[E_drag] = __ovr_E_drag__initial)
-  __ovr_E_drag__guess = pop!(__overrides, "E_drag.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -250,7 +246,6 @@ P0 crank-coupled hybrid WLTC (derived; position comparison against the driver).
   isnothing(__ovr_E_charge__guess) || (__guesses[E_charge] = __ovr_E_charge__guess)
   isnothing(__ovr_E_regen__guess) || (__guesses[E_regen] = __ovr_E_regen__guess)
   isnothing(__ovr_E_friction__guess) || (__guesses[E_friction] = __ovr_E_friction__guess)
-  isnothing(__ovr_E_drag__guess) || (__guesses[E_drag] = __ovr_E_drag__guess)
 
   ### Initialization Equations
   push!(__initialization_eqs, E_charge ~ 0.0)
@@ -272,7 +267,6 @@ P0 crank-coupled hybrid WLTC (derived; position comparison against the driver).
   push!(__initialization_eqs, car.fr.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, car.rl.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, car.rr.brake.tau_actual ~ 0.0)
-  push!(__initialization_eqs, E_drag ~ 0.0)
   push!(__initialization_eqs, powertrain.drive.converter.i_out ~ 0.0)
 
   ### Assertions
@@ -290,13 +284,12 @@ P0 crank-coupled hybrid WLTC (derived; position comparison against the driver).
   push!(__eqs, ModelingToolkit.D_nounits(E_regen) ~ manager.tau_regen * max(manager.w_shaft, 0.0))
   push!(__eqs, ModelingToolkit.D_nounits(E_friction) ~ car.fl.brake.tau_friction * car.fl.brake.w + car.fr.brake.tau_friction * car.fr.brake.w + car.rl.brake.tau_friction * car.rl.brake.w + car.rr.brake.tau_friction * car.rr.brake.w)
   push!(__eqs, manager.w_shaft ~ powertrain.engine_speed)
-  push!(__eqs, manager.T_lim ~ powertrain.drive.T_max * i_crank)
-  push!(__eqs, powertrain.tau_ref ~ manager.tau_machine / i_crank)
+  push!(__eqs, manager.T_lim ~ powertrain.drive.T_max * powertrain.i_crank)
+  push!(__eqs, powertrain.tau_ref ~ manager.tau_machine / powertrain.i_crank)
   push!(__eqs, powertrain.N_ref ~ N_target)
   push!(__eqs, powertrain.engage ~ max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.speed_variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
   push!(__eqs, ratio ~ powertrain.speed_variator.ratio)
   push!(__eqs, P_stored ~ powertrain.E * powertrain.i)
-  push!(__eqs, ModelingToolkit.D_nounits(E_drag) ~ max(-powertrain.engine.torque_blend.motored * powertrain.engine.cut_fraction * powertrain.engine_speed, 0.0))
   push!(__eqs, connect(car.bus, motion.bus))
   push!(__eqs, connect(trace.y, driver.u_s))
   push!(__eqs, connect(motion.vx, kmh.u, meter.speed))
