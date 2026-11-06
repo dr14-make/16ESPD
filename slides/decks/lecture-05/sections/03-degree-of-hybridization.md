@@ -103,7 +103,7 @@ routeAlias: micro-to-plug-in
 |---|---|---|---|
 | **Micro** | stops and restarts the engine | 12 V starter, ≈ 3 kW | 5.0 % vs no stop/start (Chalmers); 3.5 % average (ICCT) |
 | **Mild, 48 V** | boost and regen; electric driving only if decoupled | 8–20 kW | ≈ 7 % (P0) to ≈ 16 % (P2, P3, P4+P0) vs stop/start, 15–16 kW |
-| **Full** | drives alone, boosts, regens; the engine can stay off | ≈ 30 kW, ≈ 1.4 kWh, 270 V (2011 Sonata Hybrid) | today's result: <span class="todo">TODO (#113)</span> |
+| **Full** | drives alone, boosts, regens; the engine can stay off | ≈ 30 kW, ≈ 1.4 kWh, 270 V (2011 Sonata Hybrid) | today's P2: 28.5 % vs no stop/start |
 | **Plug-in** | a full hybrid with a pack charged from the grid | a larger pack | first charge-depleting, then charge-sustaining |
 
 </div>
@@ -129,7 +129,8 @@ A full hybrid has a machine and a battery large enough to drive the car alone at
 the engine off for long stretches. The anchor is the 2011 Hyundai Sonata Hybrid Oak Ridge
 benchmarked: a 30 kilowatt machine behind an engine clutch, a 1.4 kilowatt-hour, 270 volt pack, and
 a claimed electric drive up to 62 miles per hour. That is the size of today's car. Its saving on the
-WLTC is what you measure in build 04.
+WLTC is what you measure in build 04: 28.5 percent against the same car without the hybrid, which
+idles at every stop, so the stop/start saving is inside that number.
 
 A plug-in hybrid is a full hybrid with a much larger pack charged from the grid. It first drives
 charge-depleting, mostly on grid energy, then charge-sustaining like a full hybrid. Today stays

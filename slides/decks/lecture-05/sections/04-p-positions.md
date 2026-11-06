@@ -536,7 +536,7 @@ connect(k0.spline_b, drive.spline, variator.spline_a)
 connect(variator.spline_b, spline)
 ```
 
-<div class="handson">✓ engine only (H0), full WLTC: speed error <b>1.55</b> km/h, <b>5.71</b>
+<div class="handson">✓ engine only (H0), full WLTC: speed error <b>1.17</b> km/h, <b>5.72</b>
 L/100 km · electric only, WLTC Low: speed error <b>1.50</b> km/h, SoC 0.60 → 0.39</div>
 
 </div>
@@ -554,8 +554,8 @@ variator, not the CVT driveline, which would bring a second launch clutch, and t
 differential to the front flanges.
 
 Then two runs, and they are the checkpoint. Engine only, H0: K0 is the launch clutch, slipping as
-the engine revs and locked once the car moves; the car follows the whole WLTC within 1.55 kilometers
-per hour and burns 5.71 liters per 100 kilometers. Electric only: K0
+the engine revs and locked once the car moves; the car follows the whole WLTC within 1.17 kilometers
+per hour and burns 5.72 liters per 100 kilometers. Electric only: K0
 open, the engine stopped; the car must follow the WLTC where the demand is low. The checkpoint asks
 only for low demand: at about 30 kilowatts instead of Lecture 4's 110, the machine is not meant to
 carry the fast phases alone.
