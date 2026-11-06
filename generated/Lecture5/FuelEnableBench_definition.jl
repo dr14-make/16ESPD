@@ -7,13 +7,7 @@
 @doc Markdown.doc"""
    FuelEnableBench(; name, __overrides)
 
-Fuel-disabled spin-down followed by a K0 start from a rotating machine-side inertia.
-
-## Variables
-
-| Name         | Description                         | Units  | 
-| ------------ | ----------------------------------- | ------ |
-| `firing`         |                          | --  |
+Fuel-disabled spin-down followed by a clutch start using the powertrain firing logic.
 """
 @component function FuelEnableBench(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -52,26 +46,22 @@ Fuel-disabled spin-down followed by a K0 start from a rotating machine-side iner
   ### Final Path Parameters
 
   ### Variables (declarations)
-  append!(__vars, @variables (firing(t)::Real))
 
   ### Variables (assignments)
-  __ovr_firing = pop!(__overrides, "firing", nothing); isnothing(__ovr_firing) || push!(__eqs, firing ~ __ovr_firing)
-  __ovr_firing__initial = pop!(__overrides, "firing.initial", nothing); isnothing(__ovr_firing__initial) || (__initial_conditions[firing] = __ovr_firing__initial)
-  __ovr_firing__guess = pop!(__overrides, "firing.guess", nothing)
 
   ### Constants
   __constants = Any[]
 
   ### Components
-  # Subcomponent engine of type VehicleSystemsComponents.Vehicle.Engine.MappedEngine
-  engine_overrides = __pop_subcomponent_overrides!(__overrides, "engine")
-  push!(__systems, @named engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(; fuel_controlled=true, __overrides = engine_overrides))
-  # Subcomponent k0 of type VehicleSystemsComponents.Vehicle.DisconnectClutch
-  k0_overrides = __pop_subcomponent_overrides!(__overrides, "k0")
-  push!(__systems, @named k0 = VehicleSystemsComponents.Vehicle.DisconnectClutch(; clamp_width=0.000001, __overrides = k0_overrides))
-  # Subcomponent load of type RotationalComponents.Components.Inertia
+  # Subcomponent powertrain of type VehicleSystemsComponents.Vehicle.P2Powertrain
+  powertrain_overrides = __pop_subcomponent_overrides!(__overrides, "powertrain")
+  powertrain_dict = Dict{String, Any}()
+  powertrain_dict["k0.clamp_width"] = ModelingToolkit.default_to_parentscope(0.000001)
+  merge!(powertrain_dict, powertrain_overrides)
+  push!(__systems, @named powertrain = VehicleSystemsComponents.Vehicle.P2Powertrain(; start_stop=true, position_start=Float64(0.0), __overrides = powertrain_dict))
+  # Subcomponent load of type RotationalComponents.Sources.VelocitySource
   load_overrides = __pop_subcomponent_overrides!(__overrides, "load")
-  push!(__systems, @named load = RotationalComponents.Components.Inertia(; J=Float64(10.0), __overrides = load_overrides))
+  push!(__systems, @named load = RotationalComponents.Sources.VelocitySource(; __overrides = load_overrides))
   # Subcomponent mount of type RotationalComponents.Components.Fixed
   mount_overrides = __pop_subcomponent_overrides!(__overrides, "mount")
   push!(__systems, @named mount = RotationalComponents.Components.Fixed(; __overrides = mount_overrides))
@@ -80,26 +70,25 @@ Fuel-disabled spin-down followed by a K0 start from a rotating machine-side iner
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
-  isnothing(__ovr_firing__guess) || (__guesses[firing] = __ovr_firing__guess)
 
   ### Initialization Equations
-  push!(__initialization_eqs, engine.crankshaft.w ~ 800.0 * pi / 30)
-  push!(__initialization_eqs, engine.crankshaft.phi ~ 0.0)
-  push!(__initialization_eqs, engine.air.manifold.p ~ 101325.0)
-  push!(__initialization_eqs, load.w ~ 150.0)
   push!(__initialization_eqs, load.phi ~ 0.0)
+  push!(__initialization_eqs, powertrain.drive.converter.i_out ~ 0.0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
-  push!(__eqs, engine.pedal ~ 0.2)
-  push!(__eqs, k0.engage ~ 0.5 * (1.0 + tanh((t - 12.0) / 0.1)))
-  push!(__eqs, firing ~ min(max((engine.N - 400.0) / 300.0, 0.0), 1.0))
-  push!(__eqs, engine.fuel_enable ~ k0.engage * firing ^ 2 * (3.0 - 2.0 * firing))
-  push!(__eqs, connect(engine.spline, k0.spline_a))
-  push!(__eqs, connect(k0.spline_b, load.spline_a))
-  push!(__eqs, connect(engine.support, k0.support, mount.spline))
+  push!(__eqs, load.w_ref ~ 150.0 / 12.0)
+  push!(__eqs, powertrain.engine_pedal ~ 0.2)
+  push!(__eqs, powertrain.engage ~ 0.5 * (1.0 + tanh((t - 12.0) / 0.1)))
+  push!(__eqs, powertrain.engine_on ~ powertrain.engage)
+  push!(__eqs, powertrain.engine_torque_ref ~ 0.0)
+  push!(__eqs, powertrain.tau_ref ~ 0.0)
+  push!(__eqs, powertrain.cvt_pedal ~ 0.0)
+  push!(__eqs, connect(load.support, mount.spline))
+  push!(__eqs, connect(powertrain.spline, load.spline))
+  push!(__eqs, connect(powertrain.support, mount.spline))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

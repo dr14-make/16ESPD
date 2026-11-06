@@ -852,12 +852,12 @@ end
     s, m = r.sol, symbolic_container(r)
     @test string(s.retcode) == "Success"
     ts = collect(5.0:0.1:11.0)
-    @test maximum(abs.(s(ts, idxs = m.engine.N).u)) < 3.0
-    @test maximum(abs.(s(ts, idxs = m.engine.mdot_fuel).u)) < 1e-10
-    @test minimum(s[m.engine.N]) > -3.0
-    @test s(14.0, idxs = m.engine.N) > 700.0
-    @test s(14.0, idxs = m.engine.mdot_fuel) > 0.0
-    @test minimum(s[m.k0.tau] .* s[m.k0.w_slip]) > -1e-8
+    @test maximum(abs.(s(ts, idxs = m.powertrain.engine.N).u)) < 3.0
+    @test maximum(abs.(s(ts, idxs = m.powertrain.engine.mdot_fuel).u)) < 1e-10
+    @test minimum(s[m.powertrain.engine.N]) > -3.0
+    @test s(14.0, idxs = m.powertrain.engine.N) > 700.0
+    @test s(14.0, idxs = m.powertrain.engine.mdot_fuel) > 0.0
+    @test minimum(s[m.powertrain.k0.tau] .* s[m.powertrain.k0.w_slip]) > -1e-8
 end
 
 
@@ -882,7 +882,10 @@ include("torque_to_pedal.jl")
     s, m = run.sol, symbolic_container(run)
     @test string(s.retcode) == "Success"
     ts = collect(0.0:0.05:1800.0)
-    at(x) = s(ts, idxs = x).u
+    cache = Dict{Any,Any}()
+    at(x) = get!(cache, x) do
+        s(ts, idxs = x).u
+    end
     integrate(y) = sum((y[1:end-1] .+ y[2:end]) ./ 2) * 0.05
     soc = at(m.powertrain.SoC)
     ref = at(m.powertrain.drive.tau_ref)
@@ -894,8 +897,8 @@ include("torque_to_pedal.jl")
     @test maximum(soc) <= 0.8
     corrected = last(s[m.meter.fuel_corr])
     @test corrected < H0_L100
-    @test corrected ≈ 4.11567 atol = 0.025
-    @test last(s[m.meter.energy_corr]) ≈ 133.0719 atol = 0.9
+    @test corrected ≈ 4.086344 atol = 0.025
+    @test last(s[m.meter.energy_corr]) ≈ 132.12377 atol = 0.9
     on = at(m.manager.engine_on) .> 0.5
     starts = findall(diff(on) .== 1)
     stops = findall(diff(on) .== -1)
@@ -920,6 +923,7 @@ include("torque_to_pedal.jl")
     @test maximum(abs.(at(m.powertrain.engine_torque)[locked])) < 230.0
     max_error = maximum(abs.(3.6 .* at(m.car.bus.vx) .- at(m.trace.y)))
     @test max_error < 1.7
+    @test last(s[m.E_charge]) ≈ 3.91999e6 rtol = 0.01
     @test last(s[m.E_regen]) > 0
     @test last(s[m.E_friction]) >= 0
     modes = [at(getproperty(m.manager, x)) for x in (:ev, :on_line, :charging, :boosting)]
@@ -938,6 +942,15 @@ include("torque_to_pedal.jl")
     @test mean_power_error < 500.0
     @test max_power_error < 5000.0
     @test line_fuel_share > 0.45
+    tau_request = at(m.manager.tau_engine)
+    on_fraction = at(m.manager.engine_on)
+    nonpositive_fuel = integrate(fuel .* ((tau_request .<= 0.0) .& (on_fraction .> 0.99)))
+    excess = max.(abs.(at(m.powertrain.tau_ref) .+ at(m.powertrain.start_compensation)) .- limit, 0.0)
+    starting = (on_age .> 0.0) .& (on_age .<= 3.0)
+    start_excess_time = integrate(Float64.(starting .& (excess .> 0.01)))
+    start_excess_peak = maximum(excess[starting])
+    start_speed_error = maximum(abs.(3.6 .* at(m.car.bus.vx) .- at(m.trace.y))[starting])
+    @info "Start compensation envelope" start_excess_time start_excess_peak start_speed_error max_ref=maximum(abs.(ref)) limit_excess=maximum(abs.(ref) .- limit) nonpositive_fuel charge_J=last(s[m.E_charge])
     @info "Engine line tracking" mean_power_error max_power_error line_fuel_share
     @info "Charge-sustaining WLTC" corrected raw=last(s[m.meter.fuel_raw]) hybrid_MJ100=last(s[m.meter.energy_corr]) conventional_MJ100=H0_MJ100 BEV_MJ100=47.25 SoC=(first(soc),last(soc),minimum(soc),maximum(soc)) starts=length(starts) starts_per_km=length(starts)/km mean_on=sum(durations)/length(durations) min_on=minimum(durations) slip_J=integrate(slip) max_error regen_J=last(s[m.E_regen]) friction_J=last(s[m.E_friction]) mode_seconds=integrate.(modes) mode_fuel_kg=[integrate(x .* at(m.powertrain.mdot_fuel)) for x in modes]
 end

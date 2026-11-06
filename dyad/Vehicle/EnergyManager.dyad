@@ -69,10 +69,10 @@ best-BSFC line. With `mapped_limits`, the torque split caps the engine share at 
 full-load envelope during CVT transients; the power request remains the operating-line target.
 """
 component EnergyManager
-  extends VehicleSystemsComponents.Vehicle.Engine.EngineMapData
   "Limit the torque split to the mapped engine envelope during CVT transients"
   structural parameter mapped_limits::Boolean = false
-  available_torque = VehicleSystemsComponents.Vehicle.Engine.SpeedCurve(rpm_axis = full_load_rpm, data = full_load_data) if mapped_limits
+  "Engine-owned full-load envelope at measured engine speed [N.m]"
+  available_torque = RealInput() if mapped_limits
   "Driver torque demand at the transmission input, positive driving [N.m]"
   tau_dem = RealInput() {^tau_dem}
   "Transmission input (machine) shaft speed [rad/s]"
@@ -218,8 +218,7 @@ relations
   w_e = max(engine_speed, w_idle)
   P_engine = engine_on * min(max(min(P_shift, cap), tau_excess * w_e), P_peak)
   if mapped_limits
-    available_torque.omega = engine_speed
-    tau_engine = min(P_engine / w_e, max(available_torque.y, 0.0))
+    tau_engine = min(P_engine / w_e, max(available_torque, 0.0))
   else
     tau_engine = P_engine / w_e
   end

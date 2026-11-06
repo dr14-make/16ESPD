@@ -16,7 +16,7 @@ component MappedEngine
   fuel_enable = RealInput() if fuel_controlled
   "Drag regularization speed [rad/s]"
   parameter w_drag::AngularVelocity(min = eps(Float64)) = 2.0
-  variable cut_fraction::Real
+  cut_fraction = RealInput()
   "Vacuum take-off: the hose to the brake booster, at manifold pressure"
   vacuum = VehicleSystemsComponents.Vehicle.GasPort() {^vacuum}
   "Engine output shaft"
@@ -93,15 +93,7 @@ relations
     connect(closed_throttle.y, torque_blend.motored) {^motored_wire}
     cut_fraction = cut_logic.cut
   end
-  if fuel_controlled
-    torque_blend.cut = cut_fraction
-    fuel_map.cut = cut_fraction
-    hc_map.cut = cut_fraction
-    co_map.cut = cut_fraction
-    nox_map.cut = cut_fraction
-  else
-    connect(cut_logic.cut, torque_blend.cut, fuel_map.cut, hc_map.cut, co_map.cut, nox_map.cut) {^cut_wire}
-  end
+  connect(cut_fraction, torque_blend.cut, fuel_map.cut, hc_map.cut, co_map.cut, nox_map.cut) {^cut_wire}
   connect(torque_blend.y, torque_source.tau, tau_e) {^torque_wire}
   connect(fuel_map.y, mdot_fuel, co2_gain.u) {^fuel_wire}
   connect(co2_gain.y, mdot_co2) {^co2_wire}

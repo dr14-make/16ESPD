@@ -1,5 +1,4 @@
-# Standalone, stdlib-only: julia --project=. test/torque_to_pedal.jl
-# Include separately from lecture05_plausibility.jl; no engine simulation required.
+# Included by lecture05_plausibility.jl; run test/runtests.jl lecture05.
 using Test
 include("../scripts/torque_to_pedal.jl")
 const TTP = TorqueToPedalMap
@@ -46,4 +45,15 @@ const TTP = TorqueToPedalMap
             @test TTP.inverse_pedal(m, n, 1e6) ≈ TTP.inverse_pedal(m, n, high) atol = 1e-10
         end
     end
+    @testset "inverse against steady Dyad engine" begin
+        for (rpm, tau) in ((1250.0, 20.0), (3000.0, 60.0), (4500.0, 100.0))
+            pedal = TTP.inverse_pedal(m, rpm, tau)
+            r = VehicleSystemsComponents.Vehicle.Engine.MappedEngineDynoTransient(
+                rpm = rpm, pedal_cmd = pedal, stop = 8.0, progress = false)
+            engine = symbolic_container(r).engine
+            @test string(r.sol.retcode) == "Success"
+            @test r.sol(8.0, idxs = engine.tau_e) ≈ tau atol = 0.5
+        end
+    end
+
 end

@@ -4,6 +4,8 @@
 # No simulation or non-stdlib dependencies. The vacuum take-off is assumed capped;
 # throttle/manifold transients, fuel cut, rev limiting and engine start are NOT inverted.
 # Regenerate after changing EngineMapData, AirPath, Throttle, CylinderAirflow or PedalMap.
+# test/runtests.jl lecture05 checks three inverse points against the steady Dyad engine
+# within 0.5 N.m, so stale air-path defaults do not pass on analytic round trips alone.
 module TorqueToPedalMap
 
 using Printf

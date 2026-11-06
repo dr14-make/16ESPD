@@ -55,7 +55,7 @@ Add structural Boolean `engine_stopped = false`, Real `position_start = 0.0`, an
 3. Export `engine.speed.w`, `engine.tau_e` and `engine.mdot_fuel`; `drive.machine.tau`; `k0.position`; `drive.SoC`; and `drive.battery.E` and `drive.battery.i` to the corresponding outputs above.
 4. Reproduce the reference initialization: engine manifold pressure `101325.0` Pa and machine rotor angle `0.0`. With `engine_stopped = false`, initialize engine crankshaft speed to `engine_speed_start` and angle to `0.0`.
 5. For the fixed electric fixture only, conditionally place `hold` and connect `engine.spline` to `hold.spline`. Set `MappedEngine`'s `fuel_cut_rpm = -2.0` and `fuel_resume_rpm = -1.0` in this configuration; otherwise retain `1300.0` and `1000.0`. At zero pedal and held zero speed, the electric fixture initializes `cut = 1`, so fuel is cut without events. This is a fixed test configuration, not engine stopping, starting or mode-switching logic.
-6. Create your own `P2WLTC` fixture using the reference `Lecture5.P2WLTC` for the planar car, road load, cycle and driver. Keep structural Boolean `electric = false`, mass `m = 1500.0` kg and `dv_wheel = 0.01` m/s. Pass `engine_stopped = electric`, `position_start = 0.0` to `powertrain`. Keep PI gain `k = 50.0` in electric mode; use `70.0` in engine-only mode, with `Ti = 2.0` s in both. Set the nested `powertrain.drive.P_aux` to `300.0` W in electric mode and `0.0` in engine-only mode so the conventional baseline draws no battery energy. In engine-only mode also set the nested drive's `T_f`, `K_i`, `k_w`, `C` and `J` to zero; retain all hybrid-drive defaults in electric mode.
+6. Create your own `P2WLTC` fixture using the reference `Lecture5.P2WLTC` for the planar car, road load, cycle and driver. Keep structural Boolean `electric = false`, mass `m = 1500.0` kg and `dv_wheel = 0.01` m/s. Pass `engine_stopped = electric`, `position_start = 0.0` to `powertrain`. Keep PI gain `k = 50.0` in electric mode; use `110.0` and `Ti = 1.0` s in engine-only mode (electric keeps `Ti = 2.0` s). Set the nested `powertrain.drive.P_aux` to `300.0` W in electric mode and `0.0` in engine-only mode so the conventional baseline draws no battery energy. In engine-only mode also set the nested drive's `T_f`, `K_i`, `k_w`, `C` and `J` to zero; retain all hybrid-drive defaults in electric mode.
 7. Wire `powertrain.spline` to `differential.flange_b`, and the differential's `flange_left` and `flange_right` to `car.spin_fl` and `car.spin_fr`. Ground `powertrain.support` with `mount`, a `RotationalComponents.Components.Fixed`. Retain the reference's straight steering, flat road, speed feedback and wheel/brake initial conditions.
 
 ::: tip Checkpoint 1a — wiring
@@ -126,7 +126,7 @@ H0 is Lecture 5's conventional baseline: Lecture 2's mapped engine and CVT on th
 2. Add bench parameters `engage_rpm = 1300.0` and `engage_width_rpm = 120.0` (rpm), matching
    `CentrifugalClutch`. Add the machine-side lock-up ramp `lock_rpm = 840`,
    `lock_width_rpm = 12` (rpm): the request is 0.001 at the 800 rpm idle and 0.999 at 880 rpm,
-   so K0 opens before a decelerating shaft drags the engine below idle. Add `brake_gain = 12`. Set the PI to `k = 70`, `Ti = 2`, `y_max = 150`, `y_min = -205`. Feed `powertrain.engine_speed` (rad/s) into the smooth engagement signal:
+   so K0 opens before a decelerating shaft drags the engine below idle. Add `brake_gain = 12`. Set the PI to `k = 110`, `Ti = 1`, `y_max = 150`, `y_min = -205`. Feed `powertrain.engine_speed` (rad/s) into the smooth engagement signal:
 
    ```dyad
    powertrain.engage = max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm)))
@@ -153,7 +153,7 @@ H0 is Lecture 5's conventional baseline: Lecture 2's mapped engine and CVT on th
 | Quantity | Full WLTC result |
 | --- | --- |
 | Duration | 1800 s |
-| Maximum absolute speed error | 1.546157 km/h |
+| Maximum absolute speed error | 1.165241 km/h |
 | Distance | 23266.587 m |
 | Raw fuel | 5.717536 L/100 km |
 | SoCCorrectedFuel `fuel_corr` | 5.717536 L/100 km |
@@ -210,14 +210,14 @@ Use the shared `P2Powertrain` with its structural speed-command option. Create o
 | --- | --- | --- |
 | `line` | VehicleSystemsComponents › Vehicle › OperatingLine | default best-BSFC CSV |
 | `powertrain` | P2Powertrain(speed_commanded = true) | `position_start = 0`; drive `P_aux = T_f = K_i = k_w = C = J = 0`; its internal `speed_variator` (SpeedCommandedVariator) keeps defaults: 12 → 2.8, 0.5 s lag, 50 rpm floor |
-| `trace`, `driver`, `no_ff`, `kmh` | step 1 cycle, LimPID, Constant, ToKmPerHour | `k = 70`, `Ti = 2`, `y_max = 150`, `y_min = -205`, `with_D = false`; zero feedforward |
+| `trace`, `driver`, `no_ff`, `kmh` | step 1 cycle, LimPID, Constant, ToKmPerHour | `k = 110`, `Ti = 1`, `y_max = 150`, `y_min = -205`, `with_D = false`; zero feedforward |
 | `car`, `motion`, `roadload` | Vehicle › Planar › PlanarCar, BusMotion, PlanarRoadLoad | mass 1500 kg, radius 0.31 m, flat road |
 | `differential` | MultibodyComponents › PlanarMechanics › DifferentialGear | unchanged |
 | `mount`, `straight` | RotationalComponents › Components › Fixed | unchanged |
 | `flat` | BlockComponents › Sources › Constant | zero grade |
 | `meter` | VehicleSystemsComponents › Vehicle › SoCCorrectedFuel | unchanged |
 
-H0 and the line use the same PI gain 70, integral time 2 s, positive limit 150 and
+H0 and the line use the same PI gain 110, integral time 1 s, positive limit 150 and
 negative limit −205 N·m. Friction braking uses a fixed gain of 12, the launch ratio,
 not the instantaneous variator ratio. Propulsion saturation therefore matches pedal saturation.
 
@@ -312,7 +312,7 @@ plot(t, [at(m.meter.fuel_raw) at(m.meter.fuel_corr)],
 
 | Quantity | Full WLTC |
 | --- | --- |
-| Maximum speed error | 1.548864 km/h (<2) |
+| Maximum speed error | 1.164972 km/h (<2) |
 | Distance | 23266.603 m |
 | Raw / corrected fuel | 5.437445 / 5.437445 L/100 km |
 | H0 pedal-schedule fuel | 5.717536 L/100 km |
@@ -457,9 +457,9 @@ test component P2OperatingLineWLTC
   "Wheel radius (derived; planar benchmark)"
   parameter radius::Length = 0.31
   "PI gain [N.m per km/h], shared with H0"
-  parameter k::Real = 70.0
+  parameter k::Real = 110.0
   "PI integral time (assumed; BEV driver)"
-  parameter Ti::Time = 2.0
+  parameter Ti::Time = 1.0
   "Positive PI ceiling [N.m], pedal saturation"
   parameter tau_max::Torque = 150.0
   "Initial wheel surface speed offset (assumed; MultibodyComponents #185)"
@@ -564,7 +564,12 @@ The driver's signed demand is at the transmission input, not the wheels.
 - Enable `powertrain.start_stop`; connect `manager.engine_on` to `powertrain.engine_on`
   and `manager.tau_engine` to `powertrain.engine_torque_ref`.
 - Feed `manager.tau_machine` to `powertrain.tau_ref`. The powertrain adds the difference
-  between requested engine torque and measured K0 transmission, including cranking drag.
+  between assumed engine torque and measured K0 transmission, including cranking drag,
+  then clamps the sum to the machine torque/power envelope. Over the first 3 s
+  of starts, the unclamped excess peaks at 123.34 N·m for 2.65 s total; the
+  maximum speed error there is 0.984 km/h. The final request peaks at 205 N·m
+  and stays within its envelope (test tolerance 1e-6 N·m). No start inhibition
+  is needed for the measured tracking band.
 - Multiply `manager.engage` by the maximum of step 2's engine launch and shaft lock-up
   ramps. Fuel permission rises smoothly from 400 to 700 rpm; with fuel off, regularized
   drag lets the engine settle at rest. No fixed hold or event stops the engine.
@@ -589,21 +594,14 @@ adds machine torque above the 30 kW line cap. During deceleration the existing r
 uses the machine first and sends the remainder to friction brakes.
 
 ::: tip Checkpoint 3 — measured full WLTC
-The run has **45 starts**, minimum on-time **1.90 s**, mean on-time **14.50 s**, and maximum
+The run has **44 starts**, minimum on-time **1.90 s**, mean on-time **14.72 s**, and maximum
 speed error **1.32 km/h**. Settled off periods have zero fuel and engine speed within 3 rpm
-of rest. K0 dissipates **107.84 kJ** over the run (2.40 kJ per start, including other slip).
+of rest. K0 dissipates **111.22 kJ** over the run (2.53 kJ per start, including other slip).
 The four mode fractions sum to one; all four occur.
-
-| Mode | Time [s] | Fuel [kg] |
-|---|---:|---:|
-| Electric | 1146.94 | 0.00359 |
-| On line | 398.69 | 0.42949 |
-| Charging | 182.45 | 0.13944 |
-| Boosting | 71.92 | 0.13852 |
 
 Fractions blend during starts and stops; the small electric-mode fuel allocation comes from
 those transitions, not settled electric operation. Requested shaft regen is **3.119 MJ**;
-actual friction-brake dissipation is **0.0543 MJ**. The battery accepts **3.809 MJ** in total,
+actual friction-brake dissipation is **0.0536 MJ**. The battery accepts **3.920 MJ** in total,
 including engine-driven charging. These quantities have different measurement boundaries.
 :::
 
@@ -617,23 +615,23 @@ and the line car retain their pedal-sized propulsion limits.
 
 Keep `meter.P_stored = powertrain.E * powertrain.i`: the correction uses stored energy,
 not terminal energy. Read the meter only after the complete 1800 s cycle. The hybrid starts
-at **0.60000**, finishes at **0.59395**, and stays between **0.51760** and **0.60000**.
+at **0.60000**, finishes at **0.61221**, and stays between **0.51295** and **0.61252**.
 
 | Car | Raw L/100 km | SoC-corrected L/100 km | MJ/100 km |
 |---|---:|---:|---:|
 | Conventional H0 | 5.718 | 5.718 | 184.87 |
 | Step-2 line car | 5.437 | 5.437 | 175.81 |
-| Charge-sustaining P2 hybrid | 4.102 | 4.116 | 133.07 |
+| Charge-sustaining P2 hybrid | 4.114 | 4.086 | 132.12 |
 | Lecture-4 BEV | — | — | 47.25 |
 
 The BEV value is battery DC electrical energy; the other rows are corrected gasoline energy.
 These are vehicle energy inputs, not a well-to-wheel comparison.
 
 ::: tip Checkpoint 4 — charge-sustaining comparison
-The hybrid ends **0.61 percentage points** below its starting SoC, within ±2 percentage
-points. Its corrected fuel is **27.86%** below H0. Outside the first 3 s of each start,
-on-line-mode engine power has mean absolute error **160 W**, maximum **3264 W**. Across
-the whole run, **51.34%** of fuel is burned within ±150 rpm of the line, versus step 2's 15%.
+The hybrid ends **1.22 percentage points** above its starting SoC, within ±2 percentage
+points. Its corrected fuel is **28.53%** below H0. Outside the first 3 s of each start,
+on-line-mode engine power has mean absolute error **171 W**, maximum **3264 W**. Across
+the whole run, **58.95%** of fuel is burned within ±150 rpm of the line, versus step 2's 15%.
 The inverse map needs no PI trim; steady analytic torque round trips are within 1e-7 N·m.
 :::
 

@@ -151,7 +151,7 @@ export FuelEnableBenchTransient__System
   var"specialization"::SpecializationLevel.Type = SpecializationLevel.Despecialize()
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
-  # Fuel-disabled spin-down followed by a K0 start from a rotating machine-side inertia.
+  # Fuel-disabled spin-down followed by a clutch start using the powertrain firing logic.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture5.FuelEnableBench(; name=:FuelEnableBench)
   __system::System = FuelEnableBenchTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file")
 end
