@@ -37,4 +37,5 @@ include("TestDCMachine_test.jl")
 include("TestHBridge_test.jl")
 include("TestRegenBlend_test.jl")
 include("TorqueSplit_test.jl")
+include("TractionDrive_test.jl")
 end

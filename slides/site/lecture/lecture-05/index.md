@@ -640,6 +640,7 @@ The inverse map needs no PI trim; steady analytic torque round trips are within 
 Studio build steps still need rehearsal before classroom use. The torque inverse assumes
 unchanged default engine and air-path calibration. Start compensation remains subject to
 the machine's current and power limits; it cannot guarantee full driver demand at every start.
+The [homework](./homework) takes the same car to a series hybrid.
 
 The unchanged variator schedules **1800–6000 rpm**, above the machine's 1412 rpm loaded corner;
 field weakening supplies the constant-power region. Low reached 3546 rpm. The existing dyno

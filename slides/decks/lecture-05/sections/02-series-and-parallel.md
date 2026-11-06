@@ -195,7 +195,10 @@ routeAlias: series-or-parallel
 
 <div class="handson">Homework: a series hybrid on prepared ground. The library gives an
 engine-generator with its mount and a WLTC bench; you wire the series layout and write the SoC
-thermostat. <span class="todo">TODO: targets and page (#116)</span></div>
+thermostat. Targets: charge-sustaining within ±0.02 SoC, at most 5.60 L/100 km
+SoC-corrected.</div>
+
+[page: the homework](../lecture/lecture-05/homework)
 
 <!--
 What each architecture costs, the last two slides side by side.
@@ -215,8 +218,9 @@ freedom a series hybrid has. Section 05 uses exactly that.
 The green box is the homework. The series hybrid is the same shape as the fuel-cell car of the extra
 pack, so you get it on prepared ground: the library ships an engine-generator part with its mount
 and a WLTC bench. You wire the series layout and write the thermostat that starts the engine when
-the state of charge is low and stops it when it is high. The targets and the homework page come
-with issue 116.
+the state of charge is low and stops it when it is high. To pass, the car ends the WLTC within
+0.02 of the SoC it started with, and burns at most 5.60 liters per 100 kilometers, SoC-corrected:
+a few percent under the conventional car. The homework page has the full list.
 -->
 
 ---
