@@ -9,7 +9,7 @@ const TABLE = joinpath(ROOT, "assets/data/lecture05/p_positions.csv")
 const H0 = 5.71753646
 const LINE = 5.43744462
 const COLUMNS = (:position, :P_rated_kW, :fuel_raw_L100, :fuel_corr_L100, :energy_MJ100,
-    :saving_H0_pct, :saving_line_pct, :E_regen_MJ, :electric_drive_s, :starts,
+    :saving_H0_pct, :saving_line_pct, :E_regen_MJ, :E_recovered_MJ, :electric_drive_s, :starts, :fuel_resumptions,
     :SoC_start, :SoC_end, :max_speed_error_kmh, :definitions_sha256)
 
 "Fingerprint the generated vehicle physics and the position's bench and analysis definitions."
@@ -45,8 +45,10 @@ function metrics(run, position; P_rated_kW = 30.0)
         fuel_corr_L100 = corr, energy_MJ100 = last(s[m.meter.energy_corr]),
         saving_H0_pct = 100 * (1 - corr / H0), saving_line_pct = 100 * (1 - corr / LINE),
         E_regen_MJ = last(s[m.E_regen]) / 1e6,
-        electric_drive_s = position == "P0" ? 0.0 : integrate(Float64.((.!on) .& (v .> 1.0) .& (at(m.manager.tau_drive) .> 1.0))),
-        starts = count(==(1), diff(on)), SoC_start = first(soc), SoC_end = last(soc),
+        E_recovered_MJ = integrate(max.(-at(m.powertrain.E) .* at(m.powertrain.i), 0.0) .* (at(m.manager.tau_dem) .< 0.0)) / 1e6,
+        electric_drive_s = position in ("P0", "P1") ? 0.0 : integrate(Float64.((.!on) .& (v .> 1.0) .& (at(m.manager.tau_drive) .> 1.0))),
+        starts = count(==(1), diff(at(m.powertrain.engine_speed) .* (30 / pi) .>= s.prob.ps[m.powertrain.firing_rpm])),
+        fuel_resumptions = count(==(1), diff(on)), SoC_start = first(soc), SoC_end = last(soc),
         max_speed_error_kmh = maximum(abs.(v .- at(m.trace.y))),
         definitions_sha256 = definitions_hash(position))
 end
