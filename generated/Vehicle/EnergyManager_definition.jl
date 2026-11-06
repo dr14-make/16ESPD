@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   EnergyManager(; name, P_on, P_off, P_line_max, dP_boost, P_peak, P_chg, SoC_on, SoC_off, SoC_full, dSoC_full, T_max, P_max, P_regen, v_fade, w_idle, w_on, w_off, tau_traction, dtau, dSoC_boost, latch_time, __overrides)
+   EnergyManager(; name, mapped_limits, P_on, P_off, P_line_max, dP_boost, P_peak, P_chg, SoC_on, SoC_off, SoC_full, dSoC_full, T_max, P_max, P_regen, v_fade, w_idle, w_on, w_off, tau_traction, dtau, dSoC_boost, latch_time, __overrides)
 
 Rule-based energy manager of a P2 hybrid: splits the driver's torque demand at the transmission
 input between engine, machine and friction brakes (derived; Lecture 5 S3). Signals only.
@@ -28,7 +28,8 @@ through it rather than switch, and a demand dithering inside a band moves no lat
     cap        = (1 - boost) P_peak + boost min(P_peak, max(P_line_max, P_drive - a_boost tau_lim w_shaft))
     tau_excess = max(tau_drive - tau_lim, 0)
     P_engine   = engine_on min(max(min(P_shift, cap), tau_excess w_e), P_peak),   w_e = max(engine_speed, w_idle)
-    tau_engine = P_engine / w_e
+    tau_engine = P_engine / w_e                                  without mapped_limits
+    tau_engine = min(P_engine / w_e, max(available_torque, 0))   with mapped_limits
     tau_assist = clamp(tau_drive - tau_engine, -tau_lim, tau_lim)
     tau_machine  = tau_assist - tau_regen
     tau_friction = max(-tau_dem, 0) - tau_regen
@@ -73,12 +74,14 @@ it to the wheels through the variator ratio. `P_engine` feeds `OperatingLine`, `
 engine's torque command, `engine_on` its fuel enable and `engage` K0, both the engine latch.
 
 Defaults are sized for the 30 kW, 1.4 kWh Sonata-like `HybridDrive` and the Lecture 2 map's
-best-BSFC line.
+best-BSFC line. With `mapped_limits`, the torque split caps the engine share at its measured-speed
+full-load envelope during CVT transients; the power request remains the operating-line target.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `mapped_limits`         | Limit the torque split to the mapped engine envelope during CVT transients                         | --  |   false |
 | `P_on`         | Engine start threshold on demand power (derived; line BSFC 240 g/kWh at 12 kW, 3 % above its minimum)                         | W  |   12.0e3 |
 | `P_off`         | Engine stop threshold on demand power (derived; below 8 kW line BSFC climbs from 247 g/kWh to 361 at 2 kW)                         | W  |   8.0e3 |
 | `P_line_max`         | Engine power cap while boosting (derived; line BSFC 248 g/kWh at 59 kW, 276 at 69 kW)                         | W  |   60.0e3 |
@@ -103,6 +106,7 @@ best-BSFC line.
 
 ## Connectors
 
+ * `available_torque` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `tau_dem` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `w_shaft` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `v` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
@@ -145,7 +149,7 @@ best-BSFC line.
 | `charging`         | Charging fraction                         | --  |
 | `boosting`         | Boosting fraction                         | --  |
 """
-@component function EnergyManager(; name = nothing, var"P_on"=Float64(12000.0), var"P_off"=Float64(8000.0), var"P_line_max"=Float64(60000.0), var"dP_boost"=Float64(5000.0), var"P_peak"=Float64(85607.0), var"P_chg"=Float64(10000.0), var"SoC_on"=0.55, var"SoC_off"=0.6, var"SoC_full"=0.8, var"dSoC_full"=0.05, var"T_max"=Float64(205.0), var"P_max"=Float64(30000.0), var"P_regen"=Float64(30000.0), var"v_fade"=Float64(10.0), var"w_idle"=800.0 * pi / 30, var"w_on"=1000.0 * pi / 30, var"w_off"=850.0 * pi / 30, var"tau_traction"=Float64(5.0), var"dtau"=Float64(20.0), var"dSoC_boost"=0.05, var"latch_time"=0.2, __overrides = Dict{String, Any}())
+@component function EnergyManager(; name = nothing, var"mapped_limits"=false, var"P_on"=Float64(12000.0), var"P_off"=Float64(8000.0), var"P_line_max"=Float64(60000.0), var"dP_boost"=Float64(5000.0), var"P_peak"=Float64(85607.0), var"P_chg"=Float64(10000.0), var"SoC_on"=0.55, var"SoC_off"=0.6, var"SoC_full"=0.8, var"dSoC_full"=0.05, var"T_max"=Float64(205.0), var"P_max"=Float64(30000.0), var"P_regen"=Float64(30000.0), var"v_fade"=Float64(10.0), var"w_idle"=800.0 * pi / 30, var"w_on"=1000.0 * pi / 30, var"w_off"=850.0 * pi / 30, var"tau_traction"=Float64(5.0), var"dtau"=Float64(20.0), var"dSoC_boost"=0.05, var"latch_time"=0.2, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -164,6 +168,7 @@ best-BSFC line.
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "mapped_limits") && (mapped_limits = pop!(__overrides, "mapped_limits"))
   haskey(__overrides, "P_on") && (P_on = pop!(__overrides, "P_on"))
   haskey(__overrides, "P_off") && (P_off = pop!(__overrides, "P_off"))
   haskey(__overrides, "P_line_max") && (P_line_max = pop!(__overrides, "P_line_max"))
@@ -266,6 +271,7 @@ best-BSFC line.
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
+  append!(__vars, @variables (available_torque(t)::Real), [input = true])
   append!(__vars, @variables (tau_dem(t)::Real), [input = true])
   append!(__vars, @variables (w_shaft(t)::Real), [input = true])
   append!(__vars, @variables (v(t)::Real), [input = true])
@@ -456,7 +462,6 @@ best-BSFC line.
   push!(__eqs, tau_excess ~ max(tau_drive - tau_lim, 0.0))
   push!(__eqs, w_e ~ max(engine_speed, w_idle))
   push!(__eqs, P_engine ~ engine_on * min(max(min(P_shift, cap), tau_excess * w_e), P_peak))
-  push!(__eqs, tau_engine ~ P_engine / w_e)
   push!(__eqs, tau_assist ~ min(max(tau_drive - tau_engine, -tau_lim), tau_lim))
   push!(__eqs, fade ~ min(max(v / v_fade, 0.0), 1.0))
   push!(__eqs, soc_x ~ min(max((SoC - SoC_full + dSoC_full) / dSoC_full, 0.0), 1.0))
@@ -469,6 +474,13 @@ best-BSFC line.
   push!(__eqs, boosting ~ engine_on * boost.y)
   push!(__eqs, charging ~ engine_on * (1.0 - boost.y) * charge.y)
   push!(__eqs, on_line ~ engine_on * (1.0 - boost.y) * (1.0 - charge.y))
+
+  ### Control Structures
+  if mapped_limits
+    push!(__eqs, tau_engine ~ min(P_engine / w_e, max(available_torque, 0.0)))
+  else
+    push!(__eqs, tau_engine ~ P_engine / w_e)
+  end
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

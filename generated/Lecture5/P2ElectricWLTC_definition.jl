@@ -16,8 +16,8 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
 | `electric`         | Electric-only fixed configuration; no mode switching (assumed; step 1)                         | --  |   true |
 | `m`         | Vehicle and road-load mass (assumed; shared planar benchmark)                         | kg  |   1500.0 |
 | `radius`         | Wheel radius (derived; planar benchmark)                         | m  |   0.31 |
-| `k`         | PI gain, input-shaft N.m per km/h: 50 as the BEV driver for electric-only, 70 for engine-only launch through K0 (tuned to the tracking band)                         | --  |   ifelse(elec...50.0, 70.0) |
-| `Ti`         | PI integral time (assumed; BEV driver)                         | s  |   2.0 |
+| `k`         | PI gain, input-shaft N.m per km/h: 50 for the electric fixture, 110 shared by the engine and hybrid comparisons                         | --  |   ifelse(elec...0.0, 110.0) |
+| `Ti`         | PI integral time: 2 s for the electric fixture, 1 s for the shared Lecture 5 driver (assumed)                         | s  |   ifelse(elec..., 2.0, 1.0) |
 | `tau_max`         | Positive driver ceiling [N.m], pedal saturation or machine peak                         | N.m  |   ifelse(elec...5.0, 150.0) |
 | `dv_wheel`         | Initial wheel surface speed offset (assumed; MultibodyComponents #185)                         | m/s  |   0.01 |
 | `engage_rpm`         | Center of K0 launch engagement [rpm] (assumed; CentrifugalClutch)                         | --  |   1300.0 |
@@ -27,7 +27,7 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
 | `lock_rpm`         | Center of machine-side K0 lock-up ramp [rpm]; open at 800 rpm idle, closed by 880 rpm                         | --  |   840.0 |
 | `lock_width_rpm`         | Width of machine-side K0 lock-up ramp [rpm]                         | --  |   12.0 |
 """
-@component function P2ElectricWLTC(; name = nothing, var"electric"=true, var"m"=Float64(1500.0), var"radius"=0.31, var"Ti"=Float64(2.0), var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"tau_brake"=Float64(205.0), var"brake_gain"=Float64(12.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"k"=nothing, var"tau_max"=nothing, __overrides = Dict{String, Any}())
+@component function P2ElectricWLTC(; name = nothing, var"electric"=true, var"m"=Float64(1500.0), var"radius"=0.31, var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"tau_brake"=Float64(205.0), var"brake_gain"=Float64(12.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"k"=nothing, var"Ti"=nothing, var"tau_max"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -49,7 +49,6 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
   haskey(__overrides, "electric") && (electric = pop!(__overrides, "electric"))
   haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
   haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
-  haskey(__overrides, "Ti") && (Ti = pop!(__overrides, "Ti"))
   haskey(__overrides, "dv_wheel") && (dv_wheel = pop!(__overrides, "dv_wheel"))
   haskey(__overrides, "engage_rpm") && (engage_rpm = pop!(__overrides, "engage_rpm"))
   haskey(__overrides, "engage_width_rpm") && (engage_width_rpm = pop!(__overrides, "engage_width_rpm"))
@@ -58,10 +57,12 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
   haskey(__overrides, "lock_rpm") && (lock_rpm = pop!(__overrides, "lock_rpm"))
   haskey(__overrides, "lock_width_rpm") && (lock_width_rpm = pop!(__overrides, "lock_width_rpm"))
   haskey(__overrides, "k") && (k = pop!(__overrides, "k"))
+  haskey(__overrides, "Ti") && (Ti = pop!(__overrides, "Ti"))
   haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
 
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
-  isnothing(k) && (k = ifelse(electric, 50.0, 70.0))
+  isnothing(k) && (k = ifelse(electric, 50.0, 110.0))
+  isnothing(Ti) && (Ti = ifelse(electric, 2.0, 1.0))
   isnothing(tau_max) && (tau_max = ifelse(electric, 205.0, 150.0))
 
   ### Structural Parameters (functions)
@@ -84,10 +85,10 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
   append!(__params, @parameters (radius::Real), [description = "Wheel radius (derived; planar benchmark)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__k = k
-  append!(__params, @parameters (k::Real), [description = "PI gain, input-shaft N.m per km/h: 50 as the BEV driver for electric-only, 70 for engine-only launch through K0 (tuned to the tracking band)"])
+  append!(__params, @parameters (k::Real), [description = "PI gain, input-shaft N.m per km/h: 50 for the electric fixture, 110 shared by the engine and hybrid comparisons"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, k, __local__k)
   __local__Ti = Ti
-  append!(__params, @parameters (Ti::Real), [description = "PI integral time (assumed; BEV driver)"])
+  append!(__params, @parameters (Ti::Real), [description = "PI integral time: 2 s for the electric fixture, 1 s for the shared Lecture 5 driver (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, Ti, __local__Ti)
   __local__tau_max = tau_max
   append!(__params, @parameters (tau_max::Real), [description = "Positive driver ceiling [N.m], pedal saturation or machine peak"])

@@ -10,6 +10,8 @@ end
 
 
 include("P2ElectricWLTC_experiment.jl")
+include("P2HybridWLTC_experiment.jl")
 include("P2OperatingLineWLTC_experiment.jl")
 include("P2Powertrain_experiment.jl")
 include("P2WLTC_experiment.jl")
+include("TorqueToPedal_experiment.jl")

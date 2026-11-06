@@ -16,6 +16,19 @@ component P2Powertrain
   N_ref = RealInput() if speed_commanded {^N_ref}
   "Select speed-commanded CVT scheduling"
   structural parameter speed_commanded::Boolean = false
+  "Enable fuel-controlled clutch starts"
+  structural parameter start_stop::Boolean = false
+  "Engine latch, 0 off to 1 running"
+  engine_on = RealInput() if start_stop
+  "Manager's assumed engine torque subtracted from driving demand before its machine clamp [N.m]"
+  engine_torque_ref = RealInput() if start_stop
+  "Lower end of the smooth firing-speed band [rpm]"
+  parameter firing_rpm::Real = 400.0
+  "Width of the firing-speed band [rpm]"
+  parameter firing_width::Real(min = eps(Float64)) = 300.0
+  variable firing_fraction::Real if start_stop
+  variable start_compensation::Torque if start_stop
+  variable machine_limit::Torque if start_stop
   "Output to planar differential (derived; P2 layout)"
   spline = Spline() {^spline}
   "Stationary housing (assumed; planar bench)"
@@ -24,6 +37,8 @@ component P2Powertrain
   engine_speed = RealOutput() {^engine_speed}
   "Engine brake torque [N.m] (derived; map)"
   engine_torque = RealOutput() {^engine_torque}
+  "Available full-load engine torque at the measured speed [N.m]"
+  available_torque = RealOutput() {^available_torque}
   "Fuel flow [kg/s] (derived; map)"
   mdot_fuel = RealOutput() {^mdot_fuel}
   "Net machine shaft torque [N.m] (derived; DCMachine)"
@@ -42,7 +57,7 @@ component P2Powertrain
   parameter position_start::Real = 0.0
   "Initial running-engine speed [rad/s] (assumed; 800 rpm idle for launch)"
   parameter engine_speed_start::AngularVelocity = 800.0 * pi / 30
-  engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(fuel_cut_rpm = ifelse(engine_stopped, -2.0, 1300.0), fuel_resume_rpm = ifelse(engine_stopped, -1.0, 1000.0)) {^engine}
+  engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(fuel_controlled = start_stop, fuel_cut_rpm = ifelse(engine_stopped, -2.0, 1300.0), fuel_resume_rpm = ifelse(engine_stopped, -1.0, 1000.0)) {^engine}
   k0 = VehicleSystemsComponents.Vehicle.DisconnectClutch(position_start = position_start) {^k0}
   drive = VehicleSystemsComponents.Vehicle.Electric.HybridDrive() {^drive}
   variator = VehicleSystemsComponents.Vehicle.ControlledVariator() if !speed_commanded {^variator}
@@ -53,7 +68,16 @@ relations
   initial drive.machine.rotor.phi = 0.0
   connect(engine_pedal, engine.pedal)
   connect(engage, k0.engage)
-  connect(tau_ref, drive.tau_ref)
+  if start_stop
+    machine_limit = min(drive.T_max, drive.P_rated / max(abs(drive.machine.w), 1.0))
+    firing_fraction = min(max((engine.N - firing_rpm) / firing_width, 0.0), 1.0)
+    engine.fuel_enable = engine_on * firing_fraction^2 * (3.0 - 2.0 * firing_fraction)
+    # Replace assumed engine delivery by the measured K0 torque, including crank drag.
+    start_compensation = engine_torque_ref - k0.tau
+    drive.tau_ref = min(max(tau_ref + start_compensation, -machine_limit), machine_limit)
+  else
+    connect(tau_ref, drive.tau_ref)
+  end
   if speed_commanded
     connect(N_ref, speed_variator.N_ref)
     connect(k0.spline_b, drive.spline, speed_variator.spline_a)
@@ -69,6 +93,7 @@ relations
   connect(engine.support, k0.support, drive.support, support)
   connect(engine.speed.w, engine_speed)
   connect(engine.tau_e, engine_torque)
+  connect(engine.torque_map.full_load.y, available_torque)
   connect(engine.mdot_fuel, mdot_fuel)
   connect(drive.SoC, SoC)
   machine_torque = drive.machine.tau

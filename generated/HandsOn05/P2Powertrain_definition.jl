@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   P2Powertrain(; name, speed_commanded, engine_stopped, position_start, engine_speed_start, __overrides)
+   P2Powertrain(; name, speed_commanded, start_stop, engine_stopped, firing_rpm, firing_width, position_start, engine_speed_start, __overrides)
 
 P2 transmission-input hybrid with a pedal- or speed-commanded total CVT ratio.
 MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to ground.
@@ -16,7 +16,10 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `speed_commanded`         | Select speed-commanded CVT scheduling                         | --  |   false |
+| `start_stop`         | Enable fuel-controlled clutch starts                         | --  |   false |
 | `engine_stopped`         | Hold engine stopped with fuel cut for an electric-only fixture (assumed; no start dynamics)                         | --  |   false |
+| `firing_rpm`         | Lower end of the smooth firing-speed band [rpm]                         | --  |   400.0 |
+| `firing_width`         | Width of the firing-speed band [rpm]                         | --  |   300.0 |
 | `position_start`         | Initial K0 position (assumed; fixed-mode bench)                         | --  |   0.0 |
 | `engine_speed_start`         | Initial running-engine speed [rad/s] (assumed; 800 rpm idle for launch)                         | rad/s  |   800.0 * pi / 30 |
 
@@ -27,18 +30,29 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
  * `tau_ref` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `cvt_pedal` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `N_ref` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `engine_on` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `engine_torque_ref` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `spline` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `support` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `engine_speed` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `engine_torque` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `available_torque` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `mdot_fuel` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `machine_torque` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `position` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `SoC` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `E` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `i` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+
+## Variables
+
+| Name         | Description                         | Units  | 
+| ------------ | ----------------------------------- | ------ |
+| `firing_fraction`         |                          | --  |
+| `start_compensation`         |                          | N.m  |
+| `machine_limit`         |                          | N.m  |
 """
-@component function P2Powertrain(; name = nothing, var"speed_commanded"=false, var"engine_stopped"=false, var"position_start"=Float64(0.0), var"engine_speed_start"=800.0 * pi / 30, __overrides = Dict{String, Any}())
+@component function P2Powertrain(; name = nothing, var"speed_commanded"=false, var"start_stop"=false, var"engine_stopped"=false, var"firing_rpm"=Float64(400.0), var"firing_width"=Float64(300.0), var"position_start"=Float64(0.0), var"engine_speed_start"=800.0 * pi / 30, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -58,7 +72,10 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
 
   ### Keyword argument overrides
   haskey(__overrides, "speed_commanded") && (speed_commanded = pop!(__overrides, "speed_commanded"))
+  haskey(__overrides, "start_stop") && (start_stop = pop!(__overrides, "start_stop"))
   haskey(__overrides, "engine_stopped") && (engine_stopped = pop!(__overrides, "engine_stopped"))
+  haskey(__overrides, "firing_rpm") && (firing_rpm = pop!(__overrides, "firing_rpm"))
+  haskey(__overrides, "firing_width") && (firing_width = pop!(__overrides, "firing_width"))
   haskey(__overrides, "position_start") && (position_start = pop!(__overrides, "position_start"))
   haskey(__overrides, "engine_speed_start") && (engine_speed_start = pop!(__overrides, "engine_speed_start"))
 
@@ -75,6 +92,12 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
+  __local__firing_rpm = firing_rpm
+  append!(__params, @parameters (firing_rpm::Real), [description = "Lower end of the smooth firing-speed band [rpm]"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, firing_rpm, __local__firing_rpm)
+  __local__firing_width = firing_width
+  append!(__params, @parameters (firing_width::Real), [description = "Width of the firing-speed band [rpm]", bounds = (eps(Float64), Inf)])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, firing_width, __local__firing_width)
   __local__position_start = position_start
   append!(__params, @parameters (position_start::Real), [description = "Initial K0 position (assumed; fixed-mode bench)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, position_start, __local__position_start)
@@ -90,8 +113,11 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
   append!(__vars, @variables (tau_ref(t)::Real), [input = true])
   append!(__vars, @variables (cvt_pedal(t)::Real), [input = true])
   append!(__vars, @variables (N_ref(t)::Real), [input = true])
+  append!(__vars, @variables (engine_on(t)::Real), [input = true])
+  append!(__vars, @variables (engine_torque_ref(t)::Real), [input = true])
   append!(__vars, @variables (engine_speed(t)::Real), [output = true])
   append!(__vars, @variables (engine_torque(t)::Real), [output = true])
+  append!(__vars, @variables (available_torque(t)::Real), [output = true])
   append!(__vars, @variables (mdot_fuel(t)::Real), [output = true])
   append!(__vars, @variables (machine_torque(t)::Real), [output = true])
   append!(__vars, @variables (position(t)::Real), [output = true])
@@ -100,8 +126,32 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
   append!(__vars, @variables (i(t)::Real), [output = true])
 
   ### Variables (declarations)
+  if start_stop
+    append!(__vars, @variables (firing_fraction(t)::Real))
+  end
+  if start_stop
+    append!(__vars, @variables (start_compensation(t)::Real))
+  end
+  if start_stop
+    append!(__vars, @variables (machine_limit(t)::Real))
+  end
 
   ### Variables (assignments)
+  if start_stop
+    __ovr_firing_fraction = pop!(__overrides, "firing_fraction", nothing); isnothing(__ovr_firing_fraction) || push!(__eqs, firing_fraction ~ __ovr_firing_fraction)
+    __ovr_firing_fraction__initial = pop!(__overrides, "firing_fraction.initial", nothing); isnothing(__ovr_firing_fraction__initial) || (__initial_conditions[firing_fraction] = __ovr_firing_fraction__initial)
+    __ovr_firing_fraction__guess = pop!(__overrides, "firing_fraction.guess", nothing)
+  end
+  if start_stop
+    __ovr_start_compensation = pop!(__overrides, "start_compensation", nothing); isnothing(__ovr_start_compensation) || push!(__eqs, start_compensation ~ __ovr_start_compensation)
+    __ovr_start_compensation__initial = pop!(__overrides, "start_compensation.initial", nothing); isnothing(__ovr_start_compensation__initial) || (__initial_conditions[start_compensation] = __ovr_start_compensation__initial)
+    __ovr_start_compensation__guess = pop!(__overrides, "start_compensation.guess", nothing)
+  end
+  if start_stop
+    __ovr_machine_limit = pop!(__overrides, "machine_limit", nothing); isnothing(__ovr_machine_limit) || push!(__eqs, machine_limit ~ __ovr_machine_limit)
+    __ovr_machine_limit__initial = pop!(__overrides, "machine_limit.initial", nothing); isnothing(__ovr_machine_limit__initial) || (__initial_conditions[machine_limit] = __ovr_machine_limit__initial)
+    __ovr_machine_limit__guess = pop!(__overrides, "machine_limit.guess", nothing)
+  end
 
   ### Constants
   __constants = Any[]
@@ -111,7 +161,7 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
   push!(__systems, @named support = __Dyad__Spline())
   # Subcomponent engine of type VehicleSystemsComponents.Vehicle.Engine.MappedEngine
   engine_overrides = __pop_subcomponent_overrides!(__overrides, "engine")
-  push!(__systems, @named engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(; fuel_cut_rpm=ifelse(engine_stopped, -2.0, 1300.0), fuel_resume_rpm=ifelse(engine_stopped, -1.0, 1000.0), __overrides = engine_overrides))
+  push!(__systems, @named engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(; fuel_controlled=start_stop, fuel_cut_rpm=ifelse(engine_stopped, -2.0, 1300.0), fuel_resume_rpm=ifelse(engine_stopped, -1.0, 1000.0), __overrides = engine_overrides))
   # Subcomponent k0 of type VehicleSystemsComponents.Vehicle.DisconnectClutch
   k0_overrides = __pop_subcomponent_overrides!(__overrides, "k0")
   push!(__systems, @named k0 = VehicleSystemsComponents.Vehicle.DisconnectClutch(; position_start=position_start, __overrides = k0_overrides))
@@ -138,6 +188,15 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
+  if start_stop
+    isnothing(__ovr_firing_fraction__guess) || (__guesses[firing_fraction] = __ovr_firing_fraction__guess)
+  end
+  if start_stop
+    isnothing(__ovr_start_compensation__guess) || (__guesses[start_compensation] = __ovr_start_compensation__guess)
+  end
+  if start_stop
+    isnothing(__ovr_machine_limit__guess) || (__guesses[machine_limit] = __ovr_machine_limit__guess)
+  end
 
   ### Initialization Equations
   push!(__initialization_eqs, engine.air.manifold.p ~ 101325.0)
@@ -153,15 +212,24 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
   push!(__eqs, i ~ drive.battery.i)
   push!(__eqs, connect(engine_pedal, engine.pedal))
   push!(__eqs, connect(engage, k0.engage))
-  push!(__eqs, connect(tau_ref, drive.tau_ref))
   push!(__eqs, connect(engine.spline, k0.spline_a))
   push!(__eqs, connect(engine.support, k0.support, drive.support, support))
   push!(__eqs, connect(engine.speed.w, engine_speed))
   push!(__eqs, connect(engine.tau_e, engine_torque))
+  push!(__eqs, connect(engine.torque_map.full_load.y, available_torque))
   push!(__eqs, connect(engine.mdot_fuel, mdot_fuel))
   push!(__eqs, connect(drive.SoC, SoC))
 
   ### Control Structures
+  if start_stop
+    push!(__eqs, machine_limit ~ min(drive.T_max, drive.P_rated / max(abs(drive.machine.w), 1.0)))
+    push!(__eqs, firing_fraction ~ min(max((engine.N - firing_rpm) / firing_width, 0.0), 1.0))
+    push!(__eqs, engine.fuel_enable ~ engine_on * firing_fraction ^ 2 * (3.0 - 2.0 * firing_fraction))
+    push!(__eqs, start_compensation ~ engine_torque_ref - k0.tau)
+    push!(__eqs, drive.tau_ref ~ min(max(tau_ref + start_compensation, -machine_limit), machine_limit))
+  else
+    push!(__eqs, connect(tau_ref, drive.tau_ref))
+  end
   if speed_commanded
     push!(__eqs, connect(N_ref, speed_variator.N_ref))
     push!(__eqs, connect(k0.spline_b, drive.spline, speed_variator.spline_a))

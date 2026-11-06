@@ -4,9 +4,9 @@ include("../scripts/bsfc_line.jl")
 using .BsfcLine
 
 const BSFC_LINE = read_line()
-const H0_L100 = 5.7054223
-const H0_MJ100 = 184.473420
-const LINE_L100 = 5.392826
+const H0_L100 = 5.71753646
+const H0_MJ100 = 184.86510643
+const LINE_L100 = 5.43744462
 const RPM_ENGINE_IDLE = 800.0
 
 # H0 is both a P2 fixed-mode check and the operating-line baseline; one 1800 s run serves both.
@@ -306,10 +306,12 @@ end
 @testset "P2 powertrain" begin
     @testset "HandsOn05 sources stay in sync" begin
         for (name, original) in (("P2Powertrain", "Vehicle"), ("P2WLTC", "Lecture5"),
-                ("P2OperatingLineWLTC", "Lecture5"))
+                ("P2OperatingLineWLTC", "Lecture5"), ("P2HybridWLTC", "Lecture5"),
+                ("TorqueToPedal", "Vehicle"))
             source(folder) = read(joinpath(@__DIR__, "..", "dyad", folder, name * ".dyad"), String)
             normalize(text) = replace(text,
                 "VehicleSystemsComponents.HandsOn05.P2Powertrain" => "VehicleSystemsComponents.Vehicle.P2Powertrain",
+                "VehicleSystemsComponents.HandsOn05.TorqueToPedal" => "VehicleSystemsComponents.Vehicle.TorqueToPedal",
                 "VehicleSystemsComponents.HandsOn05.P2WLTC" => "VehicleSystemsComponents.Lecture5.P2WLTC")
             @test normalize(source("HandsOn05")) == normalize(source(original))
         end
@@ -344,13 +346,14 @@ end
             @test minimum(s[m.powertrain.position][above_ramp]) > 0.99
             engaged_min_rpm = k0_engaged_min_rpm(m, s)
             @test engaged_min_rpm > RPM_ENGINE_IDLE - 20.0
-            @test s[m.meter.fuel_raw][end] ≈ H0_L100 rtol=1e-3
+            @test s[m.meter.fuel_raw][end] ≈ H0_L100 atol=1e-5 rtol=0
             @test s[m.meter.fuel_corr][end] ≈ s[m.meter.fuel_raw][end] atol=1e-10
-            @test s[m.meter.energy_corr][end] ≈ H0_MJ100 rtol=1e-3
+            @test s[m.meter.energy_corr][end] ≈ H0_MJ100 atol=5e-4 rtol=0
             @test maximum(abs, s[m.powertrain.i]) < 1e-9
             capacity = maximum(s[m.powertrain.k0.tau_capacity])
             @test maximum(s[m.powertrain.engine_torque]) < capacity
-            @test k0_cruise_min_position(m, s) > 0.99
+            cruise_min_position = k0_cruise_min_position(m, s)
+            @test cruise_min_position > 0.99
             locked = s[m.powertrain.position] .> 0.99
             @test all(s[m.powertrain.engine_torque][locked] .< s[m.powertrain.k0.tau_capacity][locked])
             d = m.powertrain.drive
@@ -363,9 +366,9 @@ end
             loss = s[m.powertrain.k0.tau] .* s[m.powertrain.k0.w_slip]
             @test minimum(loss) >= 0.0
             slip_MJ = sum(diff(s.t) .* (loss[1:end-1] .+ loss[2:end])) / 2e6
-            @info "H0 K0" slip_MJ peak_engine_torque=maximum(s[m.powertrain.engine_torque]) capacity engaged_min_rpm
+            @info "H0 K0" slip_MJ peak_engine_torque=maximum(s[m.powertrain.engine_torque]) capacity engaged_min_rpm cruise_min_position SoC=extrema(s[m.powertrain.SoC]) duration=last(s.t)
         end
-        @info "P2 fixed-mode WLTC" electric speed_error distance=s[m.meter.s][end] raw_L100=s[m.meter.fuel_raw][end] corrected_L100=s[m.meter.fuel_corr][end] MJ100=s[m.meter.energy_corr][end] fuel_kg=s[m.meter.m_fuel][end] SoC_drop=s[m.powertrain.SoC][1]-s[m.powertrain.SoC][end]
+        @info "P2 fixed-mode WLTC" electric speed_error distance=s[m.meter.s][end] raw_L100=s[m.meter.fuel_raw][end] corrected_L100=s[m.meter.fuel_corr][end] MJ100=s[m.meter.energy_corr][end] fuel_kg=s[m.meter.m_fuel][end] SoC_drop=s[m.powertrain.SoC][1]-s[m.powertrain.SoC][end] peak_shaft_rpm=maximum(s[m.powertrain.drive.machine.w])*30/pi
     end
 end
 
@@ -489,7 +492,7 @@ end
     end
     raw = s[m.meter.fuel_raw][end]
     h0 = h0_run().sol[symbolic_container(h0_run()).meter.fuel_raw][end]
-    @test raw ≈ LINE_L100 rtol=1e-3
+    @test raw ≈ LINE_L100 atol=1e-5 rtol=0
     # Same driver, brakes and K0 lock-up as H0: only the CVT schedule differs.
     @test raw < 0.96h0
     @info "P2 operating-line WLTC" speed_error distance=s[m.meter.s][end] raw_L100=raw MJ100=s[m.meter.energy_corr][end] H0_L100=h0 difference=raw-h0 percent=100*(raw/h0-1)
@@ -927,4 +930,125 @@ end
         @test all(-1e-9 .<= P_e .<= lp(LM.P_peak) + 1e-6)
         @info "Energy manager, depleted battery" engine_start = starts boost_share = extrema(a) SoC = extrema(soc)
     end
+end
+
+
+@testset "Lecture 5 fuel-enabled clutch start" begin
+    r = VehicleSystemsComponents.Lecture5.FuelEnableBenchTransient()
+    s, m = r.sol, symbolic_container(r)
+    @test string(s.retcode) == "Success"
+    ts = collect(5.0:0.1:11.0)
+    @test maximum(abs.(s(ts, idxs = m.powertrain.engine.N).u)) < 3.0
+    @test maximum(abs.(s(ts, idxs = m.powertrain.engine.mdot_fuel).u)) < 1e-10
+    @test minimum(s[m.powertrain.engine.N]) > -3.0
+    @test s(14.0, idxs = m.powertrain.engine.N) > 700.0
+    @test s(14.0, idxs = m.powertrain.engine.mdot_fuel) > 0.0
+    @test minimum(s[m.powertrain.k0.tau] .* s[m.powertrain.k0.w_slip]) > -1e-8
+end
+
+
+@testset "Enabled P2 closed-pedal idle with K0 open" begin
+    r = VehicleSystemsComponents.Lecture5.P2IdleBenchTransient()
+    s, m = r.sol, symbolic_container(r)
+    ts = collect(20.0:0.1:30.0)
+    @test string(s.retcode) == "Success"
+    rpm = s(ts, idxs = m.powertrain.engine.N).u
+    fuel = s(ts, idxs = m.powertrain.mdot_fuel).u
+    @test all(750.0 .<= rpm .<= 850.0)
+    @test all(0.08e-3 .<= fuel .<= 0.12e-3)
+    @test maximum(abs.(s(ts, idxs = m.powertrain.position).u)) < 1e-9
+    @info "Enabled closed-pedal idle" rpm=extrema(rpm) fuel_kg_s=extrema(fuel)
+end
+
+
+include("torque_to_pedal.jl")
+
+@testset "Lecture 5 charge-sustaining hybrid WLTC" begin
+    run = VehicleSystemsComponents.Lecture5.P2HybridWLTCTransient()
+    s, m = run.sol, symbolic_container(run)
+    @test string(s.retcode) == "Success"
+    ts = collect(0.0:0.05:1800.0)
+    cache = Dict{Any,Any}()
+    at(x) = get!(cache, x) do
+        s(ts, idxs = x).u
+    end
+    integrate(y) = sum((y[1:end-1] .+ y[2:end]) ./ 2) * 0.05
+    soc = at(m.powertrain.SoC)
+    ref = at(m.powertrain.drive.tau_ref)
+    limit = at(m.powertrain.machine_limit)
+    # The bench copies these envelopes as literals; a drive or engine change must move them too.
+    drive, manager = m.powertrain.drive, m.manager
+    @test s.ps[manager.T_max] == s.ps[drive.T_max]
+    @test s.ps[manager.P_max] == s.ps[drive.P_rated]
+    # The problem stores the table's interpolator inside a FunctionWrapper; obj[] is the table.
+    full_load = s.ps[m.powertrain.engine.torque_map.full_load.table.interpolator].obj[]
+    full_load_peak = maximum(full_load.u)
+    @test s.ps[m.tau_max] ≈ s.ps[drive.T_max] + full_load_peak atol = 1e-9 rtol = 0
+
+    @test abs(soc[end] - soc[1]) <= 0.02
+    @test minimum(soc) >= 0.4
+    @test maximum(soc) <= 0.8
+    corrected = last(s[m.meter.fuel_corr])
+    @test corrected < H0_L100
+    @test corrected ≈ 4.086344 atol = 1e-5 rtol = 0
+    @test last(s[m.meter.energy_corr]) ≈ 132.1236886596 atol = 5e-4 rtol = 0
+    on = at(m.manager.engine_on) .> 0.5
+    starts = findall(diff(on) .== 1)
+    stops = findall(diff(on) .== -1)
+    durations = [(isempty(filter(>(i), stops)) ? ts[end] : ts[first(filter(>(i), stops))]) - ts[i] for i in starts]
+    km = last(s[m.meter.s]) / 1000
+    @test 1 <= length(starts) <= 60
+    @test length(starts) / km < 3.0
+    @test minimum(durations) >= 1.5
+    off_age = zeros(length(ts))
+    for i in 2:length(ts)
+        off_age[i] = on[i] ? 0.0 : off_age[i-1] + 0.05
+    end
+    settled = (off_age .> 5.0) .& (at(m.manager.engine_on) .< 1e-6)
+    @test any(settled)
+    @test maximum(abs.(at(m.powertrain.engine.N)[settled])) < 3.0
+    @test maximum(abs.(at(m.powertrain.mdot_fuel)[settled])) < 1e-9
+    @test minimum(at(m.powertrain.engine.N)) > -3.0
+    slip = at(m.powertrain.k0.tau) .* at(m.powertrain.k0.w_slip)
+    @test minimum(slip) >= -1e-8
+    locked = (at(m.powertrain.position) .> 0.99) .& (abs.(at(m.powertrain.k0.w_slip)) .< 1.0)
+    @test any(locked)
+    @test maximum(abs.(at(m.powertrain.engine_torque)[locked])) < 230.0
+    max_error = maximum(abs.(3.6 .* at(m.car.bus.vx) .- at(m.trace.y)))
+    @test max_error < 1.7
+    @test last(s[m.E_charge]) ≈ 3.91999e6 rtol = 0.01
+    @test last(s[m.E_regen]) > 0
+    @test last(s[m.E_friction]) >= 0
+    modes = [at(getproperty(m.manager, x)) for x in (:ev, :on_line, :charging, :boosting)]
+    @test maximum(abs.(sum(modes) .- 1.0)) < 1e-8
+    @test all(x -> integrate(x) > 1.0, modes)
+    on_age = zeros(length(ts))
+    for i in 2:length(ts)
+        on_age[i] = on[i] ? on_age[i-1] + 0.05 : 0.0
+    end
+    tracking = (on_age .> 3.0) .& (at(m.manager.on_line) .> 0.9)
+    error_W = abs.(at(m.powertrain.engine_torque) .* at(m.powertrain.engine_speed) .- at(m.manager.P_engine))
+    mean_power_error = sum(error_W[tracking]) / sum(tracking)
+    max_power_error = maximum(error_W[tracking])
+    fuel = at(m.powertrain.mdot_fuel)
+    line_fuel_share = sum(fuel[abs.(at(m.powertrain.engine.N) .- at(m.line.N)) .<= 150.0]) / sum(fuel)
+    @test mean_power_error < 500.0
+    @test max_power_error < 5000.0
+    @test line_fuel_share > 0.45
+    tau_request = at(m.manager.tau_engine)
+    on_fraction = at(m.manager.engine_on)
+    nonpositive_fuel = integrate(fuel .* ((tau_request .<= 0.0) .& (on_fraction .> 0.99)))
+    excess = max.(abs.(at(m.powertrain.tau_ref) .+ at(m.powertrain.start_compensation)) .- limit, 0.0)
+    starting = (on_age .> 0.0) .& (on_age .<= 3.0)
+    start_excess_time = integrate(Float64.(starting .& (excess .> 0.01)))
+    start_excess_peak = maximum(excess[starting])
+    start_speed_error = maximum(abs.(3.6 .* at(m.car.bus.vx) .- at(m.trace.y))[starting])
+    @test 0.0 <= nonpositive_fuel <= 0.005
+    @test 0.0 <= start_excess_time <= 3.0
+    @test 0.0 <= start_excess_peak <= 130.0
+    @test start_speed_error <= 1.1
+    @info "Start compensation envelope" start_excess_time start_excess_peak start_speed_error max_ref=maximum(abs.(ref)) limit_excess=maximum(abs.(ref) .- limit) nonpositive_fuel charge_J=last(s[m.E_charge])
+    @info "Engine line tracking" mean_power_error max_power_error line_fuel_share
+    @info "Guide derived hybrid figures" saving_percent=100*(1-corrected/H0_L100) SoC_gain_percentage_points=100*(last(soc)-first(soc)) slip_J_per_start=integrate(slip)/length(starts)
+    @info "Charge-sustaining WLTC" corrected raw=last(s[m.meter.fuel_raw]) hybrid_MJ100=last(s[m.meter.energy_corr]) conventional_MJ100=H0_MJ100 BEV_MJ100=47.25 SoC=(first(soc),last(soc),minimum(soc),maximum(soc)) starts=length(starts) starts_per_km=length(starts)/km mean_on=sum(durations)/length(durations) min_on=minimum(durations) slip_J=integrate(slip) max_error regen_J=last(s[m.E_regen]) friction_J=last(s[m.E_friction]) mode_seconds=integrate.(modes) mode_fuel_kg=[integrate(x .* at(m.powertrain.mdot_fuel)) for x in modes]
 end
