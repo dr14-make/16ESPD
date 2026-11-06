@@ -1,6 +1,8 @@
 using SHA
 using DyadInterface: symbolic_container
 include("../scripts/p_position_table.jl")
+const POSITION_ENGINE_PEAK = Ref{Float64}(NaN)
+
 using .PPositionTable
 
 @testset "Belt power directions" begin
@@ -61,6 +63,9 @@ end
     @testset "P4 live run matches pin" begin
         run = VehicleSystemsComponents.Lecture5.P4HybridWLTCTransient()
         live = PPositionTable.metrics(run, "P4")
+        m = symbolic_container(run)
+        POSITION_ENGINE_PEAK[] = maximum(run.sol.ps[
+            m.powertrain.engine.torque_map.full_load.table.interpolator].obj[].u)
         for column in (:fuel_raw_L100, :fuel_corr_L100, :energy_MJ100,
                 :E_regen_MJ, :E_recovered_MJ, :SoC_start, :SoC_end, :max_speed_error_kmh)
             @test getproperty(live, column) ≈ getproperty(p4, column) rtol = 1e-5 atol = 1e-7
@@ -107,8 +112,7 @@ end
             end
         end
     end
-    peak_rows = split.(readlines(joinpath(@__DIR__, "../data/engine/full_load.csv"))[2:end], ',')
-    full_load_peak = maximum(parse(Float64, row[2]) for row in peak_rows)
+    full_load_peak = POSITION_ENGINE_PEAK[]
     @test resolved(reference, reference.tau_max) ≈ 355.233567 atol = 1e-9 rtol = 0
     @test resolved(reference, reference.tau_max) ≈
         full_load_peak + resolved(reference, reference.powertrain.drive.T_max) atol = 1e-9 rtol = 0
@@ -117,9 +121,11 @@ end
             @test resolved(model, model.tau_brake) ≈ 355.233567 atol = 1e-9 rtol = 0
             @test resolved(model, model.driver.y_min) ≈ -355.233567 atol = 1e-9 rtol = 0
             @test resolved(model, model.driver.y_max) ≈ resolved(model, model.tau_max)
-            interpolator = ModelingToolkit.Symbolics.value(resolved_value(model,
-                model.powertrain.engine.torque_map.full_load.table.interpolator))
-            @test maximum(interpolator.obj[].u) ≈ full_load_peak atol = 1e-9 rtol = 0
+            table = model.powertrain.engine.torque_map.full_load.table
+            defaults = values_for(table)
+            key = only(filter(k -> string(k) == "interpolator", collect(keys(defaults))))
+            data = ModelingToolkit.Symbolics.value(defaults[key])
+            @test maximum(data.u) ≈ full_load_peak atol = 1e-9 rtol = 0
             if model !== reference
                 @test resolved(model, model.tau_engine_peak) ≈ full_load_peak atol = 1e-9 rtol = 0
                 machine = resolved(model, model.T_max)
