@@ -47,6 +47,9 @@ features:
   - title: "Lecture 5 build guide: a P2 hybrid of your own"
     details: "Alongside the lecture<br>A P2 powertrain with the K0 clutch on the planar car, electric-only and engine-only WLTC runs, the engine held on its best-BSFC line by a speed-commanded CVT, a rule-based energy manager, and the charge-sustaining WLTC in L/100 km and MJ/100 km."
     link: /lecture/lecture-05/
+  - title: "Lecture 5 homework: a series hybrid"
+    details: "After the lecture<br>Wire a series hybrid on prepared ground: the library's engine-generator and traction drive on one battery bus, the engine on its best-BSFC line, and an SoC thermostat of your own. Charge-sustaining on WLTC, against the conventional car in L/100 km."
+    link: /lecture/lecture-05/homework
 ---
 
 ## Lecture 1, in two sessions
@@ -138,7 +141,9 @@ converter, the battery, the car, regen and the bill. They follow the
 
 The students build a P2 hybrid along with the lecture, one step per section from 04 on: the
 powertrain, the operating line, the energy manager and the charge-sustaining WLTC. They follow the
-[build guide](./lecture/lecture-05/); each build slide links to its step.
+[build guide](./lecture/lecture-05/); each build slide links to its step. The
+[homework](./lecture/lecture-05/homework) is a series hybrid on prepared ground, with the targets
+it has to meet.
 
 ## For the lecturer
 

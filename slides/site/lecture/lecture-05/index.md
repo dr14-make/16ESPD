@@ -550,7 +550,7 @@ end
 
 ## Where this stops
 
-Steps 1 and 2 establish the composition, fixed-mode checks and operating-line target. Task #113 will address the energy manager; it is not part of this guide. Studio build steps still need rehearsal before this draft can be used as a verified classroom walkthrough.
+Steps 1 and 2 establish the composition, fixed-mode checks and operating-line target. Task #113 will address the energy manager; it is not part of this guide. The [homework](./homework) takes the same car to a series hybrid. Studio build steps still need rehearsal before this draft can be used as a verified classroom walkthrough.
 
 The unchanged variator schedules **1800–6000 rpm**, above the machine's 1412 rpm loaded corner;
 field weakening supplies the constant-power region. Low reached 3546 rpm. The existing dyno

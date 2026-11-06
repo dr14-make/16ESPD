@@ -25,4 +25,6 @@ include("OperatingLineBench_test.jl")
 include("P2ElectricWLTC_test.jl")
 include("P2OperatingLineWLTC_test.jl")
 include("P2WLTC_test.jl")
+include("SeriesGroundElectric_test.jl")
+include("TractionDriveDyno_test.jl")
 end

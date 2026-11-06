@@ -611,6 +611,91 @@ end
     end
 end
 
+@testset "series-hybrid parts" begin
+    @testset "traction drive envelope" begin
+        # Leaf scaling at 80 kW, designed at HybridDrive's 220 V loaded pack voltage.
+        scale = 80 / 110
+        Vd = 220.0
+        R = 0.05 * (Vd / 350)^2 / scale
+        w = 80e3 / 250
+        losses = (0.5 + 1.0) * scale + 300 / (10100pi / 30)^3 * scale * w^2 + 200scale / w
+        k = (Vd + sqrt(Vd^2 - 4w * R * (250 + losses))) / (2w)
+        envelope(run) = begin
+            d, s = symbolic_container(run).drive, run.sol
+            ts = collect(0.5:0.01:22.0)
+            at(x) = s(ts, idxs = x).u
+            (; m = symbolic_container(run), d, s, rpm = at(d.machine.w) .* (30 / pi), torque = at(d.machine.tau),
+                power = at(d.machine.P_mech), field = at(d.converter.field),
+                P_elec = at(d.P_elec), P_in = at(d.converter.P_in),
+                v = at(symbolic_container(run).bus.v))
+        end
+        corner(e) = e.rpm[something(findfirst(<(0.999), e.field), lastindex(e.rpm))]
+
+        stiff = envelope(VehicleSystemsComponents.Lecture5.TractionDriveDynoTransient())
+        @test string(stiff.s.retcode) == "Success"
+        ps = stiff.s.ps
+        d = stiff.d
+        @test ps[d.V_design] == Vd
+        for (p, expected) in ((d.machine.R, R), (d.machine.L, 0.01R), (d.machine.J, 0.05scale),
+                (d.machine.C, 200scale), (d.machine.tau_loss_base, losses), (d.machine.k, k),
+                (d.converter.I_max, (250 + losses) / k))
+            @test ps[p] ≈ expected rtol = 1e-12
+        end
+        @test maximum(stiff.torque) ≈ 250.0 rtol = 0.02
+        # Designed at 220 V, on a stiff 270 V bus the corner and the constant power both rise by
+        # 270/220, and hold past WLTC's 9200 rpm at the machine.
+        @test corner(stiff) ≈ 80e3 / 250 * 30 / pi * 270 / Vd rtol = 0.03
+        @test stiff.rpm[end] > 9200
+        @test stiff.power[end] ≈ 80e3 * 270 / Vd rtol = 0.02
+        @test all(isapprox.(stiff.P_elec, stiff.P_in; rtol = 1e-9))
+
+        # On the homework pack alone the pack sets the limit: no more than E^2 / (4 R0) drawn,
+        # measured 55.1 kW at a 142 V bus, the high-voltage side of the pack's maximum.
+        pack = envelope(VehicleSystemsComponents.Lecture5.TractionDrivePackDynoTransient())
+        @test string(pack.s.retcode) == "Success"
+        b = pack.m.bus
+        E, R0 = pack.s.ps[b.E], pack.s.ps[b.R0]
+        @test R0 == 0.33
+        P_max_pack = E^2 / (4R0)
+        @test maximum(pack.P_elec) <= P_max_pack
+        @test maximum(pack.P_elec) ≈ P_max_pack rtol = 0.01
+        @test minimum(pack.v) > E / 2
+        @test maximum(pack.torque) ≈ 250.0 rtol = 0.02
+        @test 47e3 < maximum(pack.power) < 52e3
+        @test 1800 < corner(pack) < 2050
+        @info "Traction drive envelope" stiff_peak_power = maximum(stiff.power) stiff_corner_rpm = corner(stiff) pack_peak_power = maximum(pack.power) pack_peak_drawn = maximum(pack.P_elec) pack_corner_rpm = corner(pack) pack_min_bus_V = minimum(pack.v)
+    end
+
+    @testset "ground, electric-only WLTC Low" begin
+        run = VehicleSystemsComponents.Lecture5.SeriesGroundElectricTransient()
+        @test string(run.sol.retcode) == "Success"
+        m, s = symbolic_container(run), run.sol
+        p(x) = s.ps[x]
+        @test s.t[end] == 589.0
+        # The split carries brake torque through the same reduction the drive turns the wheels by.
+        @test p(m.split.ratio) == p(m.drive.reduction.ratio)
+        @test p(m.driver.y_max) == p(m.drive.machine.T_max)
+        ts = collect(0.0:0.1:589.0)
+        at(x) = s(ts, idxs = x).u
+        err = at(m.trace.y) .- at(m.kmh.y)
+        # Measured 1.56 km/h at worst, inside WLTP's 2 km/h.
+        @test maximum(abs, err) < 2.0
+        @test minimum(at(m.kmh.y)) > -1e-3
+        # The meter reads what the ground hands it: no fuel, and the store's energy E Q dSoC.
+        soc_end = s[m.battery.SoC][end]
+        @test s[m.meter.fuel_raw][end] == 0.0
+        @test s[m.meter.E_batt_MJ][end] ≈ p(m.battery.E) * p(m.battery.Q_nom) * (p(m.battery.SoC0) - soc_end) / 1e6 rtol = 1e-4
+        @test s[m.meter.s][end] ≈ 3095.0 rtol = 1e-3
+        # Low drains the 1.4 kWh pack by about a quarter of its charge: measured 0.361.
+        @test 0.33 < soc_end < 0.39
+        @test minimum(at(m.battery.v)) > 200.0
+        weak = at(m.drive.converter.field) .< 0.99
+        @test count(weak) > 10
+        @test maximum(abs, at(m.drive.machine.tau_em)[weak] .- at(m.split.tau_motor)[weak]) < 1.0
+        @info "Series ground, electric-only Low" max_speed_error = maximum(abs, err) soc_end E_batt_MJ = s[m.meter.E_batt_MJ][end] peak_drive_kW = maximum(at(m.drive.P_elec)) / 1e3
+    end
+end
+
 include("../notebooks/lecture05/operating_points.jl")
 using .OperatingPoints
 
