@@ -3,7 +3,7 @@ P0 crank-coupled hybrid: machine--belt--engine--K0--CVT--front output.
 The shared 30 kW HybridDrive is a controlled comparison, not a production P0 rating.
 An open K0 cannot give electric-only traction: the machine must turn the engine
 for either boost or regeneration. No ideal starter is used; machine torque cranks
-against engine drag. `i_crank=1, eta_crank=1` permits a later ideal P1 comparison.
+against engine drag. `i_crank=1, eta_crank=1` models an ideal direct-crank P1 coupling.
 Connect support to a stationary reference; spline goes to an external differential.
 """
 component CoupledHybridPowertrain
@@ -16,7 +16,7 @@ component CoupledHybridPowertrain
   variable machine_limit::Torque
   "Machine-side cranking deficit [N.m], gated by engine_on and the smooth unfired fraction; never cancels fuel-cut drag"
   variable start_compensation::Torque
-  "Select the existing speed-commanded CVT instead of pedal scheduling (assumed comparison option)"
+  "Select speed-commanded CVT control instead of pedal scheduling (assumed comparison option)"
   structural parameter speed_commanded::Boolean = false
   cvt_pedal = RealInput() if !speed_commanded
   N_ref = RealInput() if speed_commanded

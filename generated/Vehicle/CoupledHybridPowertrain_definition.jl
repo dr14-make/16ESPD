@@ -11,14 +11,14 @@ P0 crank-coupled hybrid: machine--belt--engine--K0--CVT--front output.
 The shared 30 kW HybridDrive is a controlled comparison, not a production P0 rating.
 An open K0 cannot give electric-only traction: the machine must turn the engine
 for either boost or regeneration. No ideal starter is used; machine torque cranks
-against engine drag. `i_crank=1, eta_crank=1` permits a later ideal P1 comparison.
+against engine drag. `i_crank=1, eta_crank=1` models an ideal direct-crank P1 coupling.
 Connect support to a stationary reference; spline goes to an external differential.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `speed_commanded`         | Select the existing speed-commanded CVT instead of pedal scheduling (assumed comparison option)                         | --  |   false |
+| `speed_commanded`         | Select speed-commanded CVT control instead of pedal scheduling (assumed comparison option)                         | --  |   false |
 | `i_crank`         | Machine/crank speed ratio (assumed: illustrative P0 pulley sizing, not vehicle data)                         | --  |   2.5 |
 | `eta_crank`         | Crank transmission efficiency in both directions (assumed: illustrative belt)                         | --  |   0.96 |
 | `P_rated`         | Machine rated power (ORNL-2011 Sonata anchor, inherited comparison basis from HybridDrive)                         | W  |   30.0e3 |
