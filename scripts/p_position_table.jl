@@ -12,22 +12,41 @@ const COLUMNS = (:position, :P_rated_kW, :fuel_raw_L100, :fuel_corr_L100, :energ
     :saving_H0_pct, :saving_line_pct, :E_regen_MJ, :E_recovered_MJ, :electric_drive_s, :starts, :fuel_resumptions,
     :SoC_start, :SoC_end, :max_speed_error_kmh, :definitions_sha256)
 
-"Fingerprint the generated vehicle physics and the position's bench and analysis definitions."
+"Transitive package-local definitions referenced by a generated bench and its analysis."
+function definition_files(bench)
+    generated = joinpath(ROOT, "generated")
+    index = Dict{String, String}()
+    for (dir, _, files) in walkdir(generated), file in files
+        endswith(file, "_definition.jl") || continue
+        relative = relpath(joinpath(dir, file), generated)
+        name = replace(relative, "_definition.jl" => "", '/' => '.')
+        index["VehicleSystemsComponents." * name] = joinpath(dir, file)
+    end
+    pending = ["VehicleSystemsComponents.Lecture5." * bench,
+        "VehicleSystemsComponents.Lecture5." * bench * "Transient"]
+    visited = Set{String}()
+    while !isempty(pending)
+        name = pop!(pending)
+        name in visited && continue
+        push!(visited, name)
+        file = index[name]
+        namespace = join(split(name, '.')[1:end-1], '.')
+        for reference in eachmatch(r"\b[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*\s*\(", read(file, String))
+            candidate = strip(chop(reference.match))
+            qualified = startswith(candidate, "VehicleSystemsComponents.") ? candidate : namespace * "." * candidate
+            haskey(index, qualified) && push!(pending, qualified)
+        end
+    end
+    sort!([index[name] for name in visited])
+end
+
+"Fingerprint the bench's transitive generated package-local dependency closure."
 function definitions_hash(position)
     benches = Dict("P0" => "CoupledHybridWLTC", "P1" => "P1HybridWLTC", "P2" => "P2HybridWLTC",
         "P3" => "OutputHybridWLTC", "P4" => "P4HybridWLTC")
-    family = position in ("P0", "P1") ? "CoupledHybridPowertrain" : position == "P2" ? "P2Powertrain" : "OutputHybridPowertrain"
-    vehicle = [family, "EnergyManager", "Electric/HybridDrive", "BeltDrive",
-        "Engine/MappedEngine", "DisconnectClutch", "SoCCorrectedFuel"]
-    files = [joinpath(ROOT, "generated/Vehicle", n * "_definition.jl") for n in vehicle]
-    names = [benches[position], benches[position] * "Transient"]
-    position != "P2" && push!(files, joinpath(ROOT, "dyad/Lecture5/HybridPositionWLTC.dyad"))
-    position == "P4" && push!(names, "OutputHybridWLTC")
-    position == "P1" && push!(names, "CoupledHybridWLTC")
-    append!(files, [joinpath(ROOT, "generated/Lecture5", n * "_definition.jl") for n in names])
     io = IOBuffer()
-    for f in sort!(unique(files))
-        write(io, relpath(f, ROOT), '\n', read(f), '\n')
+    for file in definition_files(benches[position])
+        write(io, relpath(file, ROOT), '\n', read(file), '\n')
     end
     bytes2hex(sha256(take!(io)))
 end
@@ -48,7 +67,7 @@ function metrics(run, position; P_rated_kW = 30.0)
         saving_H0_pct = 100 * (1 - corr / H0), saving_line_pct = 100 * (1 - corr / LINE),
         E_regen_MJ = last(s[m.E_regen]) / 1e6,
         E_recovered_MJ = integrate(max.(-at(m.powertrain.E) .* at(m.powertrain.i), 0.0) .* (at(m.manager.tau_dem) .< 0.0)) / 1e6,
-        electric_drive_s = position in ("P0", "P1") ? 0.0 : integrate(Float64.((.!on) .& (v .> 1.0) .& (at(m.manager.tau_drive) .> 1.0))),
+        electric_drive_s = integrate(Float64.((.!on) .& (v .> 1.0) .& (at(m.manager.tau_drive) .> 1.0))),
         starts = count(==(1), diff(at(m.powertrain.engine_speed) .* (30 / pi) .>= s.prob.ps[m.powertrain.firing_rpm])),
         fuel_resumptions = count(==(1), diff(on)), SoC_start = first(soc), SoC_end = last(soc),
         max_speed_error_kmh = maximum(abs.(v .- at(m.trace.y))),
@@ -58,7 +77,7 @@ end
 function read_table(path = TABLE)
     lines = readlines(path)
     names = Symbol.(split(first(lines), ','))
-    [NamedTuple{Tuple(names)}(Tuple(i in (1, length(names)) ? x : parse(Float64, x)
+    [NamedTuple{Tuple(names)}(Tuple(names[i] in (:position, :baseline, :definitions_sha256) ? x : parse(Float64, x)
         for (i, x) in enumerate(split(line, ',')))) for line in lines[2:end] if !isempty(line)]
 end
 
@@ -73,12 +92,9 @@ function generate_baselines(L)
     fuel = at(m.powertrain.mdot_fuel) .* (power .<= 1000.0)
     idle_mass = sum((fuel[1:end-1] .+ fuel[2:end]) ./ 2) * 0.05
     idle = 1e8 * idle_mass / (745.0 * last(s[m.meter.s]))
-    files = [joinpath(ROOT, "generated/Lecture5", n * "_definition.jl")
-        for n in ("P2OperatingLineWLTC", "P2OperatingLineWLTCTransient")]
-    hash = bytes2hex(sha256(join(read.(files, String), "\n")))
     open(joinpath(dirname(TABLE), "baselines.csv"), "w") do io
-        println(io, "baseline,fuel_L100,idle_fuel_L100,definitions_sha256")
-        println(io, "line,", last(s[m.meter.fuel_raw]), ',', idle, ',', hash)
+        println(io, "baseline,fuel_L100,idle_fuel_L100")
+        println(io, "line,", last(s[m.meter.fuel_raw]), ',', idle)
     end
 end
 
