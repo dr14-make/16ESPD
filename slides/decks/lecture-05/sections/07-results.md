@@ -33,15 +33,14 @@ routeAlias: three-powertrains
 
 | Powertrain | L/100 km | MJ/100 km |
 |---|---:|---:|
-| conventional, same planar car (H0) | 5.71 | 184.5 |
-| conventional, CVT on the operating line | 5.39 | 174.4 |
-| P2 hybrid, SoC-corrected | <span class="todo">TODO</span> | <span class="todo">TODO</span> |
+| conventional, same planar car (H0) | 5.72 | 184.9 |
+| conventional, CVT on the operating line | 5.44 | 175.8 |
+| P2 hybrid, SoC-corrected | 4.09 | 132.1 |
 | battery-electric, Lecture 4 | — | 47.2 |
 
 </div>
 
-The hybrid hardware alone, the machine idling on the shaft, costs the conventional car
-**about 0.07 L/100 km, about 1 %**: the hybrid earns that back before it saves anything.
+The hybrid saves **28.5 %** against H0; the line alone, **4.9 %**.
 
 MJ of petrol into the tank against MJ out of the battery's terminals: the energy each car draws
 from its store, not from the well or the grid.
@@ -66,23 +65,23 @@ Produced by the charge-sustaining WLTC run, #113
 The first comparison: the three powertrains on the same cycle.
 
 The conventional car is H0: the same planar car, K0 locked once it moves and the hybrid machine removed, so the
-rows differ only in the powertrain: 5.71 liters per 100 kilometers, 184.5 megajoules. The second
-row is build 02: the same engine-only car with its CVT on the operating-line schedule, 5.39 liters,
-174.4 megajoules, 5.5 percent less with no electric machine. For
-scale, Lecture 2's car on its own, one-dimensional bench burned 5.22. The hybrid's hardware alone,
-its machine spinning idle on the shaft, would cost the same car about 0.07 liters, about 1 percent: the hybrid
-has to earn that back before it saves anything. The hybrid you finish today, with its fuel corrected for the change in the
-battery's charge: TODO until the reference run of issue 113. The battery-electric car of Lecture 4:
+rows differ only in the powertrain: 5.72 liters per 100 kilometers, 184.9 megajoules. The second
+row is build 02: the same engine-only car with its CVT on the operating-line schedule, 5.44 liters,
+175.8 megajoules, 4.9 percent less with no electric machine. For
+scale, Lecture 2's car on its own, one-dimensional bench burned 5.22. The hybrid you finish today,
+with its fuel corrected for the change in the battery's charge: 4.09 liters, 132.1 megajoules, 28.5
+percent less than H0. Its raw fuel is 4.11 liters; it ends with a little more charge than it
+started, so the correction takes a few hundredths off. The battery-electric car of Lecture 4:
 no liters, 47.2 megajoules per 100 kilometers at the battery's terminals, from Lecture 4's wrap-up.
 
-Be careful what the megajoule column compares. For the two fuel cars it is the petrol's heating
-value going into the engine; for the electric car it is the electricity coming out of the battery's
-terminals. It is the energy each car draws from its own store. It is not well-to-wheel: it leaves
-out the refinery, the power station, the grid and the charger. That is the same caveat as in
-Lecture 4.
+Be careful what the megajoule column compares. For the three fuel rows it is the petrol's heating
+value going into the engine, the hybrid's corrected for its change of charge; for the electric car
+it is the electricity coming out of the battery's terminals. It is the energy each car draws from
+its own store. It is not well-to-wheel: it leaves out the refinery, the power station, the grid and
+the charger. That is the same caveat as in Lecture 4.
 
-The figure will show the three by WLTC phase, once the reference run of issue 113 has produced
-the split.
+The table has the reference run's totals. The figure, the same three cars split by WLTC phase, is
+still to be drawn from that run.
 -->
 
 ---
@@ -119,12 +118,12 @@ gearbox.
 
 Ours: Lecture 2's engine and CVT, idling at every stop. So ours is closest to Chalmers.
 
-The green box is why it matters. A baseline without stop/start lets every hybrid also take the credit
-for stopping the engine: in Chalmers' own numbers, a 12 volt stop/start alone saves 5.0 percent on
-the WLTC. Against a baseline that idles, our savings will read high next to Schaeffler and
-Braunschweig. And our CVT can move the engine toward the line without a battery, 5.5 percent in build 02,
-which a stepped gearbox cannot, so part of the operating-point saving is already the CVT's. The plan therefore compares our table for
-ranking and order of magnitude, not to the percent.
+The green box is why it matters. A baseline without stop/start lets every hybrid also take the
+credit for stopping the engine: in Chalmers' own numbers, a 12 volt stop/start alone saves 5.0
+percent on the WLTC. Against a baseline that idles, our savings will read high next to Schaeffler
+and Braunschweig. And our CVT can move the engine toward the line without a battery, 4.9 percent in
+build 02, which a stepped gearbox cannot, so part of the operating-point saving is already the
+CVT's. The plan therefore compares our table for ranking and order of magnitude, not to the percent.
 -->
 
 ---
@@ -204,7 +203,7 @@ routeAlias: reading-the-table
 ### What will differ, and why
 
 - **Baseline**: ours idles; two of the three studies' cars stop.
-- **Transmission**: our CVT alone saves 5.5 % by moving toward the line; theirs are stepped.
+- **Transmission**: our CVT alone saves 4.9 % by moving toward the line; theirs are stepped.
 - **Strategy**: our five rules, not their calibrated controllers.
 - **Car and engine**: Lecture 2's engine, not a 1.0 or 1.5 L DCT car.
 
@@ -225,7 +224,7 @@ to 10 percent on P2, P3 and P4, while P0 and P1 gain little, because their limit
 engine, not the machine. Our 15 and 30 kilowatt columns test exactly that.
 
 What will differ. The baseline: ours idles. The transmission: our CVT alone already moves the engine
-toward the line, 5.5 percent in build 02, while the studies' dual-clutch and manual gearboxes leave
+toward the line, 4.9 percent in build 02, while the studies' dual-clutch and manual gearboxes leave
 more for the hybrid to gain. The strategy: our five rules against controllers the studies calibrated. And the car and
 engine themselves.
 
@@ -256,22 +255,25 @@ Captured with the build guide, #113
 
 **Given:** the SoC-corrected fuel calculation (#199)
 
-<span class="todo">TODO: guide link · reference `dyad/HandsOn05/…`</span>
+[page: step 4](../lecture/lecture-05/#step-4) · reference `dyad/HandsOn05/P2HybridWLTC.dyad`
 
 </div>
 <div class="stack">
 
-*The full hybrid on the WLTC bench · the fuel block on the fuel flow, the battery's terminal
-power and the distance · then the three cars side by side*
+*Nothing new to wire: the fuel block is on the bench already · run the full 1800 s, read the
+meter at the end · then the three cars side by side*
 
-```julia
-# TODO: snippet from the build guide (#113)
+```txt
+# keep, already on the bench: stored power, not terminal
+meter.P_stored = powertrain.E * powertrain.i
+# read at t = 1800 s
+meter.fuel_raw   meter.fuel_corr   meter.energy_corr
 ```
 
 <div class="handson">✓ SoC at the end within <b>± 2 %</b> of capacity of its start:
-<span class="todo">TODO ΔSoC</span> · L/100 km: conventional on this bench
-<b>5.71</b> (Lecture 2: 5.22), hybrid SoC-corrected <span class="todo">TODO</span>
-· MJ/100 km: conventional <b>184.5</b>, hybrid <span class="todo">TODO</span>,
+0.600 → <b>0.612</b> · L/100 km: conventional on this bench
+<b>5.72</b> (Lecture 2: 5.22), hybrid SoC-corrected <b>4.09</b> (raw 4.11), <b>−28.5 %</b>
+· MJ/100 km: conventional <b>184.9</b>, hybrid <b>132.1</b>,
 battery-electric <b>47.2</b></div>
 
 </div>
@@ -280,16 +282,21 @@ battery-electric <b>47.2</b></div>
 <!--
 Build 04: the charge-sustaining WLTC. The screenshot comes with the build guide of issue 113.
 
-You put your full hybrid, with its operating line and its energy manager, on the WLTC bench, and add
-the library's fuel block from issue 199. It reads the engine's fuel flow, the battery's terminal
-power and the distance, and reports the raw fuel, the net battery energy and the SoC-corrected fuel,
-in liters and in megajoules per 100 kilometers. Then you put the three cars side by side.
+Your hybrid bench already carries the library's fuel block from issue 199, wired since the first
+build; step 4 adds nothing to it. You run the full 1800 seconds and read the meter only at the end.
+The block reads the engine's fuel flow, the power into and out of
+the battery's store, open-circuit voltage times current, and the distance. Stored, not terminal:
+the terminal power would count the battery's resistance loss as charge it never holds. The block
+reports the raw fuel, the net battery energy and the SoC-corrected fuel, in liters and in
+megajoules per 100 kilometers. Then you put the three cars side by side.
 
 The checkpoint, from the plan. First the honesty check: the state of charge at the end must be
 within 2 percent of capacity of its start. Then the numbers: the SoC-corrected liters per 100
 kilometers for the conventional car and the hybrid, and megajoules per 100 kilometers for all three.
-The electric car's 47.2 is Lecture 4's. The conventional car's 5.71 is this bench's reference run;
-Lecture 2's 5.22 is there to compare with. The hybrid's are TODO until the reference run.
+The electric car's 47.2 is Lecture 4's. The conventional car's 5.72 is this bench's reference run;
+Lecture 2's 5.22 is there to compare with. The hybrid starts at 0.600 and ends at 0.612, 1.2 points
+up, well inside the band. Its corrected fuel is 4.09 liters per 100 kilometers, raw 4.11, and 132.1
+megajoules: 28.5 percent less than H0.
 
 If your state of charge ends outside the band, the charge thresholds are too far apart or the charge
 power too small for the cycle; the fuel figure is then not one to quote.
@@ -299,16 +306,15 @@ power too small for the cycle; the fuel figure is then not one to quote.
 
 ## Summary of section 07
 
-- Three powertrains on one car and one cycle: **184.5**, <span class="todo">TODO</span> and
-  **47.2 MJ/100 km**.
+- Three powertrains on one car and one cycle: **184.9**, **132.1** and **47.2 MJ/100 km**.
 - Every saving is against a baseline: **say which**. Ours idles at stops.
 - The studies agree on the ranking, **P0 < P1 ≪ P2 ≈ P3 ≈ P4**, and so must we.
 
 ### Next: <Link to="wrap-up">→ 08, wrap-up</Link>
 
 <!--
-Section 07 in three lines. Three powertrains on one car and one cycle: 184.5 megajoules per 100
-kilometers for the conventional car, the hybrid's number from your build 04, and 47.2 for the
+Section 07 in three lines. Three powertrains on one car and one cycle: 184.9 megajoules per 100
+kilometers for the conventional car, 132.1 for the hybrid of your build 04, and 47.2 for the
 electric car. Every saving is against a baseline, so say which; ours idles at stops. And the three
 studies agree on the ranking, P0 below P1, far below P2, P3 and P4, and so must our table.
 -->
