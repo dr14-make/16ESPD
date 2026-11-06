@@ -1,0 +1,94 @@
+"""
+P0 crank-coupled hybrid: machine--belt--engine--K0--CVT--front output.
+The shared 30 kW HybridDrive is a controlled comparison, not a production P0 rating.
+An open K0 cannot give electric-only traction: the machine must turn the engine
+for either boost or regeneration. No ideal starter is used; machine torque cranks
+against engine drag. `i_crank=1, eta_crank=1` models an ideal direct-crank P1 coupling.
+Connect support to a stationary reference; spline goes to an external differential.
+"""
+component CoupledHybridPowertrain
+  engine_pedal = RealInput()
+  engage = RealInput()
+  tau_ref = RealInput()
+  engine_on = RealInput()
+  "Cranking torque target [N.m]; compensates the target minus actual engine torque only while latched on below firing"
+  engine_torque_ref = RealInput()
+  variable machine_limit::Torque
+  "Machine-side cranking deficit [N.m], gated by engine_on and the smooth unfired fraction; never cancels fuel-cut drag"
+  variable start_compensation::Torque
+  "Select speed-commanded CVT control instead of pedal scheduling (assumed comparison option)"
+  structural parameter speed_commanded::Boolean = false
+  cvt_pedal = RealInput() if !speed_commanded
+  N_ref = RealInput() if speed_commanded
+  spline = Spline()
+  support = Spline()
+  engine_speed = RealOutput()
+  engine_torque = RealOutput()
+  available_torque = RealOutput()
+  mdot_fuel = RealOutput()
+  machine_torque = RealOutput()
+  position = RealOutput()
+  SoC = RealOutput()
+  E = RealOutput()
+  i = RealOutput()
+  "Machine/crank speed ratio (assumed: illustrative P0 pulley sizing, not vehicle data)"
+  parameter i_crank::Real(min = eps(Float64)) = 2.5
+  "Crank transmission efficiency in both directions (assumed: illustrative belt)"
+  parameter eta_crank::Real(min = eps(Float64), max = 1.0) = 0.96
+  "Machine rated power (ORNL-2011 Sonata anchor, inherited comparison basis from HybridDrive)"
+  parameter P_rated::Power = 30.0e3
+  "Machine peak torque (ORNL-2012 Hyundai HSG; belt starter-generator)"
+  parameter T_max::Torque = 43.0
+  "Lower firing-band speed [rpm] (assumed; same teaching start model as P2Powertrain)"
+  parameter firing_rpm::Real = 400.0
+  "Firing-band width [rpm] (assumed; same as P2Powertrain)"
+  parameter firing_width::Real(min = eps(Float64)) = 300.0
+  "Initial crank speed (assumed: stopped start-stop fixture)"
+  parameter engine_speed_start::AngularVelocity = 0.0
+  "Initial K0 actuator position (assumed: disconnected start)"
+  parameter position_start::Real = 0.0
+  "Linear firing-band fraction (derived: measured engine rpm)"
+  variable firing_fraction::Real
+  engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(fuel_controlled = true)
+  k0 = VehicleSystemsComponents.Vehicle.DisconnectClutch(position_start = position_start)
+  drive = VehicleSystemsComponents.Vehicle.Electric.HybridDrive(P_rated = P_rated, T_max = T_max)
+  belt = VehicleSystemsComponents.Vehicle.BeltDrive(ratio = i_crank, eta = eta_crank)
+  variator = VehicleSystemsComponents.Vehicle.ControlledVariator() if !speed_commanded
+  speed_variator = VehicleSystemsComponents.Vehicle.SpeedCommandedVariator() if speed_commanded
+relations
+  initial engine.air.manifold.p = 101325.0
+  initial engine.crankshaft.w = engine_speed_start
+  initial engine.crankshaft.phi = 0.0
+  initial k0.spline_b.phi = 0.0
+
+  connect(engine_pedal, engine.pedal)
+  connect(engage, k0.engage)
+  machine_limit = min(drive.T_max, drive.P_rated / max(abs(drive.machine.w), 1.0))
+  start_compensation = min(max(engine_on, 0.0), 1.0) * (1.0 - firing_fraction^2 * (3.0 - 2.0 * firing_fraction)) * (engine_torque_ref - engine.tau_e) / i_crank
+  drive.tau_ref = min(max(tau_ref + start_compensation, -machine_limit), machine_limit)
+  firing_fraction = min(max((engine.N - firing_rpm) / firing_width, 0.0), 1.0)
+  engine.fuel_enable = engine_on * firing_fraction^2 * (3.0 - 2.0 * firing_fraction)
+  connect(drive.spline, belt.spline_a)
+  connect(belt.spline_b, engine.spline, k0.spline_a)
+  if speed_commanded
+    connect(N_ref, speed_variator.N_ref)
+    connect(k0.spline_b, speed_variator.spline_a)
+    connect(speed_variator.spline_b, spline)
+    connect(speed_variator.support, support)
+  else
+    connect(cvt_pedal, variator.pedal)
+    connect(k0.spline_b, variator.spline_a)
+    connect(variator.spline_b, spline)
+    connect(variator.support, support)
+  end
+  connect(engine.support, belt.support, k0.support, drive.support, support)
+  engine_speed = engine.speed.w
+  engine_torque = engine.tau_e
+  available_torque = engine.torque_map.full_load.y
+  mdot_fuel = engine.mdot_fuel
+  machine_torque = drive.machine.tau
+  position = k0.position
+  SoC = drive.SoC
+  E = drive.battery.E
+  i = drive.battery.i
+end

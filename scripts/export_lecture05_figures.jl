@@ -27,6 +27,7 @@ const OUT = joinpath(ROOT, "slides", "decks", "lecture-05", "public", "figures")
 const MAP_FIGURE = "05-bsfc-line"
 const NOTEBOOK_FIGURES = Dict(
     "01-operating-points.pluto.jl" => ["05-operating-points-conventional" => :conventional_plot],
+    "02-p-positions.pluto.jl" => ["07-p-position-table" => :position_table_plot],
 )
 
 function export_notebook(notebook, figures)
