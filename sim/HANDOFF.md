@@ -35,6 +35,13 @@ Realtime drive is a library analysis with optional UI extensions. Read this, the
   calls `VehicleSystemsComponents.PlanarBEVByHandDrive()`. Studio and Orchestrator list
   `PlanarBEVRealtimeDrive` (scripted, 22 seconds, no window) and `PlanarBEVByHandDrive`
   (human, window on, runs until closed). Set `window = false, duration = 3` for neutral driving.
+- The by-hand drive runs on OpenCRG files: `PlanarBEVByHandDrive(road_file = "dyad://VehicleSystemsComponents/roads/ice_patch_mu.crg")`,
+  likewise `height_file`. Dyad 3.5.0 cannot hand an analysis parameter to a structural parameter
+  of its model, so `drive_model` rebuilds the model from its constructor with the files; any other
+  structural setting of a passed-in `model` returns to its default. Empty files keep the model's own.
+- The window learns the files from the spec, not the compiled model, and draws a static grip
+  map and height contours (`drive_road`, sampled once by `road_mesh`) under the course. The HUD
+  shows μ under each wheel. A model passed in with its own road files gets no map.
 - A window request loads GLMakie and SimpleDirectMediaLayer by itself when the environment stack
   provides them (`sim/` on `LOAD_PATH`, or both added to the default `@v1.13` environment);
   otherwise it raises the "load GLMakie" error. Students without them never resolve them.
@@ -69,9 +76,11 @@ dependencies (ADR-0002's student never needs to resolve them).
 | `check_coast_brake.jl` | Coast-down and full-brake run printing road load, motor torque, per-wheel friction and slip. |
 | `regen-braking-observations.md` | What the sim showed about coasting and braking, with the validation asks; researched in PR #155. |
 
-The car is the library component `Vehicle.Planar.PlanarBEVDrive`
-(`dyad/Vehicle/Planar/PlanarBEVDrive.dyad`): `PlanarCar`, `ElectricDrive` on the front axle via
-`DifferentialGear`, `RegenBlend`, `BrakeControlUnit` and `PlanarRoadLoad`. The realtime analysis
+The by-hand car is the library component `Vehicle.Planar.RoadBEVDrive`
+(`dyad/Vehicle/Planar/RoadBEVDrive.dyad`); the scripted one is `Vehicle.Planar.PlanarBEVDrive`,
+the same assembly on a uniform flat road: `PlanarCar` (`RoadCar` on the road), `ElectricDrive` on the front axle via
+`DifferentialGear`, `RegenBlend`, `BrakeControlUnit` and `PlanarRoadLoad`, plus `RoadGrade` on
+the road. The realtime analysis
 owns model/integrator construction; the extension only consumes them. `bench_realtime.jl`
 fills the human buffer between frame steps; `check_coast_brake.jl` uses the scripted hard-stop preset.
 
@@ -105,7 +114,10 @@ Options/Backspace reset, PS/P pause.
 
 ## Numbers that should hold
 
-- Real time: about 12× faster than real time natively (`bench_realtime.jl`), 34 unknowns.
+- Real time: the by-hand road car, about 1.7× faster than real time natively
+  (`bench_realtime.jl`), 35 unknowns. Each road grip or slope lookup costs about 3.5 µs and
+  3 KB of allocation, four grips and one slope per right-hand side; the flat `PlanarBEVDrive`
+  runs the same drive at about 8×.
 - Coast-down from about 105 km/h: N 0.035 g, D 0.059 g, e-Pedal 0.222 g, friction brakes at 0.
 - Road load at 105.6 km/h: 502 N (325 N drag at CdA 0.63 m², 177 N rolling at f_r 0.012).
 
