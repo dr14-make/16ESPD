@@ -55,13 +55,20 @@ Finish). The CLI and Julia stay where HANDOVER puts them: `npx -y @juliacomputin
   does not show it until it holds a `.dyad` file and the library recompiles; right-clicking a
   module row shows no menu.
   1. Create the component at the library root as above.
-  2. Move its file into the module folder on disk (close its diagram first).
-  3. F1 › `Dyad: Compile` (auto-compile can be off). The module now shows in COMPONENTS.
+  2. Before placing it anywhere, close its diagram and move its file into the module folder on
+     disk. The move changes its qualified name (`MyCar.X` → `MyCar.Module.X`): update every
+     reference to the old name.
+  3. F1 › `Dyad: Compile` (auto-compile can be off). The module now shows in COMPONENTS. The
+     generated files for the old root path stay behind; the `generated/` check below lists them.
   4. Use the **+** on the module's row (Component / Connector / Module) for every further
      component: it creates `dyad/<Module>/<lowercase name>.dyad`.
 - **Compile rewrites `generated/`:** `Dyad: Compile` rewrites committed `generated/*.jl` files
-  (`module.jl`, `tests.jl`, and any whose docstrings have drifted). Run `git status generated/`
-  after each compile and keep only the changes the task means to make.
+  (`module.jl`, `tests.jl`, and any whose docstrings have drifted). After each compile run
+  `git status --short generated/`:
+  - a tracked file the task did not mean to change (` M`): hand the user a `git restore <file>`
+    line;
+  - an untracked new file (`??`), stale ones from a moved component included: list it for the
+    user to remove (`git restore` does not touch untracked files).
 - **Rename a block:** select it → **Edit Parameters** → pencil next to the name → `zoom` to see the
   name box open and selected → type → Enter. Set parameters before renaming: a rename empties the
   parameter list until the block is reselected.
@@ -126,6 +133,8 @@ instance → **Go to definition** (opens or focuses the owner's diagram; press R
   new wire. Ctrl+Z undoes a wrong one.
 - Click empty canvas between wire drags: the drag right after a wire is drawn is swallowed. Some
   drags are swallowed even so: retry, and count `connect(` lines in the file after each batch.
+  If the count never moves although the wire draws, the diagram has gone stale after a text edit:
+  close and reopen it ([Code view](#code-view-and-editing-on-disk)).
 - **Overlapping ports** (e.g. `spline` under MappedEngine's output triangles): drag the block to the
   canvas center, Zoom In, hover until the tooltip names the port, and wire at that zoom.
 - **Ports that cannot be hit:** MappedEngine's `mdot_fuel` (eight outputs stacked on its right edge;
@@ -150,12 +159,15 @@ no structural option: write `structural parameter …` in code, along with condi
 ## Code view and editing on disk
 
 - **⇄** opens the code as a separate text tab; the diagram tab stays open.
-- **Edit on disk** is the cheapest way to enter code, but **close the component's diagram tab
-  first** and reopen it after. With the diagram open it redraws the disk edit, yet every later GUI
-  move or wire in that tab draws and is never written. In a rehearsal, enter code the way a
-  student would.
+- **After any text edit, close the diagram and reopen it**, then confirm one GUI edit reaches the
+  file by grepping it. Edited on disk with the diagram open, the diagram redraws the edit, yet
+  every later GUI move or wire in that tab draws and is never written. Whether a Ctrl+S in the ⇄
+  text tab desyncs the open diagram the same way is **(unverified)**: apply the same rule.
+- **Edit on disk** is the cheapest way to enter code; close the diagram first. In a rehearsal,
+  enter code the way a student would.
 - **Paste in the GUI:** click in the editor, set the clipboard with
-  `navigator.clipboard.writeText(code)` via `javascript_tool`, then Ctrl+A, Ctrl+V, Ctrl+S. To
+  `navigator.clipboard.writeText(code)` via `javascript_tool`, then Ctrl+A, Ctrl+V, Ctrl+S, then
+  close and reopen the diagram as above. To
   insert at a line instead: Ctrl+G, the line number, Enter, End, Ctrl+V. For long code, serve the
   snippets from a small local HTTP server that allows CORS and `fetch` them in the page before
   `writeText`, rather than inlining them in the script. If `writeText` hangs (CDP timeout), the old
@@ -200,16 +212,19 @@ A long transient (1800 s) peaks at 3–4 GB in the REPL on top of the language s
 the REPL itself (~2.3 GB). earlyoom kills the REPL, or the plugin host, right after Studio's
 automatic plot, even with 8 GB available beforehand.
 
-- Before each ▷, `free -g` must show **at least 12 GB available**; if not, wait and recheck every
-  2 minutes, and start nothing heavy beside Studio.
+- Before each ▷, read the `available` column of `free -m` and require **12000 MB** (a chosen
+  margin above the observed 8 GB failure; the threshold itself is **(unverified)**). Below it,
+  start nothing heavy beside Studio and recheck every 2 minutes. After 10 minutes still below,
+  stop: list the largest processes (`ps -eo pid,rss,cmd --sort=-rss | head`) for the user and wait
+  for their answer instead of polling.
 - Work in one Studio tab only.
 - Close the "Julia Plots" tab as soon as it opens, and every earlier one.
 - **REPL killed:** its terminal tab vanishes with no message. F1 › `Dyad: Open Julia REPL`, then
   ▷ again; every REPL global, `solution` included, is gone.
 - **Plugin host killed:** Studio shows "Plugin runtime crashed … reload", and the tab's REPL and
-  language server are gone. Open a new Studio tab (Setup step 2) and carry on there. The dead tab
-  usually sits behind a "Leave site?" prompt the extension cannot dismiss: ask the user to close
-  it and answer "Leave".
+  language server are gone. Open a new Studio tab (Setup step 2) and carry on there.
+- **Tab stuck behind "Leave site?"** (a dead tab, or a tab closed with a dirty diagram): the
+  extension can neither close nor reload it. Ask the user to close it and answer "Leave".
 
 ## REPL
 
@@ -225,20 +240,16 @@ automatic plot, even with 8 GB available beforehand.
 ## Plots and screenshots
 
 - The dyad-3.5 kernel has no GR (`gr()` throws "Package GR not found"), and plotly's `savefig`
-  writes 700×500 whatever `size` says. Save PNGs through PlotlyKaleido at the plot's size:
+  writes 700×500 whatever `size` says. Save SVG with the repo's own helper, which the figure
+  export scripts use:
   ```julia
   using Plots; import PlotlyBase, PlotlyKaleido; plotly()
-  function save_png(p, path)
-      Plots.prepare_output(p)
-      width, height = p[:size]
-      fig = Plots.plotlybase_syncplot(p)
-      PlotlyKaleido.is_running() || PlotlyKaleido.restart()
-      PlotlyKaleido.savefig(path, fig; width, height, format = "png")
-  end
-  save_png(plot(...; size = (990, 528)), "<run folder>/plot.png")
+  include(joinpath(pkgdir(VehicleSystemsComponents), "scripts/plotly_svg.jl"))
+  save_svg(plot(...; size = (990, 528)), "<run folder>/plot.svg")
   ```
-  In this repo, `scripts/plotly_svg.jl` (`save_svg`) does the same for SVG and also places one
-  legend per subplot.
+- **PNG (unverified):** copy `save_svg`'s body with `format = "png"`. Keep all three of its fixes:
+  `line.simplify = false` on every trace, `place_legends!` for per-subplot legends, and the
+  non-empty file check. Then confirm the PNG exists and is non-empty before using it.
 - Diagram shots: hide the sidebar and the panel, then Reset view, then `hover` outside the region
   so the cursor and tooltips stay out of the shot. While a port tooltip shows, `zoom` and
   `screenshot` time out (30 s): move the cursor off the canvas first. `zoom` with `save_to_disk`
