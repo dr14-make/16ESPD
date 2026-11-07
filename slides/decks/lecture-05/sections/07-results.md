@@ -178,7 +178,8 @@ routeAlias: reading-the-table
 
 - The **ranking**: the coupled positions well below the decoupled ones.
 - The **gap** at 15 kW: about **15–16 points** between P0 and P2 or P3 in Chalmers.
-- More power helps the decoupled positions most: 20–30 kW adds **5–10 %** on P2, P3, P4.
+- More power: 20–30 kW adds **5–10 %** on P2, P3, P4 (ICCT). Our P2, 15 → 30 kW: **25.3 → 28.5 %**;
+  past 22 kW the machine already covers the regen and the low-power driving.
 
 </div>
 <div>
@@ -197,14 +198,16 @@ routeAlias: reading-the-table
 the baseline first.</div>
 
 <!--
-How to read the comparison when it arrives.
+How to read the comparison.
 
 What should agree. The ranking: the coupled positions, P0 and P1, well below the decoupled ones. The
 size of the gap: in the Chalmers study, at 15 kilowatts on the WLTC, P2 is 15.6 points above P0 and
 P3 16.1; the research note puts the coupled-to-decoupled gap at about 7 to 15 points across the
 three studies. And the effect of power: the ICCT finds that going from 15 to 20 or 30 kilowatts adds 5
 to 10 percent on P2, P3 and P4, while P0 and P1 gain little, because their limit is the coupled
-engine, not the machine. Our 15 and 30 kilowatt columns test exactly that.
+engine, not the machine. Ours gains less: the machine-size sweep of section 03 takes our P2 from
+25.3 percent at 15 kilowatts to 28.5 at 30, about 3 points, most of it by 22 kilowatts. Past the
+point where the machine covers the regen and the low-power driving, more power buys nothing.
 
 What will differ. The baseline: ours idles. The transmission: our CVT alone already moves the engine
 toward the line, 4.9 percent in build 02, while the studies' dual-clutch and manual gearboxes leave
