@@ -29,7 +29,7 @@ routeAlias: lecture-summary
   more than the machine's power.**
 - **05** The CVT moves the engine toward its best-BSFC line: 4.9 % less fuel alone; the machine
   shifts the load.
-- **06** Five rules, three latches, charge-sustaining within ± 2 %.
+- **06** Five rules, three latches (switches with memory), the battery back within ± 2 %.
 - **07** The ranking P0 < P1 ≪ P2 ≈ P3 ≈ P4, each saving against a stated baseline.
 
 <!--
@@ -50,7 +50,8 @@ the machine's power.
 05: the CVT moves the engine toward its best-BSFC line, 4.9 percent less fuel on its own, and the
 machine shifts the load.
 
-06: five rules, three latches, and a result that is charge-sustaining within 2 percent.
+06: five rules, three latches, which are switches with two thresholds and a memory, and a result
+that is charge-sustaining: the battery ends within 2 percent of where it started.
 
 07: the ranking P0 below P1, far below P2, P3 and P4, and every saving stated against its baseline.
 -->
@@ -90,12 +91,14 @@ routeAlias: known-limits
 
 - **No stepped gearbox**, no shift logic: the CVT's ratio is free. A stepped gearbox is in the
   extra pack.
-- **Starts are warm**: K0 cranks the engine, fuel fades in from 400 to 700 rpm, the slip counts;
-  no cold-start enrichment or warm-up, and the manager puts no price on a start.
-- **No emissions beyond fuel**: the catalyst cooling down during electric driving is not modeled.
-- **P4 is not torque vectoring**: it drives the rear flanges through its own reduction.
+- **Starts are warm**: K0 cranks the engine, fuel fades in from 400 to 700 rpm, the clutch's slip
+  heat counts; no extra fuel for a cold engine, no warm-up, and the manager puts no price on a
+  start.
+- **No emissions beyond fuel**: the catalytic converter cooling down during electric driving is
+  not modeled.
+- **P4 drives both rear wheels the same**: no different torques left and right.
 
-<div class="handson">Homework: the series hybrid, on prepared ground. Extra pack: the fuel-cell car,
+<div class="handson">Homework: the series hybrid, with prepared parts. Extra pack: the fuel-cell car,
 the same shape with another source.</div>
 
 <!--
@@ -107,17 +110,19 @@ gearbox is in the extra pack.
 
 Engine starts are in the model, but only warm ones. K0 closes and cranks the engine while the
 machine makes up the torque the clutch takes from the shaft; fuel fades in between 400 and 700
-revolutions per minute; and the clutch's slip heat while it cranks is in the energy balance, not
-left out. What is missing: the fuel always comes from the warm engine's steady-state map,
-so there is no cold-start enrichment and no warm-up. And our energy manager puts no price on a
+revolutions per minute; and the clutch's slip heat while it cranks is counted in the energy. What
+is missing: the fuel always comes from the warm engine's map, measured at steady running, so there
+is no extra fuel for a cold start and no warm-up. And our energy manager puts no price on a
 start; only its hysteresis keeps them apart. A real energy manager penalizes starts.
 
-There are no emissions beyond fuel. In particular the catalyst cools down while the car drives
-electrically, and a cold catalyst at restart costs emissions; we do not model it.
+There are no emissions beyond fuel. In particular the catalytic converter, which cleans the
+exhaust, cools down while the car drives electrically, and a cold converter at restart costs
+emissions; we do not model it.
 
-And our P4 drives the rear flanges through its own reduction; it is not torque vectoring. That comes
+And our P4 drives the rear wheels through its own reduction gear; it is not torque vectoring, which
+gives the left and right wheels different torques to help the car turn. That comes
 in a later lecture on the same platform.
 
-The green box: your homework is the series hybrid on prepared ground, and the extra pack's fuel-cell
-car is the same shape with another source.
+The green box: your homework is the series hybrid with prepared parts, and the extra pack's
+fuel-cell car is the same shape with another source.
 -->
