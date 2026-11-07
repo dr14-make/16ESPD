@@ -239,11 +239,11 @@ routeAlias: build-charge-sustaining
 The hybrid WLTC bench with the SoC-corrected fuel block reading the fuel flow, the battery power
 and the distance.
 
-Captured with the build guide, #113
+Captured with the build guide
 
 </div>
 
-**Given:** the SoC-corrected fuel calculation (#199)
+**Given:** the SoC-corrected fuel calculation (`Vehicle.SoCCorrectedFuel`)
 
 [page: step 4](../lecture/lecture-05/#step-4) · reference `dyad/HandsOn05/P2HybridWLTC.dyad`
 
@@ -270,9 +270,9 @@ battery-electric <b>47.2</b></div>
 </div>
 
 <!--
-Build 04: the charge-sustaining WLTC. The screenshot comes with the build guide of issue 113.
+Build 04: the charge-sustaining WLTC. The screenshot comes with the build guide.
 
-Your hybrid bench already carries the library's fuel block from issue 199, wired since the first
+Your hybrid bench already carries the library's fuel block, SoCCorrectedFuel, wired since the first
 build; step 4 adds nothing to it. You run the full 1800 seconds and read the meter only at the end.
 The block reads the engine's fuel flow, the power into and out of
 the battery's store, open-circuit voltage times current, and the distance. Stored, not terminal:

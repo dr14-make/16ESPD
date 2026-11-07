@@ -302,7 +302,7 @@ routeAlias: build-energy-manager
 The energy manager in Studio: demand, SoC and speeds in; the three latches; engine on, K0, engine
 torque and machine torque out.
 
-Captured with the build guide, #113
+Captured with the build guide
 
 </div>
 
@@ -334,8 +334,7 @@ speed error <b>1.32</b> km/h</div>
 </div>
 
 <!--
-Build 03: the energy manager. The screenshot will show it in Studio, captured with the build guide
-of issue 113.
+Build 03: the energy manager. The screenshot will show it in Studio, captured with the build guide.
 
 The library gives you the rules as one block, the energy manager: three of Lecture 2's latches, on
 the demand for starting the engine, on the line's cap for boost, and on the state of charge for

@@ -60,10 +60,10 @@ closed and friction is large, so BSFC is high. At low speed and high torque the 
 to the full-load line. The best-BSFC line joins, for every power, the speed and torque where BSFC is
 lowest. It starts near idle, runs up through the region of the best point, and ends at peak power.
 
-The figure will show it over Lecture 2's map. Issue 200 computes the line from the course's own
-engine maps and draws it; its acceptance check is that the line's minimum is the map's global
-minimum, the best point you already know: 232 grams per kilowatt-hour at 3000 rpm and 99 newton
-meters.
+The figure will show it over Lecture 2's map. The script bsfc_line.jl computes the line from the
+course's own engine maps and draws it; its acceptance check is that the line's minimum is the map's
+global minimum, the best point you already know: 232 grams per kilowatt-hour at 3000 rpm and 99
+newton meters.
 
 Note that the line is not the best point. The car asks for a power; the line says how to give that
 power best. To run always at the best point you need a battery to absorb the difference, and that is
@@ -262,11 +262,11 @@ routeAlias: build-operating-line
 The P2 powertrain with the operating-line table between the requested power and the CVT's ratio
 command.
 
-Captured with the build guide, #112
+Captured with the build guide
 
 </div>
 
-**Given:** the best-BSFC line as a data table (#200)
+**Given:** the best-BSFC line as a data table (`Vehicle.OperatingLine`)
 
 [page: step 2](../lecture/lecture-05/#step-2) · reference `dyad/HandsOn05/P2OperatingLineWLTC.dyad`
 
@@ -290,7 +290,7 @@ powertrain.N_ref = N_target
 
 <!--
 Build 02: the operating line. The screenshot will show your P2 powertrain with the line between the
-requested power and the CVT; it is captured with the build guide, issue 112.
+requested power and the CVT; it is captured with the build guide.
 
 The library gives you the best-BSFC line as a data table. The powertrain gets a switch,
 speed_commanded, that swaps the pedal-scheduled CVT for one that holds a commanded engine speed.
