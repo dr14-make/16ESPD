@@ -50,7 +50,6 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
 | ------------ | ----------------------------------- | ------ |
 | `firing_fraction`         |                          | --  |
 | `start_compensation`         |                          | N.m  |
-| `machine_limit`         |                          | N.m  |
 """
 @component function P2Powertrain(; name = nothing, var"speed_commanded"=false, var"start_stop"=false, var"engine_stopped"=false, var"firing_rpm"=Float64(400.0), var"firing_width"=Float64(300.0), var"position_start"=Float64(0.0), var"engine_speed_start"=800.0 * pi / 30, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -132,9 +131,6 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
   if start_stop
     append!(__vars, @variables (start_compensation(t)::Real))
   end
-  if start_stop
-    append!(__vars, @variables (machine_limit(t)::Real))
-  end
 
   ### Variables (assignments)
   if start_stop
@@ -146,11 +142,6 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
     __ovr_start_compensation = pop!(__overrides, "start_compensation", nothing); isnothing(__ovr_start_compensation) || push!(__eqs, start_compensation ~ __ovr_start_compensation)
     __ovr_start_compensation__initial = pop!(__overrides, "start_compensation.initial", nothing); isnothing(__ovr_start_compensation__initial) || (__initial_conditions[start_compensation] = __ovr_start_compensation__initial)
     __ovr_start_compensation__guess = pop!(__overrides, "start_compensation.guess", nothing)
-  end
-  if start_stop
-    __ovr_machine_limit = pop!(__overrides, "machine_limit", nothing); isnothing(__ovr_machine_limit) || push!(__eqs, machine_limit ~ __ovr_machine_limit)
-    __ovr_machine_limit__initial = pop!(__overrides, "machine_limit.initial", nothing); isnothing(__ovr_machine_limit__initial) || (__initial_conditions[machine_limit] = __ovr_machine_limit__initial)
-    __ovr_machine_limit__guess = pop!(__overrides, "machine_limit.guess", nothing)
   end
 
   ### Constants
@@ -168,21 +159,15 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
   # Subcomponent drive of type VehicleSystemsComponents.Vehicle.Electric.HybridDrive
   drive_overrides = __pop_subcomponent_overrides!(__overrides, "drive")
   push!(__systems, @named drive = VehicleSystemsComponents.Vehicle.Electric.HybridDrive(; __overrides = drive_overrides))
-  # Subcomponent variator of type VehicleSystemsComponents.Vehicle.ControlledVariator
+  # Subcomponent variator of type VehicleSystemsComponents.Vehicle.P2Variator
   variator_overrides = __pop_subcomponent_overrides!(__overrides, "variator")
-  if !speed_commanded
-    push!(__systems, @named variator = VehicleSystemsComponents.Vehicle.ControlledVariator(; __overrides = variator_overrides))
-  end
-  # Subcomponent speed_variator of type VehicleSystemsComponents.Vehicle.SpeedCommandedVariator
-  speed_variator_overrides = __pop_subcomponent_overrides!(__overrides, "speed_variator")
-  if speed_commanded
-    push!(__systems, @named speed_variator = VehicleSystemsComponents.Vehicle.SpeedCommandedVariator(; __overrides = speed_variator_overrides))
-  end
-  # Subcomponent hold of type RotationalComponents.Components.Fixed
+  push!(__systems, @named variator = VehicleSystemsComponents.Vehicle.P2Variator(; speed_commanded=speed_commanded, __overrides = variator_overrides))
+  # Subcomponent command of type VehicleSystemsComponents.Vehicle.P2TorqueCommand
+  command_overrides = __pop_subcomponent_overrides!(__overrides, "command")
+  push!(__systems, @named command = VehicleSystemsComponents.Vehicle.P2TorqueCommand(; on=start_stop, T_max=drive.T_max, P_rated=drive.P_rated, __overrides = command_overrides))
+  # Subcomponent hold of type VehicleSystemsComponents.Vehicle.OptionalShaftHold
   hold_overrides = __pop_subcomponent_overrides!(__overrides, "hold")
-  if engine_stopped
-    push!(__systems, @named hold = RotationalComponents.Components.Fixed(; __overrides = hold_overrides))
-  end
+  push!(__systems, @named hold = VehicleSystemsComponents.Vehicle.OptionalShaftHold(; held=engine_stopped, __overrides = hold_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -194,9 +179,6 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
   if start_stop
     isnothing(__ovr_start_compensation__guess) || (__guesses[start_compensation] = __ovr_start_compensation__guess)
   end
-  if start_stop
-    isnothing(__ovr_machine_limit__guess) || (__guesses[machine_limit] = __ovr_machine_limit__guess)
-  end
 
   ### Initialization Equations
   push!(__initialization_eqs, engine.air.manifold.p ~ 101325.0)
@@ -206,46 +188,47 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
   __assertions = []
 
   ### Equations
-  push!(__eqs, engine_speed ~ engine.speed.w)
-  push!(__eqs, available_torque ~ engine.torque_map.full_load.y)
-  push!(__eqs, machine_torque ~ drive.machine.tau)
-  push!(__eqs, position ~ k0.position)
-  push!(__eqs, E ~ drive.battery.E)
-  push!(__eqs, i ~ drive.battery.i)
+  push!(__eqs, command.w ~ drive.machine.w)
   push!(__eqs, connect(engine_pedal, engine.pedal))
   push!(__eqs, connect(engage, k0.engage))
+  push!(__eqs, connect(tau_ref, command.u))
+  push!(__eqs, connect(command.y, drive.tau_ref))
+  push!(__eqs, connect(N_ref, variator.N_ref))
+  push!(__eqs, connect(cvt_pedal, variator.pedal))
+  push!(__eqs, connect(k0.spline_b, drive.spline, variator.spline_a))
+  push!(__eqs, connect(variator.spline_b, spline))
+  push!(__eqs, connect(variator.support, support))
   push!(__eqs, connect(engine.spline, k0.spline_a))
   push!(__eqs, connect(engine.support, k0.support, drive.support, support))
+  push!(__eqs, connect(engine.engine_speed, engine_speed))
   push!(__eqs, connect(engine.tau_e, engine_torque))
+  push!(__eqs, connect(engine.available_torque, available_torque))
   push!(__eqs, connect(engine.mdot_fuel, mdot_fuel))
   push!(__eqs, connect(drive.SoC, SoC))
+  push!(__eqs, connect(drive.machine_torque, machine_torque))
+  push!(__eqs, connect(k0.measured_position, position))
+  push!(__eqs, connect(drive.battery_voltage, E))
+  push!(__eqs, connect(drive.battery_current, i))
+  push!(__eqs, connect(engine.spline, hold.spline))
 
   ### Control Structures
   if start_stop
-    push!(__eqs, machine_limit ~ min(drive.T_max, drive.P_rated / max(abs(drive.machine.w), 1.0)))
     push!(__eqs, firing_fraction ~ min(max((engine.N - firing_rpm) / firing_width, 0.0), 1.0))
     push!(__eqs, engine.fuel_enable ~ engine_on * firing_fraction ^ 2 * (3.0 - 2.0 * firing_fraction))
     push!(__eqs, start_compensation ~ engine_torque_ref - k0.tau)
-    push!(__eqs, drive.tau_ref ~ min(max(tau_ref + start_compensation, -machine_limit), machine_limit))
+    push!(__eqs, command.compensation ~ start_compensation)
   else
-    push!(__eqs, connect(tau_ref, drive.tau_ref))
+    push!(__eqs, command.compensation ~ 0.0)
   end
   if speed_commanded
-    push!(__eqs, connect(N_ref, speed_variator.N_ref))
-    push!(__eqs, connect(k0.spline_b, drive.spline, speed_variator.spline_a))
-    push!(__eqs, connect(speed_variator.spline_b, spline))
-    push!(__eqs, connect(speed_variator.support, support))
+    push!(__eqs, cvt_pedal ~ 0.0)
   else
-    push!(__eqs, connect(cvt_pedal, variator.pedal))
-    push!(__eqs, connect(k0.spline_b, drive.spline, variator.spline_a))
-    push!(__eqs, connect(variator.spline_b, spline))
-    push!(__eqs, connect(variator.support, support))
+    push!(__eqs, N_ref ~ 0.0)
   end
-  if engine_stopped
-    push!(__eqs, connect(engine.spline, hold.spline))
-  else
+  if !engine_stopped
     push!(__initialization_eqs, engine.crankshaft.w ~ engine_speed_start)
     push!(__initialization_eqs, engine.crankshaft.phi ~ 0.0)
+  else
   end
 
   # Return completely constructed System

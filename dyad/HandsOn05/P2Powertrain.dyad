@@ -11,9 +11,9 @@ component P2Powertrain
   "Machine torque request [N.m] (derived; HybridDrive)"
   tau_ref = RealInput() {^tau_ref}
   "Variator speed-schedule pedal (derived; ControlledVariator)"
-  cvt_pedal = RealInput() if !speed_commanded {^cvt_pedal}
+  cvt_pedal = RealInput() {^cvt_pedal}
   "Target transmission input speed [rpm]"
-  N_ref = RealInput() if speed_commanded {^N_ref}
+  N_ref = RealInput() {^N_ref}
   "Select speed-commanded CVT scheduling"
   structural parameter speed_commanded::Boolean = false
   "Enable fuel-controlled clutch starts"
@@ -28,7 +28,6 @@ component P2Powertrain
   parameter firing_width::Real(min = eps(Float64)) = 300.0
   variable firing_fraction::Real if start_stop
   variable start_compensation::Torque if start_stop
-  variable machine_limit::Torque if start_stop
   "Output to planar differential (derived; P2 layout)"
   spline = Spline() {^spline}
   "Stationary housing (assumed; planar bench)"
@@ -60,51 +59,50 @@ component P2Powertrain
   engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(fuel_controlled = start_stop, fuel_cut_rpm = ifelse(engine_stopped, -2.0, 1300.0), fuel_resume_rpm = ifelse(engine_stopped, -1.0, 1000.0)) {^engine}
   k0 = VehicleSystemsComponents.Vehicle.DisconnectClutch(position_start = position_start) {^k0}
   drive = VehicleSystemsComponents.Vehicle.Electric.HybridDrive() {^drive}
-  variator = VehicleSystemsComponents.Vehicle.ControlledVariator() if !speed_commanded {^variator}
-  speed_variator = VehicleSystemsComponents.Vehicle.SpeedCommandedVariator() if speed_commanded {^speed_variator}
-  hold = RotationalComponents.Components.Fixed() if engine_stopped {^hold}
+  variator = VehicleSystemsComponents.Vehicle.P2Variator(speed_commanded = speed_commanded) {^variator}
+  command = VehicleSystemsComponents.Vehicle.P2TorqueCommand(on = start_stop, T_max = drive.T_max, P_rated = drive.P_rated) {^command}
+  hold = VehicleSystemsComponents.Vehicle.OptionalShaftHold(held = engine_stopped) {^hold}
 relations
   initial engine.air.manifold.p = 101325.0
   initial drive.machine.rotor.phi = 0.0
   connect(engine_pedal, engine.pedal)
   connect(engage, k0.engage) {^engage_wire}
+  connect(tau_ref, command.u)
+  connect(command.y, drive.tau_ref)
+  command.w = drive.machine.w
   if start_stop
-    machine_limit = min(drive.T_max, drive.P_rated / max(abs(drive.machine.w), 1.0))
     firing_fraction = min(max((engine.N - firing_rpm) / firing_width, 0.0), 1.0)
     engine.fuel_enable = engine_on * firing_fraction^2 * (3.0 - 2.0 * firing_fraction)
-    # Replace assumed engine delivery by the measured K0 torque, including crank drag.
     start_compensation = engine_torque_ref - k0.tau
-    drive.tau_ref = min(max(tau_ref + start_compensation, -machine_limit), machine_limit)
+    command.compensation = start_compensation
   else
-    connect(tau_ref, drive.tau_ref)
+    command.compensation = 0.0
   end
+  connect(N_ref, variator.N_ref)
+  connect(cvt_pedal, variator.pedal)
   if speed_commanded
-    connect(N_ref, speed_variator.N_ref)
-    connect(k0.spline_b, drive.spline, speed_variator.spline_a)
-    connect(speed_variator.spline_b, spline)
-    connect(speed_variator.support, support)
+    cvt_pedal = 0.0
   else
-    connect(cvt_pedal, variator.pedal)
-    connect(k0.spline_b, drive.spline, variator.spline_a)
-    connect(variator.spline_b, spline)
-    connect(variator.support, support)
+    N_ref = 0.0
   end
+  connect(k0.spline_b, drive.spline, variator.spline_a)
+  connect(variator.spline_b, spline)
+  connect(variator.support, support)
   connect(engine.spline, k0.spline_a)
   connect(engine.support, k0.support, drive.support, support) {^support_bus}
-  engine_speed = engine.speed.w
+  connect(engine.engine_speed, engine_speed)
   connect(engine.tau_e, engine_torque) {^torque_wire}
-  available_torque = engine.torque_map.full_load.y
+  connect(engine.available_torque, available_torque)
   connect(engine.mdot_fuel, mdot_fuel) {^fuel_wire}
   connect(drive.SoC, SoC) {^soc_wire}
-  machine_torque = drive.machine.tau
-  position = k0.position
-  E = drive.battery.E
-  i = drive.battery.i
-  if engine_stopped
-    connect(engine.spline, hold.spline)
-  else
+  connect(drive.machine_torque, machine_torque)
+  connect(k0.measured_position, position)
+  connect(drive.battery_voltage, E)
+  connect(drive.battery_current, i)
+  connect(engine.spline, hold.spline)
+  if !engine_stopped
     initial engine.crankshaft.w = engine_speed_start
     initial engine.crankshaft.phi = 0.0
   end
-metadata {"Dyad":{"icons":{"default":"dyad://VehicleSystemsComponents/Vehicle/CVTDriveline.svg"}},"_links":{"E":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":780,"y2":820},"icon":{"x1":960,"x2":1040,"y1":760,"y2":840}}}},"SoC":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":390,"y2":430},"icon":{"x1":960,"x2":1040,"y1":370,"y2":450}}}},"cvt_pedal":{"Dyad":{"placement":{"diagram":{"x1":-20,"x2":20,"y1":840,"y2":880},"icon":{"x1":-40,"x2":40,"y1":820,"y2":900}}}},"N_ref":{"Dyad":{"placement":{"diagram":{"x1":-20,"x2":20,"y1":740,"y2":780},"icon":{"x1":-40,"x2":40,"y1":720,"y2":800}}}},"drive":{"Dyad":{"placement":{"diagram":{"x1":610,"y1":440,"x2":730,"y2":560}}}},"engage":{"Dyad":{"placement":{"diagram":{"x1":-20,"x2":20,"y1":200,"y2":240},"icon":{"x1":-40,"x2":40,"y1":180,"y2":260}}}},"engine":{"Dyad":{"placement":{"diagram":{"x1":100,"y1":392,"x2":220,"y2":512}}}},"engine_pedal":{"Dyad":{"placement":{"diagram":{"x1":-20,"x2":20,"y1":408,"y2":448},"icon":{"x1":-40,"x2":40,"y1":388,"y2":468}}}},"engine_speed":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":320,"y2":360},"icon":{"x1":960,"x2":1040,"y1":300,"y2":380}}}},"engine_torque":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":180,"y2":220},"icon":{"x1":960,"x2":1040,"y1":160,"y2":240}}}},"hold":{"Dyad":{"placement":{"diagram":{"x1":130,"y1":680,"x2":190,"y2":740}}}},"i":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":880,"y2":920},"icon":{"x1":960,"x2":1040,"y1":860,"y2":940}}}},"k0":{"Dyad":{"placement":{"diagram":{"x1":430,"y1":440,"x2":550,"y2":560}}}},"machine_torque":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":580,"y2":620},"icon":{"x1":960,"x2":1040,"y1":560,"y2":640}}}},"mdot_fuel":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":250,"y2":290},"icon":{"x1":960,"x2":1040,"y1":230,"y2":310}}}},"position":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":680,"y2":720},"icon":{"x1":960,"x2":1040,"y1":660,"y2":740}}}},"spline":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":110,"y2":150},"icon":{"x1":960,"x2":1040,"y1":90,"y2":170}}}},"support":{"Dyad":{"placement":{"diagram":{"x1":480,"x2":520,"y1":980,"y2":1020},"icon":{"x1":460,"x2":540,"y1":960,"y2":1040}}}},"tau_ref":{"Dyad":{"placement":{"diagram":{"x1":-20,"x2":20,"y1":640,"y2":680},"icon":{"x1":-40,"x2":40,"y1":620,"y2":700}}}},"variator":{"Dyad":{"placement":{"diagram":{"x1":790,"y1":440,"x2":910,"y2":560}}}},"speed_variator":{"Dyad":{"placement":{"diagram":{"x1":790,"y1":650,"x2":910,"y2":770}}}},"engine_torque_ref":{"Dyad":{"placement":{"diagram":{"x1":-20,"x2":20,"y1":110,"y2":150},"icon":{"x1":-40,"x2":40,"y1":90,"y2":170}}}},"engine_on":{"Dyad":{"placement":{"diagram":{"x1":-20,"x2":20,"y1":518,"y2":558},"icon":{"x1":-40,"x2":40,"y1":498,"y2":578}}}},"available_torque":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":460,"y2":500},"icon":{"x1":960,"x2":1040,"y1":440,"y2":520}}}},"engage_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":490.0,"y":220}],"E":2}],"renderStyle":"standard"}},"support_bus":{"Dyad":{"edges":[{"S":1,"M":[{"x":85,"y":512.0},{"x":85,"y":610},{"x":500,"y":610}],"E":4},{"S":2,"M":[{"x":580,"y":560.0},{"x":580,"y":610},{"x":500,"y":610}],"E":4},{"S":3,"M":[{"x":760,"y":560.0},{"x":760,"y":610},{"x":500,"y":610}],"E":4}],"renderStyle":"standard"}},"torque_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":250,"y":416.0},{"x":250,"y":200}],"E":2}],"renderStyle":"standard"}},"fuel_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":265,"y":440.0},{"x":265,"y":270}],"E":2}],"renderStyle":"standard"}},"soc_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":670.0,"y":410}],"E":2}],"renderStyle":"standard"}}}}
+metadata {"Dyad":{"icons":{"default":"dyad://VehicleSystemsComponents/Vehicle/CVTDriveline.svg"}},"_links":{"command":{"Dyad":{"placement":{"diagram":{"x1":310,"x2":390,"y1":640,"y2":720}}}},"E":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":780,"y2":820},"icon":{"x1":960,"x2":1040,"y1":760,"y2":840}}}},"SoC":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":390,"y2":430},"icon":{"x1":960,"x2":1040,"y1":370,"y2":450}}}},"cvt_pedal":{"Dyad":{"placement":{"diagram":{"x1":-20,"x2":20,"y1":840,"y2":880},"icon":{"x1":-40,"x2":40,"y1":820,"y2":900}}}},"N_ref":{"Dyad":{"placement":{"diagram":{"x1":-20,"x2":20,"y1":740,"y2":780},"icon":{"x1":-40,"x2":40,"y1":720,"y2":800}}}},"drive":{"Dyad":{"placement":{"diagram":{"x1":610,"y1":440,"x2":730,"y2":560}}}},"engage":{"Dyad":{"placement":{"diagram":{"x1":-20,"x2":20,"y1":200,"y2":240},"icon":{"x1":-40,"x2":40,"y1":180,"y2":260}}}},"engine":{"Dyad":{"placement":{"diagram":{"x1":100,"y1":392,"x2":220,"y2":512}}}},"engine_pedal":{"Dyad":{"placement":{"diagram":{"x1":-20,"x2":20,"y1":408,"y2":448},"icon":{"x1":-40,"x2":40,"y1":388,"y2":468}}}},"engine_speed":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":320,"y2":360},"icon":{"x1":960,"x2":1040,"y1":300,"y2":380}}}},"engine_torque":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":180,"y2":220},"icon":{"x1":960,"x2":1040,"y1":160,"y2":240}}}},"hold":{"Dyad":{"placement":{"diagram":{"x1":130,"y1":680,"x2":190,"y2":740}}}},"i":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":880,"y2":920},"icon":{"x1":960,"x2":1040,"y1":860,"y2":940}}}},"k0":{"Dyad":{"placement":{"diagram":{"x1":430,"y1":440,"x2":550,"y2":560}}}},"machine_torque":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":580,"y2":620},"icon":{"x1":960,"x2":1040,"y1":560,"y2":640}}}},"mdot_fuel":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":250,"y2":290},"icon":{"x1":960,"x2":1040,"y1":230,"y2":310}}}},"position":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":680,"y2":720},"icon":{"x1":960,"x2":1040,"y1":660,"y2":740}}}},"spline":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":110,"y2":150},"icon":{"x1":960,"x2":1040,"y1":90,"y2":170}}}},"support":{"Dyad":{"placement":{"diagram":{"x1":480,"x2":520,"y1":980,"y2":1020},"icon":{"x1":460,"x2":540,"y1":960,"y2":1040}}}},"tau_ref":{"Dyad":{"placement":{"diagram":{"x1":-20,"x2":20,"y1":640,"y2":680},"icon":{"x1":-40,"x2":40,"y1":620,"y2":700}}}},"variator":{"Dyad":{"placement":{"diagram":{"x1":790,"y1":440,"x2":910,"y2":560}}}},"speed_variator":{"Dyad":{"placement":{"diagram":{"x1":790,"y1":650,"x2":910,"y2":770}}}},"engine_torque_ref":{"Dyad":{"placement":{"diagram":{"x1":-20,"x2":20,"y1":110,"y2":150},"icon":{"x1":-40,"x2":40,"y1":90,"y2":170}}}},"engine_on":{"Dyad":{"placement":{"diagram":{"x1":-20,"x2":20,"y1":518,"y2":558},"icon":{"x1":-40,"x2":40,"y1":498,"y2":578}}}},"available_torque":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":460,"y2":500},"icon":{"x1":960,"x2":1040,"y1":440,"y2":520}}}},"engage_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":490.0,"y":220}],"E":2}],"renderStyle":"standard"}},"support_bus":{"Dyad":{"edges":[{"S":1,"M":[{"x":85,"y":512.0},{"x":85,"y":610},{"x":500,"y":610}],"E":4},{"S":2,"M":[{"x":580,"y":560.0},{"x":580,"y":610},{"x":500,"y":610}],"E":4},{"S":3,"M":[{"x":760,"y":560.0},{"x":760,"y":610},{"x":500,"y":610}],"E":4}],"renderStyle":"standard"}},"torque_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":250,"y":416.0},{"x":250,"y":200}],"E":2}],"renderStyle":"standard"}},"fuel_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":265,"y":440.0},{"x":265,"y":270}],"E":2}],"renderStyle":"standard"}},"soc_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":670.0,"y":410}],"E":2}],"renderStyle":"standard"}}}}
 end
