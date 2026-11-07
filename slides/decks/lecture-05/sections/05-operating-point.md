@@ -316,7 +316,7 @@ powertrain.N_ref = N_target
 </div>
 
 <!--
-Build 02: the operating line. On the left, the operating-line bench in Studio: the line's table sits
+Build 02: the operating line. On the left, the operating-line test model in Studio: the line's table sits
 between the driver and the powertrain.
 
 The library gives you the best-BSFC line as a data table. The powertrain gets a switch,
