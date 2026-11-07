@@ -16,22 +16,29 @@ const H0_RUN = Ref{Any}()
 h0_run() = isassigned(H0_RUN) ? H0_RUN[] :
     (H0_RUN[] = VehicleSystemsComponents.Lecture5.P2EngineWLTCTransient())
 
-# A sampled minimum, not a continuous-time bound; use the guide's 0.01 s checkpoint grid.
-function k0_engaged_min_rpm(m, s)
-    ts = 0.0:0.01:last(s.t)
-    engaged = s(ts, idxs = m.powertrain.position).u .> 0.5
-    minimum(s(ts, idxs = m.powertrain.engine_speed).u[engaged]) * 30 / pi
+# Uniform interpolation avoids weighting extrema and integrals by adaptive solver effort.
+function sampled(s; dt = 0.01)
+    ts = collect(first(s.t):dt:last(s.t))
+    cache = Dict{Any,Any}()
+    at(x) = get!(cache, x) do
+        s(ts, idxs = x).u
+    end
+    (; ts, at, dt)
+end
+
+function k0_engaged_min_rpm(m, at)
+    engaged = at(m.powertrain.position) .> 0.5
+    minimum(at(m.powertrain.engine_speed)[engaged]) * 30 / pi
 end
 
 # Level stretches of the trace above 12 km/h, off launches and decelerations. Decelerating, the
 # variator's ratio lag lets the shaft fall through the lock-up ramp and K0 opens before idle.
 # Below about 11 km/h the variator's 50 rpm output-speed floor holds the shaft under 880 rpm.
-function k0_cruise_min_position(m, s)
-    ts = collect(0.0:0.01:1800.0)
-    v, trace = (s(ts, idxs = x).u for x in (m.car.bus.vx, m.trace.y))
-    slope = [0.0; diff(trace) ./ 0.01]
+function k0_cruise_min_position(m, at, dt)
+    v, trace = at(m.car.bus.vx), at(m.trace.y)
+    slope = [0.0; diff(trace) ./ dt]
     cruise = (3.6 .* v .> 12.0) .& (abs.(slope) .< 0.5)
-    minimum(s(ts, idxs = m.powertrain.position).u[cruise])
+    minimum(at(m.powertrain.position)[cruise])
 end
 
 @testset "Lecture 5 best-BSFC line" begin
@@ -334,10 +341,10 @@ end
         m, s = symbolic_container(run), run.sol
         @test string(s.retcode) == "Success"
         @test s.t[end] == stop
-        checkpoint_ts = 0.0:0.01:last(s.t)
-        checkpoint(x) = s(checkpoint_ts, idxs = x).u
+        checkpoint_ts, checkpoint, dt = sampled(s)
         speed_error = maximum(abs, 3.6 .* checkpoint(m.car.bus.vx) .- checkpoint(m.trace.y))
         trace_distance = sum(diff(s.t) .* (s[m.trace.y][1:end-1] .+ s[m.trace.y][2:end])) / 7.2
+        @test speed_error <= 2.0
         @test speed_error ≈ (electric ? 1.502830 : 1.167635) atol = 1e-4
         @test s[m.meter.s][end] ≈ trace_distance rtol=5e-4
         if electric
@@ -357,7 +364,8 @@ end
             @test any(above_ramp)
             # Allow actuator lag while checking near-closure above the engagement ramp.
             @test minimum(s[m.powertrain.position][above_ramp]) > 0.99
-            engaged_min_rpm = k0_engaged_min_rpm(m, s)
+            engaged_min_rpm = k0_engaged_min_rpm(m, checkpoint)
+            @test engaged_min_rpm >= RPM_ENGINE_IDLE - 20.0
             @test engaged_min_rpm ≈ 785.1 atol = 0.2
             @test s[m.meter.fuel_raw][end] ≈ H0_L100 atol=1e-5 rtol=0
             @test s[m.meter.fuel_corr][end] ≈ s[m.meter.fuel_raw][end] atol=1e-10
@@ -365,7 +373,7 @@ end
             @test maximum(abs, s[m.powertrain.i]) < 1e-9
             capacity = maximum(s[m.powertrain.k0.tau_capacity])
             @test maximum(s[m.powertrain.engine_torque]) < capacity
-            cruise_min_position = k0_cruise_min_position(m, s)
+            cruise_min_position = k0_cruise_min_position(m, checkpoint, dt)
             @test cruise_min_position > 0.99
             locked = s[m.powertrain.position] .> 0.99
             @test all(s[m.powertrain.engine_torque][locked] .< s[m.powertrain.k0.tau_capacity][locked])
@@ -448,9 +456,9 @@ end
     m, s = symbolic_container(run), run.sol
     @test string(s.retcode) == "Success"
     @test s.t[end] == 1800.0
-    checkpoint_ts = 0.0:0.01:last(s.t)
-    checkpoint(x) = s(checkpoint_ts, idxs = x).u
-    speed_error = maximum(abs, 3.6 .* checkpoint(m.car.bus.vx) .- checkpoint(m.trace.y))
+    ts, at, dt = sampled(s)
+    speed_error = maximum(abs, 3.6 .* at(m.car.bus.vx) .- at(m.trace.y))
+    @test speed_error <= 2.0
     @test speed_error ≈ 1.167747 atol = 1e-4
     trace_distance = sum(diff(s.t) .* (s[m.trace.y][1:end-1] .+ s[m.trace.y][2:end])) / 7.2
     @test s[m.meter.s][end] ≈ trace_distance rtol=5e-4
@@ -458,9 +466,6 @@ end
     @test maximum(abs, s[m.powertrain.i]) < 1e-9
     @test s[m.meter.fuel_corr][end] ≈ s[m.meter.fuel_raw][end] atol=1e-10
 
-    # Uniform samples avoid weighting points by adaptive solver effort. Fuel uses trapezoids.
-    ts = collect(0.0:0.01:1800.0)
-    at(x) = s(ts, idxs=x).u
     rpm = at(m.powertrain.engine_speed) .* (30 / pi)
     torque = at(m.powertrain.engine_torque)
     position = at(m.powertrain.position)
@@ -474,8 +479,8 @@ end
     ratio = at(m.powertrain.speed_variator.ratio)
     # The bounded actuator undershoots 2.8 by 3.9e-5 at the analysis solver tolerance.
     @info "Line ratio interpolation" sampled=extrema(ratio) accepted=extrema(s[m.powertrain.speed_variator.ratio])
-    @test all(2.8 - 1e-4 .<= ratio .<= 12.0 + 1e-4)
-    @test all(2.8 - 1e-4 .<= s[m.powertrain.speed_variator.ratio] .<= 12.0 + 1e-4)
+    @test all(2.8 - 5e-5 .<= ratio .<= 12.0 + 5e-5)
+    @test all(2.8 - 5e-5 .<= s[m.powertrain.speed_variator.ratio] .<= 12.0 + 5e-5)
     idle = (power .< 1.0) .| (at(m.driver.y) .<= 0.0)
     launch = .!idle .& (cmd .>= 11.999)
     overdrive = .!idle .& (cmd .<= 2.801)
@@ -486,16 +491,20 @@ end
     @test maximum(abs.(at(m.line.P) .- at(m.powertrain.engine_pedal) .* s.ps[m.P_peak])) < 1e-8
     @test all(isapprox.(at(m.N_target), max.(at(m.line.N), s.ps[m.N_locked]); atol = 1e-9))
     moving = at(m.car.bus.vx) .* 3.6 .> 10.0
-    cruise_min_position = k0_cruise_min_position(m, s)
+    cruise_min_position = k0_cruise_min_position(m, at, dt)
+    # At 54.01 s the shallow-slope mask resumes before the 0.5 s variator lag has settled;
+    # K0 is still recovering from deceleration, with only about 0.004 rad/s slip.
+    @test cruise_min_position > 0.98
     @test cruise_min_position ≈ 0.98846 atol = 1e-4
-    engaged_min_rpm = k0_engaged_min_rpm(m, s)
+    engaged_min_rpm = k0_engaged_min_rpm(m, at)
+    @test engaged_min_rpm >= RPM_ENGINE_IDLE - 20.0
     @test engaged_min_rpm ≈ 815.95 atol = 0.2
     loss = at(m.powertrain.k0.tau) .* slip
     @test minimum(loss) >= -1e-9
     locked = position .> 0.99
     @test all(torque[locked] .< capacity[locked])
     unlocked = moving .& (position .< 0.99)
-    @info "Line K0" unlocked_seconds=0.01sum(unlocked) unlocked_fuel_kg=0.01sum(fuel[unlocked]) max_slip_rad_s=maximum(abs, slip[moving .& locked]) cruise_min_position engaged_min_rpm max_deviation_rpm=maximum(deviation[eligible]) max_deviation_off_launch_rpm=maximum(deviation[.!idle .& .!launch])
+    @info "Line K0" unlocked_seconds=dt*sum(unlocked) unlocked_fuel_kg=dt*sum(fuel[unlocked]) max_slip_rad_s=maximum(abs, slip[moving .& locked]) cruise_min_position engaged_min_rpm max_deviation_rpm=maximum(deviation[eligible]) max_deviation_off_launch_rpm=maximum(deviation[.!idle .& .!launch])
     on = eligible .& (deviation .<= 150.0)
     @info "Line band" on_share_of_eligible=sum(on)/sum(eligible)
     @test sum(eligible) / length(ts) > 0.20
@@ -986,12 +995,8 @@ include("torque_to_pedal.jl")
     run = VehicleSystemsComponents.Lecture5.P2HybridWLTCTransient()
     s, m = run.sol, symbolic_container(run)
     @test string(s.retcode) == "Success"
-    ts = collect(0.0:0.01:1800.0)
-    cache = Dict{Any,Any}()
-    at(x) = get!(cache, x) do
-        s(ts, idxs = x).u
-    end
-    integrate(y) = sum((y[1:end-1] .+ y[2:end]) ./ 2) * 0.01
+    ts, at, dt = sampled(s)
+    integrate(y) = sum(diff(ts) .* (y[1:end-1] .+ y[2:end])) / 2
     soc = at(m.powertrain.SoC)
     ref = at(m.powertrain.drive.tau_ref)
     limit = at(m.powertrain.machine_limit)
@@ -1018,10 +1023,11 @@ include("torque_to_pedal.jl")
     km = last(s[m.meter.s]) / 1000
     @test 1 <= length(starts) <= 60
     @test length(starts) / km < 3.0
+    @test minimum(durations) >= 1.5
     @test minimum(durations) ≈ 1.87 atol = 0.02
     off_age = zeros(length(ts))
     for i in 2:length(ts)
-        off_age[i] = on[i] ? 0.0 : off_age[i-1] + 0.01
+        off_age[i] = on[i] ? 0.0 : off_age[i-1] + dt
     end
     settled = (off_age .> 5.0) .& (at(m.manager.engine_on) .< 1e-6)
     @test any(settled)
@@ -1043,7 +1049,7 @@ include("torque_to_pedal.jl")
     @test all(x -> integrate(x) > 1.0, modes)
     on_age = zeros(length(ts))
     for i in 2:length(ts)
-        on_age[i] = on[i] ? on_age[i-1] + 0.01 : 0.0
+        on_age[i] = on[i] ? on_age[i-1] + dt : 0.0
     end
     tracking = (on_age .> 3.0) .& (at(m.manager.on_line) .> 0.9)
     error_W = abs.(at(m.powertrain.engine_torque) .* at(m.powertrain.engine_speed) .- at(m.manager.P_engine))
