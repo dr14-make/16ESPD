@@ -19,6 +19,142 @@ stronger one that cannot. At the end you build the P2 powertrain, build 01.
 -->
 
 ---
+routeAlias: cvt
+---
+
+## The CVT: any ratio in a range
+
+<div class="grid grid-cols-[1fr_1.2fr] gap-8 items-start">
+<div>
+
+A **continuously variable transmission** changes its ratio smoothly, not in steps. So for one wheel
+speed, the engine speed can be chosen.
+
+$$
+\omega_e = i\,\omega_w
+$$
+
+<div class="caption text-left">ω<sub>e</sub>: engine-side speed · ω<sub>w</sub>: wheel speed ·
+<i>i</i>: the ratio, final drive included</div>
+
+<div class="handson">Section 05 uses this freedom: the ratio puts the engine at its most efficient
+speed.</div>
+
+</div>
+<div class="tight">
+
+| The course's CVT model | |
+|---|---|
+| Ratio range | **12.0** at launch to **2.8** at top speed |
+| Ratio chosen by | the pedal: target engine speed from **1800 rpm** (pedal up) to **6000 rpm** (pedal down); from build 02 on, a speed command instead |
+| Outside the range | the ratio stops at its limit; the engine leaves its target |
+| How fast | follows the command with a **0.5 s** lag |
+| Losses | none: ideal, power in = power out |
+| Starting from rest | needs a clutch: in Lecture 2 a centrifugal clutch, closing near **1300 rpm**; in our P2, K0 |
+
+</div>
+</div>
+
+<!--
+Two parts carry the hybrid we build: the CVT and the K0 clutch. Every position on the next slide is
+drawn on them, so here is what each one does and how the course models it. First the CVT.
+
+CVT stands for continuously variable transmission. A normal gearbox has a few fixed gears. A CVT
+can take any ratio between two limits, and change it smoothly. The formula says what that buys: the
+engine-side speed, omega e, equals the ratio i times the wheel speed, omega w. The wheels set their
+speed from the car's speed. So by choosing the ratio, we choose the engine's speed. In our model the
+ratio already includes the final drive, the fixed gear in front of the wheels.
+
+The table is the course's model. The ratio runs from 12.0 at launch, for strong pull at low speed,
+to 2.8 at top speed, so the engine turns slowly on the motorway. Both values are assumed for a small
+car's belt CVT.
+
+How is the ratio chosen? In Lecture 2's model, and in build 01, the pedal picks a target engine
+speed: 1800 rpm with the pedal up, rising to 6000 rpm with the pedal fully down. The CVT then picks
+the ratio that puts the engine at that speed. From build 02 on, we swap in a version that takes the
+target speed as a command instead, from the engine's efficient-speed line. That is section 05.
+
+If the target needs a ratio outside 12.0 to 2.8, the ratio stops at its limit and the engine
+leaves its target: below it at launch, above it at high speed. The ratio does not jump: it follows
+the command with a lag of 0.5 seconds, like the hydraulics of a real belt CVT. And the model has no
+losses: all the power that goes in comes out. That is a simplification to remember.
+
+Last row: a CVT alone cannot start the car from rest, because the wheels stand still and no ratio
+fits. It needs a clutch that slips. Lecture 2's car used a centrifugal clutch that closes as the
+engine speeds up past about 1300 rpm. In our P2 that job goes to K0, the next slide.
+-->
+
+---
+routeAlias: k0-clutch
+---
+
+## K0: the clutch that cuts off the engine
+
+<div class="grid grid-cols-[1fr_1.2fr] gap-8 items-start">
+<div>
+
+K0 sits between the engine and the electric machine.
+
+- **Open**: the engine can stand still while the machine drives or brakes the car.
+- **Closed**: the engine drives the car, or the machine spins the engine up to start it.
+- **Slipping**: the two sides turn at different speeds, and the clutch passes friction torque
+  between them.
+
+<div class="handson">The decoupled positions of this section, P2 to P4, exist because of K0.</div>
+
+</div>
+<div class="tight">
+
+| The course's K0 model | |
+|---|---|
+| Strength | up to **230 N·m** of friction torque: 1.5 × the engine's peak torque |
+| Actuator | hydraulic, **0.15 s** lag: 90 % closed in about **0.35 s** |
+| Slip | friction torque grows smoothly with slip, close to full strength above about 1 rad/s |
+| At the start of a run | open |
+| Starting the car (H0) | closes as the engine passes about **1300 rpm**, over about **120 rpm** |
+| Lock-up | closes as the machine side passes **840 rpm**: open at 800 rpm idle, closed by **880 rpm** |
+| Starting the engine (build 03) | K0 closes and cranks it; fuel fades in from **400** to **700 rpm**; the machine adds the torque K0 takes |
+
+</div>
+</div>
+
+<!--
+The second part: K0, the clutch between the engine and the electric machine. The name K0 comes from
+the German word for clutch, Kupplung; zero because it sits first, right after the engine.
+
+What it does, three states. Open: the engine is cut off. It can stand still while the machine
+drives the car, or brakes it to charge the battery, without dragging the engine along. Closed: the
+engine and the machine turn together. Then the engine drives the car, or, if the engine is off,
+closing K0 lets the turning machine spin the engine up to start it. Slipping, in between: the two
+sides turn at different speeds and the clutch passes friction torque from the faster side to the
+slower one, as a car clutch does when you start off.
+
+The table is the course's model, the library's DisconnectClutch. Its strength, the most friction
+torque it can pass, is 230 newton meters: one and a half times the engine's peak torque of about
+150, so a closed clutch does not slip even under the engine's full torque.
+
+It is closed by a hydraulic actuator, modeled as a lag of 0.15 seconds: the clutch is 90 percent
+closed after about 0.35 seconds.
+
+The slip row: the friction torque is the clutch's strength times how far it is closed, and its
+direction follows the slip. It grows smoothly from zero, so the solver never has to stop at the
+moment of locking; above about one radian per second of slip it is close to full strength. So a
+closed clutch behaves as locked, with a very small slip.
+
+Every run starts with K0 open. Then the test models close it in two ways. Starting the car, in H0,
+the engine-only car: K0 closes as the engine speeds past about 1300 rpm, over a band of about 120
+rpm, like Lecture 2's centrifugal clutch. Lock-up: once the machine side passes 840 rpm, K0 closes
+fully; it is open at the 800 rpm idle and closed by 880.
+
+Starting the engine, in build 03: the energy manager closes K0 while the machine turns, and K0
+cranks the engine. The engine's fuel fades in between 400 and 700 rpm. While K0 cranks, it takes
+torque from the shaft, and the machine adds that torque back, so the wheels still get what the driver asks for.
+
+Take-away: K0 is what lets the engine stop while the car moves. The positions after it, P2, P3 and
+P4, depend on it.
+-->
+
+---
 routeAlias: five-positions
 ---
 
