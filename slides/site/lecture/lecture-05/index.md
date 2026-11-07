@@ -502,7 +502,7 @@ H0 and the line use the same PI gain 110, integral time 1 s, positive limit 150 
 negative limit −205 N·m. Friction braking uses a fixed gain of 12, the launch ratio,
 not the instantaneous variator ratio. Propulsion saturation therefore matches pedal saturation.
 
-#### Code view required — add to P2Powertrain
+#### Code view required — add to P2Powertrain {#step-2-powertrain}
 
 If you used the step-1a listing, these declarations and relations already exist: inspect them, do not duplicate them. Otherwise change `cvt_pedal` and `variator` to conditional declarations and add:
 
@@ -688,6 +688,8 @@ lets the shaft fall below the 1000 rpm floor, and at low vehicle speed its 50 rp
 37.38 s above 10 km/h, with 4.78 g of fuel burned meanwhile. Wherever K0 position exceeds 0.5, the
 sampled engine-speed minimum is 815.95 rpm on `0:0.01:1800`, not a continuous-time lower bound.
 
+**Instructor note:** The shallow-slope cruise mask resumes at **54.01 s**, immediately after deceleration, while the variator's **0.5 s** ratio lag is still settling. At **12.043 km/h**, the driver is still braking (pedal zero), the target is floored at **1000 rpm**, and the shaft is near **867 rpm**. K0 is recovering through its lock-up ramp: position is **0.98846**, with about **0.004 rad/s** slip. The `0:0.01:1800` grid includes **0.06 s** below 0.99 in this mask; the old 0.1 s grid missed that transition and read 0.99380. Expect this brief near-closure dip, not a loss of lock throughout steady cruise; the physical check allows position above **0.98**.
+
 :::
 
 [![Studio diagram of the operating-line WLTC fixture with driver, powertrain, differential, planar car and road load](/lecture/lecture-05/img/step02-operating-line-diagram.png)](/lecture/lecture-05/img/step02-operating-line-diagram.png)
@@ -696,17 +698,7 @@ sampled engine-speed minimum is 815.95 rpm on `0:0.01:1800`, not a continuous-ti
 
 The step-2 additions and complete line fixture follow. **Code view required:** create `MyCar.P2OperatingLineWLTC` as a new test component, retaining step 1 unchanged. The listing already uses your local powertrain path.
 
-**Code view required — step-2 powertrain option.** The step-1a listing includes this conditional seam; inspect these declarations before enabling it on the new fixture. These are excerpts of existing code, not duplicate declarations to paste alongside it:
-
-```dyad
-structural parameter speed_commanded::Boolean = false
-cvt_pedal = RealInput() if !speed_commanded
-N_ref = RealInput() if speed_commanded
-variator = VehicleSystemsComponents.Vehicle.ControlledVariator() if !speed_commanded
-speed_variator = VehicleSystemsComponents.Vehicle.SpeedCommandedVariator() if speed_commanded
-```
-
-The existing conditional relations select the corresponding pedal/speed input, shafts and support. Set `speed_commanded = true` only on the new fixture's powertrain instance, as below. Do not add another variator to the fixture. No start/stop controls are added until step 3.
+**Code view required — step-2 powertrain option.** Inspect the [powertrain declarations and conditional relations above](#step-2-powertrain); the step-1a listing already includes them, so do not paste duplicate declarations. They select the corresponding pedal/speed input, shafts and support. Set `speed_commanded = true` only on the new fixture's powertrain instance, as below. Do not add another variator to the fixture. No start/stop controls are added until step 3.
 
 ```dyad
 """
