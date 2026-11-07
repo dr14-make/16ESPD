@@ -186,6 +186,47 @@ end
     @test mapped.sol(19.5; idxs = s.vehicle.motion.r) > 0.0
 end
 
+@testset "Road mesh: what is drawn is what the car feels" begin
+    V = VehicleSystemsComponents
+    extent = V.road_extent(ROAD_ASSETS * "ice_patch_mu.crg"; margin = 5.0)
+    @test all(extent.x .≈ (415.0, 535.0))
+    @test all(extent.y .≈ (-6.0, 6.0))
+    hill, ice = ROAD_ASSETS * "hill_z.crg", ROAD_ASSETS * "ice_patch_mu.crg"
+    x, y = 430.0:2.5:520.0, -3.0:0.5:3.0
+    mesh = V.road_mesh(hill; grip_file = ice, x, y)
+    nx, ny = length(x), length(y)
+    @test mesh.x == collect(x) && mesh.y == collect(y)
+    @test size(mesh.height) == size(mesh.grip) == (nx, ny)
+    @test length(mesh.vertices) == nx * ny
+    @test length(mesh.faces) == 2 * (nx - 1) * (ny - 1)
+    @test all(f -> all(in(1:nx*ny), f), mesh.faces)
+    @test all(mesh.vertices[i + (j - 1) * nx] == (x[i], y[j], mesh.height[i, j])
+              for i in 1:nx, j in 1:ny)
+    # Counter-clockwise seen from +z: the z-up frame, not a mirrored one.
+    @test all(mesh.faces) do (a, b, c)
+        p, q, r = mesh.vertices[a], mesh.vertices[b], mesh.vertices[c]
+        (q[1] - p[1]) * (r[2] - p[2]) - (q[2] - p[2]) * (r[1] - p[1]) > 0
+    end
+    grip = V.road_grip(ice)
+    height = V.road_surface(hill; elevation = true)
+    slope = V.road_height(hill)
+    for (i, j) in ((1, 1), (11, 7), (20, 3), (nx, ny))
+        @test mesh.grip[i, j] == grip(x[i], y[j])
+        @test mesh.height[i, j] == height(x[i], y[j])
+    end
+    # Heights differentiate to the slope the road-load sensor reads.
+    for i in 2:nx-1
+        @test (mesh.height[i+1, 7] - mesh.height[i-1, 7]) / 5.0 ≈ slope(x[i], 0.0, 0.0) atol = 2e-3
+    end
+    @test minimum(mesh.grip) < 0.3 && maximum(mesh.grip) ≈ 1.0
+    flat = V.road_mesh(ROAD_ASSETS * "flat_z.crg"; x = -50.0:10.0:50.0, y = -5.0:5.0:5.0)
+    @test all(iszero, flat.height)
+    @test all(==(1.0), flat.grip)
+    default_axes = V.road_mesh(ROAD_ASSETS * "hill_across_z.crg")
+    @test length(default_axes.vertices) <= 170_000
+    @test first(default_axes.x) < -600 && last(default_axes.y) > 140
+end
+
 @testset "Library remains headless" begin
     @test !any(p -> p.name in ("GLMakie", "SimpleDirectMediaLayer"), keys(Base.loaded_modules))
 end

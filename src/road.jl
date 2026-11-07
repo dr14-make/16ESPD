@@ -108,3 +108,95 @@ road_directional_slope(height::Function, x, y, psi) = ForwardDiff.derivative(t -
     height(x + t * cos(psi), y + t * sin(psi)), zero(x + y + psi))
 
 ModelingToolkit.Symbolics.@register_symbolic road_directional_slope(height::Function, x, y, psi)
+
+"""
+    road_extent(files...; margin = 20.0) -> (; x = (xmin, xmax), y = (ymin, ymax))
+
+World bounding box, in meters, of the grids of one or more OpenCRG `files`, grown by `margin` on
+every side. Use it to pick the sampling window for [`road_mesh`](@ref) without guessing.
+"""
+function road_extent(files::AbstractString...; margin = 20.0)
+    isempty(files) && throw(ArgumentError("road_extent needs at least one road file"))
+    xs, ys = Float64[], Float64[]
+    for file in files
+        data = OpenCRG.read_crg(road_path(file))
+        replace!(data.phi, NaN => data.refline.start_phi)
+        _, _, X, Y, _ = OpenCRG.road_surface_grid(data)
+        push!(xs, extrema(X)...)
+        push!(ys, extrema(Y)...)
+    end
+    return (; x = (minimum(xs) - margin, maximum(xs) + margin),
+              y = (minimum(ys) - margin, maximum(ys) + margin))
+end
+
+"""
+    road_axes(files...; margin = 20.0, max_points = 160_000, min_step = 0.25) -> (; x, y)
+
+Evenly spaced world sample axes over [`road_extent`](@ref) with one spacing on both axes, no
+finer than `min_step` meters and with at most about `max_points` grid points.
+"""
+function road_axes(files::AbstractString...; margin = 20.0, max_points = 160_000, min_step = 0.25)
+    box = road_extent(files...; margin)
+    wx, wy = box.x[2] - box.x[1], box.y[2] - box.y[1]
+    step = max(min_step, sqrt(wx * wy / max_points))
+    return (; x = range(box.x[1], box.x[2]; length = max(2, ceil(Int, wx / step) + 1)),
+              y = range(box.y[1], box.y[2]; length = max(2, ceil(Int, wy / step) + 1)))
+end
+
+"""
+    road_mesh(height_file; grip_file = nothing, x, y)
+        -> (; x, y, vertices, faces, height, grip)
+
+Sample a road on the world grid `x` by `y` (meters) for drawing.
+
+Heights and grips come from the same fitted, edge-held callables the car evaluates
+([`road_surface`](@ref), behind [`road_height`](@ref) and [`road_grip`](@ref)), not from the raw
+CRG nodes, so the picture is what the tires feel, including the held edges beyond a file's grid.
+Without `grip_file` the grip is one everywhere. `x` and `y` default to [`road_axes`](@ref) over
+both files.
+
+Everything is in the CRG world frame: right-handed and z-up, x and y the planar car's world
+coordinates. Returns plain arrays:
+
+- `x::Vector{Float64}` (length `nx`), `y::Vector{Float64}` (length `ny`): the sample axes.
+- `height::Matrix{Float64}`, `grip::Matrix{Float64}` (`nx` by `ny`): `height[i, j]` is the road
+  elevation and `grip[i, j]` the grip multiplier at `(x[i], y[j])`; ready for a top-view
+  `heatmap(x, y, grip)`.
+- `vertices::Vector{NTuple{3, Float64}}`: `(x[i], y[j], height[i, j])` at linear index
+  `i + (j - 1) * nx`, so `vec(height)` and `vec(grip)` are per-vertex values.
+- `faces::Vector{NTuple{3, Int}}`: two counter-clockwise triangles (seen from +z) per grid cell,
+  1-based indices into `vertices`.
+
+A y-up scene such as the multibody world takes each vertex through `(x, y, z) -> (x, z, -y)`, a
+proper rotation about x. The swap `(x, z, y)` is a mirror: it reverses face winding and the sign
+of yaw.
+"""
+function road_mesh(height_file::AbstractString; grip_file = nothing,
+        x = nothing, y = nothing)
+    if x === nothing || y === nothing
+        files = grip_file === nothing ? (height_file,) : (height_file, grip_file)
+        axes = road_axes(files...)
+        x = something(x, axes.x)
+        y = something(y, axes.y)
+    end
+    xs, ys = collect(Float64, x), collect(Float64, y)
+    nx, ny = length(xs), length(ys)
+    nx >= 2 && ny >= 2 || throw(ArgumentError("road_mesh needs at least two samples per axis"))
+    elevation = road_surface(height_file; elevation = true)
+    height = Float64[elevation(xi, yi) for xi in xs, yi in ys]
+    grip = if grip_file === nothing
+        ones(nx, ny)
+    else
+        surface = road_surface(grip_file)
+        Float64[surface(xi, yi) for xi in xs, yi in ys]
+    end
+    vertices = vec([(xs[i], ys[j], height[i, j]) for i in 1:nx, j in 1:ny])
+    index(i, j) = i + (j - 1) * nx
+    faces = NTuple{3, Int}[]
+    sizehint!(faces, 2 * (nx - 1) * (ny - 1))
+    for j in 1:ny-1, i in 1:nx-1
+        push!(faces, (index(i, j), index(i + 1, j), index(i + 1, j + 1)))
+        push!(faces, (index(i, j), index(i + 1, j + 1), index(i, j + 1)))
+    end
+    return (; x = xs, y = ys, vertices, faces, height, grip)
+end
