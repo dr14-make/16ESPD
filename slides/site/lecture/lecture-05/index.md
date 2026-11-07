@@ -555,23 +555,25 @@ exact rolling rest: the stdlib wheel Jacobian has the known zero-slip singularit
 
 #### Run and plot
 
-Add `P2OperatingLineWLTCTransient`, stop 1800 s, Rodas5P, `dtmax = 1`,
+Create your local `MyCar.P2OperatingLineWLTCTransient` from the listing below, stop 1800 s, Rodas5P, `dtmax = 1`,
 `optimize = OptimizationLevel.None()`. Run it once from Studio, then open the Julia REPL:
 
 ```julia
 using DyadInterface: symbolic_container
 using Plots
-r = MyCar.P2OperatingLineWLTCTransient()
+r = solution  # just-completed Studio P2OperatingLineWLTCTransient result
 m, s = symbolic_container(r), r.sol
-t = 0:0.1:1800
+T = 1800.0
+t = 0:0.01:T
 at(x) = s(t, idxs=x).u
 plot(t, [at(m.trace.y) 3.6 .* at(m.car.bus.vx)], label=["target" "actual"],
      xlabel="Time [s]", ylabel="Speed [km/h]")
 scatter(at(m.powertrain.engine_speed) .* (30/pi), at(m.powertrain.engine_torque),
         markersize=1, label="WLTC", xlabel="Engine speed [rpm]", ylabel="Torque [N·m]")
-# From the course checkout; otherwise select the same CSV in your local course library.
+using VehicleSystemsComponents
+# Resolve the map from the installed course package, not the REPL working directory.
 rows = [parse.(Float64, split(l, ',')) for l in
-        readlines("assets/data/engine/bsfc_line.csv")[2:end]]
+        readlines(joinpath(pkgdir(VehicleSystemsComponents), "assets", "data", "engine", "bsfc_line.csv"))[2:end]]
 line = reduce(vcat, permutedims.(rows))
 plot!(line[:,2], line[:,3], label="best-BSFC line", linewidth=2)
 plot(t, [at(m.powertrain.engine_speed) .* (30/pi) at(m.N_target)],
@@ -596,6 +598,12 @@ plot(t, [at(m.meter.fuel_raw) at(m.meter.fuel_corr)],
 The lower speed, higher load moves part of the cycle toward better BSFC. The measured net
 fuel reduction uses the same driver, brake mapping and K0 lock-up as H0; it is not a universal hybrid
 saving and uses no machine assistance or regen.
+
+:::
+
+::: warning Instructor note — historical diagnostics, not a student checkpoint
+
+The classification, line-band and fuel-weight statistics below lack a reproducible student calculation here. They are retained for instructor reference only; do not use them as acceptance criteria or infer them from the scatter plot. Their historical 0.1 s sampling is distinct from the 0.01 s plotting grid.
 
 **Line band:** compare actual engine rpm against CSV rpm at actual brake power, within
 **±150 rpm**. This fixed rpm band avoids a broad tolerance on the steep line sections.
@@ -628,121 +636,19 @@ engine turns at 814.8 rpm or more.
 
 #### Fell behind?
 
-The shared powertrain and line fixture follow. In your library, change the fixture's
-powertrain path to `MyCar.P2Powertrain`.
+The step-2 additions and complete line fixture follow. **Code view required:** create `MyCar.P2OperatingLineWLTC` as a new test component, retaining step 1 unchanged. The listing already uses your local powertrain path.
+
+**Code view required — step-2 powertrain option.** The step-1a listing includes this conditional seam; inspect these declarations before enabling it on the new fixture. These are excerpts of existing code, not duplicate declarations to paste alongside it:
 
 ```dyad
-"""
-P2 transmission-input hybrid with a pedal- or speed-commanded total CVT ratio.
-MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to ground.
-`engine_stopped` holds the engine with fuel cut for fixed electric-only tests.
-"""
-component P2Powertrain
-  "Engine pedal, 0 to 1 (derived; MappedEngine)"
-  engine_pedal = RealInput() {^engine_pedal}
-  "K0 engagement request (derived; DisconnectClutch)"
-  engage = RealInput() {^engage}
-  "Machine torque request [N.m] (derived; HybridDrive)"
-  tau_ref = RealInput() {^tau_ref}
-  "Variator speed-schedule pedal (derived; ControlledVariator)"
-  cvt_pedal = RealInput() if !speed_commanded {^cvt_pedal}
-  "Target transmission input speed [rpm]"
-  N_ref = RealInput() if speed_commanded {^N_ref}
-  "Select speed-commanded CVT scheduling"
-  structural parameter speed_commanded::Boolean = false
-  "Enable fuel-controlled clutch starts"
-  structural parameter start_stop::Boolean = false
-  "Engine latch, 0 off to 1 running"
-  engine_on = RealInput() if start_stop
-  "Manager's assumed engine torque subtracted from driving demand before its machine clamp [N.m]"
-  engine_torque_ref = RealInput() if start_stop
-  "Lower end of the smooth firing-speed band [rpm]"
-  parameter firing_rpm::Real = 400.0
-  "Width of the firing-speed band [rpm]"
-  parameter firing_width::Real(min = eps(Float64)) = 300.0
-  variable firing_fraction::Real if start_stop
-  variable start_compensation::Torque if start_stop
-  variable machine_limit::Torque if start_stop
-  "Output to planar differential (derived; P2 layout)"
-  spline = Spline() {^spline}
-  "Stationary housing (assumed; planar bench)"
-  support = Spline() {^support}
-  "Engine speed [rad/s] (derived; crank sensor)"
-  engine_speed = RealOutput() {^engine_speed}
-  "Engine brake torque [N.m] (derived; map)"
-  engine_torque = RealOutput() {^engine_torque}
-  "Available full-load engine torque at the measured speed [N.m]"
-  available_torque = RealOutput() {^available_torque}
-  "Fuel flow [kg/s] (derived; map)"
-  mdot_fuel = RealOutput() {^mdot_fuel}
-  "Net machine shaft torque [N.m] (derived; DCMachine)"
-  machine_torque = RealOutput() {^machine_torque}
-  "K0 actuator position (derived; actuator)"
-  position = RealOutput() {^position}
-  "Battery state of charge (derived; coulomb count)"
-  SoC = RealOutput() {^SoC}
-  "Battery open-circuit voltage [V] (derived; HybridDrive)"
-  E = RealOutput() {^E}
-  "Battery current, positive discharge [A] (derived; Battery)"
-  i = RealOutput() {^i}
-  "Hold engine stopped with fuel cut for an electric-only fixture (assumed; no start dynamics)"
-  structural parameter engine_stopped::Boolean = false
-  "Initial K0 position (assumed; fixed-mode bench)"
-  parameter position_start::Real = 0.0
-  "Initial running-engine speed [rad/s] (assumed; 800 rpm idle for launch)"
-  parameter engine_speed_start::AngularVelocity = 800.0 * pi / 30
-  engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(fuel_controlled = start_stop, fuel_cut_rpm = ifelse(engine_stopped, -2.0, 1300.0), fuel_resume_rpm = ifelse(engine_stopped, -1.0, 1000.0)) {^engine}
-  k0 = VehicleSystemsComponents.Vehicle.DisconnectClutch(position_start = position_start) {^k0}
-  drive = VehicleSystemsComponents.Vehicle.Electric.HybridDrive() {^drive}
-  variator = VehicleSystemsComponents.Vehicle.ControlledVariator() if !speed_commanded {^variator}
-  speed_variator = VehicleSystemsComponents.Vehicle.SpeedCommandedVariator() if speed_commanded {^speed_variator}
-  hold = RotationalComponents.Components.Fixed() if engine_stopped {^hold}
-relations
-  initial engine.air.manifold.p = 101325.0
-  initial drive.machine.rotor.phi = 0.0
-  connect(engine_pedal, engine.pedal)
-  connect(engage, k0.engage)
-  if start_stop
-    machine_limit = min(drive.T_max, drive.P_rated / max(abs(drive.machine.w), 1.0))
-    firing_fraction = min(max((engine.N - firing_rpm) / firing_width, 0.0), 1.0)
-    engine.fuel_enable = engine_on * firing_fraction^2 * (3.0 - 2.0 * firing_fraction)
-    # Replace assumed engine delivery by the measured K0 torque, including crank drag.
-    start_compensation = engine_torque_ref - k0.tau
-    drive.tau_ref = min(max(tau_ref + start_compensation, -machine_limit), machine_limit)
-  else
-    connect(tau_ref, drive.tau_ref)
-  end
-  if speed_commanded
-    connect(N_ref, speed_variator.N_ref)
-    connect(k0.spline_b, drive.spline, speed_variator.spline_a)
-    connect(speed_variator.spline_b, spline)
-    connect(speed_variator.support, support)
-  else
-    connect(cvt_pedal, variator.pedal)
-    connect(k0.spline_b, drive.spline, variator.spline_a)
-    connect(variator.spline_b, spline)
-    connect(variator.support, support)
-  end
-  connect(engine.spline, k0.spline_a)
-  connect(engine.support, k0.support, drive.support, support)
-  connect(engine.speed.w, engine_speed)
-  connect(engine.tau_e, engine_torque)
-  connect(engine.torque_map.full_load.y, available_torque)
-  connect(engine.mdot_fuel, mdot_fuel)
-  connect(drive.SoC, SoC)
-  machine_torque = drive.machine.tau
-  position = k0.position
-  E = drive.battery.E
-  i = drive.battery.i
-  if engine_stopped
-    connect(engine.spline, hold.spline)
-  else
-    initial engine.crankshaft.w = engine_speed_start
-    initial engine.crankshaft.phi = 0.0
-  end
-metadata {"Dyad":{"icons":{"default":"dyad://VehicleSystemsComponents/Vehicle/CVTDriveline.svg"}},"_links":{"E":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":825,"y2":875},"icon":{"x1":950,"x2":1050,"y1":800,"y2":900}}}},"SoC":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":765,"y2":815},"icon":{"x1":950,"x2":1050,"y1":740,"y2":840}}}},"cvt_pedal":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":285,"y2":335},"icon":{"x1":-50,"x2":50,"y1":260,"y2":360}}}},"N_ref":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":385,"y2":435},"icon":{"x1":-50,"x2":50,"y1":360,"y2":460}}}},"drive":{"Dyad":{"placement":{"diagram":{"x1":450,"x2":550,"y1":400,"y2":500}}}},"engage":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":165,"y2":215},"icon":{"x1":-50,"x2":50,"y1":140,"y2":240}}}},"engine":{"Dyad":{"placement":{"diagram":{"x1":150,"x2":250,"y1":400,"y2":500}}}},"engine_pedal":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":105,"y2":155},"icon":{"x1":-50,"x2":50,"y1":80,"y2":180}}}},"engine_speed":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":465,"y2":515},"icon":{"x1":950,"x2":1050,"y1":440,"y2":540}}}},"engine_torque":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":525,"y2":575},"icon":{"x1":950,"x2":1050,"y1":500,"y2":600}}}},"hold":{"Dyad":{"placement":{"diagram":{"x1":750,"x2":850,"y1":400,"y2":500}}}},"i":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":885,"y2":935},"icon":{"x1":950,"x2":1050,"y1":860,"y2":960}}}},"k0":{"Dyad":{"placement":{"diagram":{"x1":300,"x2":400,"y1":400,"y2":500}}}},"machine_torque":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":645,"y2":695},"icon":{"x1":950,"x2":1050,"y1":620,"y2":720}}}},"mdot_fuel":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":585,"y2":635},"icon":{"x1":950,"x2":1050,"y1":560,"y2":660}}}},"position":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":705,"y2":755},"icon":{"x1":950,"x2":1050,"y1":680,"y2":780}}}},"spline":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":875,"y2":925},"icon":{"x1":950,"x2":1050,"y1":850,"y2":950}}}},"support":{"Dyad":{"placement":{"diagram":{"x1":450,"x2":550,"y1":950,"y2":1050},"icon":{"x1":450,"x2":550,"y1":950,"y2":1050}}}},"tau_ref":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":225,"y2":275},"icon":{"x1":-50,"x2":50,"y1":200,"y2":300}}}},"variator":{"Dyad":{"placement":{"diagram":{"x1":600,"x2":700,"y1":400,"y2":500}}}},"speed_variator":{"Dyad":{"placement":{"diagram":{"x1":600,"x2":700,"y1":550,"y2":650}}}}}}
-end
+structural parameter speed_commanded::Boolean = false
+cvt_pedal = RealInput() if !speed_commanded
+N_ref = RealInput() if speed_commanded
+variator = VehicleSystemsComponents.Vehicle.ControlledVariator() if !speed_commanded
+speed_variator = VehicleSystemsComponents.Vehicle.SpeedCommandedVariator() if speed_commanded
 ```
+
+The existing conditional relations select the corresponding pedal/speed input, shafts and support. Set `speed_commanded = true` only on the new fixture's powertrain instance, as below. Do not add another variator to the fixture. No start/stop controls are added until step 3.
 
 ```dyad
 """
@@ -778,7 +684,7 @@ test component P2OperatingLineWLTC
   driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_brake) {^driver}
   no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
   kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
-  powertrain = VehicleSystemsComponents.HandsOn05.P2Powertrain(speed_commanded = true, position_start = 0.0, drive(P_aux = 0.0, T_f = 0.0, K_i = 0.0, k_w = 0.0, C = 0.0, J = 0.0)) {^powertrain}
+  powertrain = VehicleSystemsComponents.MyCar.P2Powertrain(speed_commanded = true, position_start = 0.0, drive(P_aux = 0.0, T_f = 0.0, K_i = 0.0, k_w = 0.0, C = 0.0, J = 0.0)) {^powertrain}
   differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
   mount = RotationalComponents.Components.Fixed() {^mount}
   straight = RotationalComponents.Components.Fixed() {^straight}
@@ -836,7 +742,6 @@ relations
   initial car.rl.brake.tau_actual = 0.0
   initial car.rr.brake.tau_actual = 0.0
   initial powertrain.drive.converter.i_out = 0.0
-metadata {"_links":{"trace":{"Dyad":{"placement":{"diagram":{"x1":20,"y1":57,"x2":100,"y2":137}}}},"driver":{"Dyad":{"placement":{"diagram":{"x1":140,"y1":70,"x2":240,"y2":170}}}},"no_ff":{"Dyad":{"placement":{"diagram":{"x1":100,"y1":10,"x2":140,"y2":50}}}},"kmh":{"Dyad":{"placement":{"diagram":{"x1":40,"y1":190,"x2":110,"y2":260}}}},"powertrain":{"Dyad":{"placement":{"diagram":{"x1":430,"y1":50,"x2":530,"y2":150}}}},"differential":{"Dyad":{"placement":{"diagram":{"x1":560,"y1":260,"x2":640,"y2":340}}}},"mount":{"Dyad":{"placement":{"diagram":{"x1":485,"y1":190,"x2":545,"y2":240}}}},"straight":{"Dyad":{"placement":{"diagram":{"x1":605,"y1":500,"x2":655,"y2":550,"rot":180}}}},"flat":{"Dyad":{"placement":{"diagram":{"x1":440,"y1":880,"x2":480,"y2":920}}}},"car":{"Dyad":{"placement":{"diagram":{"x1":520,"y1":600,"x2":740,"y2":820}}}},"motion":{"Dyad":{"placement":{"diagram":{"x1":775,"y1":610,"x2":975,"y2":810}}}},"roadload":{"Dyad":{"placement":{"diagram":{"x1":500,"y1":865,"x2":570,"y2":935}}}},"line":{"Dyad":{"placement":{"diagram":{"x1":290,"y1":70,"x2":390,"y2":170}}}}}}
 end
 
 "Full WLTC operating-line analysis (derived; Lecture 5 step 2)."
@@ -856,6 +761,50 @@ Add `Vehicle.EnergyManager` as `manager` and `Vehicle.TorqueToPedal` as `map`.
 Set `manager.mapped_limits = true`. The driver's signed demand is at the transmission
 input, not the wheels. Keep the chassis, differential, supports, road load, meter and initial
 conditions from step 2. Replace the step-2 signal wiring with the following.
+
+### Code view required — add start/stop to your powertrain
+
+In `MyCar.P2Powertrain`, add the following declarations before `relations`. Do not remove the step-2 speed-commanded option or the public `available_torque` output:
+
+```dyad
+structural parameter start_stop::Boolean = false
+engine_on = RealInput() if start_stop
+engine_torque_ref = RealInput() if start_stop
+parameter firing_rpm::Real = 400.0
+parameter firing_width::Real(min = eps(Float64)) = 300.0
+variable firing_fraction::Real if start_stop
+variable start_compensation::Torque if start_stop
+variable machine_limit::Torque if start_stop
+```
+
+Add `fuel_controlled = start_stop` to the existing `engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(...)` modifiers, retaining its fuel-cut thresholds. **Replace** `connect(tau_ref, drive.tau_ref)` with:
+
+```dyad
+if start_stop
+  machine_limit = min(drive.T_max, drive.P_rated / max(abs(drive.machine.w), 1.0))
+  firing_fraction = min(max((engine.N - firing_rpm) / firing_width, 0.0), 1.0)
+  engine.fuel_enable = engine_on * firing_fraction^2 * (3.0 - 2.0 * firing_fraction)
+  start_compensation = engine_torque_ref - k0.tau
+  drive.tau_ref = min(max(tau_ref + start_compensation, -machine_limit), machine_limit)
+else
+  connect(tau_ref, drive.tau_ref)
+end
+```
+
+### Code view required — change the fixture declarations
+
+Copy your step-2 fixture to `MyCar.P2HybridWLTC`. Replace its powertrain declaration (remove the zero-loss nested drive modifiers), add the manager, inverse map and second operating line, and change the two existing driver-limit parameter defaults:
+
+```dyad
+parameter tau_max::Torque = 150.233567 + 205.0
+parameter tau_brake::Torque = tau_max
+powertrain = VehicleSystemsComponents.MyCar.P2Powertrain(speed_commanded = true, start_stop = true, position_start = 0.0, engine_speed_start = 0.0)
+manager = VehicleSystemsComponents.Vehicle.EnergyManager(mapped_limits = true, SoC_on = 0.52, SoC_off = 0.55, P_line_max = 30.0e3)
+map = VehicleSystemsComponents.Vehicle.TorqueToPedal()
+demand_line = VehicleSystemsComponents.Vehicle.OperatingLine()
+```
+
+Keep the existing `line` and `N_target`; do not declare them twice. Remove the step-2 equations for `line.P`, `N_target`, engine pedal, engagement, machine request and front brakes, plus the old `connect(kmh.y, driver.u_m)`. Replace them with the table and equations below; the table represents `connect(...)` statements. All unchanged mechanical, meter and initialization relations remain.
 
 ### Every connection changed or added in step 3
 
@@ -887,8 +836,7 @@ car.tau_rl = 0.0
 car.tau_rr = 0.0
 ```
 
-Add a second `Vehicle.OperatingLine` named `demand_line` and declare
-`variable N_target::Real`. Set `powertrain.start_stop = true`,
+The added `demand_line` uses the existing `variable N_target::Real`. Set `powertrain.start_stop = true`,
 `powertrain.engine_speed_start = 0.0` and `powertrain.position_start = 0.0`.
 The available-torque connection is required when mapped limits are enabled; it uses the
 powertrain's public output, not an internal engine block.
@@ -912,7 +860,7 @@ powertrain's public output, not an internal engine block.
 - In electric mode, a second `OperatingLine` follows positive demand power. Blend its
   speed toward the engine-request line using `engine_on`, then floor the target at 1000 rpm.
 
-Set the signed driver limits to ±355.234 N·m: 150.234 engine plus 205 machine. Use the shared Lecture 5 driver, `k=110`, `Ti=1`; its maximum error is 1.32 km/h. Use `mapped_limits=true`: during a CVT transient,
+Set the signed driver limits to `±(150.233567 + 205.0)` N·m: mapped engine peak plus machine limit. Use the shared Lecture 5 driver, `k=110`, `Ti=1`; its maximum error is 1.32 km/h. Use `mapped_limits=true`: during a CVT transient,
 the manager must not subtract engine torque above the mapped full-load envelope from the
 machine demand. Set `SoC_on=0.52`, `SoC_off=0.55` to leave room for late-cycle regen, and
 `P_line_max=30000` W. With these settings the run uses 4.08634 corrected L/100 km,
@@ -923,6 +871,38 @@ Electric mode carries low demand with K0 open. On-line mode starts the engine an
 the efficient-speed target. Charging raises engine load and generates the surplus. Boost
 adds machine torque above the 30 kW line cap. During deceleration the existing regen blend
 uses the machine first and sends the remainder to friction brakes.
+
+### Code view required — energy accounting and analysis
+
+Add these declarations before `relations`:
+
+```dyad
+variable E_charge::Energy
+variable E_regen::Energy
+variable E_friction::Energy
+```
+
+Add these relations so the energy boundaries in the checkpoint are observable:
+
+```dyad
+der(E_charge) = max(-meter.P_stored, 0.0)
+der(E_regen) = manager.tau_regen * max(manager.w_shaft, 0.0)
+der(E_friction) = car.fl.brake.tau_friction * car.fl.brake.w + car.fr.brake.tau_friction * car.fr.brake.w + car.rl.brake.tau_friction * car.rl.brake.w + car.rr.brake.tau_friction * car.rr.brake.w
+initial E_charge = 0.0
+initial E_regen = 0.0
+initial E_friction = 0.0
+```
+
+Create and run this analysis in your library:
+
+```dyad
+analysis P2HybridWLTCTransient
+  extends TransientAnalysis(stop = 1800.0, alg = ODEAlg.Rodas5P(), dtmax = 1.0, optimize = OptimizationLevel.None())
+  model = P2HybridWLTC()
+end
+```
+
+In the REPL capture `r = solution`, then use `m, s = symbolic_container(r), r.sol` and `t = 0:0.01:1800.0`. Plot speed tracking, engine rpm, K0 position, SoC and the manager's four mode fractions (`manager.ev`, `manager.on_line`, `manager.charging`, `manager.boosting`) over the complete cycle; inspect the first start as well as settled operation. Read `E_charge`, `E_regen` and `E_friction` at 1800 s, not from the last plotted time window.
 
 ::: tip Checkpoint 3 — measured full WLTC
 The run has **44 starts**, minimum on-time **1.90 s**, mean on-time **14.72 s**, and maximum
@@ -940,7 +920,7 @@ including engine-driven charging. These quantities have different measurement bo
 
 H0, the line car and the hybrid share `k=110`, `Ti=1 s`. H0 uses
 5.717536 L/100 km and the line car 5.437445 L/100 km. Their maximum speed errors are
-1.168 and 1.168 km/h. The ±355.234 N·m limits apply only to the hybrid; H0
+1.168 and 1.168 km/h. The `±(150.233567 + 205.0)` N·m limits apply only to the hybrid; H0
 and the line car retain their pedal-sized propulsion limits.
 
 Keep `meter.P_stored = powertrain.E * powertrain.i`: the correction uses stored energy,
@@ -959,7 +939,11 @@ These are vehicle energy inputs, not a well-to-wheel comparison.
 
 ::: tip Checkpoint 4 — charge-sustaining comparison
 The hybrid ends **1.22 percentage points** above its starting SoC, within ±2 percentage
-points. Its corrected fuel is **28.53%** below H0. Outside the first 3 s of each start,
+points. Its corrected fuel is **28.53%** below H0.
+:::
+
+::: warning Instructor note — historical power-error and fuel-band diagnostics
+These metrics have no reproducible student calculation in this guide and are not acceptance criteria. Outside the first 3 s of each start,
 on-line-mode engine power has mean absolute error **171 W**, maximum **3264 W**. Across
 the whole run, **58.95%** of fuel is burned within ±150 rpm of the line, versus step 2's 16.57%.
 The inverse map needs no PI trim; steady analytic torque round trips are within 1e-7 N·m.
@@ -967,7 +951,7 @@ The inverse map needs no PI trim; steady analytic torque round trips are within 
 
 ## Limits of this reference
 
-Studio build steps still need rehearsal before classroom use. The torque inverse assumes
+The corrected `P2Powertrain` diagram still needs a post-merge Studio check. The torque inverse assumes
 unchanged default engine and air-path calibration. Start compensation remains subject to
 the machine's current and power limits; it cannot guarantee full driver demand at every start.
 The [homework](./homework) takes the same car to a series hybrid.
