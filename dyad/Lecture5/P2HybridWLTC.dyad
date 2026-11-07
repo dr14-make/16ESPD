@@ -60,7 +60,7 @@ relations
   connect(kmh.y, driver.u_m, manager.v) {^kmh_wire}
   connect(no_ff.y, driver.u_ff) {^ff_wire}
   connect(driver.y, manager.tau_dem) {^dem_wire}
-  manager.w_shaft = powertrain.speed_variator.w_a
+  manager.w_shaft = powertrain.variator.w_a
   connect(powertrain.SoC, manager.SoC) {^soc_wire}
   connect(powertrain.engine_speed, manager.engine_speed, map.omega) {^speed_wire}
   connect(powertrain.available_torque, manager.available_torque) {^torque_wire}
@@ -72,7 +72,7 @@ relations
   demand_line.P = manager.P_drive
   N_target = max(manager.engine_on * line.N + (1.0 - manager.engine_on) * demand_line.N, N_locked)
   powertrain.N_ref = N_target
-  powertrain.engage = manager.engage * max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.speed_variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm)))
+  powertrain.engage = manager.engage * max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm)))
   connect(powertrain.spline, differential.flange_b) {^spline_wire}
   connect(differential.flange_left, car.spin_fl) {^left_wire}
   connect(differential.flange_right, car.spin_fr) {^right_wire}
@@ -82,7 +82,7 @@ relations
   connect(car.chassis, roadload.chassis) {^chassis_wire}
   connect(powertrain.mdot_fuel, meter.mdot_fuel) {^fuel_wire}
   meter.P_stored = powertrain.E * powertrain.i
-  car.tau_fl = manager.tau_friction * powertrain.speed_variator.ratio / 2.0
+  car.tau_fl = manager.tau_friction * powertrain.variator.ratio / 2.0
   car.tau_fr = car.tau_fl
   car.tau_rl = 0.0
   car.tau_rr = 0.0

@@ -226,7 +226,7 @@ The line target is floored above idle. Machine torque, losses and inertia are ze
   push!(__eqs, N_target ~ max(line.N, N_locked))
   push!(__eqs, powertrain.N_ref ~ N_target)
   push!(__eqs, powertrain.engine_pedal ~ min(max(driver.y / tau_max, 0.0), 1.0))
-  push!(__eqs, powertrain.engage ~ max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.speed_variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
+  push!(__eqs, powertrain.engage ~ max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
   push!(__eqs, powertrain.tau_ref ~ 0.0)
   push!(__eqs, car.tau_fl ~ -min(driver.y, 0.0) * brake_gain / 2.0)
   push!(__eqs, car.tau_fr ~ car.tau_fl)

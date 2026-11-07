@@ -237,13 +237,13 @@ The electric-mode CVT target follows demand power to avoid starting against an i
   __assertions = []
 
   ### Equations
-  push!(__eqs, manager.w_shaft ~ powertrain.speed_variator.w_a)
+  push!(__eqs, manager.w_shaft ~ powertrain.variator.w_a)
   push!(__eqs, demand_line.P ~ manager.P_drive)
   push!(__eqs, N_target ~ max(manager.engine_on * line.N + (1.0 - manager.engine_on) * demand_line.N, N_locked))
   push!(__eqs, powertrain.N_ref ~ N_target)
-  push!(__eqs, powertrain.engage ~ manager.engage * max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.speed_variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
+  push!(__eqs, powertrain.engage ~ manager.engage * max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
   push!(__eqs, meter.P_stored ~ powertrain.E * powertrain.i)
-  push!(__eqs, car.tau_fl ~ manager.tau_friction * powertrain.speed_variator.ratio / 2.0)
+  push!(__eqs, car.tau_fl ~ manager.tau_friction * powertrain.variator.ratio / 2.0)
   push!(__eqs, car.tau_fr ~ car.tau_fl)
   push!(__eqs, car.tau_rl ~ 0.0)
   push!(__eqs, car.tau_rr ~ 0.0)
