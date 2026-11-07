@@ -206,6 +206,8 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
   __assertions = []
 
   ### Equations
+  push!(__eqs, engine_speed ~ engine.speed.w)
+  push!(__eqs, available_torque ~ engine.torque_map.full_load.y)
   push!(__eqs, machine_torque ~ drive.machine.tau)
   push!(__eqs, position ~ k0.position)
   push!(__eqs, E ~ drive.battery.E)
@@ -214,9 +216,7 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
   push!(__eqs, connect(engage, k0.engage))
   push!(__eqs, connect(engine.spline, k0.spline_a))
   push!(__eqs, connect(engine.support, k0.support, drive.support, support))
-  push!(__eqs, connect(engine.speed.w, engine_speed))
   push!(__eqs, connect(engine.tau_e, engine_torque))
-  push!(__eqs, connect(engine.torque_map.full_load.y, available_torque))
   push!(__eqs, connect(engine.mdot_fuel, mdot_fuel))
   push!(__eqs, connect(drive.SoC, SoC))
 
