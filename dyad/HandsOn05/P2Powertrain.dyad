@@ -91,9 +91,9 @@ relations
   end
   connect(engine.spline, k0.spline_a)
   connect(engine.support, k0.support, drive.support, support)
-  connect(engine.speed.w, engine_speed)
+  engine_speed = engine.speed.w
   connect(engine.tau_e, engine_torque)
-  connect(engine.torque_map.full_load.y, available_torque)
+  available_torque = engine.torque_map.full_load.y
   connect(engine.mdot_fuel, mdot_fuel)
   connect(drive.SoC, SoC)
   machine_torque = drive.machine.tau
