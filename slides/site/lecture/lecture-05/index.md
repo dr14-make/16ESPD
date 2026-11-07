@@ -381,6 +381,8 @@ For step 1c, run your engine analysis in Studio, capture its new `r = solution`,
 
 Compare with `Lecture5.P2ElectricWLTC` and `Lecture5.P2ElectricWLTCTransient`, then inspect the electric branch of `P2WLTC`. A successful Low run does not validate electric operation for all 1800 s.
 
+[![Electric-only WLTC Low plots of target and actual speed, zero fuel, battery SoC and machine speed](/lecture/lecture-05/img/step01-electric-wltc-low.png)](/lecture/lecture-05/img/step01-electric-wltc-low.png)
+
 ## 1c · Engine-only WLTC through K0 {#step-1c}
 
 #### Given
@@ -454,6 +456,8 @@ Compare the engine branch and initial conditions with `Lecture5.P2WLTC` and the 
 `HandsOn05` reference. Retain the electric branch's machine sizing and regen mapping. These measurements validate the
 numerical reference, not the unrehearsed Studio steps.
 
+
+[![Engine-only WLTC speed tracking, engine speed, K0 position and slip, and fuel consumption](/lecture/lecture-05/img/step01-engine-only-wltc.png)](/lecture/lecture-05/img/step01-engine-only-wltc.png)
 
 ## 2 · Hold the engine on its operating line {#step-2}
 
@@ -634,6 +638,8 @@ engine turns at 814.8 rpm or more.
 
 :::
 
+[![Studio diagram of the operating-line WLTC fixture with driver, powertrain, differential, planar car and road load](/lecture/lecture-05/img/step02-operating-line-diagram.png)](/lecture/lecture-05/img/step02-operating-line-diagram.png)
+
 #### Fell behind?
 
 The step-2 additions and complete line fixture follow. **Code view required:** create `MyCar.P2OperatingLineWLTC` as a new test component, retaining step 1 unchanged. The listing already uses your local powertrain path.
@@ -750,6 +756,8 @@ analysis P2OperatingLineWLTCTransient
   model = P2OperatingLineWLTC()
 end
 ```
+
+[![Engine operating points on the best-BSFC line and full-load map for the operating-line WLTC](/lecture/lecture-05/img/step02-operating-points.png)](/lecture/lecture-05/img/step02-operating-points.png)
 
 ## 3 · Let the energy manager split the demand {#step-3}
 
@@ -915,6 +923,8 @@ those transitions, not settled electric operation. Requested shaft regen is **3.
 actual friction-brake dissipation is **0.0536 MJ**. The battery accepts **3.920 MJ** in total,
 including engine-driven charging. These quantities have different measurement boundaries.
 :::
+
+[![Hybrid WLTC speed tracking, engine starts, K0 position, battery SoC and energy-manager modes](/lecture/lecture-05/img/step03-hybrid-wltc.png)](/lecture/lecture-05/img/step03-hybrid-wltc.png)
 
 ## 4 · Compare at equal battery charge {#step-4}
 
