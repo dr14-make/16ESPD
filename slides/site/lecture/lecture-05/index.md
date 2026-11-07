@@ -6,7 +6,7 @@ title: Lecture 5 — compose a P2 hybrid powertrain
 
 # Lecture 5: compose a P2 hybrid powertrain
 
-Rehearsed in Dyad Studio 3.5.1. Code-view work is called out below; the revised powertrain diagram will be checked after these fixes land.
+Rehearsed in Dyad Studio 3.5.1. Code-view work is called out below.
 
 **What you build.** A transmission-input P2 hybrid from existing library parts: mapped engine → disconnect clutch K0 → machine shaft → controlled variator → differential → front wheels. Step 2 adds the operating-line lookup and speed-commanded variator. Steps 3 and 4 add the energy manager, clutch starts and charge-sustaining comparison.
 
@@ -109,6 +109,10 @@ Add structural Boolean `engine_stopped = false`, Real `position_start = 0.0`, an
 Trace engine → K0 → shared machine/variator input → variator → differential → front wheels. All powertrain supports reach `mount`; there is one final drive and no launch clutch. The four fixed-mode commands and nine outputs remain accessible on `powertrain`. This is a structural checkpoint, not evidence that the engine-only car can launch.
 
 :::
+
+[![Studio diagram of HandsOn05.P2Powertrain: input ports on the left, engine, K0, hybrid drive and variator left to right with the speed-commanded variator below, output ports and the spline on the right, the housing support at the bottom](/lecture/lecture-05/img/step01-p2-powertrain.png)](/lecture/lecture-05/img/step01-p2-powertrain.png)
+
+The reference already carries the step-2 and step-3 ports (`N_ref`, `engine_on`, `engine_torque_ref`). Studio does not draw a `connect` inside an `if` block, so the shaft from K0 through the variator and the `tau_ref` path show only in code.
 
 #### Code view required — your powertrain and fixture
 
@@ -320,6 +324,8 @@ analysis P2ElectricWLTCTransient
   model = P2ElectricWLTC()
 end
 ```
+
+[![Studio diagram of the P2WLTC fixture: drive cycle, PI driver and torque split feeding the P2 powertrain, which turns the planar car's front wheels through the differential; road load below the car, vehicle-speed feedback to the driver and the fuel meter on the right](/lecture/lecture-05/img/step01-p2wltc-fixture.png)](/lecture/lecture-05/img/step01-p2wltc-fixture.png)
 
 #### Fell behind?
 
@@ -692,7 +698,7 @@ sampled engine-speed minimum is 815.95 rpm on `0:0.01:1800`, not a continuous-ti
 
 :::
 
-[![Studio diagram of the operating-line WLTC fixture with driver, powertrain, differential, planar car and road load](/lecture/lecture-05/img/step02-operating-line-diagram.png)](/lecture/lecture-05/img/step02-operating-line-diagram.png)
+[![Studio diagram of the operating-line WLTC fixture: driver, operating-line table and P2 powertrain, which turns the planar car through the differential; road load, speed feedback and fuel meter](/lecture/lecture-05/img/step02-operating-line-diagram.png)](/lecture/lecture-05/img/step02-operating-line-diagram.png)
 
 #### Fell behind?
 
@@ -924,6 +930,8 @@ the efficient-speed target. Charging raises engine load and generates the surplu
 adds machine torque above the 30 kW line cap. During deceleration the existing regen blend
 uses the machine first and sends the remainder to friction brakes.
 
+[![Studio diagram of P2HybridWLTC: driver demand into the energy manager, whose outputs drive the torque-to-pedal map and the powertrain; engine speed, available torque and SoC loop back under the manager; operating-line tables above; planar car, road load and fuel meter as in step 2](/lecture/lecture-05/img/step03-hybrid-diagram.png)](/lecture/lecture-05/img/step03-hybrid-diagram.png)
+
 ### Code view required — energy accounting and analysis
 
 Add these declarations before `relations`:
@@ -1005,7 +1013,7 @@ The inverse map needs no PI trim; steady analytic torque round trips are within 
 
 ## Limits of this reference
 
-The corrected `P2Powertrain` diagram still needs a post-merge Studio check. The torque inverse assumes
+The torque inverse assumes
 unchanged default engine and air-path calibration. Start compensation remains subject to
 the machine's current and power limits; it cannot guarantee full driver demand at every start.
 The [homework](./homework) takes the same car to a series hybrid.
