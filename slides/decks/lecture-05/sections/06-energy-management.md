@@ -295,16 +295,7 @@ routeAlias: build-energy-manager
 <div class="grid grid-cols-[1.1fr_1fr] gap-8 items-start">
 <div>
 
-<div class="placeholder">
-
-**Screenshot: `step03-energy-manager.png`**
-
-The energy manager in Studio: demand, SoC and speeds in; the three latches; engine on, K0, engine
-torque and machine torque out.
-
-To capture: Studio screenshot of the `manager` block in the `P2HybridWLTC` diagram
-
-</div>
+![The manager in P2HybridWLTC: driver demand, speed, SoC and engine speed in on the left, available torque from below; engine power, engine torque, engine-on, K0 and machine torque out to the map and the powertrain.](/img/lecture-05/step03-energy-manager.png)
 
 **Given:** `EnergyManager`, built on Lecture 2's `HysteresisLatch` and Lecture 4's regen
 blending · `TorqueToPedal`, the engine's inverse map

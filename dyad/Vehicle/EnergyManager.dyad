@@ -78,11 +78,11 @@ component EnergyManager
   "Allow electric-only traction; otherwise run the engine in traction and release it while braking (assumed; architecture option)"
   structural parameter electric_drive::Boolean = true
   "Machine torque envelope referred to the transmission input [N.m]"
-  T_lim = RealInput() if geared_limit
+  T_lim = RealInput() if geared_limit {^T_lim}
   "Limit the torque split to the mapped engine envelope during CVT transients"
   structural parameter mapped_limits::Boolean = false
   "Engine-owned full-load envelope at measured engine speed [N.m]"
-  available_torque = RealInput() if mapped_limits
+  available_torque = RealInput() if mapped_limits {^available_torque}
   "Driver torque demand at the transmission input, positive driving [N.m]"
   tau_dem = RealInput() {^tau_dem}
   "Transmission input (machine) shaft speed [rad/s]"
@@ -287,14 +287,16 @@ metadata {
     "tau_dem": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 100, "x2": 50, "y2": 200}, "diagram": {"x1": -25, "y1": 125, "x2": 25, "y2": 175}}}},
     "w_shaft": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 275, "x2": 50, "y2": 375}, "diagram": {"x1": -25, "y1": 300, "x2": 25, "y2": 350}}}},
     "v": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -25, "y1": 475, "x2": 25, "y2": 525}}}},
-    "SoC": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 625, "x2": 50, "y2": 725}, "diagram": {"x1": -25, "y1": 650, "x2": 25, "y2": 700}}}},
-    "engine_speed": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 800, "x2": 50, "y2": 900}, "diagram": {"x1": -25, "y1": 825, "x2": 25, "y2": 875}}}},
+    "SoC": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 800, "x2": 50, "y2": 900}, "diagram": {"x1": -25, "y1": 825, "x2": 25, "y2": 875}}}},
+    "engine_speed": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 625, "x2": 50, "y2": 725}, "diagram": {"x1": -25, "y1": 650, "x2": 25, "y2": 700}}}},
     "P_engine": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 50, "x2": 1050, "y2": 150}, "diagram": {"x1": 975, "y1": 75, "x2": 1025, "y2": 125}}}},
     "tau_engine": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 210, "x2": 1050, "y2": 310}, "diagram": {"x1": 975, "y1": 235, "x2": 1025, "y2": 285}}}},
     "engine_on": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 370, "x2": 1050, "y2": 470}, "diagram": {"x1": 975, "y1": 395, "x2": 1025, "y2": 445}}}},
     "engage": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 530, "x2": 1050, "y2": 630}, "diagram": {"x1": 975, "y1": 555, "x2": 1025, "y2": 605}}}},
     "tau_machine": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 690, "x2": 1050, "y2": 790}, "diagram": {"x1": 975, "y1": 715, "x2": 1025, "y2": 765}}}},
     "tau_friction": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 850, "x2": 1050, "y2": 950}, "diagram": {"x1": 975, "y1": 875, "x2": 1025, "y2": 925}}}},
+    "available_torque": {"Dyad": {"placement": {"icon": {"x1": 150, "y1": 950, "x2": 250, "y2": 1050, "rot": 270}, "diagram": {"x1": 175, "y1": 975, "x2": 225, "y2": 1025, "rot": 270}}}},
+    "T_lim": {"Dyad": {"placement": {"icon": {"x1": 750, "y1": 950, "x2": 850, "y2": 1050, "rot": 270}, "diagram": {"x1": 775, "y1": 975, "x2": 825, "y2": 1025, "rot": 270}}}},
     "engine": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 150, "x2": 600, "y2": 350}}}},
     "boost": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 400, "x2": 600, "y2": 600}}}},
     "charge": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 650, "x2": 600, "y2": 850}}}}

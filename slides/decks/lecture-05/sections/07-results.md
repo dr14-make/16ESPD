@@ -232,16 +232,7 @@ routeAlias: build-charge-sustaining
 <div class="grid grid-cols-[1.1fr_1fr] gap-8 items-start">
 <div>
 
-<div class="placeholder">
-
-**Screenshot: `step04-charge-sustaining.png`**
-
-The hybrid WLTC bench with the SoC-corrected fuel block reading the fuel flow, the battery power
-and the distance.
-
-To capture: Studio screenshot of the `meter` block in the `P2HybridWLTC` diagram
-
-</div>
+![The meter in P2HybridWLTC: the powertrain's fuel flow and the vehicle speed wired in; the stored battery power enters as an equation.](/img/lecture-05/step04-charge-sustaining.png)
 
 **Given:** the SoC-corrected fuel calculation (`SoCCorrectedFuel`)
 
@@ -270,7 +261,7 @@ battery-electric <b>47.2</b></div>
 </div>
 
 <!--
-Build 04: the charge-sustaining WLTC. On the left, the hybrid bench with its fuel block in Studio.
+Build 04: the charge-sustaining WLTC. On the left, the fuel block on the hybrid bench in Studio.
 
 Your hybrid bench already carries the library's fuel block, SoCCorrectedFuel, wired since the first
 build; step 4 adds nothing to it. You run the full 1800 seconds and read the meter only at the end.

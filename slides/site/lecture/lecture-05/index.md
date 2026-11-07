@@ -6,7 +6,7 @@ title: Lecture 5 — compose a P2 hybrid powertrain
 
 # Lecture 5: compose a P2 hybrid powertrain
 
-Rehearsed in Dyad Studio 3.5.1. Code-view work is called out below; the revised powertrain diagram will be checked after these fixes land.
+Rehearsed in Dyad Studio 3.5.1. Code-view work is called out below.
 
 **What you build.** A transmission-input P2 hybrid from existing library parts: mapped engine → disconnect clutch K0 → machine shaft → controlled variator → differential → front wheels. Step 2 adds the operating-line lookup and speed-commanded variator. Steps 3 and 4 add the energy manager, clutch starts and charge-sustaining comparison.
 
@@ -106,15 +106,19 @@ Add structural Boolean `engine_stopped = false`, Real `position_start = 0.0`, an
 
 ::: tip Checkpoint 1a — wiring
 
-Trace engine → K0 → shared machine/variator input → variator → differential → front wheels. All powertrain supports reach `mount`; there is one final drive and no launch clutch. The four fixed-mode commands and nine outputs remain accessible on `powertrain`. This is a structural checkpoint, not evidence that the engine-only car can launch.
+In code view, trace engine → K0 → shared machine/variator input → variator → differential → front wheels; the diagram below leaves out the connections inside `if` blocks. All powertrain supports reach `mount`; there is one final drive and no launch clutch. The four fixed-mode commands and nine outputs remain accessible on `powertrain`. This is a structural checkpoint, not evidence that the engine-only car can launch.
 
 :::
+
+[![Studio diagram of HandsOn05.P2Powertrain: input ports on the left, engine, K0, hybrid drive and variator left to right with the speed-commanded variator below, output ports and the spline on the right, the housing support at the bottom](/lecture/lecture-05/img/step01-p2-powertrain.png)](/lecture/lecture-05/img/step01-p2-powertrain.png)
+
+The reference already carries the step-3 ports `engine_on` and `engine_torque_ref`. Studio does not draw a `connect` inside an `if` block, so every such connection appears only in code view: here `tau_ref` → `drive.tau_ref`, `N_ref` → `speed_variator.N_ref`, `cvt_pedal` → `variator.pedal`, the shaft from `k0.spline_b` through either variator to `spline`, each variator's support to `support`, and `engine.spline` → `hold.spline`.
 
 #### Code view required — your powertrain and fixture
 
 **Every connection and Initialization for step 1a:** the `P2WLTC` listing below includes the complete shaft, road, driver and meter wiring, both fixed-mode branches, and all body, wheel, brake and converter initial conditions. Build this fixture here, before step 1b; no step-2 fixture is needed.
 
-Create `MyCar.P2Powertrain` and the **separate test component** `MyCar.P2WLTC`; a powertrain with undriven inputs is not an analysis fixture. The speed-commanded option below prepares step 2; leave it false for all of step 1. `available_torque` prepares step 3 and needs no extra input. Diagram placement metadata is omitted.
+Create `MyCar.P2Powertrain` and the **separate test component** `MyCar.P2WLTC`; a powertrain with undriven inputs is not an analysis fixture. The speed-commanded option below prepares step 2; leave it false for all of step 1. `available_torque` prepares step 3 and needs no extra input. Diagram placement metadata is omitted; the `{^…}` tags on declarations and `connect` lines name it, and Studio draws anything without metadata at a default position; keeping or dropping them changes only the drawing.
 
 ```dyad
 """
@@ -173,7 +177,7 @@ relations
   initial engine.air.manifold.p = 101325.0
   initial drive.machine.rotor.phi = 0.0
   connect(engine_pedal, engine.pedal)
-  connect(engage, k0.engage)
+  connect(engage, k0.engage) {^engage_wire}
   connect(tau_ref, drive.tau_ref)
   if speed_commanded
     connect(N_ref, speed_variator.N_ref)
@@ -187,12 +191,12 @@ relations
     connect(variator.support, support)
   end
   connect(engine.spline, k0.spline_a)
-  connect(engine.support, k0.support, drive.support, support)
+  connect(engine.support, k0.support, drive.support, support) {^support_bus}
   engine_speed = engine.speed.w
-  connect(engine.tau_e, engine_torque)
+  connect(engine.tau_e, engine_torque) {^torque_wire}
   available_torque = engine.torque_map.full_load.y
-  connect(engine.mdot_fuel, mdot_fuel)
-  connect(drive.SoC, SoC)
+  connect(engine.mdot_fuel, mdot_fuel) {^fuel_wire}
+  connect(drive.SoC, SoC) {^soc_wire}
   machine_torque = drive.machine.tau
   position = k0.position
   E = drive.battery.E
@@ -254,18 +258,18 @@ test component P2WLTC
 relations
   connect(car.bus, motion.bus)
   connect(trace.y, driver.u_s)
-  connect(motion.vx, kmh.u, meter.speed)
-  connect(kmh.y, driver.u_m, split.v)
-  connect(no_ff.y, driver.u_ff)
-  connect(powertrain.spline, differential.flange_b)
-  connect(differential.flange_left, car.spin_fl)
-  connect(differential.flange_right, car.spin_fr)
-  connect(powertrain.support, mount.spline)
+  connect(motion.vx, kmh.u, meter.speed) {^vx_wire}
+  connect(kmh.y, driver.u_m, split.v) {^kmh_wire}
+  connect(no_ff.y, driver.u_ff) {^ff_wire}
+  connect(powertrain.spline, differential.flange_b) {^spline_wire}
+  connect(differential.flange_left, car.spin_fl) {^left_wire}
+  connect(differential.flange_right, car.spin_fr) {^right_wire}
+  connect(powertrain.support, mount.spline) {^mount_wire}
   connect(car.steering, straight.spline)
   connect(flat.y, roadload.grade)
-  connect(car.chassis, roadload.chassis)
+  connect(car.chassis, roadload.chassis) {^chassis_wire}
   connect(driver.y, split.tau_ref)
-  connect(powertrain.mdot_fuel, meter.mdot_fuel)
+  connect(powertrain.mdot_fuel, meter.mdot_fuel) {^fuel_wire}
   meter.P_stored = powertrain.E * powertrain.i
   if electric
     powertrain.cvt_pedal = min(max(driver.y / 150.0, 0.0), 1.0)
@@ -320,6 +324,8 @@ analysis P2ElectricWLTCTransient
   model = P2ElectricWLTC()
 end
 ```
+
+[![Studio diagram of the P2WLTC fixture: drive cycle, PI driver and torque split feeding the P2 powertrain, which turns the planar car's front wheels through the differential; road load below the car, vehicle-speed feedback to the driver and the fuel meter on the right](/lecture/lecture-05/img/step01-p2wltc-fixture.png)](/lecture/lecture-05/img/step01-p2wltc-fixture.png)
 
 #### Fell behind?
 
@@ -562,17 +568,17 @@ In the fixture, wire:
 ```dyad
 connect(car.bus, motion.bus)
 connect(trace.y, driver.u_s)
-connect(motion.vx, kmh.u, meter.speed)
-connect(kmh.y, driver.u_m)
-connect(no_ff.y, driver.u_ff)
-connect(powertrain.spline, differential.flange_b)
-connect(differential.flange_left, car.spin_fl)
-connect(differential.flange_right, car.spin_fr)
-connect(powertrain.support, mount.spline)
+connect(motion.vx, kmh.u, meter.speed) {^vx_wire}
+connect(kmh.y, driver.u_m) {^kmh_wire}
+connect(no_ff.y, driver.u_ff) {^ff_wire}
+connect(powertrain.spline, differential.flange_b) {^spline_wire}
+connect(differential.flange_left, car.spin_fl) {^left_wire}
+connect(differential.flange_right, car.spin_fr) {^right_wire}
+connect(powertrain.support, mount.spline) {^mount_wire}
 connect(car.steering, straight.spline)
 connect(flat.y, roadload.grade)
-connect(car.chassis, roadload.chassis)
-connect(powertrain.mdot_fuel, meter.mdot_fuel)
+connect(car.chassis, roadload.chassis) {^chassis_wire}
+connect(powertrain.mdot_fuel, meter.mdot_fuel) {^fuel_wire}
 ```
 
 Declare `variable N_target::Real`, the commanded input speed, and add the signal equations
@@ -692,7 +698,7 @@ sampled engine-speed minimum is 815.95 rpm on `0:0.01:1800`, not a continuous-ti
 
 :::
 
-[![Studio diagram of the operating-line WLTC fixture with driver, powertrain, differential, planar car and road load](/lecture/lecture-05/img/step02-operating-line-diagram.png)](/lecture/lecture-05/img/step02-operating-line-diagram.png)
+[![Studio diagram of the operating-line WLTC fixture: driver, operating-line table and P2 powertrain, which turns the planar car through the differential; road load, speed feedback and fuel meter](/lecture/lecture-05/img/step02-operating-line-diagram.png)](/lecture/lecture-05/img/step02-operating-line-diagram.png)
 
 #### Fell behind?
 
@@ -753,17 +759,17 @@ test component P2OperatingLineWLTC
 relations
   connect(car.bus, motion.bus)
   connect(trace.y, driver.u_s)
-  connect(motion.vx, kmh.u, meter.speed)
-  connect(kmh.y, driver.u_m)
-  connect(no_ff.y, driver.u_ff)
-  connect(powertrain.spline, differential.flange_b)
-  connect(differential.flange_left, car.spin_fl)
-  connect(differential.flange_right, car.spin_fr)
-  connect(powertrain.support, mount.spline)
+  connect(motion.vx, kmh.u, meter.speed) {^vx_wire}
+  connect(kmh.y, driver.u_m) {^kmh_wire}
+  connect(no_ff.y, driver.u_ff) {^ff_wire}
+  connect(powertrain.spline, differential.flange_b) {^spline_wire}
+  connect(differential.flange_left, car.spin_fl) {^left_wire}
+  connect(differential.flange_right, car.spin_fr) {^right_wire}
+  connect(powertrain.support, mount.spline) {^mount_wire}
   connect(car.steering, straight.spline)
   connect(flat.y, roadload.grade)
-  connect(car.chassis, roadload.chassis)
-  connect(powertrain.mdot_fuel, meter.mdot_fuel)
+  connect(car.chassis, roadload.chassis) {^chassis_wire}
+  connect(powertrain.mdot_fuel, meter.mdot_fuel) {^fuel_wire}
   meter.P_stored = powertrain.E * powertrain.i
   line.P = powertrain.engine_pedal * P_peak
   N_target = max(line.N, N_locked)
@@ -816,12 +822,12 @@ conditions from step 2. Replace the step-2 signal wiring with the following.
 
 ### Code view required — add start/stop to your powertrain
 
-In `MyCar.P2Powertrain`, add the following declarations before `relations`. Do not remove the step-2 speed-commanded option or the public `available_torque` output:
+In `MyCar.P2Powertrain`, add the following declarations before `relations`. Do not remove the step-2 speed-commanded option or the public `available_torque` output. Studio draws the two new ports stacked at the block center until they have a placement: drag each to the left edge of the diagram.
 
 ```dyad
 structural parameter start_stop::Boolean = false
-engine_on = RealInput() if start_stop
-engine_torque_ref = RealInput() if start_stop
+engine_on = RealInput() if start_stop {^engine_on}
+engine_torque_ref = RealInput() if start_stop {^engine_torque_ref}
 parameter firing_rpm::Real = 400.0
 parameter firing_width::Real(min = eps(Float64)) = 300.0
 variable firing_fraction::Real if start_stop
@@ -924,6 +930,8 @@ the efficient-speed target. Charging raises engine load and generates the surplu
 adds machine torque above the 30 kW line cap. During deceleration the existing regen blend
 uses the machine first and sends the remainder to friction brakes.
 
+[![Studio diagram of P2HybridWLTC: driver demand into the energy manager, whose outputs drive the torque-to-pedal map and the powertrain; engine speed, available torque and SoC loop back under the manager; operating-line tables above; planar car, road load and fuel meter as in step 2](/lecture/lecture-05/img/step03-hybrid-diagram.png)](/lecture/lecture-05/img/step03-hybrid-diagram.png)
+
 ### Code view required — energy accounting and analysis
 
 Add these declarations before `relations`:
@@ -1005,9 +1013,9 @@ The inverse map needs no PI trim; steady analytic torque round trips are within 
 
 ## Limits of this reference
 
-The corrected `P2Powertrain` diagram still needs a post-merge Studio check. The torque inverse assumes
-unchanged default engine and air-path calibration. Start compensation remains subject to
-the machine's current and power limits; it cannot guarantee full driver demand at every start.
+The torque inverse assumes unchanged default engine and air-path calibration. Start
+compensation remains subject to the machine's current and power limits; it cannot guarantee full
+driver demand at every start.
 The [homework](./homework) takes the same car to a series hybrid.
 
 The unchanged variator schedules **1800–6000 rpm**, above the machine's 1412 rpm loaded corner;

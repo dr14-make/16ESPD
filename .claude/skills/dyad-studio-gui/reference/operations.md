@@ -44,6 +44,11 @@ Finish). The CLI and Julia stay where HANDOVER puts them: `npx -y @juliacomputin
   does nothing. Quick-open (Ctrl+P) of a `.dyad` file opens the text editor; its "Render Diagram"
   code lens opens the diagram. Reach a tree item by scrolling the tree: `scroll_to` on its ref can
   scroll the whole Theia page and shift every coordinate.
+  Enter on a row that is already selected opens nothing: select another row first, then the target,
+  then Enter (observed on 3.5.1). Quick-open ranks recently opened files first, so with copies in
+  several modules (`HandsOn05/P2WLTC.dyad`, `Lecture5/P2WLTC.dyad`) `zoom` on the list and pick the
+  row with Down before Enter; click into the editor area first, or the keys land in the REPL
+  terminal (observed on 3.5.1).
 - **Create:**
   1. Right-click the library (`MyCar`); if no menu appears, right-click again.
   2. Click **Add Component** (or Add Module / Add Connector).
@@ -69,6 +74,9 @@ Finish). The CLI and Julia stay where HANDOVER puts them: `npx -y @juliacomputin
     line;
   - an untracked new file (`??`), stale ones from a moved component included: list it for the
     user to remove (`git restore` does not touch untracked files).
+- **Startup rewrites `.vscode/settings.json`:** opening the workspace in Studio dropped
+  `"julia.environmentPath": "${workspaceFolder}"` from the committed file (observed on 3.5.1).
+  Do not stage it; hand the user a `git restore .vscode/settings.json` line.
 - **Rename a block:** select it → **Edit Parameters** → pencil next to the name → `zoom` to see the
   name box open and selected → type → Enter. Set parameters before renaming: a rename empties the
   parameter list until the block is reselected.
@@ -88,6 +96,10 @@ Finish). The CLI and Julia stay where HANDOVER puts them: `npx -y @juliacomputin
    when their condition is false. Close the toast; the part is fine.
 
 Move a placed block by `left_click_drag` from its body.
+
+**Mirror and rotate in metadata** (observed on 3.5.1): a placement box with `y1 > y2` mirrors the
+block vertically (`x1 > x2` horizontally), and `"rot"` turns it clockwise in steps of 90. Ports and
+the instance label move with it, so a mirrored `DifferentialGear` takes `flange_b` from above.
 
 ## Ports
 
@@ -142,6 +154,22 @@ instance → **Go to definition** (opens or focuses the owner's diagram; press R
   drop raises "incompatible connectors Spline → RealInput"). Write those `connect`s in code.
 - `connect`s inside an `if` block are not drawn. `connect`s entered in code draw as diagonals; to
   tidy a diagram for a screenshot, see [Plots and screenshots](#plots-and-screenshots).
+- **Bend points** (observed on 3.5.1): tag the line `connect(a, b, c) {^speed_wire}` and give the
+  tag an entry in the file's metadata:
+  ```json
+  "speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 905, "y": 188}, {"x": 905, "y": 15}], "E": 2},
+                                    {"S": 1, "M": [], "E": 3}], "renderStyle": "standard"}}
+  ```
+  `S` and `E` are 1-based indices into the `connect`'s arguments, `M` the bend points in diagram
+  units; one edge per drawn segment chain, so a three-way `connect` takes two. Studio draws
+  `S → M… → E` as straight segments: a bend point must share its `x` or `y` with the port it follows
+  for the wire to stay orthogonal. A tag without a metadata entry is harmless.
+- **Labels** (observed on 3.5.1): every instance label sits at its component's `Dyad.labels` point,
+  default `(500, 1100)` of the icon, about 10 % of the box below it; an instance cannot move it. A
+  wire that leaves a bottom-center port (supports, `chassis`) straight down crosses its own block's
+  label, so leave such ports sideways along the box edge. A port on the outline's top or bottom edge
+  draws its label inside the diagram, where its own wire crosses it: keep outline ports on the left
+  and right edges.
 
 ## Parameters
 
@@ -255,6 +283,13 @@ automatic plot, even with 8 GB available beforehand.
   `screenshot` time out (30 s): move the cursor off the canvas first. `zoom` with `save_to_disk`
   writes a full-resolution PNG of the region (honoring `scale`, so save at scale 1); `screenshot`
   with `save_to_disk` writes a JPEG of the frame.
+- **Crop around the toolbar** (observed on 3.5.1): with the sidebar hidden the canvas toolbar
+  floats over the top-left of the outline, so pan the diagram right before cropping (two
+  horizontal scroll ticks). Scroll pans in steps of about 85 px and dragging empty canvas does not
+  pan; Reset view fits the outline exactly, so ports on its edges are half outside the frame. To
+  get a bottom-edge port and its label into a shot, keep every port at least 130 units below the
+  top and scroll down one tick. At 4× zoom the canvas does not scroll far enough to show a block
+  in the outline's top-right corner.
 - **Tidy a diagram for a shot** by editing placements on disk (diagram closed): set each block's
   `metadata._links.<name>.Dyad.placement.diagram` box to a clean grid, and line the ports up in a
   column on the outline (the `x1`/`x2` of one edge, evenly spaced `y1`/`y2`). A code-entered wire

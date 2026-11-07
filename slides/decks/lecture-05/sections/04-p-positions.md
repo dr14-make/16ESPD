@@ -508,16 +508,7 @@ routeAlias: build-p2
 <div class="grid grid-cols-[1.1fr_1fr] gap-8 items-start">
 <div>
 
-<div class="placeholder">
-
-**Screenshot: `step01-p2-powertrain.png`**
-
-The finished P2 powertrain in Studio: engine → K0 → machine → CVT → differential, the battery on
-the machine.
-
-To capture: Studio screenshot of the `P2Powertrain` diagram
-
-</div>
+![P2Powertrain in Studio: engine, K0, hybrid drive and variator left to right, command ports on the left, outputs and the spline on the right, the housing support at the bottom.](/img/lecture-05/step01-p2-powertrain.png)
 
 **Given:** `DisconnectClutch` (K0 and its actuator) · `HybridDrive` (30 kW, 1.4 kWh)
 
