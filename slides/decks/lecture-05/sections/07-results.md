@@ -48,7 +48,7 @@ from its store, not from the well or the grid.
 </div>
 <div>
 
-<img src="/figures/07-three-powertrains.svg" class="w-full" style="max-height: 24rem" alt="WLTC fuel in L/100 km by phase for the conventional car, the same car with its CVT on the best-BSFC line, and the P2 hybrid SoC-corrected. Low: 7.13, 6.63 and 3.52. Medium: 5.77, 5.32 and 3.41. High: 5.12, 4.82 and 3.73. Extra High: 5.68, 5.59 and 5.00. Whole cycle: 5.72, 5.44 and 4.09. The hybrid saves most in the Low phase, about half, and least in Extra High."/>
+<img src="/figures/07-three-powertrains.svg" class="w-full" style="max-height: 30rem" alt="WLTC fuel in L/100 km by phase for the conventional car, the same car with its CVT on the best-BSFC line, and the P2 hybrid SoC-corrected. Low: 7.13, 6.63 and 3.52. Medium: 5.77, 5.32 and 3.41. High: 5.12, 4.82 and 3.73. Extra High: 5.68, 5.59 and 5.00. Whole cycle: 5.72, 5.44 and 4.09. The hybrid saves most in the Low phase, about half, and least in Extra High."/>
 
 </div>
 </div>

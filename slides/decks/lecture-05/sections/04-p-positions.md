@@ -73,7 +73,7 @@ routeAlias: p0-belt
 
 </div>
 
-<div class="grid grid-cols-[1fr_1fr] gap-8 items-start">
+<div class="grid grid-cols-[1fr_1fr] gap-8 items-start mt-4">
 <div class="text-[0.9rem]">
 
 On the accessory belt, where the alternator sits: **linked to the engine, never separated**. The
@@ -135,7 +135,7 @@ routeAlias: p1-crank
 
 </div>
 
-<div class="grid grid-cols-[1fr_1fr] gap-8 items-start">
+<div class="grid grid-cols-[1fr_1fr] gap-8 items-start mt-4">
 <div class="text-[0.9rem]">
 
 Directly on the crankshaft, before K0: **no belt to slip**, so more torque than a P0. Generator when
@@ -196,7 +196,7 @@ routeAlias: p2-after-k0
 
 </div>
 
-<div class="grid grid-cols-[1fr_1fr] gap-8 items-start">
+<div class="grid grid-cols-[1fr_1fr] gap-8 items-start mt-4">
 <div class="text-[0.9rem]">
 
 After K0, on the transmission input, by a belt or integrated through a gear mesh. **Open K0** and
@@ -254,7 +254,7 @@ routeAlias: p3-output
 
 </div>
 
-<div class="grid grid-cols-[1fr_1fr] gap-8 items-start">
+<div class="grid grid-cols-[1fr_1fr] gap-8 items-start mt-4">
 <div class="text-[0.9rem]">
 
 Geared to the transmission output: its speed is **a multiple of the wheel speed**, whatever the
@@ -309,7 +309,7 @@ routeAlias: p4-rear-axle
 
 </div>
 
-<div class="grid grid-cols-[1fr_1fr] gap-8 items-start">
+<div class="grid grid-cols-[1fr_1fr] gap-8 items-start mt-4">
 <div class="text-[0.9rem]">
 
 On the rear axle through its own gear, or in the wheel hubs. The engine drives the front axle, the
