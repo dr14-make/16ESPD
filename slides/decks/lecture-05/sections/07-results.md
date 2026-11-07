@@ -118,7 +118,7 @@ credit for stopping the engine: in Chalmers' own numbers, a 12 volt stop/start a
 percent on the WLTC. Against a baseline that idles, our savings will read high next to Schaeffler
 and Braunschweig. And our CVT can move the engine toward the line without a battery, 4.9 percent in
 build 02, which a stepped gearbox cannot, so part of the operating-point saving is already the
-CVT's. The plan therefore compares our table for ranking and order of magnitude, not to the percent.
+CVT's. So we compare our table for ranking and order of magnitude, not to the percent.
 -->
 
 ---
@@ -147,8 +147,8 @@ routeAlias: p-position-table
 The second comparison, and the demo: the same parts on the other four flanges.
 
 The left column is the band each position reaches in the three studies, at the 15 kilowatts they
-compare at; it is the reality-anchor table of the plan. P0, with 15 to 16 kilowatts: 4 to 9 percent,
-Schaeffler's 6.6 at 16 kilowatts and Chalmers' 8.9 at 15 among them. P1: 8.5 to 10.4. P2: 12 to 25;
+compare at; it is the reference table we check our results against. P0, with 15 to 16 kilowatts: 4
+to 9 percent, Schaeffler's 6.6 at 16 kilowatts and Chalmers' 8.9 at 15 among them. P1: 8.5 to 10.4. P2: 12 to 25;
 that spread is mostly the baseline, with or without stop/start. P3: 15 to 25. P4 with a P0 for
 starting: about 15.5, Schaeffler's number. The ranking is the same in all three studies: P0 below
 P1, far below P2, P3 and P4, which are close to each other.
@@ -239,11 +239,11 @@ routeAlias: build-charge-sustaining
 The hybrid WLTC bench with the SoC-corrected fuel block reading the fuel flow, the battery power
 and the distance.
 
-Captured with the build guide, #113
+To capture: Studio screenshot of the `meter` block in the `P2HybridWLTC` diagram
 
 </div>
 
-**Given:** the SoC-corrected fuel calculation (#199)
+**Given:** the SoC-corrected fuel calculation (`SoCCorrectedFuel`)
 
 [page: step 4](../lecture/lecture-05/#step-4) · reference `dyad/HandsOn05/P2HybridWLTC.dyad`
 
@@ -270,9 +270,9 @@ battery-electric <b>47.2</b></div>
 </div>
 
 <!--
-Build 04: the charge-sustaining WLTC. The screenshot comes with the build guide of issue 113.
+Build 04: the charge-sustaining WLTC. On the left, the hybrid bench with its fuel block in Studio.
 
-Your hybrid bench already carries the library's fuel block from issue 199, wired since the first
+Your hybrid bench already carries the library's fuel block, SoCCorrectedFuel, wired since the first
 build; step 4 adds nothing to it. You run the full 1800 seconds and read the meter only at the end.
 The block reads the engine's fuel flow, the power into and out of
 the battery's store, open-circuit voltage times current, and the distance. Stored, not terminal:
@@ -280,7 +280,7 @@ the terminal power would count the battery's resistance loss as charge it never 
 reports the raw fuel, the net battery energy and the SoC-corrected fuel, in liters and in
 megajoules per 100 kilometers. Then you put the three cars side by side.
 
-The checkpoint, from the plan. First the honesty check: the state of charge at the end must be
+The checkpoint. First the honesty check: the state of charge at the end must be
 within 2 percent of capacity of its start. Then the numbers: the SoC-corrected liters per 100
 kilometers for the conventional car and the hybrid, and megajoules per 100 kilometers for all three.
 The electric car's 47.2 is Lecture 4's. The conventional car's 5.72 is this bench's reference run;

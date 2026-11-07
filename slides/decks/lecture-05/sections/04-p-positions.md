@@ -280,7 +280,7 @@ so stop/start **needs a starter**.
 
 <!--
 P3. Point at the box after the CVT: the machine is connected through a gear mesh to the
-transmission's output shaft. In our car, that is the CVT output, as the plan puts it.
+transmission's output shaft. In our car, that is the CVT output.
 
 Its speed is a multiple of the wheel speed, fixed by its own gear, whatever the CVT's ratio does. So
 unlike P2, the CVT cannot move the machine to a better speed.
@@ -348,7 +348,7 @@ cannot start the engine: it needs a starter.
 Recuperation is the highest in the deck's rating: no engine drag, and no transmission between the
 wheel and the machine, only its own gear. It can creep and drive electrically with the engine off.
 
-In our car the plan puts it on the rear flanges with its own reduction, one machine for the axle; it
+In our car it sits on the rear flanges with its own reduction, one machine for the axle; it
 is not torque vectoring.
 
 The green box is from the deck's slide on machines for hybrids: a motor integral with the wheel is the
@@ -493,7 +493,7 @@ decoupled three. Starting the engine: P0 and P1 directly, P2 by closing K0; P3 a
 row is particular to our car: only P2 sits before the CVT, so the CVT's ratio moves the machine's
 speed as well as the engine's.
 
-So P2 is the one column with a tick in every row. That is settled decision S1 of the plan: one
+So P2 is the one column with a tick in every row. That is why the build uses P2: one
 energy manager on a P2 exercises every mode, and moving the machine to the other four positions is
 the same experiment four more times. You build P2, and I show the other four as one table in section
 07.
@@ -515,11 +515,11 @@ routeAlias: build-p2
 The finished P2 powertrain in Studio: engine → K0 → machine → CVT → differential, the battery on
 the machine.
 
-Captured with the build guide, #111
+To capture: Studio screenshot of the `P2Powertrain` diagram
 
 </div>
 
-**Given:** the K0 clutch with its actuator (#197), the 30 kW machine and 1.4 kWh battery (#198)
+**Given:** `DisconnectClutch` (K0 and its actuator) · `HybridDrive` (30 kW, 1.4 kWh)
 
 [page: steps 1a–1c](../lecture/lecture-05/#step-1a) · reference `dyad/HandsOn05/P2Powertrain.dyad`, `dyad/HandsOn05/P2WLTC.dyad`
 
@@ -543,8 +543,7 @@ L/100 km · electric only, WLTC Low: speed error <b>1.50</b> km/h, SoC 0.60 → 
 </div>
 
 <!--
-Build 01: the P2 powertrain. On the left will be the finished powertrain in Studio; the screenshot
-is captured with the build guide, issue 111.
+Build 01: the P2 powertrain. On the left, the finished powertrain in Studio.
 
 The italic line is the build. Lecture 2's mapped engine, then the K0 clutch, which the library gives
 you with its actuator. Then the hybrid drive: a 30 kilowatt machine with its converter and a 1.4

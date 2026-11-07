@@ -60,10 +60,9 @@ closed and friction is large, so BSFC is high. At low speed and high torque the 
 to the full-load line. The best-BSFC line joins, for every power, the speed and torque where BSFC is
 lowest. It starts near idle, runs up through the region of the best point, and ends at peak power.
 
-The figure will show it over Lecture 2's map. Issue 200 computes the line from the course's own
-engine maps and draws it; its acceptance check is that the line's minimum is the map's global
-minimum, the best point you already know: 232 grams per kilowatt-hour at 3000 rpm and 99 newton
-meters.
+The figure shows the line over Lecture 2's map. A course script computes it from the engine maps.
+It passes through the map's global minimum, the best point you already know: 232 grams per
+kilowatt-hour at 3000 rpm and 99 newton meters; the course's plausibility test checks that.
 
 Note that the line is not the best point. The car asks for a power; the line says how to give that
 power best. To run always at the best point you need a battery to absorb the difference, and that is
@@ -119,8 +118,8 @@ Even steady cruise is off the line: at 90 km/h Lecture 2's CVT schedule runs the
 power must still equal the road's.</div>
 
 <!--
-How does the car put the engine on the line? With the CVT, the free degree of freedom that settled
-decision S2 of the plan chose it for.
+How does the car put the engine on the line? With the CVT: its ratio is the free degree of freedom
+that lets the engine speed be chosen for a given wheel speed.
 
 Take the power the driver asks for. The best-BSFC line gives the engine speed for that power, omega
 e star. The CVT's ratio is that speed divided by the speed of its output, which the wheels set. So
@@ -262,11 +261,11 @@ routeAlias: build-operating-line
 The P2 powertrain with the operating-line table between the requested power and the CVT's ratio
 command.
 
-Captured with the build guide, #112
+To capture: Studio screenshot of the `P2OperatingLineWLTC` diagram
 
 </div>
 
-**Given:** the best-BSFC line as a data table (#200)
+**Given:** the best-BSFC line as a data table (`OperatingLine`)
 
 [page: step 2](../lecture/lecture-05/#step-2) · reference `dyad/HandsOn05/P2OperatingLineWLTC.dyad`
 
@@ -289,8 +288,8 @@ powertrain.N_ref = N_target
 </div>
 
 <!--
-Build 02: the operating line. The screenshot will show your P2 powertrain with the line between the
-requested power and the CVT; it is captured with the build guide, issue 112.
+Build 02: the operating line. On the left, your P2 powertrain with the line between the requested
+power and the CVT.
 
 The library gives you the best-BSFC line as a data table. The powertrain gets a switch,
 speed_commanded, that swaps the pedal-scheduled CVT for one that holds a commanded engine speed.

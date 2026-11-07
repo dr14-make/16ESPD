@@ -62,7 +62,7 @@ routeAlias: rules
 
 <div class="diagram-wide">
 
-![The modes over the plane of the power the driver asks for at the wheels, horizontally, and the state of charge, vertically. Negative power, braking: regen, the machine brakes first with Lecture 4's blending. From zero to P_ev: electric only, K0 open, engine off. From P_ev to P_line,max: engine on its line, machine idle. Above P_line,max: boost, engine and machine. Below the SoC thresholds, from zero to P_line,max: charge, the engine on its line above the demand and the machine generating the rest; above P_line,max: the engine alone above its line, as boost fades out with low charge. Two dashed lines mark the SoC hysteresis: charge on at the lower, charge off at the upper.](/diagrams/06-modes.svg)
+![The modes over the plane of the power the driver asks for at the wheels, horizontally, and the state of charge, vertically. Negative power, braking: regen, the machine brakes first with Lecture 4's blending. From zero to the electric-drive threshold, P ev: electric only, K0 open, engine off. From P ev to the line's power cap, P line max: engine on its line, machine idle. Above P line max: boost, engine and machine. Below the SoC thresholds, from zero to P line max: charge, the engine on its line above the demand and the machine generating the rest; above P line max: the engine alone above its line, as boost fades out with low charge. Two dashed lines mark the SoC hysteresis: charge on at the lower, charge off at the upper.](/diagrams/06-modes.svg)
 
 </div>
 <div class="grid grid-cols-2 gap-x-8 text-[0.85rem] mt-2">
@@ -86,8 +86,9 @@ bench **0.52 / 0.55**
 </div>
 
 <!--
-The energy manager we build is rule-based, settled decision S3 of the plan. Five modes, laid out on
-a plane: horizontally, the power the driver asks for at the wheels, negative when braking;
+The energy manager we build is rule-based: fixed rules on demand and charge, no optimizer. Five
+modes, laid out on a plane: horizontally, the power the driver asks for at the wheels, negative
+when braking;
 vertically, the battery's state of charge.
 
 One, regen: whenever the driver brakes, the machine brakes first, through Lecture 4's series
@@ -161,9 +162,8 @@ The cure is two thresholds and a memory. Charging switches on below SoC on and o
 and between the two it stays as it was. That is the latch on the slide. The same goes for starting
 the engine against the electric-only threshold: start above one power, stop below a lower one.
 
-You have the part already: Lecture 2's `HysteresisLatch`. It follows the house rule of Lecture 2's
-settled decision S7, continuous latches without events, so the solver does not have to stop and
-restart at every switch.
+You have the part already: Lecture 2's `HysteresisLatch`. It follows Lecture 2's house rule,
+continuous latches without events, so the solver does not have to stop and restart at every switch.
 
 The window itself keeps the battery away from both ends: room above the top to take a regen event,
 and reserve below the bottom for electric driving and boost. The library's defaults charge below
@@ -206,12 +206,12 @@ The conventional car's WLTC: **43.0 MJ** of fuel.
 </div>
 
 <!--
-Settled decision S4 of the plan: results are charge-sustaining. A hybrid that ends the WLTC with
+Every result is charge-sustaining. A hybrid that ends the WLTC with
 less charge than it started has borrowed fuel from the battery: energy the engine put in some
 earlier day. Report its raw fuel and it looks better than it is.
 
 Two defenses. First a check: the state of charge at the end must be within plus or minus 2 percent
-of the battery's capacity of its start. That band is the plan's, an assumed charge-sustaining
+of the battery's capacity of its start. That band is our choice, an assumed charge-sustaining
 tolerance. Second a correction: turn the net battery energy into the fuel it would have taken to put
 it back. The formula: the corrected fuel volume is the raw fuel plus the battery energy at the start
 minus at the end, divided by the engine-to-battery efficiency, the fuel's heating value and its
@@ -260,14 +260,14 @@ $$
   time; the benchmark the others are measured against.
 - **Rules**: what we build; transparent, and tuned by reading them.
 
-<div class="handson">Not in today's build: settled decision S3.</div>
+<div class="handson">Not in today's build: our manager stays rule-based.</div>
 
 </div>
 </div>
 
 <!--
 What the industry uses when rules are not enough: ECMS, the equivalent consumption minimization
-strategy. One slide, not built today; settled decision S3 keeps the build rule-based.
+strategy. One slide, not built today; the build stays rule-based.
 
 The idea: at every instant, consider every possible split u of the demand between the engine and the
 machine, and choose the one that minimizes an equivalent fuel flow. That is the real fuel flow plus a
@@ -302,12 +302,12 @@ routeAlias: build-energy-manager
 The energy manager in Studio: demand, SoC and speeds in; the three latches; engine on, K0, engine
 torque and machine torque out.
 
-Captured with the build guide, #113
+To capture: Studio screenshot of the `manager` block in the `P2HybridWLTC` diagram
 
 </div>
 
-**Given:** `Vehicle.EnergyManager`, built on Lecture 2's `HysteresisLatch` and Lecture 4's regen
-blending · `Vehicle.TorqueToPedal`, the engine's inverse map
+**Given:** `EnergyManager`, built on Lecture 2's `HysteresisLatch` and Lecture 4's regen
+blending · `TorqueToPedal`, the engine's inverse map
 
 [page: step 3](../lecture/lecture-05/#step-3) · reference `dyad/HandsOn05/P2HybridWLTC.dyad`
 
@@ -334,8 +334,7 @@ speed error <b>1.32</b> km/h</div>
 </div>
 
 <!--
-Build 03: the energy manager. The screenshot will show it in Studio, captured with the build guide
-of issue 113.
+Build 03: the energy manager. On the left, the manager in Studio.
 
 The library gives you the rules as one block, the energy manager: three of Lecture 2's latches, on
 the demand for starting the engine, on the line's cap for boost, and on the state of charge for
