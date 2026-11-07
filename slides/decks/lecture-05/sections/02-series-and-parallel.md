@@ -29,6 +29,8 @@ routeAlias: series-hybrid
 
 ![Block diagram of a series hybrid. The engine turns a generator, mechanical to electrical, which feeds a DC link; the battery is on the same link, and in a plug-in the grid charges it; the link feeds the motor, electrical to mechanical, which alone drives the wheels, and regen goes back to the battery. No shaft runs from the engine to the wheels.](/diagrams/02-series.svg)
 
+<div class="caption">Orange: electric connections · black: shafts</div>
+
 </div>
 <div class="text-[0.95rem]">
 
@@ -52,21 +54,26 @@ motor in each wheel.
 The first architecture, the series hybrid.
 
 The vehicle is driven by one or more electric motors, and only by them. Point at the drawing: the
-orange lines are electrical, the black ones shafts, and there is no shaft from the engine to the
-wheels. The engine only turns a generator.
+orange lines are electrical, the black ones are shafts, and there is no shaft from the engine to the
+wheels. The engine only turns a generator. The orange dot, the DC link, is the electrical junction
+that the generator, the battery and the motor all share.
 
 The motor is fed from the engine and its generator, from the battery, or from both when extra power
 is needed. The battery is charged by the engine through the generator, by regenerative braking when
-the motor runs backwards as a generator, and in a plug-in also from the grid, the dashed box.
+the motor works as a generator and brakes the car, and in a plug-in also from the grid, the dashed
+box.
 
 So the engine is completely free of the road: it can run at its best point whatever the car does, or
 stand still. The price is in the two labels above the generator and the motor: every joule from the
 engine is converted twice, mechanical to electrical and back. And the motor must be big enough to
 drive the car alone.
 
-The original deck names where that is used: diesel-electric locomotives, and special all-terrain
-vehicles with a separately controlled motor in each wheel. Keep the series hybrid in mind: it is your
-homework.
+The take-away from the drawing is its bottom line: no shaft from the engine to the wheels, so every
+joule from the engine is converted twice.
+
+The original course deck names where that is used: diesel-electric locomotives, and special
+all-terrain vehicles with a separately controlled motor in each wheel. Keep the series hybrid in
+mind: it is your homework.
 -->
 
 ---
@@ -79,6 +86,9 @@ routeAlias: parallel-hybrid
 <div>
 
 ![Block diagram of a parallel hybrid. The engine drives through the K0 clutch onto a shaft that the motor also drives, then through the transmission, whose ratio ties the engine speed to the wheels, to the wheels; the battery feeds the motor.](/diagrams/02-parallel.svg)
+
+<div class="caption">Orange: electric connections · black: shafts · K0: the clutch that cuts off the
+engine</div>
 
 </div>
 <div class="text-[0.95rem]">
@@ -104,16 +114,17 @@ electric motors working through the transmission or coupled directly to the whee
 once. In the drawing the motor sits on the same shaft as the engine, before the transmission; a motor
 on the wheels is the other option, and we come back to it as P4.
 
-Point at the black line from the engine to the wheels: there is a mechanical path, so when the engine
-drives, its power reaches the road without being converted twice. And the motor only helps, so it can
-be much smaller than a series hybrid's.
+Same colors as before: orange is electrical, black is shafts. Point at the black line from the engine
+to the wheels: there is a mechanical path, so when the engine drives, its power reaches the road
+without being converted twice. That is the take-away of this drawing. And the motor only helps, so
+it can be much smaller than a series hybrid's.
 
 The price is under the transmission: the engine's speed is tied to the wheels through its ratio. The
 engine cannot simply sit at its best point.
 
 This is what most passenger hybrids are, and what you build today. The drawing already shows the
-clutch K0 between the engine and the motor; section 04 is about where exactly the motor sits, and
-why that clutch matters.
+clutch K0 between the engine and the motor: the clutch that can cut the engine off from the rest of
+the driveline. Section 04 is about where exactly the motor sits, and why that clutch matters.
 -->
 
 ---
@@ -127,6 +138,8 @@ routeAlias: series-parallel-clutch
 
 ![The series hybrid's diagram with one addition: a clutch on the engine-generator shaft, closed at steady cruise, joins the engine's shaft to the motor's shaft above the wheels. With the clutch open it is a series hybrid; with it closed the engine drives the wheels directly.](/diagrams/02-series-parallel-clutch.svg)
 
+<div class="caption">Orange: electric connections · black: shafts</div>
+
 </div>
 <div class="text-[0.95rem]">
 
@@ -139,15 +152,16 @@ beats converting every joule twice.
 **Used in** Honda's current hybrids.
 
 **Against the power split** of <Link to="power-split">section 05</Link>: a few fixed modes,
-switched by a clutch, not a continuously variable split.
+switched by a clutch, not a split that changes smoothly.
 
 </div>
 </div>
 
 <!--
-One layout sits between the two: the series-parallel hybrid with a clutch. Point at the drawing: it
-is the series diagram from two slides ago, with one clutch added on the engine's shaft, after the
-generator, leading to the wheel path.
+One layout sits between the two: the series-parallel hybrid with a clutch. Point at the drawing,
+same colors, orange electrical and black shafts: it is the series diagram from two slides ago, with
+one clutch added on the engine's shaft, after the generator, and a new black shaft from it to the
+wheels.
 
 At low speed the clutch is open and the car is a series hybrid: the engine turns the generator, the
 motor alone drives the wheels, and the engine is free of the road, where that freedom pays most.
@@ -160,7 +174,8 @@ the parallel's where the parallel is good.
 Honda's current hybrids use this layout. No numbers on it today: our research notes have none.
 
 The last line is the contrast with the power-split hybrid of section 05, the Prius: there a planetary
-gear splits the engine's power continuously between a mechanical and an electrical path. Here a
+gear, a set of gears turning around a central gear, splits the engine's power smoothly between a
+mechanical and an electrical path. Here a
 clutch switches between a few fixed modes.
 -->
 
@@ -193,10 +208,11 @@ routeAlias: series-or-parallel
 </div>
 </div>
 
-<div class="handson">Homework: a series hybrid on prepared ground. The library gives an
-engine-generator with its mount and a WLTC bench; you wire the series layout and write the SoC
-thermostat. Targets: charge-sustaining within ±0.02 SoC, at most 5.60 L/100 km
-SoC-corrected.</div>
+<div class="handson">Homework: a series hybrid, with prepared parts. The library gives an
+engine-generator with its mount and a WLTC test model; you wire the series layout and write the
+battery's thermostat: engine on when the charge (SoC) is low, off when it is high. Targets: the
+battery ends within ±0.02 of its starting SoC; at most 5.60 L/100 km, with the fuel corrected for
+the change in charge.</div>
 
 [page: the homework](../lecture/lecture-05/homework)
 
@@ -207,8 +223,8 @@ The series hybrid's strength is that the engine is free of the road: any speed a
 its single best point, or off. Its weakness is the double conversion: generator, converter, motor,
 a few percent lost each time, as you measured on Lecture 4's chain. And it needs three full
 machines: an engine, a generator that takes all its power, and a motor that drives the car alone.
-It is simple to control: the engine is a power source that keeps the battery in a window, a
-thermostat.
+It is simple to control: the engine is a power source that keeps the battery in a window, like a
+thermostat keeps a room warm.
 
 The parallel hybrid's strength is the single mechanical path, and a machine that can be small,
 because it only helps. Its weakness is the engine's speed tied to the wheels. The last line is why
@@ -216,11 +232,13 @@ our car is a good place to learn this: the CVT has a free ratio, so it gives bac
 freedom a series hybrid has. Section 05 uses exactly that.
 
 The green box is the homework. The series hybrid is the same shape as the fuel-cell car of the extra
-pack, so you get it on prepared ground: the library ships an engine-generator part with its mount
-and a WLTC bench. You wire the series layout and write the thermostat that starts the engine when
-the state of charge is low and stops it when it is high. To pass, the car ends the WLTC within
-0.02 of the SoC it started with, and burns at most 5.60 liters per 100 kilometers, SoC-corrected:
-a few percent under the conventional car. The homework page has the full list.
+pack, so you get prepared parts: the library ships an engine-generator part with its mount and a
+WLTC test model. You wire the series layout and write the thermostat that starts the engine when
+the state of charge is low and stops it when it is high. State of charge, SoC, is how full the
+battery is, from 0 to 1. To pass, the car ends the WLTC within 0.02 of the SoC it started with; we
+call that charge-sustaining. And it burns at most 5.60 liters per 100 kilometers, after the fuel is
+corrected for any change in the battery's charge: a few percent under the conventional car. The
+homework page has the full list.
 -->
 
 ---
@@ -241,10 +259,10 @@ routeAlias: other-hybrids
 </div>
 <div>
 
-- **Flywheels and supercapacitors**: very high specific power, they take and give energy quickly;
-  poor specific energy.
+- **Flywheels and supercapacitors**: very high power per kilogram, they take and give energy
+  quickly; but little energy per kilogram.
 - **Solar**: record-setting cars in races across Australia; on a road car the panel area limits it
-  to a range extender.
+  to a little extra range.
 
 </div>
 </div>
@@ -260,12 +278,13 @@ zinc-air, in the same fueled group.
 Electric vehicles on supply lines: trolleybuses and trams, used for city transport, with the power
 from overhead lines; many now carry a battery to cross the gaps.
 
-Flywheels and supercapacitors: both have very high specific power, they take in and give out
-energy very quickly, but they store little per kilogram. That makes them good for braking and
+Flywheels and supercapacitors: both have very high specific power, meaning power per kilogram; they
+take in and give out energy very quickly. But their specific energy, the energy stored per
+kilogram, is small. That makes them good for braking and
 launching, poor as the only store.
 
 Solar cars: the deck mentions the record runs in the solar races across Australia. On a road car
-the area of the roof limits what the sun can give, so solar is at most a range extender. No numbers
+the area of the roof limits what the sun can give, so solar can at most add a little range. No numbers
 on this slide: none of them come back today.
 -->
 
