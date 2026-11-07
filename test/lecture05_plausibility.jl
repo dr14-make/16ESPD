@@ -313,6 +313,30 @@ end
 
 
 @testset "P2 powertrain" begin
+    @testset "HandsOn05 canvas wiring" begin
+        folder = joinpath(@__DIR__, "..", "dyad", "HandsOn05")
+        for file in filter(f -> endswith(f, ".dyad"), readdir(folder; join = true))
+            text = read(file, String)
+            outputs = [m.captures[1] for m in eachmatch(r"(?m)^\s*(\w+) = RealOutput\(", text)]
+            depth = 0
+            for raw in split(text, '\n')
+                line = strip(first(split(raw, '#'; limit = 2)))
+                startswith(line, "metadata ") && continue
+                if occursin(r"^if\s", line)
+                    depth += 1
+                elseif line == "end" && depth > 0
+                    depth -= 1
+                end
+                @test !(depth > 0 && occursin(r"\bconnect\s*\(", line))
+                for port in outputs
+                    # TorqueToPedal defines its inverse-map output internally, not an exported wire.
+                    file == joinpath(folder, "TorqueToPedal.dyad") && port == "pedal" && continue
+                    @test !(startswith(line, port * " = ") && !occursin("RealOutput(", line))
+                end
+            end
+        end
+    end
+
     @testset "HandsOn05 sources stay in sync" begin
         for (name, original) in (("P2Powertrain", "Vehicle"), ("P2WLTC", "Lecture5"),
                 ("P2OperatingLineWLTC", "Lecture5"), ("P2HybridWLTC", "Lecture5"),
@@ -342,10 +366,11 @@ end
         # Step 1a already includes the step-2 speed-command seam: keep it in the comparison.
         # Only the step-3 start/stop additions are absent from that listing.
         source = replace(source,
-            r"(?ms)^  \"Enable fuel-controlled clutch starts\"\n.*?^  variable machine_limit::Torque if start_stop\n" => "",
+            r"(?ms)^  \"Enable fuel-controlled clutch starts\"\n.*?^  variable start_compensation::Torque if start_stop\n" => "",
             "fuel_controlled = start_stop, " => "",
-            r"(?ms)^  if start_stop\n.*?^  else\n    connect\(tau_ref, drive.tau_ref\)\n  end\n" =>
-                "  connect(tau_ref, drive.tau_ref)\n")
+            "on = start_stop" => "on = false",
+            r"(?ms)^  if start_stop\n.*?^  end\n" =>
+                "  command.compensation = 0.0\n")
         normalize_powertrain(x) = strip(replace(x, r"(?m)^metadata .*\n" => "",
             "VehicleSystemsComponents.MyCar." => "VehicleSystemsComponents.HandsOn05."))
         @test normalize_powertrain(powertrain) == normalize_powertrain(source)
@@ -355,7 +380,7 @@ end
         blocks = [m.captures[1] for m in eachmatch(r"```dyad\n(.*?)```"s, guide)]
         listing = only(filter(x -> startswith(x, "structural parameter start_stop::Boolean"), blocks))
         source = read(joinpath(@__DIR__, "..", "dyad", "HandsOn05", "P2Powertrain.dyad"), String)
-        declarations = match(r"(?ms)^  structural parameter start_stop::Boolean.*?^  variable machine_limit::Torque if start_stop\n", source).match
+        declarations = match(r"(?ms)^  structural parameter start_stop::Boolean.*?^  variable start_compensation::Torque if start_stop\n", source).match
         # The guide omits the description strings; link tags stay, so a missing tag fails.
         declaration_lines(x) = [strip(l) for l in split(x, '\n') if !isempty(strip(l)) && !startswith(strip(l), '"')]
         @test declaration_lines(listing) == declaration_lines(declarations)
@@ -501,12 +526,12 @@ end
     power = rpm .* torque .* (pi / 30 / 1000)
     target = [BsfcLine.lin(BSFC_LINE.power_kw, BSFC_LINE.rpm, p) for p in power]
     deviation = abs.(rpm .- target)
-    cmd = at(m.powertrain.speed_variator.i_command)
-    ratio = at(m.powertrain.speed_variator.ratio)
+    cmd = at(m.powertrain.variator.i_command)
+    ratio = at(m.powertrain.variator.ratio)
     # The bounded actuator undershoots 2.8 by 3.9e-5 at the analysis solver tolerance.
-    @info "Line ratio interpolation" sampled=extrema(ratio) accepted=extrema(s[m.powertrain.speed_variator.ratio])
+    @info "Line ratio interpolation" sampled=extrema(ratio) accepted=extrema(s[m.powertrain.variator.ratio])
     @test all(2.8 - 5e-5 .<= ratio .<= 12.0 + 5e-5)
-    @test all(2.8 - 5e-5 .<= s[m.powertrain.speed_variator.ratio] .<= 12.0 + 5e-5)
+    @test all(2.8 - 5e-5 .<= s[m.powertrain.variator.ratio] .<= 12.0 + 5e-5)
     idle = (power .< 1.0) .| (at(m.driver.y) .<= 0.0)
     launch = .!idle .& (cmd .>= 11.999)
     overdrive = .!idle .& (cmd .<= 2.801)
