@@ -131,11 +131,11 @@ routeAlias: p-position-table
 
 | Position | ICCT 2022, WLTC CO₂, 15 kW | Ours, 30 kW, vs H0 |
 |---|---|---:|
-| P0 | 4–9 % (15–16 kW) | 15.7 % |
-| P1 | 8.5–10.4 % | 21.1 % |
-| P2 | 12–25 % | 28.5 % |
-| P3 | 15–25 % | 28.6 % |
-| P4 (+P0) | ≈ 15.5 % | 28.5 % |
+| P0 | 4–9 % (15–16 kW) | 15.74 % |
+| P1 | 8.5–10.4 % | 21.10 % |
+| P2 | 12–25 % | 28.53 % |
+| P3 | 15–25 % | 28.65 % |
+| P4 | ≈ 15.5 % (with a P0) | 28.53 % (ideal starter) |
 
 </div>
 
@@ -154,9 +154,11 @@ starting: about 15.5, Schaeffler's number. The ranking is the same in all three 
 P1, far below P2, P3 and P4, which are close to each other.
 
 The right column is ours, from the P-position notebook: the course car with today's 30 kilowatt
-machine at each position, SoC-corrected, against H0. P0 15.7 percent, P1 21.1, P2 28.5, P3 28.6, P4
-28.5. The ranking is the studies': P0 below P1, far below P2, P3 and P4, which are within a tenth of
-a point of each other. The absolute numbers are higher than the bands: our baseline idles, the reason on
+machine at each position, SoC-corrected, against H0. P0 15.74 percent, P1 21.10, P2 28.53, P3
+28.65, P4 28.53. The ranking is the studies': P0 below P1, far below P2, P3 and P4, which are within
+0.12 points of each other. Our P4 is not the studies' P4 plus P0: it is an electric rear axle, and
+an ideal crank starter stands in for the P0 only to start the engine, with no second machine to
+boost or recuperate. The absolute numbers are higher than the bands: our baseline idles, the reason on
 the last slide, and our machine is twice the studies' size. We did not run the positions at 15
 kilowatts; only P2 has a 15 kilowatt figure, 25.3 percent, from the machine-size sweep.
 
@@ -177,7 +179,8 @@ routeAlias: reading-the-table
 ### What should agree
 
 - The **ranking**: the coupled positions well below the decoupled ones.
-- The **gap** at 15 kW: about **15–16 points** between P0 and P2 or P3 in Chalmers.
+- The **gap** P0 to P2 or P3: **15–16 points** in Chalmers at 15 kW; ours **12.8–12.9** at 30 kW,
+  not like for like.
 - More power: 20–30 kW adds **5–10 %** on P2, P3, P4 (ICCT). Our P2, 15 → 30 kW: **25.3 → 28.5 %**;
   past 22 kW the machine already covers the regen and the low-power driving.
 
@@ -203,7 +206,8 @@ How to read the comparison.
 What should agree. The ranking: the coupled positions, P0 and P1, well below the decoupled ones. The
 size of the gap: in the Chalmers study, at 15 kilowatts on the WLTC, P2 is 15.6 points above P0 and
 P3 16.1; the research note puts the coupled-to-decoupled gap at about 7 to 15 points across the
-three studies. And the effect of power: the ICCT finds that going from 15 to 20 or 30 kilowatts adds 5
+three studies. Ours, at 30 kilowatts: P2 12.8 points above P0, P3 12.9. That is not like for like,
+since the studies' gap is at 15 kilowatts and we ran the positions only at 30. And the effect of power: the ICCT finds that going from 15 to 20 or 30 kilowatts adds 5
 to 10 percent on P2, P3 and P4, while P0 and P1 gain little, because their limit is the coupled
 engine, not the machine. Ours gains less: the machine-size sweep of section 03 takes our P2 from
 25.3 percent at 15 kilowatts to 28.5 at 30, about 3 points, most of it by 22 kilowatts. Past the
