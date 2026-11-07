@@ -101,8 +101,8 @@ routeAlias: micro-to-plug-in
 
 </div>
 
-<div class="handson">Today's car is a full hybrid. The P-position comparison of section 07 runs it
-at 15 kW too, the size the mild-hybrid studies compare at.</div>
+<div class="handson">Today's car is a full hybrid. Section 07 compares the positions at its 30 kW;
+at 15 kW, the size the mild-hybrid studies compare at, only P2 ran: 25.3 %, in this sweep.</div>
 
 <!--
 The degree of hybridization in four classes, from small to large.
@@ -129,8 +129,9 @@ A plug-in hybrid is a full hybrid with a much larger pack charged from the grid.
 charge-depleting, mostly on grid energy, then charge-sustaining like a full hybrid. Today stays
 charge-sustaining; section 06 says why that matters for honest numbers.
 
-The green box: today's car is a full hybrid. In section 07 the same car also runs with a 15
-kilowatt machine, because that is the size at which the published studies compare positions.
+The green box: today's car is a full hybrid. Section 07 compares the five positions at its 30
+kilowatts. The published studies compare them at 15; of ours only P2 ran at that size, in this
+sweep, and saves 25.3 percent.
 -->
 
 ---

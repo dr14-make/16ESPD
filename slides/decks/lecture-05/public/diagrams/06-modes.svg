@@ -49,9 +49,9 @@
   <path d="M300 340 V350" class="axis"/>
   <text x="300" y="368" text-anchor="middle" class="lbl">0</text>
   <path d="M480 340 V350" class="axis"/>
-  <text x="480" y="368" text-anchor="middle" class="lbl">P_ev</text>
+  <text x="480" y="368" text-anchor="middle" class="lbl">P<tspan baseline-shift="sub" font-size="10">ev</tspan></text>
   <path d="M730 340 V350" class="axis"/>
-  <text x="730" y="368" text-anchor="middle" class="lbl">P_line,max</text>
+  <text x="730" y="368" text-anchor="middle" class="lbl">P<tspan baseline-shift="sub" font-size="10">line,max</tspan></text>
   <text x="620" y="405" text-anchor="middle" class="lbl">power the driver asks for at the wheels →</text>
   <text x="70" y="190" text-anchor="middle" class="lbl" transform="rotate(-90 70 190)">state of charge →</text>
 </svg>

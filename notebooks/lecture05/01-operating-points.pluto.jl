@@ -247,7 +247,7 @@ three_powertrains_plot = let
     colors = [CAR_COLORS[1], CAR_COLORS[3], CAR_COLORS[2]]
     names = [r.name for r in last(first(phases))]
     w = 0.26
-    p = plot(; size = (1280, 620), xticks = (1:length(names), names), ylims = (0, 8.2),
+    p = plot(; size = (1280, 620), xticks = (1:length(names), names), ylims = (0, 9.5),
         ylabel = "fuel [L/100 km]", title = "WLTC fuel by phase", legend = :topright,
         grid = true, gridalpha = 0.25, left_margin = 8Plots.mm, bottom_margin = 5Plots.mm,
         titlefontsize = 22, guidefontsize = 21, tickfontsize = 19, legendfontsize = 17)

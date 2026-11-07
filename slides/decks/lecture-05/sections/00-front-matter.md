@@ -138,13 +138,14 @@ layout: center
 
 ### Notebooks
 
-`notebooks/lecture05/` <span class="todo">TODO: file names</span>
+`notebooks/lecture05/`
 
 - `01-operating-points.pluto.jl`: Lecture 2's engine on its BSFC map, conventional against P2
   on WLTC
+- `02-p-positions.pluto.jl`: P0 to P4 at 30 kW, fuel, recovered energy and electric driving per
+  position
 - `03-machine-size.pluto.jl`: degree of hybridization, the P2 machine 8–40 kW against fuel
   saving
-- P-position table: fuel, recovered energy and modes per position (#114)
 
 `scripts/bsfc_line.jl`: the best-BSFC line over the map
 
@@ -160,8 +161,8 @@ layout: center
 - `assets/data/engine/bsfc_line.csv`: the best-BSFC operating line
 - `SoCCorrectedFuel`: the SoC-corrected fuel calculation
 - `EnergyManager`: the five rules; `TorqueToPedal`: the engine's inverse map
-- the P0, P1, P3 and P4 benches (#114)
-- the series-hybrid homework ground (#116)
+- the P0, P1, P3 and P4 benches
+- the series-hybrid homework ground
 
 </div>
 <div>
@@ -183,14 +184,13 @@ Reference answers: `dyad/HandsOn05/`.
 </div>
 
 <!--
-This slide lists the models behind today, in three columns. Several of them are still being built;
-the yellow TODO marks say what is missing and the issue numbers say where it comes from.
+This slide lists the models behind today, in three columns.
 
 The left column is the notebooks. The operating-points notebook puts Lecture 2's engine points on
-its fuel map, once for the conventional car and once for the P2 hybrid. The degree-of-hybridization
-notebook sweeps the P2 machine from 8 to 40 kilowatts and plots the fuel saving against it. The
-P-position notebook prints the table of section 07: fuel, recovered energy and available modes for
-each position. And a script draws the best-BSFC line over the map. Every plot in this deck comes
+its fuel map, once for the conventional car and once for the P2 hybrid. The P-position notebook
+prints the table of section 07: fuel, recovered braking energy and engine-off driving for each
+position, all at 30 kilowatts. The degree-of-hybridization notebook sweeps the P2 machine from 8 to
+40 kilowatts and plots the fuel saving against it. And a script draws the best-BSFC line over the map. Every plot in this deck comes
 from one of these; the block diagrams are drawn by hand.
 
 The middle column is what the course library gives you, so you spend the build on the hybrid and
