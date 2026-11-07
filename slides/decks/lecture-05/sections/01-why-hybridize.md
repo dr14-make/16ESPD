@@ -55,7 +55,7 @@ about 2300 rpm at light load to 3600 rpm at 110 newton meters: faster and lighte
 best-BSFC line, in the 250 to 350 gram region. Only a third of the fuel is burned within 10 grams
 per kilowatt-hour of the line. That gap is what the operating line and the hybrid recover.
 
-The right column has the numbers that figure will show. At its best point the engine turns 35.7
+The right column has the numbers behind that figure. At its best point the engine turns 35.7
 percent of the fuel's energy into shaft work: 232 grams of petrol per kilowatt-hour, at 3000 rpm and
 99 newton meters. That is the star on Lecture 2's efficiency map, in the engine-and-cycles section of
 that deck.
