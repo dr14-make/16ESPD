@@ -198,7 +198,7 @@ Less charge at the end, more fuel charged to the run.
 
 ± 2 % of 1.4 kWh = ± 0.028 kWh ≈ ± 0.1 MJ of battery energy
 
-The conventional car's WLTC: **42.9 MJ** of fuel.
+The conventional car's WLTC: **43.0 MJ** of fuel.
 
 η<sub>eb</sub>, engine to battery: **0.30** = 0.347 · 0.90 · 0.97 (assumed)
 
@@ -225,7 +225,7 @@ best-BSFC line at a 15 kilowatt charging point, 34.7 percent, times 0.90 for the
 generating, times 0.97 for the battery's charging loss.
 
 The right column sizes the window. 2 percent of 1.4 kilowatt-hours is 0.028 kilowatt-hours, about
-0.1 megajoules. The conventional car burns 42.9 megajoules of fuel on the WLTC, on this bench. So
+0.1 megajoules. The conventional car burns 43.0 megajoules of fuel on the WLTC, on this bench. So
 the band is small against the cycle's fuel, even after dividing by
 the efficiency: the correction is a check on honesty, not a large term.
 -->
