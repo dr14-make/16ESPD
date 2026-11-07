@@ -10,7 +10,7 @@ layout: section
 The WLTC for three powertrains on one car, and the five positions against the published studies,
 each with its baseline.
 
-<span class="todo">TODO: notebook files (#113, #114)</span>
+`notebooks/lecture05/01-operating-points.pluto.jl` · `notebooks/lecture05/02-p-positions.pluto.jl`
 
 <!--
 Section 07, the results. Two comparisons. First the WLTC for three powertrains on one car: the
@@ -127,35 +127,21 @@ routeAlias: p-position-table
 
 ## The five positions against the studies
 
-<div class="grid grid-cols-[1.2fr_1fr] gap-6 items-start">
 <div class="tight">
 
-| Position | ICCT 2022, WLTC CO₂, 15 kW | Ours, 15 kW | Ours, 30 kW |
-|---|---|---:|---:|
-| P0 | 4–9 % (15–16 kW) | <span class="todo">TODO</span> | <span class="todo">TODO</span> |
-| P1 | 8.5–10.4 % | <span class="todo">TODO</span> | <span class="todo">TODO</span> |
-| P2 | 12–25 % | <span class="todo">TODO</span> | <span class="todo">TODO</span> |
-| P3 | 15–25 % | <span class="todo">TODO</span> | <span class="todo">TODO</span> |
-| P4 (+P0) | ≈ 15.5 % | <span class="todo">TODO</span> | <span class="todo">TODO</span> |
+| Position | ICCT 2022, WLTC CO₂, 15 kW | Ours, 30 kW, vs H0 |
+|---|---|---:|
+| P0 | 4–9 % (15–16 kW) | 15.7 % |
+| P1 | 8.5–10.4 % | 21.1 % |
+| P2 | 12–25 % | 28.5 % |
+| P3 | 15–25 % | 28.6 % |
+| P4 (+P0) | ≈ 15.5 % | 28.5 % |
+
+</div>
 
 **Ranking, all three studies:** P0 < P1 ≪ P2 ≈ P3 ≈ P4
 
-</div>
-<div>
-
-<div class="placeholder">
-
-**Figure: `07-p-position-table.svg`**
-
-WLTC fuel saving, recovered energy and available modes per position, at 15 and 30 kW, with the
-ICCT bands shaded.
-
-Produced by the P-position notebook, #114
-
-</div>
-
-</div>
-</div>
+<img src="/figures/07-p-position-table.svg" class="w-full" style="max-height: 15rem" alt="WLTC results per position, each with a 30 kW machine and a 270 V battery. Corrected fuel in L/100 km: P0 4.82, P1 4.51, P2 4.09, P3 4.08, P4 4.09. Saving against H0: 15.74, 21.10, 28.53, 28.65 and 28.53 percent; against the line car: 11.40, 17.03, 24.85, 24.97 and 24.84. Braking energy stored: 1.60, 2.14, 2.64, 2.72 and 2.72 MJ. Engine-off electric driving: 19.7 and 18.8 s for P0 and P1, about 531 to 534 s for P2, P3 and P4."/>
 
 <!--
 The second comparison, and the demo: the same parts on the other four flanges.
@@ -167,14 +153,16 @@ that spread is mostly the baseline, with or without stop/start. P3: 15 to 25. P4
 starting: about 15.5, Schaeffler's number. The ranking is the same in all three studies: P0 below
 P1, far below P2, P3 and P4, which are close to each other.
 
-The two right columns are ours, from the P-position notebook of issue 114: the course car with the
-machine at each position, at 15 kilowatts, the studies' size, and at 30 kilowatts, today's. They are
-TODO until the benches run. What I expect, and what the notebook's test asserts, is the ranking. The
-absolute numbers should land in the same order of magnitude, high against the stop/start studies for
-the reason on the last slide.
+The right column is ours, from the P-position notebook: the course car with today's 30 kilowatt
+machine at each position, SoC-corrected, against H0. P0 15.7 percent, P1 21.1, P2 28.5, P3 28.6, P4
+28.5. The ranking is the studies': P0 below P1, far below P2, P3 and P4, which are within a tenth of
+a point of each other. The absolute numbers are higher than the bands: our baseline idles, the reason on
+the last slide, and our machine is twice the studies' size. We did not run the positions at 15
+kilowatts; only P2 has a 15 kilowatt figure, 25.3 percent, from the machine-size sweep.
 
-The figure will add what a percentage hides: how much braking energy each position recovered, and
-which modes it could use at all.
+The figure below adds what a percentage hides: the fuel before and after the correction, the saving
+against the line car too, the braking energy each position stored, and how long it drove with the
+engine off. P0 and P1 drive electrically for under 20 seconds; P2, P3 and P4 for about 530.
 -->
 
 ---
