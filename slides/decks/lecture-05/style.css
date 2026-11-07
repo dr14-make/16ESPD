@@ -53,16 +53,6 @@ html.dark .slidev-layout img[src^="data:image/svg+xml"] {
   background: rgba(46, 139, 87, 0.08);
 }
 
-/* A figure or screenshot not yet produced: names the file, what it must show and what makes it. */
-.slidev-layout .placeholder {
-  border: 2px dashed #b8860b;
-  border-radius: 6px;
-  padding: 1.5rem 1rem;
-  text-align: center;
-  font-size: 0.85rem;
-  opacity: 0.8;
-}
-
 /* Tables of numbers set tighter than prose. */
 .slidev-layout .tight table {
   font-size: 0.8rem;
