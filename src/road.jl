@@ -6,7 +6,7 @@ function road_path(file::AbstractString)
     startswith(file, prefix) ? joinpath(@__DIR__, "..", "assets", file[length(prefix)+1:end]) : file
 end
 
-"Quadratic B-spline dimension and its nodal collocation matrix, evaluated by DataInterpolationsND."
+"Quadratic B-spline dimension and its nodal collocation matrix, used to fit road coefficients."
 function road_dimension(axis)
     length(axis) >= 3 || error("a road grid needs at least three nodes per axis")
     knots = [first(axis); [(axis[j] + axis[j+1]) / 2 for j in 2:length(axis)-2]; last(axis)]
@@ -18,7 +18,83 @@ function road_dimension(axis)
     return dim, matrix
 end
 
-"Load an OpenCRG grid and fit its edge-held world-coordinate surface."
+"Innermost real value of a possibly nested `ForwardDiff.Dual`."
+primal(x::ForwardDiff.Dual) = primal(ForwardDiff.value(x))
+primal(x::Real) = x
+
+"""
+    quadratic_basis(breaks, t) -> (i, b0, b1, b2)
+
+Nonzero basis values of the clamped quadratic B-spline on strictly increasing `breaks` at `t`:
+coefficients `i`, `i+1`, `i+2` carry weights `b0`, `b1`, `b2`. Outside the breaks `t` is held at
+the nearer edge, so the spline keeps its edge value and has zero slope there. Generic in the
+number type of `t`, including `ForwardDiff.Dual`, and allocation-free.
+"""
+@inline function quadratic_basis(breaks::Vector{Float64}, t)
+    m = length(breaks)
+    @inbounds first_break, last_break = breaks[1], breaks[m]
+    # Compare primal values: on the edge itself the spline's one-sided slope applies in every direction.
+    value = primal(t)
+    held = value < first_break ? first_break + zero(t) : value > last_break ? last_break + zero(t) : t
+    i = clamp(searchsortedlast(breaks, value), 1, m - 1)
+    @inbounds begin
+        left, right = breaks[i], breaks[i+1]
+        before, after = breaks[max(i - 1, 1)], breaks[min(i + 2, m)]
+    end
+    # Cox-de Boor for degree 2; the clamped end knots repeat the first and last breaks.
+    scale = 1 / (right - left)
+    n0, n1 = (right - held) * scale, (held - left) * scale
+    w0 = n0 / (right - before)
+    w1 = n1 / (after - left)
+    return i, (right - held) * w0, (held - before) * w0 + (after - held) * w1, (held - left) * w1
+end
+
+"""
+    RoadSurface(x0, y0, c, s, u0, u_breaks, v_breaks, coefficients, center, heading)
+
+Edge-held C1 quadratic B-spline road surface of world `(x, y)`. World points are rotated by the
+start heading (`c`, `s`) about the reference-line start `(x0, y0)` into along-road `u` (offset by
+`u0`) and lateral `v`. Empty `center` and `heading` mean a straight reference line; otherwise
+they are spline coefficients over `u_breaks` of the reference line's lateral offset and heading in
+the start frame, and `v` is measured from that line along its normal. Calls with numbers run the
+spline; calls with symbolic arguments stay one opaque term.
+"""
+struct RoadSurface <: Function
+    x0::Float64
+    y0::Float64
+    c::Float64
+    s::Float64
+    u0::Float64
+    u_breaks::Vector{Float64}
+    v_breaks::Vector{Float64}
+    coefficients::Matrix{Float64}
+    center::Vector{Float64}
+    heading::Vector{Float64}
+end
+
+(surface::RoadSurface)(x, y) = road_lookup(surface, x, y)
+
+"Evaluate a fitted road surface at world x and y."
+function road_lookup(surface::RoadSurface, x, y)
+    dx, dy = x - surface.x0, y - surface.y0
+    u = surface.c * dx + surface.s * dy + surface.u0
+    v = -surface.s * dx + surface.c * dy
+    i, a0, a1, a2 = quadratic_basis(surface.u_breaks, u)
+    if !isempty(surface.center)
+        center, heading = surface.center, surface.heading
+        @inbounds v = cos(a0 * heading[i] + a1 * heading[i+1] + a2 * heading[i+2]) *
+            (v - (a0 * center[i] + a1 * center[i+1] + a2 * center[i+2]))
+    end
+    j, b0, b1, b2 = quadratic_basis(surface.v_breaks, v)
+    C = surface.coefficients
+    @inbounds return a0 * (b0 * C[i, j] + b1 * C[i, j+1] + b2 * C[i, j+2]) +
+        a1 * (b0 * C[i+1, j] + b1 * C[i+1, j+1] + b2 * C[i+1, j+2]) +
+        a2 * (b0 * C[i+2, j] + b1 * C[i+2, j+1] + b2 * C[i+2, j+2])
+end
+
+ModelingToolkit.Symbolics.@register_symbolic road_lookup(surface::RoadSurface, x, y)
+
+"Load an OpenCRG grid and fit its edge-held world-coordinate [`RoadSurface`](@ref)."
 function road_surface(file::AbstractString; fill_missing = nothing, elevation = false)
     kind = elevation ? "height" : "grip"
     path = road_path(file)
@@ -74,20 +150,16 @@ function road_surface(file::AbstractString; fill_missing = nothing, elevation = 
         straight = maximum(abs.(center)) <= 1e-12 * max(1.0, last(xaxis))
         axis = straight ? u : xaxis
         du, au = road_dimension(axis)
-        surface = DataInterpolationsND.NDInterpolation((au \ z) / transpose(av), (du, dv))
+        coefficients = (au \ z) / transpose(av)
+        u_breaks, v_breaks = collect(Float64, du.t), collect(Float64, dv.t)
         if straight
-            return (x, y) -> surface(c * (x-cx[1]) + s * (y-cy[1]) + first(u),
-                -s * (x-cx[1]) + c * (y-cy[1]))
+            return RoadSurface(cx[1], cy[1], c, s, first(u), u_breaks, v_breaks, coefficients,
+                Float64[], Float64[])
         end
         heading = [atan(center[min(i+1,end)] - center[max(i-1,1)],
                         xaxis[min(i+1,end)] - xaxis[max(i-1,1)]) for i in eachindex(xaxis)]
-        center_y = DataInterpolationsND.NDInterpolation(au \ center, (du,))
-        direction = DataInterpolationsND.NDInterpolation(au \ heading, (du,))
-        return (x, y) -> begin
-            local_x = c * (x-cx[1]) + s * (y-cy[1])
-            local_y = -s * (x-cx[1]) + c * (y-cy[1])
-            surface(local_x, cos(direction(local_x)) * (local_y - center_y(local_x)))
-        end
+        return RoadSurface(cx[1], cy[1], c, s, 0.0, u_breaks, v_breaks, coefficients,
+            au \ center, au \ heading)
     catch e
         error("$file: $(sprint(showerror, e))")
     end

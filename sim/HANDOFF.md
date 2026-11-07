@@ -114,10 +114,9 @@ Options/Backspace reset, PS/P pause.
 
 ## Numbers that should hold
 
-- Real time: the by-hand road car, about 1.7× faster than real time natively
-  (`bench_realtime.jl`), 35 unknowns. Each road grip or slope lookup costs about 3.5 µs and
-  3 KB of allocation, four grips and one slope per right-hand side; the flat `PlanarBEVDrive`
-  runs the same drive at about 8×.
+- Real time: the by-hand road car, about 11× faster than real time natively
+  (`bench_realtime.jl`), 35 unknowns. Each road grip lookup costs about 20 ns and each slope
+  lookup about 35 ns, allocation-free, four grips and one slope per right-hand side.
 - Coast-down from about 105 km/h: N 0.035 g, D 0.059 g, e-Pedal 0.222 g, friction brakes at 0.
 - Road load at 105.6 km/h: 502 N (325 N drag at CdA 0.63 m², 177 N rolling at f_r 0.012).
 

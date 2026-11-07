@@ -1,4 +1,5 @@
-using ModelingToolkit, OpenCRG
+using ModelingToolkit, OpenCRG, Random
+import DataInterpolationsND, ForwardDiff
 using DyadInterface: symbolic_container, run_analysis, TransientAnalysisSpec, OptimizationLevel
 
 "Run a road acceptance maneuver without realtime parameter overrides or a window."
@@ -92,6 +93,58 @@ road_stop(file; esp_on = 0.0) = road_run(VehicleSystemsComponents.PlanarBEVOnRoa
         @test_throws r"turning_back.crg.*reference line turns back" VehicleSystemsComponents.road_grip(back)
 
     end
+end
+
+"Evaluate a fitted road's coefficients with DataInterpolationsND, independently of its own evaluator."
+function reference_surface(road)
+    D = DataInterpolationsND
+    dimension(breaks) = D.BSplineInterpolationDimension(breaks, 2;
+        extrapolation = D.ExtrapolationType.Constant)
+    du, dv = dimension(road.u_breaks), dimension(road.v_breaks)
+    surface = D.NDInterpolation(road.coefficients, (du, dv))
+    curved = !isempty(road.center)
+    center = D.NDInterpolation(curved ? road.center : zeros(length(road.u_breaks) + 1), (du,))
+    heading = D.NDInterpolation(curved ? road.heading : zeros(length(road.u_breaks) + 1), (du,))
+    return (x, y) -> begin
+        u = road.c * (x - road.x0) + road.s * (y - road.y0) + road.u0
+        v = -road.s * (x - road.x0) + road.c * (y - road.y0)
+        curved ? surface(u, cos(heading(u)) * (v - center(u))) : surface(u, v)
+    end
+end
+
+lookup_allocations(f, args...) = (f(args...); @allocated f(args...))
+
+@testset "Lookup: reference spline, edge hold, no allocation" begin
+    V = VehicleSystemsComponents
+    rng = Xoshiro(1)
+    files = vcat([V.road_path(ROAD_ASSETS * f) for f in ("hill_z.crg", "ramp_hold_z.crg", "ice_patch_mu.crg")],
+        [joinpath(@__DIR__, "data", "opencrg", f) for f in ("handmade_straight.crg", "handmade_curved.crg")])
+    for file in files
+        road = V.road_surface(file; elevation = true, fill_missing = 0.0)
+        reference = reference_surface(road)
+        box = V.road_extent(file; margin = 20.0)
+        points = [(box.x[1] + (box.x[2] - box.x[1]) * rand(rng), box.y[1] + (box.y[2] - box.y[1]) * rand(rng))
+                  for _ in 1:2000]
+        # Points on the first and last along-road nodes, where the edge hold starts.
+        for u in road.u_breaks[[1, end]] .- road.u0, v in range(road.v_breaks[1], road.v_breaks[end]; length = 5)
+            push!(points, (road.x0 + road.c * u - road.s * v, road.y0 + road.s * u + road.c * v))
+        end
+        scale = max(1.0, maximum(abs(reference(p...)) for p in points))
+        gradient(f, x, y) = ForwardDiff.gradient(q -> f(q[1], q[2]), [x, y])
+        value_error = maximum(abs(road(p...) - reference(p...)) for p in points)
+        slope_error = maximum(maximum(abs, gradient(road, p...) .- gradient(reference, p...)) for p in points)
+        @info "Road lookup against DataInterpolationsND" file = basename(file) value_error slope_error
+        @test value_error < 1e-12 * scale
+        @test slope_error < 1e-12 * scale
+    end
+    grip, slope = V.road_grip(ROAD_ASSETS * "ice_patch_mu.crg"), V.road_height(ROAD_ASSETS * "hill_z.crg")
+    # Beyond the last node the height is held, so the grade is exactly zero.
+    @test slope(1.0e4, 0.0, 0.0) == 0.0
+    dual = ForwardDiff.Dual{typeof(ForwardDiff.Tag(sin, Float64))}(470.3, 1.0)
+    @test lookup_allocations(grip, 470.3, 0.1) == 0
+    @test lookup_allocations(grip, dual, 0.1) == 0
+    @test lookup_allocations(slope, 470.3, 0.1, 0.2) == 0
+    @test lookup_allocations(slope, dual, 0.1, 0.2) == 0
 end
 
 @testset "One wheel: file only, no road wiring" begin
