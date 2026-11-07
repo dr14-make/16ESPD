@@ -12,9 +12,149 @@ matters more than its power.
 
 <!--
 Section 04, P0 to P4. In a parallel hybrid the machine can sit in five places along the driveline,
-named P0 to P4 from the engine outwards. We go through them, compare what each can do, and arrive at
-the argument of the lecture: a machine that can be decoupled from the engine is worth more than a
+the chain of shafts and gears from the engine to the wheels. P stands for position. They are
+numbered P0 to P4 from the engine outward. We go through them, compare what each can do, and arrive
+at the argument of the lecture: a machine that can be decoupled from the engine is worth more than a
 stronger one that cannot. At the end you build the P2 powertrain, build 01.
+-->
+
+---
+routeAlias: cvt
+---
+
+## The CVT: any ratio in a range
+
+<div class="grid grid-cols-[1fr_1.2fr] gap-8 items-start">
+<div>
+
+A **continuously variable transmission** changes its ratio smoothly, not in steps. So for one wheel
+speed, the engine speed can be chosen.
+
+$$
+\omega_e = i\,\omega_w
+$$
+
+<div class="caption text-left">ω<sub>e</sub>: engine-side speed · ω<sub>w</sub>: wheel speed ·
+<i>i</i>: the ratio, final drive included</div>
+
+<div class="handson">Section 05 uses this freedom: the ratio puts the engine at its most efficient
+speed.</div>
+
+</div>
+<div class="tight">
+
+| The course's CVT model | |
+|---|---|
+| Ratio range | **12.0** at launch to **2.8** at top speed |
+| Ratio chosen by | the pedal: target engine speed from **1800 rpm** (pedal up) to **6000 rpm** (pedal down); from build 02 on, a speed command instead |
+| Outside the range | the ratio stops at its limit; the engine leaves its target |
+| How fast | follows the command with a **0.5 s** lag |
+| Losses | none: ideal, power in = power out |
+| Starting from rest | needs a clutch: in Lecture 2 a centrifugal clutch, closing near **1300 rpm**; in our P2, K0 |
+
+</div>
+</div>
+
+<!--
+Two parts carry the hybrid we build: the CVT and the K0 clutch. The drawing of the five positions,
+two slides on, is built on them, so here is what each one does and how the course models it. First
+the CVT.
+
+CVT stands for continuously variable transmission. A normal gearbox has a few fixed gears. A CVT
+can take any ratio between two limits, and change it smoothly. The formula says what that buys: the
+engine-side speed, omega e, equals the ratio i times the wheel speed, omega w. The wheels set their
+speed from the car's speed. So by choosing the ratio, we choose the engine's speed. In our model the
+ratio already includes the final drive, the fixed gear in front of the wheels.
+
+The table is the course's model. The ratio runs from 12.0 at launch, for strong pull at low speed,
+to 2.8 at top speed, so the engine turns slowly on the highway. Both values are assumed for a small
+car's belt CVT.
+
+How is the ratio chosen? In Lecture 2's model, and in build 01, the pedal picks a target engine
+speed: 1800 rpm with the pedal up, rising to 6000 rpm with the pedal fully down. The CVT then picks
+the ratio that puts the engine at that speed. From build 02 on, we swap in a version that takes the
+target speed as a command instead, from the engine's efficient-speed line. That is section 05.
+
+If the target needs a ratio outside 12.0 to 2.8, the ratio stops at its limit and the engine
+leaves its target: below it at launch, above it at high speed. The ratio does not jump: it follows
+the command with a lag of 0.5 seconds, like the hydraulics of a real belt CVT. And the model has no
+losses: all the power that goes in comes out. That is a simplification to remember.
+
+Last row: a CVT alone cannot start the car from rest, because the wheels stand still and no ratio
+fits. It needs a clutch that slips. Lecture 2's car used a centrifugal clutch that closes as the
+engine speeds up past about 1300 rpm. In our P2 that job goes to K0, the next slide.
+-->
+
+---
+routeAlias: k0-clutch
+---
+
+## K0: the clutch that cuts off the engine
+
+<div class="grid grid-cols-[1fr_1.2fr] gap-8 items-start">
+<div>
+
+K0 sits between the engine and the electric machine.
+
+- **Open**: the engine can stand still while the machine drives or brakes the car.
+- **Closed**: the engine drives the car, or the machine spins the engine up to start it.
+- **Slipping**: the two sides turn at different speeds, and the clutch passes friction torque
+  between them.
+
+<div class="handson">The decoupled positions of this section, P2 to P4, exist because of K0.</div>
+
+</div>
+<div class="tight">
+
+| The course's K0 model | |
+|---|---|
+| Strength | up to **230 N·m** of friction torque: 1.5 × the engine's peak torque |
+| Actuator | hydraulic, **0.15 s** lag: 90 % closed in about **0.35 s** |
+| Slip | friction torque grows smoothly with slip, close to full strength above about 1 rad/s |
+| At the start of a run | open |
+| Starting the car (H0) | closes as the engine passes about **1300 rpm**, over about **120 rpm** |
+| Lock-up | closes as the machine side passes **840 rpm**: open at 800 rpm idle, closed by **880 rpm**; opens again at stops |
+| Starting the engine (build 03) | K0 closes and cranks it; fuel fades in from **400** to **700 rpm**; the machine adds the torque K0 takes |
+
+</div>
+</div>
+
+<!--
+The second part: K0, the clutch between the engine and the electric machine. The name K0 comes from
+the German word for clutch, Kupplung; zero because it sits first, right after the engine.
+
+What it does, three states. Open: the engine is cut off. It can stand still while the machine
+drives the car, or brakes it to charge the battery, without dragging the engine along. Closed: the
+engine and the machine turn together. Then the engine drives the car, or, if the engine is off,
+closing K0 lets the turning machine spin the engine up to start it. Slipping, in between: the two
+sides turn at different speeds and the clutch passes friction torque from the faster side to the
+slower one, as a car clutch does when you start off.
+
+The table is the course's model, the library's DisconnectClutch. Its strength, the most friction
+torque it can pass, is 230 newton meters: one and a half times the engine's peak torque of about
+150. So when it is closed, it passes up to 230 newton meters with very little slip.
+
+It is closed by a hydraulic actuator, modeled as a lag of 0.15 seconds: the clutch is 90 percent
+closed after about 0.35 seconds.
+
+The slip row: the friction torque is the clutch's strength times how far it is closed, and its
+direction follows the slip. It grows smoothly from zero, so the solver never has to stop at the
+moment of locking; above about one radian per second of slip it is close to full strength. So a
+closed clutch behaves as locked, with a very small slip.
+
+Every run starts with K0 open. Then the test models close it in two ways. Starting the car, in H0,
+the engine-only car: K0 closes as the engine speeds past about 1300 rpm, over a band of about 120
+rpm, like Lecture 2's centrifugal clutch. Lock-up: once the machine side passes 840 rpm, K0 closes
+fully; it is open at the 800 rpm idle and closed by 880. K0 takes whichever of the two asks for
+more. When the car slows to a stop, both speeds fall below their bands and K0 opens again.
+
+Starting the engine, in build 03: the energy manager closes K0 while the machine turns, and K0
+cranks the engine. The engine's fuel fades in between 400 and 700 rpm. While K0 cranks, it takes
+torque from the shaft, and the machine adds that torque back, so the wheels still get what the
+driver asks for.
+
+Take-away: K0 is what lets the engine stop while the car moves. The positions after it, P2, P3 and
+P4, depend on it.
 -->
 
 ---
@@ -29,11 +169,14 @@ routeAlias: five-positions
 
 </div>
 
+<div class="caption">P = position, numbered from the engine outward · red zone: always turns with
+the engine · green zone: can turn with the engine off, once K0 opens</div>
+
 <div class="grid grid-cols-2 gap-8 text-[0.85rem]">
 <div>
 
-**No mechanical disconnection.** **P0**: on the belt of the front-end accessory drive (FEAD).
-**P1**: directly on the crankshaft.
+**No mechanical disconnection.** **P0**: on the belt that drives the engine's accessories, such
+as the alternator (FEAD, front-end accessory drive). **P1**: directly on the crankshaft.
 
 </div>
 <div>
@@ -46,8 +189,10 @@ axle or in the hubs.
 </div>
 
 <!--
-The five positions, drawn on the driveline we use today: the engine, the K0 clutch, the CVT, the
-differential, the front wheels.
+The five positions, drawn on the driveline we use today. Read the black line from left to right:
+the engine, the K0 clutch, the CVT, the differential, the front wheels. The small boxes P0 to P4
+are the places a machine can sit: P0 and P1 in red, P2, P3 and P4 in green, the color of the zone
+they sit in. The zones are the dashed outlines.
 
 The red zone on the left holds the two positions without the possibility of mechanical
 disconnection: P0 on the engine's belt, P1 on the crankshaft. Both turn whenever the engine turns,
@@ -57,8 +202,13 @@ The green zone holds the three decoupled positions: P2 after the clutch on the t
 P3 on the transmission output, P4 on the rear axle or in the wheel hubs. With K0 open, the engine
 can stand still while P2, P3 and P4 turn.
 
+The one thing to take from the drawing is the two zones: red means the machine can never stop when
+the engine turns, green means it can, once K0 opens.
+
 In our car the CVT is the transmission. The next five slides take the positions one at a time,
-each on this same drawing, with the original deck's rating of what it can do.
+each on this same drawing with the position in focus drawn with a thick border, red for P0 and P1,
+green for P2 to P4, and the others grayed out,
+and with the original deck's rating of what it can do.
 -->
 
 ---
@@ -77,8 +227,9 @@ routeAlias: p0-belt
 <div class="text-[0.9rem]">
 
 On the accessory belt, where the alternator sits: **linked to the engine, never separated**. The
-engine's friction torque is a parasitic load on the machine, in boost and in recuperation. The
-belt limits the torque: it slips, worst at a cold start.
+machine must always turn the engine too, against its friction: when it helps drive (boost) and when
+it brakes to recover energy (recuperation). The belt limits the torque: it slips, worst at a cold
+start.
 
 <div class="handson">Measured on a production P0 (2012 Sonata's belt starter-generator, ORNL): system
 peak <b>86–88 %</b> including the belt; belt loss <b>1–2 %</b> at high power, <b>3–6 %</b> at
@@ -87,12 +238,12 @@ moderate load and low speed.</div>
 </div>
 <div class="tight">
 
-| BiSG, belt-integrated | |
+| BiSG, belt-integrated starter-generator | |
 |---|---|
 | Torque boost | medium: belt slip, durability |
 | Recuperation | medium: engine losses |
 | Driveability | medium: limited boost |
-| Electric creep, drive | not possible |
+| Electric creep (slow crawl), drive | not possible |
 | Packaging | **easy**: little impact on the car |
 | System efficiency | medium: the belt |
 | Usual machine | 2.5–6 kW, 89–95 % |
@@ -102,25 +253,30 @@ moderate load and low speed.</div>
 </div>
 
 <!--
-P0, the belt-integrated starter-generator, BiSG in the original deck. Point at the highlighted box:
-it sits on the front-end accessory belt, where the alternator sits today, inside the red zone.
+P0, the belt-integrated starter-generator, BiSG in the original deck: one machine that both starts
+the engine and generates electricity, driven by a belt. Point at the box outlined in red: it sits on
+the front-end accessory belt, where the alternator sits today, inside the red zone.
 
 The key physical fact is that the engine and the machine can never be separated; the belt links
-them. So the engine's friction torque is a parasitic load on the machine both when it gives boost
-torque and when it recuperates: a share of every brake goes into turning the engine. And the belt
-limits the torque it can pass: it slips, especially at a cold start. That is why, the deck says,
-all current 48 volt BiSG mild hybrids still keep the 12 volt starter.
+them. So the engine's friction always loads the machine, both when it gives extra torque to help
+the engine, which we call boost, and when it brakes the car to recover energy, which we call
+recuperation: a share of every brake goes into turning the engine. And the belt limits the torque
+it can pass: it slips, especially at a cold start. That is why, the deck says, all current 48 volt
+BiSG mild hybrids still keep the 12 volt starter.
 
-The table is the deck's characteristics. Boost, recuperation and driveability are all medium, for
-those two reasons. Electric creep or drive is not possible, with that little torque through a belt.
+The table is the deck's characteristics. Boost, recuperation and driveability, how smoothly and
+strongly the car responds to the pedal, are all medium, for those two reasons. Electric creep, the
+car crawling slowly on electric power as in a traffic jam, or electric driving, is not possible
+with that little torque through a belt.
 Packaging is the strength: the components integrate with little impact on the rest of the car, which
 is why the deck calls it the most cost-effective mild hybrid topology. System efficiency is medium,
 because of the belt. The usual machine is 2.5 to 6 kilowatts at 89 to 95 percent.
 
-The green box puts a number on the belt. Oak Ridge measured the 2012 Hyundai Sonata's belt
+The green box puts a number on the belt. Oak Ridge National Laboratory, ORNL, measured the 2012
+Hyundai Sonata's belt
 starter-generator, effectively a P0 machine of 8.5 kilowatts: the whole system peaks at 86 to 88
 percent including the belt, and the belt alone loses 1 to 2 percent at high power and 3 to 6 percent
-at moderate load and low speed. That is the research note's section 2.4.
+at moderate load and low speed. The course's research note has these numbers, in its section 2.4.
 -->
 
 ---
@@ -139,17 +295,17 @@ routeAlias: p1-crank
 <div class="text-[0.9rem]">
 
 Directly on the crankshaft, before K0: **no belt to slip**, so more torque than a P0. Generator when
-the car decelerates, starter, motor assisting the engine in acceleration. But it **still turns with
-the engine**: the friction torque is a parasitic load in boost and in recuperation, and creeping
+the car slows down, starter, motor helping the engine when the car speeds up. But it **still turns
+with the engine**: it must turn the engine's friction in boost and in recuperation, and creeping
 turns the engine too.
 
-<div class="handson">In line with the crankcase, in most cases a BLDC machine: short and wide in
-diameter, as in the Honda Insight.</div>
+<div class="handson">In line with the engine block, in most cases a brushless DC (BLDC) machine:
+short and wide in diameter, as in the Honda Insight.</div>
 
 </div>
 <div class="tight">
 
-| CiSG, crankshaft-integrated | |
+| CiSG, crankshaft-integrated starter-generator | |
 |---|---|
 | Torque boost | **high**, if the machine can |
 | Recuperation | medium: engine losses |
@@ -168,20 +324,20 @@ P1, the crankshaft-mounted machine, CiSG in the original deck. Point at the box 
 inside the red zone, before the clutch K0.
 
 With no belt in between, it can give more torque than the belt starter-generator, and it does three
-jobs: a generator when the car decelerates, the engine's starter, and a motor that assists the engine
-when the car accelerates.
+jobs: a generator when the car decelerates, the engine's starter, and a motor that assists the
+engine when the car accelerates.
 
-The key fact is the zone it sits in: it still turns with the engine, always. So the engine's
-friction is a parasitic load again, in boost and in recuperation, and recuperation stays medium. It
+The key fact is the zone it sits in: it still turns with the engine, always. So the machine must
+turn the engine's friction again, in boost and in recuperation, and recuperation stays medium. It
 can creep, if its torque allows, but only by turning the engine with it.
 
 The table: torque boost high if the machine is strong enough; driveability medium, depending on that
 torque. Packaging is difficult: the powertrain has to be designed for it. System efficiency is high:
-no belt and no gear mesh. The usual machine is up to 15 kilowatts at 89 to 95 percent.
+no belt and no gears in between. The usual machine is up to 15 kilowatts at 89 to 95 percent.
 
 The green box is from the deck's slide on machines for hybrids: a crankshaft machine sits in line
-with the crankcase and is in most cases a brushless DC machine, short in length and wide in
-diameter. The deck's example is the Honda Insight.
+with the engine block and is in most cases a brushless DC machine, a common electric motor type
+with no brushes, short in length and wide in diameter. The deck's example is the Honda Insight.
 -->
 
 ---
@@ -199,13 +355,14 @@ routeAlias: p2-after-k0
 <div class="grid grid-cols-[1fr_1fr] gap-8 items-start mt-4">
 <div class="text-[0.9rem]">
 
-After K0, on the transmission input, by a belt or integrated through a gear mesh. **Open K0** and
-the engine stands still: electric creep and drive, recuperation while coasting, no engine drag.
+After K0, on the transmission input, by a belt or through gears. **Open K0** and the engine stands
+still: electric creep and drive, recuperation while coasting, no engine drag.
 **Close K0** with the machine turning and it starts the engine. In our car the CVT's ratio moves
 its speed with the engine's.
 
-<div class="handson">The P2 we size after: the 2011 Sonata Hybrid, a <b>30 kW</b> machine in place
-of the torque converter, behind an engine clutch (ORNL). You build it: build 01.</div>
+<div class="handson">The P2 we size after: the 2011 Sonata Hybrid, a <b>30 kW</b> machine where an
+automatic gearbox has its fluid coupling, behind an engine clutch (ORNL). You build it: build
+01.</div>
 
 </div>
 <div class="tight">
@@ -224,9 +381,9 @@ of the torque converter, behind an engine clutch (ORNL). You build it: build 01.
 </div>
 
 <!--
-P2, the first position in the green zone. Point at K0 and then at the box right after it: the machine
-sits after the clutch, on the transmission's input shaft. The deck says it can be side-attached to
-the transmission through a belt, or integrated into it through a gear mesh.
+P2, the first position in the green zone. Point at K0 and then at the box right after it: the
+machine sits after the clutch, on the transmission's input shaft. The deck says it can be attached
+beside the transmission through a belt, or built into it through gears.
 
 The clutch is the whole story. With K0 open the engine stands still and is not dragged: the machine
 can creep and drive the car electrically, and recuperate while braking and coasting, all of it
@@ -238,8 +395,8 @@ In our car the transmission is the CVT, so the machine sits before the ratio: th
 speed as well as the engine's. We use that in section 05.
 
 The green box is the real P2 we size after: the 2011 Hyundai Sonata Hybrid that Oak Ridge
-benchmarked, a 30 kilowatt machine in place of the torque converter, behind an engine clutch. That is
-what you build at the end of this section.
+benchmarked, a 30 kilowatt machine in place of the torque converter, the fluid coupling an automatic
+gearbox normally has, behind an engine clutch. That is what you build at the end of this section.
 -->
 
 ---
@@ -279,8 +436,8 @@ so stop/start **needs a starter**.
 </div>
 
 <!--
-P3. Point at the box after the CVT: the machine is connected through a gear mesh to the
-transmission's output shaft. In our car, that is the CVT output.
+P3. Point at the box after the CVT: the machine is connected through gears to the transmission's
+output shaft. In our car, that is the CVT output.
 
 Its speed is a multiple of the wheel speed, fixed by its own gear, whatever the CVT's ratio does. So
 unlike P2, the CVT cannot move the machine to a better speed.
@@ -294,7 +451,8 @@ The price is the engine start. The machine is on the far side of the CVT and K0,
 the engine; a car with a P3 needs a starter for stop/start.
 
 The rest of the table is the deck's common rating for P2, P3 and P4: high boost if the machine can,
-medium driveability, difficult packaging, high system efficiency with only gear mesh losses.
+medium driveability, difficult packaging, which means hard to fit into the car, and high system
+efficiency with only the losses of its gears.
 -->
 
 ---
@@ -315,7 +473,7 @@ routeAlias: p4-rear-axle
 On the rear axle through its own gear, or in the wheel hubs. The engine drives the front axle, the
 machine the rear: they meet only through the road, a **through-the-road hybrid**. That gives
 **all-wheel drive**, and no transmission in the regen path; but it **needs a starter**. In our car,
-one machine on the rear flanges, not torque vectoring.
+one machine drives both rear wheels the same; it does not give them different torques.
 
 <div class="handson">A motor in the wheel hub is the same "inside-out" type as the crankshaft
 machine: short and wide.</div>
@@ -337,8 +495,8 @@ machine: short and wide.</div>
 </div>
 
 <!--
-P4. Point at the box at the bottom: the machine drives the rear axle through its own gear, or sits in
-the wheel hubs. The deck puts it on the rear differential.
+P4. Point at the box at the bottom: the machine drives the rear axle through its own gear, or sits
+in the wheel hubs. The deck puts it on the rear differential.
 
 The engine drives the front axle through K0 and the CVT, the machine drives the rear. There is no
 shaft between them: they are coupled only through the road, which is why this is called a
@@ -348,11 +506,12 @@ cannot start the engine: it needs a starter.
 Recuperation is the highest in the deck's rating: no engine drag, and no transmission between the
 wheel and the machine, only its own gear. It can creep and drive electrically with the engine off.
 
-In our car it sits on the rear flanges with its own reduction, one machine for the axle; it
-is not torque vectoring.
+In our car it drives the rear wheel hubs through its own reduction gear, one machine for the axle.
+It is not torque vectoring: it cannot give the left and right wheels different torques to help the
+car turn.
 
-The green box is from the deck's slide on machines for hybrids: a motor integral with the wheel is the
-same inside-out type as the crankshaft machine of P1, short in length and wide in diameter.
+The green box is from the deck's slide on machines for hybrids: a motor integral with the wheel is
+the same inside-out type as the crankshaft machine of P1, short in length and wide in diameter.
 -->
 
 ---
@@ -376,13 +535,14 @@ routeAlias: positions-compared
 
 <!--
 The five positions in one table, the original deck's six questions. Read it by rows, not by
-columns.
+columns. Packaging means how hard the machine is to fit into the car; system efficiency is how much
+of the power gets through.
 
 Torque boost: only P0 is limited, by its belt. Energy recuperation is the key row: P0 and P1 drag
 the engine with every brake; the decoupled positions do not. Electric creep and drive: impossible on
 P0, only with the engine turning on P1, with the engine off on P2 to P4. Packaging is the one row P0
-wins, which is why it is the cheapest. And the last row: P0 and P1 start the engine themselves, P2 by
-closing K0, P3 and P4 need a separate starter.
+wins, which is why it is the cheapest. And the last row: P0 and P1 start the engine themselves, P2
+by closing K0, P3 and P4 need a separate starter.
 
 The two rows to remember are recuperation and electric drive. Both are decided by the clutch, not by
 the machine. The next slide puts a number on that.
@@ -409,10 +569,14 @@ $$
 P_{\text{to battery}} = \eta\,\big(P_{\text{brake}} - P_{\text{driveline loss}}\big)
 $$
 
+<div class="caption text-left">All in kW · P<sub>brake</sub>: braking power at the wheels ·
+P<sub>engine drag</sub>: power spent turning the engine · P<sub>driveline loss</sub>: power lost
+in the gears on the way · η: efficiency of the machine and converter</div>
+
 P2 loses the CVT and final drive; P3 and P4 only their gear.
 
 And with the engine coupled there is no driving with the engine off: no electric creep, no
-sailing.
+sailing (rolling with the engine off).
 
 </div>
 <div>
@@ -430,7 +594,7 @@ sailing.
 
 </div>
 
-Same power, same car: P2 and P3 beat P0 by **15–16 points**.
+Same power, same car: P2 and P3 beat P0 by **15–16 percentage points**.
 
 </div>
 </div>
@@ -440,21 +604,25 @@ Same power, same car: P2 and P3 beat P0 by **15–16 points**.
 <!--
 This is the argument of the lecture.
 
-Take the car braking. With the engine coupled, P0 or P1, the machine cannot have all of the braking
-power: the engine turns with it and its friction and pumping take a share first. What reaches the
-battery is the brake power minus the engine's drag, times the efficiency of the machine and
-converter. With K0 open, P2, P3 or P4, the engine stands still and only the gears between the wheel
-and the machine take their share.
+Take the car braking. Both formulas say the same thing: the power that reaches the battery is the
+braking power at the wheels, minus what is lost on the way, times eta, the efficiency of the
+machine and its converter. All powers are in kilowatts. The difference is what is lost on the way.
+With the engine coupled, P0 or P1, the engine turns with the machine, and its friction and the work
+of pumping air take a share first: that is the engine drag. With K0 open, P2, P3 or P4, the engine
+stands still and only the gears between the wheel and the machine take their share: that is the
+driveline loss, and it is much smaller.
 
 And when driving: with the engine coupled the machine can never drive with the engine off. It can
 creep, as a P1, only by turning the engine with it. So the two modes that save the most in town,
-driving on electricity at low power and sailing with the engine off, need the clutch.
+driving on electricity at low power and sailing, rolling along with the engine off, need the
+clutch.
 
 The table on the right is the cleanest evidence, from the Chalmers study the ICCT review reproduces:
-the same C-segment car with a seven-speed dual-clutch gearbox, the same 15 kilowatt machine, moved
-from position to position, against the car without stop/start. On the WLTC: P0 8.9 percent, P1 10.4,
-P2 24.5, P3 25.0. Read the gap off the table: at equal power, P2 is 15.6 points above P0 and P3
-16.1, so decoupling the machine from the engine is worth about 15 to 16 points. Going from 8 to 15
+the same compact car, the C-segment, the size of a Golf, with a seven-speed dual-clutch gearbox,
+the same 15 kilowatt machine, moved from position to position, against the car without stop/start.
+On the WLTC: P0 8.9 percent, P1 10.4, P2 24.5, P3 25.0. Read the gap off the table: at equal power,
+P2 is 15.6 percentage points above P0 and P3 16.1, so decoupling the machine from the engine is
+worth about 15 to 16 points. Going from 8 to 15
 kilowatts adds only 1.5 to 2.0 points for P0 and P1.
 
 The green box is the sentence to take home, and the research note's teaching takeaway, consistent
@@ -476,7 +644,7 @@ routeAlias: why-p2
 | boost | ✓ | ✓ | ✓ | ✓ | ✓ |
 | regen without engine drag | | | ✓ | ✓ | ✓ |
 | engine start by the machine | ✓ | ✓ | ✓ | | |
-| machine speed through the CVT ratio | | | ✓ | | |
+| machine speed set by the CVT ratio | | | ✓ | | |
 
 </div>
 
@@ -489,9 +657,9 @@ Why you build P2 and not another position.
 
 The table lists the modes a hybrid can have and ticks the positions that have them. Electric drive
 with the engine off: only the decoupled three. Boost: all five. Regen without engine drag: the
-decoupled three. Starting the engine: P0 and P1 directly, P2 by closing K0; P3 and P4 need a starter. And the last
-row is particular to our car: only P2 sits before the CVT, so the CVT's ratio moves the machine's
-speed as well as the engine's.
+decoupled three. Starting the engine: P0 and P1 directly, P2 by closing K0; P3 and P4 need a
+starter. And the last row is particular to our car: only P2 sits before the CVT, so the CVT's ratio
+moves the machine's speed as well as the engine's.
 
 So P2 is the one column with a tick in every row. That is why the build uses P2: one
 energy manager on a P2 exercises every mode, and moving the machine to the other four positions is
@@ -518,8 +686,8 @@ routeAlias: build-p2
 <div class="stack">
 
 *`MappedEngine` → K0 → `HybridDrive` (30 kW, 1.4 kWh) on the CVT's input shaft →
-`ControlledVariator` → planar differential → front flanges · then two runs: engine only, K0 as
-the launch clutch; electric only, K0 open, engine held*
+`ControlledVariator` (the CVT) → planar differential → front wheel hubs · then two runs: engine
+only, K0 slipping to start the car; electric only, K0 open, engine held*
 
 ```txt
 connect(engine.spline, k0.spline_a)
@@ -527,25 +695,32 @@ connect(k0.spline_b, drive.spline, variator.spline_a)
 connect(variator.spline_b, spline)
 ```
 
-<div class="handson">✓ engine only (H0), full WLTC: speed error <b>1.17</b> km/h, <b>5.72</b>
-L/100 km · electric only, WLTC Low: speed error <b>1.50</b> km/h, SoC 0.60 → 0.39</div>
+<div class="handson">✓ engine only (H0), full WLTC: speed error (worst gap to the test's speed)
+<b>1.17</b> km/h, <b>5.72</b> L/100 km · electric only, WLTC Low: speed error <b>1.50</b> km/h,
+SoC 0.60 → 0.39</div>
 
 </div>
 </div>
 
 <!--
-Build 01: the P2 powertrain. On the left, the finished powertrain in Studio.
+Build 01: the P2 powertrain. On the left, the finished powertrain in Studio. Read it left to right:
+the engine, the K0 clutch, the hybrid drive and the variator, which is the CVT. The command inputs
+come in on the left, the outputs and the shaft to the wheels leave on the right, and the mount to
+the car body is at the bottom.
 
-The italic line is the build. Lecture 2's mapped engine, then the K0 clutch, which the library gives
+The italic line is the build. Lecture 2's engine model, then the K0 clutch, which the library gives
 you with its actuator. Then the hybrid drive: a 30 kilowatt machine with its converter and a 1.4
 kilowatt-hour battery, after the 2011 Sonata, built like Lecture 4's drive but not the Leaf's. It
 sits on the CVT's input shaft, beside K0, not as another gear in series. Then the controlled
-variator, not the CVT driveline, which would bring a second launch clutch, and the planar car's
-differential to the front flanges.
+variator, not the full CVT driveline, which would bring a second clutch for starting the car. Then
+the planar car's differential to the front wheel hubs. The three connect lines in the code box join
+the shafts: the engine to the clutch, the clutch to the machine and the CVT, and the CVT to the
+output.
 
-Then two runs, and they are the checkpoint. Engine only, H0: K0 is the launch clutch, slipping as
-the engine revs and locked once the car moves; the car follows the whole WLTC within 1.17 kilometers
-per hour and burns 5.72 liters per 100 kilometers. Electric only: K0
+Then two runs, and they are the checkpoint. Engine only, H0: K0 starts the car like the clutch of a
+manual car, slipping as the engine revs and closed while the car moves. The speed error is the
+largest gap between the car's speed and the speed the test asks for. The car follows the whole WLTC
+within 1.17 kilometers per hour and burns 5.72 liters per 100 kilometers. Electric only: K0
 open, the engine stopped; the car must follow the WLTC where the demand is low. The checkpoint asks
 only for low demand: at about 30 kilowatts instead of Lecture 4's 110, the machine is not meant to
 carry the fast phases alone.
@@ -570,9 +745,9 @@ battery from 60 to 39 percent: the pack is far too small to drive a whole cycle 
 <!--
 Section 04 in four lines. P0 and P1 turn with the engine: cheap to integrate, but every brake drags
 the engine and the car cannot drive with the engine off. P2, P3 and P4 sit behind a clutch: they can
-drive electrically, sail, and regenerate without dragging the engine. At equal power, decoupling
-is worth 15 to 16 points on the WLTC in the Chalmers study, P2 and P3 against P0; the clutch matters more than the
-machine's power. And you built the P2, the one position with every mode.
+drive electrically, sail, and regenerate without dragging the engine. At equal power, decoupling is
+worth 15 to 16 points on the WLTC in the Chalmers study, P2 and P3 against P0; the clutch matters
+more than the machine's power. And you built the P2, the one position with every mode.
 
 Next: when the engine does run, where on its map should it run?
 -->

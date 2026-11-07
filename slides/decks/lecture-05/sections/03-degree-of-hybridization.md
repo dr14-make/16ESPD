@@ -30,16 +30,25 @@ $$
 \mathrm{DOH} = \frac{P_{EM}}{P_{EM} + P_{ICE}}
 $$
 
+<div class="caption text-left">DOH: degree of hybridization · P<sub>EM</sub>: the electric
+machine's peak power · P<sub>ICE</sub>: the engine's peak power, both in kW · 0 = no machine, 1 =
+battery-electric</div>
+
 The larger it is, the smaller the engine can be, and the more of the time it runs near its best
 efficiency.
 
-**BSFC**, brake-specific fuel consumption: fuel mass per unit of shaft work.
+**BSFC**, brake-specific fuel consumption: grams of fuel per kWh of shaft work.
 
 $$
 \mathrm{BSFC} = \frac{\dot m_f}{P}
 \qquad
 \eta_b = \frac{1}{\mathrm{BSFC}\cdot H_u}
 $$
+
+<div class="caption text-left">ṁ<sub>f</sub>: fuel flow, g/h · <i>P</i>: shaft power, kW ·
+<i>H</i><sub>u</sub>: energy in the fuel, MJ/kg · η<sub>b</sub>: brake efficiency, the share of the
+fuel's energy that becomes shaft work · in these units, η<sub>b</sub> = 3600 / (BSFC ·
+<i>H</i><sub>u</sub>)</div>
 
 232 g/kWh with *H*<sub>u</sub> = 43.4 MJ/kg is η<sub>b</sub> = 35.7 %.
 
@@ -50,38 +59,55 @@ Our P2: DOH = 30 kW / (30 kW + 85.6 kW) ≈ **26 %**
 
 <img src="/figures/03-doh-sweep.svg" class="w-full" style="max-height: 24rem" alt="WLTC fuel saving of the P2 hybrid against the conventional car, SoC-corrected, for machines of 8, 15, 22, 30 and 40 kW: 22.2, 25.3, 27.6, 28.5 and 28.4 percent. The saving rises by 3.1 and 2.3 points from 8 to 22 kW, then by 0.9 to 30 kW, and 40 kW saves no more than 30 kW; 15 kW is marked at 25.3 percent, DOH 15 percent, and 30 kW at 28.5 percent, DOH 26 percent. The 8 kW point is hollow: that run falls 2.3 km/h behind the trace and does not end charge-sustaining."/>
 
+<div class="caption">Machine power across, WLTC fuel saving against the conventional car up. Past
+about 22 kW, a bigger machine saves almost nothing more.</div>
+
 </div>
 </div>
 
 <!--
-The degree of hybridization, DOH, is the share of the electric machine's power in the total: P EM
-over P EM plus P ICE. Zero is a conventional car, one is a battery-electric car. That is the
-original deck's definition, slide 11.
+The degree of hybridization, DOH, is the share of the electric machine's power in the total. On
+top, the electric machine's peak power, P EM. Below, the electric machine's power plus the
+engine's peak power, P ICE, where ICE stands for internal combustion engine. Both in kilowatts.
+Zero is a conventional car with no machine; one is a battery-electric car with no engine. That is
+the original course deck's definition, on its slide 11.
 
 What it buys, in the deck's words: the larger it is, the greater the scope for a smaller engine, and
 for having that engine run near its best efficiency for more of the time. A machine that can carry
 the car at low power lets the engine stay off there, which is exactly the region where section 01
 showed the engine is worst.
 
-The efficiency of an engine is usually given as BSFC, brake-specific fuel consumption: the fuel mass
-flow divided by the shaft power, in grams per kilowatt-hour. Lower is better. It is the inverse of
-the brake efficiency times the fuel's lower heating value. Check it with Lecture 2's best point: 232
-grams per kilowatt-hour is 0.232 kilograms per 3.6 megajoules; times 43.4 megajoules per kilogram,
-the heating value Lecture 4 used, that is 2.80 joules of fuel per joule of work, and the inverse is
-35.7 percent.
+The efficiency of an engine is usually given as BSFC, brake-specific fuel consumption, the term
+from section 01: how many grams of fuel the engine burns for each kilowatt-hour of work at its
+shaft. The first formula says it: the fuel flow, m dot f, in grams per hour, divided by the shaft
+power P, in kilowatts. Lower is better.
+
+The second formula turns it into an efficiency. Eta b, the brake efficiency, is the share of the
+fuel's energy that comes out as work at the shaft. It is one over BSFC times H u, the heating
+value: the energy in one kilogram of fuel, in megajoules per kilogram. The units must match: with
+BSFC in grams per kilowatt-hour and H u in megajoules per kilogram, the efficiency is 3600 divided
+by BSFC times H u, because a kilowatt-hour is 3.6 megajoules. Check it with Lecture 2's
+best point: 232 grams per kilowatt-hour is 0.232 kilograms per 3.6 megajoules; times 43.4
+megajoules per kilogram, the heating value Lecture 4 used, that is 2.80 joules of fuel per joule of
+work, and the inverse is 35.7 percent.
 
 Our P2 has a 30 kilowatt machine, so its DOH is 30 over 30 plus the engine's peak power. Lecture 2's
-map peaks at 85.6 kilowatts, at about 6000 rpm, the top of the best-BSFC line. So the DOH is about 26
-percent, a full hybrid.
+map peaks at 85.6 kilowatts, at about 6000 rpm, the top of the best-BSFC line. So the DOH is about
+26 percent, a full hybrid.
 
-The figure on the right is the sweep: the same P2 car and energy manager with machines from 8 to 40
-kilowatts, the WLTC fuel saving, SoC-corrected, against machine power. The ICCT review expects the
-saving to grow with power, and says going from 15 to 20 or 30 kilowatts adds 5 to 10 percent on P2,
-P3 and P4, in its own words. Ours grows from 25.3 percent at 15 kilowatts to 28.5 at 30, about 3
-points, most of it by 22 kilowatts, and then it is flat: 40 kilowatts saves 28.4, no more than 30.
-Past the point where the machine covers the regen and the low-power driving, more power buys
-nothing. The 8 kilowatt point is hollow: with the
-manager left as it is, that machine falls behind the trace and does not end charge-sustaining.
+The figure on the right runs the same P2 car and energy manager with five machine sizes, from 8 to
+40 kilowatts. Across is the machine's rated power, in kilowatts. Up is the WLTC fuel saving against
+the conventional car, in percent, with the fuel corrected for any change in the battery's charge.
+Each green dot is one run. A filled dot is a run that ends with the battery at its starting
+charge; the hollow dot is a run that does not, so we flag it.
+
+The ICCT review expects the saving to grow with power, and says going from 15 to 20 or 30
+kilowatts adds 5 to 10 percent on P2, P3 and P4, in its own words. Ours grows from 25.3 percent at
+15 kilowatts to 28.5 at 30, about 3 percentage points, most of it by 22 kilowatts, and then it is
+flat: 40 kilowatts saves 28.4, no more than 30. That is the one thing to take from the plot: past
+the point where the machine covers the regen and the low-power driving, more power buys nothing.
+The 8 kilowatt point is hollow: with the manager left as it is, that machine falls behind the speed
+the test asks for, and does not end with the battery at its starting charge.
 -->
 
 ---
@@ -97,7 +123,7 @@ routeAlias: micro-to-plug-in
 | **Micro** | stops and restarts the engine | 12 V starter, ≈ 3 kW | 5.0 % vs no stop/start (Chalmers); 3.5 % average (ICCT) |
 | **Mild, 48 V** | boost and regen; electric driving only if decoupled | 8–20 kW | ≈ 7 % (P0) to ≈ 16 % (P2, P3, P4+P0) vs stop/start, 15–16 kW |
 | **Full** | drives alone, boosts, regens; the engine can stay off | ≈ 30 kW, ≈ 1.4 kWh, 270 V (2011 Sonata Hybrid) | today's P2: 28.5 % vs no stop/start |
-| **Plug-in** | a full hybrid with a pack charged from the grid | a larger pack | first charge-depleting, then charge-sustaining |
+| **Plug-in** | a full hybrid with a pack charged from the grid | a larger pack | first drains the pack, then holds its charge |
 
 </div>
 
@@ -107,9 +133,10 @@ at 15 kW, the size the mild-hybrid studies compare at, only P2 ran: 25.3 %, in t
 <!--
 The degree of hybridization in four classes, from small to large.
 
-A micro hybrid only stops the engine at standstill and restarts it with a strengthened 12 volt
-starter. In the Chalmers study the ICCT review reproduces, a 3 kilowatt 12 volt stop/start saves
-5.0 percent on the WLTC against the same car without it. The ICCT's own average for micro hybrids is
+A micro hybrid only stops the engine at standstill and restarts it with a stronger 12 volt
+starter. Chalmers University of Technology in Sweden ran a study that the ICCT review reproduces.
+In it, a 3 kilowatt 12 volt stop/start saves 5.0 percent on the WLTC against the same car without
+it. The ICCT's own average for micro hybrids is
 3.5 percent on the WLTC.
 
 A mild hybrid at 48 volts adds a machine of 8 to 20 kilowatts, the range the research note collects
@@ -125,8 +152,9 @@ a claimed electric drive up to 62 miles per hour. That is the size of today's ca
 WLTC is what you measure in build 04: 28.5 percent against the same car without the hybrid, which
 idles at every stop, so the stop/start saving is inside that number.
 
-A plug-in hybrid is a full hybrid with a much larger pack charged from the grid. It first drives
-charge-depleting, mostly on grid energy, then charge-sustaining like a full hybrid. Today stays
+A plug-in hybrid is a full hybrid with a much larger pack charged from the grid. It first drains
+the pack, mostly on grid energy; we call that charge-depleting. Then it holds the pack's charge
+level like a full hybrid; we call that charge-sustaining. Today stays
 charge-sustaining; section 06 says why that matters for honest numbers.
 
 The green box: today's car is a full hybrid. Section 07 compares the five positions at its 30
@@ -156,7 +184,7 @@ routeAlias: cost
 ### The battery
 
 - The high-voltage battery is the largest single addition.
-- Average lithium-ion pack price, 2025: **108 $/kWh** (BNEF).
+- Average lithium-ion pack price, 2025: **108 $/kWh** (BloombergNEF).
 - A full hybrid's ≈ 1.4 kWh is small; a plug-in's pack is many times that, and so is its cost.
 
 </div>
@@ -203,11 +231,13 @@ routeAlias: power-battery
 
 </div>
 
-For each kWh it holds, the hybrid's pack gives about eight times the Leaf's power: its cells are
-built for **power rather than energy**.
+C rate: power ÷ stored energy. At 1 C the full pack would last one hour. For each kWh it holds,
+the hybrid's pack gives about eight times the Leaf's power: its cells are built for **power rather
+than energy**.
 
-So its **internal resistance** matters: at 30 kW about 130 A flow through it. Measured on new
-2011 Sonata packs (INL, 10 s pulse): ***R*₀ ≈ 0.33 Ω**, the value our model uses.
+So its **internal resistance** *R*₀ matters: at 30 kW about 130 A flow through it, and *I*²*R*,
+current squared times resistance, is lost as heat. Measured on new 2011 Sonata packs (INL, 10 s
+pulse): ***R*₀ ≈ 0.33 Ω**, the value our model uses.
 
 <div class="tight">
 
@@ -243,31 +273,40 @@ Li-ion in that table: 300 W/kg from 150 Wh/kg, **2 C**. A hybrid asks ten times 
 <!--
 The battery from the last slide, seen from the side that matters for a hybrid: power.
 
-Divide the power the pack must give by the energy it holds. Today's car, after the 2011 Sonata: 30
+Divide the power the pack must give by the energy it holds. The result is called the C rate. At 1
+C, the full pack would last one hour; at 2 C, half an hour. Today's car, after the 2011 Sonata: 30
 kilowatts from 1.4 kilowatt-hours, about 21 per hour, a 21 C discharge. Lecture 4's Leaf: 110
 kilowatts from 40 kilowatt-hours, about 2.75 C. The hybrid's pack has to give about eight times more
 power for each kilowatt-hour it holds. So hybrid cells are built for power rather than energy.
 
-And the pack's internal resistance matters. At 30 kilowatts out of the terminals about 133 amperes
-flow, and every one of them goes through R zero. Idaho National Laboratory measured new 2011 Sonata Hybrid packs, the
-same 72-cell, 5.3 ampere-hour, 270 volt pack: 0.32 to 0.38 ohm at the end of a 10 second pulse in
-the middle of the charge window, on two cars at two labs. Our model uses 0.33 ohm, and with it
-reproduces INL's own pulse power. Discharging at 30 kilowatts, the terminals sag to 226 volts: 5.8
-kilowatts of heat, 83.8 percent battery efficiency. Charging at 30 kilowatts takes 99 amperes, 3.2
-kilowatts of heat, 89.2 percent. A joule that goes in and comes back out at that power keeps about
-75 percent of itself. That is the round trip
-section 01 said every stored joule pays.
+And the pack's internal resistance matters. Think of it as a resistor inside the battery, R zero.
+Every ampere that flows goes through it and heats it: the heat is the current squared times the
+resistance, I squared R, the column in the lower table. At 30 kilowatts out of the terminals about
+133 amperes flow. Idaho National Laboratory, INL, measured new 2011 Sonata Hybrid packs, the same
+72-cell, 5.3 ampere-hour, 270 volt pack: 0.32 to 0.38 ohm at the end of a 10 second pulse in the
+middle of the charge window, on two cars at two labs. Our model uses 0.33 ohm, and with it
+reproduces INL's own pulse power.
 
-A 10 second value includes slower polarization, so in a model without an RC branch it somewhat
-overstates the loss on short transients; 0.2 ohm is the sensitivity case. And note what it does to
-the machine: at 0.33 ohm the pack sags to about 220 volts at the machine's full input, about 33
-kilowatts once its own losses are counted, so the model designs the 30 kilowatt machine for 220 volts, not the 270 volt open-circuit value. The research note
-`docs/research_notes/Electric and hybrid vehicles/hybrid-pack-resistance.md` has the sources.
+Now read the lower table. Discharging at 30 kilowatts, the terminal voltage drops to 226 volts: 5.8
+kilowatts become heat, so the battery's efficiency, the share of power that gets through, is 83.8
+percent. Charging at 30 kilowatts takes 99 amperes, 3.2 kilowatts of heat, 89.2 percent. A joule
+that goes in and comes back out at that power keeps about 75 percent of itself. That is the round
+trip section 01 said every stored joule pays.
+
+A 10 second value also contains slower effects inside the cells, which our simple battery model
+leaves out, so it somewhat overstates the loss on short pulses; we also try 0.2 ohm to see how much
+that matters. And note what it does to the machine: at 0.33 ohm the pack's voltage drops to about
+220 volts when the machine takes its full input, about 33 kilowatts once its own losses are
+counted. So the model designs the 30 kilowatt machine for 220 volts, not for the 270 volts the pack
+shows with no current flowing. The course's research note on the hybrid pack's resistance has the
+sources.
 
 The right side is from the batteries lecture, the summary table of slide 14; the deck calls its
-figures guidelines only. Read the two columns as a ratio: a typical Li-ion cell there gives 300 watts
-per kilogram from 150 watt-hours per kilogram, about 2 C. A hybrid asks about ten times that, which is
-why a hybrid pack is not just a small electric-car pack.
+figures guidelines only. The first number column is energy per kilogram, in watt-hours per kilogram;
+the second is power per kilogram, in watts per kilogram. The rows are lead-acid, nickel-cadmium,
+nickel-metal-hydride and lithium-ion. Read the two columns as a ratio: a typical Li-ion cell there
+gives 300 watts per kilogram from 150 watt-hours per kilogram, about 2 C. A hybrid asks about ten
+times that, which is why a hybrid pack is not just a small electric-car pack.
 -->
 
 ---
