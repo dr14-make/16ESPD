@@ -334,6 +334,22 @@ end
             "VehicleSystemsComponents.MyCar." => "VehicleSystemsComponents.HandsOn05."))
         @test normalize_fixture(fixture) == normalize_fixture(source)
     end
+    @testset "guide step 1a powertrain stays in sync" begin
+        guide = read(joinpath(@__DIR__, "..", "slides", "site", "lecture", "lecture-05", "index.md"), String)
+        blocks = [m.captures[1] for m in eachmatch(r"```dyad\n(.*?)```"s, guide)]
+        powertrain = only(filter(x -> occursin("component P2Powertrain\n", x), blocks))
+        source = read(joinpath(@__DIR__, "..", "dyad", "HandsOn05", "P2Powertrain.dyad"), String)
+        # Step 1a already includes the step-2 speed-command seam: keep it in the comparison.
+        # Only the step-3 start/stop additions are absent from that listing.
+        source = replace(source,
+            r"(?ms)^  \"Enable fuel-controlled clutch starts\"\n.*?^  variable machine_limit::Torque if start_stop\n" => "",
+            "fuel_controlled = start_stop, " => "",
+            r"(?ms)^  if start_stop\n.*?^  else\n    connect\(tau_ref, drive.tau_ref\)\n  end\n" =>
+                "  connect(tau_ref, drive.tau_ref)\n")
+        normalize_powertrain(x) = strip(replace(x, r"(?m)^metadata .*\n" => "",
+            "VehicleSystemsComponents.MyCar." => "VehicleSystemsComponents.HandsOn05."))
+        @test normalize_powertrain(powertrain) == normalize_powertrain(source)
+    end
     for (electric, analysis, stop) in (
         (false, h0_run, 1800.0),
         (true, VehicleSystemsComponents.Lecture5.P2ElectricWLTCTransient, 589.0))
