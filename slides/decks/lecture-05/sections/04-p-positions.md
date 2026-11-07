@@ -515,12 +515,11 @@ routeAlias: build-p2
 The finished P2 powertrain in Studio: engine → K0 → machine → CVT → differential, the battery on
 the machine.
 
-Captured with the build guide
+To capture: Studio screenshot of the `P2Powertrain` diagram
 
 </div>
 
-**Given:** `Vehicle.DisconnectClutch`, K0 with its actuator · `Vehicle.Electric.HybridDrive`, the
-30 kW machine and 1.4 kWh battery
+**Given:** `DisconnectClutch` (K0 and its actuator) · `HybridDrive` (30 kW, 1.4 kWh)
 
 [page: steps 1a–1c](../lecture/lecture-05/#step-1a) · reference `dyad/HandsOn05/P2Powertrain.dyad`, `dyad/HandsOn05/P2WLTC.dyad`
 
@@ -544,8 +543,7 @@ L/100 km · electric only, WLTC Low: speed error <b>1.50</b> km/h, SoC 0.60 → 
 </div>
 
 <!--
-Build 01: the P2 powertrain. On the left will be the finished powertrain in Studio; the screenshot
-is captured with the build guide.
+Build 01: the P2 powertrain. On the left, the finished powertrain in Studio.
 
 The italic line is the build. Lecture 2's mapped engine, then the K0 clutch, which the library gives
 you with its actuator. Then the hybrid drive: a 30 kilowatt machine with its converter and a 1.4

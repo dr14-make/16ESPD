@@ -62,7 +62,7 @@ routeAlias: rules
 
 <div class="diagram-wide">
 
-![The modes over the plane of the power the driver asks for at the wheels, horizontally, and the state of charge, vertically. Negative power, braking: regen, the machine brakes first with Lecture 4's blending. From zero to P ev: electric only, K0 open, engine off. From P ev to P line max: engine on its line, machine idle. Above P line max: boost, engine and machine. Below the SoC thresholds, from zero to P line max: charge, the engine on its line above the demand and the machine generating the rest; above P line max: the engine alone above its line, as boost fades out with low charge. Two dashed lines mark the SoC hysteresis: charge on at the lower, charge off at the upper.](/diagrams/06-modes.svg)
+![The modes over the plane of the power the driver asks for at the wheels, horizontally, and the state of charge, vertically. Negative power, braking: regen, the machine brakes first with Lecture 4's blending. From zero to the electric-drive threshold, P ev: electric only, K0 open, engine off. From P ev to the line's power cap, P line max: engine on its line, machine idle. Above P line max: boost, engine and machine. Below the SoC thresholds, from zero to P line max: charge, the engine on its line above the demand and the machine generating the rest; above P line max: the engine alone above its line, as boost fades out with low charge. Two dashed lines mark the SoC hysteresis: charge on at the lower, charge off at the upper.](/diagrams/06-modes.svg)
 
 </div>
 <div class="grid grid-cols-2 gap-x-8 text-[0.85rem] mt-2">
@@ -302,7 +302,7 @@ routeAlias: build-energy-manager
 The energy manager in Studio: demand, SoC and speeds in; the three latches; engine on, K0, engine
 torque and machine torque out.
 
-Captured with the build guide
+To capture: Studio screenshot of the `manager` block in the `P2HybridWLTC` diagram
 
 </div>
 
@@ -334,7 +334,7 @@ speed error <b>1.32</b> km/h</div>
 </div>
 
 <!--
-Build 03: the energy manager. The screenshot will show it in Studio, captured with the build guide.
+Build 03: the energy manager. On the left, the manager in Studio.
 
 The library gives you the rules as one block, the energy manager: three of Lecture 2's latches, on
 the demand for starting the engine, on the line's cap for boost, and on the state of charge for
