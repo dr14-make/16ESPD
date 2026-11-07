@@ -90,9 +90,6 @@ lag. The velocity constraint avoids dependence on accumulated absolute shaft ang
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
-  __local__speed_commanded = speed_commanded
-  append!(__params, @parameters (speed_commanded::Bool), [description = "Use the speed command rather than the pedal schedule (assumed; fixed configuration)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, speed_commanded, __local__speed_commanded)
   __local__i_launch = i_launch
   append!(__params, @parameters (i_launch::Real), [description = "Launch ratio, including final drive (assumed for a small-car belt CVT)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, i_launch, __local__i_launch)
@@ -184,12 +181,19 @@ lag. The velocity constraint avoids dependence on accumulated absolute shaft ang
   push!(__eqs, w_b ~ ModelingToolkit.D_nounits(spline_b.phi) - ModelingToolkit.D_nounits(support.phi))
   push!(__eqs, N_a ~ w_a * 30 / pi)
   push!(__eqs, N_b ~ sqrt((w_b * 30 / pi) ^ 2 + output_rpm_floor ^ 2))
-  push!(__eqs, N_target ~ ifelse(speed_commanded, N_ref, target_rpm_min + min(max(pedal, 0.0), 1.0) * (target_rpm_max - target_rpm_min)))
-  push!(__eqs, i_command ~ min(max(N_target / N_b, i_overdrive), i_launch))
   push!(__eqs, ModelingToolkit.D_nounits(ratio) ~ (i_command - ratio) / ratio_time)
   push!(__eqs, w_a ~ ratio * w_b)
   push!(__eqs, 0 ~ ratio * spline_a.tau + spline_b.tau)
   push!(__eqs, support.tau ~ -spline_a.tau - spline_b.tau)
+
+  ### Control Structures
+  if speed_commanded
+    push!(__eqs, N_target ~ N_ref)
+    push!(__eqs, i_command ~ min(max(N_ref / N_b, i_overdrive), i_launch))
+  else
+    push!(__eqs, N_target ~ target_rpm_min + min(max(pedal, 0.0), 1.0) * (target_rpm_max - target_rpm_min))
+    push!(__eqs, i_command ~ min(max(N_target / N_b, i_overdrive), i_launch))
+  end
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

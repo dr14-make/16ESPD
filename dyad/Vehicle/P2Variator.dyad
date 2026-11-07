@@ -17,7 +17,7 @@ component P2Variator
   "Target input speed [rpm] (derived; SpeedCommandedVariator)"
   N_ref = RealInput() {^N_ref}
   "Use the speed command rather than the pedal schedule (assumed; fixed configuration)"
-  parameter speed_commanded::Boolean = false
+  structural parameter speed_commanded::Boolean = false
   "Launch ratio, including final drive (assumed for a small-car belt CVT)"
   parameter i_launch::Real = 12.0
   "Overdrive ratio, including final drive (assumed for a small-car belt CVT)"
@@ -51,8 +51,13 @@ relations
   w_b = der(spline_b.phi) - der(support.phi)
   N_a = w_a * 30 / pi
   N_b = sqrt((w_b * 30 / pi)^2 + output_rpm_floor^2)
-  N_target = ifelse(speed_commanded, N_ref, target_rpm_min + min(max(pedal, 0.0), 1.0) * (target_rpm_max - target_rpm_min))
-  i_command = min(max(N_target / N_b, i_overdrive), i_launch)
+  if speed_commanded
+    N_target = N_ref
+    i_command = min(max(N_ref / N_b, i_overdrive), i_launch)
+  else
+    N_target = target_rpm_min + min(max(pedal, 0.0), 1.0) * (target_rpm_max - target_rpm_min)
+    i_command = min(max(N_target / N_b, i_overdrive), i_launch)
+  end
   der(ratio) = (i_command - ratio) / ratio_time
   w_a = ratio * w_b
   0 = ratio * spline_a.tau + spline_b.tau
