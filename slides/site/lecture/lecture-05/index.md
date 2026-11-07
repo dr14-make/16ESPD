@@ -106,13 +106,13 @@ Add structural Boolean `engine_stopped = false`, Real `position_start = 0.0`, an
 
 ::: tip Checkpoint 1a — wiring
 
-Trace engine → K0 → shared machine/variator input → variator → differential → front wheels. All powertrain supports reach `mount`; there is one final drive and no launch clutch. The four fixed-mode commands and nine outputs remain accessible on `powertrain`. This is a structural checkpoint, not evidence that the engine-only car can launch.
+In code view, trace engine → K0 → shared machine/variator input → variator → differential → front wheels; the diagram below leaves out the connections inside `if` blocks. All powertrain supports reach `mount`; there is one final drive and no launch clutch. The four fixed-mode commands and nine outputs remain accessible on `powertrain`. This is a structural checkpoint, not evidence that the engine-only car can launch.
 
 :::
 
 [![Studio diagram of HandsOn05.P2Powertrain: input ports on the left, engine, K0, hybrid drive and variator left to right with the speed-commanded variator below, output ports and the spline on the right, the housing support at the bottom](/lecture/lecture-05/img/step01-p2-powertrain.png)](/lecture/lecture-05/img/step01-p2-powertrain.png)
 
-The reference already carries the step-2 and step-3 ports (`N_ref`, `engine_on`, `engine_torque_ref`). Studio does not draw a `connect` inside an `if` block, so the shaft from K0 through the variator and the `tau_ref` path show only in code.
+The reference already carries the step-3 ports `engine_on` and `engine_torque_ref`. Studio does not draw a `connect` inside an `if` block, so every such connection appears only in code view: here `tau_ref` → `drive.tau_ref`, `N_ref` → `speed_variator.N_ref`, `cvt_pedal` → `variator.pedal`, the shaft from `k0.spline_b` through either variator to `spline`, each variator's support to `support`, and `engine.spline` → `hold.spline`.
 
 #### Code view required — your powertrain and fixture
 
@@ -822,12 +822,12 @@ conditions from step 2. Replace the step-2 signal wiring with the following.
 
 ### Code view required — add start/stop to your powertrain
 
-In `MyCar.P2Powertrain`, add the following declarations before `relations`. Do not remove the step-2 speed-commanded option or the public `available_torque` output:
+In `MyCar.P2Powertrain`, add the following declarations before `relations`. Do not remove the step-2 speed-commanded option or the public `available_torque` output. Studio draws the two new ports stacked at the block center until they have a placement: drag each to the left edge of the diagram.
 
 ```dyad
 structural parameter start_stop::Boolean = false
-engine_on = RealInput() if start_stop
-engine_torque_ref = RealInput() if start_stop
+engine_on = RealInput() if start_stop {^engine_on}
+engine_torque_ref = RealInput() if start_stop {^engine_torque_ref}
 parameter firing_rpm::Real = 400.0
 parameter firing_width::Real(min = eps(Float64)) = 300.0
 variable firing_fraction::Real if start_stop
@@ -1013,9 +1013,9 @@ The inverse map needs no PI trim; steady analytic torque round trips are within 
 
 ## Limits of this reference
 
-The torque inverse assumes
-unchanged default engine and air-path calibration. Start compensation remains subject to
-the machine's current and power limits; it cannot guarantee full driver demand at every start.
+The torque inverse assumes unchanged default engine and air-path calibration. Start
+compensation remains subject to the machine's current and power limits; it cannot guarantee full
+driver demand at every start.
 The [homework](./homework) takes the same car to a series hybrid.
 
 The unchanged variator schedules **1800–6000 rpm**, above the machine's 1412 rpm loaded corner;

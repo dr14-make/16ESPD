@@ -350,6 +350,16 @@ end
             "VehicleSystemsComponents.MyCar." => "VehicleSystemsComponents.HandsOn05."))
         @test normalize_powertrain(powertrain) == normalize_powertrain(source)
     end
+    @testset "guide step 3 start/stop declarations stay in sync" begin
+        guide = read(joinpath(@__DIR__, "..", "slides", "site", "lecture", "lecture-05", "index.md"), String)
+        blocks = [m.captures[1] for m in eachmatch(r"```dyad\n(.*?)```"s, guide)]
+        listing = only(filter(x -> startswith(x, "structural parameter start_stop::Boolean"), blocks))
+        source = read(joinpath(@__DIR__, "..", "dyad", "HandsOn05", "P2Powertrain.dyad"), String)
+        declarations = match(r"(?ms)^  structural parameter start_stop::Boolean.*?^  variable machine_limit::Torque if start_stop\n", source).match
+        # The guide omits the description strings; link tags stay, so a missing tag fails.
+        declaration_lines(x) = [strip(l) for l in split(x, '\n') if !isempty(strip(l)) && !startswith(strip(l), '"')]
+        @test declaration_lines(listing) == declaration_lines(declarations)
+    end
     for (electric, analysis, stop) in (
         (false, h0_run, 1800.0),
         (true, VehicleSystemsComponents.Lecture5.P2ElectricWLTCTransient, 589.0))
