@@ -1,0 +1,14 @@
+"Ideal fixed or torque-free shaft termination (derived; Fixed and unconnected spline semantics)."
+component OptionalShaftHold
+  "Shaft being held (derived; Spline potential angle and flow torque)"
+  spline = Spline() {^spline}
+  "Fix the shaft angle instead of exerting zero torque (assumed; electric-only fixture)"
+  structural parameter held::Boolean = false
+relations
+  if held
+    spline.phi = 0.0
+  else
+    spline.tau = 0.0
+  end
+metadata {"_links":{"spline":{"Dyad":{"placement":{"icon":{"x1":450,"x2":550,"y1":-50,"y2":50},"diagram":{"x1":475,"x2":525,"y1":-25,"y2":25}}}}}}
+end

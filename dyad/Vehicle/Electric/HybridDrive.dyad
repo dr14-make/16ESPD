@@ -15,6 +15,12 @@ component HybridDrive
   support = Spline() {^support}
   "Battery state of charge (derived; Battery interface)"
   SoC = RealOutput() {^SoC}
+  "Net machine shaft torque [N.m] (derived; DCMachine)"
+  machine_torque = RealOutput() {^machine_torque}
+  "Pack open-circuit voltage [V] (derived; Battery)"
+  battery_voltage = RealOutput() {^battery_voltage}
+  "Pack current, positive discharge [A] (derived; Battery)"
+  battery_current = RealOutput() {^battery_current}
   "Peak shaft torque (ORNL-2011)"
   parameter T_max::Torque = 205.0
   "Rated shaft power (ORNL-2011)"
@@ -91,9 +97,15 @@ relations
   connect(machine.support, reduction.support, support)
   connect(battery.SoC, SoC)
   converter.i_ref = tau_ref / (converter.field * machine.k)
+  machine_torque = machine.tau
+  battery_voltage = battery.E
+  battery_current = battery.i
 metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/ElectricDrive.svg"}},
   "_links": {
+    "machine_torque": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 200, "y2": 280}, "diagram": {"x1": 975, "x2": 1025, "y1": 215, "y2": 265}}}},
+    "battery_voltage": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 340, "y2": 420}, "diagram": {"x1": 975, "x2": 1025, "y1": 355, "y2": 405}}}},
+    "battery_current": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 480, "y2": 560}, "diagram": {"x1": 975, "x2": 1025, "y1": 495, "y2": 545}}}},
     "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
     "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 400, "x2": 1050, "y2": 500}}}},
     "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 788, "y1": 950, "x2": 888, "y2": 1050}}}},

@@ -36,6 +36,7 @@ capacity to 229.885 N.m, still above the 1.5 sizing factor.
  * `spline_b` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `support` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `engage` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `measured_position` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
 ## Variables
 
@@ -105,6 +106,7 @@ capacity to 229.885 N.m, still above the 1.5 sizing factor.
 
   ### Final Path Parameters
   append!(__vars, @variables (engage(t)::Real), [input = true])
+  append!(__vars, @variables (measured_position(t)::Real), [output = true])
 
   ### Variables (declarations)
   append!(__vars, @variables (position(t)::Real), [description = "Actuator position before capacity saturation (derived: actuator output)"])
@@ -167,6 +169,7 @@ capacity to 229.885 N.m, still above the 1.5 sizing factor.
   push!(__eqs, spline_b.tau ~ -tau)
   push!(__eqs, support.tau ~ -spline_a.tau - spline_b.tau)
   push!(__eqs, connect(engage, actuator.u))
+  push!(__eqs, connect(actuator.y, measured_position))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -1,0 +1,14 @@
+"Parameter-selected signal path without events (derived; Lecture 5 fixed configurations)."
+component ParameterGate
+  "Signal to pass (derived; fixed-mode selection)"
+  u = RealInput() {^u}
+  "Selected signal (derived; fixed-mode selection)"
+  y = RealOutput() {^y}
+  "Pass the signal rather than the fallback (assumed; fixed configuration)"
+  parameter on::Boolean = true
+  "Output when disabled (assumed; fixed configuration)"
+  parameter fallback::Real = 0.0
+relations
+  y = ifelse(on, u, fallback)
+metadata {"_links":{"u":{"Dyad":{"placement":{"icon":{"x1":-50,"x2":50,"y1":450,"y2":550},"diagram":{"x1":-25,"x2":25,"y1":475,"y2":525}}}},"y":{"Dyad":{"placement":{"icon":{"x1":950,"x2":1050,"y1":450,"y2":550},"diagram":{"x1":975,"x2":1025,"y1":475,"y2":525}}}}}}
+end
