@@ -6,11 +6,13 @@ title: Lecture 5 — compose a P2 hybrid powertrain
 
 # Lecture 5: compose a P2 hybrid powertrain
 
-**Draft — Studio rehearsal unverified.** This guide describes task #111's reference composition and reported numerical checks, not a rehearsed Studio walkthrough. Do not treat the existence of an analysis as a passing run.
+Rehearsed in Dyad Studio 3.5.1. Code-view work is called out below; the revised powertrain diagram will be checked after these fixes land.
 
 **What you build.** A transmission-input P2 hybrid from existing library parts: mapped engine → disconnect clutch K0 → machine shaft → controlled variator → differential → front wheels. Step 2 adds the operating-line lookup and speed-commanded variator. Steps 3 and 4 add the energy manager, clutch starts and charge-sustaining comparison.
 
-**How each step works.** As in HandsOn04, use the instance names below, build the diagram, then compare with the checkpoint before going on. The parts tables give library paths; names in code use dots instead of ›. Parameters with physical units use **Real** in Studio's **Add parameter** form, with the unit entered separately.
+**Working module.** In `VehicleSystemsComponents`, create a module named `MyCar` (right-click the library › **Add Module**). Add a component with the **+** on its row. If the empty module does not appear, create `P2Powertrain` at the library root, move its `.dyad` file into `dyad/MyCar/`, then use **F1 › Dyad: Compile**. The name box takes `P2Powertrain`, not `MyCar.P2Powertrain`. Create the remaining components and analyses with the module row's **+**. `MyCar` in listings means this module; `HandsOn05` is the fallback answer.
+
+**How each step works.** As in HandsOn04, use the instance names below, build the diagram, then compare with the checkpoint before going on. The parts tables give library paths; names in code use dots instead of ›. Parameters with physical units use **Real** in Studio's **Add parameter** form, with the unit entered separately. **Code view required** labels mark declarations, conditional structure, nested modifiers, equations and initialization that are not diagram wiring. Save edits and wait for compilation before running; a source change alone is not a new simulation. In the Julia REPL, `solution` is the result of the most recent Studio analysis run: capture it immediately as `r = solution` before running another analysis.
 
 **Fell behind?** The reference answers under `dyad/HandsOn05/` are self-contained copies of the `P2Powertrain.dyad`, `P2WLTC.dyad`, `P2OperatingLineWLTC.dyad`, `P2HybridWLTC.dyad` and `TorqueToPedal.dyad` compositions, with references between them localized to `HandsOn05`. They still use the existing library parts. Compare them with `Vehicle.P2Powertrain`, `Lecture5.P2WLTC`, `Lecture5.P2OperatingLineWLTC`, `Lecture5.P2HybridWLTC` and `Vehicle.TorqueToPedal`; do not claim that a wrapper around those answers is your own composition.
 
@@ -18,6 +20,8 @@ title: Lecture 5 — compose a P2 hybrid powertrain
 - [1b · Electric-only WLTC Low](#step-1b)
 - [1c · Engine-only WLTC through K0](#step-1c)
 - [2 · Hold the engine on its operating line](#step-2)
+- [3 · Let the energy manager split the demand](#step-3)
+- [4 · Compare at equal battery charge](#step-4)
 
 ## 1a · Wire the P2 powertrain {#step-1a}
 
@@ -27,7 +31,7 @@ title: Lecture 5 — compose a P2 hybrid powertrain
 
 #### Parts
 
-Create your own `P2Powertrain` component and expose the same interface. Place:
+Create `P2Powertrain` in your module. Add its ports with **+ › Dyad › RealInput / RealOutput / Spline**, then use **Edit Parameters › pencil** to rename each to the interface above. Place:
 
 | Name | Library path | Set |
 | --- | --- | --- |
@@ -41,6 +45,8 @@ Add structural Boolean `engine_stopped = false`, Real `position_start = 0.0`, an
 
 #### Do this
 
+**Code view required:** structural declarations, conditional parts, equations and initial conditions below must be entered in the component source. Use the diagram for placement and the explicit `connect(...)` wiring.
+
 1. In Studio, place `engine`, `k0`, `drive` and `variator` from left to right. Wire the shafts:
 
    ```dyad
@@ -52,10 +58,47 @@ Add structural Boolean `engine_stopped = false`, Real `position_start = 0.0`, an
 
    The machine shares the transmission-input shaft; it is not another gear in series.
 2. Wire `engine_pedal` to `engine.pedal`, `engage` to `k0.engage`, `tau_ref` to `drive.tau_ref`, and `cvt_pedal` to `variator.pedal`.
-3. Export `engine.speed.w`, `engine.tau_e` and `engine.mdot_fuel`; `drive.machine.tau`; `k0.position`; `drive.SoC`; and `drive.battery.E` and `drive.battery.i` to the corresponding outputs above.
-4. Reproduce the reference initialization: engine manifold pressure `101325.0` Pa and machine rotor angle `0.0`. With `engine_stopped = false`, initialize engine crankshaft speed to `engine_speed_start` and angle to `0.0`.
-5. For the fixed electric fixture only, conditionally place `hold` and connect `engine.spline` to `hold.spline`. Set `MappedEngine`'s `fuel_cut_rpm = -2.0` and `fuel_resume_rpm = -1.0` in this configuration; otherwise retain `1300.0` and `1000.0`. At zero pedal and held zero speed, the electric fixture initializes `cut = 1`, so fuel is cut without events. This is a fixed test configuration, not engine stopping, starting or mode-switching logic.
-6. Create your own `P2WLTC` fixture using the reference `Lecture5.P2WLTC` for the planar car, road load, cycle and driver. Keep structural Boolean `electric = false`, mass `m = 1500.0` kg and `dv_wheel = 0.01` m/s. Pass `engine_stopped = electric`, `position_start = 0.0` to `powertrain`. Keep PI gain `k = 50.0` in electric mode; use `110.0` and `Ti = 1.0` s in engine-only mode (electric keeps `Ti = 2.0` s). Set the nested `powertrain.drive.P_aux` to `300.0` W in electric mode and `0.0` in engine-only mode so the conventional baseline draws no battery energy. In engine-only mode also set the nested drive's `T_f`, `K_i`, `k_w`, `C` and `J` to zero; retain all hybrid-drive defaults in electric mode.
+3. Wire the ports `engine.tau_e` → `engine_torque`, `engine.mdot_fuel` → `mdot_fuel` and `drive.SoC` → `SoC`. **Code view required:** the other exports are variables, not drawable connector endpoints:
+
+   ```dyad
+   engine_speed = engine.speed.w
+   machine_torque = drive.machine.tau
+   position = k0.position
+   E = drive.battery.E
+   i = drive.battery.i
+   ```
+
+   Never put these variable paths inside `connect(...)`.
+4. **Code view required:** put these lines in `relations`:
+
+   ```dyad
+   initial engine.air.manifold.p = 101325.0
+   initial drive.machine.rotor.phi = 0.0
+   if !engine_stopped
+     initial engine.crankshaft.w = engine_speed_start
+     initial engine.crankshaft.phi = 0.0
+   end
+   ```
+
+   The listing below combines the last conditional with the stopped-engine connection; use one form, not both.
+5. **Code view required:** for the fixed electric fixture only, conditionally place `hold` and connect `engine.spline` to `hold.spline`. Set `MappedEngine`'s `fuel_cut_rpm = -2.0` and `fuel_resume_rpm = -1.0` in this configuration; otherwise retain `1300.0` and `1000.0`. At zero pedal and held zero speed, the electric fixture initializes `cut = 1`, so fuel is cut without events. This is a fixed test configuration, not engine stopping, starting or mode-switching logic.
+   The declarations and conditional relation are:
+
+   ```dyad
+   structural parameter engine_stopped::Boolean = false
+   hold = RotationalComponents.Components.Fixed() if engine_stopped
+   engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(fuel_cut_rpm = ifelse(engine_stopped, -2.0, 1300.0), fuel_resume_rpm = ifelse(engine_stopped, -1.0, 1000.0))
+   ```
+
+   In `relations`:
+
+   ```dyad
+   if engine_stopped
+     connect(engine.spline, hold.spline)
+   end
+   ```
+
+6. **Code view required:** create your own `P2WLTC` test fixture using the complete listing below for the planar car, road load, cycle and driver. Keep structural Boolean `electric = false`, mass `m = 1500.0` kg and `dv_wheel = 0.01` m/s. Pass `engine_stopped = electric`, `position_start = 0.0` to `powertrain`. Keep PI gain `k = 50.0` in electric mode; use `110.0` and `Ti = 1.0` s in engine-only mode (electric keeps `Ti = 2.0` s). Set the nested `powertrain.drive.P_aux` to `300.0` W in electric mode and `0.0` in engine-only mode so the conventional baseline draws no battery energy. In engine-only mode also set the nested drive's `T_f`, `K_i`, `k_w`, `C` and `J` to zero; retain all hybrid-drive defaults in electric mode.
 7. Wire `powertrain.spline` to `differential.flange_b`, and the differential's `flange_left` and `flange_right` to `car.spin_fl` and `car.spin_fr`. Ground `powertrain.support` with `mount`, a `RotationalComponents.Components.Fixed`. Retain the reference's straight steering, flat road, speed feedback and wheel/brake initial conditions.
 
 ::: tip Checkpoint 1a — wiring
@@ -64,20 +107,229 @@ Trace engine → K0 → shared machine/variator input → variator → different
 
 :::
 
+#### Code view required — your powertrain and fixture
+
+Create `MyCar.P2Powertrain` and the **separate test component** `MyCar.P2WLTC`; a powertrain with undriven inputs is not an analysis fixture. The speed-commanded option below prepares step 2; leave it false for all of step 1. `available_torque` prepares step 3 and needs no extra input. Diagram placement metadata is omitted.
+
+```dyad
+"""
+P2 transmission-input hybrid with a pedal- or speed-commanded total CVT ratio.
+MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to ground.
+`engine_stopped` holds the engine with fuel cut for fixed electric-only tests.
+"""
+component P2Powertrain
+  "Engine pedal, 0 to 1 (derived; MappedEngine)"
+  engine_pedal = RealInput() {^engine_pedal}
+  "K0 engagement request (derived; DisconnectClutch)"
+  engage = RealInput() {^engage}
+  "Machine torque request [N.m] (derived; HybridDrive)"
+  tau_ref = RealInput() {^tau_ref}
+  "Variator speed-schedule pedal (derived; ControlledVariator)"
+  cvt_pedal = RealInput() if !speed_commanded {^cvt_pedal}
+  "Target transmission input speed [rpm]"
+  N_ref = RealInput() if speed_commanded {^N_ref}
+  "Select speed-commanded CVT scheduling"
+  structural parameter speed_commanded::Boolean = false
+  "Output to planar differential (derived; P2 layout)"
+  spline = Spline() {^spline}
+  "Stationary housing (assumed; planar bench)"
+  support = Spline() {^support}
+  "Engine speed [rad/s] (derived; crank sensor)"
+  engine_speed = RealOutput() {^engine_speed}
+  "Engine brake torque [N.m] (derived; map)"
+  engine_torque = RealOutput() {^engine_torque}
+  "Available full-load engine torque at the measured speed [N.m]"
+  available_torque = RealOutput() {^available_torque}
+  "Fuel flow [kg/s] (derived; map)"
+  mdot_fuel = RealOutput() {^mdot_fuel}
+  "Net machine shaft torque [N.m] (derived; DCMachine)"
+  machine_torque = RealOutput() {^machine_torque}
+  "K0 actuator position (derived; actuator)"
+  position = RealOutput() {^position}
+  "Battery state of charge (derived; coulomb count)"
+  SoC = RealOutput() {^SoC}
+  "Battery open-circuit voltage [V] (derived; HybridDrive)"
+  E = RealOutput() {^E}
+  "Battery current, positive discharge [A] (derived; Battery)"
+  i = RealOutput() {^i}
+  "Hold engine stopped with fuel cut for an electric-only fixture (assumed; no start dynamics)"
+  structural parameter engine_stopped::Boolean = false
+  "Initial K0 position (assumed; fixed-mode bench)"
+  parameter position_start::Real = 0.0
+  "Initial running-engine speed [rad/s] (assumed; 800 rpm idle for launch)"
+  parameter engine_speed_start::AngularVelocity = 800.0 * pi / 30
+  engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(fuel_cut_rpm = ifelse(engine_stopped, -2.0, 1300.0), fuel_resume_rpm = ifelse(engine_stopped, -1.0, 1000.0)) {^engine}
+  k0 = VehicleSystemsComponents.Vehicle.DisconnectClutch(position_start = position_start) {^k0}
+  drive = VehicleSystemsComponents.Vehicle.Electric.HybridDrive() {^drive}
+  variator = VehicleSystemsComponents.Vehicle.ControlledVariator() if !speed_commanded {^variator}
+  speed_variator = VehicleSystemsComponents.Vehicle.SpeedCommandedVariator() if speed_commanded {^speed_variator}
+  hold = RotationalComponents.Components.Fixed() if engine_stopped {^hold}
+relations
+  initial engine.air.manifold.p = 101325.0
+  initial drive.machine.rotor.phi = 0.0
+  connect(engine_pedal, engine.pedal)
+  connect(engage, k0.engage)
+  connect(tau_ref, drive.tau_ref)
+  if speed_commanded
+    connect(N_ref, speed_variator.N_ref)
+    connect(k0.spline_b, drive.spline, speed_variator.spline_a)
+    connect(speed_variator.spline_b, spline)
+    connect(speed_variator.support, support)
+  else
+    connect(cvt_pedal, variator.pedal)
+    connect(k0.spline_b, drive.spline, variator.spline_a)
+    connect(variator.spline_b, spline)
+    connect(variator.support, support)
+  end
+  connect(engine.spline, k0.spline_a)
+  connect(engine.support, k0.support, drive.support, support)
+  engine_speed = engine.speed.w
+  connect(engine.tau_e, engine_torque)
+  available_torque = engine.torque_map.full_load.y
+  connect(engine.mdot_fuel, mdot_fuel)
+  connect(drive.SoC, SoC)
+  machine_torque = drive.machine.tau
+  position = k0.position
+  E = drive.battery.E
+  i = drive.battery.i
+  if engine_stopped
+    connect(engine.spline, hold.spline)
+  else
+    initial engine.crankshaft.w = engine_speed_start
+    initial engine.crankshaft.phi = 0.0
+  end
+end
+```
+
+Use this current `HandsOn05.P2WLTC` composition as your fixture listing, with the two local paths changed to `MyCar`. It owns the car, driver, loads, metering and fixed-mode branches; it is not an `extends Lecture5.P2WLTC` shortcut. Save this fixture before creating its analyses.
+
+```dyad
+"Planar P2 fixed-mode WLTC fixture (derived; PlanarBEVWLTC, Lecture 5 step 1)."
+test component P2WLTC
+  "Electric-only fixed configuration; no mode switching (assumed; step 1)"
+  structural parameter electric::Boolean = false
+  "Vehicle and road-load mass (assumed; shared planar benchmark)"
+  parameter m::Mass = 1500.0
+  "Wheel radius (derived; planar benchmark)"
+  parameter radius::Length = 0.31
+  "PI gain, input-shaft N.m per km/h: 50 for the electric fixture, 110 shared by the engine and hybrid comparisons"
+  parameter k::Real = ifelse(electric, 50.0, 110.0)
+  "PI integral time: 2 s for the electric fixture, 1 s for the shared Lecture 5 driver (assumed)"
+  parameter Ti::Time = ifelse(electric, 2.0, 1.0)
+  "Positive driver ceiling [N.m], pedal saturation or machine peak"
+  parameter tau_max::Torque = ifelse(electric, 205.0, 150.0)
+  "Initial wheel surface speed offset (assumed; MultibodyComponents #185)"
+  parameter dv_wheel::Velocity = 0.01
+  "Center of K0 launch engagement [rpm] (assumed; CentrifugalClutch)"
+  parameter engage_rpm::Real = 1300.0
+  "Width of K0 launch engagement [rpm] (assumed; CentrifugalClutch)"
+  parameter engage_width_rpm::Real(min = eps(Float64)) = 120.0
+  "Negative PI limit [N.m], independent of propulsion saturation"
+  parameter tau_brake::Torque = 205.0
+  "Total wheel brake torque per negative driver N.m, launch ratio reference"
+  parameter brake_gain::Real = 12.0
+  "Center of machine-side K0 lock-up ramp [rpm]; open at 800 rpm idle, closed by 880 rpm"
+  parameter lock_rpm::Real = 840.0
+  "Width of machine-side K0 lock-up ramp [rpm]"
+  parameter lock_width_rpm::Real(min = eps(Float64)) = 12.0
+  trace = VehicleSystemsComponents.Vehicle.DriveCycle() {^trace}
+  driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_brake) {^driver}
+  no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
+  kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
+  powertrain = VehicleSystemsComponents.MyCar.P2Powertrain(engine_stopped = electric, position_start = 0.0, drive(P_aux = ifelse(electric, 300.0, 0.0), T_f = ifelse(electric, 0.5 * (30.0e3 / 110.0e3), 0.0), K_i = ifelse(electric, 1.0 * (30.0e3 / 110.0e3), 0.0), k_w = ifelse(electric, 300.0 / (10100.0 * pi / 30.0) ^ 3 * (30.0e3 / 110.0e3), 0.0), C = ifelse(electric, 200.0 * (30.0e3 / 110.0e3), 0.0), J = ifelse(electric, 0.05 * (30.0e3 / 110.0e3), 0.0))) {^powertrain}
+  differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
+  mount = RotationalComponents.Components.Fixed() {^mount}
+  straight = RotationalComponents.Components.Fixed() {^straight}
+  flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius) {^car}
+  motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
+  roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
+  split = VehicleSystemsComponents.Vehicle.Electric.TorqueSplit(ratio = 1.0) {^split}
+  meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel() {^meter}
+relations
+  connect(car.bus, motion.bus)
+  connect(trace.y, driver.u_s)
+  connect(motion.vx, kmh.u, meter.speed)
+  connect(kmh.y, driver.u_m, split.v)
+  connect(no_ff.y, driver.u_ff)
+  connect(powertrain.spline, differential.flange_b)
+  connect(differential.flange_left, car.spin_fl)
+  connect(differential.flange_right, car.spin_fr)
+  connect(powertrain.support, mount.spline)
+  connect(car.steering, straight.spline)
+  connect(flat.y, roadload.grade)
+  connect(car.chassis, roadload.chassis)
+  connect(driver.y, split.tau_ref)
+  connect(powertrain.mdot_fuel, meter.mdot_fuel)
+  meter.P_stored = powertrain.E * powertrain.i
+  if electric
+    powertrain.cvt_pedal = min(max(driver.y / 150.0, 0.0), 1.0)
+    powertrain.engine_pedal = 0.0
+    powertrain.engage = 0.0
+    connect(split.tau_motor, powertrain.tau_ref)
+    car.tau_fl = split.tau_brake * powertrain.variator.ratio
+    car.tau_fr = car.tau_fl
+  else
+    powertrain.engine_pedal = min(max(driver.y / tau_max, 0.0), 1.0)
+    powertrain.cvt_pedal = powertrain.engine_pedal
+    powertrain.engage = max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm)))
+    powertrain.tau_ref = 0.0
+    car.tau_fl = -min(driver.y, 0.0) * brake_gain / 2.0
+    car.tau_fr = car.tau_fl
+  end
+  car.tau_rl = 0.0
+  car.tau_rr = 0.0
+  initial car.body.r = [0, 0]
+  initial car.body.v = [0, 0]
+  initial car.body.phi = 0.0
+  initial car.body.w = 0.0
+  initial car.fl.inertia.w = dv_wheel / radius
+  initial car.fr.inertia.w = dv_wheel / radius
+  initial car.rl.inertia.w = dv_wheel / radius
+  initial car.rr.inertia.w = dv_wheel / radius
+  initial car.fl.inertia.phi = 0.0
+  initial car.fr.inertia.phi = 0.0
+  initial car.rl.inertia.phi = 0.0
+  initial car.rr.inertia.phi = 0.0
+  initial car.fl.brake.tau_actual = 0.0
+  initial car.fr.brake.tau_actual = 0.0
+  initial car.rl.brake.tau_actual = 0.0
+  initial car.rr.brake.tau_actual = 0.0
+  initial powertrain.drive.converter.i_out = 0.0
+end
+
+"Engine-only full WLTC (derived; Lecture 5 step 1)."
+analysis P2EngineWLTCTransient
+  extends TransientAnalysis(stop = 1800.0, alg = ODEAlg.Rodas5P(), dtmax = 1.0, optimize = OptimizationLevel.None())
+  model = P2WLTC()
+end
+
+"Electric-only fixed fixture (derived; P2WLTC with stopped engine)."
+test component P2ElectricWLTC
+  extends VehicleSystemsComponents.MyCar.P2WLTC(electric = true)
+end
+
+"Electric-only WLTC Low phase (derived; UNECE phase boundary 589 s)."
+analysis P2ElectricWLTCTransient
+  extends TransientAnalysis(stop = 589.0, alg = ODEAlg.Rodas5P(), dtmax = 1.0, optimize = OptimizationLevel.None())
+  model = P2ElectricWLTC()
+end
+```
+
 #### Fell behind?
 
-Compare the connections and initial conditions with `Vehicle.P2Powertrain` and `Lecture5.P2WLTC`. The `HandsOn05` answers copy these compositions, rather than hiding the wiring behind an inherited reference powertrain.
+Open `HandsOn05.P2Powertrain` and `HandsOn05.P2WLTC` as code-view comparisons. Keep your fixture's `powertrain = VehicleSystemsComponents.MyCar.P2Powertrain(...)` so your wiring is what the analyses exercise.
 
 ## 1b · Electric-only WLTC Low {#step-1b}
 
 #### Given
 
-`Lecture5.P2ElectricWLTC` wraps `P2WLTC(electric = true)`: K0 open, engine held stopped, zero engine pedal, machine torque from the driver. The 30 kW, 205 N·m hybrid drive is not the Lecture 4 Leaf drive.
+Your `MyCar.P2ElectricWLTC` extends your `P2WLTC(electric = true)`: K0 open, engine held stopped, zero engine pedal, machine torque from the driver. The 30 kW, 205 N·m hybrid drive is not the Lecture 4 Leaf drive.
 
 #### Do this
 
 1. Use `Vehicle › Electric › TorqueSplit` as `split`, with `ratio = 1.0`: the PI driver's request is already at the transmission input. Connect driver output to `split.tau_ref`, vehicle speed in km/h to `split.v`, and `split.tau_motor` to `powertrain.tau_ref`.
-2. Set `powertrain.engine_pedal = 0.0` and `powertrain.engage = 0.0`. Retain the instantaneous CVT schedule:
+2. **Code view required:** in the fixture's electric branch, set `powertrain.engine_pedal = 0.0` and `powertrain.engage = 0.0`. Retain the instantaneous CVT schedule:
 
    ```dyad
    powertrain.cvt_pedal = min(max(driver.y / 150.0, 0.0), 1.0)
@@ -86,7 +338,7 @@ Compare the connections and initial conditions with `Vehicle.P2Powertrain` and `
    ```
 
    `split.tau_brake` already includes division by two for the front wheels. Multiply by the instantaneous CVT ratio, but do **not** divide by two again. Keep rear brake commands zero for this fixture.
-3. Use `P2ElectricWLTCTransient`: stop `589.0` s (WLTC Low), `alg = ODEAlg.Rodas5P()`, `dtmax = 1.0`, `optimize = OptimizationLevel.None()`. Keep the reference's `dv_wheel = 0.01` m/s and mass `1500.0` kg.
+3. Use your `MyCar.P2ElectricWLTCTransient` from the step-1a listing: stop `589.0` s (WLTC Low), `alg = ODEAlg.Rodas5P()`, `dtmax = 1.0`, `optimize = OptimizationLevel.None()`. Keep the reference's `dv_wheel = 0.01` m/s and mass `1500.0` kg.
 4. Run the analysis from Studio before using the Julia REPL to inspect it. Plot target and actual speed, fuel flow, SoC and machine rpm; compare the whole interval, not only the endpoint.
 
 ::: tip Checkpoint 1b — measured reference run
@@ -104,6 +356,27 @@ These are reported reference measurements, not newly measured Studio results or 
 
 :::
 
+#### Inspect the Studio result
+
+Immediately after the electric run, use the REPL (do not run a second analysis just to plot):
+
+```julia
+using DyadInterface: symbolic_container
+using Plots
+r = solution
+m, s = symbolic_container(r), r.sol
+T = 589.0
+t = 0:0.01:T
+at(x) = s(t, idxs=x).u
+plot(t, [at(m.trace.y) 3.6 .* at(m.car.bus.vx)], label=["target" "actual"],
+     xlabel="Time [s]", ylabel="Speed [km/h]")
+plot(t, at(m.powertrain.mdot_fuel), ylabel="Fuel [kg/s]", label="fuel")
+plot(t, at(m.powertrain.SoC), ylabel="SoC", label="SoC")
+plot(t, at(m.powertrain.drive.machine.w) .* (30/pi), ylabel="Machine [rpm]", label="machine")
+```
+
+For step 1c, run your engine analysis in Studio, capture its new `r = solution`, and repeat the setup with `T = 1800.0`. Plot `m.powertrain.engine_speed` (multiply by `30/pi` for rpm), `m.powertrain.position`, `m.powertrain.k0.w_slip` (rad/s), and `m.meter.fuel_raw` / `m.meter.fuel_corr`. The result variable belongs to the last analysis run; do not reuse the electric result for H0.
+
 #### Fell behind?
 
 Compare with `Lecture5.P2ElectricWLTC` and `Lecture5.P2ElectricWLTCTransient`, then inspect the electric branch of `P2WLTC`. A successful Low run does not validate electric operation for all 1800 s.
@@ -115,7 +388,7 @@ Compare with `Lecture5.P2ElectricWLTC` and `Lecture5.P2ElectricWLTCTransient`, t
 H0 is Lecture 5's conventional baseline: Lecture 2's mapped engine and CVT on the same
 1500 kg planar car as the hybrid. Compare hybrid results against this H0, not Lecture 2's
 5.22 L/100 km from a different 1D bench (quoted only for scale).
-`Lecture5.P2EngineWLTCTransient` runs `P2WLTC(electric = false)` for **1800 s**, with
+Your `MyCar.P2EngineWLTCTransient` runs `P2WLTC(electric = false)` for **1800 s**, with
 `Rodas5P`, `dtmax = 1.0` and `OptimizationLevel.None()`.
 
 #### Do this
@@ -123,7 +396,7 @@ H0 is Lecture 5's conventional baseline: Lecture 2's mapped engine and CVT on th
 1. Start the engine at **800 rpm** and K0 at `position_start = 0.0`. The P2 layout has no
    separate launch clutch: in engine-only mode K0 does that job. Closing it from rest would
    pull the engine down to the stopped wheels, where the map supplies no launch torque.
-2. Add bench parameters `engage_rpm = 1300.0` and `engage_width_rpm = 120.0` (rpm), matching
+2. **Code view required:** in the fixture's engine branch, add bench parameters `engage_rpm = 1300.0` and `engage_width_rpm = 120.0` (rpm), matching
    `CentrifugalClutch`. Add the machine-side lock-up ramp `lock_rpm = 840`,
    `lock_width_rpm = 12` (rpm): the request is 0.001 at the 800 rpm idle and 0.999 at 880 rpm,
    so K0 opens before a decelerating shaft drags the engine below idle. Add `brake_gain = 12`. Set the PI to `k = 110`, `Ti = 1`, `y_max = 150`, `y_min = -205`. Feed `powertrain.engine_speed` (rad/s) into the smooth engagement signal:
