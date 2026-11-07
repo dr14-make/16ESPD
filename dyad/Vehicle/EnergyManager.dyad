@@ -78,11 +78,11 @@ component EnergyManager
   "Allow electric-only traction; otherwise run the engine in traction and release it while braking (assumed; architecture option)"
   structural parameter electric_drive::Boolean = true
   "Machine torque envelope referred to the transmission input [N.m]"
-  T_lim = RealInput() if geared_limit
+  T_lim = RealInput() if geared_limit {^T_lim}
   "Limit the torque split to the mapped engine envelope during CVT transients"
   structural parameter mapped_limits::Boolean = false
   "Engine-owned full-load envelope at measured engine speed [N.m]"
-  available_torque = RealInput() if mapped_limits
+  available_torque = RealInput() if mapped_limits {^available_torque}
   "Driver torque demand at the transmission input, positive driving [N.m]"
   tau_dem = RealInput() {^tau_dem}
   "Transmission input (machine) shaft speed [rad/s]"
@@ -295,6 +295,8 @@ metadata {
     "engage": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 530, "x2": 1050, "y2": 630}, "diagram": {"x1": 975, "y1": 555, "x2": 1025, "y2": 605}}}},
     "tau_machine": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 690, "x2": 1050, "y2": 790}, "diagram": {"x1": 975, "y1": 715, "x2": 1025, "y2": 765}}}},
     "tau_friction": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 850, "x2": 1050, "y2": 950}, "diagram": {"x1": 975, "y1": 875, "x2": 1025, "y2": 925}}}},
+    "available_torque": {"Dyad": {"placement": {"icon": {"x1": 150, "y1": 950, "x2": 250, "y2": 1050, "rot": 270}, "diagram": {"x1": 175, "y1": 975, "x2": 225, "y2": 1025, "rot": 270}}}},
+    "T_lim": {"Dyad": {"placement": {"icon": {"x1": 750, "y1": 950, "x2": 850, "y2": 1050, "rot": 270}, "diagram": {"x1": 775, "y1": 975, "x2": 825, "y2": 1025, "rot": 270}}}},
     "engine": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 150, "x2": 600, "y2": 350}}}},
     "boost": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 400, "x2": 600, "y2": 600}}}},
     "charge": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 650, "x2": 600, "y2": 850}}}}

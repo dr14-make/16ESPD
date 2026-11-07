@@ -13,18 +13,19 @@ Calibration is valid only for the default engine/air/pedal parameters.
 """
 component TorqueToPedal
   "Requested fired engine brake torque [N.m]"
-  tau = RealInput()
+  tau = RealInput() {^tau}
   "Measured engine angular speed [rad/s]"
-  omega = RealInput()
+  omega = RealInput() {^omega}
   "Feed-forward pedal command, 0 to 1"
-  pedal = RealOutput()
+  pedal = RealOutput() {^pedal}
   structural parameter file::String = "dyad://VehicleSystemsComponents/data/engine/torque_to_pedal.csv"
   structural parameter dataset::DyadData.DyadInterpolationTable2D = DyadData.DyadInterpolationTable2D(file, axis1_name = "speed_rpm", axis2_name = "torque_Nm", data_name = "pedal")
-  table = BlockComponents.Tables.InterpolatedTable(axis1 = dataset["speed_rpm"], axis2 = dataset["torque_Nm"], data = dataset["pedal"], interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension())
+  table = BlockComponents.Tables.InterpolatedTable(axis1 = dataset["speed_rpm"], axis2 = dataset["torque_Nm"], data = dataset["pedal"], interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension()) {^table}
   variable opening::Real
 relations
   opening = min(max(tau / 5.0, 0.0), 1.0)
   table.u1 = min(max(omega * 30 / pi, 800.0), 6500.0)
   table.u2 = min(max(tau, 0.0), 180.0)
   pedal = opening^2 * (3.0 - 2.0 * opening) * min(max(table.y, 0.0), 1.0)
+metadata {"_links":{"tau":{"Dyad":{"placement":{"diagram":{"x1":-25,"y1":275,"x2":25,"y2":325},"icon":{"x1":-50,"y1":250,"x2":50,"y2":350}}}},"omega":{"Dyad":{"placement":{"diagram":{"x1":-25,"y1":675,"x2":25,"y2":725},"icon":{"x1":-50,"y1":650,"x2":50,"y2":750}}}},"pedal":{"Dyad":{"placement":{"diagram":{"x1":975,"y1":475,"x2":1025,"y2":525},"icon":{"x1":950,"y1":450,"x2":1050,"y2":550}}}},"table":{"Dyad":{"placement":{"diagram":{"x1":400,"y1":400,"x2":600,"y2":600}}}}}}
 end

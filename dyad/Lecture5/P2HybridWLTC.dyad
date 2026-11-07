@@ -56,14 +56,14 @@ test component P2HybridWLTC
 relations
   connect(car.bus, motion.bus)
   connect(trace.y, driver.u_s)
-  connect(motion.vx, kmh.u, meter.speed)
+  connect(motion.vx, kmh.u, meter.speed) {^vx_wire}
   connect(kmh.y, driver.u_m, manager.v)
   connect(no_ff.y, driver.u_ff)
   connect(driver.y, manager.tau_dem)
   manager.w_shaft = powertrain.speed_variator.w_a
-  connect(powertrain.SoC, manager.SoC)
-  connect(powertrain.engine_speed, manager.engine_speed, map.omega)
-  connect(powertrain.available_torque, manager.available_torque)
+  connect(powertrain.SoC, manager.SoC) {^soc_wire}
+  connect(powertrain.engine_speed, manager.engine_speed, map.omega) {^speed_wire}
+  connect(powertrain.available_torque, manager.available_torque) {^torque_wire}
   connect(manager.P_engine, line.P)
   connect(manager.tau_engine, map.tau, powertrain.engine_torque_ref)
   connect(map.pedal, powertrain.engine_pedal)
@@ -109,6 +109,7 @@ relations
   initial car.rl.brake.tau_actual = 0.0
   initial car.rr.brake.tau_actual = 0.0
   initial powertrain.drive.converter.i_out = 0.0
+metadata {"_links":{"trace":{"Dyad":{"placement":{"diagram":{"x1":10,"y1":130,"x2":80,"y2":200}}}},"no_ff":{"Dyad":{"placement":{"diagram":{"x1":125,"y1":55,"x2":165,"y2":95}}}},"driver":{"Dyad":{"placement":{"diagram":{"x1":100,"y1":120,"x2":190,"y2":210}}}},"kmh":{"Dyad":{"placement":{"diagram":{"x1":20,"y1":260,"x2":90,"y2":330}}}},"powertrain":{"Dyad":{"placement":{"diagram":{"x1":620,"y1":110,"x2":860,"y2":350}}}},"mount":{"Dyad":{"placement":{"diagram":{"x1":560,"y1":470,"x2":600,"y2":510}}}},"differential":{"Dyad":{"placement":{"diagram":{"x1":680,"y1":530,"x2":760,"y2":450}}}},"meter":{"Dyad":{"placement":{"diagram":{"x1":910,"y1":182,"x2":990,"y2":262}}}},"straight":{"Dyad":{"placement":{"diagram":{"x1":605,"y1":560,"x2":655,"y2":610,"rot":180}}}},"car":{"Dyad":{"placement":{"diagram":{"x1":520,"y1":640,"x2":740,"y2":860}}}},"motion":{"Dyad":{"placement":{"diagram":{"x1":790,"y1":650,"x2":990,"y2":850}}}},"roadload":{"Dyad":{"placement":{"diagram":{"x1":560,"y1":890,"x2":630,"y2":960}}}},"flat":{"Dyad":{"placement":{"diagram":{"x1":470,"y1":905,"x2":510,"y2":945}}}},"manager":{"Dyad":{"placement":{"diagram":{"x1":240,"y1":135,"x2":440,"y2":335}}}},"line":{"Dyad":{"placement":{"diagram":{"x1":510,"y1":0,"x2":575,"y2":60}}}},"map":{"Dyad":{"placement":{"diagram":{"x1":510,"y1":101,"x2":580,"y2":171}}}},"demand_line":{"Dyad":{"placement":{"diagram":{"x1":605,"y1":0,"x2":670,"y2":60}}}},"speed_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":895,"y":132.8},{"x":895,"y":420},{"x":215,"y":420},{"x":215,"y":305}],"E":2},{"S":1,"M":[{"x":875,"y":132.8},{"x":875,"y":85},{"x":495,"y":85},{"x":495,"y":150}],"E":3}],"renderStyle":"standard"}},"torque_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":885,"y":175.8},{"x":885,"y":410},{"x":280,"y":410}],"E":2}],"renderStyle":"standard"}},"soc_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":875,"y":294.8},{"x":875,"y":400},{"x":225,"y":400},{"x":225,"y":270}],"E":2}],"renderStyle":"standard"}},"vx_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":1010,"y":702},{"x":1010,"y":630},{"x":5,"y":630},{"x":5,"y":295}],"E":2},{"S":1,"M":[{"x":1010,"y":702},{"x":1010,"y":290},{"x":903,"y":290},{"x":903,"y":246}],"E":3}],"renderStyle":"standard"}}}}
 end
 
 "Full WLTC hybrid energy-management analysis (derived; Lecture 5 step 3)."
