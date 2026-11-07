@@ -254,16 +254,7 @@ routeAlias: build-operating-line
 <div class="grid grid-cols-[1.1fr_1fr] gap-8 items-start">
 <div>
 
-<div class="placeholder">
-
-**Screenshot: `step02-operating-line.png`**
-
-The P2 powertrain with the operating-line table between the requested power and the CVT's ratio
-command.
-
-To capture: Studio screenshot of the `P2OperatingLineWLTC` diagram
-
-</div>
+![P2OperatingLineWLTC in Studio: driver, operating-line table and P2 powertrain on top, the planar car, differential and road load below, the fuel meter on the right.](/img/lecture-05/step02-operating-line-diagram.png)
 
 **Given:** the best-BSFC line as a data table (`OperatingLine`)
 
@@ -288,8 +279,8 @@ powertrain.N_ref = N_target
 </div>
 
 <!--
-Build 02: the operating line. On the left, your P2 powertrain with the line between the requested
-power and the CVT.
+Build 02: the operating line. On the left, the operating-line bench in Studio: the line's table sits
+between the driver and the powertrain.
 
 The library gives you the best-BSFC line as a data table. The powertrain gets a switch,
 speed_commanded, that swaps the pedal-scheduled CVT for one that holds a commanded engine speed.
