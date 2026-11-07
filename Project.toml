@@ -33,9 +33,6 @@ TranslationalComponents = "42acc370-819b-4877-bdd6-eb3294461f5d"
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 SimpleDirectMediaLayer = "98e33af6-2ee5-5afd-9e75-cbc738b767c4"
 
-[sources]
-OpenCRG = {url = "https://github.com/asinghvi17/CarComponents", subdir = "lib/OpenCRG", rev = "e1278cfe1be27026de0c90a959f53adc71740a40"}
-
 [extensions]
 VehicleSystemsComponentsGLMakieExt = "GLMakie"
 VehicleSystemsComponentsPadExt = ["GLMakie", "SimpleDirectMediaLayer"]
