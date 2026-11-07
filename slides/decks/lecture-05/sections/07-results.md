@@ -141,7 +141,7 @@ routeAlias: p-position-table
 
 **Ranking, all three studies:** P0 < P1 ≪ P2 ≈ P3 ≈ P4
 
-<img src="/figures/07-p-position-table.svg" class="w-full" style="max-height: 15rem" alt="WLTC results per position, each with a 30 kW machine and a 270 V battery. Corrected fuel in L/100 km: P0 4.82, P1 4.51, P2 4.09, P3 4.08, P4 4.09. Saving against H0: 15.74, 21.10, 28.53, 28.65 and 28.53 percent; against the line car: 11.40, 17.03, 24.85, 24.97 and 24.84. Braking energy stored: 1.60, 2.14, 2.64, 2.72 and 2.72 MJ. Engine-off electric driving: 19.7 and 18.8 s for P0 and P1, about 531 to 534 s for P2, P3 and P4."/>
+<img src="/figures/07-p-position-table.svg" class="w-full" alt="WLTC results per position, each with a 30 kW machine and a 270 V battery. Corrected fuel in L/100 km: P0 4.82, P1 4.51, P2 4.09, P3 4.08, P4 4.09. Saving against H0: 15.74, 21.10, 28.53, 28.65 and 28.53 percent; against the line car: 11.40, 17.03, 24.85, 24.97 and 24.84. Braking energy stored: 1.60, 2.14, 2.64, 2.72 and 2.72 MJ. Engine-off electric driving: 19.7 and 18.8 s for P0 and P1, about 531 to 534 s for P2, P3 and P4."/>
 
 <!--
 The second comparison, and the demo: the same parts on the other four flanges.
