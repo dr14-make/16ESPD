@@ -171,13 +171,11 @@ export PlanarWLTCTransient__System
   # overflows (`exp(-v / 1e-3)`) once the car reverses faster than 0.71 m/s. With `cycle = false`
   # the bench holds the constant `v_set` instead (`PlanarCruise`).
   # 
-  # **Standstill.** `SlipBasedWheelJoint` adds its regularization outside the square root of the slip
-  # speed, so its Jacobian is NaN whenever a wheel's longitudinal and lateral slip speeds are both
-  # exactly zero (JuliaComputing/MultibodyComponents.jl#185). A car initialized at exact rest is in
-  # that state at t = 0 and Rodas5P aborts on the first step. The bench therefore starts the wheels
-  # `dv_wheel` faster than the body. Once moving, the car does not return to exact zero: braked to a
-  # stop, its slip speeds settle at round-off (about 1e-22 m/s) rather than at zero, which carries it
-  # through every WLTC stop and a 400 s park.
+  # **Standstill.** Each wheel's `SlipWheelJoint` regularizes the slip-speed magnitude inside the
+  # square root, so the tire forces and their Jacobian stay finite when a wheel's longitudinal and
+  # lateral slip speeds are both exactly zero. The car starts from exact rest (`dv_wheel = 0`) and
+  # holds still through every WLTC stop. The bench starts the wheels `dv_wheel` faster than the
+  # body, the start its reference results were recorded with.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Vehicle.Planar.PlanarWLTC(; name=:PlanarWLTC)
   __system::System = PlanarWLTCTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file", var"k"=var"k", var"Ti"=var"Ti")
 end

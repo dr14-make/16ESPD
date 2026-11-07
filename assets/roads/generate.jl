@@ -65,3 +65,5 @@ write_height("flat", (x,y) -> 0.0, 0.0:1.0:2.0, -1.0:1.0:1.0)
 write_height("hill", (x,y) -> hill(x), 220.0:1.0:420.0, -1.0:1.0:1.0)
 write_height("hill_across", (x,y) -> hill(x), 220.0:1.0:420.0, -600.0:600.0:600.0; phi = pi/2, offset_y = -280.0)
 write_height("ramp", (x,y) -> 0.0, 0.0:250.0:500.0, -1.0:1.0:1.0; slope = 0.02)
+# The car starts at the origin, so its parked-on-a-grade ramp extends behind it.
+write_height("ramp_hold", (x,y) -> 0.0, -250.0:250.0:250.0, -1.0:1.0:1.0; slope = 0.02)

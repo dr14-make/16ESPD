@@ -125,16 +125,18 @@ magnitude.
 - The curve is the same function as `MultibodyComponents.limit_S_triple(sA, sS, mu_A, mu_S, |κ|)`,
   written out in Dyad.
 
-### Planar car: `Vehicle.Planar.PlanarBrakedWheel` → `MultibodyComponents.PlanarMechanics.SlipBasedWheelJoint`
+### Planar car: `Vehicle.Planar.PlanarBrakedWheel` → `Vehicle.Planar.SlipWheelJoint`
 
-Read from `MultibodyComponents` 0.2.6, `dyad/PlanarMechanics/slip_based_wheel_joint.dyad`, the
-version in the repository's Manifest. It follows the Modelica PlanarMechanics library's slip-based
-wheel (Zimmer and Otter, *Real-time models for wheels and tyres in an object-oriented modelling
-framework*, Vehicle System Dynamics 48(2), 2010, literature).
+Read from `MultibodyComponents` 0.2.6, `dyad/PlanarMechanics/slip_based_wheel_joint.dyad`.
+The library now carries that joint as `Vehicle.Planar.SlipWheelJoint`, copied from 0.3.1, which
+differs only in the slip-speed regularization below. It follows the Modelica PlanarMechanics
+library's slip-based wheel (Zimmer and Otter, *Real-time models for wheels and tyres in an
+object-oriented modelling framework*, Vehicle System Dynamics 48(2), 2010, literature).
 
 - Wheel-frame slip velocities: $v_{s,\text{long}} = v_\text{long} - r\omega$ and
-  $v_{s,\text{lat}} = v_\text{lat}$; total $v_s = \sqrt{v_{s,\text{long}}^2 + v_{s,\text{lat}}^2}$
-  (+ 10⁻⁴ m/s).
+  $v_{s,\text{lat}} = v_\text{lat}$; total
+  $v_s = \sqrt{v_{s,\text{long}}^2 + v_{s,\text{lat}}^2 + v_\text{small}^2}$,
+  $v_\text{small} = 10^{-4}$ m/s (0.2.6 and 0.3.0 add 10⁻⁴ m/s outside the root instead).
 - Thresholds scale with the wheel's circumferential speed:
   $v_A = \max(0.05, s_A |r\omega|)$, $v_S = \max(0.15, s_S |r\omega|)$. So the curve's argument is
   the slip speed over $r\omega$, Pacejka's theoretical slip $|\sigma|$, combined over both

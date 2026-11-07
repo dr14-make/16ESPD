@@ -159,9 +159,9 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   push!(__systems, @named frame_a = __Dyad__Frame2D())
   push!(__systems, @named spin = __Dyad__Spline())
   push!(__systems, @named load = __Dyad__Flange())
-  # Subcomponent joint of type MultibodyComponents.PlanarMechanics.SlipBasedWheelJoint
+  # Subcomponent joint of type VehicleSystemsComponents.Vehicle.Planar.SlipWheelJoint
   joint_overrides = __pop_subcomponent_overrides!(__overrides, "joint")
-  push!(__systems, @named joint = MultibodyComponents.PlanarMechanics.SlipBasedWheelJoint(; N=Float64(0.0), mu_A=mu_scale * mu_A, mu_S=mu_scale * mu_S, r=[Float64(1), Float64(0)], render=false, radius=radius, sAdhesion=sAdhesion, sSlide=sSlide, vAdhesion_min=vAdhesion_min, vSlide_min=vSlide_min, __overrides = joint_overrides))
+  push!(__systems, @named joint = VehicleSystemsComponents.Vehicle.Planar.SlipWheelJoint(; N=Float64(0.0), mu_A=mu_scale * mu_A, mu_S=mu_scale * mu_S, r=[Float64(1), Float64(0)], radius=radius, sAdhesion=sAdhesion, sSlide=sSlide, vAdhesion_min=vAdhesion_min, vSlide_min=vSlide_min, __overrides = joint_overrides))
   # Subcomponent inertia of type RotationalComponents.Components.Inertia
   inertia_overrides = __pop_subcomponent_overrides!(__overrides, "inertia")
   push!(__systems, @named inertia = RotationalComponents.Components.Inertia(; J=J, __overrides = inertia_overrides))

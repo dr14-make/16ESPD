@@ -112,3 +112,24 @@ end
     end
     @test !any(p -> p.name in ("GLMakie", "SimpleDirectMediaLayer"), keys(Base.loaded_modules))
 end
+
+@testset "Brake held at standstill for 60 s stays finite" begin
+    @named held = VehicleSystemsComponents.PlanarBEVByHand(mu = 1.0)
+    hs = simplify_model(held)
+    for on in (1.0, 0.0)
+        prob = ODEProblem(hs, [hs.esp_on => on, hs.abs_on => on], (0.0, 1e7))
+        @test prob.ps[hs.vehicle.ecu.esp_on] == on
+        @test prob.ps[hs.vehicle.ecu.abs_on] == on
+        VehicleSystemsComponents.reset_human_commands!()
+        integ = init(prob, Rodas5P(); dtmax = 0.005, save_everystep = false)
+        VehicleSystemsComponents.set_human_commands!(throttle = 0, brake = 1, steer = 0)
+        while integ.t < 60.0 && string(integ.sol.retcode) in ("Default", "Success")
+            step!(integ, 1 / 60, true)
+        end
+        VehicleSystemsComponents.reset_human_commands!()
+        @test string(integ.sol.retcode) in ("Default", "Success")
+        @test integ.t >= 60.0
+        @test all(isfinite, integ.u)
+        @test abs(integ[hs.vehicle.motion.vx]) < 1e-6
+    end
+end
