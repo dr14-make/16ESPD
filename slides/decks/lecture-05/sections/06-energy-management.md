@@ -62,7 +62,7 @@ routeAlias: rules
 
 <div class="diagram-wide">
 
-![The modes over the plane of the power the driver asks for at the wheels, horizontally, and the state of charge, vertically. Negative power, braking: regen, the machine brakes first with Lecture 4's blending. From zero to P_ev: electric only, K0 open, engine off. From P_ev to P_line,max: engine on its line, machine idle. Above P_line,max: boost, engine and machine. Below the SoC thresholds, from zero to P_line,max: charge, the engine on its line above the demand and the machine generating the rest; above P_line,max: the engine alone above its line, as boost fades out with low charge. Two dashed lines mark the SoC hysteresis: charge on at the lower, charge off at the upper.](/diagrams/06-modes.svg)
+![The modes over the plane of the power the driver asks for at the wheels, horizontally, and the state of charge, vertically. Negative power, braking: regen, the machine brakes first with Lecture 4's blending. From zero to P ev: electric only, K0 open, engine off. From P ev to P line max: engine on its line, machine idle. Above P line max: boost, engine and machine. Below the SoC thresholds, from zero to P line max: charge, the engine on its line above the demand and the machine generating the rest; above P line max: the engine alone above its line, as boost fades out with low charge. Two dashed lines mark the SoC hysteresis: charge on at the lower, charge off at the upper.](/diagrams/06-modes.svg)
 
 </div>
 <div class="grid grid-cols-2 gap-x-8 text-[0.85rem] mt-2">
