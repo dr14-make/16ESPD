@@ -493,7 +493,7 @@ decoupled three. Starting the engine: P0 and P1 directly, P2 by closing K0; P3 a
 row is particular to our car: only P2 sits before the CVT, so the CVT's ratio moves the machine's
 speed as well as the engine's.
 
-So P2 is the one column with a tick in every row. That is settled decision S1 of the plan: one
+So P2 is the one column with a tick in every row. That is why the build uses P2: one
 energy manager on a P2 exercises every mode, and moving the machine to the other four positions is
 the same experiment four more times. You build P2, and I show the other four as one table in section
 07.

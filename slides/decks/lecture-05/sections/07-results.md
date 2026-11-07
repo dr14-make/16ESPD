@@ -243,7 +243,7 @@ To capture: Studio screenshot of the `meter` block in the `P2HybridWLTC` diagram
 
 </div>
 
-**Given:** the SoC-corrected fuel calculation (`Vehicle.SoCCorrectedFuel`)
+**Given:** the SoC-corrected fuel calculation (`SoCCorrectedFuel`)
 
 [page: step 4](../lecture/lecture-05/#step-4) · reference `dyad/HandsOn05/P2HybridWLTC.dyad`
 

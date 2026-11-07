@@ -118,8 +118,8 @@ Even steady cruise is off the line: at 90 km/h Lecture 2's CVT schedule runs the
 power must still equal the road's.</div>
 
 <!--
-How does the car put the engine on the line? With the CVT, the free degree of freedom that settled
-decision S2 of the plan chose it for.
+How does the car put the engine on the line? With the CVT: its ratio is the free degree of freedom
+that lets the engine speed be chosen for a given wheel speed.
 
 Take the power the driver asks for. The best-BSFC line gives the engine speed for that power, omega
 e star. The CVT's ratio is that speed divided by the speed of its output, which the wheels set. So
@@ -265,7 +265,7 @@ To capture: Studio screenshot of the `P2OperatingLineWLTC` diagram
 
 </div>
 
-**Given:** the best-BSFC line as a data table (`Vehicle.OperatingLine`)
+**Given:** the best-BSFC line as a data table (`OperatingLine`)
 
 [page: step 2](../lecture/lecture-05/#step-2) · reference `dyad/HandsOn05/P2OperatingLineWLTC.dyad`
 
