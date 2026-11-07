@@ -85,7 +85,7 @@ traction energy came back through regen. Those are the numbers from Lecture 4's 
 
 The green box says what we do today. We keep the engine from Lecture 2, add a disconnect clutch,
 called K0, take the machine from Lecture 4 but sized at about 30 kilowatts, and a battery of about
-1.4 kilowatt-hours. Those sizes are the plan's: the 2011 Hyundai Sonata Hybrid that Oak Ridge
+1.4 kilowatt-hours. Those sizes come from a real car: the 2011 Hyundai Sonata Hybrid that Oak Ridge
 National Laboratory benchmarked had a 30 kilowatt machine behind an engine clutch and a 1.4
 kilowatt-hour, 270 volt pack. It all goes on Lecture 4's planar car and drives the same cycle, so at
 the end of the day we can put the conventional car, the hybrid and the electric car side by side.

@@ -280,7 +280,7 @@ so stop/start **needs a starter**.
 
 <!--
 P3. Point at the box after the CVT: the machine is connected through a gear mesh to the
-transmission's output shaft. In our car, that is the CVT output, as the plan puts it.
+transmission's output shaft. In our car, that is the CVT output.
 
 Its speed is a multiple of the wheel speed, fixed by its own gear, whatever the CVT's ratio does. So
 unlike P2, the CVT cannot move the machine to a better speed.
@@ -348,7 +348,7 @@ cannot start the engine: it needs a starter.
 Recuperation is the highest in the deck's rating: no engine drag, and no transmission between the
 wheel and the machine, only its own gear. It can creep and drive electrically with the engine off.
 
-In our car the plan puts it on the rear flanges with its own reduction, one machine for the axle; it
+In our car it sits on the rear flanges with its own reduction, one machine for the axle; it
 is not torque vectoring.
 
 The green box is from the deck's slide on machines for hybrids: a motor integral with the wheel is the

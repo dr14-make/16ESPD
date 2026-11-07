@@ -211,7 +211,7 @@ less charge than it started has borrowed fuel from the battery: energy the engin
 earlier day. Report its raw fuel and it looks better than it is.
 
 Two defenses. First a check: the state of charge at the end must be within plus or minus 2 percent
-of the battery's capacity of its start. That band is the plan's, an assumed charge-sustaining
+of the battery's capacity of its start. That band is our choice, an assumed charge-sustaining
 tolerance. Second a correction: turn the net battery energy into the fuel it would have taken to put
 it back. The formula: the corrected fuel volume is the raw fuel plus the battery energy at the start
 minus at the end, divided by the engine-to-battery efficiency, the fuel's heating value and its

@@ -99,7 +99,7 @@ routeAlias: known-limits
 the same shape with another source.</div>
 
 <!--
-What the model leaves out, from the plan's known limits.
+What the model leaves out: its known limits.
 
 There is no stepped gearbox and no shift logic: the CVT's ratio is free. The Sonata's P2 sits in a
 six-speed automatic, and the studies of section 07 use dual-clutch and manual gearboxes; the stepped
