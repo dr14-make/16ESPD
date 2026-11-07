@@ -422,8 +422,8 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
 - **Regen withdrawal after #156 rebases #140.** `RegenBlend(abs_rule = true)` uses sampled
   `front_active` (either front command below demand); `allow` decays in 30 ms and returns in
   0.5 s. After the pressure-memory fix below, keep dry withdrawal ON: 27.102 m versus
-  26.938 m friction-only (0.61% longer), within the passing regression's explicit 1% tolerance.
-  Rule OFF is 27.238 m but reverses front wheels; it is not a physical comparison benchmark.
+  26.932 m friction-only (0.63% longer), within the passing regression's explicit 1% tolerance.
+  Rule OFF is 27.258 m but reverses front wheels; it is not a physical comparison benchmark.
   The motor-share goal remains unmet: blanket withdrawal leaves only 0.839% gross shaft share.
   WLTC does not use the rule; its equations and results are unchanged. Current evidence,
   low-grip caveats and the measured pressure-memory trace are recorded below.
@@ -645,6 +645,10 @@ Energies are end-of-run integrals; shaft input/output remain separate, not silen
 | Rule OFF gross motor share / min front slip | 45.3137 → 28.7152 % / approximately −0.1 → −5.893705 |
 | Friction-only BEV distance / time | 26.937898732 / 2.335 s → unchanged |
 | Friction-only BEV brake / tire energy | 352732.323 / 34555.337 J → unchanged |
+
+These are MultibodyComponents 0.3.0 wheel-joint figures. `SlipWheelJoint` moves the rule-ON and
+friction-only results by under 0.1 % and rule OFF by up to 1.2 %; `docs/lecture-04-plan.md`
+"Current ABS memory-fix evidence" carries the current values.
 
 **Keep dry withdrawal ON.** It is shorter than OFF and keeps front slip above −0.2
 in the sampled vx > 3 m/s window.

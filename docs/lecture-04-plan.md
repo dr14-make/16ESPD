@@ -98,7 +98,7 @@ speed source driven by the sensed body-frame vx, a force sensor, and `WorldForce
 motor up to the smallest of its torque limit, the battery charge-power limit and a low-speed fade;
 the remainder goes to the hydraulics through the existing allocator. A fourth rule withdraws
 regen while the ABS acts on either driven wheel. With the shared ABS memory fix, the hard-stop
-bench keeps this rule ON (`withdraw = 1`): 27.102036224 m, 0.61 % above friction-only,
+bench keeps this rule ON (`withdraw = 1`): 27.101840 m, 0.63 % above friction-only,
 inside the 1 % distance regression tolerance. ON is shorter and keeps slip above −0.2 while vx > 3 m/s; OFF reverses
 front wheels and is not a physical regen benchmark. WLTC does not use the rule.
 WLTC never decelerates harder than 1.5 m/s² (0.15 g), so friction only covers the low-speed
@@ -202,7 +202,7 @@ interleaved. Figures the models can produce are regenerated from them, not copie
   5.0 that `Project.toml` requires) and the `dyad` CLI binary reports 3.2.0. Use the pinned
   `npx @juliacomputing/dyad-cli@3.5.0` from the agent quick start in `lecture-02-plan.md`.
 - `RoadLoad` extraction (S7), with Lectures 1–3 tests unchanged.
-- Planar WLTC bench with road load and the standstill workaround (S9).
+- Planar WLTC bench with road load that parks at exact zero (S9).
 
 ## Known limits
 
@@ -271,8 +271,8 @@ state **before** the ABS memory fix; they are history, not current expectations.
   ABS stop from 80 km/h), the rule-OFF diagnostic takes 33.037836314 m / 2.705 s after the
   pedal, with 45.3137% machine share, 160119.109 J shaft recovery, 193237.591 J friction,
   27300.500 J tire loss and 154840.805 J battery recovery. This is not the rule-ON default
-  result below. Friction-only takes 26.937898732 m / 2.335 s, with shaft_in 853.747 J,
-  shaft_out 7484.425 J, friction 352732.323 J, tire 34555.337 J and battery recovery zero.
+  result below. Friction-only takes 26.931868 m / 2.330 s, with shaft_in 853.501 J,
+  shaft_out 7484.274 J, friction 352757.278 J, tire 34530.477 J and battery recovery zero.
   On WLTC
   (`Vehicle.Planar.PlanarBEVRegenWLTC`) neither limit binds above 2 km/h (WLTC asks at most 87 N·m
   and 32 kW), friction takes 0.004 % of the braking, and 23.85 % of the traction comes back: the
@@ -338,16 +338,20 @@ unchanged. Release memory and decrement are untouched; the threshold is tagged (
 | Battery positive recovery | 2979.353015 → 2956.884659 J |
 | Gross motor share | 0.98865324 → 0.839 % |
 
-ON front/rear minimum slip above 3 m/s is −0.126072/−0.090554. Friction-only BEV is
-unchanged: 26.937898732 m, 2.335 s, brake 352732.323 J / tire 34555.337 J. ON is
-0.16413749 m / 0.61 % longer. The broken penalty assertion is replaced by
+The table was measured on the MultibodyComponents 0.3.0 wheel joint. On `SlipWheelJoint` ON
+takes 27.101840 m and 2.340 s; shaft_in 2951.143 J, shaft_out 6479.396 J, friction 348899.596 J,
+tire 35285.639 J, battery positive recovery 2956.887 J, gross motor share 0.839 %.
+
+ON front/rear minimum slip above 3 m/s is −0.125672/−0.090377. Friction-only BEV takes
+26.931868 m, 2.330 s, brake 352757.278 J / tire 34530.477 J. ON is
+0.16997232 m / 0.63 % longer. The broken penalty assertion is replaced by
 `distance <= 1.01 * friction_distance` (1 % tolerance). This does **not** meet the meaningful
 motor-share goal: blanket front-active withdrawal suppresses regen almost throughout the stop.
 Net energy accounting subtracts shaft output from shaft recovery, rather than using gross share.
 
-Dry OFF is now 27.238292677 m, 2.425 s; shaft_in 91401.848027 J, shaft_out 61800.443694 J,
-brake 226903.189571 J, tire 124152.388374 J, battery positive recovery 92809.448651 J,
-gross motor share 28.7 %. Front minimum slip −5.893705 above 3 m/s indicates reversed
+Dry OFF is 27.258401 m, 2.425 s; shaft_in 90784.620 J, shaft_out 62550.670 J,
+brake 226850.688 J, tire 125572.344 J, battery positive recovery 92241.492 J,
+gross motor share 28.6 %. Front minimum slip −5.871590 above 3 m/s indicates reversed
 wheels, **NOT a physical regen benchmark**. Keep ON: shorter and keeps slip above −0.2 while vx > 3 m/s.
 
 ON trace: at 0.515 s `p = tau_lock = 0`; at 0.525 s `p = 200`, rate 40000;

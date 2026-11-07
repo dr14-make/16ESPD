@@ -265,7 +265,6 @@ end
 
 @testset "ABS rule: low-grip front wheels no longer lock" begin
     with = _RG_PL.PlanarBEVLowGripStopTransient()
-    # Bound both runs after their stops, before prolonged parking hits the exact-rest tire singularity.
     without = _RG_PL.PlanarBEVLowGripStopTransient(withdraw = 0.0)
     for run in (with, without)
         @test string(run.sol.retcode) == "Success"
