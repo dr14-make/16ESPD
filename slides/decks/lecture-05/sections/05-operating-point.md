@@ -15,10 +15,10 @@ the power-split hybrid that does it with a planetary gear.
 <!--
 Section 05, moving the operating point, the engine's speed and torque. This is the first of the
 three savings from section 01, and the one that explains most of a hybrid's gain when the engine
-runs. For each power the engine can give, there is a best speed; the CVT can put it there; the machine can shift the engine's load up or
-down; and the power-split hybrid, the Prius, does all of it with one planetary gear. You build the
-operating line at the end, build 02. The figures come from the best-BSFC line script and the
-operating-points notebook.
+runs. For each power the engine can give, there is a best speed; the CVT can put it there; the
+machine can shift the engine's load up or down; and the power-split hybrid, the Prius, does all of
+it with one planetary gear. You build the operating line at the end, build 02. The figures come from
+the best-BSFC line script and the operating-points notebook.
 -->
 
 ---
@@ -50,7 +50,7 @@ Best point of Lecture 2's map: **232 g/kWh** at 3000 rpm, 99 N·m.
 
 <img src="/figures/05-bsfc-line.svg" class="w-full" style="max-height: 26rem" alt="Lecture 2's BSFC map, brake torque against engine speed from 1000 to 6000 rpm, with BSFC contours from 235 to 500 g/kWh, the full-load curve, and dashed lines of constant power at 20, 40, 60 and 80 kW. The best-BSFC line runs from low speed and torque up through the minimum of 232 g/kWh at 3000 rpm, then follows the full-load curve to peak power."/>
 
-<div class="caption">Gray rings: equal BSFC, g/kWh · dashed: equal power · blue: the best-BSFC
+<div class="caption">Thin black rings: equal BSFC, g/kWh · gray dashed: equal power · blue: the best-BSFC
 line, the cheapest way to make each power</div>
 
 </div>
@@ -68,13 +68,13 @@ to the full-load line. The best-BSFC line joins, for every power, the speed and 
 lowest. It starts near idle, runs up through the region of the best point, and ends at peak power.
 
 The figure shows the line over Lecture 2's map, the same map as in section 01. Across is engine
-speed in rpm, up is torque in newton meters. The black curve is full load. The gray rings are
-lines of equal BSFC, in grams per kilowatt-hour. The dashed gray curves are the lines of equal
-power, 20, 40, 60 and 80 kilowatts: those are the curves I just described. The blue line is the
-best-BSFC line. Take one dashed curve and slide along it: the point where it touches the lowest
-ring is on the blue line. A course script computes it from the engine maps.
-It passes through the map's global minimum, the best point you already know: 232 grams per
-kilowatt-hour at 3000 rpm and 99 newton meters; the course's plausibility test checks that.
+speed in rpm, up is torque in newton meters. The thick black curve is full load. The thin black
+rings are lines of equal BSFC, in grams per kilowatt-hour. The dashed gray curves are the lines of
+equal power, 20, 40, 60 and 80 kilowatts: those are the curves I just described. The blue line is
+the best-BSFC line. Take one dashed curve and slide along it: the point where it touches the lowest
+ring is on the blue line. A course script computes it from the engine maps. It passes through the
+map's global minimum, the best point you already know: 232 grams per kilowatt-hour at 3000 rpm and
+99 newton meters; the course's plausibility test checks that.
 
 Note that the line is not the best point. The car asks for a power; the line says how to give that
 power best. To run always at the best point you need a battery to absorb the difference, and that is
@@ -155,9 +155,10 @@ a driver model that works the pedal, and gave 5.22. The two
 methods differ, so read the gap, about three tenths of a liter, as an order of magnitude.
 
 The last line under it is one point you can check by hand. At a steady 90 kilometers per hour the
-car needs about 10 kilowatts. Lecture 2's CVT schedule gives them at 2182 rpm, where the engine burns
-264 grams per kilowatt-hour; the best-BSFC line gives the same 10 kilowatts at 1420 rpm and 242 grams.
-Same power, about 8 percent less fuel, just by choosing the speed. Even steady cruise is off the line.
+car needs about 10 kilowatts. Lecture 2's CVT schedule gives them at 2182 rpm, where the engine
+burns 264 grams per kilowatt-hour; the best-BSFC line gives the same 10 kilowatts at 1420 rpm and
+242 grams. Same power, about 8 percent less fuel, just by choosing the speed. Even steady cruise is
+off the line.
 
 The green box is the limit of this trick. A CVT gives one free choice, the engine's speed. The
 power still has to equal what the road asks, so at low power the engine still runs on a poor part of
@@ -211,10 +212,10 @@ end, let the machine boost, so the engine stays on its line instead of going to 
 
 Together they gather the engine's points where it is efficient and empty the poor region at low
 load. The figure, from the operating-points notebook, shows exactly that. It is the same fuel map:
-speed across, torque up, gray rings of equal BSFC, the blue best-BSFC line. Now there are two sets
-of bubbles, and a bigger bubble means more fuel burned there. Red is the conventional car: its WLTC
-fuel sits on its diagonal band through the 250 to 350 gram region. Green is the P2 hybrid: its fuel
-gathers along the blue line, most of it near the map's best point, and the low-torque corner is
+speed across, torque up, thin black rings of equal BSFC, the blue best-BSFC line. Now there are two
+sets of bubbles, and a bigger bubble means more fuel burned there. Red is the conventional car: its
+WLTC fuel sits on its diagonal band through the 250 to 350 gram region. Green is the P2 hybrid: its
+fuel gathers along the blue line, most of it near the map's best point, and the low-torque corner is
 nearly empty. That is the take-away: the hybrid burns its fuel where the engine is efficient.
 
 Remember the catch of section 01: each joule stored to run the engine better later pays the round
@@ -260,11 +261,12 @@ There is a hybrid that does all of this with no CVT at all: the power-split hybr
 the Toyota Prius. A picture only; we do not build it.
 
 The heart is one planetary gear: a sun gear in the middle, small planet gears around it held by a
-carrier, and a ring gear with teeth on the inside around them all. In the drawing, black lines are
-shafts and orange lines are electrical. The engine drives the carrier. The sun gear drives the
-first motor-generator, MG1. The ring gear drives the final drive and the wheels, and the second
-motor-generator, MG2, sits on the same shaft. The two machines are joined electrically through
-their inverters, the electronics that drive them, and the battery.
+carrier, and a ring gear with teeth on the inside around them all. In the drawing, thick black lines
+are shafts and thin orange lines are electrical; the carrier's arms are drawn in orange too. The
+engine drives the carrier. The sun gear drives the first motor-generator, MG1. The ring gear drives
+the final drive and the wheels, and the second motor-generator, MG2, sits on the same shaft. The two
+machines are joined electrically through their inverters, the electronics that drive them, and the
+battery.
 
 The equation is the planetary gear's speed rule. Omega is a speed: c for the carrier, s for the
 sun, r for the ring. In words: one plus k, times the carrier speed, equals the sun speed plus k
@@ -316,8 +318,8 @@ powertrain.N_ref = N_target
 </div>
 
 <!--
-Build 02: the operating line. On the left, the operating-line test model in Studio: the line's table sits
-between the driver and the powertrain.
+Build 02: the operating line. On the left, the operating-line test model in Studio: the line's table
+sits between the driver and the powertrain.
 
 The library gives you the best-BSFC line as a data table. The powertrain gets a switch,
 speed_commanded, that swaps the CVT that follows the pedal for one that holds an engine speed we
@@ -331,11 +333,11 @@ The checkpoint: over the WLTC the car burns 5.44 liters per 100 kilometers, agai
 That is 4.9 percent, with no electric machine at all, from moving the engine to lower speed and
 higher load.
 
-But be honest about why. Nothing checks the request against the engine: pedal times 85 kilowatts
-is not what the engine actually delivers, so the engine does not sit on the line. Only 17 percent of the fuel burns within
-150 revolutions per minute of it. The saving comes from running slower in general. Holding the
-engine on the line needs a controller that commands engine power directly: the energy manager of
-section 06.
+But be honest about why. Nothing checks the request against the engine: pedal times 85 kilowatts is
+not what the engine actually delivers, so the engine does not sit on the line. Only 17 percent of
+the fuel burns within 150 revolutions per minute of it. The saving comes from running slower in
+general. Holding the engine on the line needs a controller that commands engine power directly: the
+energy manager of section 06.
 -->
 
 ---
@@ -353,8 +355,8 @@ section 06.
 <!--
 Section 05 in four lines. For each power the engine gives, there is a best speed; joined up, that is
 the best-BSFC line. The CVT puts the engine on it by commanding the ratio, inside its ratio range.
-The machine shifts the load: it raises it and stores the surplus, lets the engine stop, or boosts. And
-the power-split hybrid does both with one planetary gear, MG1 setting the engine's speed.
+The machine shifts the load: it raises it and stores the surplus, lets the engine stop, or boosts.
+And the power-split hybrid does both with one planetary gear, MG1 setting the engine's speed.
 
 Next: somebody has to decide which of these to do at every moment. That is the energy manager.
 -->

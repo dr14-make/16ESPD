@@ -21,7 +21,7 @@ presenter mode from the nav bar, bottom left
 </div>
 
 <!--
-Welcome to Lecture 5, hybrids. A hybrid car has two power sources: a petrol engine and an
+Welcome to Lecture 5, hybrids. A hybrid car has two power sources: a gasoline engine and an
 electric machine with a battery. The subtitle names the four things we put together today: Lecture
 2's engine, a clutch, Lecture 4's electric machine, and an energy manager, the controller that
 decides which of them drives.
@@ -59,7 +59,7 @@ routeAlias: from-lectures-2-and-4
 ### Lecture 2: the engine car
 
 The engine model, built from measured maps, with a CVT drove the WLTC on **5.22 L/100 km**:
-**168.8 MJ/100 km** of petrol. Every stop idled the engine, and every brake burned what the engine
+**168.8 MJ/100 km** of gasoline. Every stop idled the engine, and every brake burned what the engine
 had made.
 
 </div>
@@ -79,19 +79,19 @@ powertrains meet on one car and one cycle.</div>
 
 <div class="caption text-left">WLTC: the standard 30-minute test drive, in four phases from Low to
 Extra High speed · CVT: a gearbox whose ratio changes smoothly · MJ/100 km: energy per 100 km, one
-unit for petrol and electricity · regen: the machine brakes as a generator and charges the battery
-· K0: the clutch between the engine and the rest</div>
+unit for gasoline and electricity · regen: the machine brakes as a generator and charges the
+battery · K0: the clutch between the engine and the rest</div>
 
 <!--
 Let us recall the two cars we already have. First, four words from the line at the bottom of the
 slide. The WLTC is the standard test drive for fuel consumption: about 30 minutes, in four phases,
 Low, Medium, High and Extra High speed. A CVT is a continuously variable transmission: a gearbox
 whose ratio changes smoothly instead of in steps. Megajoules per 100 kilometers is energy per
-distance; it lets us compare a petrol car and an electric car in one unit. And regen, regenerative
+distance; it lets us compare a gasoline car and an electric car in one unit. And regen, regenerative
 braking, means the electric machine brakes the car as a generator and charges the battery.
 
 On the left, Lecture 2's car: the engine model built from the engine's measured maps, with the CVT.
-On the WLTC it burned 5.22 liters of petrol per 100 kilometers, which is 168.8 megajoules per 100
+On the WLTC it burned 5.22 liters of gasoline per 100 kilometers, which is 168.8 megajoules per 100
 kilometers. That is the number from Lecture 4's opening slide, and it is still what the current
 model gives. Two things in that run are pure waste: the engine idles at every stop, and every time
 the car brakes, the energy the engine put into its speed goes into the brake discs as heat.
@@ -102,10 +102,11 @@ driving energy came back through regen. Those are the numbers from Lecture 4's w
 
 The green box says what we do today. We keep the engine from Lecture 2 and add a disconnect clutch.
 We call it K0: the clutch that can cut the engine off from the rest of the car. We take the machine
-from Lecture 4 but sized at about 30 kilowatts, and a battery of about 1.4 kilowatt-hours. Those sizes come from a real car: the 2011 Hyundai Sonata Hybrid that Oak Ridge
-National Laboratory benchmarked had a 30 kilowatt machine behind an engine clutch and a 1.4
-kilowatt-hour, 270 volt pack. It all goes on Lecture 4's planar car and drives the same cycle, so at
-the end of the day we can put the conventional car, the hybrid and the electric car side by side.
+from Lecture 4 but sized at about 30 kilowatts, and a battery of about 1.4 kilowatt-hours. Those
+sizes come from a real car: the 2011 Hyundai Sonata Hybrid that Oak Ridge National Laboratory
+benchmarked had a 30 kilowatt machine behind an engine clutch and a 1.4 kilowatt-hour, 270 volt
+pack. It all goes on Lecture 4's planar car and drives the same cycle, so at the end of the day we
+can put the conventional car, the hybrid and the electric car side by side.
 -->
 
 ---
@@ -119,7 +120,7 @@ the end of the day we can put the conventional car, the hybrid and the electric 
 | <Link to="degree-of-hybridization">03</Link> | Degree of hybridization | the electric share of the power, micro to plug-in, cost | |
 | <Link to="p-positions">04</Link> | P0 to P4 | where the machine sits, and why the clutch decides | 01 the P2 powertrain |
 | <Link to="operating-point">05</Link> | Moving the operating point | the engine's most efficient speeds, the CVT, power split | 02 the operating line |
-| <Link to="energy-management">06</Link> | Energy management | driving modes, a battery charge window, ending with the charge we started with, an optimizer | 03 the energy manager |
+| <Link to="energy-management">06</Link> | Energy management | driving modes, the battery's charge window, an optimizer | 03 the energy manager |
 | <Link to="results">07</Link> | Results | WLTC three ways, the five positions against published studies | 04 the WLTC, charge-sustaining |
 | <Link to="wrap-up">08</Link> | Wrap-up | what you measured, what the model leaves out | |
 

@@ -123,6 +123,6 @@ And our P4 drives the rear wheels through its own reduction gear; it is not torq
 gives the left and right wheels different torques to help the car turn. That comes
 in a later lecture on the same platform.
 
-The green box: your homework is the series hybrid with prepared parts, and the extra pack's fuel-cell
-car is the same shape with another source.
+The green box: your homework is the series hybrid with prepared parts, and the extra pack's
+fuel-cell car is the same shape with another source.
 -->

@@ -47,7 +47,8 @@ $$
 
 <div class="caption text-left">ṁ<sub>f</sub>: fuel flow, g/h · <i>P</i>: shaft power, kW ·
 <i>H</i><sub>u</sub>: energy in the fuel, MJ/kg · η<sub>b</sub>: brake efficiency, the share of the
-fuel's energy that becomes shaft work</div>
+fuel's energy that becomes shaft work · in these units, η<sub>b</sub> = 3600 / (BSFC ·
+<i>H</i><sub>u</sub>)</div>
 
 232 g/kWh with *H*<sub>u</sub> = 43.4 MJ/kg is η<sub>b</sub> = 35.7 %.
 
@@ -83,14 +84,16 @@ power P, in kilowatts. Lower is better.
 
 The second formula turns it into an efficiency. Eta b, the brake efficiency, is the share of the
 fuel's energy that comes out as work at the shaft. It is one over BSFC times H u, the heating
-value: the energy in one kilogram of fuel, in megajoules per kilogram. Check it with Lecture 2's
+value: the energy in one kilogram of fuel, in megajoules per kilogram. The units must match: with
+BSFC in grams per kilowatt-hour and H u in megajoules per kilogram, the efficiency is 3600 divided
+by BSFC times H u, because a kilowatt-hour is 3.6 megajoules. Check it with Lecture 2's
 best point: 232 grams per kilowatt-hour is 0.232 kilograms per 3.6 megajoules; times 43.4
 megajoules per kilogram, the heating value Lecture 4 used, that is 2.80 joules of fuel per joule of
 work, and the inverse is 35.7 percent.
 
 Our P2 has a 30 kilowatt machine, so its DOH is 30 over 30 plus the engine's peak power. Lecture 2's
-map peaks at 85.6 kilowatts, at about 6000 rpm, the top of the best-BSFC line. So the DOH is about 26
-percent, a full hybrid.
+map peaks at 85.6 kilowatts, at about 6000 rpm, the top of the best-BSFC line. So the DOH is about
+26 percent, a full hybrid.
 
 The figure on the right runs the same P2 car and energy manager with five machine sizes, from 8 to
 40 kilowatts. Across is the machine's rated power, in kilowatts. Up is the WLTC fuel saving against
@@ -299,11 +302,11 @@ shows with no current flowing. The course's research note on the hybrid pack's r
 sources.
 
 The right side is from the batteries lecture, the summary table of slide 14; the deck calls its
-figures guidelines only. The first number column is energy per kilogram, in watt-hours per
-kilogram; the second is power per kilogram, in watts per kilogram. The rows are lead-acid,
-nickel-cadmium, nickel-metal-hydride and lithium-ion. Read the two columns as a ratio: a typical
-Li-ion cell there gives 300 watts per kilogram from 150 watt-hours per kilogram, about 2 C. A hybrid asks about ten times that, which is
-why a hybrid pack is not just a small electric-car pack.
+figures guidelines only. The first number column is energy per kilogram, in watt-hours per kilogram;
+the second is power per kilogram, in watts per kilogram. The rows are lead-acid, nickel-cadmium,
+nickel-metal-hydride and lithium-ion. Read the two columns as a ratio: a typical Li-ion cell there
+gives 300 watts per kilogram from 150 watt-hours per kilogram, about 2 C. A hybrid asks about ten
+times that, which is why a hybrid pack is not just a small electric-car pack.
 -->
 
 ---

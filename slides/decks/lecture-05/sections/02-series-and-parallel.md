@@ -111,13 +111,13 @@ The second architecture, the parallel hybrid.
 
 The vehicle is driven either by the engine working directly through a transmission, by one or more
 electric motors working through the transmission or coupled directly to the wheels, or by both at
-once. In the drawing the motor sits on the same shaft as the engine, before the transmission; a motor
-on the wheels is the other option, and we come back to it as P4.
+once. In the drawing the motor sits on the same shaft as the engine, before the transmission; a
+motor on the wheels is the other option, and we come back to it as P4.
 
-Same colors as before: orange is electrical, black is shafts. Point at the black line from the engine
-to the wheels: there is a mechanical path, so when the engine drives, its power reaches the road
-without being converted twice. That is the take-away of this drawing. And the motor only helps, so
-it can be much smaller than a series hybrid's.
+Same colors as before: orange is electrical, black is shafts. Point at the black line from the
+engine to the wheels: there is a mechanical path, so when the engine drives, its power reaches the
+road without being converted twice. That is the take-away of this drawing. And the motor only helps,
+so it can be much smaller than a series hybrid's.
 
 The price is under the transmission: the engine's speed is tied to the wheels through its ratio. The
 engine cannot simply sit at its best point.
@@ -173,10 +173,9 @@ the parallel's where the parallel is good.
 
 Honda's current hybrids use this layout. No numbers on it today: our research notes have none.
 
-The last line is the contrast with the power-split hybrid of section 05, the Prius: there a planetary
-gear, a set of gears turning around a central gear, splits the engine's power smoothly between a
-mechanical and an electrical path. Here a
-clutch switches between a few fixed modes.
+The last line is the contrast with the power-split hybrid of section 05, the Prius: there a
+planetary gear, a set of gears turning around a central gear, splits the engine's power smoothly
+between a mechanical and an electrical path. Here a clutch switches between a few fixed modes.
 -->
 
 ---
@@ -283,8 +282,8 @@ take in and give out energy very quickly. But their specific energy, the energy 
 kilogram, is small. That makes them good for braking and
 launching, poor as the only store.
 
-Solar cars: the deck mentions the record runs in the solar races across Australia. On a road car
-the area of the roof limits what the sun can give, so solar can at most add a little range. No numbers
+Solar cars: the deck mentions the record runs in the solar races across Australia. On a road car the
+area of the roof limits what the sun can give, so solar can at most add a little range. No numbers
 on this slide: none of them come back today.
 -->
 

@@ -30,9 +30,9 @@ routeAlias: wltc-on-the-bsfc-map
 
 <img src="/figures/05-operating-points-conventional.svg" class="w-full" style="max-height: 24rem" alt="Lecture 2's BSFC map with the conventional car's WLTC operating points as bubbles sized by the fuel burned there. Nearly all the fuel lies on one diagonal band from about 2300 rpm at 10 N·m to 3600 rpm at 110 N·m, set by the CVT's pedal schedule, at higher speed and lower torque than the best-BSFC line, in the 250 to 350 g/kWh region."/>
 
-<div class="caption">Engine speed across, torque up · gray rings: BSFC · blue: the best-BSFC line ·
-red bubbles: where the fuel burns, bigger = more. Most of the fuel burns below and right of the
-blue line.</div>
+<div class="caption">Engine speed across, torque up · thin black rings: BSFC · blue: the best-BSFC
+line · red bubbles: where the fuel burns, bigger = more. Most of the fuel burns below and right of
+the blue line.</div>
 
 </div>
 <div>
@@ -62,8 +62,9 @@ burns for each kilowatt-hour of work it gives at its shaft. Lower is better. Bra
 at the shaft, the crankshaft.
 
 Now the figure, Lecture 2's fuel map. Across is engine speed, in revolutions per minute. Up is the
-engine's torque, in newton meters. The black curve at the top is full load, the most torque the
-engine can give. The thin gray rings are lines of equal BSFC, labeled in grams per kilowatt-hour;
+engine's torque, in newton meters. The thick black curve at the top is full load, the most torque
+the engine can give. The thin black rings are lines of equal BSFC, labeled in grams per
+kilowatt-hour;
 the smallest ring, near 3000 rpm, is the best point. The dashed gray curves are lines of equal
 power, 20 to 80 kilowatts. The blue line is the best-BSFC line: for each power, the speed and torque
 where the engine burns the least fuel. On top, the red bubbles are every point the conventional
@@ -75,19 +76,19 @@ the pedal, puts it there. That band runs faster and with less torque than the bl
 to 350 gram region. Only a third of the fuel is burned within 10 grams per kilowatt-hour of the
 line. That gap is what the hybrid recovers.
 
-The right column has the numbers behind that figure. At its best point the engine turns 35.7
-percent of the fuel's energy into shaft work: that is its brake efficiency, 232 grams of petrol per
+The right column has the numbers behind that figure. At its best point the engine turns 35.7 percent
+of the fuel's energy into shaft work: that is its brake efficiency, 232 grams of gasoline per
 kilowatt-hour, at 3000 rpm and 99 newton meters. That is the star on Lecture 2's efficiency map, in
 the engine-and-cycles section of that deck.
 
 Over the whole WLTC, on the conventional reference run, it gets 30.2 percent: on average 275 grams
 per kilowatt-hour of shaft work over the cycle, against 232 at the star. The table splits the cycle
-by engine power. Read the first column: four tenths of the time the engine idles or barely pulls,
-and it burns only 6 percent of the fuel there. Read the third column: two thirds of the fuel goes in
-at 10 to 40 kilowatts, on the band the CVT's pedal schedule sets. So, again: only a third of all
-the fuel is burned within 10 grams per kilowatt-hour of the line. Light load is where the engine
-does worst: the throttle is nearly closed, so the engine works hard to suck air past it, and
-friction is a large share of a small output.
+by engine power. Read the column for 1 kilowatt or less: four tenths of the time the engine idles or
+barely pulls, and it burns only 6 percent of the fuel there. Read the column for 10 to 40 kilowatts:
+two thirds of the fuel goes in there, on the band the CVT's pedal schedule sets. So, again: only a
+third of all the fuel is burned within 10 grams per kilowatt-hour of the line. Light load is where
+the engine does worst: the throttle is nearly closed, so the engine works hard to suck air past it,
+and friction is a large share of a small output.
 
 And the engine idles at every stop. The WLTC's Low phase is full of stops, and every second of idle
 burns fuel with nothing to show for it.
@@ -179,7 +180,7 @@ routeAlias: model-ladder
 
 | Level | Model | What it adds | Built in |
 |---|---|---|---|
-| H0 | H1 with the hybrid machine removed: no torque, no losses, no inertia; K0 slips to start the car, then stays locked | the conventional car to compare against, on the same planar car, L/100 km on WLTC | reference |
+| H0 | H1 with the hybrid machine removed: no torque, no losses, no inertia; K0 opens at stops, slips to start the car, and closes once it moves | the conventional car to compare against, on the same planar car, L/100 km on WLTC | reference |
 | H1 | P2 powertrain | engine → K0 clutch → ≈ 30 kW machine → CVT → differential; ≈ 1.4 kWh battery | build 01 |
 | H2 | H1 + operating line | the CVT ratio aims the engine at its best-BSFC line | build 02 |
 | H3 | H2 + energy manager | driving modes that keep the battery's charge (SoC) in a window, without flickering on and off; regen as in Lecture 4 | build 03 |
@@ -194,10 +195,11 @@ H3. H4 shows that where the machine sits decides how much of each a hybrid can g
 Here is the ladder we climb today, one rung per build.
 
 H0 is the conventional car we compare against, in liters per 100 kilometers on the WLTC. It is the
-P2 car with the hybrid machine removed: no torque, no losses, no inertia, no auxiliaries. K0 slips
-to start the car moving, like the clutch in a manual car, and then stays locked once the car moves.
-So it is Lecture 2's engine and CVT on the same planar car, driveline and mass as the hybrid, and
-the difference you measure is the hybrid's alone. You do not build it; it is the reference run.
+P2 car with the hybrid machine removed: no torque, no losses, no inertia, no auxiliaries. K0 works
+like the clutch of a manual car, but on its own: it is open while the car stands, slips as the
+engine revs up to start the car, and is closed while the car moves. So it is Lecture 2's engine and
+CVT on the same planar car, driveline and mass as the hybrid, and the difference you measure is the
+hybrid's alone. You do not build it; it is the reference run.
 
 H1, build 01, is the P2 powertrain. Lecture 2's engine, then the K0 disconnect clutch, then Lecture
 4's machine at about 30 kilowatts, then the CVT that the course already has, then the planar car's

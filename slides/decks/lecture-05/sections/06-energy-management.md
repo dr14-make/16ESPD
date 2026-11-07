@@ -167,16 +167,17 @@ Default SoC<sub>on</sub> **0.55**, SoC<sub>off</sub> **0.60**, the start. On the
 </div>
 
 <!--
-Why hysteresis. Hysteresis means a gap between the switch-on and the switch-off point. With a
-single threshold, the controller chatters: it switches on and off very fast. The state of charge falls below
-the threshold, the engine starts charging, the state of charge rises a hair above it, the engine
-stops, the charge falls a hair, the engine starts. A real engine would start and stop many times a
-second; in a model the solver takes tiny steps at every switch.
+Why hysteresis. Hysteresis means a gap between the switch-on and the switch-off point. With a single
+threshold, the controller chatters: it switches on and off very fast. The state of charge falls
+below the threshold, the engine starts charging, the state of charge rises a hair above it, the
+engine stops, the charge falls a hair, the engine starts. A real engine would start and stop many
+times a second; in a model the solver takes tiny steps at every switch.
 
-The cure is two thresholds and a memory. Read the formula on the slide line by line. Charging is
-on when the state of charge is below SoC on. It is off when the state of charge is above SoC off,
-which is a little higher. In between, it stays as it was. That memory is the latch. The same goes for starting
-the engine against the electric-only threshold: start above one power, stop below a lower one.
+The cure is two thresholds and a memory. Read the formula on the slide line by line. Charging is on
+when the state of charge is below SoC on. It is off when the state of charge is above SoC off, which
+is a little higher. In between, it stays as it was. That memory is the latch. The same goes for
+starting the engine against the electric-only threshold: start above one power, stop below a lower
+one.
 
 You have the part already: Lecture 2's `HysteresisLatch`. It follows Lecture 2's rule: the latch
 switches smoothly, so the solver, the program that steps the model through time, does not have to
@@ -241,7 +242,7 @@ in megajoules. We divide it by three things: eta e b, the engine-to-battery effi
 of the fuel's energy that ends up stored in the battery; H u, the energy in one kilogram of fuel;
 and rho f, the fuel's density, kilograms per liter. That turns megajoules of battery energy into
 liters of fuel. We use 43.4 megajoules per kilogram and 0.745 kilograms per liter, Lecture 4's
-petrol. The sign: less charge at the end, more fuel charged to the run.
+gasoline. The sign: less charge at the end, more fuel charged to the run.
 
 The library gives you this as a block, SoC-corrected fuel. It follows the straight-line correction
 of the American and European test rules for hybrids, SAE J1711 and UN ECE R101. Those rules find
@@ -251,9 +252,9 @@ kilowatt charging point, 34.7 percent, times 0.90 for the machine and inverter g
 0.97 for the battery's charging loss.
 
 The right column sizes the window. 2 percent of 1.4 kilowatt-hours is 0.028 kilowatt-hours, about
-0.1 megajoules. The conventional car burns 43.0 megajoules of fuel on the WLTC, on this test model. So
-the band is small against the cycle's fuel, even after dividing by
-the efficiency: the correction is a check on honesty, not a large term.
+0.1 megajoules. The conventional car burns 43.0 megajoules of fuel on the WLTC, on this test model.
+So the band is small against the cycle's fuel, even after dividing by the efficiency: the correction
+is a check on honesty, not a large term.
 -->
 
 ---
@@ -402,11 +403,11 @@ thresholds are the same.
 ### Next: what it all saves. <Link to="results">→ 07, results</Link>
 
 <!--
-Section 06 in five lines. The controller decides modes and torques: whether the engine runs,
-whether K0 is closed, how the demand is split, and how much the machine brakes. We write it as five
-rules: regen, electric only, on the line, boost, charge. Hysteresis keeps them from switching on and
-off too fast, with two thresholds and a latch. The result must be charge-sustaining: state of charge back
-within 2 percent, the fuel corrected for the rest. And ECMS, which we do not build, prices the
+Section 06 in five lines. The controller decides modes and torques: whether the engine runs, whether
+K0 is closed, how the demand is split, and how much the machine brakes. We write it as five rules:
+regen, electric only, on the line, boost, charge. Hysteresis keeps them from switching on and off
+too fast, with two thresholds and a latch. The result must be charge-sustaining: state of charge
+back within 2 percent, the fuel corrected for the rest. And ECMS, which we do not build, prices the
 battery's energy as fuel and minimizes at every instant.
 
 Next: what all this saves on the WLTC.

@@ -43,7 +43,7 @@ routeAlias: three-powertrains
 
 The hybrid saves **28.5 %** against H0; the line alone, **4.9 %**.
 
-MJ of petrol into the engine against MJ out of the battery's terminals: the energy each car draws
+MJ of gasoline into the engine against MJ out of the battery's terminals: the energy each car draws
 from its own store, without the refinery, power station or grid.
 
 </div>
@@ -60,17 +60,17 @@ the conventional car idles and creeps.</div>
 <!--
 The first comparison: the three powertrains on the same cycle.
 
-The conventional car is H0: the same planar car, K0 locked once it moves and the hybrid machine removed, so the
-rows differ only in the powertrain: 5.72 liters per 100 kilometers, 184.9 megajoules. The second
-row is build 02: the same engine-only car with its CVT on the operating-line schedule, 5.44 liters,
-175.8 megajoules, 4.9 percent less with no electric machine. For
-scale, Lecture 2's car on its own, one-dimensional car model burned 5.22. The hybrid you finish today,
-with its fuel corrected for the change in the battery's charge: 4.09 liters, 132.1 megajoules, 28.5
+The conventional car is H0: the same planar car, K0 closed while it moves and the hybrid machine
+removed, so the rows differ only in the powertrain: 5.72 liters per 100 kilometers, 184.9
+megajoules. The second row is build 02: the same engine-only car with its CVT on the operating-line
+schedule, 5.44 liters, 175.8 megajoules, 4.9 percent less with no electric machine. For scale,
+Lecture 2's car on its own, one-dimensional car model burned 5.22. The hybrid you finish today, with
+its fuel corrected for the change in the battery's charge: 4.09 liters, 132.1 megajoules, 28.5
 percent less than H0. Its raw fuel is 4.11 liters; it ends with a little more charge than it
-started, so the correction takes a few hundredths off. The battery-electric car of Lecture 4:
-no liters, 47.2 megajoules per 100 kilometers at the battery's terminals, from Lecture 4's wrap-up.
+started, so the correction takes a few hundredths off. The battery-electric car of Lecture 4: no
+liters, 47.2 megajoules per 100 kilometers at the battery's terminals, from Lecture 4's wrap-up.
 
-Be careful what the megajoule column compares. For the three fuel rows it is the petrol's heating
+Be careful what the megajoule column compares. For the three fuel rows it is the gasoline's heating
 value going into the engine, the hybrid's corrected for its change of charge; for the electric car
 it is the electricity coming out of the battery's terminals. It is the energy each car draws from
 its own store. It does not count the whole chain from the oil well or the power station: it leaves
@@ -79,9 +79,9 @@ Lecture 4.
 
 The figure splits the three fuel cars by WLTC phase. Across are the four phases, Low, Medium, High
 and Extra High, from slowest to fastest, and the whole cycle on the right. Up is fuel in liters per
-100 kilometers. Red is the conventional car, purple the same car with its CVT on the operating
-line, green the hybrid with its fuel corrected for the battery. Each phase is charged its own fuel, and for
-the hybrid the fuel equivalent of the battery energy it drew there, so its phases add up to the
+100 kilometers. Red is the conventional car, purple the same car with its CVT on the operating line,
+green the hybrid with its fuel corrected for the battery. Each phase is charged its own fuel, and
+for the hybrid the fuel equivalent of the battery energy it drew there, so its phases add up to the
 4.09. The hybrid halves the Low phase, 7.13 down to 3.52, where it drives electrically and the
 conventional car idles and creeps; in Extra High, where the engine is loaded anyway, it saves about
 12 percent. The line car gains 6 to 8 percent in the first three phases and under 2 in Extra High.
@@ -98,7 +98,7 @@ routeAlias: baselines
 | Study | Baseline | Car | Gearbox |
 |---|---|---|---|
 | Schaeffler 2018 | **12 V stop/start** | compact (C-segment), 1.0 L 3-cylinder; 1.4 kWh battery | 7-speed dual-clutch |
-| Chalmers (SAE 2019-01-0366) | **no stop/start** | compact (C-segment), 1300 kg + 50 kg, 1.5 L petrol | 7-speed dual-clutch |
+| Chalmers (SAE 2019-01-0366) | **no stop/start** | compact (C-segment), 1300 kg + 50 kg, 1.5 L gasoline | 7-speed dual-clutch |
 | TU Braunschweig 2018 | **stop/start** | compact (C-segment), 1520 kg | manual |
 | **Ours** | **idles at stops** | Lecture 2's engine | CVT |
 
@@ -117,7 +117,7 @@ against its own baseline. Schaeffler, 2018: against a 12 volt stop/start car, a 
 1.0 liter three-cylinder and a seven-speed dual-clutch gearbox, an automated gearbox with two
 clutches, with a 1.4 kilowatt-hour battery in
 the hybrids. Chalmers, the SAE paper 2019-01-0366: against the same car without stop/start, a
-C-segment car of 1300 kilograms plus 50, with a 1.5 liter petrol engine, again a seven-speed
+C-segment car of 1300 kilograms plus 50, with a 1.5 liter gasoline engine, again a seven-speed
 dual-clutch. TU Braunschweig, 2018: against stop/start, a 1520 kilogram C-segment car with a manual
 gearbox.
 
@@ -162,18 +162,18 @@ The second comparison, and the demo: the same parts at the other four places in 
 
 The left column is the band each position reaches in the three studies, at the 15 kilowatts they
 compare at; it is the reference table we check our results against. P0, with 15 to 16 kilowatts: 4
-to 9 percent, Schaeffler's 6.6 at 16 kilowatts and Chalmers' 8.9 at 15 among them. P1: 8.5 to 10.4. P2: 12 to 25;
-that spread is mostly the baseline, with or without stop/start. P3: 15 to 25. P4 with a P0 for
-starting: about 15.5, Schaeffler's number. The ranking is the same in all three studies: P0 below
-P1, far below P2, P3 and P4, which are close to each other.
+to 9 percent, Schaeffler's 6.6 at 16 kilowatts and Chalmers' 8.9 at 15 among them. P1: 8.5 to 10.4.
+P2: 12 to 25; that spread is mostly the baseline, with or without stop/start. P3: 15 to 25. P4 with
+a P0 for starting: about 15.5, Schaeffler's number. The ranking is the same in all three studies: P0
+below P1, far below P2, P3 and P4, which are close to each other.
 
 The right column is ours, from the P-position notebook: the course car with today's 30 kilowatt
-machine at each position, SoC-corrected, against H0. P0 15.74 percent, P1 21.10, P2 28.53, P3
-28.65, P4 28.53. The ranking is the studies': P0 below P1, far below P2, P3 and P4, which are within
-0.12 points of each other. Our P4 is not the studies' P4 plus P0: it is an electric rear axle, and
-an ideal crank starter stands in for the P0 only to start the engine, with no second machine to
-boost or recuperate. The absolute numbers are higher than the bands: our baseline idles, the reason on
-the last slide, and our machine is twice the studies' size. We did not run the positions at 15
+machine at each position, SoC-corrected, against H0. P0 15.74 percent, P1 21.10, P2 28.53, P3 28.65,
+P4 28.53. The ranking is the studies': P0 below P1, far below P2, P3 and P4, which are within 0.12
+points of each other. Our P4 is not the studies' P4 plus P0: it is an electric rear axle, and an
+ideal crank starter stands in for the P0 only to start the engine, with no second machine to boost
+or recuperate. The absolute numbers are higher than the bands: our baseline idles, the reason on the
+last slide, and our machine is twice the studies' size. We did not run the positions at 15
 kilowatts; only P2 has a 15 kilowatt figure, 25.3 percent, from the machine-size sweep.
 
 The figure below is a table, one row per position, all at 30 kilowatts. It adds what a percentage
@@ -229,14 +229,14 @@ How to read the comparison.
 
 What should agree. The ranking: the coupled positions, P0 and P1, well below the decoupled ones. The
 size of the gap: in the Chalmers study, at 15 kilowatts on the WLTC, P2 is 15.6 percentage points
-above P0 and
-P3 16.1; the research note puts the coupled-to-decoupled gap at about 7 to 15 points across the
-three studies. Ours, at 30 kilowatts: P2 12.8 points above P0, P3 12.9. That is not like for like,
-since the studies' gap is at 15 kilowatts and we ran the positions only at 30. And the effect of power: the ICCT finds that going from 15 to 20 or 30 kilowatts adds 5
-to 10 percent on P2, P3 and P4, while P0 and P1 gain little, because their limit is the coupled
-engine, not the machine. Ours gains less: the machine-size sweep of section 03 takes our P2 from
-25.3 percent at 15 kilowatts to 28.5 at 30, about 3 points, most of it by 22 kilowatts. Past the
-point where the machine covers the regen and the low-power driving, more power buys nothing.
+above P0 and P3 16.1; the research note puts the coupled-to-decoupled gap at about 7 to 15 points
+across the three studies. Ours, at 30 kilowatts: P2 12.8 points above P0, P3 12.9. That is not like
+for like, since the studies' gap is at 15 kilowatts and we ran the positions only at 30. And the
+effect of power: the ICCT finds that going from 15 to 20 or 30 kilowatts adds 5 to 10 percent on P2,
+P3 and P4, while P0 and P1 gain little, because their limit is the coupled engine, not the machine.
+Ours gains less: the machine-size sweep of section 03 takes our P2 from 25.3 percent at 15 kilowatts
+to 28.5 at 30, about 3 points, most of it by 22 kilowatts. Past the point where the machine covers
+the regen and the low-power driving, more power buys nothing.
 
 What will differ. The baseline: ours idles. The transmission: our CVT alone already moves the engine
 toward the line, 4.9 percent in build 02, while the studies' dual-clutch and manual gearboxes leave
@@ -292,21 +292,20 @@ started. On the left, the fuel block on the hybrid test model in Studio: the pow
 and the car's speed are wired into it, and the battery power enters as one line of code.
 
 Your hybrid test model already carries the library's fuel block, SoCCorrectedFuel, wired since the
-first build; step 4 adds nothing to it. You run the full 1800 seconds and read the meter only at the end.
-The block reads the engine's fuel flow, the power into and out of
-the battery's store, and the distance. The code line says how the stored power is computed: E, the
-battery's open-circuit voltage, the voltage with no current flowing, times i, the current. Stored,
-not terminal: the power at the terminals would count the heat lost in the battery's resistance as
-charge it never holds. The block
-reports the raw fuel, the net battery energy and the SoC-corrected fuel, in liters and in
+first build; step 4 adds nothing to it. You run the full 1800 seconds and read the meter only at the
+end. The block reads the engine's fuel flow, the power into and out of the battery's store, and the
+distance. The code line says how the stored power is computed: E, the battery's open-circuit
+voltage, the voltage with no current flowing, times i, the current. Stored, not terminal: the power
+at the terminals would count the heat lost in the battery's resistance as charge it never holds. The
+block reports the raw fuel, the net battery energy and the SoC-corrected fuel, in liters and in
 megajoules per 100 kilometers. Then you put the three cars side by side.
 
-The checkpoint. First the honesty check: the state of charge at the end must be
-within 2 percent of capacity of its start. Then the numbers: the SoC-corrected liters per 100
-kilometers for the conventional car and the hybrid, and megajoules per 100 kilometers for all three.
-The electric car's 47.2 is Lecture 4's. The conventional car's 5.72 is this test model's reference run;
-Lecture 2's 5.22 is there to compare with. The hybrid starts at 0.600 and ends at 0.612, 1.2 points
-up, well inside the band. Its corrected fuel is 4.09 liters per 100 kilometers, raw 4.11, and 132.1
+The checkpoint. First the honesty check: the state of charge at the end must be within 2 percent of
+capacity of its start. Then the numbers: the SoC-corrected liters per 100 kilometers for the
+conventional car and the hybrid, and megajoules per 100 kilometers for all three. The electric car's
+47.2 is Lecture 4's. The conventional car's 5.72 is this test model's reference run; Lecture 2's
+5.22 is there to compare with. The hybrid starts at 0.600 and ends at 0.612, 1.2 points up, well
+inside the band. Its corrected fuel is 4.09 liters per 100 kilometers, raw 4.11, and 132.1
 megajoules: 28.5 percent less than H0.
 
 If your state of charge ends outside the band, the charge thresholds are too far apart or the charge
