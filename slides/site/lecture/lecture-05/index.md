@@ -118,7 +118,7 @@ The reference already carries the step-3 ports `engine_on` and `engine_torque_re
 
 **Every connection and Initialization for step 1a:** the `P2WLTC` listing below includes the complete shaft, road, driver and meter wiring, both fixed-mode branches, and all body, wheel, brake and converter initial conditions. Build this fixture here, before step 1b; no step-2 fixture is needed.
 
-Create `MyCar.P2Powertrain` and the **separate test component** `MyCar.P2WLTC`; a powertrain with undriven inputs is not an analysis fixture. The speed-commanded option below prepares step 2; leave it false for all of step 1. `available_torque` prepares step 3 and needs no extra input. Diagram placement metadata is omitted.
+Create `MyCar.P2Powertrain` and the **separate test component** `MyCar.P2WLTC`; a powertrain with undriven inputs is not an analysis fixture. The speed-commanded option below prepares step 2; leave it false for all of step 1. `available_torque` prepares step 3 and needs no extra input. Diagram placement metadata is omitted; the `{^…}` tags on declarations and `connect` lines name it, and Studio draws anything without metadata at a default position; keeping or dropping them changes only the drawing.
 
 ```dyad
 """
@@ -177,7 +177,7 @@ relations
   initial engine.air.manifold.p = 101325.0
   initial drive.machine.rotor.phi = 0.0
   connect(engine_pedal, engine.pedal)
-  connect(engage, k0.engage)
+  connect(engage, k0.engage) {^engage_wire}
   connect(tau_ref, drive.tau_ref)
   if speed_commanded
     connect(N_ref, speed_variator.N_ref)
@@ -191,12 +191,12 @@ relations
     connect(variator.support, support)
   end
   connect(engine.spline, k0.spline_a)
-  connect(engine.support, k0.support, drive.support, support)
+  connect(engine.support, k0.support, drive.support, support) {^support_bus}
   engine_speed = engine.speed.w
-  connect(engine.tau_e, engine_torque)
+  connect(engine.tau_e, engine_torque) {^torque_wire}
   available_torque = engine.torque_map.full_load.y
-  connect(engine.mdot_fuel, mdot_fuel)
-  connect(drive.SoC, SoC)
+  connect(engine.mdot_fuel, mdot_fuel) {^fuel_wire}
+  connect(drive.SoC, SoC) {^soc_wire}
   machine_torque = drive.machine.tau
   position = k0.position
   E = drive.battery.E
@@ -258,18 +258,18 @@ test component P2WLTC
 relations
   connect(car.bus, motion.bus)
   connect(trace.y, driver.u_s)
-  connect(motion.vx, kmh.u, meter.speed)
-  connect(kmh.y, driver.u_m, split.v)
-  connect(no_ff.y, driver.u_ff)
-  connect(powertrain.spline, differential.flange_b)
-  connect(differential.flange_left, car.spin_fl)
-  connect(differential.flange_right, car.spin_fr)
-  connect(powertrain.support, mount.spline)
+  connect(motion.vx, kmh.u, meter.speed) {^vx_wire}
+  connect(kmh.y, driver.u_m, split.v) {^kmh_wire}
+  connect(no_ff.y, driver.u_ff) {^ff_wire}
+  connect(powertrain.spline, differential.flange_b) {^spline_wire}
+  connect(differential.flange_left, car.spin_fl) {^left_wire}
+  connect(differential.flange_right, car.spin_fr) {^right_wire}
+  connect(powertrain.support, mount.spline) {^mount_wire}
   connect(car.steering, straight.spline)
   connect(flat.y, roadload.grade)
-  connect(car.chassis, roadload.chassis)
+  connect(car.chassis, roadload.chassis) {^chassis_wire}
   connect(driver.y, split.tau_ref)
-  connect(powertrain.mdot_fuel, meter.mdot_fuel)
+  connect(powertrain.mdot_fuel, meter.mdot_fuel) {^fuel_wire}
   meter.P_stored = powertrain.E * powertrain.i
   if electric
     powertrain.cvt_pedal = min(max(driver.y / 150.0, 0.0), 1.0)
@@ -568,17 +568,17 @@ In the fixture, wire:
 ```dyad
 connect(car.bus, motion.bus)
 connect(trace.y, driver.u_s)
-connect(motion.vx, kmh.u, meter.speed)
-connect(kmh.y, driver.u_m)
-connect(no_ff.y, driver.u_ff)
-connect(powertrain.spline, differential.flange_b)
-connect(differential.flange_left, car.spin_fl)
-connect(differential.flange_right, car.spin_fr)
-connect(powertrain.support, mount.spline)
+connect(motion.vx, kmh.u, meter.speed) {^vx_wire}
+connect(kmh.y, driver.u_m) {^kmh_wire}
+connect(no_ff.y, driver.u_ff) {^ff_wire}
+connect(powertrain.spline, differential.flange_b) {^spline_wire}
+connect(differential.flange_left, car.spin_fl) {^left_wire}
+connect(differential.flange_right, car.spin_fr) {^right_wire}
+connect(powertrain.support, mount.spline) {^mount_wire}
 connect(car.steering, straight.spline)
 connect(flat.y, roadload.grade)
-connect(car.chassis, roadload.chassis)
-connect(powertrain.mdot_fuel, meter.mdot_fuel)
+connect(car.chassis, roadload.chassis) {^chassis_wire}
+connect(powertrain.mdot_fuel, meter.mdot_fuel) {^fuel_wire}
 ```
 
 Declare `variable N_target::Real`, the commanded input speed, and add the signal equations
@@ -759,17 +759,17 @@ test component P2OperatingLineWLTC
 relations
   connect(car.bus, motion.bus)
   connect(trace.y, driver.u_s)
-  connect(motion.vx, kmh.u, meter.speed)
-  connect(kmh.y, driver.u_m)
-  connect(no_ff.y, driver.u_ff)
-  connect(powertrain.spline, differential.flange_b)
-  connect(differential.flange_left, car.spin_fl)
-  connect(differential.flange_right, car.spin_fr)
-  connect(powertrain.support, mount.spline)
+  connect(motion.vx, kmh.u, meter.speed) {^vx_wire}
+  connect(kmh.y, driver.u_m) {^kmh_wire}
+  connect(no_ff.y, driver.u_ff) {^ff_wire}
+  connect(powertrain.spline, differential.flange_b) {^spline_wire}
+  connect(differential.flange_left, car.spin_fl) {^left_wire}
+  connect(differential.flange_right, car.spin_fr) {^right_wire}
+  connect(powertrain.support, mount.spline) {^mount_wire}
   connect(car.steering, straight.spline)
   connect(flat.y, roadload.grade)
-  connect(car.chassis, roadload.chassis)
-  connect(powertrain.mdot_fuel, meter.mdot_fuel)
+  connect(car.chassis, roadload.chassis) {^chassis_wire}
+  connect(powertrain.mdot_fuel, meter.mdot_fuel) {^fuel_wire}
   meter.P_stored = powertrain.E * powertrain.i
   line.P = powertrain.engine_pedal * P_peak
   N_target = max(line.N, N_locked)

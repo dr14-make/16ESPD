@@ -27,5 +27,5 @@ relations
   table.u1 = min(max(omega * 30 / pi, 800.0), 6500.0)
   table.u2 = min(max(tau, 0.0), 180.0)
   pedal = opening^2 * (3.0 - 2.0 * opening) * min(max(table.y, 0.0), 1.0)
-metadata {"_links":{"tau":{"Dyad":{"placement":{"diagram":{"x1":-25,"y1":275,"x2":25,"y2":325},"icon":{"x1":-50,"y1":250,"x2":50,"y2":350}}}},"omega":{"Dyad":{"placement":{"diagram":{"x1":-25,"y1":675,"x2":25,"y2":725},"icon":{"x1":-50,"y1":650,"x2":50,"y2":750}}}},"pedal":{"Dyad":{"placement":{"diagram":{"x1":975,"y1":475,"x2":1025,"y2":525},"icon":{"x1":950,"y1":450,"x2":1050,"y2":550}}}},"table":{"Dyad":{"placement":{"diagram":{"x1":400,"y1":400,"x2":600,"y2":600}}}}}}
+metadata {"_links":{"tau":{"Dyad":{"placement":{"diagram":{"x1":-25,"y1":675,"x2":25,"y2":725},"icon":{"x1":-50,"y1":650,"x2":50,"y2":750}}}},"omega":{"Dyad":{"placement":{"diagram":{"x1":475,"y1":-25,"x2":525,"y2":25,"rot":90},"icon":{"x1":450,"y1":-50,"x2":550,"y2":50,"rot":90}}}},"pedal":{"Dyad":{"placement":{"diagram":{"x1":975,"y1":475,"x2":1025,"y2":525},"icon":{"x1":950,"y1":450,"x2":1050,"y2":550}}}},"table":{"Dyad":{"placement":{"diagram":{"x1":400,"y1":400,"x2":600,"y2":600}}}}}}
 end
