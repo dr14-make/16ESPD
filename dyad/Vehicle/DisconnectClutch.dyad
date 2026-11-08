@@ -21,9 +21,9 @@ component DisconnectClutch
   support = Spline() {^support}
   "Engagement request, 0 open to 1 closed (assumed command convention)"
   engage = RealInput() {^engage}
-  "Actuator position before saturation (derived; existing actuator output)"
+  "Actuator position before saturation (derived; FirstOrder actuator)"
   measured_position = RealOutput() {^measured_position}
-  "Torque entering the engine-side spline [N.m] (derived; existing K0 torque law)"
+  "Torque entering the engine-side spline [N.m] (derived; regularized K0 slip torque)"
   measured_torque = RealOutput() {^measured_torque}
   "Electrohydraulic actuator time constant [s] (assumed: finite pressure-fill response of K0)"
   parameter actuator_time::Time(min = eps(Float64)) = 0.15

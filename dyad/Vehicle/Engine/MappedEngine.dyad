@@ -40,9 +40,9 @@ component MappedEngine
   tau_e = RealOutput() {^tau_e}
   "Air-fuel equivalence ratio"
   lambda = RealOutput() {^lambda}
-  "Crank speed [rad/s] (derived; existing velocity sensor)"
+  "Crank speed [rad/s] (derived; RotationalComponents VelocitySensor)"
   engine_speed = RealOutput() {^engine_speed}
-  "Full-load torque at crank speed [N.m] (derived; existing torque map)"
+  "Full-load torque at crank speed [N.m] (derived; TorqueMap full-load curve)"
   available_torque = RealOutput() {^available_torque}
 
   "Progressive drive-by-wire pedal exponent (assumed)"
