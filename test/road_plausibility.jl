@@ -174,7 +174,7 @@ end
     @test custom(475.0, 0.0) == ice(475.0, 0.0)
     @test_throws "blend width" V.road_grip(ROAD_ASSETS * "ice_patch_mu.crg"; blend_width = 0.0)
     ramp = V.road_surface(ROAD_ASSETS * "ramp_z.crg"; elevation = true)
-    @test ramp(510.0, 0.0) == ramp(250.0, 5.0) == 0.0
+    @test ramp(1003.0, 0.0) == ramp(250.0, 1003.0) == 0.0
     @test ramp(500.0, 0.0) ≈ 10.0
     gradient(f, x, y) = ForwardDiff.gradient(q -> f(q[1], q[2]), [x, y])
     for road in (ice, ramp, V.road_surface(ROAD_ASSETS * "hill_z.crg"; elevation = true))
@@ -198,6 +198,33 @@ end
             fd = [(road(x + e, y) - road(x - e, y)) / 2e, (road(x, y + e) - road(x, y - e)) / 2e]
             @test gradient(road, x, y) ≈ fd atol = 1e-6
         end
+    end
+end
+
+@testset "Height files: no cliff beside a strip or past its end" begin
+    V = VehicleSystemsComponents
+    gradient(f, x, y) = ForwardDiff.gradient(q -> f(q[1], q[2]), [x, y])
+    # Start heading and lateral offset of the reference line, stations along it, and the grade
+    # the generator writes; the fitted hill overshoots its 0.08 by under 6e-4.
+    for (file, phi, offset, stations, max_grade, max_height) in (
+            ("hill_z.crg", 0.0, 0.0, (260.0, 320.0, 380.0), 0.08, 4.08),
+            ("hill_across_z.crg", pi/2, -280.0, (260.0, 320.0, 380.0), 0.08, 4.08),
+            ("ramp_z.crg", 0.0, 0.0, (100.0, 250.0, 500.0), 0.02, 10.4),
+            ("ramp_hold_z.crg", 0.0, 0.0, (-100.0, 0.0, 250.0), 0.02, 10.4))
+        road = V.road_surface(ROAD_ASSETS * file; elevation = true)
+        world(u, v) = (u * cos(phi) - v * sin(phi), u * sin(phi) + v * cos(phi) + offset)
+        sideways = [[world(u, v) for v in -50.0:0.25:50.0] for u in stations]
+        past = [world(u, 0.0) for u in last(stations):0.25:last(stations) + 100.0]
+        points = vcat(past, sideways...)
+        heights = [road(p...) for p in points]
+        grades = [hypot(gradient(road, p...)...) for p in points]
+        @info "Height file off the strip" file max_grade_seen = maximum(grades) height_range = extrema(heights)
+        @test all(isfinite, heights) && all(isfinite, grades)
+        # The fitted hill dips 9e-5 m below zero at its feet, where the cosine meets the flat.
+        @test all(h -> -1e-4 <= h <= max_height + 1e-9, heights)
+        @test maximum(grades) <= 1.01max_grade
+        # Level across the road: the height 50 m to either side is the center-line height.
+        @test all(line -> maximum(p -> road(p...), line) - minimum(p -> road(p...), line) < 1e-9, sideways)
     end
 end
 
