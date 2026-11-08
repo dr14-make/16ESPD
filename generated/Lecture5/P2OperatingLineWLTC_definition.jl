@@ -191,12 +191,6 @@ The line target is floored above idle. Machine torque, losses and inertia are ze
   # Subcomponent line of type VehicleSystemsComponents.Vehicle.OperatingLine
   line_overrides = __pop_subcomponent_overrides!(__overrides, "line")
   push!(__systems, @named line = VehicleSystemsComponents.Vehicle.OperatingLine(; __overrides = line_overrides))
-  # Subcomponent speed_command of type BlockComponents.Math.Max
-  speed_command_overrides = __pop_subcomponent_overrides!(__overrides, "speed_command")
-  push!(__systems, @named speed_command = BlockComponents.Math.Max(; __overrides = speed_command_overrides))
-  # Subcomponent speed_floor of type BlockComponents.Sources.Constant
-  speed_floor_overrides = __pop_subcomponent_overrides!(__overrides, "speed_floor")
-  push!(__systems, @named speed_floor = BlockComponents.Sources.Constant(; k=N_locked, __overrides = speed_floor_overrides))
   # Subcomponent unused_command of type BlockComponents.Sources.Constant
   unused_command_overrides = __pop_subcomponent_overrides!(__overrides, "unused_command")
   push!(__systems, @named unused_command = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = unused_command_overrides))
@@ -233,7 +227,7 @@ The line target is floored above idle. Machine torque, losses and inertia are ze
   push!(__eqs, meter.P_stored ~ powertrain.E * powertrain.i)
   push!(__eqs, line.P ~ powertrain.engine_pedal * P_peak)
   push!(__eqs, N_target ~ max(line.N, N_locked))
-  push!(__eqs, speed_command.u1 ~ N_target)
+  push!(__eqs, powertrain.N_ref ~ N_target)
   push!(__eqs, powertrain.engine_pedal ~ min(max(driver.y / tau_max, 0.0), 1.0))
   push!(__eqs, powertrain.engage ~ max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
   push!(__eqs, powertrain.tau_ref ~ 0.0)
@@ -255,8 +249,6 @@ The line target is floored above idle. Machine torque, losses and inertia are ze
   push!(__eqs, connect(flat.y, roadload.grade))
   push!(__eqs, connect(car.chassis, roadload.chassis))
   push!(__eqs, connect(powertrain.mdot_fuel, meter.mdot_fuel))
-  push!(__eqs, connect(speed_floor.y, speed_command.u2))
-  push!(__eqs, connect(speed_command.y, powertrain.N_ref))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

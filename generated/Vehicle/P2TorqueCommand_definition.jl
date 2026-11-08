@@ -68,9 +68,6 @@ Machine demand with optional start compensation (derived; P2 clutch-start torque
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
-  __local__on = on
-  append!(__params, @parameters (on::Bool), [description = "Enable clutch-start compensation (assumed; fixed configuration)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, on, __local__on)
   __local__T_max = T_max
   append!(__params, @parameters (T_max::Real), [description = "Machine peak torque [N.m] (derived; HybridDrive rating)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, T_max, __local__T_max)
@@ -117,9 +114,17 @@ Machine demand with optional start compensation (derived; P2 clutch-start torque
   __assertions = []
 
   ### Equations
-  push!(__eqs, compensation ~ engine_target - k0_torque)
-  push!(__eqs, limit ~ min(T_max, P_rated / max(abs(w), 1.0)))
-  push!(__eqs, y ~ ifelse(on, min(max(u + compensation, -limit), limit), u))
+
+  ### Control Structures
+  if on
+    push!(__eqs, compensation ~ engine_target - k0_torque)
+    push!(__eqs, limit ~ min(T_max, P_rated / max(abs(w), 1.0)))
+    push!(__eqs, y ~ min(max(u + compensation, -limit), limit))
+  else
+    push!(__eqs, compensation ~ 0.0)
+    push!(__eqs, limit ~ 0.0)
+    push!(__eqs, y ~ u)
+  end
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -56,9 +56,6 @@ Parameter-selected signal path without events (derived; Lecture 5 fixed configur
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
-  __local__on = on
-  append!(__params, @parameters (on::Bool), [description = "Pass the signal rather than the fallback (assumed; fixed configuration)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, on, __local__on)
   __local__fallback = fallback
   append!(__params, @parameters (fallback::Real), [description = "Output when disabled (assumed; fixed configuration)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, fallback, __local__fallback)
@@ -89,7 +86,13 @@ Parameter-selected signal path without events (derived; Lecture 5 fixed configur
   __assertions = []
 
   ### Equations
-  push!(__eqs, y ~ ifelse(on, u, fallback))
+
+  ### Control Structures
+  if on
+    push!(__eqs, y ~ u)
+  else
+    push!(__eqs, y ~ fallback)
+  end
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
