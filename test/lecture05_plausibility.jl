@@ -506,13 +506,16 @@ end
             (; declarations = sort(declarations), equations = sort(equations), nets = nets(connections))
         end
         library(path) = replace(strip(path), " › " => ".") * "()"
-        for (id, starter, bench) in (("step-1", "Step1EngineWLTC", "P2WLTC"),
-                ("step-2", "Step2OperatingLineWLTC", "P2OperatingLineWLTC"),
-                ("step-3", "Step3HybridWLTC", "P2HybridWLTC"))
+        for (id, starter, bench, wire_count, flag_count) in (
+                ("step-1", "Step1EngineWLTC", "P2WLTC", 7, 0),
+                ("step-2", "Step2OperatingLineWLTC", "P2OperatingLineWLTC", 2, 1),
+                ("step-3", "Step3HybridWLTC", "P2HybridWLTC", 7, 1))
             text = section(id)
             source = dyad("HandsOn05", starter)
             completed = component(source, starter)
-            for m in eachmatch(r"change `(\w+ = \w+)` to\s+`(\w+ = \w+)`", text)
+            flags = collect(eachmatch(r"change `(\w+ = \w+)` to\s+`(\w+ = \w+)`", text))
+            @test length(flags) == flag_count
+            for m in flags
                 line = only(filter(l -> startswith(strip(l), "powertrain = "), split(completed, '\n')))
                 @test occursin(m.captures[1], line)
                 completed = replace(completed, line => replace(line, m.captures[1] => m.captures[2]))
@@ -527,7 +530,7 @@ end
                     equations = sort([mine.equations; equations]),
                     nets = nets([[collect(n) for n in mine.nets]; wires]))
             reference = canonical(component(dyad("Lecture5", bench), bench))
-            @test length(wires) <= 8
+            @test length(wires) == wire_count
             @test mine.declarations == reference.declarations
             @test mine.equations == reference.equations
             @test mine.nets == reference.nets
@@ -537,9 +540,6 @@ end
             @test isempty(intersect(bare.equations, equations))
             @test analysis_extends(source, starter) == analysis_extends(dyad("Lecture5", bench), bench)
         end
-        @test count(r"(?m)^\s*\| `[\w.]+` \| `[\w.]+` \|$", section("step-1")) == 7
-        @test count(r"(?m)^\s*\| `[\w.]+` \| `[\w.]+` \|$", section("step-2")) == 2
-        @test count(r"(?m)^\s*\| `[\w.]+` \| `[\w.]+` \|$", section("step-3")) == 7
         for starter in (:Step1EngineWLTC, :Step2OperatingLineWLTC, :Step3HybridWLTC)
             @test nameof(getproperty(VehicleSystemsComponents.HandsOn05, starter)(name = starter)) == starter
         end
