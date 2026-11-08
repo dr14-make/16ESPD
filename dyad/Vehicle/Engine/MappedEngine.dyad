@@ -13,7 +13,7 @@ component MappedEngine
   "Enable externally commanded fuel cut and zero-speed drag"
   structural parameter fuel_controlled::Boolean = false
   "Fuel permission, 0 cut to 1 enabled"
-  fuel_enable = RealInput() if fuel_controlled
+  fuel_enable = RealInput() if fuel_controlled {^fuel_enable}
   "Drag regularization speed [rad/s]"
   parameter w_drag::AngularVelocity(min = eps(Float64)) = 2.0
   "Computed fuel-cut fraction, 0 enabled to 1 cut (derived; fuel permission and FuelCutLogic)"
@@ -117,10 +117,11 @@ relations
 metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/MappedEngine.svg"}},
   "_links": {
-    "cut_signal": {"Dyad":{"placement":{"diagram":{"x1":315,"x2":365,"y1":475,"y2":525}}}},
-    "cut_wire": {"Dyad":{"edges":[{"S":1,"M":[],"E":-1},{"S":-1,"M":[{"x":800,"y":500},{"x":800,"y":210}],"E":2},{"S":-1,"M":[],"E":-2},{"S":-2,"M":[],"E":3},{"S":-2,"M":[],"E":-3},{"S":-3,"M":[],"E":4},{"S":-3,"M":[],"E":-4},{"S":-4,"M":[],"E":5},{"S":-4,"M":[{"x":450,"y":1125}],"E":6}],"junctions":[{"x":450,"y":500},{"x":450,"y":735},{"x":450,"y":865},{"x":450,"y":995}]}},
-    "engine_speed": {"Dyad":{"placement":{"diagram":{"x1":275.0,"x2":325.0,"y1":-25.0,"y2":25.0},"icon":{"x1":270.0,"x2":330.0,"y1":-30.0,"y2":30.0}}}},
-    "available_torque": {"Dyad":{"placement":{"diagram":{"x1":675.0,"x2":725.0,"y1":-25.0,"y2":25.0},"icon":{"x1":670.0,"x2":730.0,"y1":-30.0,"y2":30.0}}}},
+    "cut_signal": {"Dyad":{"placement":{"diagram":{"x1":270,"x2":320,"y1":615,"y2":665}}}},
+    "cut_wire": {"Dyad":{"edges":[{"S":1,"M":[{"x":380,"y":640},{"x":380,"y":500}],"E":-1},{"S":-1,"M":[{"x":800,"y":500},{"x":800,"y":210}],"E":2},{"S":-1,"M":[],"E":-2},{"S":-2,"M":[],"E":3},{"S":-2,"M":[],"E":-3},{"S":-3,"M":[],"E":4},{"S":-3,"M":[],"E":-4},{"S":-4,"M":[],"E":5},{"S":-4,"M":[{"x":450,"y":1125}],"E":6}],"junctions":[{"x":450,"y":500},{"x":450,"y":735},{"x":450,"y":865},{"x":450,"y":995}]}},
+    "engine_speed": {"Dyad":{"placement":{"diagram":{"x1":1525,"x2":1575,"y1":405,"y2":455},"icon":{"x1":270.0,"x2":330.0,"y1":-30.0,"y2":30.0}}}},
+    "available_torque": {"Dyad":{"placement":{"diagram":{"x1":1475,"x2":1525,"y1":125,"y2":175},"icon":{"x1":670.0,"x2":730.0,"y1":-30.0,"y2":30.0}}}},
+    "fuel_enable": {"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":575,"y2":625},"icon":{"x1":-40,"x2":40,"y1":660,"y2":740}}}},
     "pedal": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}, "diagram": {"x1": -25, "y1": 235, "x2": 25, "y2": 285}}}},
     "vacuum": {"Dyad": {"placement": {"icon": {"iconName": "gas_port_a", "x1": 150, "y1": 950, "x2": 250, "y2": 1050}, "diagram": {"iconName": "gas_port_a", "x1": -25, "y1": 375, "x2": 25, "y2": 425}}}},
     "p_m": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 50, "x2": 1050, "y2": 150}, "diagram": {"x1": 1375, "y1": 15, "x2": 1425, "y2": 65}}}},

@@ -156,25 +156,25 @@ relations
   connect(engage, k0.engage) {^engage_wire}
   connect(tau_ref, command.u)
   connect(command.y, drive.tau_ref)
-  connect(drive.machine_speed, command.w)
-  connect(k0.measured_torque, command.k0_torque)
-  connect(engine_torque_ref, command.engine_target)
-  connect(N_ref, variator.N_ref)
-  connect(cvt_pedal, variator.pedal)
-  connect(k0.spline_b, drive.spline, variator.spline_a)
+  connect(drive.machine_speed, command.w) {^speed_feedback_wire}
+  connect(k0.measured_torque, command.k0_torque) {^k0_torque_wire}
+  connect(engine_torque_ref, command.engine_target) {^target_wire}
+  connect(N_ref, variator.N_ref) {^n_ref_wire}
+  connect(cvt_pedal, variator.pedal) {^cvt_pedal_wire}
+  connect(k0.spline_b, drive.spline, variator.spline_a) {^shaft_wire}
   connect(variator.spline_b, spline)
-  connect(variator.support, support)
+  connect(variator.support, support) {^variator_support_wire}
   connect(engine.spline, k0.spline_a)
   connect(engine.support, k0.support, drive.support, support) {^support_bus}
-  connect(engine.engine_speed, engine_speed)
+  connect(engine.engine_speed, engine_speed) {^speed_wire}
   connect(engine.tau_e, engine_torque) {^torque_wire}
-  connect(engine.available_torque, available_torque)
+  connect(engine.available_torque, available_torque) {^available_wire}
   connect(engine.mdot_fuel, mdot_fuel) {^fuel_wire}
   connect(drive.SoC, SoC) {^soc_wire}
-  connect(drive.machine_torque, machine_torque)
-  connect(k0.measured_position, position)
-  connect(drive.battery_voltage, E)
-  connect(drive.battery_current, i)
+  connect(drive.machine_torque, machine_torque) {^machine_torque_wire}
+  connect(k0.measured_position, position) {^position_wire}
+  connect(drive.battery_voltage, E) {^voltage_wire}
+  connect(drive.battery_current, i) {^current_wire}
   connect(engine.spline, hold.spline)
   if !engine_stopped
     initial engine.crankshaft.w = engine_speed_start
@@ -234,8 +234,8 @@ test component P2WLTC
   "Zero for unused command inputs (assumed; fixed-mode fixture)"
   unused_command = BlockComponents.Sources.Constant(k = 0.0) {^unused_command}
 relations
-  connect(unused_command.y, powertrain.N_ref, powertrain.engine_torque_ref)
-  connect(pedal_command.y, powertrain.cvt_pedal)
+  connect(unused_command.y, powertrain.N_ref, powertrain.engine_torque_ref) {^unused_wire}
+  connect(pedal_command.y, powertrain.cvt_pedal) {^cvt_wire}
   connect(car.bus, motion.bus)
   connect(trace.y, driver.u_s)
   connect(motion.vx, kmh.u, meter.speed) {^vx_wire}
@@ -524,7 +524,7 @@ connect(trace.y, driver.u_s)
 connect(motion.vx, kmh.u, meter.speed) {^vx_wire}
 connect(kmh.y, driver.u_m) {^kmh_wire}
 connect(no_ff.y, driver.u_ff) {^ff_wire}
-connect(unused_command.y, powertrain.cvt_pedal, powertrain.engine_torque_ref)
+connect(unused_command.y, powertrain.cvt_pedal, powertrain.engine_torque_ref) {^unused_wire}
 connect(powertrain.spline, differential.flange_b) {^spline_wire}
 connect(differential.flange_left, car.spin_fl) {^left_wire}
 connect(differential.flange_right, car.spin_fr) {^right_wire}
