@@ -11,7 +11,12 @@ const FRAME = 1 / 60
 const FULL_LOCK = 9.6
 const LOCK_RANGE = (0.3FULL_LOCK, FULL_LOCK)
 
-# All model-dependent data belongs to this invocation, not to the extension module.
+"""
+    context(integ, assembly)
+
+Model geometry, signal getters and fixed run settings for one window. All model-dependent data
+belongs to this invocation, not to the extension module.
+"""
 function context(integ, assembly)
     sys = assembly.vehicle
     a, b, tw, i_s, mass, radius, torque, ratio = Float64.(getp(assembly, [
@@ -30,9 +35,12 @@ function context(integ, assembly)
         :demand => sys.blend.tau_brake,
         :esp => sys.ecu.esp.dT_fl + sys.ecu.esp.dT_fr + sys.ecu.esp.dT_rl + sys.ecu.esp.dT_rr,
         :motor => sys.drive.machine.tau,
-        :power => sys.drive.battery.v * sys.drive.battery.i, :soc => sys.drive.SoC)
+        :power => sys.drive.battery.v * sys.drive.battery.i, :soc => sys.drive.SoC,
+        :gfl => sys.car.fl.grip, :gfr => sys.car.fr.grip,
+        :grl => sys.car.rl.grip, :grr => sys.car.rr.grip)
+    names = Tuple(first.(signals))
     read_signals = getu(assembly, collect(last.(signals)))
-    snapshot = i -> NamedTuple{Tuple(first.(signals))}(Tuple(read_signals(i)))
+    snapshot = i -> NamedTuple{names}(Tuple(read_signals(i)))
     esp_on, abs_on, mu = Float64.(getp(assembly, [sys.esp_on, sys.abs_on, sys.mu])(integ))
     return (; i_s, mass, radius, torque, ratio, snapshot, esp_on, abs_on, mu,
             by_hand = hasproperty(assembly.driver, :reader),
@@ -81,8 +89,30 @@ function car_shapes(ctx, s)
         s.x, s.y, s.psi) for (w, (px, py)) in pairs(ctx.wheel_at)]
     return body, wheels
 end
+"Road friction multiplier under each wheel: the uniform `mu` times the road file's grip."
+wheel_mu(ctx, s) = map(g -> ctx.mu * g, (s.gfl, s.gfr, s.grl, s.grr))
 grip_color(g) = g < 0.7 ? RGBf(0.2, 0.75, 0.3) : g < 1.0 ? RGBf(0.95, 0.75, 0.1) : RGBf(0.9, 0.15, 0.1)
 bar(x) = (n = round(Int, 12clamp(x, 0, 1)); "█"^n * "░"^(12 - n))
+"""
+    road!(ax, road, mu)
+
+Static road layer from `VehicleSystemsComponents.drive_road`, drawn once under the course: a map
+of road μ, the uniform `mu` times the file's grip as the HUD reports it under each wheel, and
+height contours on a graded road. The road files are structural, so the window takes them from
+the spec, not from the compiled assembly.
+"""
+function road!(ax, road, mu)
+    road === nothing && return nothing
+    if road.grip_varies
+        road_mu = mu .* road.grip
+        heatmap!(ax, road.x, road.y, road_mu; colormap = Reverse(:Blues),
+            colorrange = (0.0, max(1.0, maximum(road_mu))), alpha = 0.8)
+    end
+    if road.height_varies
+        contour!(ax, road.x, road.y, road.height; levels = 12, color = (:sienna, 0.7), linewidth = 1)
+    end
+    return nothing
+end
 function course!(ax)
     span = -400:10:400
     linesegments!(ax, [p for v in span for p in (Point2f(v, -400), Point2f(v, 400))]; color = (:gray55, 0.35), linewidth = 1)
@@ -176,6 +206,7 @@ function window_session!(integ, sys, spec, pad)
     GLMakie.activate!(; title = "VehicleSystemsComponents — planar BEV", vsync = false)
     fig = Figure(size = (1500, 900), backgroundcolor = RGBf(0.93, 0.93, 0.9))
     ax = Axis(fig[1, 1]; aspect = DataAspect(), backgroundcolor = RGBf(0.82, 0.83, 0.8), xlabel = "x [m]", ylabel = "y [m]")
+    road!(ax, VehicleSystemsComponents.drive_road(spec), ctx.mu)
     course!(ax)
     s = ctx.snapshot(integ)
     body0, wheels0 = car_shapes(ctx, s)
@@ -289,7 +320,8 @@ function window_session!(integ, sys, spec, pad)
                 "lat acc $(lpad(round(s.ay / 9.81, digits = 2), 6)) g", "",
                 "ESP $(controls.esp ? "on " : "OFF")  $(esp_braking(s, controls) ? "▶ BRAKING A WHEEL" : "")",
                 "ABS $(controls.abs ? "on " : "OFF")  $(abs_cycling(s, controls) ? "▶ CYCLING" : "")",
-                "road  μ = $(ctx.mu)", "drive $(DRIVE_MODES[controls.mode][1])", "",
+                "road μ  " * join(("FL", "FR", "RL", "RR") .* " " .*
+                    string.(round.(wheel_mu(ctx, s); digits = 2)), "  "), "drive $(DRIVE_MODES[controls.mode][1])", "",
                 "$(pad === nothing ? "keyboard" : "DualSense + keyboard")$(controls.paused ? "   PAUSED" : "")",
                 "solver $(round(work_ms, digits = 1)) ms / frame"], "\n")
             haptics!(pad, s, controls, wall_acc)

@@ -43,6 +43,38 @@ using DyadOrchestrator
     end
 end
 
+@testset "By-hand analysis forwards its road files to the car and the window" begin
+    V = VehicleSystemsComponents
+    byhand(; kw...) = V.__dyad_base_analysis_spec(V.PlanarBEVByHandDrive__Spec(; kw...))
+    roads = "dyad://VehicleSystemsComponents/roads/"
+    plain = byhand(; window = false)
+    @test plain.road_file == plain.height_file == ""
+    @test V.drive_model(plain) === plain.model
+    @test V.drive_road(plain) === nothing
+    files = (; road_file = roads * "uniform_low_mu.crg", height_file = roads * "ramp_hold_z.crg")
+    spec = byhand(; window = false, files...)
+    @test (spec.road_file, spec.height_file) == values(files)
+    road = V.drive_road(spec)
+    @test road.height_varies
+    # The uniform file covers two kilometers; the map's margin shows the default grip beyond it.
+    on_file = [abs(x) <= 1000 && abs(y) <= 1000 for x in road.x, y in road.y]
+    @test all(≈(0.3), road.grip[on_file])
+    @test all(≈(1.0), road.grip[[abs(x) >= 1002 || abs(y) >= 1002 for x in road.x, y in road.y]])
+    @test V.drive_road(byhand(; road_file = roads * "ice_patch_mu.crg")).grip_varies
+    result = V.PlanarBEVByHandDrive(; window = false, duration = 3.0, mu = 0.9, files...)
+    rs, sol = symbolic_container(result), result.sol
+    @test sol.t[end] ≈ 3.0
+    for wheel in (:fl, :fr, :rl, :rr)
+        w = getproperty(rs.vehicle.car, wheel)
+        @test sol(3.0; idxs = w.grip) ≈ 0.3
+        @test sol.prob.ps[w.mu_scale] == 0.9
+    end
+    @test sol(3.0; idxs = rs.vehicle.roadgrade.grade) ≈ 0.02
+    # Released pedals on an uphill grade: the car rolls back.
+    @test sol(3.0; idxs = rs.vehicle.motion.vx) < -0.01
+    @test all(isfinite, sol.u[end])
+end
+
 @testset "Scripted analysis by name" begin
     @test "PlanarBEVRealtimeDrive" in DyadOrchestrator.list_analyses("VehicleSystemsComponents")
     result = DyadOrchestrator.run_analysis("VehicleSystemsComponents", "PlanarBEVRealtimeDrive")
@@ -73,7 +105,7 @@ end
 
 @testset "Hard-stop preset and fixed run settings" begin
     result = VehicleSystemsComponents.PlanarBEVRealtimeDrive(
-        model = VehicleSystemsComponents.PlanarBEVScripted(; name = :hard_stop,
+        model = VehicleSystemsComponents.PlanarBEVOnRoad(; name = :hard_stop,
             table = "dyad://VehicleSystemsComponents/drivers/hard_stop.csv"))
     sys, sol = symbolic_container(result), result.sol
     for t in (0.0, 9.0, 18.99, 19.0, 19.01, 22.0)

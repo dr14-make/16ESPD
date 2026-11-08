@@ -23,6 +23,10 @@ using VehicleSystemsComponents: AbstractRealtimeDriveSpec, RealtimeDriveSpec
   var"abs_on"::Float64 = 1.0
   # Uniform road-grip multiplier
   var"mu"::Float64 = 1.0
+  # OpenCRG grip asset for a model with a road car, also mapped in the window; empty keeps the model's own
+  var"road_file"::String = ""
+  # OpenCRG height asset for a model with a road car, also contoured in the window; empty keeps the model's own
+  var"height_file"::String = ""
   var"model"::Union{Nothing, System} = Dyad.EmptyComponent(; name=:EmptyComponent)
   __system::System
 end

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   RoadCar(; name, road_file, road, load_transfer, m, Iz, a, b, tw, radius, J, mu_A, mu_S, sAdhesion_f, sAdhesion_r, mu_scale_fl, mu_scale_fr, mu_scale_rl, mu_scale_rr, T_brake, tau_max, i_s, t_k, ackermann, h_cg, T_lt, __overrides)
+   RoadCar(; name, road_file, default_grip, blend_width, road, load_transfer, m, Iz, a, b, tw, radius, J, mu_A, mu_S, sAdhesion_f, sAdhesion_r, mu_scale_fl, mu_scale_fr, mu_scale_rl, mu_scale_rr, T_brake, tau_max, i_s, t_k, ackermann, h_cg, T_lt, __overrides)
 
 Four-wheel planar vehicle with physical steering, wheel, spin, and load paths.
 
@@ -17,7 +17,9 @@ steering column and each wheel, and the car sends every reading on its `bus` por
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `road_file`         | OpenCRG road asset used to construct the shared grip callable                         | --  |   "dyad://Veh...orm_mu.crg" |
-| `road`         | Road grip callable shared by all four wheels                         | --  |   VehicleSyst...(road_file) |
+| `default_grip`         | Grip multiplier beyond the road file's grid                         | --  |   1.0 |
+| `blend_width`         | Distance beyond a road file's grid over which its values blend to the defaults                         | m  |   2.0 |
+| `road`         | Road grip callable shared by all four wheels                         | --  |   VehicleSyst...lend_width) |
 | `load_transfer`         | Enable acceleration filtering and load transfer (derived)                         | --  |   false |
 | `m`         | Vehicle mass (probe)                         | kg  |   1500.0 |
 | `Iz`         | Yaw inertia (probe)                         | kg.m2  |   2500.0 |
@@ -71,7 +73,7 @@ A `CarBus` connects to a `CarBusIn`, field by field. Two `CarBus` ports would bo
 same signals, and the compiler does not reject that wiring, so connect a `CarBus` only to
 `CarBusIn` ports. ([`CarBus`](@ref))
 """
-@component function RoadCar(; name = nothing, var"road_file"="dyad://VehicleSystemsComponents/roads/uniform_mu.crg", var"load_transfer"=false, var"m"=Float64(1500.0), var"Iz"=Float64(2500.0), var"a"=1.2, var"b"=1.5, var"tw"=1.55, var"radius"=0.31, var"J"=Float64(1.0), var"mu_A"=Float64(1.0), var"mu_S"=0.8, var"sAdhesion_f"=0.12, var"sAdhesion_r"=0.09, var"mu_scale_fl"=Float64(1.0), var"mu_scale_fr"=Float64(1.0), var"mu_scale_rl"=Float64(1.0), var"mu_scale_rr"=Float64(1.0), var"T_brake"=0.03, var"tau_max"=Float64(2500.0), var"i_s"=Float64(16.0), var"ackermann"=Float64(1.0), var"h_cg"=Float64(0.0), var"T_lt"=0.05, var"road"=nothing, var"t_k"=nothing, __overrides = Dict{String, Any}())
+@component function RoadCar(; name = nothing, var"road_file"="dyad://VehicleSystemsComponents/roads/uniform_mu.crg", var"default_grip"=Float64(1.0), var"blend_width"=Float64(2.0), var"load_transfer"=false, var"m"=Float64(1500.0), var"Iz"=Float64(2500.0), var"a"=1.2, var"b"=1.5, var"tw"=1.55, var"radius"=0.31, var"J"=Float64(1.0), var"mu_A"=Float64(1.0), var"mu_S"=0.8, var"sAdhesion_f"=0.12, var"sAdhesion_r"=0.09, var"mu_scale_fl"=Float64(1.0), var"mu_scale_fr"=Float64(1.0), var"mu_scale_rl"=Float64(1.0), var"mu_scale_rr"=Float64(1.0), var"T_brake"=0.03, var"tau_max"=Float64(2500.0), var"i_s"=Float64(16.0), var"ackermann"=Float64(1.0), var"h_cg"=Float64(0.0), var"T_lt"=0.05, var"road"=nothing, var"t_k"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -91,6 +93,8 @@ same signals, and the compiler does not reject that wiring, so connect a `CarBus
 
   ### Keyword argument overrides
   haskey(__overrides, "road_file") && (road_file = pop!(__overrides, "road_file"))
+  haskey(__overrides, "default_grip") && (default_grip = pop!(__overrides, "default_grip"))
+  haskey(__overrides, "blend_width") && (blend_width = pop!(__overrides, "blend_width"))
   haskey(__overrides, "load_transfer") && (load_transfer = pop!(__overrides, "load_transfer"))
   haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
   haskey(__overrides, "Iz") && (Iz = pop!(__overrides, "Iz"))
@@ -117,11 +121,11 @@ same signals, and the compiler does not reject that wiring, so connect a `CarBus
   haskey(__overrides, "t_k") && (t_k = pop!(__overrides, "t_k"))
 
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
-  isnothing(road) && (road = VehicleSystemsComponents.road_grip(road_file))
+  isnothing(road) && (road = VehicleSystemsComponents.road_grip(road_file; default_grip=default_grip, blend_width=blend_width))
   isnothing(t_k) && (t_k = tw)
 
   ### Structural Parameters (functions)
-  roadˍ₋value = VehicleSystemsComponents.road_grip(road_file)
+  roadˍ₋value = VehicleSystemsComponents.road_grip(road_file; default_grip=default_grip, blend_width=blend_width)
 
   ### Structural Parameters (Final)
 

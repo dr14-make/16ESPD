@@ -23,6 +23,10 @@ abstract type AbstractRealtimeDriveSpec <: AbstractAnalysisSpec end
     esp_on::Float64 = 1.0
     abs_on::Float64 = 1.0
     mu::Float64 = 1.0
+    "OpenCRG grip asset for a model with a road car; empty keeps the model's own."
+    road_file::String = ""
+    "OpenCRG height asset for a model with a road car; empty keeps the model's own."
+    height_file::String = ""
 end
 
 DyadInterface.is_runnable(T::Type{<:AbstractRealtimeDriveSpec}) =
@@ -46,6 +50,44 @@ function load_window_packages!()
         Base.locate_package(pkg) === nothing || Base.require(pkg)
     end
     return nothing
+end
+
+"""
+    drive_model(spec)
+
+The spec's model, rebuilt with the spec's `road_file` and `height_file` when it names either.
+
+Road files are structural parameters of the car, and an analysis cannot pass its parameters to
+a structural parameter of its model: the `model` field is built without them, and a structural
+modification would arrive as a run-time override the built system has no variable for. So the
+files reach the model here instead: its constructor is called again under the same name with the
+named files. Any other structural setting of a passed-in model returns to its default.
+"""
+function drive_model(spec)
+    files = (; (k => getfield(spec, k) for k in (:road_file, :height_file)
+                if !isempty(getfield(spec, k)))...)
+    isempty(files) && return spec.model
+    meta = ModelingToolkit.get_gui_metadata(spec.model)
+    meta === nothing && throw(ArgumentError(
+        "$(nameof(spec.model)): road files need a model built by a component constructor"))
+    constructor = getglobal(meta.type.mod, meta.type.name)
+    return constructor(; name = nameof(spec.model), files...)
+end
+
+"""
+    drive_road(spec) -> Union{Nothing, NamedTuple}
+
+Static road layer for a drive window, sampled once by [`road_mesh`](@ref) from the spec's road
+files: `nothing` when the spec names neither, otherwise the sample axes `x` and `y`, the
+`height` and `grip` matrices, and `grip_varies` and `height_varies`, which say whether a grip map
+and height contours carry any information.
+"""
+function drive_road(spec)
+    isempty(spec.road_file) && isempty(spec.height_file) && return nothing
+    given(file) = isempty(file) ? nothing : file
+    (; x, y, height, grip) = road_mesh(given(spec.height_file); grip_file = given(spec.road_file))
+    varies(values) = ((low, high) = extrema(values); high - low > 1e-6)
+    return (; x, y, height, grip, grip_varies = varies(grip), height_varies = varies(height))
 end
 
 "Integrator saving one sample per frame; drives and resets share the solver settings."
@@ -83,7 +125,8 @@ function DyadInterface.run_analysis(spec::RealtimeDriveSpec;
         throw(ArgumentError("RealtimeDrive requires frame > 0, dtmax > 0, and duration >= 0"))
     spec.window && isempty(methods(drive_window)) && load_window_packages!()
     spec.window && isempty(methods(drive_window)) && error(WINDOW_MISSING)
-    transient(stop) = TransientAnalysisSpec(; name = spec.name, model = spec.model,
+    model = drive_model(spec)
+    transient(stop) = TransientAnalysisSpec(; name = spec.name, model,
         overrides = spec.overrides, stop, dtmax = spec.dtmax, progress = false,
         optimize = OptimizationLevel.None())
     setup = DyadInterface.setup_analysis(transient(spec.duration > 0 ? spec.duration + 1.0 : 3600.0))

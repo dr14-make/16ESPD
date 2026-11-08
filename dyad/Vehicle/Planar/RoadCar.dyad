@@ -7,8 +7,12 @@ steering column and each wheel, and the car sends every reading on its `bus` por
 component RoadCar
   "OpenCRG road asset used to construct the shared grip callable"
   structural parameter road_file::String = "dyad://VehicleSystemsComponents/roads/uniform_mu.crg"
+  "Grip multiplier beyond the road file's grid"
+  structural parameter default_grip::Real = 1.0
+  "Distance beyond a road file's grid over which its values blend to the defaults"
+  structural parameter blend_width::Length = 2.0
   "Road grip callable shared by all four wheels"
-  structural parameter road::VehicleSystemsComponents.RoadGrip = VehicleSystemsComponents.road_grip(road_file)
+  structural parameter road::VehicleSystemsComponents.RoadGrip = VehicleSystemsComponents.road_grip(road_file, default_grip = default_grip, blend_width = blend_width)
   steering = Spline() {^steering}
   chassis = Frame2D() {^chassis}
   wheel_fl = Frame2D() {^wheel_fl}

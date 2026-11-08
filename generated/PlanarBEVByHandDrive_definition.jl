@@ -6,7 +6,7 @@
 
 using DyadInterface
 using VehicleSystemsComponents: AbstractRealtimeDriveSpec, RealtimeDriveSpec
-@component function PlanarBEVByHandDrive__System(; name = nothing, var"duration"=0, var"frame"=0.016666667, var"dtmax"=0.005, var"window"=true, var"esp_on"=1.0, var"abs_on"=1.0, var"mu"=1.0, var"m"=1500, __overrides = Dict{String, Any}())
+@component function PlanarBEVByHandDrive__System(; name = nothing, var"duration"=0, var"frame"=0.016666667, var"dtmax"=0.005, var"window"=true, var"esp_on"=1.0, var"abs_on"=1.0, var"mu"=1.0, var"road_file"="", var"height_file"="", var"m"=1500, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -32,6 +32,8 @@ using VehicleSystemsComponents: AbstractRealtimeDriveSpec, RealtimeDriveSpec
   haskey(__overrides, "esp_on") && (esp_on = pop!(__overrides, "esp_on"))
   haskey(__overrides, "abs_on") && (abs_on = pop!(__overrides, "abs_on"))
   haskey(__overrides, "mu") && (mu = pop!(__overrides, "mu"))
+  haskey(__overrides, "road_file") && (road_file = pop!(__overrides, "road_file"))
+  haskey(__overrides, "height_file") && (height_file = pop!(__overrides, "height_file"))
   haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
 
   ### Structural Parameters (functions)
@@ -68,6 +70,12 @@ using VehicleSystemsComponents: AbstractRealtimeDriveSpec, RealtimeDriveSpec
   __local__mu = mu
   append!(__params, @parameters (mu::Float64), [description = "Uniform road-grip multiplier"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, mu, __local__mu)
+  __local__road_file = road_file
+  append!(__params, @parameters (road_file::String), [description = "OpenCRG grip asset for a model with a road car, also mapped in the window; empty keeps the model's own"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, road_file, __local__road_file)
+  __local__height_file = height_file
+  append!(__params, @parameters (height_file::String), [description = "OpenCRG height asset for a model with a road car, also contoured in the window; empty keeps the model's own"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, height_file, __local__height_file)
   __local__m = m
   append!(__params, @parameters (m::Float64), [description = "Vehicle mass", bounds = (0, Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
@@ -122,11 +130,15 @@ export PlanarBEVByHandDrive__System
   var"abs_on"::Float64 = 1.0
   # Uniform road-grip multiplier
   var"mu"::Float64 = 1.0
+  # OpenCRG grip asset for a model with a road car, also mapped in the window; empty keeps the model's own
+  var"road_file"::String = ""
+  # OpenCRG height asset for a model with a road car, also contoured in the window; empty keeps the model's own
+  var"height_file"::String = ""
   # Vehicle mass
   var"m"::Float64 = 1500
-  # Planar BEV assembly with a held by-hand driver.
+  # Planar BEV assembly with a held by-hand driver and position-dependent road grip and grade.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.PlanarBEVByHand(; name=:PlanarBEVByHand)
-  __system::System = PlanarBEVByHandDrive__System(; name, var"duration"=var"duration", var"frame"=var"frame", var"dtmax"=var"dtmax", var"window"=var"window", var"esp_on"=var"esp_on", var"abs_on"=var"abs_on", var"mu"=var"mu", var"m"=var"m")
+  __system::System = PlanarBEVByHandDrive__System(; name, var"duration"=var"duration", var"frame"=var"frame", var"dtmax"=var"dtmax", var"window"=var"window", var"esp_on"=var"esp_on", var"abs_on"=var"abs_on", var"mu"=var"mu", var"road_file"=var"road_file", var"height_file"=var"height_file", var"m"=var"m")
 end
 
 function __dyad_base_analysis_spec(spec::PlanarBEVByHandDrive__Spec)
@@ -138,7 +150,7 @@ function __dyad_base_analysis_spec(spec::PlanarBEVByHandDrive__Spec)
   push!(overrides, no_namespace_model.mu => spec.var"mu")
   merge!(overrides, spec.__overrides)
   RealtimeDriveSpec(;
-    name=spec.name, overrides, __system=spec.__system, var"duration"=spec.var"duration", var"frame"=spec.var"frame", var"dtmax"=spec.var"dtmax", var"window"=spec.var"window", var"esp_on"=spec.var"esp_on", var"abs_on"=spec.var"abs_on", var"mu"=spec.var"mu", var"model"=spec.var"model"
+    name=spec.name, overrides, __system=spec.__system, var"duration"=spec.var"duration", var"frame"=spec.var"frame", var"dtmax"=spec.var"dtmax", var"window"=spec.var"window", var"esp_on"=spec.var"esp_on", var"abs_on"=spec.var"abs_on", var"mu"=spec.var"mu", var"road_file"=spec.var"road_file", var"height_file"=spec.var"height_file", var"model"=spec.var"model"
   )
 end
 

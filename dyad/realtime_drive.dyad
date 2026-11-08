@@ -17,17 +17,21 @@ partial analysis RealtimeDrive
   parameter abs_on::Real = 1.0
   "Uniform road-grip multiplier"
   parameter mu::Real = 1.0
+  "OpenCRG grip asset for a model with a road car, also mapped in the window; empty keeps the model's own"
+  parameter road_file::String = ""
+  "OpenCRG height asset for a model with a road car, also contoured in the window; empty keeps the model's own"
+  parameter height_file::String = ""
 end
 
-"Scripted coast-down, run without a window by default."
+"Scripted coast-down on an OpenCRG road, run without a window by default."
 analysis PlanarBEVRealtimeDrive
   extends RealtimeDrive(window = false)
-  model = PlanarBEVScripted(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
+  model = PlanarBEVOnRoad(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
   "Vehicle mass"
   parameter m::Mass = 1500
 end
 
-"By-hand planar BEV drive with the optional window and controller extensions."
+"By-hand planar BEV drive on an OpenCRG road, with the optional window and controller extensions."
 analysis PlanarBEVByHandDrive
   extends RealtimeDrive(window = true, duration = 0)
   model = PlanarBEVByHand(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
