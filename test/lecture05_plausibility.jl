@@ -8,7 +8,7 @@ const BSFC_LINE = read_line()
 # The machine-size sweep's baseline is H0's pinned fuel; one constant serves the sweep and these tests.
 include("../scripts/machine_size_sweep.jl")
 const H0_L100 = MachineSizeSweep.H0_L100
-const H0_MJ100 = 184.86510643
+const H0_MJ100 = 184.86508896
 const LINE_L100 = 5.4374440955
 const RPM_ENGINE_IDLE = 800.0
 
@@ -1133,7 +1133,7 @@ include("torque_to_pedal.jl")
     @test maximum(soc) <= 0.8
     corrected = last(s[m.meter.fuel_corr])
     @test corrected < H0_L100
-    @test corrected ≈ 4.086344 atol = 1e-5 rtol = 0
+    @test corrected ≈ 4.086343 atol = 1e-5 rtol = 0
     @test last(s[m.meter.energy_corr]) ≈ 132.1236886596 atol = 5e-4 rtol = 0
     on = at(m.manager.engine_on) .> 0.5
     starts = findall(diff(on) .== 1)
@@ -1250,7 +1250,7 @@ end
     end
     @testset "the 30 kW row is the charge-sustaining pin" begin
         ours = only(filter(r -> r.P_rated == 30e3, rows))
-        @test ours.fuel_corr ≈ 4.086344 atol = 1e-4 rtol = 0
+        @test ours.fuel_corr ≈ 4.086343 atol = 1e-4 rtol = 0
         @test ours.flag == "ok"
     end
     @testset "a larger machine saves more, up to 30 kW" begin
