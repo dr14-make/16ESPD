@@ -71,7 +71,7 @@ drive the car alone.
 The take-away from the drawing is its bottom line: no shaft from the engine to the wheels, so every
 joule from the engine is converted twice.
 
-The original course deck names where that is used: diesel-electric locomotives, and special
+Where is it used? In diesel-electric locomotives, and in special
 all-terrain vehicles with a separately controlled motor in each wheel. Keep the series hybrid in
 mind: it is your homework.
 -->
@@ -250,7 +250,7 @@ routeAlias: other-hybrids
 <div>
 
 - **Fuel cells**: hydrogen into electricity, a battery beside it: a series hybrid with another
-  source. The original deck counts metal-air batteries, such as zinc-air, as "fueled" too.
+  source. Metal-air batteries, such as zinc-air, count as "fueled" too.
   *Extra pack.*
 - **Supply lines**: trolleybuses and trams take their power from overhead lines, often with a
   battery for the gaps.
@@ -267,12 +267,12 @@ routeAlias: other-hybrids
 </div>
 
 <!--
-The original deck closes its hybrid part with other kinds of hybrid. One slide, briefly.
+To close the layouts, other kinds of hybrid. One slide, briefly.
 
 Fuel-cell vehicles turn hydrogen into electricity, with a battery beside the stack to take regen
 and the peaks. Seen from the wheels it is a series hybrid with a different source, which is why the
-extra pack treats it right after your series homework. The deck puts metal-air batteries, such as
-zinc-air, in the same fueled group.
+extra pack treats it right after your series homework. Metal-air batteries, such as zinc-air,
+belong to the same fueled group.
 
 Electric vehicles on supply lines: trolleybuses and trams, used for city transport, with the power
 from overhead lines; many now carry a battery to cross the gaps.
@@ -282,7 +282,7 @@ take in and give out energy very quickly. But their specific energy, the energy 
 kilogram, is small. That makes them good for braking and
 launching, poor as the only store.
 
-Solar cars: the deck mentions the record runs in the solar races across Australia. On a road car the
+Solar cars: they set records in the solar races across Australia. On a road car the
 area of the roof limits what the sun can give, so solar can at most add a little range. No numbers
 on this slide: none of them come back today.
 -->

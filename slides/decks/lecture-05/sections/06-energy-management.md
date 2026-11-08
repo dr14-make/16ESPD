@@ -38,8 +38,7 @@ decisions · right: the commands it sends</div>
 is one more command, from build 02's line.</div>
 
 <!--
-This is the usual controller architecture, redrawn from the original deck's slide 18, which shows a
-Modelica controller of this shape.
+This is the usual architecture of a hybrid controller.
 
 On the left, what the controller measures and is asked for: the vehicle speed, the engine speed,
 the machine speed, the driver's accelerator and brake demands, the battery's state of charge, and

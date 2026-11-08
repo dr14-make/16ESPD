@@ -78,8 +78,7 @@ line. That gap is what the hybrid recovers.
 
 The right column has the numbers behind that figure. At its best point the engine turns 35.7 percent
 of the fuel's energy into shaft work: that is its brake efficiency, 232 grams of gasoline per
-kilowatt-hour, at 3000 rpm and 99 newton meters. That is the star on Lecture 2's efficiency map, in
-the engine-and-cycles section of that deck.
+kilowatt-hour, at 3000 rpm and 99 newton meters. That is the star on Lecture 2's efficiency map.
 
 Over the whole WLTC, on the conventional reference run, it gets 30.2 percent: on average 275 grams
 per kilowatt-hour of shaft work over the cycle, against 232 at the star. The table splits the cycle

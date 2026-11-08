@@ -69,10 +69,9 @@ about 22 kW, a bigger machine saves almost nothing more.</div>
 The degree of hybridization, DOH, is the share of the electric machine's power in the total. On
 top, the electric machine's peak power, P EM. Below, the electric machine's power plus the
 engine's peak power, P ICE, where ICE stands for internal combustion engine. Both in kilowatts.
-Zero is a conventional car with no machine; one is a battery-electric car with no engine. That is
-the original course deck's definition, on its slide 11.
+Zero is a conventional car with no machine; one is a battery-electric car with no engine.
 
-What it buys, in the deck's words: the larger it is, the greater the scope for a smaller engine, and
+What it buys: the larger it is, the greater the scope for a smaller engine, and
 for having that engine run near its best efficiency for more of the time. A machine that can carry
 the car at low power lets the engine stay off there, which is exactly the region where section 01
 showed the engine is worst.
@@ -194,7 +193,7 @@ routeAlias: cost
 needs a clutch inside the driveline. Section 04 is that trade.</div>
 
 <!--
-What drives the cost, from the original deck's slide 12.
+What drives the cost.
 
 The first driver is the impact on the existing powertrain. The cheapest way is to keep the vehicle
 and the transmission architecture of the conventional car, and at 48 volts to integrate the machine
@@ -204,7 +203,7 @@ axle, and above 48 volts the whole high-voltage wiring and its protection.
 
 The second driver is the high-voltage battery. Prices have fallen a long way: BloombergNEF's survey
 puts the average lithium-ion pack at 108 dollars per kilowatt-hour in 2025, the number Lecture 4
-showed. That is already below what the original deck forecast for 2030. A
+showed. That is already below what industry sources forecast for 2030. A
 full hybrid's pack of about 1.4 kilowatt-hours is small. A plug-in's is many times larger, and so
 is its cost and its mass.
 
@@ -252,7 +251,7 @@ pulse): ***R*₀ ≈ 0.33 Ω**, the value our model uses.
 </div>
 <div>
 
-**Batteries deck, summary table (guidelines only)**
+**Battery chemistries (guidelines only)**
 
 <div class="tight">
 
@@ -301,8 +300,7 @@ counted. So the model designs the 30 kilowatt machine for 220 volts, not for the
 shows with no current flowing. The course's research note on the hybrid pack's resistance has the
 sources.
 
-The right side is from the batteries lecture, the summary table of slide 14; the deck calls its
-figures guidelines only. The first number column is energy per kilogram, in watt-hours per kilogram;
+The right side is a summary table of battery chemistries; its figures are guidelines only. The first number column is energy per kilogram, in watt-hours per kilogram;
 the second is power per kilogram, in watts per kilogram. The rows are lead-acid, nickel-cadmium,
 nickel-metal-hydride and lithium-ion. Read the two columns as a ratio: a typical Li-ion cell there
 gives 300 watts per kilogram from 150 watt-hours per kilogram, about 2 C. A hybrid asks about ten

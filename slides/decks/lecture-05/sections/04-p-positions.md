@@ -208,7 +208,7 @@ the engine turns, green means it can, once K0 opens.
 In our car the CVT is the transmission. The next five slides take the positions one at a time,
 each on this same drawing with the position in focus drawn with a thick border, red for P0 and P1,
 green for P2 to P4, and the others grayed out,
-and with the original deck's rating of what it can do.
+and with a rating of what it can do.
 -->
 
 ---
@@ -253,7 +253,7 @@ moderate load and low speed.</div>
 </div>
 
 <!--
-P0, the belt-integrated starter-generator, BiSG in the original deck: one machine that both starts
+P0, the belt-integrated starter-generator, BiSG for short: one machine that both starts
 the engine and generates electricity, driven by a belt. Point at the box outlined in red: it sits on
 the front-end accessory belt, where the alternator sits today, inside the red zone.
 
@@ -261,22 +261,22 @@ The key physical fact is that the engine and the machine can never be separated;
 them. So the engine's friction always loads the machine, both when it gives extra torque to help
 the engine, which we call boost, and when it brakes the car to recover energy, which we call
 recuperation: a share of every brake goes into turning the engine. And the belt limits the torque
-it can pass: it slips, especially at a cold start. That is why, the deck says, all current 48 volt
+it can pass: it slips, especially at a cold start. That is why current 48 volt
 BiSG mild hybrids still keep the 12 volt starter.
 
-The table is the deck's characteristics. Boost, recuperation and driveability, how smoothly and
+The table rates what it can do. Boost, recuperation and driveability, how smoothly and
 strongly the car responds to the pedal, are all medium, for those two reasons. Electric creep, the
 car crawling slowly on electric power as in a traffic jam, or electric driving, is not possible
 with that little torque through a belt.
 Packaging is the strength: the components integrate with little impact on the rest of the car, which
-is why the deck calls it the most cost-effective mild hybrid topology. System efficiency is medium,
+makes it the most cost-effective mild hybrid topology. System efficiency is medium,
 because of the belt. The usual machine is 2.5 to 6 kilowatts at 89 to 95 percent.
 
 The green box puts a number on the belt. Oak Ridge National Laboratory, ORNL, measured the 2012
 Hyundai Sonata's belt
 starter-generator, effectively a P0 machine of 8.5 kilowatts: the whole system peaks at 86 to 88
 percent including the belt, and the belt alone loses 1 to 2 percent at high power and 3 to 6 percent
-at moderate load and low speed. The course's research note has these numbers, in its section 2.4.
+at moderate load and low speed.
 -->
 
 ---
@@ -320,7 +320,7 @@ short and wide in diameter, as in the Honda Insight.</div>
 </div>
 
 <!--
-P1, the crankshaft-mounted machine, CiSG in the original deck. Point at the box on the crank, still
+P1, the crankshaft-mounted machine, CiSG for short. Point at the box on the crank, still
 inside the red zone, before the clutch K0.
 
 With no belt in between, it can give more torque than the belt starter-generator, and it does three
@@ -335,9 +335,9 @@ The table: torque boost high if the machine is strong enough; driveability mediu
 torque. Packaging is difficult: the powertrain has to be designed for it. System efficiency is high:
 no belt and no gears in between. The usual machine is up to 15 kilowatts at 89 to 95 percent.
 
-The green box is from the deck's slide on machines for hybrids: a crankshaft machine sits in line
+The green box is about the machine itself: a crankshaft machine sits in line
 with the engine block and is in most cases a brushless DC machine, a common electric motor type
-with no brushes, short in length and wide in diameter. The deck's example is the Honda Insight.
+with no brushes, short in length and wide in diameter. One example is the Honda Insight.
 -->
 
 ---
@@ -382,14 +382,14 @@ automatic gearbox has its fluid coupling, behind an engine clutch (ORNL). You bu
 
 <!--
 P2, the first position in the green zone. Point at K0 and then at the box right after it: the
-machine sits after the clutch, on the transmission's input shaft. The deck says it can be attached
+machine sits after the clutch, on the transmission's input shaft. It can be attached
 beside the transmission through a belt, or built into it through gears.
 
 The clutch is the whole story. With K0 open the engine stands still and is not dragged: the machine
 can creep and drive the car electrically, and recuperate while braking and coasting, all of it
 reaching the battery except the transmission's loss. With K0 closed it turns at the engine's speed
 and boosts like a P1. And by closing K0 while the machine turns, it starts the engine, so a P2 needs
-no separate starter. The price, the deck says, is a higher integration cost.
+no separate starter. The price is a higher integration cost.
 
 In our car the transmission is the CVT, so the machine sits before the ratio: the CVT moves its
 speed as well as the engine's. We use that in section 05.
@@ -443,14 +443,14 @@ Its speed is a multiple of the wheel speed, fixed by its own gear, whatever the 
 unlike P2, the CVT cannot move the machine to a better speed.
 
 The gain is in recuperation. When the car brakes, the energy comes from the wheels through the
-differential and reaches the machine before it reaches the CVT: no engine drag, and no CVT loss. The
-deck calls it the highest energy recuperation potential; of the positions on the front axle it is.
+differential and reaches the machine before it reaches the CVT: no engine drag, and no CVT loss. It
+has the highest energy recuperation potential of the positions on the front axle.
 It can creep and drive electrically with K0 open, like a P2.
 
 The price is the engine start. The machine is on the far side of the CVT and K0, so it cannot crank
 the engine; a car with a P3 needs a starter for stop/start.
 
-The rest of the table is the deck's common rating for P2, P3 and P4: high boost if the machine can,
+The rest of the table is the common rating for P2, P3 and P4: high boost if the machine can,
 medium driveability, difficult packaging, which means hard to fit into the car, and high system
 efficiency with only the losses of its gears.
 -->
@@ -496,21 +496,21 @@ machine: short and wide.</div>
 
 <!--
 P4. Point at the box at the bottom: the machine drives the rear axle through its own gear, or sits
-in the wheel hubs. The deck puts it on the rear differential.
+in the wheel hubs. Usually it sits on the rear differential.
 
 The engine drives the front axle through K0 and the CVT, the machine drives the rear. There is no
 shaft between them: they are coupled only through the road, which is why this is called a
 through-the-road hybrid. Two consequences. It gives all-wheel drive as a bonus. And, like P3, it
 cannot start the engine: it needs a starter.
 
-Recuperation is the highest in the deck's rating: no engine drag, and no transmission between the
+Recuperation is rated the highest: no engine drag, and no transmission between the
 wheel and the machine, only its own gear. It can creep and drive electrically with the engine off.
 
 In our car it drives the rear wheel hubs through its own reduction gear, one machine for the axle.
 It is not torque vectoring: it cannot give the left and right wheels different torques to help the
 car turn.
 
-The green box is from the deck's slide on machines for hybrids: a motor integral with the wheel is
+The green box is about the machine: a motor integral with the wheel is
 the same inside-out type as the crankshaft machine of P1, short in length and wide in diameter.
 -->
 
@@ -534,7 +534,7 @@ routeAlias: positions-compared
 </div>
 
 <!--
-The five positions in one table, the original deck's six questions. Read it by rows, not by
+The five positions in one table, rated on six questions. Read it by rows, not by
 columns. Packaging means how hard the machine is to fit into the car; system efficiency is how much
 of the power gets through.
 

@@ -38,12 +38,11 @@ driveline. Section 04 explains the names. You build it on Lecture 4's planar car
 with four wheels on a flat road. Then I move its machine to every other position and show the table
 the theory predicts.
 
-The material follows the course's deck on electric vehicles and electric machines, its slides on
-series and parallel hybrids, the degree of hybridization, the P0 to P4 positions and the
-controller. The fuel cell, which is a series hybrid with a different source, is in the extra pack,
+Today covers series and parallel hybrids, the degree of hybridization, the P0 to P4 positions and
+the controller. The fuel cell, which is a series hybrid with a different source, is in the extra pack,
 the optional slides after this lecture.
 
-The small line at the bottom is for browsing the deck yourself: arrows and space move, O opens the
+The small line at the bottom is for browsing the slides yourself: arrows and space move, O opens the
 overview, G jumps to a slide.
 -->
 
@@ -92,7 +91,7 @@ braking, means the electric machine brakes the car as a generator and charges th
 
 On the left, Lecture 2's car: the engine model built from the engine's measured maps, with the CVT.
 On the WLTC it burned 5.22 liters of gasoline per 100 kilometers, which is 168.8 megajoules per 100
-kilometers. That is the number from Lecture 4's opening slide, and it is still what the current
+kilometers. That is the number we started Lecture 4 with, and it is still what the current
 model gives. Two things in that run are pure waste: the engine idles at every stop, and every time
 the car brakes, the energy the engine put into its speed goes into the brake discs as heat.
 
@@ -215,7 +214,7 @@ prints the table of section 07: fuel, recovered braking energy and engine-off dr
 position, all at 30 kilowatts. The degree-of-hybridization notebook runs the P2 car with machines
 from 8 to 40 kilowatts and plots the fuel saving against machine size. And a script draws, over
 the map, the engine's most efficient speed for each power; we call that the best-BSFC line in
-section 05. Every plot in this deck comes from one of these; the block diagrams are drawn by hand.
+section 05. Every plot today comes from one of these; the block diagrams are drawn by hand.
 
 The middle column is what the course library gives you, so you spend the build on the hybrid and
 not on parts: the K0 clutch with its actuator, the machine and battery at hybrid size, the
