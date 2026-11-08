@@ -573,7 +573,10 @@ end
     at(x) = s(ts, idxs = x).u
     N_a, N_t, ratio, cmd = at(v.N_a), at(m.line.N), at(v.ratio), at(v.i_command)
 
-    @test all(i_od - 1e-6 .<= ratio .<= i_l + 1e-6)
+    # OperatingLineBench sampled lower bound: solver excursion 7.076e-7 plus margin.
+    @test minimum(ratio) >= i_od - 8e-7
+    # OperatingLineBench sampled upper bound: no measured excursion; allow roundoff.
+    @test maximum(ratio) <= i_l + 1e-10
 
     # Settled on the 32 kW hold: the line speed, low only by the output-speed floor's bias.
     hold = 38.0 .<= ts .<= 43.0
@@ -634,10 +637,15 @@ end
     deviation = abs.(rpm .- target)
     cmd = at(m.powertrain.variator.i_command)
     ratio = at(m.powertrain.variator.ratio)
-    # The analysis solver tolerance permits ratio-bound overshoot below 2.1e-4.
     @info "Line ratio interpolation" sampled=extrema(ratio) accepted=extrema(s[m.powertrain.variator.ratio])
-    @test all(2.8 - 2.1e-4 .<= ratio .<= 12.0 + 2.1e-4)
-    @test all(2.8 - 2.1e-4 .<= s[m.powertrain.variator.ratio] .<= 12.0 + 2.1e-4)
+    # P2OperatingLineWLTC sampled lower bound: solver excursion 2.071e-5 plus margin.
+    @test minimum(ratio) >= 2.8 - 2.3e-5
+    # P2OperatingLineWLTC sampled upper bound: solver excursion 2.241e-7 plus margin.
+    @test maximum(ratio) <= 12.0 + 2.5e-7
+    # P2OperatingLineWLTC accepted lower bound: solver excursion 2.372e-5 plus margin.
+    @test minimum(s[m.powertrain.variator.ratio]) >= 2.8 - 2.6e-5
+    # P2OperatingLineWLTC accepted upper bound: solver excursion 1.969e-4 plus margin.
+    @test maximum(s[m.powertrain.variator.ratio]) <= 12.0 + 2.1e-4
     idle = (power .< 1.0) .| (at(m.driver.y) .<= 0.0)
     launch = .!idle .& (cmd .>= 11.999)
     overdrive = .!idle .& (cmd .<= 2.801)
