@@ -230,8 +230,9 @@ test component P2WLTC
   split = VehicleSystemsComponents.Vehicle.Electric.TorqueSplit(ratio = 1.0) {^split}
   meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel() {^meter}
   machine_gate = VehicleSystemsComponents.Vehicle.ParameterGate(on = electric) {^machine_gate}
-  "Zero for unused command inputs (assumed; fixed-mode fixture)"
+  "Bounded CVT pedal request (derived; driver torque normalized by tau_max)"
   pedal_command = BlockComponents.Nonlinear.Limiter(y_min = 0.0, y_max = 1.0) {^pedal_command}
+  "Zero for unused command inputs (assumed; fixed-mode fixture)"
   unused_command = BlockComponents.Sources.Constant(k = 0.0) {^unused_command}
 relations
   connect(unused_command.y, powertrain.N_ref, powertrain.engine_torque_ref)
@@ -516,7 +517,7 @@ parameter Ti::Time = 1.0
 
 `speed_commanded = true` selects `N_ref` on the existing `variator`; both command and mechanical connections remain drawn. The fixture adds no variator of its own; it drives `powertrain.N_ref` and wires the ignored `cvt_pedal` input to the visible zero constant.
 
-In the fixture, place `unused_command = BlockComponents.Sources.Constant(k = 0.0)`, `speed_command = BlockComponents.Math.Max()` and `speed_floor = BlockComponents.Sources.Constant(k = N_locked)`, and wire:
+In the fixture, place `unused_command = BlockComponents.Sources.Constant(k = 0.0)` and wire:
 
 ```dyad
 connect(car.bus, motion.bus)
@@ -525,8 +526,6 @@ connect(motion.vx, kmh.u, meter.speed) {^vx_wire}
 connect(kmh.y, driver.u_m) {^kmh_wire}
 connect(no_ff.y, driver.u_ff) {^ff_wire}
 connect(unused_command.y, powertrain.cvt_pedal, powertrain.engine_torque_ref)
-connect(speed_floor.y, speed_command.u2)
-connect(speed_command.y, powertrain.N_ref)
 connect(powertrain.spline, differential.flange_b) {^spline_wire}
 connect(differential.flange_left, car.spin_fl) {^left_wire}
 connect(differential.flange_right, car.spin_fr) {^right_wire}
@@ -544,7 +543,7 @@ Declare `variable N_target::Real`, the commanded input speed, and add the signal
 meter.P_stored = powertrain.E * powertrain.i
 line.P = powertrain.engine_pedal * P_peak
 N_target = max(line.N, N_locked)
-speed_command.u1 = N_target
+powertrain.N_ref = N_target
 powertrain.engine_pedal = min(max(driver.y / tau_max, 0.0), 1.0)
 powertrain.engage = max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm)))
 powertrain.tau_ref = 0.0
@@ -729,7 +728,7 @@ relations
   meter.P_stored = powertrain.E * powertrain.i
   line.P = powertrain.engine_pedal * P_peak
   N_target = max(line.N, N_locked)
-  speed_command.u1 = N_target
+  powertrain.N_ref = N_target
   powertrain.engine_pedal = min(max(driver.y / tau_max, 0.0), 1.0)
   powertrain.engage = max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm)))
   powertrain.tau_ref = 0.0
@@ -810,7 +809,7 @@ map = VehicleSystemsComponents.Vehicle.TorqueToPedal()
 demand_line = VehicleSystemsComponents.Vehicle.OperatingLine()
 ```
 
-Keep the existing `line` and `N_target`; do not declare them twice. Remove the step-2 equations for `line.P`, `N_target`, engine pedal, engagement, machine request and front brakes, plus the old `connect(kmh.y, driver.u_m)`. Remove `powertrain.engine_torque_ref` from the zero-constant wire; retain `connect(unused_command.y, powertrain.cvt_pedal)`. Also remove `speed_command.u1 = N_target` and the rear-brake equations; they are repeated in the replacement block. Replace them with the table and equations below; the table represents `connect(...)` statements. All unchanged mechanical, meter and initialization relations remain.
+Keep the existing `line` and `N_target`; do not declare them twice. Remove the step-2 equations for `line.P`, `N_target`, engine pedal, engagement, machine request and front brakes, plus the old `connect(kmh.y, driver.u_m)`. Remove `powertrain.engine_torque_ref` from the zero-constant wire; retain `connect(unused_command.y, powertrain.cvt_pedal)`. Also remove `powertrain.N_ref = N_target` and the rear-brake equations; they are repeated in the replacement block. Replace them with the table and equations below; the table represents `connect(...)` statements. All unchanged mechanical, meter and initialization relations remain.
 
 ### Every connection changed or added in step 3
 
@@ -818,8 +817,6 @@ Keep the existing `line` and `N_target`; do not declare them twice. Remove the s
 | --- | --- |
 | `driver.y` | `manager.tau_dem` |
 | `unused_command.y` | `powertrain.cvt_pedal` (ignored in speed mode) |
-| `speed_floor.y` | `speed_command.u2` |
-| `speed_command.y` | `powertrain.N_ref` |
 | `powertrain.SoC` | `manager.SoC` |
 | `powertrain.engine_speed` | `manager.engine_speed`, `map.omega` |
 | `powertrain.available_torque` | `manager.available_torque` |
@@ -837,7 +834,7 @@ engagement and brake equations rather than keeping both):
 manager.w_shaft = powertrain.variator.w_a
 demand_line.P = manager.P_drive
 N_target = max(manager.engine_on * line.N + (1.0 - manager.engine_on) * demand_line.N, N_locked)
-speed_command.u1 = N_target
+powertrain.N_ref = N_target
 powertrain.engage = manager.engage * max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm)))
 car.tau_fl = manager.tau_friction * powertrain.variator.ratio / 2.0
 car.tau_fr = car.tau_fl
