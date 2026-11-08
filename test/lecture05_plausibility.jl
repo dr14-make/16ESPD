@@ -2,6 +2,7 @@
 
 include("../scripts/bsfc_line.jl")
 using .BsfcLine
+using JSON
 
 const BSFC_LINE = read_line()
 # The machine-size sweep's baseline is H0's pinned fuel; one constant serves the sweep and these tests.

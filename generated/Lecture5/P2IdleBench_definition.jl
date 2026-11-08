@@ -59,6 +59,9 @@ Enabled engine idling with closed pedal and K0 open.
   # Subcomponent load of type RotationalComponents.Components.Inertia
   load_overrides = __pop_subcomponent_overrides!(__overrides, "load")
   push!(__systems, @named load = RotationalComponents.Components.Inertia(; J=Float64(10.0), __overrides = load_overrides))
+  # Subcomponent unused_command of type BlockComponents.Sources.Constant
+  unused_command_overrides = __pop_subcomponent_overrides!(__overrides, "unused_command")
+  push!(__systems, @named unused_command = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = unused_command_overrides))
   # Subcomponent mount of type RotationalComponents.Components.Fixed
   mount_overrides = __pop_subcomponent_overrides!(__overrides, "mount")
   push!(__systems, @named mount = RotationalComponents.Components.Fixed(; __overrides = mount_overrides))
@@ -82,7 +85,7 @@ Enabled engine idling with closed pedal and K0 open.
   push!(__eqs, powertrain.engine_torque_ref ~ 0.0)
   push!(__eqs, powertrain.engage ~ 0.0)
   push!(__eqs, powertrain.tau_ref ~ 0.0)
-  push!(__eqs, powertrain.cvt_pedal ~ 0.0)
+  push!(__eqs, connect(unused_command.y, powertrain.N_ref, powertrain.cvt_pedal))
   push!(__eqs, connect(powertrain.spline, load.spline_a))
   push!(__eqs, connect(powertrain.support, mount.spline))
 
