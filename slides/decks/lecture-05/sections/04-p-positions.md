@@ -709,7 +709,7 @@ routeAlias: build-p2
 
 **Given:** `DisconnectClutch` (K0 and its actuator) · `HybridDrive` (30 kW, 1.4 kWh)
 
-[page: steps 1a–1c](../lecture/lecture-05/#step-1a) · reference `dyad/HandsOn05/P2Powertrain.dyad`, `dyad/HandsOn05/P2WLTC.dyad`
+[page: step 1](../lecture/lecture-05/#step-1) · reference `dyad/Vehicle/P2Powertrain.dyad`, `dyad/HandsOn05/P2WLTC.dyad`
 
 </div>
 <div class="stack">
