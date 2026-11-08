@@ -39,6 +39,10 @@ Realtime drive is a library analysis with optional UI extensions. Read this, the
 - The by-hand drive runs on OpenCRG files: `PlanarBEVByHandDrive(road_file = "dyad://VehicleSystemsComponents/roads/ice_patch_mu.crg")`,
   likewise `height_file`. The files are structural, so `drive_model` rebuilds the model with them;
   its docstring says why and what else that resets. Empty files keep the model's own.
+- Beyond a file's grid the road blends, over `blend_width` (2 m), to `default_grip` (1.0) and
+  `default_height` (0 m), structural parameters next to the road files. The shipped height files
+  are 2 m wide strips: a car leaving one sideways meets that blend, a cliff where the strip's
+  edge is high (ramps reach 10 m, the hill crest 4.1 m).
 - The window learns the files from the spec, not the compiled model, and draws a static map of
   road μ (the run's `mu` times the file's grip) and height contours (`drive_road`, sampled once by
   `road_mesh`) under the course. The HUD shows the same μ under each wheel. A model passed in with its own road files gets no map.

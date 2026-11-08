@@ -10,8 +10,12 @@ test component TestRoadWheelRig
   parameter N_load::Force = 4000.0
   "OpenCRG low-grip road asset for the wheel test"
   structural parameter road_file::String = "dyad://VehicleSystemsComponents/roads/uniform_low_mu.crg"
+  "Grip multiplier beyond the road file's grid"
+  structural parameter default_grip::Real = 1.0
+  "Distance beyond a road file's grid over which its values blend to the defaults"
+  structural parameter blend_width::Length = 2.0
   "Road grip callable evaluated at the prescribed wheel position"
-  structural parameter road::VehicleSystemsComponents.RoadGrip = VehicleSystemsComponents.road_grip(road_file)
+  structural parameter road::VehicleSystemsComponents.RoadGrip = VehicleSystemsComponents.road_grip(road_file, default_grip = default_grip, blend_width = blend_width)
   vx_source = BlockComponents.Sources.Constant(k = v) {^vx_source}
   vy_source = BlockComponents.Sources.Constant(k = vy) {^vy_source}
   tau_source = BlockComponents.Sources.Constant(k = tau) {^tau_source}

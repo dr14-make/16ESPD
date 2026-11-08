@@ -23,8 +23,9 @@ road_stop(file; esp_on = 0.0) = road_run(VehicleSystemsComponents.PlanarBEVOnRoa
             if isfinite(data.z[i,j])]
         @info "OpenCRG finite nodes" file maximum_error = maximum(errors)
         @test maximum(errors) < 1e-9
-        @test road(-100.0, 0.0) == road(0.0, 0.0)
-        @test road(100.0, 100.0) == road(22.0, 1.5)
+        # Beyond the grid and its blend the road takes the default grip.
+        @test road(-100.0, 0.0) == 1.0
+        @test road(100.0, 100.0) == 1.0
     end
     # This pinned reader does not implement the upstream minimalist file's implicit v origin.
     @test_throws "LONG_SECTION_V_RIGHT" VehicleSystemsComponents.road_grip(
@@ -66,8 +67,8 @@ road_stop(file; esp_on = 0.0) = road_run(VehicleSystemsComponents.PlanarBEVOnRoa
         uniform = read(VehicleSystemsComponents.road_path(ROAD_ASSETS * "uniform_mu.crg"), String)
         for channel in ("slope", "banking")
             bad = joinpath(dir, channel * ".crg")
-            write(bad, replace(uniform, "D:long section at v = -1.0,m" =>
-                "D:reference line " * channel * ",rad"))
+            write(bad, replace(uniform, r"D:long section at v = [^,]*,m" =>
+                "D:reference line " * channel * ",rad"; count = 1))
             @test_throws Regex(basename(bad) * ".*elevation data") VehicleSystemsComponents.road_grip(bad)
         end
         straight = joinpath(dir, "constant_phi.crg")
@@ -95,7 +96,10 @@ road_stop(file; esp_on = 0.0) = road_run(VehicleSystemsComponents.PlanarBEVOnRoa
     end
 end
 
-"Evaluate a fitted road's coefficients with DataInterpolationsND, independently of its own evaluator."
+"""
+Evaluate a fitted road's coefficients with DataInterpolationsND, independently of its own
+evaluator, on the file's grid; NaN beyond it.
+"""
 function reference_surface(road)
     D = DataInterpolationsND
     dimension(breaks) = D.BSplineInterpolationDimension(breaks, 2;
@@ -108,13 +112,16 @@ function reference_surface(road)
     return (x, y) -> begin
         u = road.c * (x - road.x0) + road.s * (y - road.y0) + road.u0
         v = -road.s * (x - road.x0) + road.c * (y - road.y0)
-        curved ? surface(u, cos(heading(u)) * (v - center(u))) : surface(u, v)
+        v = curved ? cos(heading(u)) * (v - center(u)) : v
+        on_grid = road.u_breaks[1] <= u <= road.u_breaks[end] &&
+            road.v_breaks[1] <= v <= road.v_breaks[end]
+        on_grid ? surface(u, v) : NaN
     end
 end
 
 lookup_allocations(f, args...) = (f(args...); @allocated f(args...))
 
-@testset "Lookup: reference spline, edge hold, no allocation" begin
+@testset "Lookup: reference spline on the grid, no allocation" begin
     V = VehicleSystemsComponents
     rng = Xoshiro(1)
     files = vcat([ROAD_ASSETS * f for f in ("hill_z.crg", "ramp_hold_z.crg", "ice_patch_mu.crg")],
@@ -125,26 +132,73 @@ lookup_allocations(f, args...) = (f(args...); @allocated f(args...))
         box = V.road_extent(file; margin = 20.0)
         points = [(box.x[1] + (box.x[2] - box.x[1]) * rand(rng), box.y[1] + (box.y[2] - box.y[1]) * rand(rng))
                   for _ in 1:2000]
-        # Points on the first and last along-road nodes, where the edge hold starts.
-        for u in road.u_breaks[[1, end]] .- road.u0, v in range(road.v_breaks[1], road.v_breaks[end]; length = 5)
-            push!(points, (road.x0 + road.c * u - road.s * v, road.y0 + road.s * u + road.c * v))
-        end
-        scale = max(1.0, maximum(abs(reference(p...)) for p in points))
+        filter!(p -> !isnan(reference(p...)), points)
+        # Values on the first and last along-road nodes, where the blend starts. The reference's
+        # slope there depends on which side its interval search lands, so slopes are compared
+        # inside only; the blend testset checks the edges.
+        edges = filter(p -> !isnan(reference(p...)), vec([
+            (road.x0 + road.c * u - road.s * v, road.y0 + road.s * u + road.c * v)
+            for u in road.u_breaks[[1, end]] .- road.u0,
+                v in range(road.v_breaks[1], road.v_breaks[end]; length = 5)]))
+        scale = max(1.0, maximum(abs(reference(p...)) for p in vcat(points, edges)))
         gradient(f, x, y) = ForwardDiff.gradient(q -> f(q[1], q[2]), [x, y])
-        value_error = maximum(abs(road(p...) - reference(p...)) for p in points)
+        value_error = maximum(abs(road(p...) - reference(p...)) for p in vcat(points, edges))
         slope_error = maximum(maximum(abs, gradient(road, p...) .- gradient(reference, p...)) for p in points)
         @info "Road lookup against DataInterpolationsND" file = basename(file) value_error slope_error
         @test value_error < 1e-12 * scale
         @test slope_error < 1e-12 * scale
     end
     grip, slope = V.road_grip(ROAD_ASSETS * "ice_patch_mu.crg"), V.road_height(ROAD_ASSETS * "hill_z.crg")
-    # Beyond the last node the height is held, so the grade is exactly zero.
+    # Beyond the blend the road is flat at its default height, so the grade is exactly zero.
     @test slope(1.0e4, 0.0, 0.0) == 0.0
     dual = ForwardDiff.Dual{typeof(ForwardDiff.Tag(sin, Float64))}(470.3, 1.0)
-    @test lookup_allocations(grip, 470.3, 0.1) == 0
-    @test lookup_allocations(grip, dual, 0.1) == 0
-    @test lookup_allocations(slope, 470.3, 0.1, 0.2) == 0
-    @test lookup_allocations(slope, dual, 0.1, 0.2) == 0
+    for y in (0.1, 1.9, 5.0)
+        @test lookup_allocations(grip, 470.3, y) == 0
+        @test lookup_allocations(grip, dual, y) == 0
+        @test lookup_allocations(slope, 470.3, y, 0.2) == 0
+        @test lookup_allocations(slope, dual, y, 0.2) == 0
+    end
+end
+
+@testset "Beyond the grid: C1 blend to the default value" begin
+    V = VehicleSystemsComponents
+    ice = V.road_grip(ROAD_ASSETS * "ice_patch_mu.crg")
+    # The patch grid is 2 m wide; beside it the grip returns to the uniform 1.0.
+    @test ice(475.0, 0.0) < 0.31
+    @test ice(475.0, 1.0) ≈ ice(475.0, 0.0)
+    @test 0.31 < ice(475.0, 2.0) < 1.0
+    @test ice(475.0, 3.0) == ice(475.0, -3.0) == ice(475.0, 50.0) == 1.0
+    @test ice(600.0, 0.0) == ice(300.0, 0.0) == 1.0
+    custom = V.road_grip(ROAD_ASSETS * "ice_patch_mu.crg"; default_grip = 0.5, blend_width = 4.0)
+    @test custom(475.0, 5.0) == 0.5
+    @test custom(475.0, 0.0) == ice(475.0, 0.0)
+    @test_throws "blend width" V.road_grip(ROAD_ASSETS * "ice_patch_mu.crg"; blend_width = 0.0)
+    ramp = V.road_surface(ROAD_ASSETS * "ramp_z.crg"; elevation = true)
+    @test ramp(510.0, 0.0) == ramp(250.0, 5.0) == 0.0
+    @test ramp(500.0, 0.0) ≈ 10.0
+    gradient(f, x, y) = ForwardDiff.gradient(q -> f(q[1], q[2]), [x, y])
+    for road in (ice, ramp, V.road_surface(ROAD_ASSETS * "hill_z.crg"; elevation = true))
+        # Value and gradient agree on both sides of the grid edge and of the blend's far end.
+        u_edges = (road.u_breaks[1], road.u_breaks[end])
+        v_edges = (road.v_breaks[1], road.v_breaks[end])
+        across = [(u, 0.5 * sum(v_edges)) for u in (u_edges..., u_edges[1] - 2.0, u_edges[2] + 2.0)]
+        append!(across, [(0.5 * sum(u_edges), v) for v in (v_edges..., v_edges[1] - 2.0, v_edges[2] + 2.0)])
+        world(u, v) = (road.x0 + road.c * (u - road.u0) - road.s * v,
+                       road.y0 + road.s * (u - road.u0) + road.c * v)
+        h = 1e-7
+        for (u, v) in across, (du, dv) in ((1.0, 0.0), (0.0, 1.0))
+            inner, outer = world(u - h * du, v - h * dv), world(u + h * du, v + h * dv)
+            @test road(inner...) ≈ road(outer...) atol = 1e-5
+            @test gradient(road, inner...) ≈ gradient(road, outer...) atol = 1e-4
+        end
+        # ForwardDiff agrees with a central difference inside the blend band.
+        for (u, v) in ((u_edges[2] + 0.7, 0.5 * sum(v_edges)), (0.5 * sum(u_edges), v_edges[1] - 1.3))
+            x, y = world(u, v)
+            e = 1e-6
+            fd = [(road(x + e, y) - road(x - e, y)) / 2e, (road(x, y + e) - road(x, y - e)) / 2e]
+            @test gradient(road, x, y) ≈ fd atol = 1e-6
+        end
+    end
 end
 
 @testset "One wheel: file only, no road wiring" begin

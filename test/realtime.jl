@@ -55,8 +55,11 @@ end
     spec = byhand(; window = false, files...)
     @test (spec.road_file, spec.height_file) == values(files)
     road = V.drive_road(spec)
-    @test !road.grip_varies && road.height_varies
-    @test all(≈(0.3), road.grip)
+    @test road.height_varies
+    # The uniform file covers two kilometers; the map's margin shows the default grip beyond it.
+    on_file = [abs(x) <= 1000 && abs(y) <= 1000 for x in road.x, y in road.y]
+    @test all(≈(0.3), road.grip[on_file])
+    @test all(≈(1.0), road.grip[[abs(x) >= 1002 || abs(y) >= 1002 for x in road.x, y in road.y]])
     @test V.drive_road(byhand(; road_file = roads * "ice_patch_mu.crg")).grip_varies
     result = V.PlanarBEVByHandDrive(; window = false, duration = 3.0, mu = 0.9, files...)
     rs, sol = symbolic_container(result), result.sol
