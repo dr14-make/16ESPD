@@ -23,7 +23,7 @@ end
 @testset "Generated position dependency closure" begin
     files = PPositionTable.definition_files("P2HybridWLTC")
     names = basename.(files)
-    for name in ("SpeedCommandedVariator", "DriveCycle", "PlanarCar", "PlanarRoadLoad",
+    for name in ("P2Variator", "DriveCycle", "PlanarCar", "PlanarRoadLoad",
             "HysteresisLatch", "ToKmPerHour", "TorqueToPedal", "OperatingLine")
         @test name * "_definition.jl" in names
     end
@@ -58,7 +58,7 @@ end
     @test p2.E_recovered_MJ < min(p3.E_recovered_MJ, p4.E_recovered_MJ)
     @test p3.electric_drive_s > 0
     @test p4.electric_drive_s > 0
-    @test p2.fuel_corr_L100 ≈ 4.0863417765 atol = 1e-9 rtol = 0
+    @test p2.fuel_corr_L100 ≈ 4.0863429317 atol = 1e-9 rtol = 0
 
     @testset "P4 live run matches pin" begin
         run = VehicleSystemsComponents.Lecture5.P4HybridWLTCTransient()

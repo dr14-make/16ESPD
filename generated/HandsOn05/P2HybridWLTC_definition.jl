@@ -201,6 +201,9 @@ The electric-mode CVT target follows demand power to avoid starting against an i
   # Subcomponent meter of type VehicleSystemsComponents.Vehicle.SoCCorrectedFuel
   meter_overrides = __pop_subcomponent_overrides!(__overrides, "meter")
   push!(__systems, @named meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel(; __overrides = meter_overrides))
+  # Subcomponent unused_command of type BlockComponents.Sources.Constant
+  unused_command_overrides = __pop_subcomponent_overrides!(__overrides, "unused_command")
+  push!(__systems, @named unused_command = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = unused_command_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -237,19 +240,20 @@ The electric-mode CVT target follows demand power to avoid starting against an i
   __assertions = []
 
   ### Equations
-  push!(__eqs, manager.w_shaft ~ powertrain.speed_variator.w_a)
+  push!(__eqs, manager.w_shaft ~ powertrain.variator.w_a)
   push!(__eqs, demand_line.P ~ manager.P_drive)
   push!(__eqs, N_target ~ max(manager.engine_on * line.N + (1.0 - manager.engine_on) * demand_line.N, N_locked))
   push!(__eqs, powertrain.N_ref ~ N_target)
-  push!(__eqs, powertrain.engage ~ manager.engage * max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.speed_variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
+  push!(__eqs, powertrain.engage ~ manager.engage * max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
   push!(__eqs, meter.P_stored ~ powertrain.E * powertrain.i)
-  push!(__eqs, car.tau_fl ~ manager.tau_friction * powertrain.speed_variator.ratio / 2.0)
+  push!(__eqs, car.tau_fl ~ manager.tau_friction * powertrain.variator.ratio / 2.0)
   push!(__eqs, car.tau_fr ~ car.tau_fl)
   push!(__eqs, car.tau_rl ~ 0.0)
   push!(__eqs, car.tau_rr ~ 0.0)
   push!(__eqs, ModelingToolkit.D_nounits(E_charge) ~ max(-meter.P_stored, 0.0))
   push!(__eqs, ModelingToolkit.D_nounits(E_regen) ~ manager.tau_regen * max(manager.w_shaft, 0.0))
   push!(__eqs, ModelingToolkit.D_nounits(E_friction) ~ car.fl.brake.tau_friction * car.fl.brake.w + car.fr.brake.tau_friction * car.fr.brake.w + car.rl.brake.tau_friction * car.rl.brake.w + car.rr.brake.tau_friction * car.rr.brake.w)
+  push!(__eqs, connect(unused_command.y, powertrain.cvt_pedal))
   push!(__eqs, connect(car.bus, motion.bus))
   push!(__eqs, connect(trace.y, driver.u_s))
   push!(__eqs, connect(motion.vx, kmh.u, meter.speed))

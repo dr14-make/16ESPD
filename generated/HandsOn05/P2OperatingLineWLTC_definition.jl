@@ -191,6 +191,9 @@ The line target is floored above idle. Machine torque, losses and inertia are ze
   # Subcomponent line of type VehicleSystemsComponents.Vehicle.OperatingLine
   line_overrides = __pop_subcomponent_overrides!(__overrides, "line")
   push!(__systems, @named line = VehicleSystemsComponents.Vehicle.OperatingLine(; __overrides = line_overrides))
+  # Subcomponent unused_command of type BlockComponents.Sources.Constant
+  unused_command_overrides = __pop_subcomponent_overrides!(__overrides, "unused_command")
+  push!(__systems, @named unused_command = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = unused_command_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -226,12 +229,13 @@ The line target is floored above idle. Machine torque, losses and inertia are ze
   push!(__eqs, N_target ~ max(line.N, N_locked))
   push!(__eqs, powertrain.N_ref ~ N_target)
   push!(__eqs, powertrain.engine_pedal ~ min(max(driver.y / tau_max, 0.0), 1.0))
-  push!(__eqs, powertrain.engage ~ max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.speed_variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
+  push!(__eqs, powertrain.engage ~ max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
   push!(__eqs, powertrain.tau_ref ~ 0.0)
   push!(__eqs, car.tau_fl ~ -min(driver.y, 0.0) * brake_gain / 2.0)
   push!(__eqs, car.tau_fr ~ car.tau_fl)
   push!(__eqs, car.tau_rl ~ 0.0)
   push!(__eqs, car.tau_rr ~ 0.0)
+  push!(__eqs, connect(unused_command.y, powertrain.cvt_pedal, powertrain.engine_torque_ref))
   push!(__eqs, connect(car.bus, motion.bus))
   push!(__eqs, connect(trace.y, driver.u_s))
   push!(__eqs, connect(motion.vx, kmh.u, meter.speed))

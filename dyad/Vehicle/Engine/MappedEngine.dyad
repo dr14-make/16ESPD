@@ -13,11 +13,13 @@ component MappedEngine
   "Enable externally commanded fuel cut and zero-speed drag"
   structural parameter fuel_controlled::Boolean = false
   "Fuel permission, 0 cut to 1 enabled"
-  fuel_enable = RealInput() if fuel_controlled
+  fuel_enable = RealInput() if fuel_controlled {^fuel_enable}
   "Drag regularization speed [rad/s]"
   parameter w_drag::AngularVelocity(min = eps(Float64)) = 2.0
-  "Internally computed fuel-cut fraction, 0 enabled to 1 cut"
+  "Computed fuel-cut fraction, 0 enabled to 1 cut (derived; fuel permission and FuelCutLogic)"
   variable cut_fraction::Real
+  "Fuel-cut fanout source (derived; computed fuel-cut fraction)"
+  cut_signal = BlockComponents.Routing.RealPassThrough() {^cut_signal}
   "Vacuum take-off: the hose to the brake booster, at manifold pressure"
   vacuum = VehicleSystemsComponents.Vehicle.GasPort() {^vacuum}
   "Engine output shaft"
@@ -40,6 +42,10 @@ component MappedEngine
   tau_e = RealOutput() {^tau_e}
   "Air-fuel equivalence ratio"
   lambda = RealOutput() {^lambda}
+  "Crank speed [rad/s] (derived; RotationalComponents VelocitySensor)"
+  engine_speed = RealOutput() {^engine_speed}
+  "Full-load torque at crank speed [N.m] (derived; TorqueMap full-load curve)"
+  available_torque = RealOutput() {^available_torque}
 
   "Progressive drive-by-wire pedal exponent (assumed)"
   parameter pedal_exponent::Real = 1.5
@@ -81,6 +87,8 @@ component MappedEngine
   variable N::Real
 relations
   N = speed.w * 30 / pi
+  connect(speed.w, engine_speed)
+  connect(torque_map.full_load_torque, available_torque)
   connect(pedal, pedal_map.pedal, cut_logic.pedal) {^pedal_wire}
   connect(pedal_map.u_thr, air.u_thr) {^throttle_wire}
   connect(vacuum, air.vacuum) {^booster_wire}
@@ -94,11 +102,8 @@ relations
     connect(closed_throttle.y, torque_blend.motored) {^motored_wire}
     cut_fraction = cut_logic.cut
   end
-  torque_blend.cut = cut_fraction
-  fuel_map.cut = cut_fraction
-  hc_map.cut = cut_fraction
-  co_map.cut = cut_fraction
-  nox_map.cut = cut_fraction
+  cut_signal.u = cut_fraction
+  connect(cut_signal.y, torque_blend.cut, fuel_map.cut, hc_map.cut, co_map.cut, nox_map.cut) {^cut_wire}
   connect(torque_blend.y, torque_source.tau, tau_e) {^torque_wire}
   connect(fuel_map.y, mdot_fuel, co2_gain.u) {^fuel_wire}
   connect(co2_gain.y, mdot_co2) {^co2_wire}
@@ -112,17 +117,22 @@ relations
 metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/MappedEngine.svg"}},
   "_links": {
+    "cut_signal": {"Dyad":{"placement":{"diagram":{"x1":270,"x2":320,"y1":615,"y2":665}}}},
+    "cut_wire": {"Dyad":{"edges":[{"S":1,"M":[{"x":380,"y":640},{"x":380,"y":500}],"E":-1},{"S":-1,"M":[{"x":800,"y":500},{"x":800,"y":210}],"E":2},{"S":-1,"M":[],"E":-2},{"S":-2,"M":[],"E":3},{"S":-2,"M":[],"E":-3},{"S":-3,"M":[],"E":4},{"S":-3,"M":[],"E":-4},{"S":-4,"M":[],"E":5},{"S":-4,"M":[{"x":450,"y":1125}],"E":6}],"junctions":[{"x":450,"y":500},{"x":450,"y":735},{"x":450,"y":865},{"x":450,"y":995}]}},
+    "engine_speed": {"Dyad":{"placement":{"diagram":{"x1":1525,"x2":1575,"y1":405,"y2":455},"icon":{"x1":270.0,"x2":330.0,"y1":-30.0,"y2":30.0}}}},
+    "available_torque": {"Dyad":{"placement":{"diagram":{"x1":1475,"x2":1525,"y1":125,"y2":175},"icon":{"x1":670.0,"x2":730.0,"y1":-30.0,"y2":30.0}}}},
+    "fuel_enable": {"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":575,"y2":625},"icon":{"x1":-40,"x2":40,"y1":660,"y2":740}}}},
     "pedal": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}, "diagram": {"x1": -25, "y1": 235, "x2": 25, "y2": 285}}}},
     "vacuum": {"Dyad": {"placement": {"icon": {"iconName": "gas_port_a", "x1": 150, "y1": 950, "x2": 250, "y2": 1050}, "diagram": {"iconName": "gas_port_a", "x1": -25, "y1": 375, "x2": 25, "y2": 425}}}},
     "p_m": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 50, "x2": 1050, "y2": 150}, "diagram": {"x1": 1375, "y1": 15, "x2": 1425, "y2": 65}}}},
-    "tau_e": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 150, "x2": 1050, "y2": 250}, "diagram": {"x1": 1375, "y1": 85, "x2": 1425, "y2": 135}}}},
-    "lambda": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}, "diagram": {"x1": 1375, "y1": 555, "x2": 1425, "y2": 605}}}},
-    "mdot_fuel": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}, "diagram": {"x1": 1375, "y1": 685, "x2": 1425, "y2": 735}}}},
-    "mdot_co2": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 1375, "y1": 750, "x2": 1425, "y2": 800}}}},
-    "mdot_hc": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 550, "x2": 1050, "y2": 650}, "diagram": {"x1": 1375, "y1": 815, "x2": 1425, "y2": 865}}}},
-    "mdot_co": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}, "diagram": {"x1": 1375, "y1": 945, "x2": 1425, "y2": 995}}}},
-    "mdot_nox": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 750, "x2": 1050, "y2": 850}, "diagram": {"x1": 1375, "y1": 1075, "x2": 1425, "y2": 1125}}}},
-    "spline": {"Dyad": {"placement": {"icon": {"iconName": "spline_b", "x1": 950, "y1": 850, "x2": 1050, "y2": 950}, "diagram": {"iconName": "spline_b", "x1": 1375, "y1": 185, "x2": 1425, "y2": 235}}}},
+    "tau_e": {"Dyad":{"placement":{"icon":{"x1":960.0,"x2":1040.0,"y1":160.0,"y2":240.0},"diagram":{"x1":1375,"y1":85,"x2":1425,"y2":135}}}},
+    "lambda": {"Dyad":{"placement":{"icon":{"x1":960.0,"x2":1040.0,"y1":260.0,"y2":340.0},"diagram":{"x1":1375,"y1":555,"x2":1425,"y2":605}}}},
+    "mdot_fuel": {"Dyad":{"placement":{"icon":{"x1":960.0,"x2":1040.0,"y1":360.0,"y2":440.0},"diagram":{"x1":1375,"y1":685,"x2":1425,"y2":735}}}},
+    "mdot_co2": {"Dyad":{"placement":{"icon":{"x1":960.0,"x2":1040.0,"y1":460.0,"y2":540.0},"diagram":{"x1":1375,"y1":750,"x2":1425,"y2":800}}}},
+    "mdot_hc": {"Dyad":{"placement":{"icon":{"x1":960.0,"x2":1040.0,"y1":560.0,"y2":640.0},"diagram":{"x1":1375,"y1":815,"x2":1425,"y2":865}}}},
+    "mdot_co": {"Dyad":{"placement":{"icon":{"x1":960.0,"x2":1040.0,"y1":660.0,"y2":740.0},"diagram":{"x1":1375,"y1":945,"x2":1425,"y2":995}}}},
+    "mdot_nox": {"Dyad":{"placement":{"icon":{"x1":960.0,"x2":1040.0,"y1":760.0,"y2":840.0},"diagram":{"x1":1375,"y1":1075,"x2":1425,"y2":1125}}}},
+    "spline": {"Dyad":{"placement":{"icon":{"iconName":"spline_b","x1":960.0,"x2":1040.0,"y1":860.0,"y2":940.0},"diagram":{"iconName":"spline_b","x1":1375,"y1":185,"x2":1425,"y2":235}}}},
     "support": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"x1": 1025, "y1": 305, "x2": 1075, "y2": 355}}}},
     "pedal_map": {"Dyad": {"placement": {"diagram": {"x1": 80, "y1": 210, "x2": 180, "y2": 310}}}},
     "air": {"Dyad": {"placement": {"diagram": {"x1": 240, "y1": 240, "x2": 340, "y2": 340}}}},
@@ -146,7 +156,6 @@ metadata {
     "speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1480, "y": 430}, {"x": 1480, "y": 1190}], "E": -1}, {"S": -1, "M": [{"x": 220, "y": 1190}], "E": -2}, {"S": -2, "M": [], "E": 3}, {"S": -2, "M": [{"x": 220, "y": 320}], "E": 2}, {"S": -1, "M": [], "E": -3}, {"S": -3, "M": [], "E": 10}, {"S": -3, "M": [], "E": -4}, {"S": -4, "M": [], "E": 9}, {"S": -4, "M": [], "E": -5}, {"S": -5, "M": [], "E": 8}, {"S": -5, "M": [], "E": -6}, {"S": -6, "M": [], "E": 7}, {"S": -6, "M": [], "E": -7}, {"S": -7, "M": [], "E": 6}, {"S": -7, "M": [], "E": -8}, {"S": -8, "M": [], "E": 5}, {"S": -8, "M": [{"x": 410, "y": 160}], "E": 4}], "junctions": [{"x": 410, "y": 1190}, {"x": 220, "y": 520}, {"x": 410, "y": 1075}, {"x": 410, "y": 945}, {"x": 410, "y": 815}, {"x": 410, "y": 685}, {"x": 410, "y": 560}, {"x": 410, "y": 330}]}},
     "fired_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "motored_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 820, "y": 330}, {"x": 820, "y": 240}], "E": 2}]}},
-    "cut_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 800, "y": 500}, {"x": 800, "y": 210}], "E": 2}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": 3}, {"S": -2, "M": [], "E": -3}, {"S": -3, "M": [], "E": 4}, {"S": -3, "M": [], "E": -4}, {"S": -4, "M": [], "E": 5}, {"S": -4, "M": [{"x": 450, "y": 1125}], "E": 6}], "junctions": [{"x": 450, "y": 500}, {"x": 450, "y": 735}, {"x": 450, "y": 865}, {"x": 450, "y": 995}]}},
     "torque_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 970, "y": 110}], "E": 3}], "junctions": [{"x": 970, "y": 210}]}},
     "fuel_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 960, "y": 775}], "E": 3}], "junctions": [{"x": 960, "y": 710}]}},
     "co2_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},

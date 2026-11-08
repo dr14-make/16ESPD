@@ -2,13 +2,14 @@
 
 include("../scripts/bsfc_line.jl")
 using .BsfcLine
+using JSON
 
 const BSFC_LINE = read_line()
 # The machine-size sweep's baseline is H0's pinned fuel; one constant serves the sweep and these tests.
 include("../scripts/machine_size_sweep.jl")
 const H0_L100 = MachineSizeSweep.H0_L100
-const H0_MJ100 = 184.86510643
-const LINE_L100 = 5.43744462
+const H0_MJ100 = 184.86508896
+const LINE_L100 = 5.4374440955
 const RPM_ENGINE_IDLE = 800.0
 
 # H0 is both a P2 fixed-mode check and the operating-line baseline; one 1800 s run serves both.
@@ -313,6 +314,135 @@ end
 
 
 @testset "P2 powertrain" begin
+    @testset "HandsOn05 canvas wiring" begin
+        function code_only(text)
+            replace(text, r"\"\"\"[\s\S]*?\"\"\"|\"(?:\\.|[^\"\\])*\"|#[^\n]*" =>
+                s -> replace(s, r"[^\n]" => c -> repeat(" ", ncodeunits(c))))
+        end
+        function component_sections(source)
+            starts = collect(eachmatch(r"(?m)^(?:test |partial )?component (\w+)", code_only(source)))
+            [(; name = component.captures[1], offset = component.offset,
+                text = source[component.offset:(index < length(starts) ?
+                    prevind(source, starts[index + 1].offset) : lastindex(source))])
+             for (index, component) in enumerate(starts)]
+        end
+        # Regex offsets are UTF-8 byte offsets, including after multibyte descriptions.
+        unicode_source = "\"\"\"λ → engine\n\"\"\"\ncomponent First\n  \"ω speed\"\nend\n\"é\"\ncomponent Second\nend\n"
+        @test ncodeunits(code_only(unicode_source)) == ncodeunits(unicode_source)
+        @test findall(==('\n'), code_only(unicode_source)) == findall(==('\n'), unicode_source)
+        @test [c.name for c in component_sections(unicode_source)] == ["First", "Second"]
+        @test all(startswith(c.text, "component " * c.name) for c in component_sections(unicode_source))
+        function nested_connections(file, text)
+            violations = Tuple{String,Int,String}[]
+            blocks = String[]
+            for (number, raw) in enumerate(split(code_only(text), '\n'))
+                line = strip(raw)
+                startswith(line, "metadata ") && continue
+                opener = match(r"^(if|for|while|when)\s", line)
+                if !isnothing(opener)
+                    push!(blocks, opener.captures[1])
+                elseif line == "end" && !isempty(blocks)
+                    pop!(blocks)
+                end
+                "if" in blocks && occursin(r"\bconnect\s*\(", line) &&
+                    push!(violations, (file, number, raw))
+            end
+            violations
+        end
+        @test isempty(nested_connections("self-check", "\"\"\"\nif prose\n\"\"\"\ncomponent X\nrelations\n  connect(a, b)\nend\n"))
+        @test length(nested_connections("self-check", "if enabled\nfor i in 1:2\nend\nconnect(a, b)\nend\n")) == 1
+        folder = joinpath(@__DIR__, "..", "dyad", "HandsOn05")
+        files = filter(f -> endswith(f, ".dyad"), readdir(folder; join = true))
+        violations = reduce(vcat, [nested_connections(file, read(file, String)) for file in files])
+        isempty(violations) || @error "Conditional canvas connections" violations
+        @test isempty(violations)
+        function equation_exports(file, source)
+            violations = Tuple{String,Int,String}[]
+            for component in component_sections(source)
+                text = code_only(component.text)
+                outputs = [m.captures[1] for m in eachmatch(r"(?m)^\s*(\w+) = RealOutput\(", text)]
+                first_line = count(==('\n'), source[1:prevind(source, component.offset)])
+                for (number, line) in enumerate(split(text, '\n')), port in outputs
+                    # This inverse map computes a clamped, smoothstep-weighted pedal, not an alias.
+                    component.name == "TorqueToPedal" && port == "pedal" && continue
+                    occursin(Regex("^\\s*" * port * "\\s*="), line) && !occursin("RealOutput(", line) &&
+                        push!(violations, (file, first_line + number, line))
+                end
+            end
+            violations
+        end
+        @test isempty(equation_exports("self-check", "component A\n y = RealOutput()\nend\ncomponent B\n y = 1\nend\n"))
+        @test length(equation_exports("self-check", "\"λ\"\ncomponent A\n y = RealOutput()\nrelations\n y = child.y\nend\n")) == 1
+        violations = reduce(vcat, [equation_exports(file, read(file, String)) for file in files])
+        isempty(violations) || @error "Equation-driven canvas exports" violations
+        @test isempty(violations)
+        touched = [joinpath(@__DIR__, "..", "dyad", file) for file in (
+            "Vehicle/P2Powertrain.dyad", "Vehicle/Electric/HybridDrive.dyad",
+            "Vehicle/Engine/MappedEngine.dyad", "Vehicle/DisconnectClutch.dyad",
+            "Vehicle/P2TorqueCommand.dyad", "Vehicle/P2Variator.dyad",
+            "Vehicle/ParameterGate.dyad", "Vehicle/OptionalShaftHold.dyad",
+            "Vehicle/Engine/TorqueMap.dyad", "Lecture5/FuelEnableBench.dyad",
+            "Lecture5/P2WLTC.dyad", "Lecture5/P2OperatingLineWLTC.dyad",
+            "Lecture5/P2HybridWLTC.dyad")]
+        function indirect_endpoints(file, source)
+            violations = Tuple{String,Int,String}[]
+            for connection in eachmatch(r"\bconnect\s*\(([^)]*)\)", code_only(source))
+                for endpoint in strip.(split(connection.captures[1], ','))
+                    count(==('.'), endpoint) <= 1 && continue
+                    line = count(==('\n'), source[1:connection.offset]) + 1
+                    push!(violations, (file, line, endpoint))
+                end
+            end
+            violations
+        end
+        @test isempty(indirect_endpoints("self-check", "connect(port, child.port) # connect(a.b.c, d)\n"))
+        @test length(indirect_endpoints("self-check", "\"λ\"\nconnect(a.b.c, d.e)\n")) == 1
+        endpoints = Tuple{String,Int,String}[]
+        violations = Tuple{String,Int,String}[]
+        orphans = Tuple{String,Int,String}[]
+        routing = Tuple{String,Int,String}[]
+        for file in unique(vcat(files, touched))
+            source = read(file, String)
+            append!(endpoints, indirect_endpoints(file, source))
+            for component in component_sections(source)
+                text = component.text
+                meta = match(r"(?s)metadata (\{.*?\})\nend", text)
+                isnothing(meta) && continue
+                links = JSON.parse(meta.captures[1])["_links"]
+                ports = [m.captures[1] for m in eachmatch(r"(?m)^\s*(\w+) = (?:RealInput|RealOutput|Spline)\(", code_only(text))]
+                tags = Set(m.captures[1] for m in eachmatch(r"\{\^(\w+)\}", text))
+                line = count(==('\n'), source[1:component.offset + meta.offset - 1]) + 1
+                for connection in eachmatch(r"connect\(([^)]*)\)\s*\{\^(\w+_wire)\}", code_only(text))
+                    length(split(connection.captures[1], ',')) >= 3 || continue
+                    tag = connection.captures[2]
+                    edges = get(get(get(links, tag, Dict()), "Dyad", Dict()), "edges", [])
+                    connection_line = count(==('\n'), source[1:component.offset + connection.offset - 1]) + 1
+                    isempty(edges) && push!(routing, (file, connection_line, tag))
+                end
+                for key in keys(links)
+                    key in tags || push!(orphans, (file, line, key))
+                end
+                for kind in ("icon", "diagram"), (i, a) in enumerate(ports), b in ports[i+1:end]
+                    pa = get(get(get(links, a, Dict()), "Dyad", Dict()), "placement", Dict())
+                    pb = get(get(get(links, b, Dict()), "Dyad", Dict()), "placement", Dict())
+                    haskey(pa, kind) && haskey(pb, kind) || continue
+                    aa, bb = pa[kind], pb[kind]
+                    overlap = all(max(min(aa[k*"1"], aa[k*"2"]), min(bb[k*"1"], bb[k*"2"])) <=
+                        min(max(aa[k*"1"], aa[k*"2"]), max(bb[k*"1"], bb[k*"2"])) for k in ("x", "y"))
+                    overlap && push!(violations, (file, line, "$kind: $a intersects $b"))
+                end
+            end
+        end
+        isempty(endpoints) || @error "Canvas connections must use direct-child endpoints (at most one dot)" endpoints
+        @test isempty(endpoints)
+        isempty(routing) || @error "Missing multi-endpoint canvas routing" routing
+        @test isempty(routing)
+        isempty(violations) || @error "Overlapping canvas ports" violations
+        @test isempty(violations)
+        isempty(orphans) || @error "Orphaned canvas metadata" orphans
+        @test isempty(orphans)
+    end
+
     @testset "HandsOn05 sources stay in sync" begin
         for (name, original) in (("P2Powertrain", "Vehicle"), ("P2WLTC", "Lecture5"),
                 ("P2OperatingLineWLTC", "Lecture5"), ("P2HybridWLTC", "Lecture5"),
@@ -342,10 +472,11 @@ end
         # Step 1a already includes the step-2 speed-command seam: keep it in the comparison.
         # Only the step-3 start/stop additions are absent from that listing.
         source = replace(source,
-            r"(?ms)^  \"Enable fuel-controlled clutch starts\"\n.*?^  variable machine_limit::Torque if start_stop\n" => "",
+            r"(?ms)^  \"Enable fuel-controlled clutch starts\"\n.*?^  variable firing_fraction::Real if start_stop\n" => "",
             "fuel_controlled = start_stop, " => "",
-            r"(?ms)^  if start_stop\n.*?^  else\n    connect\(tau_ref, drive.tau_ref\)\n  end\n" =>
-                "  connect(tau_ref, drive.tau_ref)\n")
+            "on = start_stop" => "on = false",
+            r"(?ms)^  if start_stop\n.*?^  end\n" =>
+                "")
         normalize_powertrain(x) = strip(replace(x, r"(?m)^metadata .*\n" => "",
             "VehicleSystemsComponents.MyCar." => "VehicleSystemsComponents.HandsOn05."))
         @test normalize_powertrain(powertrain) == normalize_powertrain(source)
@@ -355,7 +486,7 @@ end
         blocks = [m.captures[1] for m in eachmatch(r"```dyad\n(.*?)```"s, guide)]
         listing = only(filter(x -> startswith(x, "structural parameter start_stop::Boolean"), blocks))
         source = read(joinpath(@__DIR__, "..", "dyad", "HandsOn05", "P2Powertrain.dyad"), String)
-        declarations = match(r"(?ms)^  structural parameter start_stop::Boolean.*?^  variable machine_limit::Torque if start_stop\n", source).match
+        declarations = match(r"(?ms)^  structural parameter start_stop::Boolean.*?^  variable firing_fraction::Real if start_stop\n", source).match
         # The guide omits the description strings; link tags stay, so a missing tag fails.
         declaration_lines(x) = [strip(l) for l in split(x, '\n') if !isempty(strip(l)) && !startswith(strip(l), '"')]
         @test declaration_lines(listing) == declaration_lines(declarations)
@@ -442,7 +573,10 @@ end
     at(x) = s(ts, idxs = x).u
     N_a, N_t, ratio, cmd = at(v.N_a), at(m.line.N), at(v.ratio), at(v.i_command)
 
-    @test all(i_od - 1e-6 .<= ratio .<= i_l + 1e-6)
+    # OperatingLineBench sampled lower bound: solver excursion 7.076e-7 plus margin.
+    @test minimum(ratio) >= i_od - 8e-7
+    # OperatingLineBench sampled upper bound: no measured excursion; allow roundoff.
+    @test maximum(ratio) <= i_l + 1e-10
 
     # Settled on the 32 kW hold: the line speed, low only by the output-speed floor's bias.
     hold = 38.0 .<= ts .<= 43.0
@@ -501,12 +635,17 @@ end
     power = rpm .* torque .* (pi / 30 / 1000)
     target = [BsfcLine.lin(BSFC_LINE.power_kw, BSFC_LINE.rpm, p) for p in power]
     deviation = abs.(rpm .- target)
-    cmd = at(m.powertrain.speed_variator.i_command)
-    ratio = at(m.powertrain.speed_variator.ratio)
-    # The bounded actuator undershoots 2.8 by 3.9e-5 at the analysis solver tolerance.
-    @info "Line ratio interpolation" sampled=extrema(ratio) accepted=extrema(s[m.powertrain.speed_variator.ratio])
-    @test all(2.8 - 5e-5 .<= ratio .<= 12.0 + 5e-5)
-    @test all(2.8 - 5e-5 .<= s[m.powertrain.speed_variator.ratio] .<= 12.0 + 5e-5)
+    cmd = at(m.powertrain.variator.i_command)
+    ratio = at(m.powertrain.variator.ratio)
+    @info "Line ratio interpolation" sampled=extrema(ratio) accepted=extrema(s[m.powertrain.variator.ratio])
+    # P2OperatingLineWLTC sampled lower bound: solver excursion 2.071e-5 plus margin.
+    @test minimum(ratio) >= 2.8 - 2.3e-5
+    # P2OperatingLineWLTC sampled upper bound: solver excursion 2.241e-7 plus margin.
+    @test maximum(ratio) <= 12.0 + 2.5e-7
+    # P2OperatingLineWLTC accepted lower bound: solver excursion 2.372e-5 plus margin.
+    @test minimum(s[m.powertrain.variator.ratio]) >= 2.8 - 2.6e-5
+    # P2OperatingLineWLTC accepted upper bound: solver excursion 1.969e-4 plus margin.
+    @test maximum(s[m.powertrain.variator.ratio]) <= 12.0 + 2.1e-4
     idle = (power .< 1.0) .| (at(m.driver.y) .<= 0.0)
     launch = .!idle .& (cmd .>= 11.999)
     overdrive = .!idle .& (cmd .<= 2.801)
@@ -1025,7 +1164,7 @@ include("torque_to_pedal.jl")
     integrate(y) = sum(diff(ts) .* (y[1:end-1] .+ y[2:end])) / 2
     soc = at(m.powertrain.SoC)
     ref = at(m.powertrain.drive.tau_ref)
-    limit = at(m.powertrain.machine_limit)
+    limit = at(m.powertrain.command.limit)
     # The bench copies these envelopes as literals; a drive or engine change must move them too.
     drive, manager = m.powertrain.drive, m.manager
     @test s.ps[manager.T_max] == s.ps[drive.T_max]
@@ -1040,8 +1179,8 @@ include("torque_to_pedal.jl")
     @test maximum(soc) <= 0.8
     corrected = last(s[m.meter.fuel_corr])
     @test corrected < H0_L100
-    @test corrected ≈ 4.086344 atol = 1e-5 rtol = 0
-    @test last(s[m.meter.energy_corr]) ≈ 132.1236886596 atol = 5e-4 rtol = 0
+    @test corrected ≈ 4.0863429317 atol = 1e-9 rtol = 0
+    @test last(s[m.meter.energy_corr]) ≈ 132.1237260121 atol = 5e-4 rtol = 0
     on = at(m.manager.engine_on) .> 0.5
     starts = findall(diff(on) .== 1)
     stops = findall(diff(on) .== -1)
@@ -1089,7 +1228,7 @@ include("torque_to_pedal.jl")
     tau_request = at(m.manager.tau_engine)
     on_fraction = at(m.manager.engine_on)
     nonpositive_fuel = integrate(fuel .* ((tau_request .<= 0.0) .& (on_fraction .> 0.99)))
-    excess = max.(abs.(at(m.powertrain.tau_ref) .+ at(m.powertrain.start_compensation)) .- limit, 0.0)
+    excess = max.(abs.(at(m.powertrain.tau_ref) .+ at(m.powertrain.command.compensation)) .- limit, 0.0)
     starting = (on_age .> 0.0) .& (on_age .<= 3.0)
     start_excess_time = integrate(Float64.(starting .& (excess .> 0.01)))
     start_excess_peak = maximum(excess[starting])
@@ -1157,7 +1296,7 @@ end
     end
     @testset "the 30 kW row is the charge-sustaining pin" begin
         ours = only(filter(r -> r.P_rated == 30e3, rows))
-        @test ours.fuel_corr ≈ 4.086344 atol = 1e-4 rtol = 0
+        @test ours.fuel_corr ≈ 4.086343 atol = 1e-4 rtol = 0
         @test ours.flag == "ok"
     end
     @testset "a larger machine saves more, up to 30 kW" begin

@@ -55,6 +55,10 @@ is unity for the P2 transmission input; no final-drive reduction is implied (ass
  * `spline` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `support` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `SoC` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `machine_torque` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `machine_speed` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `battery_voltage` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `battery_current` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
 @component function HybridDrive(; name = nothing, var"T_max"=Float64(205.0), var"P_rated"=Float64(30000.0), var"V_nom"=Float64(270.0), var"V_design"=Float64(220.0), var"w_reg"=Float64(10.0), var"d_max"=Float64(1.0), var"T_i"=0.001, var"V_on"=1.2, var"f_s"=Float64(5000.0), var"t_sw"=0.000001, var"eps"=0.0001, var"SoC0"=0.6, var"ratio"=Float64(1.0), var"P_aux"=Float64(300.0), var"T_aux"=0.01, var"w_base"=nothing, var"size_scale"=nothing, var"E"=nothing, var"R"=nothing, var"J"=nothing, var"T_f"=nothing, var"K_i"=nothing, var"k_w"=nothing, var"C"=nothing, var"Q_nom"=nothing, var"R0"=nothing, var"L"=nothing, var"tau_loss_base"=nothing, var"k"=nothing, var"I_max"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -232,6 +236,10 @@ is unity for the P2 transmission input; no final-drive reduction is implied (ass
   ### Final Path Parameters
   append!(__vars, @variables (tau_ref(t)::Real), [input = true])
   append!(__vars, @variables (SoC(t)::Real), [output = true])
+  append!(__vars, @variables (machine_torque(t)::Real), [output = true])
+  append!(__vars, @variables (machine_speed(t)::Real), [output = true])
+  append!(__vars, @variables (battery_voltage(t)::Real), [output = true])
+  append!(__vars, @variables (battery_current(t)::Real), [output = true])
 
   ### Variables (declarations)
 
@@ -274,6 +282,10 @@ is unity for the P2 transmission input; no final-drive reduction is implied (ass
 
   ### Equations
   push!(__eqs, converter.i_ref ~ tau_ref / (converter.field * machine.k))
+  push!(__eqs, machine_torque ~ machine.tau)
+  push!(__eqs, machine_speed ~ machine.w)
+  push!(__eqs, battery_voltage ~ battery.E)
+  push!(__eqs, battery_current ~ battery.i)
   push!(__eqs, connect(battery.p, converter.p_in, aux.p))
   push!(__eqs, connect(battery.n, converter.n, aux.n, machine.n, ground.g))
   push!(__eqs, connect(converter.p_out, machine.p))

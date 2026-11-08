@@ -2,8 +2,10 @@
 component FuelEnableBench
   powertrain = VehicleSystemsComponents.Vehicle.P2Powertrain(start_stop = true, position_start = 0.0, k0(clamp_width = 1e-6))
   load = RotationalComponents.Sources.VelocitySource()
+  unused_command = BlockComponents.Sources.Constant(k = 0.0)
   mount = RotationalComponents.Components.Fixed()
 relations
+  connect(unused_command.y, powertrain.N_ref, powertrain.cvt_pedal)
   load.w_ref = 150.0 / 12.0
   initial load.phi = 0.0
   connect(load.support, mount.spline)
@@ -12,7 +14,6 @@ relations
   powertrain.engine_on = powertrain.engage
   powertrain.engine_torque_ref = 0.0
   powertrain.tau_ref = 0.0
-  powertrain.cvt_pedal = 0.0
   connect(powertrain.spline, load.spline)
   connect(powertrain.support, mount.spline)
   initial powertrain.drive.converter.i_out = 0.0
@@ -28,14 +29,15 @@ end
 component P2IdleBench
   powertrain = VehicleSystemsComponents.Vehicle.P2Powertrain(start_stop = true)
   load = RotationalComponents.Components.Inertia(J = 10.0)
+  unused_command = BlockComponents.Sources.Constant(k = 0.0)
   mount = RotationalComponents.Components.Fixed()
 relations
+  connect(unused_command.y, powertrain.N_ref, powertrain.cvt_pedal)
   powertrain.engine_on = 1.0
   powertrain.engine_pedal = 0.0
   powertrain.engine_torque_ref = 0.0
   powertrain.engage = 0.0
   powertrain.tau_ref = 0.0
-  powertrain.cvt_pedal = 0.0
   connect(powertrain.spline, load.spline_a)
   connect(powertrain.support, mount.spline)
   initial load.w = 0.0

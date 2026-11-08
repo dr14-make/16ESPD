@@ -1,0 +1,31 @@
+"Machine demand with optional start compensation (derived; P2 clutch-start torque balance)."
+component P2TorqueCommand
+  "Requested machine torque [N.m] (derived; EnergyManager)"
+  u = RealInput() {^u}
+  "Engine target torque [N.m] (derived; EnergyManager)"
+  engine_target = RealInput() {^engine_target}
+  "Torque entering K0 [N.m] (derived; DisconnectClutch)"
+  k0_torque = RealInput() {^k0_torque}
+  variable compensation::Torque
+  "Machine shaft speed [rad/s] (derived; DCMachine)"
+  w = RealInput() {^w}
+  "With on, demand plus clutch-start compensation bounded by the machine limit; without, the demand unchanged [N.m] (derived; P2 clutch-start torque balance)"
+  y = RealOutput() {^y}
+  "Enable clutch-start compensation (assumed; fixed configuration)"
+  structural parameter on::Boolean = false
+  "Machine peak torque [N.m] (derived; HybridDrive rating)"
+  parameter T_max::Torque = 205.0
+  "Machine rated power [W] (derived; HybridDrive rating)"
+  parameter P_rated::Power = 30.0e3
+  variable limit::Torque
+relations
+  limit = min(T_max, P_rated / max(abs(w), 1.0))
+  if on
+    compensation = engine_target - k0_torque
+    y = min(max(u + compensation, -limit), limit)
+  else
+    compensation = 0.0
+    y = u
+  end
+metadata {"_links":{"u":{"Dyad":{"placement":{"diagram":{"x1":-25.0,"x2":25.0,"y1":125.0,"y2":175.0},"icon":{"x1":-40.0,"x2":40.0,"y1":110.0,"y2":190.0}}}},"w":{"Dyad":{"placement":{"diagram":{"x1":-25.0,"x2":25.0,"y1":815.0,"y2":865.0},"icon":{"x1":-40.0,"x2":40.0,"y1":800.0,"y2":880.0}}}},"y":{"Dyad":{"placement":{"icon":{"x1":950,"x2":1050,"y1":450,"y2":550},"diagram":{"x1":975,"x2":1025,"y1":475,"y2":525}}}},"engine_target":{"Dyad":{"placement":{"diagram":{"x1":-25.0,"x2":25.0,"y1":355.0,"y2":405.0},"icon":{"x1":-40.0,"x2":40.0,"y1":340.0,"y2":420.0}}}},"k0_torque":{"Dyad":{"placement":{"diagram":{"x1":-25.0,"x2":25.0,"y1":585.0,"y2":635.0},"icon":{"x1":-40.0,"x2":40.0,"y1":570.0,"y2":650.0}}}}}}
+end

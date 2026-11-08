@@ -62,6 +62,9 @@ Fuel-disabled spin-down followed by a clutch start using the powertrain firing l
   # Subcomponent load of type RotationalComponents.Sources.VelocitySource
   load_overrides = __pop_subcomponent_overrides!(__overrides, "load")
   push!(__systems, @named load = RotationalComponents.Sources.VelocitySource(; __overrides = load_overrides))
+  # Subcomponent unused_command of type BlockComponents.Sources.Constant
+  unused_command_overrides = __pop_subcomponent_overrides!(__overrides, "unused_command")
+  push!(__systems, @named unused_command = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = unused_command_overrides))
   # Subcomponent mount of type RotationalComponents.Components.Fixed
   mount_overrides = __pop_subcomponent_overrides!(__overrides, "mount")
   push!(__systems, @named mount = RotationalComponents.Components.Fixed(; __overrides = mount_overrides))
@@ -85,7 +88,7 @@ Fuel-disabled spin-down followed by a clutch start using the powertrain firing l
   push!(__eqs, powertrain.engine_on ~ powertrain.engage)
   push!(__eqs, powertrain.engine_torque_ref ~ 0.0)
   push!(__eqs, powertrain.tau_ref ~ 0.0)
-  push!(__eqs, powertrain.cvt_pedal ~ 0.0)
+  push!(__eqs, connect(unused_command.y, powertrain.N_ref, powertrain.cvt_pedal))
   push!(__eqs, connect(load.support, mount.spline))
   push!(__eqs, connect(powertrain.spline, load.spline))
   push!(__eqs, connect(powertrain.support, mount.spline))
