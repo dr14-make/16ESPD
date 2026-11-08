@@ -317,8 +317,21 @@ end
     @testset "HandsOn05 canvas wiring" begin
         function code_only(text)
             replace(text, r"\"\"\"[\s\S]*?\"\"\"|\"(?:\\.|[^\"\\])*\"|#[^\n]*" =>
-                s -> replace(s, r"[^\n]" => " "))
+                s -> replace(s, r"[^\n]" => c -> repeat(" ", ncodeunits(c))))
         end
+        function component_sections(source)
+            starts = collect(eachmatch(r"(?m)^(?:test |partial )?component (\w+)", code_only(source)))
+            [(; name = component.captures[1], offset = component.offset,
+                text = source[component.offset:(index < length(starts) ?
+                    prevind(source, starts[index + 1].offset) : lastindex(source))])
+             for (index, component) in enumerate(starts)]
+        end
+        # Regex offsets are UTF-8 byte offsets, including after multibyte descriptions.
+        unicode_source = "\"\"\"λ → engine\n\"\"\"\ncomponent First\n  \"ω speed\"\nend\n\"é\"\ncomponent Second\nend\n"
+        @test ncodeunits(code_only(unicode_source)) == ncodeunits(unicode_source)
+        @test findall(==('\n'), code_only(unicode_source)) == findall(==('\n'), unicode_source)
+        @test [c.name for c in component_sections(unicode_source)] == ["First", "Second"]
+        @test all(startswith(c.text, "component " * c.name) for c in component_sections(unicode_source))
         function nested_connections(file, text)
             violations = Tuple{String,Int,String}[]
             blocks = String[]
@@ -343,45 +356,68 @@ end
         violations = reduce(vcat, [nested_connections(file, read(file, String)) for file in files])
         isempty(violations) || @error "Conditional canvas connections" violations
         @test isempty(violations)
-        violations = Tuple{String,Int,String}[]
-        for file in files
-            text = code_only(read(file, String))
-            outputs = [m.captures[1] for m in eachmatch(r"(?m)^\s*(\w+) = RealOutput\(", text)]
-            for (number, line) in enumerate(split(text, '\n')), port in outputs
-                # TorqueToPedal computes its inverse map rather than exporting a hidden connection.
-                basename(file) == "TorqueToPedal.dyad" && port == "pedal" && continue
-                occursin(Regex("^\\s*" * port * "\\s*="), line) && !occursin("RealOutput(", line) &&
-                    push!(violations, (file, number, line))
+        function equation_exports(file, source)
+            violations = Tuple{String,Int,String}[]
+            for component in component_sections(source)
+                text = code_only(component.text)
+                outputs = [m.captures[1] for m in eachmatch(r"(?m)^\s*(\w+) = RealOutput\(", text)]
+                first_line = count(==('\n'), source[1:prevind(source, component.offset)])
+                for (number, line) in enumerate(split(text, '\n')), port in outputs
+                    # This inverse map computes a clamped, smoothstep-weighted pedal, not an alias.
+                    component.name == "TorqueToPedal" && port == "pedal" && continue
+                    occursin(Regex("^\\s*" * port * "\\s*="), line) && !occursin("RealOutput(", line) &&
+                        push!(violations, (file, first_line + number, line))
+                end
             end
+            violations
         end
+        @test isempty(equation_exports("self-check", "component A\n y = RealOutput()\nend\ncomponent B\n y = 1\nend\n"))
+        @test length(equation_exports("self-check", "\"λ\"\ncomponent A\n y = RealOutput()\nrelations\n y = child.y\nend\n")) == 1
+        violations = reduce(vcat, [equation_exports(file, read(file, String)) for file in files])
         isempty(violations) || @error "Equation-driven canvas exports" violations
         @test isempty(violations)
         touched = [joinpath(@__DIR__, "..", "dyad", file) for file in (
             "Vehicle/P2Powertrain.dyad", "Vehicle/Electric/HybridDrive.dyad",
             "Vehicle/Engine/MappedEngine.dyad", "Vehicle/DisconnectClutch.dyad",
-            "Vehicle/P2TorqueCommand.dyad", "Lecture5/FuelEnableBench.dyad",
+            "Vehicle/P2TorqueCommand.dyad", "Vehicle/P2Variator.dyad",
+            "Vehicle/ParameterGate.dyad", "Vehicle/OptionalShaftHold.dyad",
+            "Vehicle/Engine/TorqueMap.dyad", "Lecture5/FuelEnableBench.dyad",
             "Lecture5/P2WLTC.dyad", "Lecture5/P2OperatingLineWLTC.dyad",
             "Lecture5/P2HybridWLTC.dyad")]
+        function indirect_endpoints(file, source)
+            violations = Tuple{String,Int,String}[]
+            for connection in eachmatch(r"\bconnect\s*\(([^)]*)\)", code_only(source))
+                for endpoint in strip.(split(connection.captures[1], ','))
+                    count(==('.'), endpoint) <= 1 && continue
+                    line = count(==('\n'), source[1:connection.offset]) + 1
+                    push!(violations, (file, line, endpoint))
+                end
+            end
+            violations
+        end
+        @test isempty(indirect_endpoints("self-check", "connect(port, child.port) # connect(a.b.c, d)\n"))
+        @test length(indirect_endpoints("self-check", "\"λ\"\nconnect(a.b.c, d.e)\n")) == 1
+        endpoints = Tuple{String,Int,String}[]
         violations = Tuple{String,Int,String}[]
         orphans = Tuple{String,Int,String}[]
         routing = Tuple{String,Int,String}[]
         for file in unique(vcat(files, touched))
             source = read(file, String)
-            starts = collect(eachmatch(r"(?m)^(?:test |partial )?component \w+", code_only(source)))
-            for (index, component) in enumerate(starts)
-                stop = index < length(starts) ? prevind(source, starts[index + 1].offset) : lastindex(source)
-                text = source[component.offset:stop]
+            append!(endpoints, indirect_endpoints(file, source))
+            for component in component_sections(source)
+                text = component.text
                 meta = match(r"(?s)metadata (\{.*?\})\nend", text)
                 isnothing(meta) && continue
                 links = JSON.parse(meta.captures[1])["_links"]
                 ports = [m.captures[1] for m in eachmatch(r"(?m)^\s*(\w+) = (?:RealInput|RealOutput|Spline)\(", code_only(text))]
                 tags = Set(m.captures[1] for m in eachmatch(r"\{\^(\w+)\}", text))
-                line = count(==('\n'), text[1:meta.offset]) + 1
+                line = count(==('\n'), source[1:component.offset + meta.offset - 1]) + 1
                 for connection in eachmatch(r"connect\(([^)]*)\)\s*\{\^(\w+_wire)\}", code_only(text))
                     length(split(connection.captures[1], ',')) >= 3 || continue
                     tag = connection.captures[2]
                     edges = get(get(get(links, tag, Dict()), "Dyad", Dict()), "edges", [])
-                    isempty(edges) && push!(routing, (file, line, tag))
+                    connection_line = count(==('\n'), source[1:component.offset + connection.offset - 1]) + 1
+                    isempty(edges) && push!(routing, (file, connection_line, tag))
                 end
                 for key in keys(links)
                     key in tags || push!(orphans, (file, line, key))
@@ -397,6 +433,8 @@ end
                 end
             end
         end
+        isempty(endpoints) || @error "Canvas connections must use direct-child endpoints (at most one dot)" endpoints
+        @test isempty(endpoints)
         isempty(routing) || @error "Missing multi-endpoint canvas routing" routing
         @test isempty(routing)
         isempty(violations) || @error "Overlapping canvas ports" violations
