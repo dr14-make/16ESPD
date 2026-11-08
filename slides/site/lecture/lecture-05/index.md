@@ -84,7 +84,7 @@ On the canvas, trace engine → K0 → shared machine/variator input → variato
 
 :::
 
-[![Studio diagram of HandsOn05.P2Powertrain: input ports on the left, engine, K0, hybrid drive and variator left to right with the torque command below the shaft chain, output ports and the spline on the right, the housing support at the bottom](/lecture/lecture-05/img/step01-p2-powertrain.png)](/lecture/lecture-05/img/step01-p2-powertrain.png)
+[![Studio diagram of HandsOn05.P2Powertrain: command inputs on the left; engine, K0 and variator on one shaft with the hold hanging from it; the hybrid drive below, joining the shaft between K0 and the variator and fed by the torque command; every export wired from engine, K0 and drive to an output port on the right, the spline beside the variator, all housings wired to the support at the bottom](/lecture/lecture-05/img/step01-p2-powertrain.png)](/lecture/lecture-05/img/step01-p2-powertrain.png)
 
 The reference already carries the step-3 ports `engine_on` and `engine_torque_ref`. All shaft, command and export connections are outside structural branches and are drawable in Studio.
 
@@ -305,7 +305,7 @@ analysis P2ElectricWLTCTransient
 end
 ```
 
-[![Studio diagram of the P2WLTC fixture: drive cycle, PI driver and torque split feeding the P2 powertrain, which turns the planar car's front wheels through the differential; road load below the car, vehicle-speed feedback to the driver and the fuel meter on the right](/lecture/lecture-05/img/step01-p2wltc-fixture.png)](/lecture/lecture-05/img/step01-p2wltc-fixture.png)
+[![Studio diagram of the P2WLTC fixture: drive cycle, PI driver, torque split and machine gate in one line into the powertrain's torque request; a zero constant wired to the unused N_ref and engine-torque inputs and the pedal limiter to the CVT pedal; the powertrain turns the planar car's front wheels through the differential, with road load below the car, vehicle-speed feedback to the driver and split, and the fuel meter beside the powertrain](/lecture/lecture-05/img/step01-p2wltc-fixture.png)](/lecture/lecture-05/img/step01-p2wltc-fixture.png)
 
 #### Fell behind?
 
@@ -514,7 +514,7 @@ parameter Ti::Time = 1.0
 
 #### Every connection
 
-`speed_commanded = true` selects `N_ref` on the existing `variator`; both command and mechanical connections remain drawn. The fixture adds no variator of its own; it drives `powertrain.N_ref` and wires the ignored `cvt_pedal` input to the visible zero constant.
+`speed_commanded = true` selects `N_ref` on the existing `variator`; both command and mechanical connections remain drawn. The fixture adds no variator of its own; it drives `powertrain.N_ref` and wires the ignored `cvt_pedal` and `engine_torque_ref` inputs to the visible zero constant.
 
 In the fixture, place `unused_command = BlockComponents.Sources.Constant(k = 0.0)` and wire:
 
@@ -652,7 +652,7 @@ sampled engine-speed minimum is 815.95 rpm on `0:0.01:1800`, not a continuous-ti
 
 :::
 
-[![Studio diagram of the operating-line WLTC fixture: driver, operating-line table and P2 powertrain, which turns the planar car through the differential; road load, speed feedback and fuel meter](/lecture/lecture-05/img/step02-operating-line-diagram.png)](/lecture/lecture-05/img/step02-operating-line-diagram.png)
+[![Studio diagram of the operating-line WLTC fixture: drive cycle, PI driver, operating-line table and a zero constant wired to the powertrain's ignored CVT pedal and engine-torque inputs; the P2 powertrain turns the planar car through the differential, with road load, speed feedback and fuel meter](/lecture/lecture-05/img/step02-operating-line-diagram.png)](/lecture/lecture-05/img/step02-operating-line-diagram.png)
 
 #### Fell behind?
 
@@ -877,7 +877,7 @@ the efficient-speed target. Charging raises engine load and generates the surplu
 adds machine torque above the 30 kW line cap. During deceleration the existing regen blend
 uses the machine first and sends the remainder to friction brakes.
 
-[![Studio diagram of P2HybridWLTC: driver demand into the energy manager, whose outputs drive the torque-to-pedal map and the powertrain; engine speed, available torque and SoC loop back under the manager; operating-line tables above; planar car, road load and fuel meter as in step 2](/lecture/lecture-05/img/step03-hybrid-diagram.png)](/lecture/lecture-05/img/step03-hybrid-diagram.png)
+[![Studio diagram of P2HybridWLTC: driver demand into the energy manager, whose outputs drive the torque-to-pedal map and the powertrain; engine speed, available torque and SoC loop back under the manager; operating-line tables above; a zero constant below the powertrain feeds its ignored CVT pedal; planar car, road load and fuel meter as in step 2](/lecture/lecture-05/img/step03-hybrid-diagram.png)](/lecture/lecture-05/img/step03-hybrid-diagram.png)
 
 ### Code view required — energy accounting and analysis
 
