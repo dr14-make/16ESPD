@@ -14,6 +14,8 @@ component TorqueMap
   p_m = RealInput() {^p_m}
   "Brake torque [N.m]"
   y = RealOutput() {^y}
+  "Full-load brake torque [N.m] (derived; EPA ALPHA full-load curve)"
+  full_load_torque = RealOutput() {^full_load_torque}
   full_load = VehicleSystemsComponents.Vehicle.Engine.SpeedCurve(rpm_axis = full_load_rpm, data = full_load_data) {^full_load}
   map = VehicleSystemsComponents.Vehicle.Engine.SpeedLoadMap(rpm_axis = rpm_axis, kpa_axis = kpa_axis, data = torque_data) {^map}
   cap = BlockComponents.Math.Min() {^cap}
@@ -21,6 +23,7 @@ relations
   connect(omega, full_load.omega, map.omega) {^speed_wire}
   connect(p_m, map.p_m) {^pressure_wire}
   connect(full_load.y, cap.u1) {^full_load_wire}
+  connect(full_load.y, full_load_torque)
   connect(map.y, cap.u2) {^map_wire}
   connect(cap.y, y) {^torque_wire}
 metadata {
@@ -29,6 +32,7 @@ metadata {
     "omega": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
     "p_m": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
     "y": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "full_load_torque": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 150, "x2": 1050, "y2": 250}, "diagram": {"x1": 975, "y1": 175, "x2": 1025, "y2": 225}}}},
     "full_load": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 150, "x2": 350, "y2": 250}}}},
     "map": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 450, "x2": 350, "y2": 550}}}},
     "cap": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 300, "x2": 650, "y2": 400}}}},

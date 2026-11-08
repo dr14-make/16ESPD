@@ -88,7 +88,7 @@ component MappedEngine
 relations
   N = speed.w * 30 / pi
   connect(speed.w, engine_speed)
-  connect(torque_map.full_load.y, available_torque)
+  connect(torque_map.full_load_torque, available_torque)
   connect(pedal, pedal_map.pedal, cut_logic.pedal) {^pedal_wire}
   connect(pedal_map.u_thr, air.u_thr) {^throttle_wire}
   connect(vacuum, air.vacuum) {^booster_wire}
