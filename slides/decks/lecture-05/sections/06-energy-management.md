@@ -224,6 +224,11 @@ The conventional car's WLTC: **43.0 MJ** of fuel.
 η<sub>eb</sub>, engine to battery: **0.30** = 0.347 · 0.90 · 0.97 (assumed): engine × machine
 and inverter × battery charging
 
+<img src="/img/lecture-05/step03-hybrid-wltc.png" style="max-height: 18rem" alt="The hybrid's WLTC run: the speed follows the trace; the SoC starts at 0.60, swings between about 0.51 and 0.59 and ends near 0.61; the engine speed against its target, with long stretches at zero; the raw and the SoC-corrected fuel in L/100 km, apart early in the run and meeting near 4 at the end." />
+
+<div class="caption">Top right: SoC ends near where it started · bottom right: raw and corrected fuel
+meet once the battery is back</div>
+
 </div>
 </div>
 
@@ -354,6 +359,11 @@ N_target = max(manager.engine_on * line.N
 <div class="handson">✓ over the WLTC the modes switch without chatter: <b>44</b> engine starts, the
 shortest on for <b>1.9 s</b> · SoC from 0.600 down to <b>0.513</b>, back up to <b>0.613</b> ·
 speed error <b>1.32</b> km/h</div>
+
+<img src="/img/lecture-05/step03-hybrid-wltc.png" style="max-height: 13rem" alt="The hybrid's WLTC run: the speed follows the trace; the SoC starts at 0.60, swings between about 0.51 and 0.59 and ends near 0.61; the engine speed against its target, with long stretches at zero; the raw and the SoC-corrected fuel in L/100 km." />
+
+<div class="caption">Bottom left, blue: engine speed, at zero while the engine is off · top right:
+SoC between 0.513 and 0.613</div>
 
 </div>
 </div>

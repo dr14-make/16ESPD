@@ -520,6 +520,15 @@ routeAlias: positions-compared
 
 ## What each position can do
 
+<div class="diagram-wide">
+
+<img src="/diagrams/04-p-positions.svg" alt="The course car's driveline with the five positions: P0 on the belt and P1 on the crank in the red zone that always turns with the engine; P2 after K0, P3 on the CVT output and P4 on the rear axle in the green zone that can turn with the engine off." style="max-height: 16rem" />
+
+</div>
+
+<div class="caption">Red zone: P0, P1, the first two columns · green zone, behind K0: P2, P3, P4, the
+last column</div>
+
 <div class="tight">
 
 | | P0, belt | P1, crank | P2, P3, P4, decoupled |
@@ -636,6 +645,15 @@ routeAlias: why-p2
 
 ## Why you build P2
 
+<div class="diagram-wide">
+
+<img src="/diagrams/04-p2.svg" alt="The course car's driveline with P2 highlighted: the machine after the K0 clutch on the CVT input, inside the green zone that can turn with the engine off. P0, P1, P3 and P4 are grayed." style="max-height: 15rem" />
+
+</div>
+
+<div class="caption">P2 sits behind K0 and before the CVT: the only position with a tick in every
+row</div>
+
 <div class="tight">
 
 | Mode | P0 | P1 | **P2** | P3 | P4 |
@@ -698,6 +716,11 @@ connect(variator.spline_b, spline)
 <div class="handson">✓ engine only (H0), full WLTC: speed error (worst gap to the test's speed)
 <b>1.17</b> km/h, <b>5.72</b> L/100 km · electric only, WLTC Low: speed error <b>1.50</b> km/h,
 SoC 0.60 → 0.39</div>
+
+<img src="/img/lecture-05/step01-electric-wltc-low.png" style="max-height: 13rem" alt="Electric only on the WLTC Low phase: the actual speed follows the target, the machine turns up to about 3500 rpm, the SoC falls from 0.60 to about 0.39, and the fuel flow stays at zero." />
+
+<div class="caption">Electric only, WLTC Low: zero fuel, SoC 0.60 → 0.39. The small pack cannot
+drive a whole cycle.</div>
 
 </div>
 </div>

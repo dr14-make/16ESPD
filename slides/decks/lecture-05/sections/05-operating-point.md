@@ -314,6 +314,11 @@ powertrain.N_ref = N_target
 <div class="handson">✓ same car, driver and K0 as H0 · WLTC: <b>5.44</b> L/100 km against H0's
 <b>5.72</b>, <b>−4.9 %</b> · only 17 % of the fuel within ±150 rpm of the line</div>
 
+<img src="/img/lecture-05/step02-operating-points.png" style="max-height: 13rem" alt="The operating-line WLTC run: engine torque against engine speed, the WLTC points as black dots and the best-BSFC line in orange. The points form a cloud around and below the line, densest on a band below it, not on the line itself." />
+
+<div class="caption">Black: the engine's WLTC points · orange: the best-BSFC line. Without a battery
+the points only scatter around the line.</div>
+
 </div>
 </div>
 
