@@ -92,9 +92,9 @@ using VehicleSystemsComponents: AbstractRealtimeDriveSpec, RealtimeDriveSpec
   __constants = Any[]
 
   ### Components
-  # Subcomponent model of type VehicleSystemsComponents.PlanarBEVScripted
+  # Subcomponent model of type VehicleSystemsComponents.PlanarBEVOnRoad
   model_overrides = __pop_subcomponent_overrides!(__overrides, "model")
-  push!(__systems, @named model = VehicleSystemsComponents.PlanarBEVScripted(; m=m, esp_on=esp_on, abs_on=abs_on, mu=mu, __overrides = model_overrides))
+  push!(__systems, @named model = VehicleSystemsComponents.PlanarBEVOnRoad(; m=m, esp_on=esp_on, abs_on=abs_on, mu=mu, __overrides = model_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -136,8 +136,8 @@ export PlanarBEVRealtimeDrive__System
   var"height_file"::String = ""
   # Vehicle mass
   var"m"::Float64 = 1500
-  # Planar BEV assembly with a scripted driver.
-  var"model"::Union{Nothing, System} = VehicleSystemsComponents.PlanarBEVScripted(; name=:PlanarBEVScripted)
+  # Planar BEV assembly with a scripted driver and position-dependent road grip.
+  var"model"::Union{Nothing, System} = VehicleSystemsComponents.PlanarBEVOnRoad(; name=:PlanarBEVOnRoad)
   __system::System = PlanarBEVRealtimeDrive__System(; name, var"duration"=var"duration", var"frame"=var"frame", var"dtmax"=var"dtmax", var"window"=var"window", var"esp_on"=var"esp_on", var"abs_on"=var"abs_on", var"mu"=var"mu", var"road_file"=var"road_file", var"height_file"=var"height_file", var"m"=var"m")
 end
 

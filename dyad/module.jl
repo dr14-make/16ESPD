@@ -71,10 +71,6 @@ function drive_model(spec)
     meta === nothing && throw(ArgumentError(
         "$(nameof(spec.model)): road files need a model built by a component constructor"))
     constructor = getglobal(meta.type.mod, meta.type.name)
-    accepted = reduce(vcat, Base.kwarg_decl.(methods(constructor)); init = Symbol[])
-    for k in keys(files)
-        k in accepted || throw(ArgumentError("$(meta.type.name) has no $k; it does not drive on a road file"))
-    end
     return constructor(; name = nameof(spec.model), files...)
 end
 

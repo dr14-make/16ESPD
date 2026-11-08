@@ -58,8 +58,6 @@ end
     @test all(≈(0.3), road.grip)
     @test V.drive_road(V.__dyad_base_analysis_spec(V.PlanarBEVByHandDrive__Spec(;
         road_file = roads * "ice_patch_mu.crg"))).grip_varies
-    @test_throws "has no road_file" V.drive_model(V.__dyad_base_analysis_spec(
-        V.PlanarBEVRealtimeDrive__Spec(; road_file = roads * "ice_patch_mu.crg")))
     result = V.PlanarBEVByHandDrive(; window = false, duration = 3.0, mu = 0.9, files...)
     rs, sol = symbolic_container(result), result.sol
     @test sol.t[end] ≈ 3.0
@@ -104,7 +102,7 @@ end
 
 @testset "Hard-stop preset and fixed run settings" begin
     result = VehicleSystemsComponents.PlanarBEVRealtimeDrive(
-        model = VehicleSystemsComponents.PlanarBEVScripted(; name = :hard_stop,
+        model = VehicleSystemsComponents.PlanarBEVOnRoad(; name = :hard_stop,
             table = "dyad://VehicleSystemsComponents/drivers/hard_stop.csv"))
     sys, sol = symbolic_container(result), result.sol
     for t in (0.0, 9.0, 18.99, 19.0, 19.01, 22.0)

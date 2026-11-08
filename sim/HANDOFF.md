@@ -33,8 +33,9 @@ Realtime drive is a library analysis with optional UI extensions. Read this, the
 - `sim/drive.jl` only loads optional packages from the stacked sim environment and runs an
   analysis. `main(spec)` calls `DyadInterface.run_analysis(spec)`; the zero-argument convenience
   calls `VehicleSystemsComponents.PlanarBEVByHandDrive()`. Studio and Orchestrator list
-  `PlanarBEVRealtimeDrive` (scripted, 22 seconds, no window) and `PlanarBEVByHandDrive`
-  (human, window on, runs until closed). Set `window = false, duration = 3` for neutral driving.
+  `PlanarBEVRealtimeDrive` (scripted on the road car `PlanarBEVOnRoad`, 22 seconds, no window)
+  and `PlanarBEVByHandDrive` (human, window on, runs until closed). Both take road files. Set
+  `window = false, duration = 3` for neutral driving.
 - The by-hand drive runs on OpenCRG files: `PlanarBEVByHandDrive(road_file = "dyad://VehicleSystemsComponents/roads/ice_patch_mu.crg")`,
   likewise `height_file`. Dyad 3.5.0 cannot hand an analysis parameter to a structural parameter
   of its model, so `drive_model` rebuilds the model from its constructor with the files; any other

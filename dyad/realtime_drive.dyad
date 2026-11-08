@@ -23,10 +23,10 @@ partial analysis RealtimeDrive
   parameter height_file::String = ""
 end
 
-"Scripted coast-down, run without a window by default."
+"Scripted coast-down on an OpenCRG road, run without a window by default."
 analysis PlanarBEVRealtimeDrive
   extends RealtimeDrive(window = false)
-  model = PlanarBEVScripted(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
+  model = PlanarBEVOnRoad(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
   "Vehicle mass"
   parameter m::Mass = 1500
 end

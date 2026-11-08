@@ -37,12 +37,9 @@ function context(integ, assembly; road = nothing)
         :demand => sys.blend.tau_brake,
         :esp => sys.ecu.esp.dT_fl + sys.ecu.esp.dT_fr + sys.ecu.esp.dT_rl + sys.ecu.esp.dT_rr,
         :motor => sys.drive.machine.tau,
-        :power => sys.drive.battery.v * sys.drive.battery.i, :soc => sys.drive.SoC)
-    # Only a road car samples grip per wheel; a uniform-grip car reports none.
-    if hasproperty(sys.car.fl, :grip)
-        signals = (signals..., :gfl => sys.car.fl.grip, :gfr => sys.car.fr.grip,
-            :grl => sys.car.rl.grip, :grr => sys.car.rr.grip)
-    end
+        :power => sys.drive.battery.v * sys.drive.battery.i, :soc => sys.drive.SoC,
+        :gfl => sys.car.fl.grip, :gfr => sys.car.fr.grip,
+        :grl => sys.car.rl.grip, :grr => sys.car.rr.grip)
     read_signals = getu(assembly, collect(last.(signals)))
     snapshot = i -> NamedTuple{Tuple(first.(signals))}(Tuple(read_signals(i)))
     esp_on, abs_on, mu = Float64.(getp(assembly, [sys.esp_on, sys.abs_on, sys.mu])(integ))
@@ -94,8 +91,7 @@ function car_shapes(ctx, s)
     return body, wheels
 end
 "Road friction multiplier under each wheel: the uniform `mu` times the road file's grip."
-wheel_mu(ctx, s) = hasproperty(s, :gfl) ?
-    map(g -> ctx.mu * g, (s.gfl, s.gfr, s.grl, s.grr)) : ntuple(_ -> ctx.mu, 4)
+wheel_mu(ctx, s) = map(g -> ctx.mu * g, (s.gfl, s.gfr, s.grl, s.grr))
 grip_color(g) = g < 0.7 ? RGBf(0.2, 0.75, 0.3) : g < 1.0 ? RGBf(0.95, 0.75, 0.1) : RGBf(0.9, 0.15, 0.1)
 bar(x) = (n = round(Int, 12clamp(x, 0, 1)); "█"^n * "░"^(12 - n))
 "Static road layer: grip map, and height contours on a graded road. Drawn once, under the course."
