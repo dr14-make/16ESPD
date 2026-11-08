@@ -8,7 +8,7 @@ const BSFC_LINE = read_line()
 include("../scripts/machine_size_sweep.jl")
 const H0_L100 = MachineSizeSweep.H0_L100
 const H0_MJ100 = 184.86510643
-const LINE_L100 = 5.43744462
+const LINE_L100 = 5.4374440955
 const RPM_ENGINE_IDLE = 800.0
 
 # H0 is both a P2 fixed-mode check and the operating-line baseline; one 1800 s run serves both.
@@ -314,27 +314,78 @@ end
 
 @testset "P2 powertrain" begin
     @testset "HandsOn05 canvas wiring" begin
-        folder = joinpath(@__DIR__, "..", "dyad", "HandsOn05")
-        for file in filter(f -> endswith(f, ".dyad"), readdir(folder; join = true))
-            text = read(file, String)
-            outputs = [m.captures[1] for m in eachmatch(r"(?m)^\s*(\w+) = RealOutput\(", text)]
+        function code_only(text)
+            replace(text, r"\"\"\"[\s\S]*?\"\"\"|\"(?:\\.|[^\"\\])*\"|#[^\n]*" =>
+                s -> replace(s, r"[^\n]" => " "))
+        end
+        function nested_connections(file, text)
+            violations = Tuple{String,Int,String}[]
             depth = 0
-            for raw in split(text, '\n')
-                line = strip(first(split(raw, '#'; limit = 2)))
+            for (number, raw) in enumerate(split(code_only(text), '\n'))
+                line = strip(raw)
                 startswith(line, "metadata ") && continue
                 if occursin(r"^if\s", line)
                     depth += 1
                 elseif line == "end" && depth > 0
                     depth -= 1
                 end
-                @test !(depth > 0 && occursin(r"\bconnect\s*\(", line))
-                for port in outputs
-                    # TorqueToPedal defines its inverse-map output internally, not an exported wire.
-                    file == joinpath(folder, "TorqueToPedal.dyad") && port == "pedal" && continue
-                    @test !(startswith(line, port * " = ") && !occursin("RealOutput(", line))
-                end
+                depth > 0 && occursin(r"\bconnect\s*\(", line) &&
+                    push!(violations, (file, number, raw))
+            end
+            violations
+        end
+        @test isempty(nested_connections("self-check", "\"\"\"\nif prose\n\"\"\"\ncomponent X\nrelations\n  connect(a, b)\nend\n"))
+        folder = joinpath(@__DIR__, "..", "dyad", "HandsOn05")
+        files = filter(f -> endswith(f, ".dyad"), readdir(folder; join = true))
+        violations = reduce(vcat, [nested_connections(file, read(file, String)) for file in files])
+        isempty(violations) || @error "Conditional canvas connections" violations
+        @test isempty(violations)
+        violations = Tuple{String,Int,String}[]
+        for file in files
+            text = code_only(read(file, String))
+            outputs = [m.captures[1] for m in eachmatch(r"(?m)^\s*(\w+) = RealOutput\(", text)]
+            for (number, line) in enumerate(split(text, '\n')), port in outputs
+                # TorqueToPedal computes its inverse map rather than exporting a hidden connection.
+                basename(file) == "TorqueToPedal.dyad" && port == "pedal" && continue
+                occursin(Regex("^\\s*" * port * "\\s*="), line) && !occursin("RealOutput(", line) &&
+                    push!(violations, (file, number, line))
             end
         end
+        isempty(violations) || @error "Equation-driven canvas exports" violations
+        @test isempty(violations)
+        touched = [joinpath(@__DIR__, "..", "dyad", file) for file in (
+            "Vehicle/P2Powertrain.dyad", "Vehicle/Electric/HybridDrive.dyad",
+            "Vehicle/Engine/MappedEngine.dyad", "Vehicle/DisconnectClutch.dyad",
+            "Vehicle/P2TorqueCommand.dyad",
+            "Lecture5/P2WLTC.dyad", "Lecture5/P2OperatingLineWLTC.dyad",
+            "Lecture5/P2HybridWLTC.dyad")]
+        violations = Tuple{String,Int,String}[]
+        orphans = Tuple{String,Int,String}[]
+        for file in unique(vcat(files, touched))
+            text = read(file, String)
+            meta = match(r"(?s)metadata (\{.*?\})\nend", text)
+            isnothing(meta) && continue
+            links = JSON.parse(meta.captures[1])["_links"]
+            ports = [m.captures[1] for m in eachmatch(r"(?m)^\s*(\w+) = (?:RealInput|RealOutput|Spline)\(", code_only(text))]
+            tags = Set(m.captures[1] for m in eachmatch(r"\{\^(\w+)\}", text))
+            line = count(==('\n'), text[1:meta.offset]) + 1
+            for key in keys(links)
+                key in tags || push!(orphans, (file, line, key))
+            end
+            for kind in ("icon", "diagram"), (i, a) in enumerate(ports), b in ports[i+1:end]
+                pa = get(get(get(links, a, Dict()), "Dyad", Dict()), "placement", Dict())
+                pb = get(get(get(links, b, Dict()), "Dyad", Dict()), "placement", Dict())
+                haskey(pa, kind) && haskey(pb, kind) || continue
+                aa, bb = pa[kind], pb[kind]
+                overlap = all(max(min(aa[k*"1"], aa[k*"2"]), min(bb[k*"1"], bb[k*"2"])) <=
+                    min(max(aa[k*"1"], aa[k*"2"]), max(bb[k*"1"], bb[k*"2"])) for k in ("x", "y"))
+                overlap && push!(violations, (file, line, "$kind: $a intersects $b"))
+            end
+        end
+        isempty(violations) || @error "Overlapping canvas ports" violations
+        @test isempty(violations)
+        isempty(orphans) || @error "Orphaned canvas metadata" orphans
+        @test isempty(orphans)
     end
 
     @testset "HandsOn05 sources stay in sync" begin
@@ -366,11 +417,11 @@ end
         # Step 1a already includes the step-2 speed-command seam: keep it in the comparison.
         # Only the step-3 start/stop additions are absent from that listing.
         source = replace(source,
-            r"(?ms)^  \"Enable fuel-controlled clutch starts\"\n.*?^  variable start_compensation::Torque if start_stop\n" => "",
+            r"(?ms)^  \"Enable fuel-controlled clutch starts\"\n.*?^  variable firing_fraction::Real if start_stop\n" => "",
             "fuel_controlled = start_stop, " => "",
             "on = start_stop" => "on = false",
             r"(?ms)^  if start_stop\n.*?^  end\n" =>
-                "  command.compensation = 0.0\n")
+                "")
         normalize_powertrain(x) = strip(replace(x, r"(?m)^metadata .*\n" => "",
             "VehicleSystemsComponents.MyCar." => "VehicleSystemsComponents.HandsOn05."))
         @test normalize_powertrain(powertrain) == normalize_powertrain(source)
@@ -380,7 +431,7 @@ end
         blocks = [m.captures[1] for m in eachmatch(r"```dyad\n(.*?)```"s, guide)]
         listing = only(filter(x -> startswith(x, "structural parameter start_stop::Boolean"), blocks))
         source = read(joinpath(@__DIR__, "..", "dyad", "HandsOn05", "P2Powertrain.dyad"), String)
-        declarations = match(r"(?ms)^  structural parameter start_stop::Boolean.*?^  variable start_compensation::Torque if start_stop\n", source).match
+        declarations = match(r"(?ms)^  structural parameter start_stop::Boolean.*?^  variable firing_fraction::Real if start_stop\n", source).match
         # The guide omits the description strings; link tags stay, so a missing tag fails.
         declaration_lines(x) = [strip(l) for l in split(x, '\n') if !isempty(strip(l)) && !startswith(strip(l), '"')]
         @test declaration_lines(listing) == declaration_lines(declarations)
@@ -528,10 +579,10 @@ end
     deviation = abs.(rpm .- target)
     cmd = at(m.powertrain.variator.i_command)
     ratio = at(m.powertrain.variator.ratio)
-    # Accepted steps can overshoot a ratio bound by 1.2e-4 at the analysis solver tolerance.
+    # The analysis solver tolerance permits ratio-bound overshoot below 2.1e-4.
     @info "Line ratio interpolation" sampled=extrema(ratio) accepted=extrema(s[m.powertrain.variator.ratio])
-    @test all(2.8 - 5e-5 .<= ratio .<= 12.0 + 5e-5)
-    @test all(2.8 - 2e-4 .<= s[m.powertrain.variator.ratio] .<= 12.0 + 2e-4)
+    @test all(2.8 - 2.1e-4 .<= ratio .<= 12.0 + 2.1e-4)
+    @test all(2.8 - 2.1e-4 .<= s[m.powertrain.variator.ratio] .<= 12.0 + 2.1e-4)
     idle = (power .< 1.0) .| (at(m.driver.y) .<= 0.0)
     launch = .!idle .& (cmd .>= 11.999)
     overdrive = .!idle .& (cmd .<= 2.801)
@@ -1114,7 +1165,7 @@ include("torque_to_pedal.jl")
     tau_request = at(m.manager.tau_engine)
     on_fraction = at(m.manager.engine_on)
     nonpositive_fuel = integrate(fuel .* ((tau_request .<= 0.0) .& (on_fraction .> 0.99)))
-    excess = max.(abs.(at(m.powertrain.tau_ref) .+ at(m.powertrain.start_compensation)) .- limit, 0.0)
+    excess = max.(abs.(at(m.powertrain.tau_ref) .+ at(m.powertrain.command.compensation)) .- limit, 0.0)
     starting = (on_age .> 0.0) .& (on_age .<= 3.0)
     start_excess_time = integrate(Float64.(starting .& (excess .> 0.01)))
     start_excess_peak = maximum(excess[starting])

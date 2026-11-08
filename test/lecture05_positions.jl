@@ -58,8 +58,7 @@ end
     @test p2.E_recovered_MJ < min(p3.E_recovered_MJ, p4.E_recovered_MJ)
     @test p3.electric_drive_s > 0
     @test p4.electric_drive_s > 0
-    # Unconditional canvas wiring changes symbolic ordering; the regenerated shift is 3.1e-7.
-    @test p2.fuel_corr_L100 ≈ 4.0863417765 atol = 5e-7 rtol = 0
+    @test p2.fuel_corr_L100 ≈ 4.0863434078 atol = 1e-9 rtol = 0
 
     @testset "P4 live run matches pin" begin
         run = VehicleSystemsComponents.Lecture5.P4HybridWLTCTransient()
