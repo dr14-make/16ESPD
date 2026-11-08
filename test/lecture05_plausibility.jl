@@ -320,21 +320,23 @@ end
         end
         function nested_connections(file, text)
             violations = Tuple{String,Int,String}[]
-            depth = 0
+            blocks = String[]
             for (number, raw) in enumerate(split(code_only(text), '\n'))
                 line = strip(raw)
                 startswith(line, "metadata ") && continue
-                if occursin(r"^if\s", line)
-                    depth += 1
-                elseif line == "end" && depth > 0
-                    depth -= 1
+                opener = match(r"^(if|for|while|when)\s", line)
+                if !isnothing(opener)
+                    push!(blocks, opener.captures[1])
+                elseif line == "end" && !isempty(blocks)
+                    pop!(blocks)
                 end
-                depth > 0 && occursin(r"\bconnect\s*\(", line) &&
+                "if" in blocks && occursin(r"\bconnect\s*\(", line) &&
                     push!(violations, (file, number, raw))
             end
             violations
         end
         @test isempty(nested_connections("self-check", "\"\"\"\nif prose\n\"\"\"\ncomponent X\nrelations\n  connect(a, b)\nend\n"))
+        @test length(nested_connections("self-check", "if enabled\nfor i in 1:2\nend\nconnect(a, b)\nend\n")) == 1
         folder = joinpath(@__DIR__, "..", "dyad", "HandsOn05")
         files = filter(f -> endswith(f, ".dyad"), readdir(folder; join = true))
         violations = reduce(vcat, [nested_connections(file, read(file, String)) for file in files])
