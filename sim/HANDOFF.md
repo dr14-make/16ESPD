@@ -37,12 +37,11 @@ Realtime drive is a library analysis with optional UI extensions. Read this, the
   and `PlanarBEVByHandDrive` (human, window on, runs until closed). Both take road files. Set
   `window = false, duration = 3` for neutral driving.
 - The by-hand drive runs on OpenCRG files: `PlanarBEVByHandDrive(road_file = "dyad://VehicleSystemsComponents/roads/ice_patch_mu.crg")`,
-  likewise `height_file`. Dyad 3.5.0 cannot hand an analysis parameter to a structural parameter
-  of its model, so `drive_model` rebuilds the model from its constructor with the files; any other
-  structural setting of a passed-in `model` returns to its default. Empty files keep the model's own.
-- The window learns the files from the spec, not the compiled model, and draws a static grip
-  map and height contours (`drive_road`, sampled once by `road_mesh`) under the course. The HUD
-  shows μ under each wheel. A model passed in with its own road files gets no map.
+  likewise `height_file`. The files are structural, so `drive_model` rebuilds the model with them;
+  its docstring says why and what else that resets. Empty files keep the model's own.
+- The window learns the files from the spec, not the compiled model, and draws a static map of
+  road μ (the run's `mu` times the file's grip) and height contours (`drive_road`, sampled once by
+  `road_mesh`) under the course. The HUD shows the same μ under each wheel. A model passed in with its own road files gets no map.
 - A window request loads GLMakie and SimpleDirectMediaLayer by itself when the environment stack
   provides them (`sim/` on `LOAD_PATH`, or both added to the default `@v1.13` environment);
   otherwise it raises the "load GLMakie" error. Students without them never resolve them.

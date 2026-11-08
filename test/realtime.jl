@@ -45,19 +45,19 @@ end
 
 @testset "By-hand analysis forwards its road files to the car and the window" begin
     V = VehicleSystemsComponents
+    byhand(; kw...) = V.__dyad_base_analysis_spec(V.PlanarBEVByHandDrive__Spec(; kw...))
     roads = "dyad://VehicleSystemsComponents/roads/"
-    plain = V.__dyad_base_analysis_spec(V.PlanarBEVByHandDrive__Spec(; window = false))
+    plain = byhand(; window = false)
     @test plain.road_file == plain.height_file == ""
     @test V.drive_model(plain) === plain.model
     @test V.drive_road(plain) === nothing
     files = (; road_file = roads * "uniform_low_mu.crg", height_file = roads * "ramp_hold_z.crg")
-    spec = V.__dyad_base_analysis_spec(V.PlanarBEVByHandDrive__Spec(; window = false, files...))
+    spec = byhand(; window = false, files...)
     @test (spec.road_file, spec.height_file) == values(files)
     road = V.drive_road(spec)
     @test !road.grip_varies && road.height_varies
     @test all(≈(0.3), road.grip)
-    @test V.drive_road(V.__dyad_base_analysis_spec(V.PlanarBEVByHandDrive__Spec(;
-        road_file = roads * "ice_patch_mu.crg"))).grip_varies
+    @test V.drive_road(byhand(; road_file = roads * "ice_patch_mu.crg")).grip_varies
     result = V.PlanarBEVByHandDrive(; window = false, duration = 3.0, mu = 0.9, files...)
     rs, sol = symbolic_container(result), result.sol
     @test sol.t[end] ≈ 3.0

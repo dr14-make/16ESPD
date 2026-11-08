@@ -11,15 +11,13 @@ const FRAME = 1 / 60
 const FULL_LOCK = 9.6
 const LOCK_RANGE = (0.3FULL_LOCK, FULL_LOCK)
 
-# All model-dependent data belongs to this invocation, not to the extension module.
 """
-    context(integ, assembly; road = nothing)
+    context(integ, assembly)
 
-Model geometry, signal getters and fixed run settings for one window. `road` is the static
-road layer from `VehicleSystemsComponents.drive_road`; the road files are structural, so the
-window cannot read them back from the compiled assembly.
+Model geometry, signal getters and fixed run settings for one window. All model-dependent data
+belongs to this invocation, not to the extension module.
 """
-function context(integ, assembly; road = nothing)
+function context(integ, assembly)
     sys = assembly.vehicle
     a, b, tw, i_s, mass, radius, torque, ratio = Float64.(getp(assembly, [
         sys.car.a, sys.car.b, sys.car.tw, sys.car.i_s, sys.car.m,
@@ -40,10 +38,11 @@ function context(integ, assembly; road = nothing)
         :power => sys.drive.battery.v * sys.drive.battery.i, :soc => sys.drive.SoC,
         :gfl => sys.car.fl.grip, :gfr => sys.car.fr.grip,
         :grl => sys.car.rl.grip, :grr => sys.car.rr.grip)
+    names = Tuple(first.(signals))
     read_signals = getu(assembly, collect(last.(signals)))
-    snapshot = i -> NamedTuple{Tuple(first.(signals))}(Tuple(read_signals(i)))
+    snapshot = i -> NamedTuple{names}(Tuple(read_signals(i)))
     esp_on, abs_on, mu = Float64.(getp(assembly, [sys.esp_on, sys.abs_on, sys.mu])(integ))
-    return (; i_s, mass, radius, torque, ratio, snapshot, esp_on, abs_on, mu, road,
+    return (; i_s, mass, radius, torque, ratio, snapshot, esp_on, abs_on, mu,
             by_hand = hasproperty(assembly.driver, :reader),
             wheel_at = (fl = (a, tw / 2), fr = (a, -tw / 2),
                         rl = (-b, tw / 2), rr = (-b, -tw / 2)))
@@ -94,12 +93,20 @@ end
 wheel_mu(ctx, s) = map(g -> ctx.mu * g, (s.gfl, s.gfr, s.grl, s.grr))
 grip_color(g) = g < 0.7 ? RGBf(0.2, 0.75, 0.3) : g < 1.0 ? RGBf(0.95, 0.75, 0.1) : RGBf(0.9, 0.15, 0.1)
 bar(x) = (n = round(Int, 12clamp(x, 0, 1)); "█"^n * "░"^(12 - n))
-"Static road layer: grip map, and height contours on a graded road. Drawn once, under the course."
-function road!(ax, road)
+"""
+    road!(ax, road, mu)
+
+Static road layer from `VehicleSystemsComponents.drive_road`, drawn once under the course: a map
+of road μ, the uniform `mu` times the file's grip as the HUD reports it under each wheel, and
+height contours on a graded road. The road files are structural, so the window takes them from
+the spec, not from the compiled assembly.
+"""
+function road!(ax, road, mu)
     road === nothing && return nothing
     if road.grip_varies
-        heatmap!(ax, road.x, road.y, road.grip; colormap = Reverse(:Blues),
-            colorrange = (0.0, max(1.0, maximum(road.grip))), alpha = 0.8)
+        road_mu = mu .* road.grip
+        heatmap!(ax, road.x, road.y, road_mu; colormap = Reverse(:Blues),
+            colorrange = (0.0, max(1.0, maximum(road_mu))), alpha = 0.8)
     end
     if road.height_varies
         contour!(ax, road.x, road.y, road.height; levels = 12, color = (:sienna, 0.7), linewidth = 1)
@@ -193,13 +200,13 @@ function window_session!(integ, sys, spec, pad)
         integ = fresh_integrator(initial_prob, spec)
         return nothing
     end
-    ctx = context(integ, sys; road = VehicleSystemsComponents.drive_road(spec))
+    ctx = context(integ, sys)
     integ = warm_up!(integ, sys, ctx, pad; spec)
     controls = Controls(; ctx.esp_on, ctx.abs_on)
     GLMakie.activate!(; title = "VehicleSystemsComponents — planar BEV", vsync = false)
     fig = Figure(size = (1500, 900), backgroundcolor = RGBf(0.93, 0.93, 0.9))
     ax = Axis(fig[1, 1]; aspect = DataAspect(), backgroundcolor = RGBf(0.82, 0.83, 0.8), xlabel = "x [m]", ylabel = "y [m]")
-    road!(ax, ctx.road)
+    road!(ax, VehicleSystemsComponents.drive_road(spec), ctx.mu)
     course!(ax)
     s = ctx.snapshot(integ)
     body0, wheels0 = car_shapes(ctx, s)

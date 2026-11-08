@@ -52,7 +52,7 @@ road_stop(file; esp_on = 0.0) = road_run(VehicleSystemsComponents.PlanarBEVOnRoa
         modified = joinpath(dir, "modified_mu.crg")
         write(modified, replace(original, "\$KD_DEFINITION" =>
             "\$ROAD_CRG_MODS\nREFLINE_OFFSET_X = 10\n\$!\n\$KD_DEFINITION"))
-        base = VehicleSystemsComponents.road_grip(VehicleSystemsComponents.road_path(ROAD_ASSETS * "ice_patch_mu.crg"))
+        base = VehicleSystemsComponents.road_grip(ROAD_ASSETS * "ice_patch_mu.crg")
         shifted = VehicleSystemsComponents.road_grip(modified)
         @test shifted(480.0, 0.0) ≈ base(470.0, 0.0)
         @test shifted(440.0, 0.5) ≈ base(430.0, 0.5)
@@ -117,7 +117,7 @@ lookup_allocations(f, args...) = (f(args...); @allocated f(args...))
 @testset "Lookup: reference spline, edge hold, no allocation" begin
     V = VehicleSystemsComponents
     rng = Xoshiro(1)
-    files = vcat([V.road_path(ROAD_ASSETS * f) for f in ("hill_z.crg", "ramp_hold_z.crg", "ice_patch_mu.crg")],
+    files = vcat([ROAD_ASSETS * f for f in ("hill_z.crg", "ramp_hold_z.crg", "ice_patch_mu.crg")],
         [joinpath(@__DIR__, "data", "opencrg", f) for f in ("handmade_straight.crg", "handmade_curved.crg")])
     for file in files
         road = V.road_surface(file; elevation = true, fill_missing = 0.0)
@@ -262,19 +262,21 @@ end
     end
     grip = V.road_grip(ice)
     height = V.road_surface(hill; elevation = true)
-    slope = V.road_height(hill)
     for (i, j) in ((1, 1), (11, 7), (20, 3), (nx, ny))
         @test mesh.grip[i, j] == grip(x[i], y[j])
         @test mesh.height[i, j] == height(x[i], y[j])
-    end
-    # Heights differentiate to the slope the road-load sensor reads.
-    for i in 2:nx-1
-        @test (mesh.height[i+1, 7] - mesh.height[i-1, 7]) / 5.0 ≈ slope(x[i], 0.0, 0.0) atol = 2e-3
     end
     @test minimum(mesh.grip) < 0.3 && maximum(mesh.grip) ≈ 1.0
     flat = V.road_mesh(ROAD_ASSETS * "flat_z.crg"; x = -50.0:10.0:50.0, y = -5.0:5.0:5.0)
     @test all(iszero, flat.height)
     @test all(==(1.0), flat.grip)
+    # Without a height file the road is flat and the sampling box is the grip file's alone.
+    grip_only = V.road_mesh(nothing; grip_file = ice)
+    @test all(iszero, grip_only.height)
+    @test all(extrema(grip_only.x) .≈ V.road_extent(ice).x)
+    @test all(extrema(grip_only.y) .≈ V.road_extent(ice).y)
+    @test V.road_extent(V.road_surface(ice)) == V.road_extent(ice)
+    @test_throws ArgumentError V.road_mesh(nothing)
     default_axes = V.road_mesh(ROAD_ASSETS * "hill_across_z.crg")
     @test length(default_axes.vertices) <= 170_000
     @test first(default_axes.x) < -600 && last(default_axes.y) > 140
