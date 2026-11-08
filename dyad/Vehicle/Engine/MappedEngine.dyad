@@ -17,7 +17,7 @@ component MappedEngine
   "Drag regularization speed [rad/s]"
   parameter w_drag::AngularVelocity(min = eps(Float64)) = 2.0
   "Internally computed fuel-cut fraction, 0 enabled to 1 cut"
-  variable cut_fraction::Real
+  cut_fraction = RealOutput() {^cut_fraction}
   "Vacuum take-off: the hose to the brake booster, at manifold pressure"
   vacuum = VehicleSystemsComponents.Vehicle.GasPort() {^vacuum}
   "Engine output shaft"
@@ -100,11 +100,7 @@ relations
     connect(closed_throttle.y, torque_blend.motored) {^motored_wire}
     cut_fraction = cut_logic.cut
   end
-  torque_blend.cut = cut_fraction
-  fuel_map.cut = cut_fraction
-  hc_map.cut = cut_fraction
-  co_map.cut = cut_fraction
-  nox_map.cut = cut_fraction
+  connect(cut_fraction, torque_blend.cut, fuel_map.cut, hc_map.cut, co_map.cut, nox_map.cut) {^cut_wire}
   connect(torque_blend.y, torque_source.tau, tau_e) {^torque_wire}
   connect(fuel_map.y, mdot_fuel, co2_gain.u) {^fuel_wire}
   connect(co2_gain.y, mdot_co2) {^co2_wire}
@@ -118,6 +114,7 @@ relations
 metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/MappedEngine.svg"}},
   "_links": {
+    "cut_fraction": {"Dyad":{"placement":{"diagram":{"x1":315,"x2":365,"y1":475,"y2":525},"icon":{"x1":470,"x2":530,"y1":-30,"y2":30}}}},
     "cut_wire": {"Dyad":{"edges":[{"S":1,"M":[],"E":-1},{"S":-1,"M":[{"x":800,"y":500},{"x":800,"y":210}],"E":2},{"S":-1,"M":[],"E":-2},{"S":-2,"M":[],"E":3},{"S":-2,"M":[],"E":-3},{"S":-3,"M":[],"E":4},{"S":-3,"M":[],"E":-4},{"S":-4,"M":[],"E":5},{"S":-4,"M":[{"x":450,"y":1125}],"E":6}],"junctions":[{"x":450,"y":500},{"x":450,"y":735},{"x":450,"y":865},{"x":450,"y":995}]}},
     "engine_speed": {"Dyad":{"placement":{"diagram":{"x1":275.0,"x2":325.0,"y1":-25.0,"y2":25.0},"icon":{"x1":270.0,"x2":330.0,"y1":-30.0,"y2":30.0}}}},
     "available_torque": {"Dyad":{"placement":{"diagram":{"x1":675.0,"x2":725.0,"y1":-25.0,"y2":25.0},"icon":{"x1":670.0,"x2":730.0,"y1":-30.0,"y2":30.0}}}},
