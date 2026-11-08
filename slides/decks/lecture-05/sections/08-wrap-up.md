@@ -33,27 +33,29 @@ routeAlias: lecture-summary
 - **07** The ranking P0 < P1 ≪ P2 ≈ P3 ≈ P4, each saving against a stated baseline.
 
 <!--
-The whole lecture, one line per section.
+Here is the whole lecture, one line per section.
 
-01: Lecture 2's engine is 232 grams per kilowatt-hour at its best and 30.2 percent efficient over
-the WLTC. A hybrid saves fuel by moving the operating point, stopping the engine, and bringing the
-braking back.
+Section 01: Lecture 2's engine burns 232 grams per kilowatt-hour at its best and is 30.2 percent
+efficient over the WLTC. A hybrid saves fuel by moving the operating point, by stopping the engine,
+and by bringing the braking back.
 
-02: in a series hybrid the motor alone drives; in a parallel hybrid both do; a series-parallel
-hybrid switches between the two with a clutch. Your homework is a series hybrid.
+Section 02: in a series hybrid the motor alone drives; in a parallel hybrid both drive; and a
+series-parallel hybrid switches between the two with a clutch. Your homework is a series hybrid.
 
-03: the degree of hybridization is the machine's share of the power; today's car is a full hybrid.
+Section 03: the degree of hybridization is the machine's share of the power, and today's car is a
+full hybrid.
 
-04: P0 and P1 turn with the engine; P2, P3 and P4 sit behind a clutch. The clutch matters more than
-the machine's power.
+Section 04: P0 and P1 turn with the engine, while P2, P3 and P4 sit behind a clutch. The clutch
+matters more than the machine's power.
 
-05: the CVT moves the engine toward its best-BSFC line, 4.9 percent less fuel on its own, and the
-machine shifts the load.
+Section 05: the CVT moves the engine toward its best-BSFC line, for 4.9 percent less fuel on its
+own, and the machine shifts the load.
 
-06: five rules, three latches, which are switches with two thresholds and a memory, and a result
-that is charge-sustaining: the battery ends within 2 percent of where it started.
+Section 06: five rules and three latches, which are switches with two thresholds and a memory, and
+a result that is charge-sustaining: the battery ends within 2 percent of where it started.
 
-07: the ranking P0 below P1, far below P2, P3 and P4, and every saving stated against its baseline.
+Section 07: the ranking, P0 below P1, far below P2, P3 and P4, and every saving stated against its
+baseline.
 -->
 
 ---
@@ -74,13 +76,15 @@ routeAlias: what-you-measured
 </div>
 
 <!--
-What you measured, one row per step, with the reference model's checkpoint numbers. Step 01, the P2
-powertrain, following the WLTC engine only and electric only. Step 02, the operating line: 5.44
-liters against H0's 5.72, with only 17 percent of the fuel near the line. Step 03, the modes
-switching without chatter: 44 engine starts over the WLTC, none shorter than 1.9 seconds, and the
-state of charge between 0.513 and 0.613. Step 04, the charge-sustaining WLTC: the state of charge
-back at 0.612 from 0.600, and the hybrid at 4.09 corrected liters and 132.1 megajoules per 100
-kilometers, 28.5 percent less than H0.
+Here is what you measured, one row per step, with the reference model's checkpoint numbers.
+
+Step 01, the P2 powertrain: it follows the WLTC engine only, within 1.17 kilometers per hour, and
+electric only on the Low phase, within 1.50. Step 02, the operating line: 5.44 liters against H0's
+5.72, with only 17 percent of the fuel within 150 rpm of the line. Step 03, the energy manager: the
+modes switch without chatter, with 44 engine starts over the WLTC, none shorter than 1.9 seconds,
+and the state of charge between 0.513 and 0.613. Step 04, the charge-sustaining WLTC: the state of
+charge comes back to 0.612 from 0.600, and the hybrid uses 4.09 corrected liters and 132.1
+megajoules per 100 kilometers, 28.5 percent less than H0.
 -->
 
 ---
@@ -102,27 +106,27 @@ routeAlias: known-limits
 the same shape with another source.</div>
 
 <!--
-What the model leaves out: its known limits.
+Finally, what the model leaves out: its known limits.
 
 There is no stepped gearbox and no shift logic: the CVT's ratio is free. The Sonata's P2 sits in a
-six-speed automatic, and the studies of section 07 use dual-clutch and manual gearboxes; the stepped
-gearbox is in the extra pack.
+six-speed automatic, and the studies of section 07 use dual-clutch and manual gearboxes. The
+stepped gearbox is in the extra pack.
 
-Engine starts are in the model, but only warm ones. K0 closes and cranks the engine while the
-machine makes up the torque the clutch takes from the shaft; fuel fades in between 400 and 700
-revolutions per minute; and the clutch's slip heat while it cranks is counted in the energy. What
+Engine starts are in the model, but only warm ones. K0 closes and cranks the engine, while the
+machine makes up the torque the clutch takes from the shaft. The fuel fades in between 400 and 700
+revolutions per minute, and the clutch's slip heat while it cranks is counted in the energy. What
 is missing: the fuel always comes from the warm engine's map, measured at steady running, so there
-is no extra fuel for a cold start and no warm-up. And our energy manager puts no price on a
-start; only its hysteresis keeps them apart. A real energy manager penalizes starts.
+is no extra fuel for a cold start and no warm-up. And our energy manager puts no price on a start;
+only its hysteresis keeps the starts apart. A real energy manager penalizes starts.
 
-There are no emissions beyond fuel. In particular the catalytic converter, which cleans the
+There are no emissions beyond fuel. In particular, the catalytic converter, which cleans the
 exhaust, cools down while the car drives electrically, and a cold converter at restart costs
-emissions; we do not model it.
+emissions. We do not model that.
 
-And our P4 drives the rear wheels through its own reduction gear; it is not torque vectoring, which
-gives the left and right wheels different torques to help the car turn. That comes
-in a later lecture on the same platform.
+And our P4 drives both rear wheels through its own reduction gear, the same on both sides. It is
+not torque vectoring, which gives the left and right wheels different torques to help the car turn.
+That comes in a later lecture on the same platform.
 
 The green box: your homework is the series hybrid with prepared parts, and the extra pack's
-fuel-cell car is the same shape with another source.
+fuel-cell car has the same shape, with another source.
 -->
