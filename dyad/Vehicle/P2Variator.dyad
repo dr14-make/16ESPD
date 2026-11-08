@@ -1,9 +1,9 @@
 """
-Ideal continuously variable transmission with a pedal-scheduled speed controller.
+Ideal continuously variable transmission with pedal- or speed-commanded scheduling.
 
-The ratio is total engine-side to wheel-side speed reduction. The controller requests the ratio
-that places the input shaft at a pedal-dependent target speed, then reaches it through a first-order
-lag. The velocity constraint avoids dependence on accumulated absolute shaft angle.
+The ratio is total engine-side to wheel-side speed reduction. The selected schedule uses either
+N_ref directly or a pedal-dependent target speed. The ratio reaches its bounded command through
+a first-order lag. The velocity constraint avoids dependence on accumulated absolute shaft angle.
 """
 component P2Variator
   "Input shaft"
@@ -53,11 +53,10 @@ relations
   N_b = sqrt((w_b * 30 / pi)^2 + output_rpm_floor^2)
   if speed_commanded
     N_target = N_ref
-    i_command = min(max(N_ref / N_b, i_overdrive), i_launch)
   else
     N_target = target_rpm_min + min(max(pedal, 0.0), 1.0) * (target_rpm_max - target_rpm_min)
-    i_command = min(max(N_target / N_b, i_overdrive), i_launch)
   end
+  i_command = min(max(N_target / N_b, i_overdrive), i_launch)
   der(ratio) = (i_command - ratio) / ratio_time
   w_a = ratio * w_b
   0 = ratio * spline_a.tau + spline_b.tau

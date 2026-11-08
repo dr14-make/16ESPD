@@ -2,8 +2,11 @@
 component P2TorqueCommand
   "Requested machine torque [N.m] (derived; EnergyManager)"
   u = RealInput() {^u}
-  "Engine target minus measured K0 torque [N.m] (derived; clutch-start balance)"
-  compensation = RealInput() {^compensation}
+  "Engine target torque [N.m] (derived; EnergyManager)"
+  engine_target = RealInput() {^engine_target}
+  "Torque entering K0 [N.m] (derived; DisconnectClutch)"
+  k0_torque = RealInput() {^k0_torque}
+  variable compensation::Torque
   "Machine shaft speed [rad/s] (derived; DCMachine)"
   w = RealInput() {^w}
   "Compensated and bounded demand [N.m] (derived; original P2 start law)"
@@ -16,7 +19,8 @@ component P2TorqueCommand
   parameter P_rated::Power = 30.0e3
   variable limit::Torque
 relations
+  compensation = engine_target - k0_torque
   limit = min(T_max, P_rated / max(abs(w), 1.0))
   y = ifelse(on, min(max(u + compensation, -limit), limit), u)
-metadata {"_links":{"u":{"Dyad":{"placement":{"icon":{"x1":-50,"x2":50,"y1":200,"y2":300},"diagram":{"x1":-25,"x2":25,"y1":225,"y2":275}}}},"compensation":{"Dyad":{"placement":{"icon":{"x1":-50,"x2":50,"y1":450,"y2":550},"diagram":{"x1":-25,"x2":25,"y1":475,"y2":525}}}},"w":{"Dyad":{"placement":{"icon":{"x1":-50,"x2":50,"y1":700,"y2":800},"diagram":{"x1":-25,"x2":25,"y1":725,"y2":775}}}},"y":{"Dyad":{"placement":{"icon":{"x1":950,"x2":1050,"y1":450,"y2":550},"diagram":{"x1":975,"x2":1025,"y1":475,"y2":525}}}}}}
+metadata {"_links":{"u":{"Dyad":{"placement":{"diagram":{"x1":-25.0,"x2":25.0,"y1":125.0,"y2":175.0},"icon":{"x1":-40.0,"x2":40.0,"y1":110.0,"y2":190.0}}}},"w":{"Dyad":{"placement":{"diagram":{"x1":-25.0,"x2":25.0,"y1":815.0,"y2":865.0},"icon":{"x1":-40.0,"x2":40.0,"y1":800.0,"y2":880.0}}}},"y":{"Dyad":{"placement":{"icon":{"x1":950,"x2":1050,"y1":450,"y2":550},"diagram":{"x1":975,"x2":1025,"y1":475,"y2":525}}}},"engine_target":{"Dyad":{"placement":{"diagram":{"x1":-25.0,"x2":25.0,"y1":355.0,"y2":405.0},"icon":{"x1":-40.0,"x2":40.0,"y1":340.0,"y2":420.0}}}},"k0_torque":{"Dyad":{"placement":{"diagram":{"x1":-25.0,"x2":25.0,"y1":585.0,"y2":635.0},"icon":{"x1":-40.0,"x2":40.0,"y1":570.0,"y2":650.0}}}}}}
 end

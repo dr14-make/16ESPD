@@ -37,6 +37,7 @@ capacity to 229.885 N.m, still above the 1.5 sizing factor.
  * `support` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `engage` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `measured_position` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `measured_torque` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
 ## Variables
 
@@ -107,6 +108,7 @@ capacity to 229.885 N.m, still above the 1.5 sizing factor.
   ### Final Path Parameters
   append!(__vars, @variables (engage(t)::Real), [input = true])
   append!(__vars, @variables (measured_position(t)::Real), [output = true])
+  append!(__vars, @variables (measured_torque(t)::Real), [output = true])
 
   ### Variables (declarations)
   append!(__vars, @variables (position(t)::Real), [description = "Actuator position before capacity saturation (derived: actuator output)"])
@@ -165,6 +167,7 @@ capacity to 229.885 N.m, still above the 1.5 sizing factor.
   push!(__eqs, tau_capacity ~ tau_max * capacity_fraction)
   push!(__eqs, w_slip ~ ModelingToolkit.D_nounits(spline_a.phi) - ModelingToolkit.D_nounits(spline_b.phi))
   push!(__eqs, tau ~ tau_capacity * tanh(w_slip / w_regularization))
+  push!(__eqs, measured_torque ~ tau)
   push!(__eqs, spline_a.tau ~ tau)
   push!(__eqs, spline_b.tau ~ -tau)
   push!(__eqs, support.tau ~ -spline_a.tau - spline_b.tau)

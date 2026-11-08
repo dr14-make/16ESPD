@@ -17,6 +17,8 @@ component HybridDrive
   SoC = RealOutput() {^SoC}
   "Net machine shaft torque [N.m] (derived; DCMachine)"
   machine_torque = RealOutput() {^machine_torque}
+  "Machine shaft speed [rad/s] (derived; DCMachine)"
+  machine_speed = RealOutput() {^machine_speed}
   "Pack open-circuit voltage [V] (derived; Battery)"
   battery_voltage = RealOutput() {^battery_voltage}
   "Pack current, positive discharge [A] (derived; Battery)"
@@ -98,14 +100,16 @@ relations
   connect(battery.SoC, SoC)
   converter.i_ref = tau_ref / (converter.field * machine.k)
   machine_torque = machine.tau
+  machine_speed = machine.w
   battery_voltage = battery.E
   battery_current = battery.i
 metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/ElectricDrive.svg"}},
   "_links": {
-    "machine_torque": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 200, "y2": 280}, "diagram": {"x1": 975, "x2": 1025, "y1": 215, "y2": 265}}}},
-    "battery_voltage": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 340, "y2": 420}, "diagram": {"x1": 975, "x2": 1025, "y1": 355, "y2": 405}}}},
-    "battery_current": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 480, "y2": 560}, "diagram": {"x1": 975, "x2": 1025, "y1": 495, "y2": 545}}}},
+    "machine_speed": {"Dyad":{"placement":{"diagram":{"x1":975.0,"x2":1025.0,"y1":275.0,"y2":325.0},"icon":{"x1":960.0,"x2":1040.0,"y1":260.0,"y2":340.0}}}},
+    "machine_torque": {"Dyad":{"placement":{"diagram":{"x1":975.0,"x2":1025.0,"y1":125.0,"y2":175.0},"icon":{"x1":960.0,"x2":1040.0,"y1":110.0,"y2":190.0}}}},
+    "battery_voltage": {"Dyad":{"placement":{"diagram":{"x1":975.0,"x2":1025.0,"y1":625.0,"y2":675.0},"icon":{"x1":960.0,"x2":1040.0,"y1":610.0,"y2":690.0}}}},
+    "battery_current": {"Dyad":{"placement":{"diagram":{"x1":975.0,"x2":1025.0,"y1":775.0,"y2":825.0},"icon":{"x1":960.0,"x2":1040.0,"y1":760.0,"y2":840.0}}}},
     "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
     "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 400, "x2": 1050, "y2": 500}}}},
     "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 788, "y1": 950, "x2": 888, "y2": 1050}}}},

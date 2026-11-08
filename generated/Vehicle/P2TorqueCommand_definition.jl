@@ -20,7 +20,8 @@ Machine demand with optional start compensation (derived; P2 clutch-start torque
 ## Connectors
 
  * `u` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `compensation` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `engine_target` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `k0_torque` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `w` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `y` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
@@ -28,6 +29,7 @@ Machine demand with optional start compensation (derived; P2 clutch-start torque
 
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
+| `compensation`         |                          | N.m  |
 | `limit`         |                          | N.m  |
 """
 @component function P2TorqueCommand(; name = nothing, var"on"=false, var"T_max"=Float64(205.0), var"P_rated"=Float64(30000.0), __overrides = Dict{String, Any}())
@@ -80,14 +82,19 @@ Machine demand with optional start compensation (derived; P2 clutch-start torque
 
   ### Final Path Parameters
   append!(__vars, @variables (u(t)::Real), [input = true])
-  append!(__vars, @variables (compensation(t)::Real), [input = true])
+  append!(__vars, @variables (engine_target(t)::Real), [input = true])
+  append!(__vars, @variables (k0_torque(t)::Real), [input = true])
   append!(__vars, @variables (w(t)::Real), [input = true])
   append!(__vars, @variables (y(t)::Real), [output = true])
 
   ### Variables (declarations)
+  append!(__vars, @variables (compensation(t)::Real))
   append!(__vars, @variables (limit(t)::Real))
 
   ### Variables (assignments)
+  __ovr_compensation = pop!(__overrides, "compensation", nothing); isnothing(__ovr_compensation) || push!(__eqs, compensation ~ __ovr_compensation)
+  __ovr_compensation__initial = pop!(__overrides, "compensation.initial", nothing); isnothing(__ovr_compensation__initial) || (__initial_conditions[compensation] = __ovr_compensation__initial)
+  __ovr_compensation__guess = pop!(__overrides, "compensation.guess", nothing)
   __ovr_limit = pop!(__overrides, "limit", nothing); isnothing(__ovr_limit) || push!(__eqs, limit ~ __ovr_limit)
   __ovr_limit__initial = pop!(__overrides, "limit.initial", nothing); isnothing(__ovr_limit__initial) || (__initial_conditions[limit] = __ovr_limit__initial)
   __ovr_limit__guess = pop!(__overrides, "limit.guess", nothing)
@@ -101,6 +108,7 @@ Machine demand with optional start compensation (derived; P2 clutch-start torque
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
+  isnothing(__ovr_compensation__guess) || (__guesses[compensation] = __ovr_compensation__guess)
   isnothing(__ovr_limit__guess) || (__guesses[limit] = __ovr_limit__guess)
 
   ### Initialization Equations
@@ -109,6 +117,7 @@ Machine demand with optional start compensation (derived; P2 clutch-start torque
   __assertions = []
 
   ### Equations
+  push!(__eqs, compensation ~ engine_target - k0_torque)
   push!(__eqs, limit ~ min(T_max, P_rated / max(abs(w), 1.0)))
   push!(__eqs, y ~ ifelse(on, min(max(u + compensation, -limit), limit), u))
 

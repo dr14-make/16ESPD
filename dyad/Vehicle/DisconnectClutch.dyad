@@ -23,6 +23,8 @@ component DisconnectClutch
   engage = RealInput() {^engage}
   "Actuator position before saturation (derived; existing actuator output)"
   measured_position = RealOutput() {^measured_position}
+  "Torque entering the engine-side spline [N.m] (derived; existing K0 torque law)"
+  measured_torque = RealOutput() {^measured_torque}
   "Electrohydraulic actuator time constant [s] (assumed: finite pressure-fill response of K0)"
   parameter actuator_time::Time(min = eps(Float64)) = 0.15
   "Nominal full capacity [N.m] (derived: 1.5 times ALPHA peak, rounded up to 230)"
@@ -54,12 +56,14 @@ relations
   tau_capacity = tau_max * capacity_fraction
   w_slip = der(spline_a.phi) - der(spline_b.phi)
   tau = tau_capacity * tanh(w_slip / w_regularization)
+  measured_torque = tau
   spline_a.tau = tau
   spline_b.tau = -tau
   support.tau = -spline_a.tau - spline_b.tau
 metadata {
   "Dyad": {"icons": {"default": "dyad://RotationalComponents/Clutch.svg"}},
   "_links": {
+    "measured_torque": {"Dyad":{"placement":{"diagram":{"x1":975.0,"x2":1025.0,"y1":725.0,"y2":775.0},"icon":{"x1":960.0,"x2":1040.0,"y1":710.0,"y2":790.0}}}},
     "measured_position": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 200, "y2": 280}, "diagram": {"x1": 975, "x2": 1025, "y1": 215, "y2": 265}}}},
     "spline_a": {"Dyad": {"placement": {"icon": {"iconName": "spline_a", "x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"iconName": "spline_a", "x1": -25, "y1": 475, "x2": 25, "y2": 525}}}},
     "spline_b": {"Dyad": {"placement": {"icon": {"iconName": "spline_b", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"iconName": "spline_b", "x1": 975, "y1": 475, "x2": 1025, "y2": 525}}}},

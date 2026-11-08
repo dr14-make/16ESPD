@@ -7,11 +7,11 @@
 @doc Markdown.doc"""
    P2Variator(; name, speed_commanded, i_launch, i_overdrive, target_rpm_min, target_rpm_max, ratio_time, output_rpm_floor, ratio_initial, __overrides)
 
-Ideal continuously variable transmission with a pedal-scheduled speed controller.
+Ideal continuously variable transmission with pedal- or speed-commanded scheduling.
 
-The ratio is total engine-side to wheel-side speed reduction. The controller requests the ratio
-that places the input shaft at a pedal-dependent target speed, then reaches it through a first-order
-lag. The velocity constraint avoids dependence on accumulated absolute shaft angle.
+The ratio is total engine-side to wheel-side speed reduction. The selected schedule uses either
+N_ref directly or a pedal-dependent target speed. The ratio reaches its bounded command through
+a first-order lag. The velocity constraint avoids dependence on accumulated absolute shaft angle.
 
 ## Parameters:
 
@@ -181,6 +181,7 @@ lag. The velocity constraint avoids dependence on accumulated absolute shaft ang
   push!(__eqs, w_b ~ ModelingToolkit.D_nounits(spline_b.phi) - ModelingToolkit.D_nounits(support.phi))
   push!(__eqs, N_a ~ w_a * 30 / pi)
   push!(__eqs, N_b ~ sqrt((w_b * 30 / pi) ^ 2 + output_rpm_floor ^ 2))
+  push!(__eqs, i_command ~ min(max(N_target / N_b, i_overdrive), i_launch))
   push!(__eqs, ModelingToolkit.D_nounits(ratio) ~ (i_command - ratio) / ratio_time)
   push!(__eqs, w_a ~ ratio * w_b)
   push!(__eqs, 0 ~ ratio * spline_a.tau + spline_b.tau)
@@ -189,10 +190,8 @@ lag. The velocity constraint avoids dependence on accumulated absolute shaft ang
   ### Control Structures
   if speed_commanded
     push!(__eqs, N_target ~ N_ref)
-    push!(__eqs, i_command ~ min(max(N_ref / N_b, i_overdrive), i_launch))
   else
     push!(__eqs, N_target ~ target_rpm_min + min(max(pedal, 0.0), 1.0) * (target_rpm_max - target_rpm_min))
-    push!(__eqs, i_command ~ min(max(N_target / N_b, i_overdrive), i_launch))
   end
 
   # Return completely constructed System

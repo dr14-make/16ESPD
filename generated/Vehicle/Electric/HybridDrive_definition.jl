@@ -56,6 +56,7 @@ is unity for the P2 transmission input; no final-drive reduction is implied (ass
  * `support` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `SoC` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `machine_torque` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `machine_speed` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `battery_voltage` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `battery_current` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
@@ -236,6 +237,7 @@ is unity for the P2 transmission input; no final-drive reduction is implied (ass
   append!(__vars, @variables (tau_ref(t)::Real), [input = true])
   append!(__vars, @variables (SoC(t)::Real), [output = true])
   append!(__vars, @variables (machine_torque(t)::Real), [output = true])
+  append!(__vars, @variables (machine_speed(t)::Real), [output = true])
   append!(__vars, @variables (battery_voltage(t)::Real), [output = true])
   append!(__vars, @variables (battery_current(t)::Real), [output = true])
 
@@ -281,6 +283,7 @@ is unity for the P2 transmission input; no final-drive reduction is implied (ass
   ### Equations
   push!(__eqs, converter.i_ref ~ tau_ref / (converter.field * machine.k))
   push!(__eqs, machine_torque ~ machine.tau)
+  push!(__eqs, machine_speed ~ machine.w)
   push!(__eqs, battery_voltage ~ battery.E)
   push!(__eqs, battery_current ~ battery.i)
   push!(__eqs, connect(battery.p, converter.p_in, aux.p))
