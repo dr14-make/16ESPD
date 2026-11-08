@@ -96,6 +96,9 @@ From the worktree root, Dyad 3.5.0 Julia:
     julia +dyad-3.5.0 --project=. sim/probe.jl          # pad check, ~30 s, hold the controller
     julia +dyad-3.5.0 --project=. sim/drive.jl          # ~3 min compile and warm-up, then the window
 
+or `mise run drive [road] [height]`, which installs `sim/`'s packages first when needed and takes
+a shipped road's short name or a path: `mise run drive ice_patch hill`, `mise run drive "" ramp`.
+
 For a lecture, keep one warm session instead: start `julia +dyad-3.5.0 --project=.`, run
 `include("sim/drive.jl"); main()` before class (about 3 minutes), and after closing the window
 `main()` opens it again in seconds. Including the file does not start the sim; running it as a
