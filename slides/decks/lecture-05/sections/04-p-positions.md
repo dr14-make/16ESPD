@@ -251,7 +251,7 @@ moderate load and low speed.</div>
 | Packaging | **easy**: little impact on the car |
 | System efficiency | medium: the belt |
 | Usual machine | 2.5–6 kW, 89–95 % |
-| Engine start | restarts it; 48 V systems keep the 12 V starter |
+| Engine start | restarts it; most 48 V systems keep the 12 V starter |
 
 </div>
 </div>
