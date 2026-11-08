@@ -16,7 +16,7 @@ component MappedEngine
   fuel_enable = RealInput() if fuel_controlled
   "Drag regularization speed [rad/s]"
   parameter w_drag::AngularVelocity(min = eps(Float64)) = 2.0
-  "Internally computed fuel-cut fraction, 0 enabled to 1 cut"
+  "Computed fuel-cut fraction, 0 enabled to 1 cut (derived; fuel permission and FuelCutLogic)"
   cut_fraction = RealOutput() {^cut_fraction}
   "Vacuum take-off: the hose to the brake booster, at manifold pressure"
   vacuum = VehicleSystemsComponents.Vehicle.GasPort() {^vacuum}

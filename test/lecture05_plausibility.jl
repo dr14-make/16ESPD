@@ -359,7 +359,7 @@ end
         touched = [joinpath(@__DIR__, "..", "dyad", file) for file in (
             "Vehicle/P2Powertrain.dyad", "Vehicle/Electric/HybridDrive.dyad",
             "Vehicle/Engine/MappedEngine.dyad", "Vehicle/DisconnectClutch.dyad",
-            "Vehicle/P2TorqueCommand.dyad",
+            "Vehicle/P2TorqueCommand.dyad", "Lecture5/FuelEnableBench.dyad",
             "Lecture5/P2WLTC.dyad", "Lecture5/P2OperatingLineWLTC.dyad",
             "Lecture5/P2HybridWLTC.dyad")]
         violations = Tuple{String,Int,String}[]
