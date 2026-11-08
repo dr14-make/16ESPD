@@ -364,14 +364,25 @@ end
             "Lecture5/P2HybridWLTC.dyad")]
         violations = Tuple{String,Int,String}[]
         orphans = Tuple{String,Int,String}[]
+        routing = Tuple{String,Int,String}[]
         for file in unique(vcat(files, touched))
-            text = read(file, String)
+            source = read(file, String)
+            starts = collect(eachmatch(r"(?m)^(?:test |partial )?component \w+", code_only(source)))
+            for (index, component) in enumerate(starts)
+            stop = index < length(starts) ? prevind(source, starts[index + 1].offset) : lastindex(source)
+            text = source[component.offset:stop]
             meta = match(r"(?s)metadata (\{.*?\})\nend", text)
             isnothing(meta) && continue
             links = JSON.parse(meta.captures[1])["_links"]
             ports = [m.captures[1] for m in eachmatch(r"(?m)^\s*(\w+) = (?:RealInput|RealOutput|Spline)\(", code_only(text))]
             tags = Set(m.captures[1] for m in eachmatch(r"\{\^(\w+)\}", text))
             line = count(==('\n'), text[1:meta.offset]) + 1
+            for connection in eachmatch(r"connect\(([^)]*)\)\s*\{\^(\w+_wire)\}", code_only(text))
+                length(split(connection.captures[1], ',')) >= 3 || continue
+                tag = connection.captures[2]
+                edges = get(get(get(links, tag, Dict()), "Dyad", Dict()), "edges", [])
+                isempty(edges) && push!(routing, (file, line, tag))
+            end
             for key in keys(links)
                 key in tags || push!(orphans, (file, line, key))
             end
@@ -385,6 +396,9 @@ end
                 overlap && push!(violations, (file, line, "$kind: $a intersects $b"))
             end
         end
+        end
+        isempty(routing) || @error "Missing multi-endpoint canvas routing" routing
+        @test isempty(routing)
         isempty(violations) || @error "Overlapping canvas ports" violations
         @test isempty(violations)
         isempty(orphans) || @error "Orphaned canvas metadata" orphans
