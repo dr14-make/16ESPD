@@ -114,15 +114,14 @@ Machine demand with optional start compensation (derived; P2 clutch-start torque
   __assertions = []
 
   ### Equations
+  push!(__eqs, limit ~ min(T_max, P_rated / max(abs(w), 1.0)))
 
   ### Control Structures
   if on
     push!(__eqs, compensation ~ engine_target - k0_torque)
-    push!(__eqs, limit ~ min(T_max, P_rated / max(abs(w), 1.0)))
     push!(__eqs, y ~ min(max(u + compensation, -limit), limit))
   else
     push!(__eqs, compensation ~ 0.0)
-    push!(__eqs, limit ~ 0.0)
     push!(__eqs, y ~ u)
   end
 
