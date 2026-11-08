@@ -9,7 +9,7 @@ component P2TorqueCommand
   variable compensation::Torque
   "Machine shaft speed [rad/s] (derived; DCMachine)"
   w = RealInput() {^w}
-  "Compensated and bounded demand [N.m] (derived; P2 clutch-start torque balance)"
+  "With on, demand plus clutch-start compensation bounded by the machine limit; without, the demand unchanged [N.m] (derived; P2 clutch-start torque balance)"
   y = RealOutput() {^y}
   "Enable clutch-start compensation (assumed; fixed configuration)"
   structural parameter on::Boolean = false

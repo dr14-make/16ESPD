@@ -73,8 +73,7 @@ Add structural Boolean `engine_stopped = false`, Real `position_start = 0.0`, an
    end
    ```
 
-   The stopped-engine connection itself remains unconditional.
-5. Place `hold = VehicleSystemsComponents.Vehicle.OptionalShaftHold(held = engine_stopped)` and always wire `engine.spline` → `hold.spline`. This ideal termination fixes angle only for the fixed electric fixture and exerts zero torque otherwise, without a stiff brake. Set `fuel_cut_rpm = -2.0` and `fuel_resume_rpm = -1.0` in the stopped-engine fixture so the normal overrun fuel-cut latch does not react to residual zero-speed motion; running fixtures retain 1300 / 1000 rpm.
+5. Place `hold = VehicleSystemsComponents.Vehicle.OptionalShaftHold(held = engine_stopped)` and always wire `engine.spline` → `hold.spline`. This ideal termination fixes angle only for the fixed electric fixture and exerts zero torque otherwise, without a stiff brake. In the `engine` modifier, set `fuel_cut_rpm = ifelse(engine_stopped, -2.0, 1300.0)` and `fuel_resume_rpm = ifelse(engine_stopped, -1.0, 1000.0)`. With the normal 1300 / 1000 rpm thresholds, the held shaft at 0 rpm satisfies the latch's reset condition (speed below 1000 rpm), so it never cuts and fuel would flow into a stopped engine; with −2 / −1 rpm the set condition holds and the reset does not, so fuel stays cut while the shaft is held.
 
 6. **Code view required:** create your own `P2WLTC` test fixture using the complete listing below for the planar car, road load, cycle and driver. Keep structural Boolean `electric = false`, mass `m = 1500.0` kg and `dv_wheel = 0.01` m/s. Pass `engine_stopped = electric`, `position_start = 0.0` to `powertrain`. Keep PI gain `k = 50.0` in electric mode; use `110.0` and `Ti = 1.0` s in engine-only mode (electric keeps `Ti = 2.0` s). Set the nested `powertrain.drive.P_aux` to `300.0` W in electric mode and `0.0` in engine-only mode so the conventional baseline draws no battery energy. In engine-only mode also set the nested drive's `T_f`, `K_i`, `k_w`, `C` and `J` to zero; retain all hybrid-drive defaults in electric mode.
 7. Wire `powertrain.spline` to `differential.flange_b`, and the differential's `flange_left` and `flange_right` to `car.spin_fl` and `car.spin_fr`. Ground `powertrain.support` with `mount`, a `RotationalComponents.Components.Fixed`. Retain the reference's straight steering, flat road, speed feedback and wheel/brake initial conditions.
@@ -787,7 +786,7 @@ parameter firing_width::Real(min = eps(Float64)) = 300.0
 variable firing_fraction::Real if start_stop
 ```
 
-Add `fuel_controlled = start_stop` to the existing engine modifiers and set `command(on = start_stop)`. Keep the unconditional command wires. The command block computes target minus measured K0 torque and uses it only when enabled. Add:
+Add `fuel_controlled = start_stop` to the existing engine modifiers and change the existing `command` declaration's `on = false` to `on = start_stop`. Keep the unconditional command wires. The command block computes target minus measured K0 torque and uses it only when enabled. Add:
 
 ```dyad
 if start_stop
