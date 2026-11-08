@@ -142,7 +142,8 @@ A mild hybrid at 48 volts adds a machine of 8 to 20 kilowatts; that is the range
 It boosts and it recovers braking energy. Whether it can drive the car alone depends on whether it
 can be decoupled from the engine, and that is section 04. With a comparable machine of 15 to 16
 kilowatts, the ICCT review finds savings from about 7 percent for P0 up to almost 16 percent for
-P2, for P3, and for P4 combined with P0, all against a stop/start car.
+P2, for P3, and for P4 combined with P0. The studies behind these numbers do not all use the same
+baseline; section 07 shows which one each study measures against.
 
 A full hybrid has a machine and a battery large enough to drive the car alone at low power and to
 keep the engine off for long stretches. Our reference is the 2011 Hyundai Sonata Hybrid that Oak
@@ -203,7 +204,7 @@ and above 48 volts you need all the high-voltage wiring and its protection.
 
 The second driver is the high-voltage battery. Prices have fallen a long way. BloombergNEF's survey
 puts the average lithium-ion pack at 108 dollars per kilowatt-hour in 2025; you saw that number in
-Lecture 4. That is already below what industry sources forecast for 2030. A full hybrid's pack of
+Lecture 4. A full hybrid's pack of
 about 1.4 kilowatt-hours is small. A plug-in's pack is many times larger, and so are its cost and
 its mass.
 

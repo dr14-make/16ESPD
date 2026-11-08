@@ -319,8 +319,8 @@ powertrain.N_ref = N_target
 
 <img src="/img/lecture-05/step02-operating-points.png" style="max-height: 13rem" alt="The operating-line WLTC run: engine torque against engine speed, the WLTC points as black dots and the best-BSFC line in orange. The points form a cloud around and below the line, densest on a band below it, not on the line itself." />
 
-<div class="caption">Black: the engine's WLTC points · orange: the best-BSFC line. Without a battery
-the points only scatter around the line.</div>
+<div class="caption">Black: the engine's WLTC points · orange: the best-BSFC line. The pedal's power
+request is never checked against the engine, so most points fall on a band below the line.</div>
 
 </div>
 </div>
@@ -344,7 +344,7 @@ and higher load.
 But be honest about why. Nothing checks the request against the engine. Pedal times 85 kilowatts is
 not what the engine actually delivers, so the engine does not sit on the line. The plot under the
 checkpoint shows this. The black dots are the engine's points over the WLTC, and the orange curve is
-the best-BSFC line. The dots form a cloud around the line, not on it. Only 17 percent of the fuel
+the best-BSFC line. The dots are densest on a band below the line, not on it. Only 17 percent of the fuel
 burns within 150 revolutions per minute of the line. The saving comes from running slower in
 general. Holding the engine on the line needs a controller that commands the engine's power
 directly: that is the energy manager of section 06.

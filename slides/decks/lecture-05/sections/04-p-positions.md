@@ -265,8 +265,8 @@ The key physical fact is that the engine and the machine can never be separated,
 links them. So the engine's friction always loads the machine. That happens when the machine gives
 extra torque to help the engine, which we call boost, and also when it brakes the car to recover
 energy, which we call recuperation: a share of every braking goes into turning the engine. And the
-belt limits the torque it can pass. It slips, especially at a cold start. That is why current 48
-volt BiSG mild hybrids still keep the 12 volt starter.
+belt limits the torque it can pass. It slips, especially at a cold start. That is why most 48
+volt BiSG mild hybrids keep the 12 volt starter, at least for cold starts.
 
 The table rates what it can do. Boost, recuperation and driveability are all medium, for those two
 reasons. Driveability means how smoothly and strongly the car responds to the pedal. Electric
@@ -502,7 +502,8 @@ machine: short and wide.</div>
 
 <!--
 P4. In the drawing, it is the box at the bottom: the machine drives the rear axle through its own
-gear, or it sits in the wheel hubs. Usually it sits on the rear differential.
+gear, or it sits in the wheel hubs. Either way it is on the rear axle: at the rear differential, or
+in the hubs. Ours drives the hubs.
 
 The engine drives the front axle through K0 and the CVT, and the machine drives the rear axle.
 There is no shaft between them. They are coupled only through the road, which is why this is called

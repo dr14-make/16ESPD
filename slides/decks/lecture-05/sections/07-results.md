@@ -232,8 +232,8 @@ Here is how to read the comparison.
 
 First, what should agree. The ranking: the coupled positions, P0 and P1, well below the decoupled
 ones. The size of the gap: in the Chalmers study, at 15 kilowatts on the WLTC, P2 is 15.6
-percentage points above P0, and P3 is 16.1 above. Across all three studies, the gap between coupled
-and decoupled positions is about 7 to 15 points. Ours, at 30 kilowatts: P2 is 12.8 points above P0,
+percentage points above P0, and P3 is 16.1 above. Across the three studies, the gap between coupled
+and decoupled positions ranges from about 7 to 16 points. Ours, at 30 kilowatts: P2 is 12.8 points above P0,
 and P3 is 12.9 above. That is not like for like, since the studies' gap is at 15 kilowatts and we
 ran the positions only at 30. And the effect of power: the ICCT finds that going from 15 to 20 or
 30 kilowatts adds 5 to 10 percent on P2, P3 and P4, while P0 and P1 gain little, because their limit
@@ -285,6 +285,11 @@ meter.fuel_raw   meter.fuel_corr   meter.energy_corr
 · MJ/100 km: conventional <b>184.9</b>, hybrid <b>132.1</b>,
 battery-electric <b>47.2</b></div>
 
+<img src="/img/lecture-05/step03-hybrid-wltc.png" style="max-height: 13rem" alt="The hybrid's WLTC run: the speed follows the trace; the SoC starts at 0.600, falls to 0.513, rises to at most 0.613 and ends at 0.612; the engine speed against its target, with long stretches at zero; the raw and the SoC-corrected fuel in L/100 km, apart early in the run and meeting near 4 at the end." />
+
+<div class="caption">Top right: SoC ends near where it started · bottom right: raw and corrected fuel
+meet once the battery is back</div>
+
 </div>
 </div>
 
@@ -314,6 +319,11 @@ kilometers, raw 4.11, and 132.1 megajoules: 28.5 percent less than H0.
 If your state of charge ends outside the band, then either the charge thresholds are too far apart,
 or the charging power is too small for the cycle. In that case, your fuel figure is not one to
 quote.
+
+The plot under the checkpoint is the hybrid's WLTC run. Look at the top right: the state of charge
+wanders down and up during the cycle, and ends near where it started. Now look at the bottom right:
+the raw fuel and the corrected fuel are far apart early in the run, while the battery is drawn down,
+and they meet at the end, once the battery is back.
 -->
 
 ---
