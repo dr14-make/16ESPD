@@ -8,8 +8,8 @@
    Step1EngineWLTC(; name, electric, m, radius, k, Ti, tau_max, dv_wheel, engage_rpm, engage_width_rpm, tau_brake, brake_gain, lock_rpm, lock_width_rpm, __overrides)
 
 Hands-on 05 step 1 starter: the P2WLTC fixture with the library P2Powertrain placed but unwired.
-Wiring the powertrain's seven command and shaft ports as the guide lists completes it to
-Lecture5.P2WLTC; `electric` stays false for the engine-only H0 baseline.
+Wiring the powertrain's shaft, housing and fuel flow and its four command inputs, as the guide
+lists, completes it to Lecture5.P2WLTC; `electric` stays false for the engine-only H0 baseline.
 
 ## Parameters:
 
