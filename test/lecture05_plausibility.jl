@@ -455,41 +455,94 @@ end
             @test normalize(source("HandsOn05")) == normalize(source(original))
         end
     end
-    @testset "guide step 1a fixture stays in sync" begin
+    @testset "guide steps complete each starter to its Lecture 5 bench" begin
         guide = read(joinpath(@__DIR__, "..", "slides", "site", "lecture", "lecture-05", "index.md"), String)
-        blocks = [m.captures[1] for m in eachmatch(r"```dyad\n(.*?)```"s, guide)]
-        fixture = only(filter(x -> occursin("test component P2WLTC\n", x), blocks))
-        source = read(joinpath(@__DIR__, "..", "dyad", "HandsOn05", "P2WLTC.dyad"), String)
-        normalize_fixture(x) = strip(replace(x, r"(?m)^metadata .*\n" => "",
-            "VehicleSystemsComponents.MyCar." => "VehicleSystemsComponents.HandsOn05."))
-        @test normalize_fixture(fixture) == normalize_fixture(source)
-    end
-    @testset "guide step 1a powertrain stays in sync" begin
-        guide = read(joinpath(@__DIR__, "..", "slides", "site", "lecture", "lecture-05", "index.md"), String)
-        blocks = [m.captures[1] for m in eachmatch(r"```dyad\n(.*?)```"s, guide)]
-        powertrain = only(filter(x -> occursin("component P2Powertrain\n", x), blocks))
-        source = read(joinpath(@__DIR__, "..", "dyad", "HandsOn05", "P2Powertrain.dyad"), String)
-        # Step 1a already includes the step-2 speed-command seam: keep it in the comparison.
-        # Only the step-3 start/stop additions are absent from that listing.
-        source = replace(source,
-            r"(?ms)^  \"Enable fuel-controlled clutch starts\"\n.*?^  variable firing_fraction::Real if start_stop\n" => "",
-            "fuel_controlled = start_stop, " => "",
-            "on = start_stop" => "on = false",
-            r"(?ms)^  if start_stop\n.*?^  end\n" =>
-                "")
-        normalize_powertrain(x) = strip(replace(x, r"(?m)^metadata .*\n" => "",
-            "VehicleSystemsComponents.MyCar." => "VehicleSystemsComponents.HandsOn05."))
-        @test normalize_powertrain(powertrain) == normalize_powertrain(source)
-    end
-    @testset "guide step 3 start/stop declarations stay in sync" begin
-        guide = read(joinpath(@__DIR__, "..", "slides", "site", "lecture", "lecture-05", "index.md"), String)
-        blocks = [m.captures[1] for m in eachmatch(r"```dyad\n(.*?)```"s, guide)]
-        listing = only(filter(x -> startswith(x, "structural parameter start_stop::Boolean"), blocks))
-        source = read(joinpath(@__DIR__, "..", "dyad", "HandsOn05", "P2Powertrain.dyad"), String)
-        declarations = match(r"(?ms)^  structural parameter start_stop::Boolean.*?^  variable firing_fraction::Real if start_stop\n", source).match
-        # The guide omits the description strings; link tags stay, so a missing tag fails.
-        declaration_lines(x) = [strip(l) for l in split(x, '\n') if !isempty(strip(l)) && !startswith(strip(l), '"')]
-        @test declaration_lines(listing) == declaration_lines(declarations)
+        dyad(folder, file) = read(joinpath(@__DIR__, "..", "dyad", folder, file * ".dyad"), String)
+        section(id) = match(Regex("(?s)\\{#" * id * "\\}(.*?)(?=\\n## |\\z)"), guide).captures[1]
+        function component(source, name)
+            start = findfirst("test component " * name * "\n", source)
+            source[first(start):first(findnext("\nend\n", source, last(start)))]
+        end
+        function analysis_extends(source, model)
+            m = match(Regex("(?s)\\nanalysis \\w+\\n  (extends [^\\n]*)\\n  model = " * model * "\\(\\)\\nend"), source)
+            m.captures[1]
+        end
+        # Connections compare as nets, so one three-way connect equals two wires from one port.
+        function nets(connections)
+            parent = Dict{String,String}()
+            root(x) = (p = get!(parent, x, x); p == x ? x : (parent[x] = root(p)))
+            for ends in connections, e in ends[2:end]
+                parent[root(e)] = root(ends[1])
+            end
+            groups = Dict{String,Set{String}}()
+            for x in collect(keys(parent))
+                push!(get!(groups, root(x), Set{String}()), x)
+            end
+            Set(values(groups))
+        end
+        # Equations keep their enclosing branch, so moving one between branches still fails.
+        function canonical(text)
+            declarations, equations, connections, branch = String[], String[], Vector{String}[], String[]
+            in_relations = false
+            for raw in split(text, '\n')[2:end]
+                line = strip(replace(raw, r"\s*\{\^\w+\}" => ""))
+                (isempty(line) || startswith(line, '"') || startswith(line, "metadata ") || line == "end" && isempty(branch)) && continue
+                if line == "relations"
+                    in_relations = true
+                elseif !in_relations
+                    push!(declarations, line)
+                elseif startswith(line, "connect(")
+                    push!(connections, String.(strip.(split(line[9:end-1], ','))))
+                elseif startswith(line, "if ")
+                    push!(branch, line)
+                elseif line == "else"
+                    branch[end] = "not " * branch[end]
+                elseif line == "end"
+                    pop!(branch)
+                else
+                    push!(equations, join([branch; line], " | "))
+                end
+            end
+            (; declarations = sort(declarations), equations = sort(equations), nets = nets(connections))
+        end
+        library(path) = replace(strip(path), " › " => ".") * "()"
+        for (id, starter, bench) in (("step-1", "Step1EngineWLTC", "P2WLTC"),
+                ("step-2", "Step2OperatingLineWLTC", "P2OperatingLineWLTC"),
+                ("step-3", "Step3HybridWLTC", "P2HybridWLTC"))
+            text = section(id)
+            source = dyad("HandsOn05", starter)
+            completed = component(source, starter)
+            for m in eachmatch(r"change `(\w+ = \w+)` to\s+`(\w+ = \w+)`", text)
+                line = only(filter(l -> startswith(strip(l), "powertrain = "), split(completed, '\n')))
+                @test occursin(m.captures[1], line)
+                completed = replace(completed, line => replace(line, m.captures[1] => m.captures[2]))
+            end
+            placed = [m.captures[1] * " = " * library(m.captures[2])
+                      for m in eachmatch(r"(?m)^\s*\| `(\w+)` \| (VehicleSystemsComponents › [^|]+)\|$", text)]
+            wires = [[m.captures[1], m.captures[2]] for m in eachmatch(r"(?m)^\s*\| `([\w.]+)` \| `([\w.]+)` \|$", text)]
+            equations = [strip(l) for b in eachmatch(r"```dyad\n(.*?)```"s, text)
+                         for l in split(b.captures[1], '\n') if !isempty(strip(l))]
+            mine = canonical(completed)
+            mine = (; declarations = sort([mine.declarations; placed]),
+                    equations = sort([mine.equations; equations]),
+                    nets = nets([[collect(n) for n in mine.nets]; wires]))
+            reference = canonical(component(dyad("Lecture5", bench), bench))
+            @test length(wires) <= 8
+            @test mine.declarations == reference.declarations
+            @test mine.equations == reference.equations
+            @test mine.nets == reference.nets
+            # The starter on its own is missing every wire and equation the step adds.
+            bare = canonical(component(source, starter))
+            @test all(w -> !any(n -> issubset(w, n), bare.nets), wires)
+            @test isempty(intersect(bare.equations, equations))
+            @test analysis_extends(source, starter) == analysis_extends(dyad("Lecture5", bench), bench)
+        end
+        @test count(r"(?m)^\s*\| `[\w.]+` \| `[\w.]+` \|$", section("step-1")) == 7
+        @test count(r"(?m)^\s*\| `[\w.]+` \| `[\w.]+` \|$", section("step-2")) == 2
+        @test count(r"(?m)^\s*\| `[\w.]+` \| `[\w.]+` \|$", section("step-3")) == 7
+        for starter in (:Step1EngineWLTC, :Step2OperatingLineWLTC, :Step3HybridWLTC)
+            @test nameof(getproperty(VehicleSystemsComponents.HandsOn05, starter)(name = starter)) == starter
+        end
     end
     for (electric, analysis, stop) in (
         (false, h0_run, 1800.0),
