@@ -29,8 +29,8 @@ holds the instructor diagnostics.
 driver, road load, fuel meter, initial conditions and everything that can only be written as
 code. You add only what the step lists: a library block or two and a few wires. Each starter
 comes with its analysis (`Step1EngineWLTCTransient` and so on), so you do not create one. Your
-finished starter is the same model as the step's reference in `HandsOn05`, so your numbers should
-match the checkpoint. The starters do not depend on each other: if you fall behind, start the next
+finished starter gives the same numbers as the step's reference, so compare them with the
+checkpoint. The starters do not depend on each other: if you fall behind, start the next
 step from its own starter.
 
 **Working in Studio.**
