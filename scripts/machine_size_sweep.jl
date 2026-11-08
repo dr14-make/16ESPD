@@ -65,7 +65,7 @@ const TAU_BRAKE = DEFAULTS["tau_brake"]
 "The engine's peak power [W], as the energy manager carries it."
 const P_ENGINE_PEAK = DEFAULTS["manager.P_peak"]
 "H0's WLTC fuel [L/100 km], the conventional baseline; the Lecture 5 tests pin H0 to it."
-const H0_L100 = 5.71753646
+const H0_L100 = 5.7175359218
 const SOC_BAND = 0.02
 const SPEED_ERROR_MAX = 2.0
 "The run's span [s]: one WLTC class 3b."
