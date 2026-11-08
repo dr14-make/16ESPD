@@ -118,6 +118,7 @@ relations
 metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/MappedEngine.svg"}},
   "_links": {
+    "cut_wire": {"Dyad":{"edges":[{"S":1,"M":[],"E":-1},{"S":-1,"M":[{"x":800,"y":500},{"x":800,"y":210}],"E":2},{"S":-1,"M":[],"E":-2},{"S":-2,"M":[],"E":3},{"S":-2,"M":[],"E":-3},{"S":-3,"M":[],"E":4},{"S":-3,"M":[],"E":-4},{"S":-4,"M":[],"E":5},{"S":-4,"M":[{"x":450,"y":1125}],"E":6}],"junctions":[{"x":450,"y":500},{"x":450,"y":735},{"x":450,"y":865},{"x":450,"y":995}]}},
     "engine_speed": {"Dyad":{"placement":{"diagram":{"x1":275.0,"x2":325.0,"y1":-25.0,"y2":25.0},"icon":{"x1":270.0,"x2":330.0,"y1":-30.0,"y2":30.0}}}},
     "available_torque": {"Dyad":{"placement":{"diagram":{"x1":675.0,"x2":725.0,"y1":-25.0,"y2":25.0},"icon":{"x1":670.0,"x2":730.0,"y1":-30.0,"y2":30.0}}}},
     "pedal": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}, "diagram": {"x1": -25, "y1": 235, "x2": 25, "y2": 285}}}},
@@ -130,7 +131,7 @@ metadata {
     "mdot_hc": {"Dyad":{"placement":{"icon":{"x1":960.0,"x2":1040.0,"y1":560.0,"y2":640.0},"diagram":{"x1":1375,"y1":815,"x2":1425,"y2":865}}}},
     "mdot_co": {"Dyad":{"placement":{"icon":{"x1":960.0,"x2":1040.0,"y1":660.0,"y2":740.0},"diagram":{"x1":1375,"y1":945,"x2":1425,"y2":995}}}},
     "mdot_nox": {"Dyad":{"placement":{"icon":{"x1":960.0,"x2":1040.0,"y1":760.0,"y2":840.0},"diagram":{"x1":1375,"y1":1075,"x2":1425,"y2":1125}}}},
-    "spline": {"Dyad":{"placement":{"icon":{"x1":960.0,"x2":1040.0,"y1":860.0,"y2":940.0},"diagram":{"iconName":"spline_b","x1":1375,"y1":185,"x2":1425,"y2":235}}}},
+    "spline": {"Dyad":{"placement":{"icon":{"iconName":"spline_b","x1":960.0,"x2":1040.0,"y1":860.0,"y2":940.0},"diagram":{"iconName":"spline_b","x1":1375,"y1":185,"x2":1425,"y2":235}}}},
     "support": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"x1": 1025, "y1": 305, "x2": 1075, "y2": 355}}}},
     "pedal_map": {"Dyad": {"placement": {"diagram": {"x1": 80, "y1": 210, "x2": 180, "y2": 310}}}},
     "air": {"Dyad": {"placement": {"diagram": {"x1": 240, "y1": 240, "x2": 340, "y2": 340}}}},
