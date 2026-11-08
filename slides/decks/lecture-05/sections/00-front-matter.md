@@ -266,7 +266,7 @@ The build guide holds every block, line and number:
 </div>
 
 <!--
-Before the first build, here is how the build works. It works the same way as in Lectures 3 and 4.
+Before the first build, here is how the build works.
 
 Each step starts from a starter model in the HandsOn05 folder. The starter already holds the car,
 the drive cycle, the driver, the fuel meter and everything that can only be written as code, and
