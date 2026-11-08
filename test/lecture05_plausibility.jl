@@ -369,33 +369,33 @@ end
             source = read(file, String)
             starts = collect(eachmatch(r"(?m)^(?:test |partial )?component \w+", code_only(source)))
             for (index, component) in enumerate(starts)
-            stop = index < length(starts) ? prevind(source, starts[index + 1].offset) : lastindex(source)
-            text = source[component.offset:stop]
-            meta = match(r"(?s)metadata (\{.*?\})\nend", text)
-            isnothing(meta) && continue
-            links = JSON.parse(meta.captures[1])["_links"]
-            ports = [m.captures[1] for m in eachmatch(r"(?m)^\s*(\w+) = (?:RealInput|RealOutput|Spline)\(", code_only(text))]
-            tags = Set(m.captures[1] for m in eachmatch(r"\{\^(\w+)\}", text))
-            line = count(==('\n'), text[1:meta.offset]) + 1
-            for connection in eachmatch(r"connect\(([^)]*)\)\s*\{\^(\w+_wire)\}", code_only(text))
-                length(split(connection.captures[1], ',')) >= 3 || continue
-                tag = connection.captures[2]
-                edges = get(get(get(links, tag, Dict()), "Dyad", Dict()), "edges", [])
-                isempty(edges) && push!(routing, (file, line, tag))
+                stop = index < length(starts) ? prevind(source, starts[index + 1].offset) : lastindex(source)
+                text = source[component.offset:stop]
+                meta = match(r"(?s)metadata (\{.*?\})\nend", text)
+                isnothing(meta) && continue
+                links = JSON.parse(meta.captures[1])["_links"]
+                ports = [m.captures[1] for m in eachmatch(r"(?m)^\s*(\w+) = (?:RealInput|RealOutput|Spline)\(", code_only(text))]
+                tags = Set(m.captures[1] for m in eachmatch(r"\{\^(\w+)\}", text))
+                line = count(==('\n'), text[1:meta.offset]) + 1
+                for connection in eachmatch(r"connect\(([^)]*)\)\s*\{\^(\w+_wire)\}", code_only(text))
+                    length(split(connection.captures[1], ',')) >= 3 || continue
+                    tag = connection.captures[2]
+                    edges = get(get(get(links, tag, Dict()), "Dyad", Dict()), "edges", [])
+                    isempty(edges) && push!(routing, (file, line, tag))
+                end
+                for key in keys(links)
+                    key in tags || push!(orphans, (file, line, key))
+                end
+                for kind in ("icon", "diagram"), (i, a) in enumerate(ports), b in ports[i+1:end]
+                    pa = get(get(get(links, a, Dict()), "Dyad", Dict()), "placement", Dict())
+                    pb = get(get(get(links, b, Dict()), "Dyad", Dict()), "placement", Dict())
+                    haskey(pa, kind) && haskey(pb, kind) || continue
+                    aa, bb = pa[kind], pb[kind]
+                    overlap = all(max(min(aa[k*"1"], aa[k*"2"]), min(bb[k*"1"], bb[k*"2"])) <=
+                        min(max(aa[k*"1"], aa[k*"2"]), max(bb[k*"1"], bb[k*"2"])) for k in ("x", "y"))
+                    overlap && push!(violations, (file, line, "$kind: $a intersects $b"))
+                end
             end
-            for key in keys(links)
-                key in tags || push!(orphans, (file, line, key))
-            end
-            for kind in ("icon", "diagram"), (i, a) in enumerate(ports), b in ports[i+1:end]
-                pa = get(get(get(links, a, Dict()), "Dyad", Dict()), "placement", Dict())
-                pb = get(get(get(links, b, Dict()), "Dyad", Dict()), "placement", Dict())
-                haskey(pa, kind) && haskey(pb, kind) || continue
-                aa, bb = pa[kind], pb[kind]
-                overlap = all(max(min(aa[k*"1"], aa[k*"2"]), min(bb[k*"1"], bb[k*"2"])) <=
-                    min(max(aa[k*"1"], aa[k*"2"]), max(bb[k*"1"], bb[k*"2"])) for k in ("x", "y"))
-                overlap && push!(violations, (file, line, "$kind: $a intersects $b"))
-            end
-        end
         end
         isempty(routing) || @error "Missing multi-endpoint canvas routing" routing
         @test isempty(routing)
