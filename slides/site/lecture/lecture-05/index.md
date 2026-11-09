@@ -15,7 +15,7 @@ under an energy manager. Then you compare the fuel at equal battery charge.
 
 | Step | You place and wire | Time |
 | --- | --- | --- |
-| [0 · Setup](#step-0) | open the workspace, compile, start the Julia REPL | 10 min |
+| [0 · Setup](#step-0) | clone the course repository at its tag, compile, start the Julia REPL | 10 min |
 | [1 · The P2 layout](#step-1) | trace `Vehicle.P2Powertrain`; 7 wires into the step-1 starter; run H0 | 20 min |
 | [2 · Operating line](#step-2) | place `OperatingLine`, 2 wires, one flag and 3 equations; run | 20 min |
 | [3 · Energy manager](#step-3) | place `TorqueToPedal`, 7 wires, one flag; run | 30 min |
@@ -76,13 +76,30 @@ solves on different machines: your run can differ past them.
 ## 0 · Setup — 10 min {#step-0}
 
 Start this before the talk ends: the first compile and the first REPL start take several minutes.
+Today you edit the starters inside the course repository itself, at the tag
+`lecture-05-dyad-3.5`: the Lecture 5 version for Dyad 3.5. Clone it before class if you can.
 
-1. Open the course repository folder in Dyad Studio. At the trust prompt, choose "Yes, I trust
-   the authors".
-2. Open the Dyad sidebar (its icon in the left activity bar). COMPONENTS lists
+1. In Studio, press F1 › **Git: Clone**, paste `https://github.com/dr14-make/16ESPD`, pick an
+   empty folder, and click **Open** when asked. At the trust prompt, choose "Yes, I trust the
+   authors".
+2. Press F1 › **Git: Create Branch From…**, type `handson-05`, and pick the tag
+   `lecture-05-dyad-3.5` from the list.
+
+   From a terminal instead, then open the `16ESPD` folder in Studio and trust it the same way:
+
+   ```sh
+   git clone --branch lecture-05-dyad-3.5 https://github.com/dr14-make/16ESPD
+   cd 16ESPD && git switch -c handson-05
+   ```
+
+3. Open the Dyad sidebar (its icon in the left activity bar). COMPONENTS lists
    `VehicleSystemsComponents`.
-3. Press F1 › **Dyad: Compile** and wait until it finishes.
-4. Press F1 › **Dyad: Open Julia REPL**. Leave it loading while you start step 1.
+4. Press F1 › **Dyad: Compile** and wait until it finishes.
+5. Press F1 › **Dyad: Open Julia REPL**. Leave it loading while you start step 1.
+
+To put one starter back as shipped, discard your changes to that file: **Source Control** ›
+right-click it › **Discard Changes**, or from a terminal
+`git restore dyad/HandsOn05/Step1EngineWLTC.dyad`.
 
 ::: tip Checkpoint 0
 
