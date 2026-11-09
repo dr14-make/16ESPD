@@ -241,9 +241,8 @@ commanded transmission input speed.
 ```julia
 scatter(at(m.powertrain.engine_speed) .* (30/pi), at(m.powertrain.engine_torque),
         markersize=1, label="WLTC", xlabel="Engine speed [rpm]", ylabel="Torque [N·m]")
-using VehicleSystemsComponents
 rows = [parse.(Float64, split(l, ',')) for l in
-        readlines(joinpath(pkgdir(VehicleSystemsComponents), "assets", "data", "engine", "bsfc_line.csv"))[2:end]]
+        readlines(joinpath(dirname(Base.active_project()), "assets", "data", "engine", "bsfc_line.csv"))[2:end]]
 line = reduce(vcat, permutedims.(rows))
 plot!(line[:,2], line[:,3], label="best-BSFC line", linewidth=2)
 plot(t, [at(m.powertrain.engine_speed) .* (30/pi) at(m.N_target)],
