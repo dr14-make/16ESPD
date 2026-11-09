@@ -1,0 +1,25 @@
+"""
+Pedal-based best-BSFC speed command with a minimum locked engine speed.
+The requested power is pedal times peak power; OperatingLine clamps table extrapolation.
+"""
+component LineSpeedCommand
+  "Engine pedal fraction (derived; P2Powertrain engine_pedal)"
+  pedal = RealInput() {^pedal}
+  "Transmission input-speed command [rpm] (derived; floored best-BSFC line)"
+  N_ref = RealOutput() {^N_ref}
+  "Full-pedal power [W] (calibrated; Lecture 2 mapped engine peak, 85 kW)"
+  parameter P_peak::Power = 85000.0
+  "Minimum locked speed [rpm] (assumed; Lecture 5 lock-up calibration, 1000 rpm)"
+  parameter N_locked::Real = 1000.0
+  line = VehicleSystemsComponents.Vehicle.OperatingLine() {^line}
+relations
+  line.P = pedal * P_peak
+  N_ref = max(line.N, N_locked)
+metadata {
+  "_links": {
+    "pedal": {"Dyad":{"placement":{"icon":{"x1":-50,"x2":50,"y1":450,"y2":550},"diagram":{"x1":-25,"x2":25,"y1":475,"y2":525}}}},
+    "N_ref": {"Dyad":{"placement":{"icon":{"x1":950,"x2":1050,"y1":450,"y2":550},"diagram":{"x1":975,"x2":1025,"y1":475,"y2":525}}}},
+    "line": {"Dyad":{"placement":{"diagram":{"x1":400,"x2":600,"y1":400,"y2":600}}}}
+  }
+}
+end
