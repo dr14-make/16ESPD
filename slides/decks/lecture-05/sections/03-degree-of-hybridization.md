@@ -225,16 +225,16 @@ routeAlias: power-battery
 
 <div class="tight">
 
-| | Power | Energy | Power / energy |
-|---|---:|---:|---:|
-| today's hybrid (2011 Sonata) | 30 kW | 1.4 kWh | **≈ 21 C** |
-| Lecture 4's Leaf | 110 kW | 40 kWh | ≈ 2.75 C |
+| | Power | Energy | C rate | Empty in |
+|---|---:|---:|---:|---:|
+| today's hybrid (2011 Sonata) | 30 kW | 1.4 kWh | **≈ 21 C** | ≈ 3 min |
+| Lecture 4's Leaf | 110 kW | 40 kWh | ≈ 2.75 C | ≈ 22 min |
 
 </div>
 
-C rate: power ÷ stored energy. At 1 C the full pack would last one hour. For each kWh it holds,
-the hybrid's pack gives about eight times the Leaf's power: its cells are built for **power rather
-than energy**.
+C rate = power ÷ energy, in 1/h: a rate, not a capacity in Ah. Its inverse is the time to empty
+the pack. Energy is the tank, power the tap. For each kWh it holds, the hybrid's pack gives about
+eight times the Leaf's power: its cells are built for **power rather than energy**.
 
 So its **internal resistance** *R*₀ matters: at 30 kW about 130 A flow through it, and *I*²*R*,
 current squared times resistance, is lost as heat. Measured on new 2011 Sonata packs (INL, 10 s
@@ -257,16 +257,24 @@ pulse): ***R*₀ ≈ 0.33 Ω**, the value our model uses.
 
 <div class="tight">
 
-| Chemistry | Wh/kg | W/kg |
-|---|---:|---:|
-| lead-acid | 30 | 250 |
-| NiCd | 50 | 150 |
-| NiMH | 65 | 200 |
-| Li-ion | 150 | 300 |
+| Chemistry | Wh/kg | W/kg | kg for 1.4 kWh / 30 kW | Pack needs |
+|---|---:|---:|---:|---:|
+| lead-acid | 30 | 250 | 47 / 120 | 120 kg |
+| NiCd | 50 | 150 | 28 / 200 | 200 kg |
+| NiMH | 65 | 200 | 22 / 150 | 150 kg |
+| Li-ion | 150 | 300 | 9 / 100 | **100 kg** |
 
 </div>
 
-Li-ion in that table: 300 W/kg from 150 Wh/kg, **2 C**. A hybrid asks ten times that.
+<div class="caption text-left">kg for energy = 1400 Wh ÷ Wh/kg · kg for power = 30 000 W ÷ W/kg ·
+the pack needs the larger</div>
+
+In every row **power sets the mass**, not energy. Li-ion in that table: 300 W/kg from 150 Wh/kg,
+**2 C**; a hybrid asks ten times that. So hybrids use power-optimized cells.
+
+<div class="caption text-left">The usual C rate counts current: 133 A ÷ 5.3 Ah ≈ 25 C, above the
+21 C of power because the voltage sags to 226 V · 30 kW is at the terminals, about the machine's
+rating; at full motor output the pack gives ≈ 33 kW</div>
 
 </div>
 </div>
@@ -274,12 +282,23 @@ Li-ion in that table: 300 W/kg from 150 Wh/kg, **2 C**. A hybrid asks ten times 
 <!--
 Now look at the battery from the side that matters for a hybrid: power.
 
-Divide the power the pack must give by the energy it holds. The result is called the C rate. At 1 C
-the full pack would last one hour; at 2 C, half an hour. Today's car, sized after the 2011 Sonata,
-takes 30 kilowatts from 1.4 kilowatt-hours: about 21 per hour, a 21 C discharge. Lecture 4's Leaf
-takes 110 kilowatts from 40 kilowatt-hours, about 2.75 C. So the hybrid's pack has to give about
-eight times more power for each kilowatt-hour it holds. That is why hybrid cells are built for power
-rather than energy.
+Divide the power the pack must give by the energy it holds. The result is called the C rate, and
+its unit is one per hour. Careful: here C is a rate, not the capacity in ampere-hours that a
+battery's data sheet also calls C. Think of energy as the size of the tank, how much is stored, and
+of power as the tap, how fast it flows in or out. One over the C rate is the time to empty the
+pack at that power. At 1 C the full pack would last one hour; at 2 C, half an hour. Today's car,
+sized after the 2011 Sonata, takes 30 kilowatts from 1.4 kilowatt-hours: about 21 per hour, a 21 C
+discharge, and the pack would be empty in about 3 minutes. Lecture 4's Leaf takes 110 kilowatts
+from 40 kilowatt-hours, about 2.75 C, and would last about 22 minutes. So the hybrid's pack has to
+give about eight times more power for each kilowatt-hour it holds. That is why hybrid cells are
+built for power rather than energy.
+
+Two footnotes on the slide. First, the C rate you find in cell data sheets counts current, not
+power: 133 amperes from a 5.3 ampere-hour pack is about 25 C, a little more than the 21 C of
+power. The two differ because the voltage sags to 226 volts under that current, so the same power
+needs more current. Second, the 30 kilowatts are measured at the battery's terminals, about the
+machine's rating. At the machine's full output the pack supplies about 33 kilowatts, because the
+machine's own losses come on top.
 
 And so the pack's internal resistance matters. Think of it as a resistor inside the battery, R
 zero. Every ampere that flows goes through it and heats it. The heat is the current squared times
@@ -307,7 +326,13 @@ first number column is energy per kilogram, in watt-hours per kilogram. The seco
 kilogram, in watts per kilogram. The rows are lead-acid, nickel-cadmium, nickel-metal-hydride and
 lithium-ion. Read the two columns as a ratio. A typical lithium-ion cell in that table gives 300
 watts per kilogram from 150 watt-hours per kilogram, about 2 C. A hybrid asks about ten times that.
-That is why a hybrid pack is not just a small electric-car pack.
+
+The last two columns size our pack, 1.4 kilowatt-hours and 30 kilowatts, from each chemistry. The
+mass to hold the energy is 1400 watt-hours divided by the watt-hours per kilogram. The mass to give
+the power is 30 000 watts divided by the watts per kilogram. The pack needs the larger of the two.
+For lithium-ion that is 9 kilograms for the energy but 100 for the power; for lead-acid, 47
+against 120. In every row the power sets the mass. That is why hybrids use cells optimized for
+power, and why a hybrid pack is not just a small electric-car pack.
 -->
 
 ---

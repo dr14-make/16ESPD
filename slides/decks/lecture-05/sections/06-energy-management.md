@@ -167,6 +167,12 @@ Default SoC<sub>on</sub> **0.55**, SoC<sub>off</sub> **0.60**, the start. On the
 </div>
 </div>
 
+<img src="/figures/06-soc-window.svg" style="max-height: 16rem" alt="One WLTC run of the P2 hybrid. Left: state of charge against time; in this run it starts at 0.600 and moves between 0.513 and 0.613, with the SoC on threshold 0.52 and the SoC off threshold 0.55 as dashed lines and orange bars along the bottom where the charge latch is on, nine times in this run. Right: the charge latch against state of charge, switching on at 0.52 and off at 0.55, a hysteresis loop."/>
+
+<div class="caption">One WLTC run of the P2 hybrid · left: SoC, 0.513 to 0.613 in this run; orange
+bars: the latch charges, 9 times · right: the latch against SoC, on below 0.52, off above 0.55 ·
+regen alone lifts SoC above the window</div>
+
 <!--
 Why hysteresis? Hysteresis means a gap between the switch-on point and the switch-off point. With a
 single threshold, the controller chatters: it switches on and off very fast. The state of charge
@@ -189,6 +195,16 @@ regen event, and a reserve below the bottom for electric driving and boost. The 
 charge below 0.55 and stop at 0.60, which is where the battery starts. The WLTC test moves the
 window down, to 0.52 and 0.55, so that the battery has room above it for the regen late in the
 cycle.
+
+The plot below is one WLTC run of our P2 hybrid. On the left, the state of charge against time. In
+this run it starts at 0.600 and drifts down as the car drives on electricity; its lowest point is
+0.513. The dashed lines are the two thresholds, 0.52 and 0.55. The orange bars along the bottom mark
+when the latch is on and the engine charges the battery, nine times in this run. It switches on when
+the charge falls below 0.52 and stays on until the charge passes 0.55, not the moment it rises a
+hair. Above 0.55 the charge still rises sometimes, without the engine, up to 0.613: that is regen
+from braking. On the right is the same run with the latch against the state of charge. It switches
+on at the left threshold and off at the right one; in between it can be either on or off, depending
+on where it came from. That gap is the hysteresis.
 -->
 
 ---

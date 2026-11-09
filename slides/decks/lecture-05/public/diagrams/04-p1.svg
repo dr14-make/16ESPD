@@ -35,13 +35,14 @@
   <rect class="off" x="40" y="70" width="70" height="50" rx="6"/>
   <text x="75" y="101" text-anchor="middle" class="p-off">P0</text>
   <path class="belt-off" d="M100 120 L102 150 M82 120 L78 150"/>
-  <text x="125" y="95" class="lbl">belt (FEAD)</text>
+  <text x="108" y="146" class="lbl">belt (FEAD),</text>
+  <text x="108" y="162" class="lbl">2.5–3 × engine speed</text>
 
   <path class="shaft" d="M190 215 H380"/>
   <rect class="coupled-hl" x="230" y="70" width="70" height="50" rx="6"/>
   <text x="265" y="101" text-anchor="middle" class="p">P1</text>
   <path class="shaft" d="M265 120 V215"/>
-  <text x="265" y="275" text-anchor="middle" class="lbl-hl">on the crank</text>
+  <text x="260" y="275" text-anchor="middle" class="lbl-hl">direct on the crankshaft</text>
 
   <rect class="box" x="370" y="185" width="60" height="60" rx="4"/>
   <text x="400" y="221" text-anchor="middle" class="b">K0</text>
@@ -49,7 +50,8 @@
   <rect class="off" x="490" y="70" width="70" height="50" rx="6"/>
   <text x="525" y="101" text-anchor="middle" class="p-off">P2</text>
   <path class="shaft-off" d="M525 120 V215"/>
-  <text x="525" y="275" text-anchor="middle" class="lbl">CVT input</text>
+  <text x="525" y="275" text-anchor="middle" class="lbl">CVT input:</text>
+  <text x="525" y="291" text-anchor="middle" class="lbl">coaxial, or chain / gear</text>
 
   <rect class="box" x="640" y="180" width="100" height="70" rx="6"/>
   <text x="690" y="220" text-anchor="middle" class="b">CVT</text>
@@ -57,7 +59,8 @@
   <rect class="off" x="770" y="70" width="70" height="50" rx="6"/>
   <text x="805" y="101" text-anchor="middle" class="p-off">P3</text>
   <path class="shaft-off" d="M805 120 V215"/>
-  <text x="805" y="275" text-anchor="middle" class="lbl">CVT output</text>
+  <text x="805" y="275" text-anchor="middle" class="lbl">CVT output:</text>
+  <text x="805" y="291" text-anchor="middle" class="lbl">gear / chain to it</text>
 
   <circle cx="960" cy="215" r="30" class="box"/>
   <text x="960" y="220" text-anchor="middle" class="b">diff</text>
@@ -71,6 +74,6 @@
   <rect class="off" x="730" y="327" width="60" height="36" rx="4"/>
   <text x="760" y="350" text-anchor="middle" class="lbl">gear</text>
   <rect class="wheel" x="830" y="330" width="70" height="30" rx="6"/>
-  <text x="910" y="342" class="lbl">rear axle,</text>
-  <text x="910" y="360" class="lbl">its own reduction</text>
+  <text x="910" y="350" class="lbl">rear axle</text>
+  <text x="770" y="390" text-anchor="middle" class="lbl">its own reduction, often planetary, or a hub motor</text>
 </svg>

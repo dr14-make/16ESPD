@@ -132,6 +132,22 @@ Even steady cruise is off the line: at 90 km/h Lecture 2's CVT schedule runs the
 </div>
 </div>
 
+<div class="grid grid-cols-[1.7fr_1fr] gap-6 items-center">
+
+<img src="/figures/05-cvt-band.svg" style="max-height: 17rem" alt="Lecture 2's BSFC map, torque against engine speed, with the best-BSFC line in blue and a dotted 10 kW curve. A green band from 2156 rpm to the map's 6500 rpm limit is every engine speed the CVT can reach at 90 km/h on the 0.31 m wheel. Lecture 2's CVT schedule point, 10 kW at 2182 rpm and 264 g/kWh, sits just inside the band, about 26 rpm above its left edge; the line's point, 10 kW at 1420 rpm and 242 g/kWh, lies outside it."/>
+
+<div>
+
+<div class="caption text-left">Blue line: best BSFC · dotted: 10 kW · green: the engine speeds the
+CVT reaches at 90 km/h · orange dot: Lecture 2's CVT schedule · blue dot: the line</div>
+
+At 90 km/h the 0.31 m wheel turns at 770 rpm, so the top ratio 2.8 puts the engine at **2156 rpm**
+at least. The schedule's 2182 rpm is *i* ≈ 2.83, just above that limit; the line's 1420 rpm would
+need *i* ≈ **1.84**, outside the range.
+
+</div>
+</div>
+
 <div class="handson">A CVT gives one free choice: engine speed. Without a battery the engine's
 power must still equal the road's.</div>
 
@@ -160,6 +176,15 @@ per hour, the car needs about 10 kilowatts. Lecture 2's CVT schedule gives them 
 the engine burns 264 grams per kilowatt-hour. The best-BSFC line gives the same 10 kilowatts at 1420
 rpm and 242 grams. Same power, about 8 percent less fuel, just by choosing the speed. So even steady
 cruise is off the line.
+
+But can this CVT get there? The plot below says no. It is the same fuel map, with the dotted 10
+kilowatt curve and the two points on it. The green band is every engine speed the CVT can reach at
+90 kilometers per hour. The wheel has a radius of 0.31 meters, so at 90 kilometers per hour it
+turns at 770 rpm. The smallest ratio, 2.8, puts the engine at 2156 rpm, and nothing lower is
+possible. The schedule's 2182 rpm is a ratio of about 2.83, only some 26 rpm above that floor: the
+CVT is almost at its top ratio already. The line's 1420 rpm would need a ratio of about 1.84, which
+this CVT does not have. So at 90 kilometers
+per hour the line is out of this CVT's reach.
 
 The green box is the limit of this trick. A CVT gives one free choice: the engine's speed. The power
 still has to equal what the road asks for, so at low power the engine still runs on a poor part of
@@ -256,6 +281,9 @@ power goes to the ring mechanically, part through MG1 and MG2 electrically.
 
 The Toyota Prius's hybrid system.
 
+To watch at home: <a href="https://www.youtube.com/watch?v=ZmHpSyTsfm0" target="_blank">2004 - 2009
+Prius P112 Hybrid Transaxle (eCVT) Operation</a>
+
 </div>
 </div>
 
@@ -285,6 +313,10 @@ moment it is partly a parallel and partly a series hybrid.
 
 That is why it is called power split, and why it can hold the engine on its best-BSFC line without
 a transmission. The price is that some of the power is always converted twice.
+
+To see it move, watch the video linked on the slide at home: "2004 - 2009 Prius P112 Hybrid
+Transaxle (eCVT) Operation", by WeberAuto. It turns the planetary gear of a real Prius transaxle
+by hand and shows each of these modes.
 -->
 
 ---
@@ -320,8 +352,10 @@ powertrain.N_ref = N_target
 
 <img src="/img/lecture-05/step02-operating-points.png" style="max-height: 13rem" alt="The operating-line WLTC run: engine torque against engine speed, the WLTC points as black dots and the best-BSFC line in orange. The points form a cloud around and below the line, densest on a band below it, not on the line itself." />
 
-<div class="caption">Black: the engine's WLTC points · orange: the best-BSFC line. The pedal's power
-request is never checked against the engine, so most points fall on a band below the line.</div>
+<div class="caption">Black: the engine's WLTC points · orange: the best-BSFC line. The command sets
+only the speed; the road sets the power. Pedal × 85 kW usually asks for more than the road takes,
+so the engine runs at the speed for a larger power and sits below the line. The saving comes from
+running slower, not from being on the line.</div>
 
 </div>
 </div>
@@ -346,13 +380,15 @@ The checkpoint: over the WLTC the car burns 5.44 liters per 100 kilometers, agai
 is 4.9 percent less, with no electric machine at all, just from moving the engine to lower speed
 and higher load.
 
-But be honest about why. Nothing checks the request against the engine. Pedal times 85 kilowatts is
-not what the engine actually delivers, so the engine does not sit on the line. The plot under the
+But be honest about why. Nothing checks the request against the engine. The command only chooses the
+speed. The power is whatever the road takes, because without a battery the engine must give exactly
+that. Pedal times 85 kilowatts usually asks for more, so the engine runs at the speed meant for a
+bigger power, with less torque than the line would have there: below the line. The plot under the
 checkpoint shows this. The black dots are the engine's points over the WLTC, and the orange curve is
 the best-BSFC line. The dots are densest on a band below the line, not on it. The reference run
 measures it: only 17 percent of the fuel burns within 150 revolutions per minute of the line. The
-saving comes from running slower in general. Holding the engine on the line needs a controller
-that commands the engine's power directly: that is the energy manager of section 06.
+saving comes from running slower in general. Holding the engine on the line needs a controller that
+commands the engine's power directly: that is the energy manager of section 06.
 -->
 
 ---
