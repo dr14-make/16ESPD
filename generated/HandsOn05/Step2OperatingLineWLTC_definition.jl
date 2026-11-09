@@ -8,8 +8,8 @@
    Step2OperatingLineWLTC(; name, m, radius, k, Ti, tau_max, dv_wheel, engage_rpm, engage_width_rpm, tau_brake, brake_gain, lock_rpm, lock_width_rpm, P_peak, N_locked, __overrides)
 
 Hands-on 05 step 2 starter: the operating-line fixture without its line, with the powertrain still
-pedal-commanded. Placing OperatingLine as `line`, wiring the zero command to the two ignored
-inputs, setting `speed_commanded = true` and adding the three line equations the guide lists
+pedal-commanded. Placing LineSpeedCommand as `speed_command`, wiring its pedal and speed ports
+and the zero command to the ignored inputs, and setting `speed_commanded = true`
 completes it to Lecture5.P2OperatingLineWLTC.
 
 ## Parameters:
@@ -30,12 +30,6 @@ completes it to Lecture5.P2OperatingLineWLTC.
 | `lock_width_rpm`         | Width of machine-side K0 lock-up ramp [rpm]                         | --  |   12.0 |
 | `P_peak`         | Full-pedal requested power [W], mapped engine peak                         | W  |   85000.0 |
 | `N_locked`         | Minimum locked engine speed [rpm]; replaces lower line rows                         | --  |   1000.0 |
-
-## Variables
-
-| Name         | Description                         | Units  | 
-| ------------ | ----------------------------------- | ------ |
-| `N_target`         | Commanded transmission input speed [rpm], line speed floored at N_locked                         | --  |
 """
 @component function Step2OperatingLineWLTC(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(110.0), var"Ti"=Float64(1.0), var"tau_max"=Float64(150.0), var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"tau_brake"=Float64(205.0), var"brake_gain"=Float64(12.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"P_peak"=Float64(85000.0), var"N_locked"=Float64(1000.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -132,12 +126,8 @@ completes it to Lecture5.P2OperatingLineWLTC.
   ### Final Path Parameters
 
   ### Variables (declarations)
-  append!(__vars, @variables (N_target(t)::Real), [description = "Commanded transmission input speed [rpm], line speed floored at N_locked"])
 
   ### Variables (assignments)
-  __ovr_N_target = pop!(__overrides, "N_target", nothing); isnothing(__ovr_N_target) || push!(__eqs, N_target ~ __ovr_N_target)
-  __ovr_N_target__initial = pop!(__overrides, "N_target.initial", nothing); isnothing(__ovr_N_target__initial) || (__initial_conditions[N_target] = __ovr_N_target__initial)
-  __ovr_N_target__guess = pop!(__overrides, "N_target.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -198,7 +188,6 @@ completes it to Lecture5.P2OperatingLineWLTC.
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
-  isnothing(__ovr_N_target__guess) || (__guesses[N_target] = __ovr_N_target__guess)
 
   ### Initialization Equations
   push!(__initialization_eqs, car.body.r ~ [0, 0])

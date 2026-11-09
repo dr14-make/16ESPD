@@ -152,8 +152,8 @@ export Step2OperatingLineWLTCTransient__System
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
   # Hands-on 05 step 2 starter: the operating-line fixture without its line, with the powertrain still
-  # pedal-commanded. Placing OperatingLine as `line`, wiring the zero command to the two ignored
-  # inputs, setting `speed_commanded = true` and adding the three line equations the guide lists
+  # pedal-commanded. Placing LineSpeedCommand as `speed_command`, wiring its pedal and speed ports
+  # and the zero command to the ignored inputs, and setting `speed_commanded = true`
   # completes it to Lecture5.P2OperatingLineWLTC.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn05.Step2OperatingLineWLTC(; name=:Step2OperatingLineWLTC)
   __system::System = Step2OperatingLineWLTCTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file")

@@ -32,7 +32,6 @@ The electric-mode CVT target follows demand power to avoid starting against an i
 
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
-| `N_target`         | CVT target blended from demand in electric mode to engine request when running [rpm]                         | --  |
 | `E_charge`         | Stored-energy charging integral [J]; includes regen and engine-driven charging                         | J  |
 | `E_regen`         | Requested regenerative braking energy at the machine shaft [J], excludes load-point charging                         | J  |
 | `E_friction`         | Actual wheel friction-brake dissipation [J]                         | J  |
@@ -127,15 +126,11 @@ The electric-mode CVT target follows demand power to avoid starting against an i
   ### Final Path Parameters
 
   ### Variables (declarations)
-  append!(__vars, @variables (N_target(t)::Real), [description = "CVT target blended from demand in electric mode to engine request when running [rpm]"])
   append!(__vars, @variables (E_charge(t)::Real), [description = "Stored-energy charging integral [J]; includes regen and engine-driven charging"])
   append!(__vars, @variables (E_regen(t)::Real), [description = "Requested regenerative braking energy at the machine shaft [J], excludes load-point charging"])
   append!(__vars, @variables (E_friction(t)::Real), [description = "Actual wheel friction-brake dissipation [J]"])
 
   ### Variables (assignments)
-  __ovr_N_target = pop!(__overrides, "N_target", nothing); isnothing(__ovr_N_target) || push!(__eqs, N_target ~ __ovr_N_target)
-  __ovr_N_target__initial = pop!(__overrides, "N_target.initial", nothing); isnothing(__ovr_N_target__initial) || (__initial_conditions[N_target] = __ovr_N_target__initial)
-  __ovr_N_target__guess = pop!(__overrides, "N_target.guess", nothing)
   __ovr_E_charge = pop!(__overrides, "E_charge", nothing); isnothing(__ovr_E_charge) || push!(__eqs, E_charge ~ __ovr_E_charge)
   __ovr_E_charge__initial = pop!(__overrides, "E_charge.initial", nothing); isnothing(__ovr_E_charge__initial) || (__initial_conditions[E_charge] = __ovr_E_charge__initial)
   __ovr_E_charge__guess = pop!(__overrides, "E_charge.guess", nothing)
@@ -171,12 +166,9 @@ The electric-mode CVT target follows demand power to avoid starting against an i
   # Subcomponent map of type VehicleSystemsComponents.HandsOn05.TorqueToPedal
   map_overrides = __pop_subcomponent_overrides!(__overrides, "map")
   push!(__systems, @named map = VehicleSystemsComponents.HandsOn05.TorqueToPedal(; __overrides = map_overrides))
-  # Subcomponent line of type VehicleSystemsComponents.Vehicle.OperatingLine
-  line_overrides = __pop_subcomponent_overrides!(__overrides, "line")
-  push!(__systems, @named line = VehicleSystemsComponents.Vehicle.OperatingLine(; __overrides = line_overrides))
-  # Subcomponent demand_line of type VehicleSystemsComponents.Vehicle.OperatingLine
-  demand_line_overrides = __pop_subcomponent_overrides!(__overrides, "demand_line")
-  push!(__systems, @named demand_line = VehicleSystemsComponents.Vehicle.OperatingLine(; __overrides = demand_line_overrides))
+  # Subcomponent speed_command of type VehicleSystemsComponents.Vehicle.HybridLineSpeedCommand
+  speed_command_overrides = __pop_subcomponent_overrides!(__overrides, "speed_command")
+  push!(__systems, @named speed_command = VehicleSystemsComponents.Vehicle.HybridLineSpeedCommand(; N_locked=N_locked, __overrides = speed_command_overrides))
   # Subcomponent differential of type MultibodyComponents.PlanarMechanics.DifferentialGear
   differential_overrides = __pop_subcomponent_overrides!(__overrides, "differential")
   push!(__systems, @named differential = MultibodyComponents.PlanarMechanics.DifferentialGear(; __overrides = differential_overrides))
@@ -209,7 +201,6 @@ The electric-mode CVT target follows demand power to avoid starting against an i
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
-  isnothing(__ovr_N_target__guess) || (__guesses[N_target] = __ovr_N_target__guess)
   isnothing(__ovr_E_charge__guess) || (__guesses[E_charge] = __ovr_E_charge__guess)
   isnothing(__ovr_E_regen__guess) || (__guesses[E_regen] = __ovr_E_regen__guess)
   isnothing(__ovr_E_friction__guess) || (__guesses[E_friction] = __ovr_E_friction__guess)
@@ -241,9 +232,6 @@ The electric-mode CVT target follows demand power to avoid starting against an i
 
   ### Equations
   push!(__eqs, manager.w_shaft ~ powertrain.variator.w_a)
-  push!(__eqs, demand_line.P ~ manager.P_drive)
-  push!(__eqs, N_target ~ max(manager.engine_on * line.N + (1.0 - manager.engine_on) * demand_line.N, N_locked))
-  push!(__eqs, powertrain.N_ref ~ N_target)
   push!(__eqs, powertrain.engage ~ manager.engage * max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
   push!(__eqs, meter.P_stored ~ powertrain.E * powertrain.i)
   push!(__eqs, car.tau_fl ~ manager.tau_friction * powertrain.variator.ratio / 2.0)
@@ -263,11 +251,14 @@ The electric-mode CVT target follows demand power to avoid starting against an i
   push!(__eqs, connect(powertrain.SoC, manager.SoC))
   push!(__eqs, connect(powertrain.engine_speed, manager.engine_speed, map.omega))
   push!(__eqs, connect(powertrain.available_torque, manager.available_torque))
-  push!(__eqs, connect(manager.P_engine, line.P))
+  push!(__eqs, connect(manager.P_engine, speed_command.P_engine))
   push!(__eqs, connect(manager.tau_engine, map.tau, powertrain.engine_torque_ref))
   push!(__eqs, connect(map.pedal, powertrain.engine_pedal))
   push!(__eqs, connect(manager.engine_on, powertrain.engine_on))
   push!(__eqs, connect(manager.tau_machine, powertrain.tau_ref))
+  push!(__eqs, connect(manager.P_drive, speed_command.P_drive))
+  push!(__eqs, connect(manager.engine_on, speed_command.engine_on))
+  push!(__eqs, connect(speed_command.N_ref, powertrain.N_ref))
   push!(__eqs, connect(powertrain.spline, differential.flange_b))
   push!(__eqs, connect(differential.flange_left, car.spin_fl))
   push!(__eqs, connect(differential.flange_right, car.spin_fr))
