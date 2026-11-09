@@ -1,0 +1,107 @@
+"""
+Slip-based planar wheel joint: a wheel rolling on the x,y-plane whose contact patch has
+slip-dependent friction, with the driving direction at phi = 0 given by `r`.
+
+This is `MultibodyComponents.PlanarMechanics.SlipBasedWheelJoint` from MultibodyComponents
+0.3.1 (`dyad/PlanarMechanics/slip_based_wheel_joint.dyad`), whose slip-speed magnitude is
+regularized inside the square root, `sqrt(v_slip_long^2 + v_slip_lat^2 + v_small^2)`. Its
+Jacobian therefore stays finite when both slip speeds are zero. The rendering parameters and
+shapes are omitted. Copyright 2024-2026 JuliaHub Inc., BSD 3-Clause License; the copyright
+notice, conditions and disclaimer are in `licenses/MultibodyComponents.LICENSE`.
+
+The slip is decomposed into longitudinal and lateral components and the friction force,
+`MultibodyComponents.limit_S_triple` of the slip speed, acts against the total slip velocity.
+
+Connectors:
+- `frame_a`: 2D frame for steering on the plane
+- `flange_a`: 1D rotational flange for wheel rolling actuation
+- `dynamicLoad`: Input for dynamic component of normal load
+"""
+component SlipWheelJoint
+  "Wheel-center frame, steered on the plane"
+  frame_a = Frame2D() {^frame_a}
+  "Wheel spin flange"
+  flange_a = Spline() {^flange_a}
+  "Dynamic component of the normal load"
+  dynamicLoad = RealInput() {^dynamicLoad}
+  "Driving direction of the wheel at angle phi = 0"
+  parameter r::Real[2] = [1, 0]
+  "Base normal load"
+  parameter N::Dyad.Force
+  "Minimum adhesion velocity"
+  parameter vAdhesion_min::Velocity
+  "Minimum sliding velocity"
+  parameter vSlide_min::Velocity
+  "Adhesion slippage"
+  parameter sAdhesion::Real
+  "Sliding slippage"
+  parameter sSlide::Real
+  "Friction coefficient at adhesion"
+  parameter mu_A::Real
+  "Friction coefficient at sliding"
+  parameter mu_S::Real
+  "Positive velocity scale for smooth slip-magnitude regularization at standstill"
+  parameter v_small::Velocity = 1e-4
+  "Radius of the wheel"
+  parameter radius::Length = 0.1
+  "Unit vector in direction of r resolved w.r.t. inertial frame"
+  variable e0::Real[2]
+  "wheel angle"
+  variable phi_roll::Angle
+  "Roll velocity of wheel"
+  variable w_roll::AngularVelocity
+  "velocity"
+  variable v_vec::Velocity[2]
+  "Velocity in lateral direction"
+  variable v_lat::Velocity
+  "Velocity in longitudinal direction"
+  variable v_long::Velocity
+  "Slip velocity in longitudinal direction"
+  variable v_slip_long::Velocity
+  "Slip velocity in lateral direction"
+  variable v_slip_lat::Velocity
+  "Slip velocity magnitude with smooth regularization by `v_small`"
+  variable v_slip::Velocity
+  "Total traction force"
+  variable f::Dyad.Force
+  "Lateral force"
+  variable f_lat::Dyad.Force
+  "Longitudinal force"
+  variable f_long::Dyad.Force
+  "Base normal load"
+  variable fN::Dyad.Force
+  "Adhesion velocity"
+  variable vAdhesion::Velocity
+  "Sliding velocity"
+  variable vSlide::Velocity
+relations
+  e0 = [[cos(frame_a.phi), -sin(frame_a.phi)], [sin(frame_a.phi), cos(frame_a.phi)]] * (r / sqrt(adjoint(r) * r))
+  v_vec = [der(frame_a.x), der(frame_a.y)]
+  phi_roll = flange_a.phi
+  w_roll = der(phi_roll)
+  v_long = v_vec[1] * e0[1] + v_vec[2] * e0[2]
+  v_lat = -v_vec[1] * e0[2] + v_vec[2] * e0[1]
+  v_slip_lat = v_lat
+  v_slip_long = v_long - radius * w_roll
+  v_slip = sqrt(v_slip_long ^ 2 + v_slip_lat ^ 2 + v_small ^ 2)
+  0 = flange_a.tau + f_long * radius
+  frame_a.tau = 0
+  vAdhesion = max(vAdhesion_min, sAdhesion * abs(radius * w_roll))
+  vSlide = max(vSlide_min, sSlide * abs(radius * w_roll))
+  fN = max(0, N + dynamicLoad)
+  f = fN * MultibodyComponents.limit_S_triple(vAdhesion, vSlide, mu_A, mu_S, v_slip)
+  f_long = f * v_slip_long / v_slip
+  f_lat = f * v_slip_lat / v_slip
+  f_long = frame_a.fx * e0[1] + frame_a.fy * e0[2]
+  f_lat = frame_a.fy * e0[1] - frame_a.fx * e0[2]
+metadata {
+  "Dyad": {"icons": {"default": "dyad://MultibodyComponents/SlipBasedWheelJoint.svg"}, "labels": [
+      {"label": "$(instance)", "x": 500, "y": 900, "rot": 0, "attrs": {"font-size": "160"}}
+  ]},
+  "_links": {
+    "frame_a": {"Dyad": {"placement": {"diagram": {"iconName": "default", "x1": 450, "y1": 50, "x2": 550, "y2": 150, "rot": 0}}}},
+    "flange_a": {"Dyad": {"placement": {"diagram": {"iconName": "default", "x1": 950, "y1": 450, "x2": 1050, "y2": 550, "rot": 0}}}},
+    "dynamicLoad": {"Dyad": {"placement": {"diagram": {"iconName": "default", "x1": -50, "y1": 450, "x2": 50, "y2": 550, "rot": 0}}}}
+  }
+}
+end

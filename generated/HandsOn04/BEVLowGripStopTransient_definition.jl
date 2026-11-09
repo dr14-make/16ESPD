@@ -185,8 +185,8 @@ export BEVLowGripStopTransient__System
   # The ABS withdrawal rule defaults ON: `withdraw = 0` runs the locked-wheel counterfactual.
   # Report stopping distance from pedal application to speed below 0.5 m/s and minimum front
   # slip while speed exceeds 3 m/s. The peak-centered ABS calibration is shared with the dry stop.
-  # The default 12 s horizon covers both stops without prolonged parking at the known exact-rest
-  # tire singularity; the withdrawal-off locked-wheel distance is not a physical benchmark.
+  # The default 12 s horizon covers both stops; the withdrawal-off locked-wheel distance is not a
+  # physical benchmark.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn04.BEVLowGripStop(; name=:BEVLowGripStop)
   __system::System = BEVLowGripStopTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file", var"T_cmd"=var"T_cmd", var"tau_max"=var"tau_max", var"P_charge"=var"P_charge", var"v_fade"=var"v_fade", var"withdraw"=var"withdraw", var"road_mu"=var"road_mu")
 end

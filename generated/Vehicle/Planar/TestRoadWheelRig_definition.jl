@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TestRoadWheelRig(; name, road_file, road, v, vy, tau, N_load, __overrides)
+   TestRoadWheelRig(; name, road_file, default_grip, blend_width, road, v, vy, tau, N_load, __overrides)
 
 Prescribed-motion grip wheel test with physical spin inertia and brake dynamics.
 
@@ -14,13 +14,15 @@ Prescribed-motion grip wheel test with physical spin inertia and brake dynamics.
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `road_file`         | OpenCRG low-grip road asset for the wheel test                         | --  |   "dyad://Veh...low_mu.crg" |
-| `road`         | Road grip callable evaluated at the prescribed wheel position                         | --  |   VehicleSyst...(road_file) |
+| `default_grip`         | Grip multiplier beyond the road file's grid                         | --  |   1.0 |
+| `blend_width`         | Distance beyond a road file's grid over which its values blend to the defaults                         | m  |   2.0 |
+| `road`         | Road grip callable evaluated at the prescribed wheel position                         | --  |   VehicleSyst...lend_width) |
 | `v`         | Prescribed forward speed                         | m/s  |   20.0 |
 | `vy`         | Prescribed lateral speed                         | m/s  |   0.0 |
 | `tau`         | Brake command                         | N.m  |   0.0 |
 | `N_load`         | Applied normal load                         | N  |   4000.0 |
 """
-@component function TestRoadWheelRig(; name = nothing, var"road_file"="dyad://VehicleSystemsComponents/roads/uniform_low_mu.crg", var"v"=Float64(20.0), var"vy"=Float64(0.0), var"tau"=Float64(0.0), var"N_load"=Float64(4000.0), var"road"=nothing, __overrides = Dict{String, Any}())
+@component function TestRoadWheelRig(; name = nothing, var"road_file"="dyad://VehicleSystemsComponents/roads/uniform_low_mu.crg", var"default_grip"=Float64(1.0), var"blend_width"=Float64(2.0), var"v"=Float64(20.0), var"vy"=Float64(0.0), var"tau"=Float64(0.0), var"N_load"=Float64(4000.0), var"road"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -40,6 +42,8 @@ Prescribed-motion grip wheel test with physical spin inertia and brake dynamics.
 
   ### Keyword argument overrides
   haskey(__overrides, "road_file") && (road_file = pop!(__overrides, "road_file"))
+  haskey(__overrides, "default_grip") && (default_grip = pop!(__overrides, "default_grip"))
+  haskey(__overrides, "blend_width") && (blend_width = pop!(__overrides, "blend_width"))
   haskey(__overrides, "v") && (v = pop!(__overrides, "v"))
   haskey(__overrides, "vy") && (vy = pop!(__overrides, "vy"))
   haskey(__overrides, "tau") && (tau = pop!(__overrides, "tau"))
@@ -47,10 +51,10 @@ Prescribed-motion grip wheel test with physical spin inertia and brake dynamics.
   haskey(__overrides, "road") && (road = pop!(__overrides, "road"))
 
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
-  isnothing(road) && (road = VehicleSystemsComponents.road_grip(road_file))
+  isnothing(road) && (road = VehicleSystemsComponents.road_grip(road_file; default_grip=default_grip, blend_width=blend_width))
 
   ### Structural Parameters (functions)
-  roadˍ₋value = VehicleSystemsComponents.road_grip(road_file)
+  roadˍ₋value = VehicleSystemsComponents.road_grip(road_file; default_grip=default_grip, blend_width=blend_width)
 
   ### Structural Parameters (Final)
 

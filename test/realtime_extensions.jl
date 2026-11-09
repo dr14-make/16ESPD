@@ -74,7 +74,7 @@ using SimpleDirectMediaLayer
     @test issorted(fresh.sol.t)
     @test all(h -> issorted(h.t), fresh.sol.discretes)
     @test length(win.car_shapes(ctx, ctx.snapshot(fresh))[2]) == 4
-    @named scripted = VehicleSystemsComponents.PlanarBEVScripted()
+    @named scripted = VehicleSystemsComponents.PlanarBEVOnRoad()
     viewer_setup = DyadInterface.setup_analysis(DyadInterface.TransientAnalysisSpec(;
         model = scripted, stop = 0.1, optimize = DyadInterface.OptimizationLevel.None(), progress = false))
     viewer_sys = DyadInterface.symbolic_container(viewer_setup.prob.f)

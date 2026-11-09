@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   RoadBEVDrive(; name, road_file, height_file, slope, esp_on, abs_on, mu, T_actuator, m, radius, T_full, tau_max, P_charge, v_fade, P_aux, ratio, dv_wheel, __overrides)
+   RoadBEVDrive(; name, road_file, default_grip, default_height, blend_width, height_file, slope, esp_on, abs_on, mu, T_actuator, m, radius, T_full, tau_max, P_charge, v_fade, P_aux, ratio, dv_wheel, __overrides)
 
 Planar battery-electric car with causal driver inputs and first-order actuator response.
 Regen withdraws while the ECU acts on either front brake, returning the demand to friction
@@ -16,8 +16,11 @@ under ABS control.
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `road_file`         | OpenCRG road asset passed to the car's shared grip callable                         | --  |   "dyad://Veh...orm_mu.crg" |
+| `default_grip`         | Grip multiplier beyond the road file's grid                         | --  |   1.0 |
+| `default_height`         | Road height beyond the height file's grid                         | m  |   0.0 |
+| `blend_width`         | Distance beyond a road file's grid over which its values blend to the defaults                         | m  |   2.0 |
 | `height_file`         | OpenCRG height asset evaluated at the chassis center                         | --  |   "dyad://Veh...flat_z.crg" |
-| `slope`         | Shared world-coordinate slope callable loaded once                         | --  |   VehicleSyst...eight_file) |
+| `slope`         | Shared world-coordinate slope callable loaded once                         | --  |   VehicleSyst...lend_width) |
 | `esp_on`         | ESP enable, fixed for the run                         | --  |   1.0 |
 | `abs_on`         | ABS enable, fixed for the run                         | --  |   1.0 |
 | `mu`         | Road-grip multiplier applied to every wheel                         | --  |   1.0 |
@@ -38,7 +41,7 @@ under ABS control.
  * `brake` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `steer` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function RoadBEVDrive(; name = nothing, var"road_file"="dyad://VehicleSystemsComponents/roads/uniform_mu.crg", var"height_file"="dyad://VehicleSystemsComponents/roads/flat_z.crg", var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"mu"=Float64(1.0), var"T_actuator"=0.05, var"m"=Float64(1500.0), var"radius"=0.31, var"T_full"=Float64(2500.0), var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"dv_wheel"=0.01, var"slope"=nothing, __overrides = Dict{String, Any}())
+@component function RoadBEVDrive(; name = nothing, var"road_file"="dyad://VehicleSystemsComponents/roads/uniform_mu.crg", var"default_grip"=Float64(1.0), var"default_height"=Float64(0.0), var"blend_width"=Float64(2.0), var"height_file"="dyad://VehicleSystemsComponents/roads/flat_z.crg", var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"mu"=Float64(1.0), var"T_actuator"=0.05, var"m"=Float64(1500.0), var"radius"=0.31, var"T_full"=Float64(2500.0), var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"dv_wheel"=0.01, var"slope"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -58,6 +61,9 @@ under ABS control.
 
   ### Keyword argument overrides
   haskey(__overrides, "road_file") && (road_file = pop!(__overrides, "road_file"))
+  haskey(__overrides, "default_grip") && (default_grip = pop!(__overrides, "default_grip"))
+  haskey(__overrides, "default_height") && (default_height = pop!(__overrides, "default_height"))
+  haskey(__overrides, "blend_width") && (blend_width = pop!(__overrides, "blend_width"))
   haskey(__overrides, "height_file") && (height_file = pop!(__overrides, "height_file"))
   haskey(__overrides, "esp_on") && (esp_on = pop!(__overrides, "esp_on"))
   haskey(__overrides, "abs_on") && (abs_on = pop!(__overrides, "abs_on"))
@@ -75,10 +81,10 @@ under ABS control.
   haskey(__overrides, "slope") && (slope = pop!(__overrides, "slope"))
 
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
-  isnothing(slope) && (slope = VehicleSystemsComponents.road_height(height_file))
+  isnothing(slope) && (slope = VehicleSystemsComponents.road_height(height_file; default_height=default_height, blend_width=blend_width))
 
   ### Structural Parameters (functions)
-  slopeˍ₋value = VehicleSystemsComponents.road_height(height_file)
+  slopeˍ₋value = VehicleSystemsComponents.road_height(height_file; default_height=default_height, blend_width=blend_width)
 
   ### Structural Parameters (Final)
 
@@ -178,7 +184,7 @@ under ABS control.
   push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(; report_front=true, esp_on=esp_on, abs_on=abs_on, radius=radius, T_max=T_full, __overrides = ecu_overrides))
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.RoadCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
-  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.RoadCar(; road_file=road_file, mu_scale_fl=mu, mu_scale_fr=mu, mu_scale_rl=mu, mu_scale_rr=mu, m=m, radius=radius, tau_max=T_full, __overrides = car_overrides))
+  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.RoadCar(; road_file=road_file, default_grip=default_grip, blend_width=blend_width, mu_scale_fl=mu, mu_scale_fr=mu, mu_scale_rl=mu, mu_scale_rr=mu, m=m, radius=radius, tau_max=T_full, __overrides = car_overrides))
   # Subcomponent roadload of type VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad
   roadload_overrides = __pop_subcomponent_overrides!(__overrides, "roadload")
   push!(__systems, @named roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(; m=m, __overrides = roadload_overrides))
