@@ -21,6 +21,12 @@ The requested power is pedal times peak power; OperatingLine clamps table extrap
 
  * `pedal` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `N_ref` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+
+## Variables
+
+| Name         | Description                         | Units  | 
+| ------------ | ----------------------------------- | ------ |
+| `N_target`         | Floored operating-line target [rpm] (derived; locked-speed constraint)                         | --  |
 """
 @component function LineSpeedCommand(; name = nothing, var"P_peak"=Float64(85000.0), var"N_locked"=Float64(1000.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -71,8 +77,12 @@ The requested power is pedal times peak power; OperatingLine clamps table extrap
   append!(__vars, @variables (N_ref(t)::Real), [output = true])
 
   ### Variables (declarations)
+  append!(__vars, @variables (N_target(t)::Real), [description = "Floored operating-line target [rpm] (derived; locked-speed constraint)"])
 
   ### Variables (assignments)
+  __ovr_N_target = pop!(__overrides, "N_target", nothing); isnothing(__ovr_N_target) || push!(__eqs, N_target ~ __ovr_N_target)
+  __ovr_N_target__initial = pop!(__overrides, "N_target.initial", nothing); isnothing(__ovr_N_target__initial) || (__initial_conditions[N_target] = __ovr_N_target__initial)
+  __ovr_N_target__guess = pop!(__overrides, "N_target.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -86,6 +96,7 @@ The requested power is pedal times peak power; OperatingLine clamps table extrap
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
+  isnothing(__ovr_N_target__guess) || (__guesses[N_target] = __ovr_N_target__guess)
 
   ### Initialization Equations
 
@@ -94,7 +105,8 @@ The requested power is pedal times peak power; OperatingLine clamps table extrap
 
   ### Equations
   push!(__eqs, line.P ~ pedal * P_peak)
-  push!(__eqs, N_ref ~ max(line.N, N_locked))
+  push!(__eqs, N_target ~ max(line.N, N_locked))
+  push!(__eqs, N_ref ~ N_target)
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
