@@ -336,7 +336,7 @@ label (5.3 L/100 km, 120 g/km).
 
 **Reference model.** `HandsOn02.MappedCarWLTC`, `MappedCarWLTCTransient`, kept off `main` so the installed library does not hold the answer: on branch `feat/handson02-wltc-bonus` only. Students build
 the bench themselves; the page gives the task, the parts and the advice, not the diagram or the
-wiring. Only `Vehicle.DriveCycle` is in the library. Full plan, grading and risks: `lecture-02-handson-step07-wltc-plan.md`.
+wiring. Only `Vehicle.DriveCycle` is in the library.
 
 **Checkpoint / grading.** Tracking inside ±2 km/h, ±1 s for most of the cycle (plots of speed,
 target and error); L/100 km and g CO₂/km inside a band around the reference; one paragraph on the

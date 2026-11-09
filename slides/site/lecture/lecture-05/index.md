@@ -49,9 +49,9 @@ step from its own starter.
 - Each run solves the full 1800 s WLTC in about 3 minutes. Close the "Julia Plots" tab that
   opens after a run: it costs memory.
 - Each run's result stays in memory. Note `fuel_corr` at the end of each run as you go. On a
-  16 GB machine, before step 3 run `r1 = r2 = nothing; GC.gc()` once your step 1 and 2 fuel
-  values are noted. If the REPL tab disappears, press F1 › **Dyad: Open Julia REPL** and press ▷
-  again.
+  16 GB machine, before step 3 run `r1 = r2 = r = m = s = nothing; GC.gc()` once your step 1 and
+  2 fuel values are noted: the setup block's `r`, `m` and `s` hold a result too. If the REPL
+  tab disappears, press F1 › **Dyad: Open Julia REPL** and press ▷ again.
 
 **Reading results in the REPL.** `solution` always holds the most recent run. Right after each
 run, keep it under its own name (`r1 = solution` in step 1, `r2` in step 2, `r3` in step 3), then
@@ -113,7 +113,8 @@ COMPONENTS shows `HandsOn05` with `Step1EngineWLTC`, `Step2OperatingLineWLTC` an
 #### Look at the powertrain (5 min)
 
 Open `Vehicle › P2Powertrain`. COMPONENTS opens with every module expanded; `Vehicle` comes
-after the `Lecture` modules, so scroll past them. Trace the shaft from left to right:
+after the `Lecture` modules, so scroll past them to the bottom, or click any row in COMPONENTS
+and type `P2Powertrain`; the tree filters as you type. Trace the shaft from left to right:
 
 | Part | What it is |
 | --- | --- |
@@ -166,6 +167,8 @@ Wire:
 The first two put the powertrain on the front wheels and on the ground. In H0 the CVT follows the
 pedal schedule, so `N_ref` is ignored; the gate keeps the machine request at zero; the engine
 torque target is used only with start/stop. The zero constant keeps every ignored input driven.
+The block also draws an `engine_on` port: leave it open. It exists only with start/stop on, and
+step 3 wires it.
 
 Your first canvas wire renames every `connect` tag in the file to `id…` and reformats its
 metadata. That is expected: the model is unchanged, but a text diff against the reference is
@@ -202,7 +205,7 @@ plot(t, [at(m.meter.fuel_raw) at(m.meter.fuel_corr)], label=["raw" "SoC-correcte
 | SoCCorrectedFuel `fuel_corr` | 5.7175 L/100 km |
 | Energy | 184.8651 MJ/100 km |
 | K0 slip energy, integrated over cycle | approximately 0.11246 MJ |
-| Peak engine torque on cycle / maximum K0 capacity | 123.372 / 229.885 N·m |
+| Peak engine torque on cycle / maximum K0 capacity | 123.37 / 229.885 N·m |
 
 Battery current is zero and SoC stays at 0.6, so raw and corrected fuel are equal. On level
 stretches above 12 km/h, K0 position stays above 0.99. Wherever K0 position exceeds 0.5, the
@@ -300,7 +303,7 @@ requested and delivered power need not agree, and most points do not land exactl
 | Raw / corrected fuel | 5.4374 / 5.4374 L/100 km |
 | H0 pedal-schedule fuel | 5.7175 L/100 km |
 | Difference | −0.2801 L/100 km (−4.90%) |
-| Energy | 175.8089 MJ/100 km |
+| Energy | 175.81 MJ/100 km |
 | Battery current / SoC | zero / 0.6 throughout |
 
 Lower speed at higher load moves part of the cycle toward better BSFC. The saving uses the same
@@ -342,7 +345,9 @@ machine limit. The manager is set to `SoC_on = 0.52`, `SoC_off = 0.55` and `P_li
 1. Open code view (⇄). In the `powertrain = ...` line, change `start_stop = false` to
    `start_stop = true`, and save. This adds the powertrain's `engine_on` input and lets fuel
    flow only when the manager asks for the engine; fuel fades in as the engine spins up from 400
-   to 700 rpm. Close the diagram and reopen it before the canvas work.
+   to 700 rpm. Switch back with ⇄, close the code tab too, then close the diagram and reopen it
+   before the canvas work: while the code tab is open, canvas wires sit unsaved in it until
+   Ctrl+S.
 2. Place one block and rename it:
 
    | Name | Library path |
@@ -411,7 +416,9 @@ small amount of fuel is booked to electric mode; settled electric operation burn
 
 A hybrid can save fuel by draining its battery, so compare at equal charge: the meter's
 `fuel_corr` converts the change in stored battery energy into fuel. Read it only after the full
-1800 s. You noted `fuel_corr` after each run; if your three results are still in the REPL:
+1800 s. You noted `fuel_corr` after each run, and those notes are what you compare. The block
+below works only if all three results are still in the REPL, so not after the memory note's
+`r1 = r2 = … = nothing`:
 
 ```julia
 [r.sol[symbolic_container(r).meter.fuel_corr][end] for r in (r1, r2, r3)]

@@ -8,7 +8,7 @@ const _BEV_PL = VehicleSystemsComponents.Vehicle.Planar
 const _BEV_H4 = VehicleSystemsComponents.HandsOn04
 
 # Lecture 2's engine car on the same cycle: 5.22 L/100 km (HandsOn02.MappedCarWLTC, branch
-# feat/handson02-wltc-bonus, docs/lecture-02-handson-step07-wltc-plan.md §5), petrol at
+# feat/handson02-wltc-bonus), petrol at
 # 0.745 kg/L (Hands-on 02) and H_l = 43.4 MJ/kg (Lecture 2 tasks, textbook).
 const _ENGINE_MJ_PER_100KM = 5.22 * 0.745 * 43.4
 

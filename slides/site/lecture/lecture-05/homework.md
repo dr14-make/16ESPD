@@ -30,13 +30,31 @@ and every powertrain part. You write no new physics: the work is the wiring and 
 
 ## The task {#task}
 
-1. In your `MyCar` library, on a new branch `homework-05`, create a test component
-   `SeriesWLTC` that `extends VehicleSystemsComponents.Lecture5.SeriesWLTCGround`.
-2. Add the battery, the auxiliaries, the traction drive and the engine-generator, and wire them
+1. In your `MyCar` library, on a new branch `homework-05`, open the Julia REPL and move the
+   course library to the Lecture 5 version for Dyad 3.5. Your `Manifest.toml` still holds the
+   Lecture 4 version, which has no `Lecture5`; the same line adds the library if `MyCar` has
+   none yet.
+
+   ```julia
+   using Pkg
+   Pkg.add(url = "https://github.com/dr14-make/16ESPD", rev = "lecture-05-dyad-3.5")
+   ```
+
+   Skipped Lecture 4? Also add the two packages your code names directly:
+
+   ```julia
+   Pkg.add(["ElectricalComponents", "MultibodyComponents"])
+   ```
+
+   Then <kbd>F1</kbd> → **Dyad: Restart Language Server** if you added the two packages, and
+   <kbd>F1</kbd> → **Dyad: Compile**.
+2. Create a test component `SeriesWLTC` that
+   `extends VehicleSystemsComponents.Lecture5.SeriesWLTCGround`.
+3. Add the battery, the auxiliaries, the traction drive and the engine-generator, and wire them
    to one DC bus and to the ground's open ends.
-3. Feed the engine-generator its speed command from the best-BSFC operating line.
-4. Write the SoC thermostat that sets the engine-generator's power command.
-5. Write an analysis that runs the full WLTC, choose your thermostat's numbers, and meet every
+4. Feed the engine-generator its speed command from the best-BSFC operating line.
+5. Write the SoC thermostat that sets the engine-generator's power command.
+6. Write an analysis that runs the full WLTC, choose your thermostat's numbers, and meet every
    [target](#targets).
 
 The design choices are yours: the power the engine-generator delivers when on, the two SoC
@@ -55,7 +73,11 @@ input wired. These are the ends it leaves open for you:
 | `differential.flange_b` | the traction drive's output shaft, which turns the front wheels |
 | `mount.spline` | every powertrain housing (`support`) |
 | `meter.mdot_fuel` | the engine's fuel mass flow [kg/s] |
-| `meter.P_stored` | the power out of the battery's store, `battery.E * battery.i` [W] |
+| `meter.P_stored` | the power out of the battery's store [W], by an equation, not a wire |
+
+`meter.P_stored` has no port on the battery to wire to: write it as an equation in your
+component's `relations`, `meter.P_stored = battery.E * battery.i`, with `battery` your pack's
+name.
 
 Its parameters, which you leave at their defaults: driver `k = 50` N·m per km/h, `Ti = 2` s,
 `tau_max = 250` N·m (the traction machine's peak torque); split `ratio = 8.193` (the traction
@@ -176,8 +198,8 @@ analysis SeriesWLTCTransient
 end
 ```
 
-`optimize = OptimizationLevel.None()` is required on the planar car. Read the results in the
-Julia REPL:
+`optimize = OptimizationLevel.None()` is required on the planar car. Press ▷ on the analysis
+once in Studio, then read the results in the Julia REPL:
 
 ```julia
 using VehicleSystemsComponents, MyCar
