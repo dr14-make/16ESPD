@@ -33,7 +33,7 @@ than the machine's power.
 
 | Level | Model | What it adds | Built in |
 |---|---|---|---|
-| H0 | Lecture 2's `MapEngine` car | conventional baseline, L/100 km on WLTC | reference |
+| H0 | H1 with K0 closed and the hybrid machine removed: no torque, no losses, no inertia | conventional baseline on the same planar car, L/100 km on WLTC (Lecture 2's 5.22 is quoted for scale only) | reference |
 | H1 | P2 powertrain | `MapEngine` → K0 clutch → L4 machine (≈ 30 kW) → `CVTDriveline` → planar differential; L4 battery at ≈ 1.4 kWh | step 1 |
 | H2 | H1 + operating line | CVT ratio commanded to hold the engine on its best-BSFC line for the requested power | step 2 |
 | H3 | H2 + energy manager | rule-based modes inside an SoC window, with hysteresis; regen through L4's blending | step 3 |
@@ -86,14 +86,16 @@ The studies compare against stop/start or a no-stop/start baseline on DCT cars; 
 Lecture 2's car with a CVT and idling at stops. The table is compared for ranking and order of
 magnitude, and the deck says which baseline each number uses.
 
-## Live build (students, in `MyCar` on `handson-05`)
+## Live build (students, about 90 minutes, from starters in `dyad/HandsOn05/`)
 
-| Step | Students build | Checkpoint |
+| Step | Students add | Checkpoint |
 |---|---|---|
-| 1 | P2 powertrain on the planar car | engine-only and electric-only runs both follow WLTC |
-| 2 | engine operating line: CVT ratio from requested power | engine points sit on the best-BSFC line of the L2 map |
-| 3 | rule-based energy manager | modes switch without chatter; SoC stays in its window |
-| 4 | charge-sustaining WLTC | SoC-corrected L/100 km: conventional vs hybrid vs L4 BEV (MJ/100 km) |
+| 1 | wire the library P2 powertrain into the planar car (7 wires) | engine-only H0 follows the full WLTC; 5.72 L/100 km |
+| 2 | engine operating line: place `OperatingLine`, 2 wires, speed-commanded CVT | fuel against H0 (5.44 vs 5.72 L/100 km) |
+| 3 | rule-based energy manager: place `TorqueToPedal`, 7 wires, start/stop on | modes switch without chatter; SoC stays in its window |
+| 4 | comparison, read from a ready table | SoC-corrected L/100 km: conventional vs hybrid vs L4 BEV (MJ/100 km) |
+
+The electric-only run is an instructor demo. Each starter, completed, is its `Lecture5` bench.
 
 Prepared in the course library: the K0 clutch with its actuator, the P-position benches, the
 SoC-corrected fuel calculation, the degree-of-hybridization notebook, and the series-hybrid

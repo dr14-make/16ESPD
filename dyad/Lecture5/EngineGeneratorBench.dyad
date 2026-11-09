@@ -1,0 +1,170 @@
+"""
+Engine-generator into a resistive DC load, stepped along the best-BSFC line (assumed bench).
+
+The electrical power command climbs 10, 20, 30 and 50 kW, each held for `t_hold` with a
+`t_ramp` ramp between. The operating line is fed the unit's `P_shaft`, the engine power the
+command needs once the generator and converter losses are paid, so the engine sits on the line:
+the 30 kW hold puts it at 32 kW and 3000 rpm, the line's best-BSFC point. The load is a resistor
+sized to put the bus at 270 V at that point, so the bus voltage rises with the power, sqrt(P R):
+156 V at 10 kW, 349 V at 50 kW. The generator's back-EMF stays under the bus at every point, so
+the field is never weakened. A DC-link capacitor across the resistor makes the bus voltage a
+state, started at the first point's voltage, which the unit delivers from t = 0; without it the
+initialization can settle on a negative or near-zero bus. Into a resistor the unit can only
+generate: a zero power command leaves no bus.
+"""
+test component EngineGeneratorBench
+  "Bus voltage at the best-BSFC point, sets the load (assumed; HybridDrive's 270 V pack)"
+  parameter V_bus::Voltage = 270.0
+  "First power command (assumed)"
+  parameter P_1::Power = 10.0e3
+  "Second power command (assumed)"
+  parameter P_2::Power = 20.0e3
+  "Third power command, the line's 32 kW best-BSFC point after about 6 % generator and converter loss (derived from this bench)"
+  parameter P_3::Power = 30.0e3
+  "Fourth power command (assumed)"
+  parameter P_4::Power = 50.0e3
+  "Load resistance, V_bus^2 / P_3 (derived)"
+  parameter R_load::Resistance = V_bus ^ 2 / P_3
+  "DC-link capacitance across the load (assumed; an inverter of this size carries about 1 mF)"
+  parameter C_link::Capacitance = 1.0e-3
+  "Hold at each point (assumed; several speed-loop settling times)"
+  parameter t_hold::Time = 10.0
+  "Ramp between points (assumed)"
+  parameter t_ramp::Time = 2.0
+  unit = VehicleSystemsComponents.Vehicle.EngineGenerator() {^unit}
+  line = VehicleSystemsComponents.Vehicle.OperatingLine() {^line}
+  step_2 = BlockComponents.Sources.Ramp(height = P_2 - P_1, offset = P_1, start_time = t_hold, duration = t_ramp) {^step_2}
+  step_3 = BlockComponents.Sources.Ramp(height = P_3 - P_2, offset = 0.0, start_time = 2 * t_hold + t_ramp, duration = t_ramp) {^step_3}
+  step_4 = BlockComponents.Sources.Ramp(height = P_4 - P_3, offset = 0.0, start_time = 3 * t_hold + 2 * t_ramp, duration = t_ramp) {^step_4}
+  load = ElectricalComponents.Analog.Basic.Resistor(R = R_load) {^load}
+  link = ElectricalComponents.Analog.Basic.Capacitor(C = C_link) {^link}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  mounts = RotationalComponents.Components.Fixed() {^mounts}
+  "Power command [W]"
+  variable P_cmd::Power
+relations
+  P_cmd = step_2.y + step_3.y + step_4.y
+  unit.P_ref = P_cmd
+  connect(unit.P_shaft, line.P) {^line_wire}
+  connect(line.N, unit.N_ref) {^speed_wire}
+  connect(unit.p, load.p, link.p) {^p_wire}
+  connect(load.n, link.n, unit.n, ground.g) {^n_wire}
+  connect(unit.support, mounts.spline) {^mount_wire}
+  initial link.v = sqrt(P_1 * R_load)
+metadata {
+  "_links": {
+    "unit": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 300, "x2": 600, "y2": 500}}}},
+    "line": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 400, "x2": 300, "y2": 500}}}},
+    "step_2": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 150, "x2": 80, "y2": 230}}}},
+    "step_3": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 270, "x2": 80, "y2": 350}}}},
+    "step_4": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 390, "x2": 80, "y2": 470}}}},
+    "load": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 350, "x2": 850, "y2": 450, "rot": 90}}}},
+    "link": {"Dyad": {"placement": {"diagram": {"x1": 900, "y1": 350, "x2": 1000, "y2": 450, "rot": 90}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 760, "y1": 600, "x2": 840, "y2": 680}}}},
+    "mounts": {"Dyad": {"placement": {"diagram": {"x1": 460, "y1": 600, "x2": 540, "y2": 680}}}},
+    "line_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 590, "y": 250}, {"x": 160, "y": 250}, {"x": 160, "y": 450}], "E": 2}]}},
+    "speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "p_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 320}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 950, "y": 320}], "E": 3}], "junctions": [{"x": 800, "y": 320}]}},
+    "n_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": 2, "M": [{"x": 950, "y": 560}], "E": -1}, {"S": 3, "M": [{"x": 620, "y": 560}], "E": -1}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 800, "y": 560}]}},
+    "mount_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end
+
+"""
+Engine-generator bench analysis (assumed bench). An analysis cannot compute `stop` or `tstops`
+from parameters, so they are written out for the bench defaults `t_hold = 10` and `t_ramp = 2`:
+the run ends after four holds and three ramps, and stops at every ramp corner.
+"""
+analysis EngineGeneratorBenchTransient
+  extends TransientAnalysis(stop = 46.0, alg = ODEAlg.Rodas5P(), saveat = 0.05, tstops = [10.0, 12.0, 22.0, 24.0, 34.0, 36.0])
+  model = EngineGeneratorBench()
+end
+
+"""
+Engine-generator charging a 270 V battery, stepped along the best-BSFC line and past the
+engine's full load (assumed bench).
+
+The bus is the library's `Battery` at `HybridDrive`'s 270 V and pack resistance, with 10 kWh so
+that its state of charge stays far from either end over the run; its open-circuit voltage does
+not depend on SoC. The electrical power command climbs 10, 20, 30 and 50 kW as on the resistive
+bench, then asks for 70 kW and comes back to 30 kW. The operating line is fed the unit's
+`P_shaft`. At 50 kW the line asks for about 4380 rpm, where the generator's full-field back-EMF
+passes the bus voltage, so the converter weakens the field. 70 kW is more than the engine makes
+at full load at the line's 4500 rpm: the shaft lags its command, the generator unloads, and the
+unit delivers the engine's full load a little under the commanded speed, with the power trim
+held bounded by its back-calculation. Back at 30 kW it recovers within the hold.
+"""
+test component EngineGeneratorBatteryBench
+  "Pack open-circuit voltage (assumed; HybridDrive's 270 V, ORNL-2011)"
+  parameter E_bus::Voltage = 270.0
+  "Pack capacity, 10 kWh / E_bus (assumed; SoC drift negligible over the run)"
+  parameter Q_bus::ElectricCharge = 10.0e3 * 3600.0 / E_bus
+  "Pack resistance: the 2011 Sonata pack's 0.33 Ohm at 270 V and 5.3 Ah, with strings in parallel for Q_bus (derived; INL 10 s pulse)"
+  parameter R_bus::Resistance = 0.33 * (E_bus / 270.0) * (1.4e3 * 3600.0 / 270.0) / Q_bus
+  "First power command (assumed)"
+  parameter P_1::Power = 10.0e3
+  "Second power command (assumed)"
+  parameter P_2::Power = 20.0e3
+  "Third power command, the line's best-BSFC point (derived; EngineGeneratorBench)"
+  parameter P_3::Power = 30.0e3
+  "Fourth power command, field-weakened (assumed)"
+  parameter P_4::Power = 50.0e3
+  "Fifth power command, past the engine's full load at the line's top speed (assumed)"
+  parameter P_5::Power = 70.0e3
+  "Last power command, recovery from the limit (assumed)"
+  parameter P_6::Power = 30.0e3
+  "Hold at each point (assumed; several speed-loop settling times)"
+  parameter t_hold::Time = 10.0
+  "Ramp between points (assumed)"
+  parameter t_ramp::Time = 2.0
+  unit = VehicleSystemsComponents.Vehicle.EngineGenerator() {^unit}
+  line = VehicleSystemsComponents.Vehicle.OperatingLine() {^line}
+  step_2 = BlockComponents.Sources.Ramp(height = P_2 - P_1, offset = P_1, start_time = t_hold, duration = t_ramp) {^step_2}
+  step_3 = BlockComponents.Sources.Ramp(height = P_3 - P_2, offset = 0.0, start_time = 2 * t_hold + t_ramp, duration = t_ramp) {^step_3}
+  step_4 = BlockComponents.Sources.Ramp(height = P_4 - P_3, offset = 0.0, start_time = 3 * t_hold + 2 * t_ramp, duration = t_ramp) {^step_4}
+  step_5 = BlockComponents.Sources.Ramp(height = P_5 - P_4, offset = 0.0, start_time = 4 * t_hold + 3 * t_ramp, duration = t_ramp) {^step_5}
+  step_6 = BlockComponents.Sources.Ramp(height = P_6 - P_5, offset = 0.0, start_time = 5 * t_hold + 4 * t_ramp, duration = t_ramp) {^step_6}
+  battery = VehicleSystemsComponents.Vehicle.Electric.Battery(E = E_bus, Q_nom = Q_bus, R0 = R_bus, SoC0 = 0.5) {^battery}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  mounts = RotationalComponents.Components.Fixed() {^mounts}
+  "Power command [W]"
+  variable P_cmd::Power
+relations
+  P_cmd = step_2.y + step_3.y + step_4.y + step_5.y + step_6.y
+  unit.P_ref = P_cmd
+  connect(unit.P_shaft, line.P) {^line_wire}
+  connect(line.N, unit.N_ref) {^speed_wire}
+  connect(unit.p, battery.p) {^p_wire}
+  connect(battery.n, unit.n, ground.g) {^n_wire}
+  connect(unit.support, mounts.spline) {^mount_wire}
+metadata {
+  "_links": {
+    "unit": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 300, "x2": 600, "y2": 500}}}},
+    "line": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 400, "x2": 300, "y2": 500}}}},
+    "step_2": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 50, "x2": 80, "y2": 130}}}},
+    "step_3": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 150, "x2": 80, "y2": 230}}}},
+    "step_4": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 250, "x2": 80, "y2": 330}}}},
+    "step_5": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 350, "x2": 80, "y2": 430}}}},
+    "step_6": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 450, "x2": 80, "y2": 530}}}},
+    "battery": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 350, "x2": 850, "y2": 450, "rot": 90}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 760, "y1": 600, "x2": 840, "y2": 680}}}},
+    "mounts": {"Dyad": {"placement": {"diagram": {"x1": 460, "y1": 600, "x2": 540, "y2": 680}}}},
+    "line_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 590, "y": 250}, {"x": 160, "y": 250}, {"x": 160, "y": 450}], "E": 2}]}},
+    "speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "p_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 320}], "E": 2}]}},
+    "n_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": 2, "M": [{"x": 620, "y": 560}], "E": -1}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 800, "y": 560}]}},
+    "mount_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end
+
+"""
+Engine-generator battery-bus analysis (assumed bench). `stop` and `tstops` are written out for
+the bench defaults `t_hold = 10` and `t_ramp = 2`: six holds and five ramps, a stop at every ramp
+corner.
+"""
+analysis EngineGeneratorBatteryBenchTransient
+  extends TransientAnalysis(stop = 70.0, alg = ODEAlg.Rodas5P(), saveat = 0.05, tstops = [10.0, 12.0, 22.0, 24.0, 34.0, 36.0, 46.0, 48.0, 58.0, 60.0])
+  model = EngineGeneratorBatteryBench()
+end

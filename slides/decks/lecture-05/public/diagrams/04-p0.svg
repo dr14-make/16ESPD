@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 420" width="1100" height="420">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .box-f { fill: #fdf3e6; stroke: #a75d00; stroke-width: 2; }
+    .coupled { fill: #f6d5d3; stroke: #c0392b; stroke-width: 2; }
+    .free { fill: #cfe3d6; stroke: #2e8b57; stroke-width: 2; }
+    .coupled-hl { fill: #f6d5d3; stroke: #c0392b; stroke-width: 5; }
+    .free-hl { fill: #cfe3d6; stroke: #2e8b57; stroke-width: 5; }
+    .off { fill: #eef0f2; stroke: #b8c0c8; stroke-width: 2; }
+    .shaft { stroke: #16202c; stroke-width: 6; fill: none; }
+    .belt { stroke: #16202c; stroke-width: 2; fill: none; }
+    .shaft-off { stroke: #c8d0d8; stroke-width: 6; fill: none; }
+    .belt-off { stroke: #c8d0d8; stroke-width: 2; fill: none; }
+    .wheel { fill: #2b3440; stroke: #16202c; stroke-width: 2; }
+    .zone-c { fill: rgba(192, 57, 43, 0.06); stroke: #c0392b; stroke-width: 1.5; stroke-dasharray: 6 4; }
+    .zone-f { fill: rgba(46, 139, 87, 0.06); stroke: #2e8b57; stroke-width: 1.5; stroke-dasharray: 6 4; }
+    .b { font-size: 15px; font-weight: 600; }
+    .p { font-size: 18px; font-weight: 700; }
+    .p-off { font-size: 18px; font-weight: 700; fill: #9aa5b1; }
+    .lbl { font-size: 13px; fill: #4a5a6b; }
+    .lbl-hl { font-size: 15px; font-weight: 700; fill: #16202c; }
+    .r { font-size: 14px; font-weight: 600; fill: #c0392b; }
+    .g { font-size: 14px; font-weight: 600; fill: #2e8b57; }
+  </style>
+
+  <rect class="zone-c" x="20" y="20" width="330" height="300" rx="10"/>
+  <text x="185" y="44" text-anchor="middle" class="r">turns with the engine, always</text>
+  <rect class="zone-f" x="420" y="20" width="660" height="380" rx="10"/>
+  <text x="750" y="44" text-anchor="middle" class="g">can turn with the engine off: K0 open</text>
+
+  <rect class="box-f" x="60" y="180" width="130" height="70" rx="6"/>
+  <text x="125" y="220" text-anchor="middle" class="b">engine</text>
+  <circle cx="90" cy="150" r="14" class="box"/>
+  <rect class="coupled-hl" x="40" y="70" width="70" height="50" rx="6"/>
+  <text x="75" y="101" text-anchor="middle" class="p">P0</text>
+  <path class="belt" d="M100 120 L102 150 M82 120 L78 150"/>
+  <text x="125" y="95" class="lbl-hl">belt (FEAD)</text>
+
+  <path class="shaft" d="M190 215 H380"/>
+  <rect class="off" x="230" y="70" width="70" height="50" rx="6"/>
+  <text x="265" y="101" text-anchor="middle" class="p-off">P1</text>
+  <path class="shaft-off" d="M265 120 V215"/>
+  <text x="265" y="275" text-anchor="middle" class="lbl">on the crank</text>
+
+  <rect class="box" x="370" y="185" width="60" height="60" rx="4"/>
+  <text x="400" y="221" text-anchor="middle" class="b">K0</text>
+  <path class="shaft" d="M430 215 H640"/>
+  <rect class="off" x="490" y="70" width="70" height="50" rx="6"/>
+  <text x="525" y="101" text-anchor="middle" class="p-off">P2</text>
+  <path class="shaft-off" d="M525 120 V215"/>
+  <text x="525" y="275" text-anchor="middle" class="lbl">CVT input</text>
+
+  <rect class="box" x="640" y="180" width="100" height="70" rx="6"/>
+  <text x="690" y="220" text-anchor="middle" class="b">CVT</text>
+  <path class="shaft" d="M740 215 H930"/>
+  <rect class="off" x="770" y="70" width="70" height="50" rx="6"/>
+  <text x="805" y="101" text-anchor="middle" class="p-off">P3</text>
+  <path class="shaft-off" d="M805 120 V215"/>
+  <text x="805" y="275" text-anchor="middle" class="lbl">CVT output</text>
+
+  <circle cx="960" cy="215" r="30" class="box"/>
+  <text x="960" y="220" text-anchor="middle" class="b">diff</text>
+  <path class="shaft" d="M960 185 V140"/>
+  <rect class="wheel" x="925" y="110" width="70" height="30" rx="6"/>
+  <text x="1010" y="130" class="lbl">front</text>
+
+  <rect class="off" x="640" y="320" width="70" height="50" rx="6"/>
+  <text x="675" y="351" text-anchor="middle" class="p-off">P4</text>
+  <path class="shaft-off" d="M710 345 H830"/>
+  <rect class="off" x="730" y="327" width="60" height="36" rx="4"/>
+  <text x="760" y="350" text-anchor="middle" class="lbl">gear</text>
+  <rect class="wheel" x="830" y="330" width="70" height="30" rx="6"/>
+  <text x="910" y="342" class="lbl">rear axle,</text>
+  <text x="910" y="360" class="lbl">its own reduction</text>
+</svg>

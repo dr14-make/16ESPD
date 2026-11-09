@@ -115,3 +115,66 @@ elevation. An empty or missing file raises an error. Straight and curved referen
 supported while the reference line moves forward in its start frame's x. Road modifications are
 applied when loading, before grip or height evaluation.
 _Avoid_: grip CSV, road drawing format
+
+**Disconnect clutch (K0)**:
+The commanded clutch between the engine and the P2 machine. Opening it lets the machine drive
+or regenerate with the engine disconnected; closing it transmits engine torque through the
+machine-side shaft to the CVT. Its electrohydraulic actuator has a finite engagement response.
+_Avoid_: launch clutch, centrifugal clutch, torque converter
+
+**SoC-corrected fuel**:
+A drive-cycle run's fuel per 100 km with the net battery energy turned into the fuel that would
+replace it, at a stated engine-to-battery efficiency: a hybrid that ends the run with less charge
+than it started reports more fuel than it burned, one that ends with more reports less. The
+`Vehicle.SoCCorrectedFuel` block reports it in L/100 km and MJ/100 km beside the raw fuel.
+_Avoid_: charge-sustaining fuel, net fuel, equivalent fuel (that is only the battery's share)
+
+**Hybrid drive**:
+`Vehicle.Electric.HybridDrive` is the battery, average converter, DC-equivalent machine,
+auxiliaries, and ideal gear supplying a hybrid transmission input. It keeps `ElectricDrive`'s
+`tau_ref`, `spline`, `support`, and `SoC` interface, with forwardable 30 kW, 205 N·m and
+270 V, 1.4 kWh defaults from the 2011 Sonata Hybrid (ORNL-2011). Its default gear ratio is 1,
+not the BEV's final-drive reduction; it does not include the engine, K0 clutch, or energy manager.
+_Avoid_: hybrid powertrain, hybrid controller
+
+**Engine-generator**:
+`Vehicle.EngineGenerator` is Lecture 2's mapped engine and a Lecture 4 DC-equivalent machine
+running as a generator on one shaft, with its converter, delivering DC power at the pins `p` and
+`n`; engine mounts and generator housing share `support`. It takes a commanded electrical power
+and a commanded engine speed: the generator torque holds the power, the engine pedal holds the
+speed, and the generator unloads if the engine cannot keep up. It reports fuel mass flow, shaft
+speed, electrical power, and the engine power it needs, which can drive the best-BSFC operating
+line. It is the series hybrid's power unit, not the series hybrid, and holds no energy manager or
+SoC logic.
+_Avoid_: range extender (a sizing, not a part), APU, genset
+
+**P2 powertrain**:
+`Vehicle.P2Powertrain` composes the mapped engine, K0 disconnect clutch, `HybridDrive` and
+`ControlledVariator`: the machine shares the shaft after K0 and before the variator. The
+variator includes the final drive, but no launch clutch. The component exposes an output spline
+and a housing `support` that the user connects in the bench. The variator is a distinct child,
+so a speed-commanded variator can replace it; this is not a language-level `replaceable` feature. Lecture 5's fixed electric fixture
+holds the engine stopped with fuel cut and K0 open; it is not engine-start logic or an energy manager.
+In engine-only mode K0 launches the car on an engine-speed ramp.
+_Avoid_: hybrid drive (that is the electric subassembly), launch device, energy manager
+
+
+**Engine operating line**:
+The Lecture 2 map's lowest-BSFC engine speed at each brake power, stored in
+`assets/data/engine/bsfc_line.csv`. `Vehicle.OperatingLine` converts power in W to rpm;
+`SpeedCommandedVariator` tries to hold that speed with total ratio 12 to 2.8, including final
+drive. Lecture 5 step 2 requests pedal × 85 kW, independent of realized brake power,
+with a 1000 rpm floor and the same machine-side K0 lock-up ramp as H0, centered at 840 rpm, so
+K0 is open before the shaft falls to the 800 rpm idle. Ratio limits,
+actuator lag, K0 launch slip, idle and braking leave points off the line; the line is a target,
+not a guarantee or an energy manager.
+_Avoid_: optimal operating point (without the requested power), efficiency controller
+
+**Energy manager**:
+`Vehicle.EnergyManager` is the P2 hybrid's rule-based supervisor, a signal block with no physics.
+From the driver's torque demand at the transmission input, the shaft and engine speeds, vehicle
+speed and SoC it picks electric only, engine on the best-BSFC line, charge (a load-point shift up
+the line), boost, launch assist or regen through three continuous `HysteresisLatch` instances on
+demand power, demand torque, shaft speed and SoC, and requests engine power, engine torque, engine
+on, K0 engagement, machine torque and the friction brakes' share. It splits power by rule; it is not an optimizer (ECMS) and not a plant.
+_Avoid_: hybrid controller, supervisory controller, ECMS, power split device

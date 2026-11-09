@@ -1,0 +1,51 @@
+"Fuel-disabled spin-down followed by a clutch start using the powertrain firing logic."
+component FuelEnableBench
+  powertrain = VehicleSystemsComponents.Vehicle.P2Powertrain(start_stop = true, position_start = 0.0, k0(clamp_width = 1e-6))
+  load = RotationalComponents.Sources.VelocitySource()
+  unused_command = BlockComponents.Sources.Constant(k = 0.0)
+  mount = RotationalComponents.Components.Fixed()
+relations
+  connect(unused_command.y, powertrain.N_ref, powertrain.cvt_pedal)
+  load.w_ref = 150.0 / 12.0
+  initial load.phi = 0.0
+  connect(load.support, mount.spline)
+  powertrain.engine_pedal = 0.2
+  powertrain.engage = 0.5 * (1.0 + tanh((time - 12.0) / 0.1))
+  powertrain.engine_on = powertrain.engage
+  powertrain.engine_torque_ref = 0.0
+  powertrain.tau_ref = 0.0
+  connect(powertrain.spline, load.spline)
+  connect(powertrain.support, mount.spline)
+  initial powertrain.drive.converter.i_out = 0.0
+end
+
+analysis FuelEnableBenchTransient
+  extends TransientAnalysis(stop = 18.0, dtmax = 0.02, alg = ODEAlg.Rodas5P())
+  model = FuelEnableBench()
+end
+
+
+"Enabled engine idling with closed pedal and K0 open."
+component P2IdleBench
+  powertrain = VehicleSystemsComponents.Vehicle.P2Powertrain(start_stop = true)
+  load = RotationalComponents.Components.Inertia(J = 10.0)
+  unused_command = BlockComponents.Sources.Constant(k = 0.0)
+  mount = RotationalComponents.Components.Fixed()
+relations
+  connect(unused_command.y, powertrain.N_ref, powertrain.cvt_pedal)
+  powertrain.engine_on = 1.0
+  powertrain.engine_pedal = 0.0
+  powertrain.engine_torque_ref = 0.0
+  powertrain.engage = 0.0
+  powertrain.tau_ref = 0.0
+  connect(powertrain.spline, load.spline_a)
+  connect(powertrain.support, mount.spline)
+  initial load.w = 0.0
+  initial load.phi = 0.0
+  initial powertrain.drive.converter.i_out = 0.0
+end
+
+analysis P2IdleBenchTransient
+  extends TransientAnalysis(stop = 30.0, dtmax = 0.1, alg = ODEAlg.Rodas5P())
+  model = P2IdleBench()
+end

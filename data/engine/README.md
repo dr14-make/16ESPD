@@ -45,6 +45,12 @@ the first column the speed axis (500–6750 rpm, 250 rpm step). `data[i, j]` is 
 
 CO₂ has no table: it is `3.09 · ṁ_f` (derived, carbon balance at full oxidation).
 
+The best-BSFC operating line (Lecture 5) is derived from `torque_Nm.csv`, `fuel_gps.csv` and
+`full_load.csv` by `scripts/bsfc_line.jl`, which describes the method. It lives in
+`assets/data/engine/bsfc_line.csv` so that Dyad reads it as
+`dyad://VehicleSystemsComponents/data/engine/bsfc_line.csv`: columns `power_kW`, `speed_rpm`,
+`torque_Nm`, `bsfc_g_per_kWh`, one row per kW from 1 kW to peak power.
+
 ## The air path these maps assume
 
 The maps and the air path must agree on how much air the cylinders draw, or λ in the model is

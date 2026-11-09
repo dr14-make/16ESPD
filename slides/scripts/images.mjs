@@ -17,6 +17,7 @@ const COPIES = {
   "lecture-02": ["decks/lecture-02/public/img/lecture-02"],
   "lecture-03": ["decks/lecture-03/public/img/lecture-03", "site/public/lecture/lecture-03/img"],
   "lecture-04": ["decks/lecture-04/public/img/lecture-04", "site/public/lecture/lecture-04/img"],
+  "lecture-05": ["decks/lecture-05/public/img/lecture-05", "site/public/lecture/lecture-05/img"],
 }
 
 for (const [folder, targets] of Object.entries(COPIES)) {

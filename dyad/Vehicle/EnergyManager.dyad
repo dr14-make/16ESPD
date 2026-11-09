@@ -1,0 +1,305 @@
+"""
+Rule-based energy manager of a P2 hybrid: splits the driver's torque demand at the transmission
+input between engine, machine and friction brakes (derived; Lecture 5 S3). Signals only.
+
+Three continuous hysteresis latches pick the mode, from the demand power `P_dem = tau_dem w_shaft`,
+the demand torque, the shaft speed and the battery state of charge:
+
+    engine: on  when P_dem > P_on  or tau_drive > tau_lim          or charge and w_shaft > w_on
+            off when P_dem < P_off and tau_drive < tau_lim - dtau  and not (charge and w_shaft > w_off)
+    boost:  on  when P_dem > P_line_max,   off when P_dem < P_line_max - dP_boost
+    charge: on  when SoC < SoC_on,         off when SoC > SoC_off
+
+Each latch output is a fraction relaxing between 0 and 1 over `latch_time`, so the modes blend
+through it rather than switch, and a demand dithering inside a band moves no latch. With
+`tau_drive = max(tau_dem, 0)`, `P_drive = tau_drive w_shaft`, the machine limit
+`tau_lim = min(T_max, P_max / |w_shaft|)` and `engine_on` the engine latch clamped to [0, 1]:
+
+    c          = charge gate_speed gate_traction
+    P_shift    = max(P_drive, min(P_drive + c P_chg, P_line_max))
+    cap        = (1 - boost) P_peak + boost min(P_peak, max(P_line_max, P_drive - a_boost tau_lim w_shaft))
+    tau_excess = max(tau_drive - tau_lim, 0)
+    P_engine   = engine_on min(max(min(P_shift, cap), tau_excess w_e), P_peak),   w_e = max(engine_speed, w_idle)
+    tau_engine = P_engine / w_e                                  without mapped_limits
+    tau_engine = min(P_engine / w_e, max(available_torque, 0))   with mapped_limits
+    tau_assist = clamp(tau_drive - tau_engine, -tau_lim, tau_lim)
+    tau_machine  = tau_assist - tau_regen
+    tau_friction = max(-tau_dem, 0) - tau_regen
+
+The modes are what these give:
+
+- **Electric only** (engine off): the engine and K0 are released and the machine carries the
+  whole demand, `tau_machine = tau_drive`, at standstill too.
+- **Engine on the line**: the engine is asked for the demand power, which `OperatingLine` turns
+  into the best-BSFC speed. With K0 closed the shaft runs at engine speed, so `tau_engine =
+  tau_drive` and the machine idles.
+- **Charge**: the engine is asked for `P_chg` above the demand, a load-point shift up the line
+  that stops at `P_line_max`, and the machine generates the difference. A low battery forces the
+  engine on, but only once the shaft turns faster than `w_on`, so a locked K0 can hold the
+  engine above idle; below `w_off` it lets go, and at standstill a low battery never ties a
+  running engine to the wheels. The charge adder fades in with shaft speed over the same band
+  (`gate_speed`) and with the traction torque over `tau_traction` (`gate_traction`): while
+  braking regen charges the battery and the engine is asked for nothing.
+- **Boost**: the engine is capped at `P_line_max` and the machine adds the rest. Where the machine
+  saturates, the cap rises to cover what it cannot give, up to `P_peak`, so the delivered power is
+  the demand up to `P_peak` plus the machine limit. The latch sets exactly at `P_line_max`, so no
+  torque jumps at engagement, and releases `dP_boost` lower. The machine's share fades with SoC:
+  `a_boost` is 1 at `SoC_on` and above and falls smoothly to 0 at `SoC_on - dSoC_boost`, the
+  engine taking over. A depleted battery is not drained further, at the price of less
+  acceleration once the demand exceeds the engine's peak.
+- **Launch**: a demand torque beyond the machine's limit starts the engine, which is asked for
+  the excess `tau_excess` at no less than idle speed. Near standstill a P2 with a CVT and no
+  launch clutch launches on the machine; the engine's torque reaches the shaft only through a
+  slipping K0, which the plant models: this block asks for the torque and closes K0.
+- **Regen**: a braking demand goes to the machine first, then the friction brakes, by Lecture 4's
+  `RegenBlend` rule: the ceiling is the smallest of the machine torque left after any generating,
+  the charge power `P_regen / w`, and a fade to zero below `v_fade`. It takes the measured shaft
+  speed, where `RegenBlend` estimates it through a fixed reduction a CVT does not have. A battery
+  near full takes less: the ceiling falls smoothly to zero between `SoC_full - dSoC_full` and
+  `SoC_full`.
+
+The fractions `ev`, `on_line`, `charging` and `boosting` partition the engine latch: electric
+when it is off, else boosting before charging before on the line, so they sum to 1.
+
+`tau_friction` is the friction brakes' share as torque at the transmission input; a bench carries
+it to the wheels through the variator ratio. `P_engine` feeds `OperatingLine`, `tau_engine` the
+engine's torque command, `engine_on` its fuel enable and `engage` K0, both the engine latch.
+
+Defaults are sized for the 30 kW, 1.4 kWh Sonata-like `HybridDrive` and the Lecture 2 map's
+best-BSFC line. With `mapped_limits`, the torque split caps the engine share at its measured-speed
+full-load envelope during CVT transients; the power request remains the operating-line target.
+`geared_limit` accepts the machine torque envelope referred to the transmission input and
+retains the power ceiling. Disabling `electric_drive` runs the engine in traction and cuts
+fuel during braking; a conditional high-SoC discharge latch lowers the engine load request.
+"""
+component EnergyManager
+  "Use a machine torque limit referred through the gearing (derived; Lecture 5 geared-machine architecture)"
+  structural parameter geared_limit::Boolean = false
+  "Allow electric-only traction; otherwise run the engine in traction and release it while braking (assumed; architecture option)"
+  structural parameter electric_drive::Boolean = true
+  "Machine torque envelope referred to the transmission input [N.m]"
+  T_lim = RealInput() if geared_limit {^T_lim}
+  "Limit the torque split to the mapped engine envelope during CVT transients"
+  structural parameter mapped_limits::Boolean = false
+  "Engine-owned full-load envelope at measured engine speed [N.m]"
+  available_torque = RealInput() if mapped_limits {^available_torque}
+  "Driver torque demand at the transmission input, positive driving [N.m]"
+  tau_dem = RealInput() {^tau_dem}
+  "Transmission input (machine) shaft speed [rad/s]"
+  w_shaft = RealInput() {^w_shaft}
+  "Vehicle speed [km/h]"
+  v = RealInput() {^v}
+  "Battery state of charge"
+  SoC = RealInput() {^SoC}
+  "Engine speed [rad/s]"
+  engine_speed = RealInput() {^engine_speed}
+  "Engine power request on the best-BSFC line [W]"
+  P_engine = RealOutput() {^P_engine}
+  "Engine torque request [N.m]"
+  tau_engine = RealOutput() {^tau_engine}
+  "Engine on, 0 to 1: fuel enable"
+  engine_on = RealOutput() {^engine_on}
+  "K0 engagement request, 0 to 1"
+  engage = RealOutput() {^engage}
+  "Machine torque request, positive motoring [N.m]"
+  tau_machine = RealOutput() {^tau_machine}
+  "Friction brakes' share as torque at the transmission input, 0 or more [N.m]"
+  tau_friction = RealOutput() {^tau_friction}
+  "Engine start threshold on demand power (derived; line BSFC 240 g/kWh at 12 kW, 3 % above its minimum)"
+  parameter P_on::Power = 12.0e3
+  "Engine stop threshold on demand power (derived; below 8 kW line BSFC climbs from 247 g/kWh to 361 at 2 kW)"
+  parameter P_off::Power = 8.0e3
+  "Crank-coupled traction set threshold [N.m], only without electric drive (assumed; 5 N.m deadband above PI zero crossings)"
+  parameter tau_coupled_on::Torque = 5.0
+  "Crank-coupled braking reset threshold [N.m], only without electric drive (assumed; symmetric 5 N.m deadband)"
+  parameter tau_coupled_off::Torque = -5.0
+  "Engine power cap while boosting (derived; line BSFC 248 g/kWh at 59 kW, 276 at 69 kW)"
+  parameter P_line_max::Power = 60.0e3
+  "Boost release band below P_line_max (assumed)"
+  parameter dP_boost::Power = 5.0e3
+  "Engine peak power, the top of the line (derived; bsfc_line.csv)"
+  parameter P_peak::Power = 85.607e3
+  "Charging power added to the demand (assumed; lifts WLTC's 5-20 kW demand into the 233-239 g/kWh stretch at 15-30 kW)"
+  parameter P_chg::Power = 10.0e3
+  "Discharging power subtracted from the demand in charge-sustaining operation (assumed; symmetric with P_chg)"
+  parameter P_dis::Power = 10.0e3
+  "SoC above which discharge starts (assumed; charge-sustaining upper band)"
+  parameter SoC_dis_on::Real = 0.62
+  "SoC below which discharge stops (assumed; charge-sustaining target)"
+  parameter SoC_dis_off::Real = 0.60
+  "SoC below which the engine charges the battery (assumed; 5 % under the start)"
+  parameter SoC_on::Real = 0.55
+  "SoC above which charging stops (assumed; HybridDrive's SoC0)"
+  parameter SoC_off::Real = 0.6
+  "SoC at which regen stops (assumed)"
+  parameter SoC_full::Real = 0.8
+  "SoC band over which regen fades out below SoC_full (assumed)"
+  parameter dSoC_full::Real(min = eps(Float64)) = 0.05
+  "Machine peak torque (ORNL-2011; HybridDrive)"
+  parameter T_max::Torque = 205.0
+  "Machine rated power (ORNL-2011; HybridDrive)"
+  parameter P_max::Power = 30.0e3
+  "Charge-power ceiling for regen (derived; machine rating)"
+  parameter P_regen::Power = 30.0e3
+  "Speed below which regen fades to zero, km/h (assumed; RegenBlend)"
+  parameter v_fade::Real(min = eps(Float64)) = 10.0
+  "Engine speed floor for the torque request (derived; line idle 800 rpm)"
+  parameter w_idle::AngularVelocity = 800.0 * pi / 30
+  "Shaft speed above which a low battery starts the engine (derived; 200 rpm above the line's 800 rpm idle, assumed margin)"
+  parameter w_on::AngularVelocity = 1000.0 * pi / 30
+  "Shaft speed below which a low battery lets the engine go (assumed; just above idle)"
+  parameter w_off::AngularVelocity = 850.0 * pi / 30
+  "Traction torque over which the charge adder fades in (assumed)"
+  parameter tau_traction::Torque(min = eps(Float64)) = 5.0
+  "Release band of the torque start below the machine limit (assumed)"
+  parameter dtau::Torque = 20.0
+  "SoC band below SoC_on over which boost assist fades out (assumed)"
+  parameter dSoC_boost::Real(min = eps(Float64)) = 0.05
+  "Mode blend time (assumed; the K0 actuator's 0.15 s)"
+  parameter latch_time::Time(min = eps(Float64)) = 0.2
+  engine = VehicleSystemsComponents.Vehicle.Engine.HysteresisLatch(latch_time = latch_time) {^engine}
+  boost = VehicleSystemsComponents.Vehicle.Engine.HysteresisLatch(latch_time = latch_time) {^boost}
+  charge = VehicleSystemsComponents.Vehicle.Engine.HysteresisLatch(latch_time = latch_time) {^charge}
+  discharge = VehicleSystemsComponents.Vehicle.Engine.HysteresisLatch(latch_time = latch_time) if !electric_drive
+  "Demand power [W]"
+  variable P_dem::Power
+  "Driving part of the demand [N.m]"
+  variable tau_drive::Torque
+  "Braking part of the demand [N.m]"
+  variable tau_brake_demand::Torque
+  "Driving demand power [W]"
+  variable P_drive::Power
+  "Engine request after the charge shift, which stops at P_line_max [W]"
+  variable P_shift::Power
+  "Engine power ceiling: P_peak, or while boosting what the machine cannot cover above P_line_max [W]"
+  variable cap::Power
+  "Demand torque beyond the machine's limit [N.m]"
+  variable tau_excess::Torque
+  "Engine speed floored at idle [rad/s]"
+  variable w_e::AngularVelocity
+  "Position in the w_off to w_on band, 0 to 1"
+  variable x_speed::Real
+  "Charge adder's shaft-speed gate, 0 to 1, a smoothstep in x_speed"
+  variable gate_speed::Real
+  "Position in the traction band, 0 to 1"
+  variable x_traction::Real
+  "Charge adder's traction gate, 0 to 1, a smoothstep in x_traction"
+  variable gate_traction::Real
+  "Position in the boost SoC band, 0 to 1"
+  variable x_boost::Real
+  "Machine's boost allowance from SoC, 0 to 1, a smoothstep in x_boost"
+  variable a_boost::Real
+  "Machine torque limit at the shaft speed [N.m]"
+  variable tau_lim::Torque
+  "Machine share of the driving demand; negative generates [N.m]"
+  variable tau_assist::Torque
+  "Machine braking ceiling [N.m]"
+  variable tau_regen_max::Torque
+  "Braking torque the machine takes [N.m]"
+  variable tau_regen::Torque
+  "Regen low-speed fade, 0 to 1"
+  variable fade::Real
+  "Position in the regen fade-out SoC band, 0 to 1"
+  variable soc_x::Real
+  "Regen allowance from SoC, 0 to 1, a smoothstep in soc_x"
+  variable soc_allow::Real
+  "Electric-only fraction"
+  variable ev::Real
+  "Engine-on-the-line fraction"
+  variable on_line::Real
+  "Charging fraction"
+  variable charging::Real
+  "Boosting fraction"
+  variable boosting::Real
+relations
+  P_dem = tau_dem * w_shaft
+  tau_drive = max(tau_dem, 0.0)
+  tau_brake_demand = max(-tau_dem, 0.0)
+  P_drive = tau_drive * max(w_shaft, 0.0)
+  # The 1 rad/s floor keeps the power limits finite at standstill, where T_max binds anyway.
+  if geared_limit
+    tau_lim = min(max(T_lim, 0.0), P_max / max(abs(w_shaft), 1.0))
+  else
+    tau_lim = min(T_max, P_max / max(abs(w_shaft), 1.0))
+  end
+  if electric_drive
+    engine.set = ifelse(P_dem > P_on or tau_drive > tau_lim or (charge.y > 0.5 and w_shaft > w_on), 1.0, 0.0)
+    engine.reset = ifelse(P_dem < P_off and tau_drive < tau_lim - dtau and (charge.y <= 0.5 or w_shaft <= w_off), 1.0, 0.0)
+  else
+    engine.set = ifelse(tau_dem > tau_coupled_on, 1.0, 0.0)
+    engine.reset = ifelse(tau_dem < tau_coupled_off, 1.0, 0.0)
+  end
+  boost.set = ifelse(P_dem > P_line_max, 1.0, 0.0)
+  boost.reset = ifelse(P_dem < P_line_max - dP_boost, 1.0, 0.0)
+  charge.set = ifelse(SoC < SoC_on, 1.0, 0.0)
+  charge.reset = ifelse(SoC > SoC_off, 1.0, 0.0)
+  # The latch state overshoots [0, 1] by the integration error; K0 and the fuel enable may not.
+  engine_on = min(max(engine.y, 0.0), 1.0)
+  engage = engine_on
+  x_speed = min(max((w_shaft - w_off) / (w_on - w_off), 0.0), 1.0)
+  gate_speed = x_speed ^ 2 * (3.0 - 2.0 * x_speed)
+  x_traction = min(max(tau_drive / tau_traction, 0.0), 1.0)
+  gate_traction = x_traction ^ 2 * (3.0 - 2.0 * x_traction)
+  if !electric_drive
+    discharge.set = ifelse(SoC > SoC_dis_on, 1.0, 0.0)
+    discharge.reset = ifelse(SoC < SoC_dis_off, 1.0, 0.0)
+    P_shift = max(0.0, max(P_drive, min(P_drive + charge.y * gate_speed * gate_traction * P_chg, P_line_max)) - discharge.y * gate_speed * gate_traction * P_dis)
+  else
+    P_shift = max(P_drive, min(P_drive + charge.y * gate_speed * gate_traction * P_chg, P_line_max))
+  end
+  x_boost = min(max((SoC - SoC_on + dSoC_boost) / dSoC_boost, 0.0), 1.0)
+  a_boost = x_boost ^ 2 * (3.0 - 2.0 * x_boost)
+  cap = (1.0 - boost.y) * P_peak + boost.y * min(P_peak, max(P_line_max, P_drive - a_boost * tau_lim * max(w_shaft, 0.0)))
+  tau_excess = max(tau_drive - tau_lim, 0.0)
+  w_e = max(engine_speed, w_idle)
+  P_engine = engine_on * min(max(min(P_shift, cap), tau_excess * w_e), P_peak)
+  if mapped_limits
+    tau_engine = min(P_engine / w_e, max(available_torque, 0.0))
+  else
+    tau_engine = P_engine / w_e
+  end
+  tau_assist = min(max(tau_drive - tau_engine, -tau_lim), tau_lim)
+  if electric_drive
+    fade = min(max(v / v_fade, 0.0), 1.0)
+  else
+    fade = min(max(v / v_fade, 0.0), 1.0) * min(max(w_shaft / w_off, 0.0), 1.0)
+  end
+  soc_x = min(max((SoC - SoC_full + dSoC_full) / dSoC_full, 0.0), 1.0)
+  soc_allow = 1.0 - soc_x ^ 2 * (3.0 - 2.0 * soc_x)
+  if geared_limit
+    tau_regen_max = soc_allow * min(tau_lim + min(tau_assist, 0.0), min(P_regen / max(abs(w_shaft), 1.0), fade * max(T_lim, 0.0)))
+  else
+    tau_regen_max = soc_allow * min(tau_lim + min(tau_assist, 0.0), min(P_regen / max(abs(w_shaft), 1.0), fade * T_max))
+  end
+  tau_regen = min(tau_brake_demand, tau_regen_max)
+  tau_machine = tau_assist - tau_regen
+  tau_friction = tau_brake_demand - tau_regen
+  ev = 1.0 - engine_on
+  boosting = engine_on * boost.y
+  charging = engine_on * (1.0 - boost.y) * charge.y
+  on_line = engine_on * (1.0 - boost.y) * (1.0 - charge.y)
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/EnergyManager.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  },
+  "_links": {
+    "tau_dem": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 100, "x2": 50, "y2": 200}, "diagram": {"x1": -25, "y1": 125, "x2": 25, "y2": 175}}}},
+    "w_shaft": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 275, "x2": 50, "y2": 375}, "diagram": {"x1": -25, "y1": 300, "x2": 25, "y2": 350}}}},
+    "v": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -25, "y1": 475, "x2": 25, "y2": 525}}}},
+    "SoC": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 800, "x2": 50, "y2": 900}, "diagram": {"x1": -25, "y1": 825, "x2": 25, "y2": 875}}}},
+    "engine_speed": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 625, "x2": 50, "y2": 725}, "diagram": {"x1": -25, "y1": 650, "x2": 25, "y2": 700}}}},
+    "P_engine": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 50, "x2": 1050, "y2": 150}, "diagram": {"x1": 975, "y1": 75, "x2": 1025, "y2": 125}}}},
+    "tau_engine": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 210, "x2": 1050, "y2": 310}, "diagram": {"x1": 975, "y1": 235, "x2": 1025, "y2": 285}}}},
+    "engine_on": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 370, "x2": 1050, "y2": 470}, "diagram": {"x1": 975, "y1": 395, "x2": 1025, "y2": 445}}}},
+    "engage": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 530, "x2": 1050, "y2": 630}, "diagram": {"x1": 975, "y1": 555, "x2": 1025, "y2": 605}}}},
+    "tau_machine": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 690, "x2": 1050, "y2": 790}, "diagram": {"x1": 975, "y1": 715, "x2": 1025, "y2": 765}}}},
+    "tau_friction": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 850, "x2": 1050, "y2": 950}, "diagram": {"x1": 975, "y1": 875, "x2": 1025, "y2": 925}}}},
+    "available_torque": {"Dyad": {"placement": {"icon": {"x1": 150, "y1": 950, "x2": 250, "y2": 1050, "rot": 270}, "diagram": {"x1": 175, "y1": 975, "x2": 225, "y2": 1025, "rot": 270}}}},
+    "T_lim": {"Dyad": {"placement": {"icon": {"x1": 750, "y1": 950, "x2": 850, "y2": 1050, "rot": 270}, "diagram": {"x1": 775, "y1": 975, "x2": 825, "y2": 1025, "rot": 270}}}},
+    "engine": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 150, "x2": 600, "y2": 350}}}},
+    "boost": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 400, "x2": 600, "y2": 600}}}},
+    "charge": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 650, "x2": 600, "y2": 850}}}}
+  }
+}
+end
