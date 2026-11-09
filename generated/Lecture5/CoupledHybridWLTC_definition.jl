@@ -235,9 +235,6 @@ EnergyManager shares this conservative limit between drive and regeneration.
   # Subcomponent meter of type VehicleSystemsComponents.Vehicle.SoCCorrectedFuel
   meter_overrides = __pop_subcomponent_overrides!(__overrides, "meter")
   push!(__systems, @named meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel(; __overrides = meter_overrides))
-  # Subcomponent brakes of type VehicleSystemsComponents.Vehicle.BrakeSplit
-  brakes_overrides = __pop_subcomponent_overrides!(__overrides, "brakes")
-  push!(__systems, @named brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(; brake_gain=Float64(1.0), __overrides = brakes_overrides))
   # Subcomponent powertrain of type VehicleSystemsComponents.Vehicle.CoupledHybridPowertrain
   powertrain_overrides = __pop_subcomponent_overrides!(__overrides, "powertrain")
   powertrain_dict = Dict{String, Any}()
@@ -285,7 +282,10 @@ EnergyManager shares this conservative limit between drive and regeneration.
   push!(__eqs, demand_line.P ~ manager.P_drive)
   push!(__eqs, N_target ~ max(manager.engine_on * line.N + (1.0 - manager.engine_on) * demand_line.N, N_locked))
   push!(__eqs, meter.P_stored ~ P_stored)
-  push!(__eqs, brakes.u ~ -manager.tau_friction * ratio)
+  push!(__eqs, car.tau_fl ~ manager.tau_friction * ratio / 2.0)
+  push!(__eqs, car.tau_fr ~ car.tau_fl)
+  push!(__eqs, car.tau_rl ~ 0.0)
+  push!(__eqs, car.tau_rr ~ 0.0)
   push!(__eqs, ModelingToolkit.D_nounits(E_charge) ~ max(-P_stored, 0.0))
   push!(__eqs, ModelingToolkit.D_nounits(E_regen) ~ manager.tau_regen * max(manager.w_shaft, 0.0))
   push!(__eqs, ModelingToolkit.D_nounits(E_friction) ~ car.fl.brake.tau_friction * car.fl.brake.w + car.fr.brake.tau_friction * car.fr.brake.w + car.rl.brake.tau_friction * car.rl.brake.w + car.rr.brake.tau_friction * car.rr.brake.w)
@@ -309,10 +309,6 @@ EnergyManager shares this conservative limit between drive and regeneration.
   push!(__eqs, connect(car.steering, straight.spline))
   push!(__eqs, connect(flat.y, roadload.grade))
   push!(__eqs, connect(car.chassis, roadload.chassis))
-  push!(__eqs, connect(brakes.tau_fl, car.tau_fl))
-  push!(__eqs, connect(brakes.tau_fr, car.tau_fr))
-  push!(__eqs, connect(brakes.tau_rl, car.tau_rl))
-  push!(__eqs, connect(brakes.tau_rr, car.tau_rr))
   push!(__eqs, connect(powertrain.SoC, manager.SoC))
   push!(__eqs, connect(powertrain.engine_speed, manager.engine_speed, map.omega))
   push!(__eqs, connect(powertrain.available_torque, manager.available_torque))
