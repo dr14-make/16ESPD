@@ -202,7 +202,7 @@ plot(t, [at(m.meter.fuel_raw) at(m.meter.fuel_corr)], label=["raw" "SoC-correcte
 | SoCCorrectedFuel `fuel_corr` | 5.7175 L/100 km |
 | Energy | 184.8651 MJ/100 km |
 | K0 slip energy, integrated over cycle | approximately 0.11246 MJ |
-| Peak engine torque on cycle / maximum K0 capacity | 123.372 / 229.885 N·m |
+| Peak engine torque on cycle / maximum K0 capacity | 123.37 / 229.885 N·m |
 
 Battery current is zero and SoC stays at 0.6, so raw and corrected fuel are equal. On level
 stretches above 12 km/h, K0 position stays above 0.99. Wherever K0 position exceeds 0.5, the
@@ -300,7 +300,7 @@ requested and delivered power need not agree, and most points do not land exactl
 | Raw / corrected fuel | 5.4374 / 5.4374 L/100 km |
 | H0 pedal-schedule fuel | 5.7175 L/100 km |
 | Difference | −0.2801 L/100 km (−4.90%) |
-| Energy | 175.8089 MJ/100 km |
+| Energy | 175.81 MJ/100 km |
 | Battery current / SoC | zero / 0.6 throughout |
 
 Lower speed at higher load moves part of the cycle toward better BSFC. The saving uses the same
