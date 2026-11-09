@@ -11,47 +11,11 @@ shaft below the target by the factor N_b / sqrt(N_b^2 + floor^2) of the true out
 negligible at cruise and large near standstill.
 """
 component SpeedCommandedVariator
-  "Input shaft"
-  spline_a = Spline() {^spline_a}
-  "Output shaft"
-  spline_b = Spline() {^spline_b}
-  "Transmission housing"
-  support = Spline() {^support}
+  extends VehicleSystemsComponents.Vehicle.VariatorLaw
   "Target input speed [rpm]"
   N_ref = RealInput() {^N_ref}
-  "Launch ratio, including final drive (assumed for a small-car belt CVT)"
-  parameter i_launch::Real = 12.0
-  "Overdrive ratio, including final drive (assumed for a small-car belt CVT)"
-  parameter i_overdrive::Real = 2.8
-  "Ratio actuator time constant [s] (assumed for a hydraulic belt CVT)"
-  parameter ratio_time::Time(min = eps(Float64)) = 0.5
-  "Regularizing output speed [rpm] (assumed to keep the launch command finite)"
-  parameter output_rpm_floor::Real(min = eps(Float64)) = 50.0
-  "Initial total ratio (assumed launch setting; override for initialized cruise)"
-  parameter ratio_initial::Real = i_launch
-  "Input speed relative to the housing [rad/s]"
-  variable w_a::AngularVelocity
-  "Output speed relative to the housing [rad/s]"
-  variable w_b::AngularVelocity
-  "Input speed [rpm]"
-  variable N_a::Real
-  "Output speed magnitude [rpm]"
-  variable N_b::Real
-  "Bounded ratio command"
-  variable i_command::Real
-  "Actual total speed ratio"
-  variable ratio::Real
 relations
-  w_a = der(spline_a.phi) - der(support.phi)
-  w_b = der(spline_b.phi) - der(support.phi)
-  N_a = w_a * 30 / pi
-  N_b = sqrt((w_b * 30 / pi)^2 + output_rpm_floor^2)
-  i_command = min(max(N_ref / N_b, i_overdrive), i_launch)
-  der(ratio) = (i_command - ratio) / ratio_time
-  w_a = ratio * w_b
-  0 = ratio * spline_a.tau + spline_b.tau
-  support.tau = -spline_a.tau - spline_b.tau
-  initial ratio = ratio_initial
+  N_target = N_ref
 metadata {
   "Dyad": {"icons": {"default": "dyad://RotationalComponents/IdealGear.svg"}},
   "_links": {

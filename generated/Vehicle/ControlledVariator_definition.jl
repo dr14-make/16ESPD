@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ControlledVariator(; name, i_launch, i_overdrive, target_rpm_min, target_rpm_max, ratio_time, output_rpm_floor, ratio_initial, __overrides)
+   ControlledVariator(; name, i_launch, i_overdrive, ratio_time, output_rpm_floor, ratio_initial, target_rpm_min, target_rpm_max, __overrides)
 
 Ideal continuously variable transmission with a pedal-scheduled speed controller.
 
@@ -19,11 +19,11 @@ lag. The velocity constraint avoids dependence on accumulated absolute shaft ang
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `i_launch`         | Launch ratio, including final drive (assumed for a small-car belt CVT)                         | --  |   12.0 |
 | `i_overdrive`         | Overdrive ratio, including final drive (assumed for a small-car belt CVT)                         | --  |   2.8 |
-| `target_rpm_min`         | Closed-pedal target speed [rpm] (assumed above clutch engagement)                         | --  |   1800.0 |
-| `target_rpm_max`         | Wide-open target speed [rpm] (assumed 500 rpm below the rev limiter)                         | --  |   6000.0 |
 | `ratio_time`         | Ratio actuator time constant [s] (assumed for a hydraulic belt CVT)                         | s  |   0.5 |
 | `output_rpm_floor`         | Regularizing output speed [rpm] (assumed to keep the launch command finite)                         | --  |   50.0 |
 | `ratio_initial`         | Initial total ratio (assumed launch setting; override for initialized cruise)                         | --  |   i_launch |
+| `target_rpm_min`         | Closed-pedal target speed [rpm] (assumed above clutch engagement)                         | --  |   1800.0 |
+| `target_rpm_max`         | Wide-open target speed [rpm] (assumed 500 rpm below the rev limiter)                         | --  |   6000.0 |
 
 ## Connectors
 
@@ -44,7 +44,7 @@ lag. The velocity constraint avoids dependence on accumulated absolute shaft ang
 | `i_command`         | Bounded ratio command                         | --  |
 | `ratio`         | Actual total speed ratio                         | --  |
 """
-@component function ControlledVariator(; name = nothing, var"i_launch"=Float64(12.0), var"i_overdrive"=2.8, var"target_rpm_min"=Float64(1800.0), var"target_rpm_max"=Float64(6000.0), var"ratio_time"=0.5, var"output_rpm_floor"=Float64(50.0), var"ratio_initial"=nothing, __overrides = Dict{String, Any}())
+@component function ControlledVariator(; name = nothing, var"i_launch"=Float64(12.0), var"i_overdrive"=2.8, var"ratio_time"=0.5, var"output_rpm_floor"=Float64(50.0), var"target_rpm_min"=Float64(1800.0), var"target_rpm_max"=Float64(6000.0), var"ratio_initial"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -65,10 +65,10 @@ lag. The velocity constraint avoids dependence on accumulated absolute shaft ang
   ### Keyword argument overrides
   haskey(__overrides, "i_launch") && (i_launch = pop!(__overrides, "i_launch"))
   haskey(__overrides, "i_overdrive") && (i_overdrive = pop!(__overrides, "i_overdrive"))
-  haskey(__overrides, "target_rpm_min") && (target_rpm_min = pop!(__overrides, "target_rpm_min"))
-  haskey(__overrides, "target_rpm_max") && (target_rpm_max = pop!(__overrides, "target_rpm_max"))
   haskey(__overrides, "ratio_time") && (ratio_time = pop!(__overrides, "ratio_time"))
   haskey(__overrides, "output_rpm_floor") && (output_rpm_floor = pop!(__overrides, "output_rpm_floor"))
+  haskey(__overrides, "target_rpm_min") && (target_rpm_min = pop!(__overrides, "target_rpm_min"))
+  haskey(__overrides, "target_rpm_max") && (target_rpm_max = pop!(__overrides, "target_rpm_max"))
   haskey(__overrides, "ratio_initial") && (ratio_initial = pop!(__overrides, "ratio_initial"))
 
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
@@ -93,12 +93,6 @@ lag. The velocity constraint avoids dependence on accumulated absolute shaft ang
   __local__i_overdrive = i_overdrive
   append!(__params, @parameters (i_overdrive::Real), [description = "Overdrive ratio, including final drive (assumed for a small-car belt CVT)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, i_overdrive, __local__i_overdrive)
-  __local__target_rpm_min = target_rpm_min
-  append!(__params, @parameters (target_rpm_min::Real), [description = "Closed-pedal target speed [rpm] (assumed above clutch engagement)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, target_rpm_min, __local__target_rpm_min)
-  __local__target_rpm_max = target_rpm_max
-  append!(__params, @parameters (target_rpm_max::Real), [description = "Wide-open target speed [rpm] (assumed 500 rpm below the rev limiter)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, target_rpm_max, __local__target_rpm_max)
   __local__ratio_time = ratio_time
   append!(__params, @parameters (ratio_time::Real), [description = "Ratio actuator time constant [s] (assumed for a hydraulic belt CVT)", bounds = (eps(Float64), Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, ratio_time, __local__ratio_time)
@@ -108,6 +102,12 @@ lag. The velocity constraint avoids dependence on accumulated absolute shaft ang
   __local__ratio_initial = ratio_initial
   append!(__params, @parameters (ratio_initial::Real), [description = "Initial total ratio (assumed launch setting; override for initialized cruise)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, ratio_initial, __local__ratio_initial)
+  __local__target_rpm_min = target_rpm_min
+  append!(__params, @parameters (target_rpm_min::Real), [description = "Closed-pedal target speed [rpm] (assumed above clutch engagement)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, target_rpm_min, __local__target_rpm_min)
+  __local__target_rpm_max = target_rpm_max
+  append!(__params, @parameters (target_rpm_max::Real), [description = "Wide-open target speed [rpm] (assumed 500 rpm below the rev limiter)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, target_rpm_max, __local__target_rpm_max)
 
   ### Final Parameters (assignments)
 
@@ -177,12 +177,12 @@ lag. The velocity constraint avoids dependence on accumulated absolute shaft ang
   push!(__eqs, w_b ~ ModelingToolkit.D_nounits(spline_b.phi) - ModelingToolkit.D_nounits(support.phi))
   push!(__eqs, N_a ~ w_a * 30 / pi)
   push!(__eqs, N_b ~ sqrt((w_b * 30 / pi) ^ 2 + output_rpm_floor ^ 2))
-  push!(__eqs, N_target ~ target_rpm_min + min(max(pedal, 0.0), 1.0) * (target_rpm_max - target_rpm_min))
   push!(__eqs, i_command ~ min(max(N_target / N_b, i_overdrive), i_launch))
   push!(__eqs, ModelingToolkit.D_nounits(ratio) ~ (i_command - ratio) / ratio_time)
   push!(__eqs, w_a ~ ratio * w_b)
   push!(__eqs, 0 ~ ratio * spline_a.tau + spline_b.tau)
   push!(__eqs, support.tau ~ -spline_a.tau - spline_b.tau)
+  push!(__eqs, N_target ~ target_rpm_min + min(max(pedal, 0.0), 1.0) * (target_rpm_max - target_rpm_min))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
