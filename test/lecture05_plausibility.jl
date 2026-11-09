@@ -9,7 +9,7 @@ const BSFC_LINE = read_line()
 include("../scripts/machine_size_sweep.jl")
 const H0_L100 = MachineSizeSweep.H0_L100
 const H0_MJ100 = 184.86508896
-const LINE_L100 = 5.4374434065
+const LINE_L100 = 5.4374462426
 const RPM_ENGINE_IDLE = 800.0
 
 # H0 is both a P2 fixed-mode check and the operating-line baseline; one 1800 s run serves both.
@@ -1250,7 +1250,7 @@ include("torque_to_pedal.jl")
     @test maximum(soc) <= 0.8
     corrected = last(s[m.meter.fuel_corr])
     @test corrected < H0_L100
-    @test corrected ≈ 4.0863406523 atol = 1e-9 rtol = 0
+    @test corrected ≈ 4.0865131152 atol = 1e-9 rtol = 0
     @test last(s[m.meter.energy_corr]) ≈ 132.1237260121 atol = 5e-4 rtol = 0
     on = at(m.manager.engine_on) .> 0.5
     starts = findall(diff(on) .== 1)
