@@ -708,8 +708,8 @@ end
     # ±150 rpm at actual brake power; demand scheduling need not follow realized power.
     @test maximum(deviation[eligible]) < 1600.0
     @test maximum(deviation[.!idle .& .!launch]) < 2400.0
-    @test maximum(abs.(at(m.line.P) .- at(m.powertrain.engine_pedal) .* s.ps[m.P_peak])) < 1e-8
-    @test all(isapprox.(at(m.N_target), max.(at(m.line.N), s.ps[m.N_locked]); atol = 1e-9))
+    @test maximum(abs.(at(m.speed_command.line.P) .- at(m.powertrain.engine_pedal) .* s.ps[m.P_peak])) < 1e-8
+    @test all(isapprox.(at(m.speed_command.N_ref), max.(at(m.speed_command.line.N), s.ps[m.N_locked]); atol = 1e-9))
     moving = at(m.car.bus.vx) .* 3.6 .> 10.0
     cruise_min_position = k0_cruise_min_position(m, at, dt)
     # At 54.01 s the shallow-slope mask resumes before the 0.5 s variator lag has settled;
@@ -1276,7 +1276,7 @@ include("torque_to_pedal.jl")
     mean_power_error = sum(error_W[tracking]) / sum(tracking)
     max_power_error = maximum(error_W[tracking])
     fuel = at(m.powertrain.mdot_fuel)
-    line_fuel_share = sum(fuel[abs.(at(m.powertrain.engine.N) .- at(m.line.N)) .<= 150.0]) / sum(fuel)
+    line_fuel_share = sum(fuel[abs.(at(m.powertrain.engine.N) .- at(m.speed_command.line.N)) .<= 150.0]) / sum(fuel)
     @test mean_power_error < 500.0
     @test max_power_error < 5000.0
     @test line_fuel_share > 0.45
