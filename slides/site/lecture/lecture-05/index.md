@@ -35,7 +35,7 @@ step from its own starter.
 
 **Working in Studio.**
 
-- Open a model: in COMPONENTS, click it once, then press Enter.
+- Open a model: in COMPONENTS, double-click it (or click it once and press Enter).
 - Place a block: **+** on the canvas toolbar, type part of its name, check the library path in the
   result, then drag the row onto the canvas. Rename it with **Edit Parameters** › pencil.
 - Wire: hover a port to read its name, then drag from port to port. Click empty canvas between
@@ -44,12 +44,19 @@ step from its own starter.
 - After you edit in code view, close the diagram and reopen it before you touch the canvas again;
   otherwise later canvas edits draw but are not saved.
 - Save (Ctrl+S) and wait for compilation to finish before you run.
-- Each run solves the full 1800 s WLTC and takes a few minutes. Close the "Julia Plots" tab that
+- Run: with the starter's diagram focused, press ▷ (Run Analysis) and click the step's analysis,
+  the second row. Enter on the highlighted first row creates a new analysis instead.
+- Each run solves the full 1800 s WLTC in about 3 minutes. Close the "Julia Plots" tab that
   opens after a run: it costs memory.
+- Each run's result stays in memory. Note `fuel_corr` at the end of each run as you go. On a
+  16 GB machine, before step 3 run `r1 = r2 = nothing; GC.gc()` once your step 1 and 2 fuel
+  values are noted. If the REPL tab disappears, press F1 › **Dyad: Open Julia REPL** and press ▷
+  again.
 
 **Reading results in the REPL.** `solution` always holds the most recent run. Right after each
 run, keep it under its own name (`r1 = solution` in step 1, `r2` in step 2, `r3` in step 3), then
-set up:
+set up as below. Paste the code blocks rather than typing them: the REPL closes brackets for you,
+and a typed line break submits half a call.
 
 ```julia
 using DyadInterface: symbolic_container
@@ -63,7 +70,8 @@ at(x) = s(t, idxs=x).u
 **Checkpoint sampling.** Unless a value is a parameter or a meter reading at the end of the cycle,
 it is evaluated on the grid `t = 0:0.01:1800` with `at(x)` above. Sampled extremes are not exact
 continuous-time bounds. Read the fuel meter at `T = 1800 s`. An engine-on sample is one with
-`at(m.manager.engine_on) > 0.5`.
+`at(m.manager.engine_on) > 0.5`. Checkpoints are printed to the digits that agree between
+solves on different machines: your run can differ past them.
 
 ## 0 · Setup — 10 min {#step-0}
 
@@ -87,7 +95,8 @@ COMPONENTS shows `HandsOn05` with `Step1EngineWLTC`, `Step2OperatingLineWLTC` an
 
 #### Look at the powertrain (5 min)
 
-Open `Vehicle › P2Powertrain`. Trace the shaft from left to right:
+Open `Vehicle › P2Powertrain`. COMPONENTS opens with every module expanded; `Vehicle` comes
+after the `Lecture` modules, so scroll past them. Trace the shaft from left to right:
 
 | Part | What it is |
 | --- | --- |
@@ -121,7 +130,11 @@ housings reach `support`. There is one final drive (inside the variator) and no 
 
 Open `HandsOn05 › Step1EngineWLTC`. The powertrain is already placed in the middle, set up as the
 conventional car H0. Its engine pedal and K0 request are set in code; no port is wired on the
-canvas yet. Wire:
+canvas yet.
+
+[![The step-1 starter as it opens: drive cycle, PI driver, torque split and machine gate on the left, the unwired powertrain block in the middle with the fuel meter beside it, the zero constant and pedal limiter loose, the planar car, differential and road load below.](/lecture/lecture-05/img/step01-starter-unwired.png)](/lecture/lecture-05/img/step01-starter-unwired.png)
+
+Wire:
 
 | From | To |
 | --- | --- |
@@ -137,6 +150,10 @@ The first two put the powertrain on the front wheels and on the ground. In H0 th
 pedal schedule, so `N_ref` is ignored; the gate keeps the machine request at zero; the engine
 torque target is used only with start/stop. The zero constant keeps every ignored input driven.
 
+Your first canvas wire renames every `connect` tag in the file to `id…` and reformats its
+metadata. That is expected: the model is unchanged, but a text diff against the reference is
+noisy.
+
 What the starter already does, in code: the pedal is the PI driver's output divided by 150 N·m;
 K0 closes smoothly as the engine passes 1300 rpm (a launch, like a centrifugal clutch) and opens
 again when the shaft falls toward the 800 rpm idle, so the engine does not stall at stops; front
@@ -145,15 +162,16 @@ so H0 is a conventional car with the same mass. Leave `electric = false`.
 
 #### Run H0 (5 min)
 
-Save. With the starter's diagram focused, press ▷ (Run Analysis) and pick
-`Step1EngineWLTCTransient`. In the REPL, `r1 = solution`, run the setup block above, then plot:
+Save. With the starter's diagram focused, press ▷ (Run Analysis) and click
+`Step1EngineWLTCTransient`, the second row. In the REPL, `r1 = solution`, run the setup block above, then plot:
 
 ```julia
 plot(t, [at(m.trace.y) 3.6 .* at(m.car.bus.vx)], label=["target" "actual"],
      xlabel="Time [s]", ylabel="Speed [km/h]")
 plot(t, at(m.powertrain.engine_speed) .* (30/pi), ylabel="Engine [rpm]", label="engine")
 plot(t, at(m.powertrain.position), ylabel="K0 position", label="K0")
-plot(t, [at(m.meter.fuel_raw) at(m.meter.fuel_corr)], label=["raw" "SoC-corrected"], ylabel="L/100 km")
+plot(t, [at(m.meter.fuel_raw) at(m.meter.fuel_corr)], label=["raw" "SoC-corrected"],
+     ylabel="L/100 km", ylims=(0, 15))
 ```
 
 ::: tip Checkpoint 1 — H0, full WLTC
@@ -161,10 +179,10 @@ plot(t, [at(m.meter.fuel_raw) at(m.meter.fuel_corr)], label=["raw" "SoC-correcte
 | Quantity | Full WLTC result |
 | --- | --- |
 | Duration | 1800 s |
-| Maximum absolute speed error | 1.167635 km/h |
+| Maximum absolute speed error | 1.17 km/h |
 | Distance | 23266.405 m |
-| Raw fuel | 5.717536 L/100 km |
-| SoCCorrectedFuel `fuel_corr` | 5.717536 L/100 km |
+| Raw fuel | 5.7175 L/100 km |
+| SoCCorrectedFuel `fuel_corr` | 5.7175 L/100 km |
 | Energy | 184.8651 MJ/100 km |
 | K0 slip energy, integrated over cycle | approximately 0.11246 MJ |
 | Peak engine torque on cycle / maximum K0 capacity | 123.372 / 229.885 N·m |
@@ -207,6 +225,8 @@ powertrain still pedal-scheduled (`speed_commanded = false`). It already declare
 power `P_peak = 85000` W, the floor `N_locked = 1000` rpm and the variable `N_target`, the
 commanded transmission input speed.
 
+[![The step-2 starter as it opens: the H0 car with its powertrain wired to the wheels, mount and fuel meter, its command inputs open, and the zero constant beside it.](/lecture/lecture-05/img/step02-starter-unwired.png)](/lecture/lecture-05/img/step02-starter-unwired.png)
+
 #### Do this
 
 1. Place one block and rename it:
@@ -224,7 +244,8 @@ commanded transmission input speed.
    | `unused_command.y` | `powertrain.engine_torque_ref` |
 
 3. Open code view (⇄). In the `powertrain = ...` line, change `speed_commanded = false` to
-   `speed_commanded = true`. Then add these three lines to `relations`:
+   `speed_commanded = true`. Then add these three lines to `relations` (type or paste them; press
+   Esc to dismiss a suggestion before Enter):
 
    ```dyad
    line.P = powertrain.engine_pedal * P_peak
@@ -234,7 +255,7 @@ commanded transmission input speed.
 
    These are equations, not wires: the line's input is a product (pedal × 85 kW) and the target
    is floored at 1000 rpm, above the 800 rpm idle; no port carries either value.
-4. Save, close the diagram, reopen it, press ▷ and pick `Step2OperatingLineWLTCTransient`. In
+4. Save, close the diagram, reopen it, press ▷ and click `Step2OperatingLineWLTCTransient` (second row). In
    the REPL, `r2 = solution`, rerun the setup block with `r = r2`, then plot the operating
    points over the line:
 
@@ -257,11 +278,11 @@ requested and delivered power need not agree, and most points do not land exactl
 
 | Quantity | Full WLTC |
 | --- | --- |
-| Maximum speed error | 1.167747 km/h (<2) |
+| Maximum speed error | 1.17 km/h (<2) |
 | Distance | 23266.405 m |
-| Raw / corrected fuel | 5.437444 / 5.437444 L/100 km |
-| H0 pedal-schedule fuel | 5.717536 L/100 km |
-| Difference | −0.280092 L/100 km (−4.899%) |
+| Raw / corrected fuel | 5.4374 / 5.4374 L/100 km |
+| H0 pedal-schedule fuel | 5.7175 L/100 km |
+| Difference | −0.2801 L/100 km (−4.90%) |
 | Energy | 175.8089 MJ/100 km |
 | Battery current / SoC | zero / 0.6 throughout |
 
@@ -297,6 +318,8 @@ already holds, in code: the CVT target (the engine's line speed while it runs, a
 the friction-brake split, and driver limits of ±(150.233567 + 205.0) N·m, engine peak plus
 machine limit. The manager is set to `SoC_on = 0.52`, `SoC_off = 0.55` and `P_line_max = 30 kW`.
 
+[![The step-3 starter as it opens: the energy manager reading driver demand, speed, SoC, engine speed and available torque, all six of its outputs unwired; the line and demand_line tables above; the powertrain on the wheels with only its CVT pedal fed by the zero constant.](/lecture/lecture-05/img/step03-starter-unwired.png)](/lecture/lecture-05/img/step03-starter-unwired.png)
+
 #### Do this
 
 1. Open code view (⇄). In the `powertrain = ...` line, change `start_stop = false` to
@@ -309,6 +332,7 @@ machine limit. The manager is set to `SoC_on = 0.52`, `SoC_off = 0.55` and `P_li
    | --- | --- |
    | `map` | VehicleSystemsComponents › Vehicle › TorqueToPedal |
 
+   The search also lists `HandsOn05 › TorqueToPedal`; drag the one under `Vehicle`.
    `TorqueToPedal` is the inverse engine map: the pedal that gives a torque `tau` at speed `omega`.
 3. Wire the manager's commands:
 
@@ -322,7 +346,7 @@ machine limit. The manager is set to `SoC_on = 0.52`, `SoC_off = 0.55` and `P_li
    | `manager.engine_on` | `powertrain.engine_on` |
    | `manager.tau_machine` | `powertrain.tau_ref` |
 
-4. Save, press ▷ and pick `Step3HybridWLTCTransient`. In the REPL, `r3 = solution`, rerun the
+4. Save, press ▷ and click `Step3HybridWLTCTransient` (second row). In the REPL, `r3 = solution`, rerun the
    setup block with `r = r3`, then plot:
 
 ```julia
@@ -370,7 +394,7 @@ small amount of fuel is booked to electric mode; settled electric operation burn
 
 A hybrid can save fuel by draining its battery, so compare at equal charge: the meter's
 `fuel_corr` converts the change in stored battery energy into fuel. Read it only after the full
-1800 s. If your three results are still in the REPL:
+1800 s. You noted `fuel_corr` after each run; if your three results are still in the REPL:
 
 ```julia
 [r.sol[symbolic_container(r).meter.fuel_corr][end] for r in (r1, r2, r3)]
@@ -411,7 +435,7 @@ flag, so `P2ElectricWLTC` is a test component that `extends P2WLTC(electric = tr
 
 | Quantity | Measured WLTC Low result |
 | --- | --- |
-| Maximum absolute speed error | 1.502830 km/h |
+| Maximum absolute speed error | 1.50 km/h |
 | Distance | 3094.989 m |
 | Fuel | 0 |
 | SoC | 0.6 → 0.3864 |
