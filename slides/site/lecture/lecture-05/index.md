@@ -49,9 +49,9 @@ step from its own starter.
 - Each run solves the full 1800 s WLTC in about 3 minutes. Close the "Julia Plots" tab that
   opens after a run: it costs memory.
 - Each run's result stays in memory. Note `fuel_corr` at the end of each run as you go. On a
-  16 GB machine, before step 3 run `r1 = r2 = nothing; GC.gc()` once your step 1 and 2 fuel
-  values are noted. If the REPL tab disappears, press F1 › **Dyad: Open Julia REPL** and press ▷
-  again.
+  16 GB machine, before step 3 run `r1 = r2 = r = m = s = nothing; GC.gc()` once your step 1 and
+  2 fuel values are noted: the setup block's `r`, `m` and `s` hold a result too. If the REPL
+  tab disappears, press F1 › **Dyad: Open Julia REPL** and press ▷ again.
 
 **Reading results in the REPL.** `solution` always holds the most recent run. Right after each
 run, keep it under its own name (`r1 = solution` in step 1, `r2` in step 2, `r3` in step 3), then
@@ -411,7 +411,9 @@ small amount of fuel is booked to electric mode; settled electric operation burn
 
 A hybrid can save fuel by draining its battery, so compare at equal charge: the meter's
 `fuel_corr` converts the change in stored battery energy into fuel. Read it only after the full
-1800 s. You noted `fuel_corr` after each run; if your three results are still in the REPL:
+1800 s. You noted `fuel_corr` after each run, and those notes are what you compare. The block
+below works only if all three results are still in the REPL, so not after the memory note's
+`r1 = r2 = … = nothing`:
 
 ```julia
 [r.sol[symbolic_container(r).meter.fuel_corr][end] for r in (r1, r2, r3)]
