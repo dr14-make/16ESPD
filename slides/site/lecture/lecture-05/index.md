@@ -393,7 +393,7 @@ recovers energy first and the friction brakes take the rest.
 | Minimum / mean engine on-time | 1.87 s / 14.72 s |
 | Maximum speed error | 1.32 km/h |
 | K0 slip energy | 111.21 kJ (2.53 kJ per start) |
-| Corrected fuel | 4.08634 L/100 km |
+| Corrected fuel | 4.08651 L/100 km |
 | SoC start → end | 0.6 → 0.61221 |
 
 All four modes occur and their fractions sum to one. While stopped, the engine burns no fuel
@@ -429,7 +429,7 @@ The hybrid starts at SoC **0.60000**, finishes at **0.61221**, and stays between
 |---|---:|---:|---:|
 | Conventional H0 | 5.718 | 5.718 | 184.87 |
 | Step-2 line car | 5.437 | 5.437 | 175.81 |
-| Charge-sustaining P2 hybrid | 4.114 | 4.086 | 132.12 |
+| Charge-sustaining P2 hybrid | 4.114 | 4.086 | 132.13 |
 | Lecture-4 BEV | — | — | 47.25 |
 
 H0, the line car and the hybrid share the same driver gains (`k = 110`, `Ti = 1 s`); the wider
