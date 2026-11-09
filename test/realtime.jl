@@ -165,3 +165,23 @@ end
         @test abs(integ[hs.vehicle.motion.vx]) < 1e-6
     end
 end
+
+@testset "Full throttle at full steering lock from standstill keeps solving" begin
+    V = VehicleSystemsComponents
+    @named launch = V.PlanarBEVByHand(mu = 1.0)
+    ls = simplify_model(launch)
+    prob = ODEProblem(ls, [], (0.0, 10.0))
+    V.reset_human_commands!()
+    integ = init(prob, Rodas5P(); dtmax = 0.005, save_everystep = false)
+    # Stepped as the window steps it, one frame per call with the commands written between
+    # frames: a loop that steps to a target time places the steps elsewhere and passes.
+    while integ.t < 2.5 && V.stepping(integ)
+        steer = 9.6 / (1 + max(integ[ls.vehicle.motion.vx], 0.0) / 45)
+        V.set_human_commands!(throttle = 1, brake = 0, steer = steer)
+        step!(integ, 1 / 60, true)
+    end
+    V.reset_human_commands!()
+    @test string(integ.sol.retcode) in ("Default", "Success")
+    @test integ.t >= 2.5
+    @test integ[ls.vehicle.motion.vx] > 5
+end

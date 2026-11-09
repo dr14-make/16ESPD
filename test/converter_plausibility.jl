@@ -14,6 +14,11 @@ const _rpm_c = 30 / pi
 const _R_c = 0.05
 const _J_c = 0.05
 const _I_max_c = 332.2
+# The library converter rounds the corners of its current limit by delta_i = 1 A; the hands-on 04
+# reference clips hard. Asked for 500 A, the library gives this, 1.2 mA under I_max.
+_smooth_limit_c(i_ref; I = _I_max_c, delta = 1.0) =
+    (sqrt((i_ref + I)^2 + delta^2) - sqrt((i_ref - I)^2 + delta^2)) / 2
+const _I_lim_c = _smooth_limit_c(500.0)
 const _V_c = 350.0
 const _loss_c = (T_f = 0.5, K_i = 1.0, k_w = 300 / (10100 * pi / 30)^3, C = 200.0)
 # Shaft loss torque above w_reg = 10 rad/s, where every term is exactly the deck's.
@@ -59,14 +64,14 @@ end
 @testset "Lecture 4 step 02: the envelope on the dyno" begin
     ts = range(0.05, 102.0, length = 2040)
     lib, mine = _E4c.ConverterTransient(), _H4c.ConverterDynoTransient()
-    for run in (lib, mine)
+    for (run, I_lim) in ((lib, _I_lim_c), (mine, _I_max_c))
         @test string(run.sol.retcode) == "Success"
         k = _k_of(run)
         t = _drive_traces(run, ts)
         wb = _base_w(k, _V_c, _I_max_c)
         # Asked for 500 A, the converter delivers its limit at every speed, and the machine
         # carries it. The current loop has settled 50 ms in (T_i = 1 ms).
-        @test all(isapprox.(t.i_out, _I_max_c; atol = 1e-6))
+        @test all(isapprox.(t.i_out, I_lim; atol = 1e-6))
         @test all(t.i .== t.i_out)
         # Neither limit is ever passed. The 1e-3 allows for the interpolant of the saved points,
         # which overshoots the corner by up to 2e-4 where a solver step straddles it.
@@ -112,10 +117,20 @@ end
         @test t.P_out[end] / t.P_in[end] ≈ 350 / 352.95 atol = 1e-5
         @test t.P_in[end] / 1e3 ≈ 117.25 atol = 0.01
     end
-    # The reference solution is the library pair under other names.
+    # The reference solution is the library pair under other names, apart from the rounded
+    # current limit: its 1.2 mA moves the torque by at most k dI and the supply power by at most
+    # (v_out + R I_max + V_on + f_s t_sw v_in) dI, 0.44 W at 350 V. Within 50 rpm of base speed
+    # the rounded voltage corner amplifies that difference, and the two runs' interpolants
+    # straddle the corner at different steps (up to 3e-4 of field, 0.1 N·m), so that span is
+    # left out.
     ml, mm = symbolic_container(lib), symbolic_container(mine)
-    @test lib.sol(ts, idxs = ml.machine.tau).u ≈ mine.sol(ts, idxs = mm.machine.tau).u atol = 1e-9
-    @test lib.sol(ts, idxs = ml.converter.P_in).u ≈ mine.sol(ts, idxs = mm.converter.P_in).u atol = 1e-6
+    dI = _I_max_c - _I_lim_c
+    t_base = 1.0 + _base_w(_k_of(lib), _V_c, _I_max_c) * _rpm_c / 100
+    off = findall(t -> abs(t - t_base) > 0.5, ts)
+    @test all(isapprox.(lib.sol(ts[off], idxs = ml.machine.tau).u, mine.sol(ts[off], idxs = mm.machine.tau).u;
+        atol = 1.01 * _k_of(lib) * dI))
+    @test all(isapprox.(lib.sol(ts[off], idxs = ml.converter.P_in).u, mine.sol(ts[off], idxs = mm.converter.P_in).u;
+        atol = 1.01 * (_V_c + _R_c * _I_max_c + 1.2 + 5.0e3 * 1.0e-6 * _V_c) * dI))
 end
 
 @testset "Lecture 4 step 02: the corner point held" begin
@@ -144,13 +159,14 @@ end
     hi = findall(w -> 3550 < w * _rpm_c < 9950, t.w)
     @test all(isapprox.(t.tau_em[hi] .* t.w[hi], (_V_c - _R_c * 150.0) * 150.0; rtol = 1e-5))
 
-    # Asked for −500 A, the converter brakes at −332.2 A and the power flows back. Above
-    # (V + R I_max)/k = 3610 rpm the back-EMF would push more than 350 V back into the supply, so
-    # the converter weakens the field here too and returns 115.3 kW. At standstill there is no
-    # back-EMF to brake with, and the supply pays the copper loss: 6.5 kW in.
+    # Asked for −500 A, the converter brakes at −332.2 A (1.2 mA less with the rounded limit)
+    # and the power flows back. Above (V + R I_max)/k = 3610 rpm the back-EMF would push more
+    # than 350 V back into the supply, so the converter weakens the field here too and returns
+    # 115.3 kW. At standstill there is no back-EMF to brake with, and the supply pays the copper
+    # loss: 6.5 kW in.
     run = _E4c.ConverterTransient(I_ref = -500.0)
     t = _drive_traces(run, ts)
-    @test all(isapprox.(t.i_out, -_I_max_c; atol = 1e-6))
+    @test all(isapprox.(t.i_out, -_I_lim_c; atol = 1e-6))
     @test all(t.tau[t.w .> 20] .< 0)
     @test maximum(abs.(t.d)) <= 1 + 1e-3
     @test 3610.1 < _fw_onset_rpm(t) < 3617.0
