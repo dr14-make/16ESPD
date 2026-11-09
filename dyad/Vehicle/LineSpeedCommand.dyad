@@ -12,12 +12,9 @@ component LineSpeedCommand
   "Minimum locked speed [rpm] (assumed; Lecture 5 lock-up calibration, 1000 rpm)"
   parameter N_locked::Real = 1000.0
   line = VehicleSystemsComponents.Vehicle.OperatingLine() {^line}
-  "Floored operating-line target [rpm] (derived; locked-speed constraint)"
-  variable N_target::Real
 relations
   line.P = pedal * P_peak
-  N_target = max(line.N, N_locked)
-  N_ref = N_target
+  N_ref = max(line.N, N_locked)
 metadata {
   "_links": {
     "pedal": {"Dyad":{"placement":{"icon":{"x1":-50,"x2":50,"y1":450,"y2":550},"diagram":{"x1":-25,"x2":25,"y1":475,"y2":525}}}},
