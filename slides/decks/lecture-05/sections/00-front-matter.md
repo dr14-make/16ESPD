@@ -193,18 +193,18 @@ layout: center
 </div>
 <div>
 
-### Yours, built along
+### Yours, from starters
 
-Your `MyCar`, branch `handson-05`:
+One starter per step in `dyad/HandsOn05/`:
 
-- step 01: the P2 powertrain on the planar car
-- step 02: the engine's operating line
-- step 03: the rule-based energy manager
-- step 04: the charge-sustaining WLTC
+- step 1: the library P2 powertrain on the planar car
+- step 2: the engine's operating line
+- step 3: the rule-based energy manager
+- step 4: the charge-sustaining comparison
 
-Components: `P2Powertrain`, `P2WLTC`, `P2OperatingLineWLTC`, `P2HybridWLTC`
+Starters: `Step1EngineWLTC`, `Step2OperatingLineWLTC`, `Step3HybridWLTC`
 
-Reference answers: `dyad/HandsOn05/`.
+Reference answers: `P2WLTC`, `P2OperatingLineWLTC`, `P2HybridWLTC`.
 
 </div>
 </div>
@@ -230,10 +230,9 @@ engine's map read backwards, which turns the torque the manager wants into a ped
 there are test models for the other four positions, and the prepared parts for the series-hybrid
 homework.
 
-The right column is what you build in your own MyCar, on a new branch called handson-05: the P2
-powertrain, the operating line, the energy manager, and the charge-sustaining WLTC. They become the
-components you see listed, P2Powertrain, P2WLTC, P2OperatingLineWLTC and P2HybridWLTC. The
-reference answers are in the folder named at the bottom of the column.
+The right column is what you build: the library's P2 powertrain on the planar car, the operating
+line, the energy manager, and the charge-sustaining comparison. Each step starts from a starter
+model in the HandsOn05 folder, and the finished reference for each step sits next to it.
 -->
 
 ---
@@ -245,13 +244,13 @@ routeAlias: how-the-build-works
 <div class="grid grid-cols-[1.1fr_1fr] gap-8 items-start">
 <div>
 
-- Work in your `MyCar`, on a new branch **`handson-05`**, from your finished `handson-04`.
-- Each step lists the parts with their library path, instance name and values, every wire and
-  line of code, and the numbers to check before you go on.
-- **Use the names given.** The energy manager and the fuel calculation read signal paths by name.
-- **Plot in the Julia REPL.** Click ▷ **Run Analysis** once for each new analysis before you paste
-  the snippet that calls it.
-- **Fell behind?** Every step ends with the finished code of that step, to paste.
+- **Open the step's starter** in `HandsOn05`. It already holds the car, cycle, driver, fuel meter
+  and everything that can only be written as code, plus its analysis.
+- Each step lists the blocks to place, every wire, and the numbers to check before you go on.
+  About 90 minutes in all.
+- **Use the names given.** The starter's equations read the placed blocks by name.
+- **Plot in the Julia REPL.** After ▷ **Run Analysis**, keep the result: `r1 = solution`.
+- **Fell behind?** Every step names its finished reference; the next starter does not need yours.
 
 </div>
 <div>
@@ -263,30 +262,26 @@ The build guide holds every block, line and number:
 
 [page: Lecture 5 build guide](../lecture/lecture-05/)
 
-Commit after each step: `Step 01: P2 powertrain`, `Step 02: operating line`, …
-
 </div>
 </div>
 
 <!--
-Before the first build, here is how the build works. It works the same way as in Lectures 3 and 4.
+Before the first build, here is how the build works.
 
-You work in your MyCar, on a new branch called handson-05, started from your finished Lecture 4
-branch. You need that branch because the machine and the battery you built there come back today.
-The build guide has one section per step. Each section gives the parts, their names and values,
-every wire and line of code, and the numbers to check.
+Each step starts from a starter model in the HandsOn05 folder. The starter already holds the car,
+the drive cycle, the driver, the fuel meter and everything that can only be written as code, and
+it comes with its analysis. You place a block or two from the library and draw a few wires. The
+whole build takes about ninety minutes.
 
-Please use the names given. Today the energy manager reads the battery's state of charge and the
-engine's speed by name, and the fuel calculation reads the fuel flow and the battery power by name.
-If you keep Studio's default names, the error shows up far away from its cause.
+Please use the names given. The starter's equations read the blocks you place by name, so if you
+keep Studio's default name, the error shows up far away from its cause.
 
-You plot in the Julia REPL. Click Run Analysis once on each new analysis before you paste the
-snippet that calls it, so that the REPL has loaded your library.
+You plot in the Julia REPL. After each run, keep the result under its own name, r1, r2 and r3, so
+that the comparison at the end can read all three.
 
-If you fall behind, every step ends with its finished code, ready to paste.
+If you fall behind, every step names its finished reference model, and the next step's starter
+does not need your previous step.
 
 The box on the right says that every number in a green checkpoint box has been checked against the
 reference model. If your number differs, your model differs.
-
-Commit after each step, with messages like "Step 01: P2 powertrain", and so on.
 -->

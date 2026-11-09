@@ -346,16 +346,16 @@ brake sharing · `TorqueToPedal`, the engine map read backwards: torque in, peda
 </div>
 <div class="stack">
 
-*The full hybrid drive back on the shaft · the manager splits the driver's demand into an engine
-torque and a machine torque · the inverse map turns the engine's into a pedal · engine-on, K0 and
-the CVT's speed target from its modes · its friction share through the CVT ratio*
-
-`manager`, set in Studio: `mapped_limits` true · `SoC_on` 0.52 · `SoC_off` 0.55 ·
-`P_line_max` 30 kW
+*In the starter `Step3HybridWLTC`: set `start_stop = true` · place `TorqueToPedal` as `map` ·
+draw 7 wires from the manager's commands to the line, the map and the powertrain · run the WLTC*
 
 ```txt
-N_target = max(manager.engine_on * line.N
-               + (1.0 - manager.engine_on) * demand_line.N, N_locked)
+manager.P_engine        → line.P
+manager.tau_engine      → map.tau, powertrain.engine_torque_ref
+powertrain.engine_speed → map.omega
+map.pedal               → powertrain.engine_pedal
+manager.engine_on       → powertrain.engine_on
+manager.tau_machine     → powertrain.tau_ref
 ```
 
 <div class="handson">✓ over the WLTC the modes switch without chatter: <b>44</b> engine starts, the
@@ -378,18 +378,17 @@ engine on, K0, and machine torque.
 
 The library gives you the rules as one block, the EnergyManager. Inside are three of Lecture 2's
 latches: one on the demand, for starting the engine; one on the line's cap, for boost; and one on
-the state of charge, for charging. It also has Lecture 4's regen brake sharing. What you build, as
-the italic line says, is the car around it.
+the state of charge, for charging. It also has Lecture 4's regen brake sharing.
 
-You put the full hybrid drive back, with its losses, its 30 kilowatts and its 1.4 kilowatt-hours.
-The manager takes the driver's demand and splits it into an engine torque and a machine torque. An
-inverse engine map, TorqueToPedal, turns the engine's torque into a pedal position. The manager's
-modes switch the engine on, close K0 and pick the CVT's speed target, and its friction-brake share
-goes to the wheels through the CVT's ratio. Above the snippet are the four manager parameters you
-set in Studio: use the engine's torque limits from its map, and use the WLTC test's thresholds. The
-snippet itself is the engine speed target. In words: when the engine is on, aim at the line's
-speed; when it is off, aim at a second line taken from the demand; and never go below the locked
-minimum speed from build 02.
+The starter already holds the full hybrid drive, with its losses, its 30 kilowatts and its 1.4
+kilowatt-hours, and the manager, set up and reading its measurements. What you add, as the italic
+line says, are its commands. First you switch on start and stop in the powertrain. Then you place
+an inverse engine map, TorqueToPedal, which turns the engine torque the manager wants into a pedal
+position. Then you draw seven wires: the engine power to the operating line, the engine torque to
+the map and to the powertrain, the engine speed to the map, the map's pedal to the engine, the
+engine-on command, and the machine torque. The manager's modes then switch the engine on, close K0
+and pick the CVT's speed target, and its friction-brake share goes to the wheels through the CVT's
+ratio.
 
 The checkpoint: over the WLTC the modes switch without chatter, and the state of charge stays in
 its window. The reference run starts the engine 44 times, and the shortest time the engine stays on

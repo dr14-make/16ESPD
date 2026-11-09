@@ -10,7 +10,7 @@ layout: section
 What you built, what you measured, and what the model leaves out.
 
 <!--
-Section 08, the wrap-up: the lecture in one slide, what you measured on your own car, and what the
+Section 08, the wrap-up: the lecture in one slide, what you measured in the build, and what the
 model leaves out.
 -->
 
@@ -62,27 +62,27 @@ baseline.
 routeAlias: what-you-measured
 ---
 
-## What you measured on your own car
+## What you measured
 
 <div class="tight">
 
-| Step | You built | You measured |
+| Step | You added | You measured |
 |---|---|---|
-| 01 | the P2 powertrain | engine only 1.17 km/h, electric only on Low 1.50 km/h worst speed error |
-| 02 | the operating line | 5.44 against H0's 5.72 L/100 km, 17 % of the fuel within ±150 rpm of the line |
+| 01 | the P2 powertrain in the car | engine only (H0) 1.17 km/h worst speed error, 5.72 L/100 km |
+| 02 | the operating line | 5.44 against H0's 5.72 L/100 km |
 | 03 | the energy manager | 44 engine starts, none shorter than 1.9 s; SoC 0.513–0.613 |
-| 04 | the charge-sustaining WLTC | SoC 0.600 → 0.612; 4.09 L/100 km, 132.1 MJ/100 km, −28.5 % against H0 |
+| 04 | the comparison | SoC 0.600 → 0.612; 4.09 L/100 km, 132.1 MJ/100 km, −28.5 % against H0 |
 
 </div>
 
 <!--
 Here is what you measured, one row per step, with the reference model's checkpoint numbers.
 
-Step 01, the P2 powertrain: it follows the WLTC engine only, within 1.17 kilometers per hour, and
-electric only on the Low phase, within 1.50. Step 02, the operating line: 5.44 liters against H0's
-5.72, with only 17 percent of the fuel within 150 rpm of the line. Step 03, the energy manager: the
+Step 01, the P2 powertrain in the car: engine only, it follows the WLTC within 1.17 kilometers per
+hour and burns 5.72 liters per 100 kilometers. Step 02, the operating line: 5.44 liters against
+H0's 5.72. Step 03, the energy manager: the
 modes switch without chatter, with 44 engine starts over the WLTC, none shorter than 1.9 seconds,
-and the state of charge between 0.513 and 0.613. Step 04, the charge-sustaining WLTC: the state of
+and the state of charge between 0.513 and 0.613. Step 04, the comparison: the state of
 charge comes back to 0.612 from 0.600, and the hybrid uses 4.09 corrected liters and 132.1
 megajoules per 100 kilometers, 28.5 percent less than H0.
 -->

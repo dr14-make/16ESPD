@@ -21,5 +21,8 @@ include("P2HybridWLTC_test.jl")
 include("P2OperatingLineWLTC_test.jl")
 include("P2Powertrain_test.jl")
 include("P2WLTC_test.jl")
+include("Step1EngineWLTC_test.jl")
+include("Step2OperatingLineWLTC_test.jl")
+include("Step3HybridWLTC_test.jl")
 include("TorqueToPedal_test.jl")
 end

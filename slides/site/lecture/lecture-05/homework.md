@@ -10,7 +10,7 @@ In a series hybrid only the electric motor drives the wheels. The engine turns a
 feeds the battery's DC bus, so it is free of the road: it can run at its best point, or not at
 all. You build one on the Lecture 5 planar car, drive it through the WLTC charge-sustaining, and
 compare its SoC-corrected fuel with the conventional car H0 from the
-[build guide](./#step-1c).
+[build guide](./#step-1).
 
 **What you build.** The series powertrain on a prepared ground: battery, traction drive and
 engine-generator on one DC bus, the engine held on its best-BSFC line, and an **SoC

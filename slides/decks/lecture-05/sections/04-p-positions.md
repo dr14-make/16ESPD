@@ -693,7 +693,8 @@ the CVT's ratio moves the machine's speed as well as the engine's.
 
 So P2 is the one column with a tick in every row. That is why the build uses P2. One energy manager
 on a P2 exercises every mode, and moving the machine to the other four positions is the same
-experiment four more times. You build P2, and I show you the other four as one table in section 07.
+experiment four more times. You put P2 in a car, and I show you the other four as one table in
+section 07.
 -->
 
 ---
@@ -707,63 +708,60 @@ routeAlias: build-p2
 
 ![P2Powertrain in Studio: engine, K0, hybrid drive and variator left to right, command ports on the left, outputs and the spline on the right, the housing support at the bottom.](/img/lecture-05/step01-p2-powertrain.png)
 
-**Given:** `DisconnectClutch` (K0 and its actuator) · `HybridDrive` (30 kW, 1.4 kWh)
+**Given:** `Vehicle.P2Powertrain`, placed in the starter `Step1EngineWLTC` with the car, driver
+and fuel meter
 
-[page: steps 1a–1c](../lecture/lecture-05/#step-1a) · reference `dyad/HandsOn05/P2Powertrain.dyad`, `dyad/HandsOn05/P2WLTC.dyad`
+[page: step 1](../lecture/lecture-05/#step-1) · reference `dyad/Vehicle/P2Powertrain.dyad`, `dyad/HandsOn05/P2WLTC.dyad`
 
 </div>
 <div class="stack">
 
-*`MappedEngine` → K0 → `HybridDrive` (30 kW, 1.4 kWh) on the CVT's input shaft →
-`ControlledVariator` (the CVT) → planar differential → front wheel hubs · then two runs: engine
-only, K0 slipping to start the car; electric only, K0 open, engine held*
+*Trace `MappedEngine` → K0 → `HybridDrive` (30 kW, 1.4 kWh) on the CVT's input shaft →
+`P2Variator` (the CVT) · wire the powertrain's 7 ports into the car · run engine only (H0), K0
+slipping to start the car*
 
 ```txt
-connect(engine.spline, k0.spline_a)
-connect(k0.spline_b, drive.spline, variator.spline_a)
-connect(variator.spline_b, spline)
+powertrain.spline  → differential.flange_b
+powertrain.support → mount.spline
+powertrain.mdot_fuel → meter.mdot_fuel
+… and 4 command inputs
 ```
 
 <div class="handson">✓ engine only (H0), full WLTC: speed error (worst gap to the test's speed)
-<b>1.17</b> km/h, <b>5.72</b> L/100 km · electric only, WLTC Low: speed error <b>1.50</b> km/h,
-SoC 0.60 → 0.39</div>
+<b>1.17</b> km/h, <b>5.72</b> L/100 km</div>
 
-<img src="/img/lecture-05/step01-electric-wltc-low.png" style="max-height: 13rem" alt="Electric only on the WLTC Low phase: the actual speed follows the target, the machine turns up to about 3500 rpm, the SoC falls from 0.60 to about 0.39, and the fuel flow stays at zero." />
+<img src="/img/lecture-05/step01-engine-only-wltc.png" style="max-height: 13rem" alt="Engine only on the full WLTC: the actual speed follows the target, the engine speed, the K0 position closing at each launch, and the fuel consumption settling near 5.7 L/100 km." />
 
-<div class="caption">Electric only, WLTC Low: zero fuel, SoC 0.60 → 0.39. The small pack cannot
-drive a whole cycle.</div>
+<div class="caption">Engine only, full WLTC: K0 slips at each launch and stays closed while the car
+moves.</div>
 
 </div>
 </div>
 
 <!--
-Build 01: the P2 powertrain. On the left you see the finished powertrain in Studio. Read it from
+Build 01: the P2 powertrain. On the left you see the library's powertrain in Studio. Read it from
 left to right: the engine, the K0 clutch, the hybrid drive, and the variator, which is the CVT. The
 command inputs come in on the left, the outputs and the shaft to the wheels leave on the right, and
 the mount to the car body is at the bottom.
 
-The italic line on the right is the build. First comes Lecture 2's engine model. Then the K0 clutch,
-which the library gives you together with its actuator. Then the hybrid drive: a 30 kilowatt machine
-with its converter and a 1.4 kilowatt-hour battery, sized after the 2011 Sonata. It is built like
-Lecture 4's drive, but it is not the Leaf's. It sits on the CVT's input shaft, beside K0, not as
-another gear in series. Then comes the controlled variator, not the full CVT driveline, which would
-bring a second clutch for starting the car. And last, the planar car's differential to the front
-wheel hubs. The three connect lines in the code box join the shafts: the engine to the clutch, the
-clutch to the machine and the CVT, and the CVT to the output.
+The italic line on the right is the build. You do not build the powertrain from parts today; you
+open the library's and trace it. First comes Lecture 2's engine model. Then the K0 clutch, with its
+actuator. Then the hybrid drive: a 30 kilowatt machine with its converter and a 1.4 kilowatt-hour
+battery, sized after the 2011 Sonata. It sits on the CVT's input shaft, beside K0, not as another
+gear in series. Then the variator, which already holds the final drive, and no second clutch for
+starting the car: K0 does that job.
 
-Then come two runs, and they are your checkpoint. First, engine only, H0. K0 starts the car like the
-clutch of a manual car: it slips as the engine revs, and it is closed while the car moves. The speed
-error is the largest gap between the car's speed and the speed the test asks for. The car follows
-the whole WLTC within 1.17 kilometers per hour, and it burns 5.72 liters per 100 kilometers.
+Then you open the starter. It already holds the car, the drive cycle, the driver and the fuel
+meter, and the powertrain sits in the middle with nothing wired. You draw seven wires: the shaft to
+the differential, the housing to the mount, the fuel flow to the meter, and four command inputs.
 
-Second, electric only: K0 open, and the engine stopped. The car must follow the WLTC where the demand
-is low. The checkpoint asks only for low demand, because at about 30 kilowatts, instead of Lecture
-4's 110, the machine is not meant to carry the fast phases alone.
+Then one run, and it is your checkpoint: engine only, H0. K0 starts the car like the clutch of a
+manual car: it slips as the engine revs, and it is closed while the car moves. The speed error is
+the largest gap between the car's speed and the speed the test asks for. The car follows the whole
+WLTC within 1.17 kilometers per hour, and it burns 5.72 liters per 100 kilometers.
 
-The plot under the checkpoint is that electric run on the WLTC Low phase. Top left, the car's speed
-follows the target, within 1.5 kilometers per hour. Bottom right, the fuel flow stays at zero. And
-bottom left, the state of charge falls from 60 to 39 percent. So the pack is far too small to drive
-a whole cycle on electricity.
+The same car can also drive on electricity alone, with K0 open and the engine stopped. I show you
+that run; at about 30 kilowatts the small pack cannot carry a whole cycle.
 -->
 
 ---
@@ -775,7 +773,7 @@ a whole cycle on electricity.
 - **P2, P3, P4** sit behind a clutch: electric drive, sailing, regen without engine drag.
 - At equal power, P2 and P3 beat P0 by **15–16 points** on the WLTC. The clutch matters more
   than the machine's power.
-- You built the P2: the one position with every mode.
+- You drove the P2: the one position with every mode.
 
 ### Next: where the engine runs when it runs. <Link to="operating-point">→ 05, moving the operating point</Link>
 
@@ -784,7 +782,7 @@ Section 04 in four lines. P0 and P1 turn with the engine. They are cheap to inte
 braking drags the engine, and the car cannot drive with the engine off. P2, P3 and P4 sit behind a
 clutch. They can drive electrically, sail, and regenerate without dragging the engine. At equal
 power, decoupling is worth 15 to 16 points on the WLTC in the Chalmers study, comparing P2 and P3
-against P0. The clutch matters more than the machine's power. And you built the P2, the one
+against P0. The clutch matters more than the machine's power. And you drove the P2, the one
 position with every mode.
 
 Next: when the engine does run, where on its map should it run?
