@@ -1,15 +1,31 @@
-"Ideal CVT shaft constraints and first-order ratio actuator with a bounded command."
-partial component VariatorLaw
+"""
+Ideal continuously variable transmission with pedal- or speed-commanded scheduling.
+
+The ratio is total engine-side to wheel-side speed reduction. The selected schedule uses either
+N_ref directly or a pedal-dependent target speed. The ratio reaches its bounded command through
+a first-order lag. The velocity constraint avoids dependence on accumulated absolute shaft angle.
+"""
+component P2Variator
   "Input shaft"
   spline_a = Spline() {^spline_a}
   "Output shaft"
   spline_b = Spline() {^spline_b}
   "Transmission housing"
   support = Spline() {^support}
+  "Driver pedal command, 0 closed to 1 fully open"
+  pedal = RealInput() {^pedal}
+  "Target input speed [rpm] (derived; SpeedCommandedVariator)"
+  N_ref = RealInput() {^N_ref}
+  "Use the speed command rather than the pedal schedule (assumed; fixed configuration)"
+  structural parameter speed_commanded::Boolean = false
   "Launch ratio, including final drive (assumed for a small-car belt CVT)"
   parameter i_launch::Real = 12.0
   "Overdrive ratio, including final drive (assumed for a small-car belt CVT)"
   parameter i_overdrive::Real = 2.8
+  "Closed-pedal target speed [rpm] (assumed above clutch engagement)"
+  parameter target_rpm_min::Real = 1800.0
+  "Wide-open target speed [rpm] (assumed 500 rpm below the rev limiter)"
+  parameter target_rpm_max::Real = 6000.0
   "Ratio actuator time constant [s] (assumed for a hydraulic belt CVT)"
   parameter ratio_time::Time(min = eps(Float64)) = 0.5
   "Regularizing output speed [rpm] (assumed to keep the launch command finite)"
@@ -35,39 +51,25 @@ relations
   w_b = der(spline_b.phi) - der(support.phi)
   N_a = w_a * 30 / pi
   N_b = sqrt((w_b * 30 / pi)^2 + output_rpm_floor^2)
+  if speed_commanded
+    N_target = N_ref
+  else
+    N_target = target_rpm_min + min(max(pedal, 0.0), 1.0) * (target_rpm_max - target_rpm_min)
+  end
   i_command = min(max(N_target / N_b, i_overdrive), i_launch)
   der(ratio) = (i_command - ratio) / ratio_time
   w_a = ratio * w_b
   0 = ratio * spline_a.tau + spline_b.tau
   support.tau = -spline_a.tau - spline_b.tau
   initial ratio = ratio_initial
-metadata {"Dyad":{"icons":{"default":"dyad://RotationalComponents/IdealGear.svg"}},"_links":{"spline_a":{"Dyad":{"placement":{"icon":{"iconName":"spline_a","x1":-50,"y1":450,"x2":50,"y2":550},"diagram":{"iconName":"spline_a","x1":-25,"y1":475,"x2":25,"y2":525}}}},"spline_b":{"Dyad":{"placement":{"icon":{"iconName":"spline_b","x1":950,"y1":450,"x2":1050,"y2":550},"diagram":{"iconName":"spline_b","x1":975,"y1":475,"x2":1025,"y2":525}}}},"support":{"Dyad":{"placement":{"icon":{"x1":450,"y1":950,"x2":550,"y2":1050},"diagram":{"x1":475,"y1":975,"x2":525,"y2":1025}}}}}}
-end
-
-"""
-Ideal continuously variable transmission with pedal- or speed-commanded scheduling.
-
-The ratio is total engine-side to wheel-side speed reduction. The selected schedule uses either
-N_ref directly or a pedal-dependent target speed. The ratio reaches its bounded command through
-a first-order lag. The velocity constraint avoids dependence on accumulated absolute shaft angle.
-"""
-component P2Variator
-  extends VehicleSystemsComponents.Vehicle.VariatorLaw
-  "Driver pedal fraction (derived; ControlledVariator schedule)"
-  pedal = RealInput() {^pedal}
-  "Target input speed [rpm] (derived; SpeedCommandedVariator)"
-  N_ref = RealInput() {^N_ref}
-  "Use the speed command (assumed; fixed configuration)"
-  structural parameter speed_commanded::Boolean = false
-  "Closed-pedal target speed [rpm] (assumed; above clutch engagement)"
-  parameter target_rpm_min::Real = 1800.0
-  "Wide-open target speed [rpm] (assumed; below rev limiter)"
-  parameter target_rpm_max::Real = 6000.0
-relations
-  if speed_commanded
-    N_target = N_ref
-  else
-    N_target = target_rpm_min + min(max(pedal, 0.0), 1.0) * (target_rpm_max - target_rpm_min)
-  end
-metadata {"_links":{"N_ref":{"Dyad":{"placement":{"icon":{"x1":650,"x2":750,"y1":-50,"y2":50},"diagram":{"x1":675,"x2":725,"y1":-25,"y2":25}}}},"pedal":{"Dyad":{"placement":{"icon":{"x1":250,"y1":-50,"x2":350,"y2":50},"diagram":{"x1":275,"y1":-25,"x2":325,"y2":25}}}}}}
+metadata {
+  "Dyad": {"icons": {"default": "dyad://RotationalComponents/IdealGear.svg"}},
+  "_links": {
+    "N_ref": {"Dyad": {"placement": {"icon": {"x1": 650, "x2": 750, "y1": -50, "y2": 50}, "diagram": {"x1": 675, "x2": 725, "y1": -25, "y2": 25}}}},
+    "spline_a": {"Dyad": {"placement": {"icon": {"iconName": "spline_a", "x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"iconName": "spline_a", "x1": -25, "y1": 475, "x2": 25, "y2": 525}}}},
+    "spline_b": {"Dyad": {"placement": {"icon": {"iconName": "spline_b", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"iconName": "spline_b", "x1": 975, "y1": 475, "x2": 1025, "y2": 525}}}},
+    "support": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"x1": 475, "y1": 975, "x2": 525, "y2": 1025}}}},
+    "pedal": {"Dyad": {"placement": {"icon": {"x1": 250, "y1": -50, "x2": 350, "y2": 50}, "diagram": {"x1": 275, "y1": -25, "x2": 325, "y2": 25}}}}
+  }
+}
 end

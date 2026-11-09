@@ -43,7 +43,6 @@ negligible at cruise and large near standstill.
 | `w_b`         | Output speed relative to the housing [rad/s]                         | rad/s  |
 | `N_a`         | Input speed [rpm]                         | --  |
 | `N_b`         | Output speed magnitude [rpm]                         | --  |
-| `N_target`         | Scheduled input-speed target [rpm]                         | --  |
 | `i_command`         | Bounded ratio command                         | --  |
 | `ratio`         | Actual total speed ratio                         | --  |
 """
@@ -114,7 +113,6 @@ negligible at cruise and large near standstill.
   append!(__vars, @variables (w_b(t)::Real), [description = "Output speed relative to the housing [rad/s]"])
   append!(__vars, @variables (N_a(t)::Real), [description = "Input speed [rpm]"])
   append!(__vars, @variables (N_b(t)::Real), [description = "Output speed magnitude [rpm]"])
-  append!(__vars, @variables (N_target(t)::Real), [description = "Scheduled input-speed target [rpm]"])
   append!(__vars, @variables (i_command(t)::Real), [description = "Bounded ratio command"])
   append!(__vars, @variables (ratio(t)::Real), [description = "Actual total speed ratio"])
 
@@ -131,9 +129,6 @@ negligible at cruise and large near standstill.
   __ovr_N_b = pop!(__overrides, "N_b", nothing); isnothing(__ovr_N_b) || push!(__eqs, N_b ~ __ovr_N_b)
   __ovr_N_b__initial = pop!(__overrides, "N_b.initial", nothing); isnothing(__ovr_N_b__initial) || (__initial_conditions[N_b] = __ovr_N_b__initial)
   __ovr_N_b__guess = pop!(__overrides, "N_b.guess", nothing)
-  __ovr_N_target = pop!(__overrides, "N_target", nothing); isnothing(__ovr_N_target) || push!(__eqs, N_target ~ __ovr_N_target)
-  __ovr_N_target__initial = pop!(__overrides, "N_target.initial", nothing); isnothing(__ovr_N_target__initial) || (__initial_conditions[N_target] = __ovr_N_target__initial)
-  __ovr_N_target__guess = pop!(__overrides, "N_target.guess", nothing)
   __ovr_i_command = pop!(__overrides, "i_command", nothing); isnothing(__ovr_i_command) || push!(__eqs, i_command ~ __ovr_i_command)
   __ovr_i_command__initial = pop!(__overrides, "i_command.initial", nothing); isnothing(__ovr_i_command__initial) || (__initial_conditions[i_command] = __ovr_i_command__initial)
   __ovr_i_command__guess = pop!(__overrides, "i_command.guess", nothing)
@@ -157,7 +152,6 @@ negligible at cruise and large near standstill.
   isnothing(__ovr_w_b__guess) || (__guesses[w_b] = __ovr_w_b__guess)
   isnothing(__ovr_N_a__guess) || (__guesses[N_a] = __ovr_N_a__guess)
   isnothing(__ovr_N_b__guess) || (__guesses[N_b] = __ovr_N_b__guess)
-  isnothing(__ovr_N_target__guess) || (__guesses[N_target] = __ovr_N_target__guess)
   isnothing(__ovr_i_command__guess) || (__guesses[i_command] = __ovr_i_command__guess)
   isnothing(__ovr_ratio__guess) || (__guesses[ratio] = __ovr_ratio__guess)
 
@@ -172,12 +166,11 @@ negligible at cruise and large near standstill.
   push!(__eqs, w_b ~ ModelingToolkit.D_nounits(spline_b.phi) - ModelingToolkit.D_nounits(support.phi))
   push!(__eqs, N_a ~ w_a * 30 / pi)
   push!(__eqs, N_b ~ sqrt((w_b * 30 / pi) ^ 2 + output_rpm_floor ^ 2))
-  push!(__eqs, i_command ~ min(max(N_target / N_b, i_overdrive), i_launch))
+  push!(__eqs, i_command ~ min(max(N_ref / N_b, i_overdrive), i_launch))
   push!(__eqs, ModelingToolkit.D_nounits(ratio) ~ (i_command - ratio) / ratio_time)
   push!(__eqs, w_a ~ ratio * w_b)
   push!(__eqs, 0 ~ ratio * spline_a.tau + spline_b.tau)
   push!(__eqs, support.tau ~ -spline_a.tau - spline_b.tau)
-  push!(__eqs, N_target ~ N_ref)
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
