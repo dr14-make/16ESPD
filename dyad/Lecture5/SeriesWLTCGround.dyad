@@ -57,6 +57,7 @@ partial component SeriesWLTCGround
   motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
   roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
   meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel() {^meter}
+  brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(brake_gain = 2.0) {^brakes}
 relations
   connect(car.bus, motion.bus) {^bus_wire}
   connect(trace.y, driver.u_s) {^trace_wire}
@@ -64,14 +65,16 @@ relations
   connect(kmh.y, driver.u_m, split.v) {^kmh_wire}
   connect(no_ff.y, driver.u_ff) {^ff_wire}
   connect(driver.y, split.tau_ref) {^demand_wire}
-  connect(split.tau_brake, car.tau_fl, car.tau_fr) {^brake_wire}
+  brakes.u = -split.tau_brake
+  connect(brakes.tau_fl, car.tau_fl) {^brake_wire}
+  connect(brakes.tau_fr, car.tau_fr) {^brake_fr_wire}
   connect(differential.flange_left, car.spin_fl) {^left_wire}
   connect(differential.flange_right, car.spin_fr) {^right_wire}
   connect(car.steering, straight.spline) {^steer_wire}
   connect(flat.y, roadload.grade) {^grade_wire}
   connect(car.chassis, roadload.chassis) {^load_wire}
-  car.tau_rl = 0.0
-  car.tau_rr = 0.0
+  connect(brakes.tau_rl, car.tau_rl) {^brake_rl_wire}
+  connect(brakes.tau_rr, car.tau_rr) {^brake_rr_wire}
   initial car.body.r = [0, 0]
   initial car.body.v = [0, 0]
   initial car.body.phi = 0.0
@@ -90,6 +93,10 @@ relations
   initial car.rr.brake.tau_actual = 0.0
 metadata {
   "_links": {
+    "brakes": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 420, "y1": 370, "y2": 490}}}},
+    "brake_fr_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "brake_rl_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "brake_rr_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "trace": {"Dyad": {"placement": {"diagram": {"x1": 20, "y1": 57, "x2": 100, "y2": 137}}}},
     "driver": {"Dyad": {"placement": {"diagram": {"x1": 140, "y1": 70, "x2": 240, "y2": 170}}}},
     "no_ff": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 10, "x2": 140, "y2": 50}}}},
@@ -130,6 +137,7 @@ test component SeriesGroundElectric
   ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
   drive = VehicleSystemsComponents.Vehicle.Electric.TractionDrive(T_max = tau_max, ratio = ratio) {^drive}
   no_fuel = BlockComponents.Sources.Constant(k = 0.0) {^no_fuel}
+  brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(brake_gain = 2.0) {^brakes}
 relations
   connect(battery.p, aux.p, drive.p)
   connect(battery.n, aux.n, drive.n, ground.g)
