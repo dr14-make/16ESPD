@@ -28,12 +28,6 @@ The line target is floored above idle. Machine torque, losses and inertia are ze
 | `lock_width_rpm`         | Width of machine-side K0 lock-up ramp [rpm]                         | --  |   12.0 |
 | `P_peak`         | Full-pedal requested power [W], mapped engine peak                         | W  |   85000.0 |
 | `N_locked`         | Minimum locked engine speed [rpm]; replaces lower line rows                         | --  |   1000.0 |
-
-## Variables
-
-| Name         | Description                         | Units  | 
-| ------------ | ----------------------------------- | ------ |
-| `N_target`         | Commanded transmission input speed [rpm], line speed floored at N_locked                         | --  |
 """
 @component function P2OperatingLineWLTC(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(110.0), var"Ti"=Float64(1.0), var"tau_max"=Float64(150.0), var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"tau_brake"=Float64(205.0), var"brake_gain"=Float64(12.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"P_peak"=Float64(85000.0), var"N_locked"=Float64(1000.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -130,12 +124,8 @@ The line target is floored above idle. Machine torque, losses and inertia are ze
   ### Final Path Parameters
 
   ### Variables (declarations)
-  append!(__vars, @variables (N_target(t)::Real), [description = "Commanded transmission input speed [rpm], line speed floored at N_locked"])
 
   ### Variables (assignments)
-  __ovr_N_target = pop!(__overrides, "N_target", nothing); isnothing(__ovr_N_target) || push!(__eqs, N_target ~ __ovr_N_target)
-  __ovr_N_target__initial = pop!(__overrides, "N_target.initial", nothing); isnothing(__ovr_N_target__initial) || (__initial_conditions[N_target] = __ovr_N_target__initial)
-  __ovr_N_target__guess = pop!(__overrides, "N_target.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -188,21 +178,23 @@ The line target is floored above idle. Machine torque, losses and inertia are ze
   # Subcomponent meter of type VehicleSystemsComponents.Vehicle.SoCCorrectedFuel
   meter_overrides = __pop_subcomponent_overrides!(__overrides, "meter")
   push!(__systems, @named meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel(; __overrides = meter_overrides))
-  # Subcomponent line of type VehicleSystemsComponents.Vehicle.OperatingLine
-  line_overrides = __pop_subcomponent_overrides!(__overrides, "line")
-  push!(__systems, @named line = VehicleSystemsComponents.Vehicle.OperatingLine(; __overrides = line_overrides))
+  # Subcomponent speed_command of type VehicleSystemsComponents.Vehicle.LineSpeedCommand
+  speed_command_overrides = __pop_subcomponent_overrides!(__overrides, "speed_command")
+  push!(__systems, @named speed_command = VehicleSystemsComponents.Vehicle.LineSpeedCommand(; P_peak=P_peak, N_locked=N_locked, __overrides = speed_command_overrides))
   # Subcomponent unused_command of type BlockComponents.Sources.Constant
   unused_command_overrides = __pop_subcomponent_overrides!(__overrides, "unused_command")
   push!(__systems, @named unused_command = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = unused_command_overrides))
   # Subcomponent brakes of type VehicleSystemsComponents.Vehicle.BrakeSplit
   brakes_overrides = __pop_subcomponent_overrides!(__overrides, "brakes")
   push!(__systems, @named brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(; brake_gain=brake_gain, __overrides = brakes_overrides))
+  # Subcomponent pedal_command of type VehicleSystemsComponents.Vehicle.ParameterGate
+  pedal_command_overrides = __pop_subcomponent_overrides!(__overrides, "pedal_command")
+  push!(__systems, @named pedal_command = VehicleSystemsComponents.Vehicle.ParameterGate(; __overrides = pedal_command_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
-  isnothing(__ovr_N_target__guess) || (__guesses[N_target] = __ovr_N_target__guess)
 
   ### Initialization Equations
   push!(__initialization_eqs, car.body.r ~ [0, 0])
@@ -228,10 +220,7 @@ The line target is floored above idle. Machine torque, losses and inertia are ze
 
   ### Equations
   push!(__eqs, meter.P_stored ~ powertrain.E * powertrain.i)
-  push!(__eqs, line.P ~ powertrain.engine_pedal * P_peak)
-  push!(__eqs, N_target ~ max(line.N, N_locked))
-  push!(__eqs, powertrain.N_ref ~ N_target)
-  push!(__eqs, powertrain.engine_pedal ~ min(max(driver.y / tau_max, 0.0), 1.0))
+  push!(__eqs, pedal_command.u ~ min(max(driver.y / tau_max, 0.0), 1.0))
   push!(__eqs, powertrain.engage ~ max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
   push!(__eqs, powertrain.tau_ref ~ 0.0)
   push!(__eqs, connect(unused_command.y, powertrain.cvt_pedal, powertrain.engine_torque_ref))
@@ -248,6 +237,9 @@ The line target is floored above idle. Machine torque, losses and inertia are ze
   push!(__eqs, connect(flat.y, roadload.grade))
   push!(__eqs, connect(car.chassis, roadload.chassis))
   push!(__eqs, connect(powertrain.mdot_fuel, meter.mdot_fuel))
+  push!(__eqs, connect(pedal_command.y, speed_command.pedal))
+  push!(__eqs, connect(speed_command.N_ref, powertrain.N_ref))
+  push!(__eqs, connect(pedal_command.y, powertrain.engine_pedal))
   push!(__eqs, connect(driver.y, brakes.u))
   push!(__eqs, connect(brakes.tau_fl, car.tau_fl))
   push!(__eqs, connect(brakes.tau_fr, car.tau_fr))

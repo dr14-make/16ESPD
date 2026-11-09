@@ -129,6 +129,7 @@ fuel during braking; a conditional high-SoC discharge latch lowers the engine lo
  * `engage` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `tau_machine` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `tau_friction` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `P_drive` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
 ## Variables
 
@@ -137,7 +138,6 @@ fuel during braking; a conditional high-SoC discharge latch lowers the engine lo
 | `P_dem`         | Demand power [W]                         | W  |
 | `tau_drive`         | Driving part of the demand [N.m]                         | N.m  |
 | `tau_brake_demand`         | Braking part of the demand [N.m]                         | N.m  |
-| `P_drive`         | Driving demand power [W]                         | W  |
 | `P_shift`         | Engine request after the charge shift, which stops at P_line_max [W]                         | W  |
 | `cap`         | Engine power ceiling: P_peak, or while boosting what the machine cannot cover above P_line_max [W]                         | W  |
 | `tau_excess`         | Demand torque beyond the machine's limit [N.m]                         | N.m  |
@@ -317,12 +317,12 @@ fuel during braking; a conditional high-SoC discharge latch lowers the engine lo
   append!(__vars, @variables (engage(t)::Real), [output = true])
   append!(__vars, @variables (tau_machine(t)::Real), [output = true])
   append!(__vars, @variables (tau_friction(t)::Real), [output = true])
+  append!(__vars, @variables (P_drive(t)::Real), [output = true])
 
   ### Variables (declarations)
   append!(__vars, @variables (P_dem(t)::Real), [description = "Demand power [W]"])
   append!(__vars, @variables (tau_drive(t)::Real), [description = "Driving part of the demand [N.m]"])
   append!(__vars, @variables (tau_brake_demand(t)::Real), [description = "Braking part of the demand [N.m]"])
-  append!(__vars, @variables (P_drive(t)::Real), [description = "Driving demand power [W]"])
   append!(__vars, @variables (P_shift(t)::Real), [description = "Engine request after the charge shift, which stops at P_line_max [W]"])
   append!(__vars, @variables (cap(t)::Real), [description = "Engine power ceiling: P_peak, or while boosting what the machine cannot cover above P_line_max [W]"])
   append!(__vars, @variables (tau_excess(t)::Real), [description = "Demand torque beyond the machine's limit [N.m]"])
@@ -355,9 +355,6 @@ fuel during braking; a conditional high-SoC discharge latch lowers the engine lo
   __ovr_tau_brake_demand = pop!(__overrides, "tau_brake_demand", nothing); isnothing(__ovr_tau_brake_demand) || push!(__eqs, tau_brake_demand ~ __ovr_tau_brake_demand)
   __ovr_tau_brake_demand__initial = pop!(__overrides, "tau_brake_demand.initial", nothing); isnothing(__ovr_tau_brake_demand__initial) || (__initial_conditions[tau_brake_demand] = __ovr_tau_brake_demand__initial)
   __ovr_tau_brake_demand__guess = pop!(__overrides, "tau_brake_demand.guess", nothing)
-  __ovr_P_drive = pop!(__overrides, "P_drive", nothing); isnothing(__ovr_P_drive) || push!(__eqs, P_drive ~ __ovr_P_drive)
-  __ovr_P_drive__initial = pop!(__overrides, "P_drive.initial", nothing); isnothing(__ovr_P_drive__initial) || (__initial_conditions[P_drive] = __ovr_P_drive__initial)
-  __ovr_P_drive__guess = pop!(__overrides, "P_drive.guess", nothing)
   __ovr_P_shift = pop!(__overrides, "P_shift", nothing); isnothing(__ovr_P_shift) || push!(__eqs, P_shift ~ __ovr_P_shift)
   __ovr_P_shift__initial = pop!(__overrides, "P_shift.initial", nothing); isnothing(__ovr_P_shift__initial) || (__initial_conditions[P_shift] = __ovr_P_shift__initial)
   __ovr_P_shift__guess = pop!(__overrides, "P_shift.guess", nothing)
@@ -448,7 +445,6 @@ fuel during braking; a conditional high-SoC discharge latch lowers the engine lo
   isnothing(__ovr_P_dem__guess) || (__guesses[P_dem] = __ovr_P_dem__guess)
   isnothing(__ovr_tau_drive__guess) || (__guesses[tau_drive] = __ovr_tau_drive__guess)
   isnothing(__ovr_tau_brake_demand__guess) || (__guesses[tau_brake_demand] = __ovr_tau_brake_demand__guess)
-  isnothing(__ovr_P_drive__guess) || (__guesses[P_drive] = __ovr_P_drive__guess)
   isnothing(__ovr_P_shift__guess) || (__guesses[P_shift] = __ovr_P_shift__guess)
   isnothing(__ovr_cap__guess) || (__guesses[cap] = __ovr_cap__guess)
   isnothing(__ovr_tau_excess__guess) || (__guesses[tau_excess] = __ovr_tau_excess__guess)
