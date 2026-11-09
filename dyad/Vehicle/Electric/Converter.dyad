@@ -4,21 +4,28 @@ DC link and the machine, with a current limit and a voltage limit (deck 7 slides
 over a switching period).
 
     v_out = d v_in        i_in = d i_out + P_loss / v_in
-    T_i di_out/dt = clamp(i_ref, -I_max, I_max) - i_out
+    T_i di_out/dt = i_cmd - i_out,   i_cmd = clamp(i_ref, -I_max, I_max), corner rounded
     |d| <= d_max,   field <= 1,   and one of them at its limit
 
 The output current follows the command `i_ref`, clipped to `±I_max`, with the current loop's
-time constant `T_i`. The duty `d` is then whatever the load needs to carry that current, and
-the converter can give at most `d_max` of its input voltage. Where the needed voltage would pass
-that, the converter weakens the field instead: its output `field` (flux as a fraction of full)
-goes to the machine's field input, and the either-or `min(1 - field, d_max - |d|) = 0` holds
-the field at 1 while the voltage has room, and holds `|d|` at `d_max` once it has none. The
-relation is written as that `min` with its corner rounded, `a + b - sqrt((a - b)^2 + eps^2) =
-0`, which is `a b = eps^2 / 4` with both positive: the solver meets no kink at base speed, and
-at the corner each side gives up `eps / 2` (0.02 N.m of torque with the Leaf machine). On a
-machine at full current this is the whole envelope: constant torque up to the speed where the
-voltage runs out (base speed), and above it a field, and so a torque, falling as `1/w` at
-constant power. A field-oriented PMSM drive does the same with its d-axis current.
+time constant `T_i`. The clip has its two corners rounded, `i_cmd = (sqrt((i_ref + I_max)^2 +
+delta_i^2) - sqrt((i_ref - I_max)^2 + delta_i^2)) / 2`: a drive that divides its torque by
+`field` (`ElectricDrive`) closes a loop from `field` through `i_ref` and the clip to the voltage
+that sets `field`, and a kink in that loop, where the clip engages at base speed, can stall the
+solver. Asked for exactly `I_max` the converter gives `delta_i / 2` less, asked for 500 A 1.2 mA
+less.
+
+The duty `d` is then whatever the load needs to carry that current, and the converter can give
+at most `d_max` of its input voltage. Where the needed voltage would pass that, the converter
+weakens the field instead: its output `field` (flux as a fraction of full) goes to the machine's
+field input, and the either-or `min(1 - field, d_max - |d|) = 0` holds the field at 1 while the
+voltage has room, and holds `|d|` at `d_max` once it has none. The relation is written as that
+`min` with its corner rounded, `a + b - sqrt((a - b)^2 + eps^2) = 0`, which is `a b = eps^2 / 4`
+with both positive: the solver meets no kink at base speed, and at the corner each side gives up
+`eps / 2` (0.02 N.m of torque with the Leaf machine). On a machine at full current this is the
+whole envelope: constant torque up to the speed where the voltage runs out (base speed), and
+above it a field, and so a torque, falling as `1/w` at constant power. A field-oriented PMSM
+drive does the same with its d-axis current.
 
 The current is imposed, so the converter must drive an inductive load that takes it, and the
 voltage limit is held only through `field`: on a load without a field input, `|d|` is not
@@ -68,6 +75,8 @@ component Converter
   parameter t_sw::Time = 1.0e-6
   "Rounding of the corner between full field and full duty: there (1 - field)(d_max - |d|) = eps^2 / 4 (numerical)"
   parameter eps::Real = 1.0e-4
+  "Rounding of the current limit's corners, so the limit has no kink inside the voltage loop: there i_cmd is delta_i / 2 short of I_max (numerical)"
+  parameter delta_i::Current = 1.0
   "Input voltage, the DC link"
   variable v_in::Voltage
   "Input current, drawn from the DC link"
@@ -98,7 +107,7 @@ relations
   p_in.i + p_out.i + n.i = 0
   v_out = d * v_in
   i_in = d * i_out + P_loss / v_in
-  i_cmd = max(-I_max, min(I_max, i_ref))
+  i_cmd = (sqrt((i_ref + I_max) ^ 2 + delta_i ^ 2) - sqrt((i_ref - I_max) ^ 2 + delta_i ^ 2)) / 2
   T_i * der(i_out) = i_cmd - i_out
   (1 - field) + (d_max - abs(d)) - sqrt(((1 - field) - (d_max - abs(d))) ^ 2 + eps ^ 2) = 0
   P_in = v_in * i_in

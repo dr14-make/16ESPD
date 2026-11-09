@@ -1,5 +1,8 @@
 using ModelingToolkit, OpenCRG, ForwardDiff
 using DyadInterface: symbolic_container, run_analysis, TransientAnalysisSpec, OptimizationLevel
+using OrdinaryDiffEqDefault: solve, Rodas5P
+using SymbolicIndexingInterface: setp
+using ModelingToolkit: remake
 
 const HEIGHT_ASSETS = "dyad://VehicleSystemsComponents/roads/"
 "Analytic raised-cosine hill derivative, including flat approaches."
@@ -121,11 +124,17 @@ end
     @test dv < 1e-3
     @test dx < 1e-3
     @test maximum(abs.(flat.sol(times; idxs=a.vehicle.roadload.grade))) < 1e-12
-    # Captured on d5083ea before height wiring, with this coast-down preset and solver settings.
+    # Captured on d5083ea before height wiring, with this coast-down preset and solver settings,
+    # and a converter that clipped its current hard. The rounded limit takes 0.1 A off full
+    # throttle, 0.011 km/h and 0.028 m by the end of the run, so the comparison sharpens it.
     reference = reduce(hcat, [parse.(Float64, split(line)) for line in
         eachline(joinpath(@__DIR__, "data", "hills_flat_reference.tsv"))])
-    baseline_dv = maximum(abs.(3.6 .* (flat.sol(reference[1,:]; idxs=a.vehicle.motion.vx) .- reference[2,:])))
-    baseline_dx = maximum(abs.(flat.sol(reference[1,:]; idxs=a.vehicle.car.bus.x) .- reference[3,:]))
+    sharp = remake(flat.sol.prob; p = deepcopy(flat.sol.prob.p))
+    setp(a, a.vehicle.drive.converter.delta_i)(sharp, 1e-3)
+    sharp_sol = solve(sharp, Rodas5P(); dtmax = 0.005)
+    @test string(sharp_sol.retcode) == "Success"
+    baseline_dv = maximum(abs.(3.6 .* (sharp_sol(reference[1,:]; idxs=a.vehicle.motion.vx) .- reference[2,:])))
+    baseline_dx = maximum(abs.(sharp_sol(reference[1,:]; idxs=a.vehicle.car.bus.x) .- reference[3,:]))
     @info "Pre-height flat equivalence" baseline_dv baseline_dx
     # The runtime callable changes the solver path; separate-process differences exceed 1e-9.
     @test baseline_dv < 1e-3

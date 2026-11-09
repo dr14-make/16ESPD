@@ -5,28 +5,35 @@
 
 
 @doc Markdown.doc"""
-   Converter(; name, I_max, d_max, T_i, V_on, f_s, t_sw, eps, __overrides)
+   Converter(; name, I_max, d_max, T_i, V_on, f_s, t_sw, eps, delta_i, __overrides)
 
 Average converter: the traction inverter and its current control, as one duty ratio between the
 DC link and the machine, with a current limit and a voltage limit (deck 7 slides 27-33, averaged
 over a switching period).
 
     v_out = d v_in        i_in = d i_out + P_loss / v_in
-    T_i di_out/dt = clamp(i_ref, -I_max, I_max) - i_out
+    T_i di_out/dt = i_cmd - i_out,   i_cmd = clamp(i_ref, -I_max, I_max), corner rounded
     |d| <= d_max,   field <= 1,   and one of them at its limit
 
 The output current follows the command `i_ref`, clipped to `±I_max`, with the current loop's
-time constant `T_i`. The duty `d` is then whatever the load needs to carry that current, and
-the converter can give at most `d_max` of its input voltage. Where the needed voltage would pass
-that, the converter weakens the field instead: its output `field` (flux as a fraction of full)
-goes to the machine's field input, and the either-or `min(1 - field, d_max - |d|) = 0` holds
-the field at 1 while the voltage has room, and holds `|d|` at `d_max` once it has none. The
-relation is written as that `min` with its corner rounded, `a + b - sqrt((a - b)^2 + eps^2) =
-0`, which is `a b = eps^2 / 4` with both positive: the solver meets no kink at base speed, and
-at the corner each side gives up `eps / 2` (0.02 N.m of torque with the Leaf machine). On a
-machine at full current this is the whole envelope: constant torque up to the speed where the
-voltage runs out (base speed), and above it a field, and so a torque, falling as `1/w` at
-constant power. A field-oriented PMSM drive does the same with its d-axis current.
+time constant `T_i`. The clip has its two corners rounded, `i_cmd = (sqrt((i_ref + I_max)^2 +
+delta_i^2) - sqrt((i_ref - I_max)^2 + delta_i^2)) / 2`: a drive that divides its torque by
+`field` (`ElectricDrive`) closes a loop from `field` through `i_ref` and the clip to the voltage
+that sets `field`, and a kink in that loop, where the clip engages at base speed, can stall the
+solver. Asked for exactly `I_max` the converter gives `delta_i / 2` less, asked for 500 A 1.2 mA
+less.
+
+The duty `d` is then whatever the load needs to carry that current, and the converter can give
+at most `d_max` of its input voltage. Where the needed voltage would pass that, the converter
+weakens the field instead: its output `field` (flux as a fraction of full) goes to the machine's
+field input, and the either-or `min(1 - field, d_max - |d|) = 0` holds the field at 1 while the
+voltage has room, and holds `|d|` at `d_max` once it has none. The relation is written as that
+`min` with its corner rounded, `a + b - sqrt((a - b)^2 + eps^2) = 0`, which is `a b = eps^2 / 4`
+with both positive: the solver meets no kink at base speed, and at the corner each side gives up
+`eps / 2` (0.02 N.m of torque with the Leaf machine). On a machine at full current this is the
+whole envelope: constant torque up to the speed where the voltage runs out (base speed), and
+above it a field, and so a torque, falling as `1/w` at constant power. A field-oriented PMSM
+drive does the same with its d-axis current.
 
 The current is imposed, so the converter must drive an inductive load that takes it, and the
 voltage limit is held only through `field`: on a load without a field input, `|d|` is not
@@ -62,6 +69,7 @@ Defaults are a Leaf ZE1-class inverter. Source tags: (ORNL) 2013 benchmarking of
 | `f_s`         | Switching frequency; ORNL tested the Leaf inverter at 5 kHz (ORNL)                         | Hz  |   5.0e3 |
 | `t_sw`         | Duration of each switching edge (assumed); with V_on it gives 99.2 % at 350 V out, ORNL's > 99 % at high speed, but 97.5 % at 113 V, where ORNL's inverter falls into the 80s (docs/lecture-04-plan.md, Known limits)                         | s  |   1.0e-6 |
 | `eps`         | Rounding of the corner between full field and full duty: there (1 - field)(d_max - \|d\|) = eps^2 / 4 (numerical)                         | --  |   1.0e-4 |
+| `delta_i`         | Rounding of the current limit's corners, so the limit has no kink inside the voltage loop: there i_cmd is delta_i / 2 short of I_max (numerical)                         | A  |   1.0 |
 
 ## Connectors
 
@@ -87,7 +95,7 @@ Defaults are a Leaf ZE1-class inverter. Source tags: (ORNL) 2013 benchmarking of
 | `P_sw`         | Switching loss                         | W  |
 | `P_loss`         | Sum of the losses                         | W  |
 """
-@component function Converter(; name = nothing, var"I_max"=332.2, var"d_max"=Float64(1.0), var"T_i"=0.001, var"V_on"=1.2, var"f_s"=Float64(5000.0), var"t_sw"=0.000001, var"eps"=0.0001, __overrides = Dict{String, Any}())
+@component function Converter(; name = nothing, var"I_max"=332.2, var"d_max"=Float64(1.0), var"T_i"=0.001, var"V_on"=1.2, var"f_s"=Float64(5000.0), var"t_sw"=0.000001, var"eps"=0.0001, var"delta_i"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -113,6 +121,7 @@ Defaults are a Leaf ZE1-class inverter. Source tags: (ORNL) 2013 benchmarking of
   haskey(__overrides, "f_s") && (f_s = pop!(__overrides, "f_s"))
   haskey(__overrides, "t_sw") && (t_sw = pop!(__overrides, "t_sw"))
   haskey(__overrides, "eps") && (eps = pop!(__overrides, "eps"))
+  haskey(__overrides, "delta_i") && (delta_i = pop!(__overrides, "delta_i"))
 
   ### Structural Parameters (functions)
 
@@ -148,6 +157,9 @@ Defaults are a Leaf ZE1-class inverter. Source tags: (ORNL) 2013 benchmarking of
   __local__eps = eps
   append!(__params, @parameters (eps::Real), [description = "Rounding of the corner between full field and full duty: there (1 - field)(d_max - |d|) = eps^2 / 4 (numerical)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, eps, __local__eps)
+  __local__delta_i = delta_i
+  append!(__params, @parameters (delta_i::Real), [description = "Rounding of the current limit's corners, so the limit has no kink inside the voltage loop: there i_cmd is delta_i / 2 short of I_max (numerical)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, delta_i, __local__delta_i)
 
   ### Final Parameters (assignments)
 
@@ -240,7 +252,7 @@ Defaults are a Leaf ZE1-class inverter. Source tags: (ORNL) 2013 benchmarking of
   push!(__eqs, p_in.i + p_out.i + n.i ~ 0)
   push!(__eqs, v_out ~ d * v_in)
   push!(__eqs, i_in ~ d * i_out + P_loss / v_in)
-  push!(__eqs, i_cmd ~ max(-I_max, min(I_max, i_ref)))
+  push!(__eqs, i_cmd ~ (sqrt((i_ref + I_max) ^ 2 + delta_i ^ 2) - sqrt((i_ref - I_max) ^ 2 + delta_i ^ 2)) / 2)
   push!(__eqs, T_i * ModelingToolkit.D_nounits(i_out) ~ i_cmd - i_out)
   push!(__eqs, (1 - field) + (d_max - abs(d)) - sqrt(((1 - field) - (d_max - abs(d))) ^ 2 + eps ^ 2) ~ 0)
   push!(__eqs, P_in ~ v_in * i_in)
