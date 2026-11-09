@@ -28,14 +28,14 @@
   <rect class="coupled" x="40" y="70" width="70" height="50" rx="6"/>
   <text x="75" y="101" text-anchor="middle" class="p">P0</text>
   <path class="belt" d="M100 120 L102 150 M82 120 L78 150"/>
-  <text x="112" y="146" class="lbl">belt (FEAD),</text>
-  <text x="112" y="162" class="lbl">2.5–3 × engine speed</text>
+  <text x="108" y="146" class="lbl">belt (FEAD),</text>
+  <text x="108" y="162" class="lbl">2.5–3 × engine speed</text>
 
   <path class="shaft" d="M190 215 H380"/>
   <rect class="coupled" x="230" y="70" width="70" height="50" rx="6"/>
   <text x="265" y="101" text-anchor="middle" class="p">P1</text>
   <path class="shaft" d="M265 120 V215"/>
-  <text x="265" y="275" text-anchor="middle" class="lbl">direct on the crankshaft</text>
+  <text x="260" y="275" text-anchor="middle" class="lbl">direct on the crankshaft</text>
 
   <rect class="box" x="370" y="185" width="60" height="60" rx="4"/>
   <text x="400" y="221" text-anchor="middle" class="b">K0</text>
