@@ -26,8 +26,6 @@ test component P2HybridWLTC
   parameter lock_rpm::Real = 840.0
   "Width of machine-side K0 lock-up [rpm] (assumed; step 2)"
   parameter lock_width_rpm::Real(min = eps(Float64)) = 12.0
-  "Minimum transmission input target [rpm] (assumed; step 2)"
-  parameter N_locked::Real = 1000.0
   trace = VehicleSystemsComponents.Vehicle.DriveCycle() {^trace}
   driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_brake) {^driver}
   no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
@@ -35,7 +33,7 @@ test component P2HybridWLTC
   powertrain = VehicleSystemsComponents.HandsOn05.P2Powertrain(speed_commanded = true, start_stop = true, position_start = 0.0, engine_speed_start = 0.0) {^powertrain}
   manager = VehicleSystemsComponents.Vehicle.EnergyManager(mapped_limits = true, SoC_on = 0.52, SoC_off = 0.55, P_line_max = 30.0e3) {^manager}
   map = VehicleSystemsComponents.HandsOn05.TorqueToPedal() {^map}
-  speed_command = VehicleSystemsComponents.Vehicle.HybridLineSpeedCommand(N_locked = N_locked) {^speed_command}
+  speed_command = VehicleSystemsComponents.Vehicle.HybridLineSpeedCommand() {^speed_command}
   differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
   mount = RotationalComponents.Components.Fixed() {^mount}
   straight = RotationalComponents.Components.Fixed() {^straight}

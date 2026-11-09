@@ -152,8 +152,9 @@ export Step3HybridWLTCTransient__System
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
   # Hands-on 05 step 3 starter: the hybrid fixture with the energy manager reading its measurements but
-  # commanding nothing yet, start/stop off and no torque-to-pedal map. Placing TorqueToPedal as
-  # `map`, wiring the manager's commands as the guide lists and setting `start_stop = true`
+  # commanding nothing yet, start/stop off and the torque-to-pedal map feedback prewired.
+  # Placing HybridLineSpeedCommand as `speed_command`, wiring the manager's commands and
+  # setting `start_stop = true`
   # completes it to Lecture5.P2HybridWLTC.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn05.Step3HybridWLTC(; name=:Step3HybridWLTC)
   __system::System = Step3HybridWLTCTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file")

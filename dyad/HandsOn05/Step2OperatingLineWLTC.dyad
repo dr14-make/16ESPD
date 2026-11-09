@@ -42,10 +42,6 @@ test component Step2OperatingLineWLTC
   motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
   roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
   meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel() {^meter}
-  "Full-pedal requested power [W], mapped engine peak"
-  parameter P_peak::Power = 85000.0
-  "Minimum locked engine speed [rpm]; replaces lower line rows"
-  parameter N_locked::Real = 1000.0
   "Zero for unused command inputs (assumed; fixed-mode fixture)"
   unused_command = BlockComponents.Sources.Constant(k = 0.0) {^unused_command}
   brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(brake_gain = brake_gain) {^brakes}

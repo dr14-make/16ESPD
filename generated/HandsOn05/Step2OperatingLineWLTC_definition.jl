@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   Step2OperatingLineWLTC(; name, m, radius, k, Ti, tau_max, dv_wheel, engage_rpm, engage_width_rpm, tau_brake, brake_gain, lock_rpm, lock_width_rpm, P_peak, N_locked, __overrides)
+   Step2OperatingLineWLTC(; name, m, radius, k, Ti, tau_max, dv_wheel, engage_rpm, engage_width_rpm, tau_brake, brake_gain, lock_rpm, lock_width_rpm, __overrides)
 
 Hands-on 05 step 2 starter: the operating-line fixture without its line, with the powertrain still
 pedal-commanded. Placing LineSpeedCommand as `speed_command`, wiring its pedal and speed ports
@@ -28,10 +28,8 @@ completes it to Lecture5.P2OperatingLineWLTC.
 | `brake_gain`         | Total wheel brake torque per negative driver N.m, launch ratio reference                         | --  |   12.0 |
 | `lock_rpm`         | Center of machine-side K0 lock-up ramp [rpm]; open at 800 rpm idle, closed by 880 rpm                         | --  |   840.0 |
 | `lock_width_rpm`         | Width of machine-side K0 lock-up ramp [rpm]                         | --  |   12.0 |
-| `P_peak`         | Full-pedal requested power [W], mapped engine peak                         | W  |   85000.0 |
-| `N_locked`         | Minimum locked engine speed [rpm]; replaces lower line rows                         | --  |   1000.0 |
 """
-@component function Step2OperatingLineWLTC(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(110.0), var"Ti"=Float64(1.0), var"tau_max"=Float64(150.0), var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"tau_brake"=Float64(205.0), var"brake_gain"=Float64(12.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"P_peak"=Float64(85000.0), var"N_locked"=Float64(1000.0), __overrides = Dict{String, Any}())
+@component function Step2OperatingLineWLTC(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(110.0), var"Ti"=Float64(1.0), var"tau_max"=Float64(150.0), var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"tau_brake"=Float64(205.0), var"brake_gain"=Float64(12.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -62,8 +60,6 @@ completes it to Lecture5.P2OperatingLineWLTC.
   haskey(__overrides, "brake_gain") && (brake_gain = pop!(__overrides, "brake_gain"))
   haskey(__overrides, "lock_rpm") && (lock_rpm = pop!(__overrides, "lock_rpm"))
   haskey(__overrides, "lock_width_rpm") && (lock_width_rpm = pop!(__overrides, "lock_width_rpm"))
-  haskey(__overrides, "P_peak") && (P_peak = pop!(__overrides, "P_peak"))
-  haskey(__overrides, "N_locked") && (N_locked = pop!(__overrides, "N_locked"))
 
   ### Structural Parameters (functions)
 
@@ -114,12 +110,6 @@ completes it to Lecture5.P2OperatingLineWLTC.
   __local__lock_width_rpm = lock_width_rpm
   append!(__params, @parameters (lock_width_rpm::Real), [description = "Width of machine-side K0 lock-up ramp [rpm]", bounds = (eps(Float64), Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, lock_width_rpm, __local__lock_width_rpm)
-  __local__P_peak = P_peak
-  append!(__params, @parameters (P_peak::Real), [description = "Full-pedal requested power [W], mapped engine peak"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, P_peak, __local__P_peak)
-  __local__N_locked = N_locked
-  append!(__params, @parameters (N_locked::Real), [description = "Minimum locked engine speed [rpm]; replaces lower line rows"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, N_locked, __local__N_locked)
 
   ### Final Parameters (assignments)
 

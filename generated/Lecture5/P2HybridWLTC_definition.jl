@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   P2HybridWLTC(; name, m, radius, k, Ti, tau_max, tau_brake, dv_wheel, engage_rpm, engage_width_rpm, lock_rpm, lock_width_rpm, N_locked, __overrides)
+   P2HybridWLTC(; name, m, radius, k, Ti, tau_max, tau_brake, dv_wheel, engage_rpm, engage_width_rpm, lock_rpm, lock_width_rpm, __overrides)
 
 Rule-based P2 hybrid on the planar WLTC bench (derived; Lecture 5 step 3).
 The manager commands engine power and torque; K0 retains the step-2 launch and lock ramps.
@@ -26,7 +26,6 @@ The electric-mode CVT target follows demand power to avoid starting against an i
 | `engage_width_rpm`         | Width of K0 launch engagement [rpm] (assumed; step 2)                         | --  |   120.0 |
 | `lock_rpm`         | Center of machine-side K0 lock-up [rpm] (assumed; step 2)                         | --  |   840.0 |
 | `lock_width_rpm`         | Width of machine-side K0 lock-up [rpm] (assumed; step 2)                         | --  |   12.0 |
-| `N_locked`         | Minimum transmission input target [rpm] (assumed; step 2)                         | --  |   1000.0 |
 
 ## Variables
 
@@ -36,7 +35,7 @@ The electric-mode CVT target follows demand power to avoid starting against an i
 | `E_regen`         | Requested regenerative braking energy at the machine shaft [J], excludes load-point charging                         | J  |
 | `E_friction`         | Actual wheel friction-brake dissipation [J]                         | J  |
 """
-@component function P2HybridWLTC(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(110.0), var"Ti"=Float64(1.0), var"tau_max"=150.233567 + 205.0, var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"N_locked"=Float64(1000.0), var"tau_brake"=nothing, __overrides = Dict{String, Any}())
+@component function P2HybridWLTC(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(110.0), var"Ti"=Float64(1.0), var"tau_max"=150.233567 + 205.0, var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"tau_brake"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -65,7 +64,6 @@ The electric-mode CVT target follows demand power to avoid starting against an i
   haskey(__overrides, "engage_width_rpm") && (engage_width_rpm = pop!(__overrides, "engage_width_rpm"))
   haskey(__overrides, "lock_rpm") && (lock_rpm = pop!(__overrides, "lock_rpm"))
   haskey(__overrides, "lock_width_rpm") && (lock_width_rpm = pop!(__overrides, "lock_width_rpm"))
-  haskey(__overrides, "N_locked") && (N_locked = pop!(__overrides, "N_locked"))
   haskey(__overrides, "tau_brake") && (tau_brake = pop!(__overrides, "tau_brake"))
 
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
@@ -117,9 +115,6 @@ The electric-mode CVT target follows demand power to avoid starting against an i
   __local__lock_width_rpm = lock_width_rpm
   append!(__params, @parameters (lock_width_rpm::Real), [description = "Width of machine-side K0 lock-up [rpm] (assumed; step 2)", bounds = (eps(Float64), Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, lock_width_rpm, __local__lock_width_rpm)
-  __local__N_locked = N_locked
-  append!(__params, @parameters (N_locked::Real), [description = "Minimum transmission input target [rpm] (assumed; step 2)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, N_locked, __local__N_locked)
 
   ### Final Parameters (assignments)
 
@@ -168,7 +163,7 @@ The electric-mode CVT target follows demand power to avoid starting against an i
   push!(__systems, @named map = VehicleSystemsComponents.Vehicle.TorqueToPedal(; __overrides = map_overrides))
   # Subcomponent speed_command of type VehicleSystemsComponents.Vehicle.HybridLineSpeedCommand
   speed_command_overrides = __pop_subcomponent_overrides!(__overrides, "speed_command")
-  push!(__systems, @named speed_command = VehicleSystemsComponents.Vehicle.HybridLineSpeedCommand(; N_locked=N_locked, __overrides = speed_command_overrides))
+  push!(__systems, @named speed_command = VehicleSystemsComponents.Vehicle.HybridLineSpeedCommand(; __overrides = speed_command_overrides))
   # Subcomponent differential of type MultibodyComponents.PlanarMechanics.DifferentialGear
   differential_overrides = __pop_subcomponent_overrides!(__overrides, "differential")
   push!(__systems, @named differential = MultibodyComponents.PlanarMechanics.DifferentialGear(; __overrides = differential_overrides))
