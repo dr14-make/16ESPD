@@ -113,7 +113,8 @@ COMPONENTS shows `HandsOn05` with `Step1EngineWLTC`, `Step2OperatingLineWLTC` an
 #### Look at the powertrain (5 min)
 
 Open `Vehicle › P2Powertrain`. COMPONENTS opens with every module expanded; `Vehicle` comes
-after the `Lecture` modules, so scroll past them. Trace the shaft from left to right:
+after the `Lecture` modules, so scroll past them to the bottom, or click any row in COMPONENTS
+and type `P2Powertrain`; the tree filters as you type. Trace the shaft from left to right:
 
 | Part | What it is |
 | --- | --- |
@@ -166,6 +167,8 @@ Wire:
 The first two put the powertrain on the front wheels and on the ground. In H0 the CVT follows the
 pedal schedule, so `N_ref` is ignored; the gate keeps the machine request at zero; the engine
 torque target is used only with start/stop. The zero constant keeps every ignored input driven.
+The block also draws an `engine_on` port: leave it open. It exists only with start/stop on, and
+step 3 wires it.
 
 Your first canvas wire renames every `connect` tag in the file to `id…` and reformats its
 metadata. That is expected: the model is unchanged, but a text diff against the reference is
@@ -342,7 +345,9 @@ machine limit. The manager is set to `SoC_on = 0.52`, `SoC_off = 0.55` and `P_li
 1. Open code view (⇄). In the `powertrain = ...` line, change `start_stop = false` to
    `start_stop = true`, and save. This adds the powertrain's `engine_on` input and lets fuel
    flow only when the manager asks for the engine; fuel fades in as the engine spins up from 400
-   to 700 rpm. Close the diagram and reopen it before the canvas work.
+   to 700 rpm. Switch back with ⇄, close the code tab too, then close the diagram and reopen it
+   before the canvas work: while the code tab is open, canvas wires sit unsaved in it until
+   Ctrl+S.
 2. Place one block and rename it:
 
    | Name | Library path |
