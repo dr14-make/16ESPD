@@ -1,7 +1,7 @@
 """
 Hands-on 05 step 2 starter: the operating-line fixture without its line, with the powertrain still
-pedal-commanded. Placing OperatingLine as `line`, wiring the zero command to the two ignored
-inputs, setting `speed_commanded = true` and adding the three line equations the guide lists
+pedal-commanded. Placing LineSpeedCommand as `speed_command`, wiring its pedal and speed ports
+and the zero command to the ignored inputs, and setting `speed_commanded = true`
 completes it to Lecture5.P2OperatingLineWLTC.
 """
 test component Step2OperatingLineWLTC
@@ -46,8 +46,6 @@ test component Step2OperatingLineWLTC
   parameter P_peak::Power = 85000.0
   "Minimum locked engine speed [rpm]; replaces lower line rows"
   parameter N_locked::Real = 1000.0
-  "Commanded transmission input speed [rpm], line speed floored at N_locked"
-  variable N_target::Real
   "Zero for unused command inputs (assumed; fixed-mode fixture)"
   unused_command = BlockComponents.Sources.Constant(k = 0.0) {^unused_command}
 relations
