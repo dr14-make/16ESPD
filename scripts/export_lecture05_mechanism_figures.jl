@@ -29,23 +29,44 @@ const NOTEBOOKS = normpath(@__DIR__, "..", "notebooks", "lecture05")
 include(joinpath(NOTEBOOKS, "operating_points.jl"))
 include(joinpath(NOTEBOOKS, "bsfc_map.jl"))
 using .BsfcMap: bsfc_map_plot, LINE_COLOR
-using .OperatingPoints.BsfcLine: load_maps, bsfc_at, torque_for, RPM_MAX
+using .OperatingPoints.BsfcLine: load_maps, bsfc_at, torque_for, read_line, RPM_MAX
 
 const ROOT = normpath(@__DIR__, "..")
 const OUT = joinpath(ROOT, "slides", "decks", "lecture-05", "public", "figures")
 
-# Vehicle.P2Variator
-const I_LAUNCH = 12.0
-const I_OVERDRIVE = 2.8
-const TARGET_RPM = (1800.0, 6000.0)
-# Vehicle.DisconnectClutch
-const K0_TIME = 0.15
-const K0_TAU_MAX = 230.0
-const K0_W_REG = 0.5
-# Vehicle.Planar.RoadCar and the Lecture 5 test models
-const WHEEL_RADIUS = 0.31
-# Lecture5.P2HybridWLTC's manager
-const SOC_ON, SOC_OFF = 0.52, 0.55
+const DYAD = joinpath(ROOT, "dyad")
+
+"""
+    dyad_value(file, name)
+
+The number assigned to `name` in Dyad source `file`, under `dyad/`: a parameter's default
+(`parameter name::Type = value`) or a modifier (`name = value`). The figures read the models'
+own values so they cannot drift from them.
+"""
+function dyad_value(file, name)
+    src = read(joinpath(DYAD, file), String)
+    number = raw"([-+]?[0-9.]+(?:[eE][-+]?[0-9]+)?)"
+    # A parameter's type can carry `(min = ...)`, so its default is the last `=` on the line.
+    m = something(match(Regex("(?m)^\\s*parameter " * name * "::.*=\\s*" * number * "\\s*\$"), src),
+        match(Regex("\\b" * name * "\\s*=\\s*" * number * "\\s*[,)]"), src), Some(nothing))
+    m === nothing && error("no value for `$name` in dyad/$file")
+    return parse(Float64, m[1])
+end
+
+const I_LAUNCH = dyad_value("Vehicle/P2Variator.dyad", "i_launch")
+const I_OVERDRIVE = dyad_value("Vehicle/P2Variator.dyad", "i_overdrive")
+const TARGET_RPM = (dyad_value("Vehicle/P2Variator.dyad", "target_rpm_min"),
+    dyad_value("Vehicle/P2Variator.dyad", "target_rpm_max"))
+const K0_TIME = dyad_value("Vehicle/DisconnectClutch.dyad", "actuator_time")
+const K0_TAU_MAX = dyad_value("Vehicle/DisconnectClutch.dyad", "tau_max")
+const K0_W_REG = dyad_value("Vehicle/DisconnectClutch.dyad", "w_regularization")
+const WHEEL_RADIUS = dyad_value("Vehicle/Planar/RoadCar.dyad", "radius")
+const SOC_ON = dyad_value("Lecture5/P2HybridWLTC.dyad", "SoC_on")
+const SOC_OFF = dyad_value("Lecture5/P2HybridWLTC.dyad", "SoC_off")
+# Lecture 2's CVT car cruising, Hands-on 02 step 05: its pedal and the schedule law of
+# Vehicle.ControlledVariator, which shares P2Variator's 1800-6000 rpm targets.
+const CRUISE_KMH = dyad_value("HandsOn02/MappedCarCruise.dyad", "speed_kmh")
+const CRUISE_PEDAL = dyad_value("HandsOn02/MappedCarCruise.dyad", "pedal_cmd")
 
 const ORANGE = "#a75d00"
 const GREEN = "#2e8b57"
@@ -70,7 +91,8 @@ function cvt_ratio_map()
     annotate!(p, w_max - 20, 6750, text(@sprintf("i = %.1f (top)", I_OVERDRIVE), 17, LINE_COLOR,
         :right))
     annotate!(p, 1000, 4600, text("any ratio in this range", 19, LINE_COLOR, :center))
-    annotate!(p, 1750, 2500, text("not reachable: i < 2.8", 17, :gray, :center))
+    annotate!(p, 1750, 2500, text(@sprintf("not reachable: i < %.1f", I_OVERDRIVE), 17, :gray,
+        :center))
     for (target, color, name) in zip(TARGET_RPM, (GREEN, ORANGE), ("pedal up", "pedal down"))
         w_lock, w_end = target / I_LAUNCH, target / I_OVERDRIVE
         plot!(p, [0, w_lock], [target, target]; color, lw = 3, ls = :dash, label = "")
@@ -80,7 +102,7 @@ function cvt_ratio_map()
         scatter!(p, [w_end], [target]; color, markersize = 8, markerstrokewidth = 0, label = "")
     end
     plot!(p, [-200, -100], [0, 0]; color = :gray, lw = 3, ls = :dash,
-        label = "left of i = 12: only with the clutch slipping")
+        label = @sprintf("left of i = %.0f: only with the clutch slipping", I_LAUNCH))
     annotate!(p, 1450, 3500, text("ratio at its limit:<br>the engine leaves its target", 16,
         :black, :left))
     return p
@@ -107,33 +129,43 @@ function k0_clutch()
     scatter!(b, [1.0], [full]; color = ORANGE, markersize = 8, markerstrokewidth = 0, label = "")
     annotate!(b, 1.15, 150, text(@sprintf("1 rad/s: %.0f %%", 100 * full / K0_TAU_MAX), 17,
         ORANGE, :left))
-    annotate!(b, -2.9, 205, text("± 230 N·m, fully closed", 17, :gray, :left))
+    annotate!(b, -2.9, 205, text(@sprintf("± %.0f N·m, fully closed", K0_TAU_MAX), 17, :gray,
+        :left))
     return plot(a, b; layout = (1, 2), size = (1280, 440), legend = false, grid = true,
         gridalpha = 0.25, FONTS..., left_margin = 10Plots.mm)
 end
 
-function cvt_band(; v_kmh = 90.0, P_kw = 10.0, n_schedule = 2182.0, n_line = 1420.0)
+"Engine speed [rpm] of the best-BSFC line at power `P_kw` [kW], linear between rows."
+function line_rpm(P_kw)
+    line = read_line()
+    k = clamp(searchsortedlast(line.power_kw, P_kw), 1, length(line.power_kw) - 1)
+    t = (P_kw - line.power_kw[k]) / (line.power_kw[k+1] - line.power_kw[k])
+    return line.rpm[k] + t * (line.rpm[k+1] - line.rpm[k])
+end
+
+function cvt_band(; v_kmh = CRUISE_KMH, P_kw = 10.0)
     m = load_maps()
     w = rpm_of(v_kmh)
     lo, hi = I_OVERDRIVE * w, min(I_LAUNCH * w, RPM_MAX)
+    n_schedule = TARGET_RPM[1] + CRUISE_PEDAL * (TARGET_RPM[2] - TARGET_RPM[1])
     p = bsfc_map_plot(; title = "")
     # A smaller canvas than the deck's full-width map: shown in half a slide, its text must grow.
     plot!(p; size = (960, 560), legend = false, top_margin = 4Plots.mm)
     plot!(p, [lo, hi], [160, 160]; fillrange = 0, fillcolor = GREEN, fillalpha = 0.12,
-        linewidth = 0, label = @sprintf("CVT at %.0f km/h: i ≤ 2.8, %.0f rpm and up", v_kmh, lo))
-    plot!(p, [lo, lo], [0, 160]; color = GREEN, lw = 2.5, ls = :dash, label = "")
+        linewidth = 0)
+    plot!(p, [lo, lo], [0, 160]; color = GREEN, lw = 2.5, ls = :dash)
     ns = range(900, 4000; length = 300)
-    plot!(p, ns, torque_for.(P_kw, ns); color = :gray, ls = :dot, lw = 2, label = "")
-    for (n, color, name) in [(n_schedule, ORANGE, "CVT schedule"), (n_line, LINE_COLOR, "line")]
+    plot!(p, ns, torque_for.(P_kw, ns); color = :gray, ls = :dot, lw = 2)
+    @printf("%.0f km/h on r = %.2f m: wheel %.1f rpm; i = %.1f gives %.0f rpm at least\n", v_kmh,
+        WHEEL_RADIUS, w, I_OVERDRIVE, lo)
+    for (n, color, name) in [(n_schedule, ORANGE, "schedule"), (line_rpm(P_kw), LINE_COLOR, "line")]
         T = torque_for(P_kw, n)
         b = bsfc_at(m, n, T).bsfc
         scatter!(p, [n], [T]; color, markersize = 12, markerstrokecolor = :white,
-            markerstrokewidth = 2, label = @sprintf("%s, %.0f kW: %.0f rpm, %.0f g/kWh", name, P_kw, n, b))
-        @printf("%s: %.0f kW at %.0f rpm, %.1f N·m, %.1f g/kWh, i = %.2f\n", name, P_kw, n, T, b,
-            n / w)
+            markerstrokewidth = 2)
+        @printf("%s: %.0f kW at %.0f rpm, %.1f N·m, %.1f g/kWh, ", name, P_kw, n, T, b)
+        @printf("i = %.2f, %+.0f rpm from the floor\n", n / w, n - lo)
     end
-    @printf("%.0f km/h on r = %.2f m: wheel %.1f rpm, i = %.1f gives %.0f rpm\n", v_kmh,
-        WHEEL_RADIUS, w, I_OVERDRIVE, lo)
     return p
 end
 
