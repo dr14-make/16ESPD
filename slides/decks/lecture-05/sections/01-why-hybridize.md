@@ -198,7 +198,8 @@ P2 car with the hybrid machine removed: no torque, no losses, no inertia, and no
 works like the clutch of a manual car, but by itself. It is open while the car stands, it slips as
 the engine revs up to start the car, and it is closed while the car moves. So H0 is Lecture 2's
 engine and CVT on the same planar car, driveline and mass as the hybrid, and any difference you
-measure belongs to the hybrid alone. You do not build H0; it is the reference run.
+measure belongs to the hybrid alone. You run H0 yourself in build 01: the library's P2 powertrain
+wired into the car with its machine switched off.
 
 H1, build 01, is the P2 powertrain: Lecture 2's engine, then the K0 disconnect clutch, then Lecture
 4's machine at about 30 kilowatts, then the CVT that the course already has, then the planar car's

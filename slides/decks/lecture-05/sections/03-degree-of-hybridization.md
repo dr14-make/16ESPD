@@ -149,8 +149,9 @@ A full hybrid has a machine and a battery large enough to drive the car alone at
 keep the engine off for long stretches. Our reference is the 2011 Hyundai Sonata Hybrid that Oak
 Ridge measured: a 30 kilowatt machine behind an engine clutch, a 1.4 kilowatt-hour, 270 volt pack,
 and a claimed electric drive up to 62 miles per hour. That is the size of today's car. Its saving on
-the WLTC is what you measure in build 04: 28.5 percent against the same car without the hybrid.
-That car idles at every stop, so the stop/start saving is included in that number.
+the WLTC is what you measure in build 03 and compare in build 04: 28.5 percent against the same car
+without the hybrid. That car idles at every stop, so the stop/start saving is included in that
+number.
 
 A plug-in hybrid is a full hybrid with a much larger pack, charged from the grid. It first drains
 the pack, mostly on grid energy; we call that charge-depleting. Then it holds the pack's charge
