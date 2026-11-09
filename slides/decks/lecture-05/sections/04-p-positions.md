@@ -56,6 +56,12 @@ speed.</div>
 </div>
 </div>
 
+<img src="/figures/04-cvt-ratio-map.svg" style="max-height: 18rem" alt="Engine speed against wheel speed for the course CVT. A blue wedge from the origin between the ratio lines i = 12.0 (launch) and i = 2.8 (top) is the reachable region. The pedal-up path holds 1800 rpm from 150 to 643 wheel rpm, then rises along i = 2.8; the pedal-down path holds 6000 rpm from 500 to 2143 wheel rpm, then rises along i = 2.8. Left of i = 12 both targets are dashed: the engine holds them only while the clutch slips. Below i = 2.8 is not reachable."/>
+
+<div class="caption">Wheel speed across, engine speed up · blue: every ratio from 12.0 to 2.8 ·
+green, orange: the pedal's targets, the ratio stops at its limits · dashed: only with the clutch
+slipping</div>
+
 <!--
 Two parts carry the hybrid we build: the CVT and the K0 clutch. The drawing of the five positions,
 two slides from now, is built on them. So here is what each one does and how we model it. First,
@@ -85,6 +91,14 @@ remember.
 Last row: a CVT alone cannot start the car from rest, because the wheels stand still and no ratio
 fits. It needs a clutch that slips. Lecture 2's car used a centrifugal clutch, which closes as the
 engine speeds up past about 1300 rpm. In our P2, that job goes to K0, on the next slide.
+
+The plot below draws all of this as a map. Across is the wheel speed, up the engine speed, both in
+rpm. Every ratio is a straight line through the origin. The blue wedge between the line for 12.0
+and the line for 2.8 is every point the CVT can reach. The green path is the pedal up: the CVT
+holds 1800 rpm until the ratio reaches 2.8, and from there the engine speed rises with the wheels.
+The orange path is the pedal down, holding 6000 rpm. To the left of the 12.0 line, the dashed
+parts, the engine can be at its target only while the clutch slips. Below the 2.8 line nothing is
+reachable.
 -->
 
 ---
@@ -121,6 +135,11 @@ K0 sits between the engine and the electric machine.
 </div>
 </div>
 
+<img src="/figures/04-k0-clutch.svg" style="max-height: 15rem" alt="Two plots of the course K0 model. Left: actuator position against time after a close command, a first-order rise with a 0.15 s time constant, reaching 90 percent at 0.35 s. Right: friction torque against slip, 230 N·m times tanh of slip over 0.5 rad/s, from minus to plus 230 N·m, at 96 percent of full strength at 1 rad/s."/>
+
+<div class="caption">From the course model, <code>Vehicle.DisconnectClutch</code> · left: actuator,
+τ = 0.15 s · right: friction torque = 230 N·m · tanh(slip / 0.5 rad/s)</div>
+
 <!--
 The second part is K0, the clutch between the engine and the electric machine. The name K0 comes
 from the German word for clutch, Kupplung. The zero is there because it sits first, right after the
@@ -144,6 +163,11 @@ Now the slip row. The friction torque is the clutch's strength times how far it 
 direction follows the slip. It grows smoothly from zero, so the solver never has to stop at the
 moment the clutch locks. Above about one radian per second of slip, it is close to full strength.
 So a closed clutch behaves as locked, with a very small slip.
+
+The two plots below come straight from the model. On the left, the actuator: after the command to
+close, its position rises like a first-order lag and passes 90 percent at 0.35 seconds. On the
+right, the slip law: 230 newton meters times the hyperbolic tangent of the slip divided by half a
+radian per second. At one radian per second it already gives 96 percent of full strength.
 
 Every run starts with K0 open. The test models then close it in two ways. First, starting the car
 in H0, the engine-only car: K0 closes as the engine speeds up past about 1300 rpm, over a band of
@@ -169,7 +193,7 @@ routeAlias: five-positions
 
 <div class="diagram-wide">
 
-![The course car's driveline from left to right: the engine, its crank, the K0 clutch, the CVT, the differential and the front wheels. P0 sits on the engine's belt drive and P1 on the crank, both inside a red zone labeled turns with the engine, always. P2 sits after K0 on the CVT input, P3 on the CVT output, and P4 drives the rear axle through its own gear, all inside a green zone labeled can turn with the engine off: K0 open.](/diagrams/04-p-positions.svg)
+![The course car's driveline from left to right: the engine, its crank, the K0 clutch, the CVT, the differential and the front wheels. P0 sits on the engine's belt drive (FEAD, 2.5–3 times engine speed) and P1 directly on the crankshaft, both inside a red zone labeled turns with the engine, always. P2 sits after K0 on the CVT input, coaxial or by chain or gear; P3 on the CVT output, by gear or chain; and P4 drives the rear axle through its own reduction, often planetary, or as a hub motor; all inside a green zone labeled can turn with the engine off: K0 open.](/diagrams/04-p-positions.svg)
 
 </div>
 
@@ -192,6 +216,9 @@ axle or in the hubs.
 </div>
 </div>
 
+<div class="caption text-left">Power-split (planetary gear, e.g. Toyota THS) is a separate family,
+not a P position.</div>
+
 <!--
 Here are the five positions, drawn on the driveline we use today. Read the black line from left to
 right: the engine, the K0 clutch, the CVT, the differential, and the front wheels. The small boxes,
@@ -206,8 +233,18 @@ The green zone holds the three decoupled positions: P2 after the clutch, on the 
 input; P3 on the transmission's output; and P4 on the rear axle or in the wheel hubs. With K0 open,
 the engine can stand still while P2, P3 and P4 turn.
 
+The small gray labels say how each machine is joined to its shaft. P0 drives the belt, the
+front-end accessory drive, FEAD, and its pulley turns it at about two and a half to three times the
+engine's speed. P1 sits directly on the crankshaft. P2 sits on the transmission's input, either
+coaxial, around the shaft, or beside it through a chain or a gear. P3 reaches the transmission's
+output through a gear or a chain. P4 has its own reduction gear to the rear axle, often a planetary
+one, or it is a motor inside the wheel hub.
+
 The one thing to take from this drawing is the two zones. Red means the machine can never stop
 while the engine turns. Green means it can, once K0 opens.
+
+One family is missing on purpose: the power-split hybrid, with its planetary gear, like Toyota's
+hybrid system. It is not a P position but a family of its own; section 05 shows it.
 
 In our car, the CVT is the transmission. The next five slides take the positions one at a time.
 Each uses this same drawing, with the position in focus drawn with a thick border, red for P0 and
