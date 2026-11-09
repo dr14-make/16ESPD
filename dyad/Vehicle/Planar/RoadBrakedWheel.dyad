@@ -18,7 +18,7 @@ component RoadBrakedWheel
   structural parameter road::VehicleSystemsComponents.RoadGrip
   "Road grip multiplier; scales traction capacity, not the reported physical load"
   variable grip::Real
-  joint = MultibodyComponents.PlanarMechanics.SlipBasedWheelJoint(N = 0.0, mu_A = mu_scale * mu_A, mu_S = mu_scale * mu_S, r = [1, 0], render = false, radius = radius, sAdhesion = sAdhesion, sSlide = sSlide, vAdhesion_min = vAdhesion_min, vSlide_min = vSlide_min) {^joint}
+  joint = VehicleSystemsComponents.Vehicle.Planar.SlipWheelJoint(N = 0.0, mu_A = mu_scale * mu_A, mu_S = mu_scale * mu_S, r = [1, 0], radius = radius, sAdhesion = sAdhesion, sSlide = sSlide, vAdhesion_min = vAdhesion_min, vSlide_min = vSlide_min) {^joint}
   inertia = RotationalComponents.Components.Inertia(J = J) {^inertia}
   brake = VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator(T = T_brake, tau_max = tau_max, w0 = w0) {^brake}
   housing = RotationalComponents.Components.Fixed() {^housing}

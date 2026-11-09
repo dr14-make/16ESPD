@@ -1,4 +1,4 @@
-"Planar BEV assembly with a held by-hand driver."
+"Planar BEV assembly with a held by-hand driver and position-dependent road grip and grade."
 component PlanarBEVByHand
   "Vehicle mass"
   parameter m::Mass = 1500.0
@@ -6,12 +6,22 @@ component PlanarBEVByHand
   parameter esp_on::Real = 1.0
   "ABS enable for the run"
   parameter abs_on::Real = 1.0
-  "Uniform road-grip multiplier"
+  "Uniform road-grip multiplier, applied on top of the road file's grip"
   parameter mu::Real = 1.0
+  "OpenCRG grip asset for all four wheel positions"
+  structural parameter road_file::String = "dyad://VehicleSystemsComponents/roads/uniform_mu.crg"
+  "OpenCRG height asset evaluated at the chassis center"
+  structural parameter height_file::String = "dyad://VehicleSystemsComponents/roads/flat_z.crg"
+  "Grip multiplier beyond the road file's grid"
+  structural parameter default_grip::Real = 1.0
+  "Road height beyond the height file's grid"
+  structural parameter default_height::Length = 0.0
+  "Distance beyond a road file's grid over which its values blend to the defaults"
+  structural parameter blend_width::Length = 2.0
   "Driver supplying the three causal commands"
   driver = VehicleSystemsComponents.HumanDriver()
-  "Car including actuator response"
-  vehicle = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDrive(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
+  "Car including actuator response and road grip lookup"
+  vehicle = VehicleSystemsComponents.Vehicle.Planar.RoadBEVDrive(road_file = road_file, height_file = height_file, default_grip = default_grip, default_height = default_height, blend_width = blend_width, m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
 relations
   connect(driver.throttle_signal, vehicle.throttle)
   connect(driver.brake_signal, vehicle.brake)

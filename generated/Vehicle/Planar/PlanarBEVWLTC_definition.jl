@@ -18,7 +18,7 @@ The machine therefore never pushes the car backwards at a stop, which `RoadLoad`
 survive below -0.71 m/s, and at every stop the friction brakes hold the car, as on
 `PlanarWLTC`. WLTC never brakes harder than the machine can, so above `v_fade` all braking is
 regenerative. Start and standstill are those of
-`PlanarWLTC` (wheels `dv_wheel` ahead of the body, MultibodyComponents.jl#185).
+`PlanarWLTC` (wheels `dv_wheel` ahead of the body).
 
 The energy states integrate each link's power from t = 0, in joules:
 
