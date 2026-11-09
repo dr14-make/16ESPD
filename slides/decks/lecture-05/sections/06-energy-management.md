@@ -16,8 +16,8 @@ energy manager makes those choices, many times a second. We look at what a hybri
 decides, and we write it as rules that keep the battery's state of charge, how full it is, inside
 a window. We keep the rules from switching on and off too fast with Lecture 2's hysteresis latch, a
 switch with two thresholds and a memory. We insist that the battery ends where it started. And we
-look at the optimizer the industry uses, called ECMS, in one slide. At the end you build the energy
-manager, build 03.
+look at the optimizer the industry uses, called ECMS, in one slide. At the end you wire the
+library's energy manager into the car, build 03.
 -->
 
 ---
