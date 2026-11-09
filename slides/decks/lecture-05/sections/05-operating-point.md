@@ -134,7 +134,7 @@ Even steady cruise is off the line: at 90 km/h Lecture 2's CVT schedule runs the
 
 <div class="grid grid-cols-[1.7fr_1fr] gap-6 items-center">
 
-<img src="/figures/05-cvt-band.svg" style="max-height: 17rem" alt="Lecture 2's BSFC map, torque against engine speed, with the best-BSFC line in blue and a dotted 10 kW curve. A green band from 2156 rpm to the map's 6500 rpm limit is every engine speed the CVT can reach at 90 km/h on the 0.31 m wheel. Lecture 2's CVT schedule point, 10 kW at 2182 rpm and 264 g/kWh, sits at the band's left edge; the line's point, 10 kW at 1420 rpm and 242 g/kWh, lies outside it."/>
+<img src="/figures/05-cvt-band.svg" style="max-height: 17rem" alt="Lecture 2's BSFC map, torque against engine speed, with the best-BSFC line in blue and a dotted 10 kW curve. A green band from 2156 rpm to the map's 6500 rpm limit is every engine speed the CVT can reach at 90 km/h on the 0.31 m wheel. Lecture 2's CVT schedule point, 10 kW at 2182 rpm and 264 g/kWh, sits just inside the band, about 26 rpm above its left edge; the line's point, 10 kW at 1420 rpm and 242 g/kWh, lies outside it."/>
 
 <div>
 
@@ -142,8 +142,8 @@ Even steady cruise is off the line: at 90 km/h Lecture 2's CVT schedule runs the
 CVT reaches at 90 km/h · orange dot: Lecture 2's CVT schedule · blue dot: the line</div>
 
 At 90 km/h the 0.31 m wheel turns at 770 rpm, so the top ratio 2.8 puts the engine at **2156 rpm**
-at least. The schedule's 2182 rpm is already at that limit; the line's 1420 rpm would need
-*i* ≈ **1.8**, outside the range.
+at least. The schedule's 2182 rpm is *i* ≈ 2.83, just above that limit; the line's 1420 rpm would
+need *i* ≈ **1.84**, outside the range.
 
 </div>
 </div>
@@ -181,8 +181,9 @@ But can this CVT get there? The plot below says no. It is the same fuel map, wit
 kilowatt curve and the two points on it. The green band is every engine speed the CVT can reach at
 90 kilometers per hour. The wheel has a radius of 0.31 meters, so at 90 kilometers per hour it
 turns at 770 rpm. The smallest ratio, 2.8, puts the engine at 2156 rpm, and nothing lower is
-possible. The schedule's 2182 rpm sits right at that edge: the CVT is already at its top ratio. The
-line's 1420 rpm would need a ratio of about 1.8, which this CVT does not have. So at 90 kilometers
+possible. The schedule's 2182 rpm is a ratio of about 2.83, only some 26 rpm above that floor: the
+CVT is almost at its top ratio already. The line's 1420 rpm would need a ratio of about 1.84, which
+this CVT does not have. So at 90 kilometers
 per hour the line is out of this CVT's reach.
 
 The green box is the limit of this trick. A CVT gives one free choice: the engine's speed. The power

@@ -260,7 +260,7 @@ routeAlias: p0-belt
 
 <div class="diagram-wide">
 
-<img src="/diagrams/04-p0.svg" alt="The course car's driveline with P0 highlighted: the machine on the engine's belt drive, inside the red zone that turns with the engine. P1 to P4 are grayed." style="max-height: 17rem" />
+<img src="/diagrams/04-p0.svg" alt="The course car's driveline with P0 highlighted: the machine on the engine's belt drive (FEAD), turning at 2.5–3 times engine speed, inside the red zone that turns with the engine. P1 to P4 are grayed." style="max-height: 17rem" />
 
 </div>
 
@@ -327,7 +327,7 @@ routeAlias: p1-crank
 
 <div class="diagram-wide">
 
-<img src="/diagrams/04-p1.svg" alt="The course car's driveline with P1 highlighted: the machine on the crankshaft between the engine and K0, inside the red zone that turns with the engine. P0, P2, P3 and P4 are grayed." style="max-height: 17rem" />
+<img src="/diagrams/04-p1.svg" alt="The course car's driveline with P1 highlighted: the machine directly on the crankshaft between the engine and K0, inside the red zone that turns with the engine. P0, P2, P3 and P4 are grayed." style="max-height: 17rem" />
 
 </div>
 
@@ -389,7 +389,7 @@ routeAlias: p2-after-k0
 
 <div class="diagram-wide">
 
-<img src="/diagrams/04-p2.svg" alt="The course car's driveline with P2 highlighted: the machine after the K0 clutch on the CVT input, inside the green zone that can turn with the engine off. P0, P1, P3 and P4 are grayed." style="max-height: 17rem" />
+<img src="/diagrams/04-p2.svg" alt="The course car's driveline with P2 highlighted: the machine after the K0 clutch on the CVT input, coaxial or by chain or gear, inside the green zone that can turn with the engine off. P0, P1, P3 and P4 are grayed." style="max-height: 17rem" />
 
 </div>
 
@@ -450,7 +450,7 @@ routeAlias: p3-output
 
 <div class="diagram-wide">
 
-<img src="/diagrams/04-p3.svg" alt="The course car's driveline with P3 highlighted: the machine geared to the CVT output, inside the green zone that can turn with the engine off. P0, P1, P2 and P4 are grayed." style="max-height: 17rem" />
+<img src="/diagrams/04-p3.svg" alt="The course car's driveline with P3 highlighted: the machine joined to the CVT output by a gear or chain, inside the green zone that can turn with the engine off. P0, P1, P2 and P4 are grayed." style="max-height: 17rem" />
 
 </div>
 
@@ -506,7 +506,7 @@ routeAlias: p4-rear-axle
 
 <div class="diagram-wide">
 
-<img src="/diagrams/04-p4.svg" alt="The course car's driveline with P4 highlighted: the machine driving the rear axle through its own gear, inside the green zone that can turn with the engine off. P0 to P3 are grayed." style="max-height: 17rem" />
+<img src="/diagrams/04-p4.svg" alt="The course car's driveline with P4 highlighted: the machine driving the rear axle through its own reduction, often planetary, or as a hub motor, inside the green zone that can turn with the engine off. P0 to P3 are grayed." style="max-height: 17rem" />
 
 </div>
 
@@ -695,7 +695,7 @@ routeAlias: why-p2
 
 <div class="diagram-wide">
 
-<img src="/diagrams/04-p2.svg" alt="The course car's driveline with P2 highlighted: the machine after the K0 clutch on the CVT input, inside the green zone that can turn with the engine off. P0, P1, P3 and P4 are grayed." style="max-height: 15rem" />
+<img src="/diagrams/04-p2.svg" alt="The course car's driveline with P2 highlighted: the machine after the K0 clutch on the CVT input, coaxial or by chain or gear, inside the green zone that can turn with the engine off. P0, P1, P3 and P4 are grayed." style="max-height: 15rem" />
 
 </div>
 
