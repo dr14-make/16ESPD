@@ -20,6 +20,8 @@ component MappedEngine
   variable cut_fraction::Real
   "Fuel-cut fanout source (derived; computed fuel-cut fraction)"
   cut_signal = BlockComponents.Routing.RealPassThrough() {^cut_signal}
+  "Motored torque fanout source [N.m] (derived; closed-throttle curve with optional zero-speed drag)"
+  motored_signal = BlockComponents.Routing.RealPassThrough() {^motored_signal}
   "Vacuum take-off: the hose to the brake booster, at manifold pressure"
   vacuum = VehicleSystemsComponents.Vehicle.GasPort() {^vacuum}
   "Engine output shaft"
@@ -87,8 +89,8 @@ component MappedEngine
   variable N::Real
 relations
   N = speed.w * 30 / pi
-  connect(speed.w, engine_speed)
-  connect(torque_map.full_load_torque, available_torque)
+  connect(speed.w, engine_speed) {^engine_speed_wire}
+  connect(torque_map.full_load_torque, available_torque) {^available_torque_wire}
   connect(pedal, pedal_map.pedal, cut_logic.pedal) {^pedal_wire}
   connect(pedal_map.u_thr, air.u_thr) {^throttle_wire}
   connect(vacuum, air.vacuum) {^booster_wire}
@@ -96,12 +98,13 @@ relations
   connect(speed.w, air.omega, cut_logic.omega, torque_map.omega, closed_throttle.omega, lambda_map.omega, fuel_map.omega, hc_map.omega, co_map.omega, nox_map.omega) {^speed_wire}
   connect(torque_map.y, torque_blend.fired) {^fired_wire}
   if fuel_controlled
-    torque_blend.motored = closed_throttle.y * tanh(speed.w / w_drag)
+    motored_signal.u = closed_throttle.y * tanh(speed.w / w_drag)
     cut_fraction = 1.0 - min(max(fuel_enable, 0.0), 1.0) * (1.0 - cut_logic.cut)
   else
-    connect(closed_throttle.y, torque_blend.motored) {^motored_wire}
+    motored_signal.u = closed_throttle.y
     cut_fraction = cut_logic.cut
   end
+  connect(motored_signal.y, torque_blend.motored) {^motored_wire}
   cut_signal.u = cut_fraction
   connect(cut_signal.y, torque_blend.cut, fuel_map.cut, hc_map.cut, co_map.cut, nox_map.cut) {^cut_wire}
   connect(torque_blend.y, torque_source.tau, tau_e) {^torque_wire}
@@ -118,6 +121,7 @@ metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/MappedEngine.svg"}},
   "_links": {
     "cut_signal": {"Dyad":{"placement":{"diagram":{"x1":270,"x2":320,"y1":615,"y2":665}}}},
+    "motored_signal": {"Dyad":{"placement":{"diagram":{"x1":680,"x2":740,"y1":300,"y2":360}}}},
     "cut_wire": {"Dyad":{"edges":[{"S":1,"M":[{"x":380,"y":640},{"x":380,"y":500}],"E":-1},{"S":-1,"M":[{"x":800,"y":500},{"x":800,"y":210}],"E":2},{"S":-1,"M":[],"E":-2},{"S":-2,"M":[],"E":3},{"S":-2,"M":[],"E":-3},{"S":-3,"M":[],"E":4},{"S":-3,"M":[],"E":-4},{"S":-4,"M":[],"E":5},{"S":-4,"M":[{"x":450,"y":1125}],"E":6}],"junctions":[{"x":450,"y":500},{"x":450,"y":735},{"x":450,"y":865},{"x":450,"y":995}]}},
     "engine_speed": {"Dyad":{"placement":{"diagram":{"x1":1525,"x2":1575,"y1":405,"y2":455},"icon":{"x1":270.0,"x2":330.0,"y1":-30.0,"y2":30.0}}}},
     "available_torque": {"Dyad":{"placement":{"diagram":{"x1":1475,"x2":1525,"y1":125,"y2":175},"icon":{"x1":670.0,"x2":730.0,"y1":-30.0,"y2":30.0}}}},
@@ -156,6 +160,8 @@ metadata {
     "speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1480, "y": 430}, {"x": 1480, "y": 1190}], "E": -1}, {"S": -1, "M": [{"x": 220, "y": 1190}], "E": -2}, {"S": -2, "M": [], "E": 3}, {"S": -2, "M": [{"x": 220, "y": 320}], "E": 2}, {"S": -1, "M": [], "E": -3}, {"S": -3, "M": [], "E": 10}, {"S": -3, "M": [], "E": -4}, {"S": -4, "M": [], "E": 9}, {"S": -4, "M": [], "E": -5}, {"S": -5, "M": [], "E": 8}, {"S": -5, "M": [], "E": -6}, {"S": -6, "M": [], "E": 7}, {"S": -6, "M": [], "E": -7}, {"S": -7, "M": [], "E": 6}, {"S": -7, "M": [], "E": -8}, {"S": -8, "M": [], "E": 5}, {"S": -8, "M": [{"x": 410, "y": 160}], "E": 4}], "junctions": [{"x": 410, "y": 1190}, {"x": 220, "y": 520}, {"x": 410, "y": 1075}, {"x": 410, "y": 945}, {"x": 410, "y": 815}, {"x": 410, "y": 685}, {"x": 410, "y": 560}, {"x": 410, "y": 330}]}},
     "fired_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "motored_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 820, "y": 330}, {"x": 820, "y": 240}], "E": 2}]}},
+    "engine_speed_wire": {"Dyad":{"edges":[{"S":1,"M":[],"E":2}]}},
+    "available_torque_wire": {"Dyad":{"edges":[{"S":1,"M":[{"x":780,"y":210},{"x":780,"y":150}],"E":2}]}},
     "torque_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 970, "y": 110}], "E": 3}], "junctions": [{"x": 970, "y": 210}]}},
     "fuel_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 960, "y": 775}], "E": 3}], "junctions": [{"x": 960, "y": 710}]}},
     "co2_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},

@@ -203,6 +203,9 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   # Subcomponent cut_signal of type BlockComponents.Routing.RealPassThrough
   cut_signal_overrides = __pop_subcomponent_overrides!(__overrides, "cut_signal")
   push!(__systems, @named cut_signal = BlockComponents.Routing.RealPassThrough(; __overrides = cut_signal_overrides))
+  # Subcomponent motored_signal of type BlockComponents.Routing.RealPassThrough
+  motored_signal_overrides = __pop_subcomponent_overrides!(__overrides, "motored_signal")
+  push!(__systems, @named motored_signal = BlockComponents.Routing.RealPassThrough(; __overrides = motored_signal_overrides))
   # Subcomponent pedal_map of type VehicleSystemsComponents.Vehicle.Engine.PedalMap
   pedal_map_overrides = __pop_subcomponent_overrides!(__overrides, "pedal_map")
   push!(__systems, @named pedal_map = VehicleSystemsComponents.Vehicle.Engine.PedalMap(; pedal_exponent=pedal_exponent, throttle_time=throttle_time, __overrides = pedal_map_overrides))
@@ -272,6 +275,7 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   push!(__eqs, connect(air.p_m, p_m, torque_map.p_m, lambda_map.p_m, fuel_map.p_m, hc_map.p_m, co_map.p_m, nox_map.p_m))
   push!(__eqs, connect(speed.w, air.omega, cut_logic.omega, torque_map.omega, closed_throttle.omega, lambda_map.omega, fuel_map.omega, hc_map.omega, co_map.omega, nox_map.omega))
   push!(__eqs, connect(torque_map.y, torque_blend.fired))
+  push!(__eqs, connect(motored_signal.y, torque_blend.motored))
   push!(__eqs, connect(cut_signal.y, torque_blend.cut, fuel_map.cut, hc_map.cut, co_map.cut, nox_map.cut))
   push!(__eqs, connect(torque_blend.y, tau_e, torque_source.tau))
   push!(__eqs, connect(fuel_map.y, mdot_fuel, co2_gain.u))
@@ -286,10 +290,10 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
 
   ### Control Structures
   if fuel_controlled
-    push!(__eqs, torque_blend.motored ~ closed_throttle.y * tanh(speed.w / w_drag))
+    push!(__eqs, motored_signal.u ~ closed_throttle.y * tanh(speed.w / w_drag))
     push!(__eqs, cut_fraction ~ 1.0 - min(max(fuel_enable, 0.0), 1.0) * (1.0 - cut_logic.cut))
   else
-    push!(__eqs, connect(closed_throttle.y, torque_blend.motored))
+    push!(__eqs, motored_signal.u ~ closed_throttle.y)
     push!(__eqs, cut_fraction ~ cut_logic.cut)
   end
 
