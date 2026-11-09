@@ -1,7 +1,7 @@
 # Lecture 2, section 09 (drive cycles): sources for every number
 
 Backs `slides/decks/lecture-02/sections/09-drive-cycles.md`. The WLTC facts follow the hands-on
-step 07 plan (`lecture-02-handson-step07-wltc-plan.md`, PR #77) and keep its numbers. Tags as in
+step 07 page (`slides/site/handson/lecture-02/index.md`) and keep its numbers. Tags as in
 the sensors research note: **(verified)** read in the primary document, **(search summary)** seen
 only in a secondary page or search result, **(computed)** produced by the `illustrations` notebook
 from committed data and pinned there by an assertion, **(derived)** arithmetic on verified numbers.

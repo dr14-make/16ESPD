@@ -71,9 +71,9 @@ begin
     PL = VehicleSystemsComponents.Vehicle.Planar
 
     # Lecture 2's engine car on the same cycle: 5.22 L/100 km (HandsOn02.MappedCarWLTC on
-    # branch feat/handson02-wltc-bonus, docs/lecture-02-handson-step07-wltc-plan.md), petrol at
+    # branch feat/handson02-wltc-bonus), petrol at
     # 0.745 kg/L and H_l = 43.4 MJ/kg.
-    # Per-phase figures from the same reference run, in the same plan.
+    # Per-phase figures from the same reference run.
     engine = (; L_per_100km = 5.22, phases = [6.30, 5.14, 4.59, 5.41], rho = 0.745, H_l = 43.4)
     engine_MJ = engine.L_per_100km * engine.rho * engine.H_l
 
