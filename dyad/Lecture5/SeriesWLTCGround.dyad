@@ -137,7 +137,6 @@ test component SeriesGroundElectric
   ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
   drive = VehicleSystemsComponents.Vehicle.Electric.TractionDrive(T_max = tau_max, ratio = ratio) {^drive}
   no_fuel = BlockComponents.Sources.Constant(k = 0.0) {^no_fuel}
-  brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(brake_gain = 2.0) {^brakes}
 relations
   connect(battery.p, aux.p, drive.p)
   connect(battery.n, aux.n, drive.n, ground.g)
