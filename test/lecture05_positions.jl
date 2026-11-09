@@ -96,7 +96,8 @@ end
     end
     resolved(model, p) = parse(Float64, string(resolved_value(model, p)))
     paths = Tuple[(p,) for p in (:m, :radius, :k, :Ti, :tau_brake, :dv_wheel,
-        :engage_rpm, :engage_width_rpm, :lock_rpm, :lock_width_rpm, :N_locked)]
+        :engage_rpm, :engage_width_rpm, :lock_rpm, :lock_width_rpm)]
+    push!(paths, (:speed_command, :N_locked))
     append!(paths, [(:manager, p) for p in (:SoC_on, :SoC_off, :SoC_full,
         :dSoC_full, :P_line_max, :P_on, :P_off, :P_chg, :P_max, :P_regen, :v_fade,
         :tau_coupled_on, :tau_coupled_off, :dP_boost, :P_peak, :P_dis,

@@ -380,10 +380,13 @@ end
             "Vehicle/P2Powertrain.dyad", "Vehicle/Electric/HybridDrive.dyad",
             "Vehicle/Engine/MappedEngine.dyad", "Vehicle/DisconnectClutch.dyad",
             "Vehicle/P2TorqueCommand.dyad", "Vehicle/P2Variator.dyad",
+            "Vehicle/LineSpeedCommand.dyad", "Vehicle/HybridLineSpeedCommand.dyad",
+            "Vehicle/BrakeSplit.dyad",
             "Vehicle/ParameterGate.dyad", "Vehicle/OptionalShaftHold.dyad",
             "Vehicle/Engine/TorqueMap.dyad", "Lecture5/FuelEnableBench.dyad",
             "Lecture5/P2WLTC.dyad", "Lecture5/P2OperatingLineWLTC.dyad",
-            "Lecture5/P2HybridWLTC.dyad")]
+            "Lecture5/P2HybridWLTC.dyad", "Lecture5/HybridPositionWLTC.dyad",
+            "Lecture5/CoupledHybridWLTC.dyad", "Lecture5/OutputHybridWLTC.dyad")]
         function indirect_endpoints(file, source)
             violations = Tuple{String,Int,String}[]
             for connection in eachmatch(r"\bconnect\s*\(([^)]*)\)", code_only(source))
@@ -453,6 +456,11 @@ end
                 "VehicleSystemsComponents.HandsOn05.TorqueToPedal" => "VehicleSystemsComponents.Vehicle.TorqueToPedal",
                 "VehicleSystemsComponents.HandsOn05.P2WLTC" => "VehicleSystemsComponents.Lecture5.P2WLTC")
             @test normalize(source("HandsOn05")) == normalize(source(original))
+            if name in ("P2OperatingLineWLTC", "P2HybridWLTC")
+                command = name == "P2OperatingLineWLTC" ? "LineSpeedCommand" : "HybridLineSpeedCommand"
+                @test occursin("speed_command = VehicleSystemsComponents.Vehicle.$command()", source("HandsOn05"))
+                @test !occursin(r"(?m)^\s*(?:line|demand_line) = .*OperatingLine\(", source("HandsOn05"))
+            end
         end
     end
     @testset "guide steps complete each starter to its Lecture 5 bench" begin
@@ -508,8 +516,8 @@ end
         library(path) = replace(strip(path), " › " => ".") * "()"
         for (id, starter, bench, wire_count, flag_count) in (
                 ("step-1", "Step1EngineWLTC", "P2WLTC", 7, 0),
-                ("step-2", "Step2OperatingLineWLTC", "P2OperatingLineWLTC", 2, 1),
-                ("step-3", "Step3HybridWLTC", "P2HybridWLTC", 7, 1))
+                ("step-2", "Step2OperatingLineWLTC", "P2OperatingLineWLTC", 4, 1),
+                ("step-3", "Step3HybridWLTC", "P2HybridWLTC", 8, 1))
             text = section(id)
             source = dyad("HandsOn05", starter)
             completed = component(source, starter)
@@ -531,10 +539,17 @@ end
                     nets = nets([[collect(n) for n in mine.nets]; wires]))
             reference = canonical(component(dyad("Lecture5", bench), bench))
             @test length(wires) == wire_count
+            @test length(wires) <= 8
+            @test isempty(equations) # Every student-added relation is a canvas wire.
+            expected_blocks = id == "step-2" ?
+                ["speed_command = VehicleSystemsComponents.Vehicle.LineSpeedCommand()"] :
+                id == "step-3" ?
+                ["speed_command = VehicleSystemsComponents.Vehicle.HybridLineSpeedCommand()"] : String[]
+            @test placed == expected_blocks
             @test mine.declarations == reference.declarations
             @test mine.equations == reference.equations
             @test mine.nets == reference.nets
-            # The starter on its own is missing every wire and equation the step adds.
+            # The starter on its own is missing every wire the step adds.
             bare = canonical(component(source, starter))
             @test all(w -> !any(n -> issubset(w, n), bare.nets), wires)
             @test isempty(intersect(bare.equations, equations))
@@ -708,8 +723,9 @@ end
     # ±150 rpm at actual brake power; demand scheduling need not follow realized power.
     @test maximum(deviation[eligible]) < 1600.0
     @test maximum(deviation[.!idle .& .!launch]) < 2400.0
-    @test maximum(abs.(at(m.line.P) .- at(m.powertrain.engine_pedal) .* s.ps[m.P_peak])) < 1e-8
-    @test all(isapprox.(at(m.N_target), max.(at(m.line.N), s.ps[m.N_locked]); atol = 1e-9))
+    command = m.speed_command
+    @test maximum(abs.(at(command.line.P) .- at(m.powertrain.engine_pedal) .* s.ps[command.P_peak])) < 1e-8
+    @test all(isapprox.(at(command.N_ref), max.(at(command.line.N), s.ps[command.N_locked]); atol = 1e-9))
     moving = at(m.car.bus.vx) .* 3.6 .> 10.0
     cruise_min_position = k0_cruise_min_position(m, at, dt)
     # At 54.01 s the shallow-slope mask resumes before the 0.5 s variator lag has settled;
@@ -1276,7 +1292,7 @@ include("torque_to_pedal.jl")
     mean_power_error = sum(error_W[tracking]) / sum(tracking)
     max_power_error = maximum(error_W[tracking])
     fuel = at(m.powertrain.mdot_fuel)
-    line_fuel_share = sum(fuel[abs.(at(m.powertrain.engine.N) .- at(m.line.N)) .<= 150.0]) / sum(fuel)
+    line_fuel_share = sum(fuel[abs.(at(m.powertrain.engine.N) .- at(m.speed_command.line.N)) .<= 150.0]) / sum(fuel)
     @test mean_power_error < 500.0
     @test max_power_error < 5000.0
     @test line_fuel_share > 0.45
