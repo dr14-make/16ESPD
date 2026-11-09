@@ -9,7 +9,7 @@ const BSFC_LINE = read_line()
 include("../scripts/machine_size_sweep.jl")
 const H0_L100 = MachineSizeSweep.H0_L100
 const H0_MJ100 = 184.86508896
-const LINE_L100 = 5.4374440955
+const LINE_L100 = 5.4374434065
 const RPM_ENGINE_IDLE = 800.0
 
 # H0 is both a P2 fixed-mode check and the operating-line baseline; one 1800 s run serves both.
@@ -695,10 +695,12 @@ end
     @test minimum(ratio) >= 2.8 - 2.3e-5
     # P2OperatingLineWLTC sampled upper bound: solver excursion 2.241e-7 plus margin.
     @test maximum(ratio) <= 12.0 + 2.5e-7
-    # P2OperatingLineWLTC accepted lower bound: solver excursion 2.372e-5 plus margin.
-    @test minimum(s[m.powertrain.variator.ratio]) >= 2.8 - 2.6e-5
-    # P2OperatingLineWLTC accepted upper bound: solver excursion 1.969e-4 plus margin.
-    @test maximum(s[m.powertrain.variator.ratio]) <= 12.0 + 2.1e-4
+    # P2OperatingLineWLTC accepted lower bound: on accepted solver steps with the planar
+    # slip-joint tire the ratio overshoots by 5.196e-5; the bound allows about twice that.
+    @test minimum(s[m.powertrain.variator.ratio]) >= 2.8 - 1e-4
+    # P2OperatingLineWLTC accepted upper bound: on accepted solver steps with the planar
+    # slip-joint tire the ratio overshoots by 2.123e-4; the bound allows about twice that.
+    @test maximum(s[m.powertrain.variator.ratio]) <= 12.0 + 4e-4
     idle = (power .< 1.0) .| (at(m.driver.y) .<= 0.0)
     launch = .!idle .& (cmd .>= 11.999)
     overdrive = .!idle .& (cmd .<= 2.801)
@@ -1232,7 +1234,7 @@ include("torque_to_pedal.jl")
     @test maximum(soc) <= 0.8
     corrected = last(s[m.meter.fuel_corr])
     @test corrected < H0_L100
-    @test corrected ≈ 4.0863429317 atol = 1e-9 rtol = 0
+    @test corrected ≈ 4.0863406523 atol = 1e-9 rtol = 0
     @test last(s[m.meter.energy_corr]) ≈ 132.1237260121 atol = 5e-4 rtol = 0
     on = at(m.manager.engine_on) .> 0.5
     starts = findall(diff(on) .== 1)
