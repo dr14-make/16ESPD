@@ -121,7 +121,7 @@ of today we can put the conventional car, the hybrid and the electric car side b
 | <Link to="p-positions">04</Link> | P0 to P4 | where the machine sits, and why the clutch decides | 01 the P2 powertrain |
 | <Link to="operating-point">05</Link> | Moving the operating point | the engine's most efficient speeds, the CVT, power split | 02 the operating line |
 | <Link to="energy-management">06</Link> | Energy management | driving modes, the battery's charge window, an optimizer | 03 the energy manager |
-| <Link to="results">07</Link> | Results | WLTC three ways, the five positions against published studies | 04 the WLTC, charge-sustaining |
+| <Link to="results">07</Link> | Results | WLTC three ways, the five positions against published studies | 04 the comparison at equal charge |
 | <Link to="wrap-up">08</Link> | Wrap-up | what you measured, what the model leaves out | |
 
 <!--
@@ -146,8 +146,8 @@ charge, which is how full the battery is; switching with a gap between the on an
 so the modes do not flicker; ending the test with the same charge we started with; and, in one
 slide, an optimizer that we do not build. You build the energy manager, build 03. Section 07 gives
 the results: the WLTC for three powertrains, and the table of the five positions against the
-published studies. There you build the charge-sustaining WLTC, the run that ends with the battery
-as full as it started, build 04. Section 08 wraps up.
+published studies. There you compare your three cars at equal battery charge, build 04. Section
+08 wraps up.
 
 So there are four build steps, each right after the theory it puts into practice. Sections 01 to
 03 are theory only.

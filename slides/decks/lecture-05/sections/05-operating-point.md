@@ -296,17 +296,19 @@ routeAlias: build-operating-line
 <div class="grid grid-cols-[1.1fr_1fr] gap-8 items-start">
 <div>
 
-![P2OperatingLineWLTC in Studio: driver, operating-line table and P2 powertrain on top, the planar car, differential and road load below, the fuel meter on the right.](/img/lecture-05/step02-operating-line-diagram.png)
+![The finished step-2 fixture in Studio: driver, operating-line table and P2 powertrain on top, the planar car, differential and road load below, the fuel meter on the right.](/img/lecture-05/step02-operating-line-diagram.png)
 
-**Given:** the best-BSFC line as a data table (`OperatingLine`)
+**Given:** the starter `Step2OperatingLineWLTC`, the H0 car with its powertrain still on the pedal
+schedule · the best-BSFC line as a data table (`OperatingLine`)
 
 [page: step 2](../lecture/lecture-05/#step-2) · reference `dyad/HandsOn05/P2OperatingLineWLTC.dyad`
 
 </div>
 <div class="stack">
 
-*Pedal → requested power → best-BSFC line → engine speed command, floored at 1000 rpm → the CVT
-sets the ratio that holds it*
+*Place `OperatingLine` as `line` · wire the zero constant to the 2 inputs the speed-commanded CVT
+ignores · set `speed_commanded = true` · type 3 equations · run: pedal → requested power →
+best-BSFC line → engine speed command, floored at 1000 rpm → the CVT holds it*
 
 ```txt
 line.P = powertrain.engine_pedal * P_peak   # P_peak = 85 kW, a calibration
@@ -315,7 +317,7 @@ powertrain.N_ref = N_target
 ```
 
 <div class="handson">✓ same car, driver and K0 as H0 · WLTC: <b>5.44</b> L/100 km against H0's
-<b>5.72</b>, <b>−4.9 %</b> · only 17 % of the fuel within ±150 rpm of the line</div>
+<b>5.72</b>, <b>−4.9 %</b></div>
 
 <img src="/img/lecture-05/step02-operating-points.png" style="max-height: 13rem" alt="The operating-line WLTC run: engine torque against engine speed, the WLTC points as black dots and the best-BSFC line in orange. The points form a cloud around and below the line, densest on a band below it, not on the line itself." />
 
@@ -326,11 +328,14 @@ request is never checked against the engine, so most points fall on a band below
 </div>
 
 <!--
-Build 02: the operating line. On the left you see the operating-line test model in Studio. The
+Build 02: the operating line. On the left you see the finished step-2 test model in Studio. The
 line's table sits between the driver and the powertrain.
 
-The library gives you the best-BSFC line as a data table, called OperatingLine. The powertrain gets
-a switch that swaps the CVT that follows the pedal for one that holds an engine speed we command.
+You start from the step-2 starter: the H0 car, with the powertrain's CVT still following the pedal.
+The library gives you the best-BSFC line as a data table, called OperatingLine; you place it and
+name it line. Two wires feed zero to the inputs the CVT no longer reads. Then, in code view, you
+flip the powertrain's switch, speed_commanded, so the CVT holds an engine speed we command instead
+of following the pedal, and you type the three lines in the code box. Then you run the WLTC.
 Now read the three code lines. First: the driver's pedal becomes a power request, the pedal position
 times 85 kilowatts, a value we chose. Second: the line turns that power into a speed, and we never
 go below 1000 revolutions per minute, so the engine never drops below idle while K0 is locked.
@@ -344,10 +349,10 @@ and higher load.
 But be honest about why. Nothing checks the request against the engine. Pedal times 85 kilowatts is
 not what the engine actually delivers, so the engine does not sit on the line. The plot under the
 checkpoint shows this. The black dots are the engine's points over the WLTC, and the orange curve is
-the best-BSFC line. The dots are densest on a band below the line, not on it. Only 17 percent of the fuel
-burns within 150 revolutions per minute of the line. The saving comes from running slower in
-general. Holding the engine on the line needs a controller that commands the engine's power
-directly: that is the energy manager of section 06.
+the best-BSFC line. The dots are densest on a band below the line, not on it. The reference run
+measures it: only 17 percent of the fuel burns within 150 revolutions per minute of the line. The
+saving comes from running slower in general. Holding the engine on the line needs a controller
+that commands the engine's power directly: that is the energy manager of section 06.
 -->
 
 ---
