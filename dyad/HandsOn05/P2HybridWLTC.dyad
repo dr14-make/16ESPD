@@ -35,7 +35,8 @@ test component P2HybridWLTC
   powertrain = VehicleSystemsComponents.HandsOn05.P2Powertrain(speed_commanded = true, start_stop = true, position_start = 0.0, engine_speed_start = 0.0) {^powertrain}
   manager = VehicleSystemsComponents.Vehicle.EnergyManager(mapped_limits = true, SoC_on = 0.52, SoC_off = 0.55, P_line_max = 30.0e3) {^manager}
   map = VehicleSystemsComponents.HandsOn05.TorqueToPedal() {^map}
-  speed_command = VehicleSystemsComponents.Vehicle.HybridLineSpeedCommand(N_locked = N_locked) {^speed_command}
+  line = VehicleSystemsComponents.Vehicle.OperatingLine() {^line}
+  demand_line = VehicleSystemsComponents.Vehicle.OperatingLine() {^demand_line}
   differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
   mount = RotationalComponents.Components.Fixed() {^mount}
   straight = RotationalComponents.Components.Fixed() {^straight}
@@ -44,6 +45,8 @@ test component P2HybridWLTC
   motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
   roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
   meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel() {^meter}
+  "CVT target blended from demand in electric mode to engine request when running [rpm]"
+  variable N_target::Real
   "Stored-energy charging integral [J]; includes regen and engine-driven charging"
   variable E_charge::Energy
   "Requested regenerative braking energy at the machine shaft [J], excludes load-point charging"
@@ -52,7 +55,6 @@ test component P2HybridWLTC
   variable E_friction::Energy
   "Zero for unused command inputs (assumed; fixed-mode fixture)"
   unused_command = BlockComponents.Sources.Constant(k = 0.0) {^unused_command}
-  brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(brake_gain = 1.0) {^brakes}
 relations
   connect(unused_command.y, powertrain.cvt_pedal) {^unused_wire}
   connect(car.bus, motion.bus)
@@ -65,14 +67,14 @@ relations
   connect(powertrain.SoC, manager.SoC) {^soc_wire}
   connect(powertrain.engine_speed, manager.engine_speed, map.omega) {^speed_wire}
   connect(powertrain.available_torque, manager.available_torque) {^torque_wire}
-  connect(manager.P_engine, speed_command.P_engine) {^line_wire}
+  connect(manager.P_engine, line.P) {^line_wire}
   connect(manager.tau_engine, map.tau, powertrain.engine_torque_ref) {^torque_ref_wire}
   connect(map.pedal, powertrain.engine_pedal) {^pedal_wire}
   connect(manager.engine_on, powertrain.engine_on)
   connect(manager.tau_machine, powertrain.tau_ref) {^machine_wire}
-  connect(manager.P_drive, speed_command.P_drive) {^drive_power_wire}
-  connect(manager.engine_on, speed_command.engine_on) {^line_on_wire}
-  connect(speed_command.N_ref, powertrain.N_ref) {^speed_command_wire}
+  demand_line.P = manager.P_drive
+  N_target = max(manager.engine_on * line.N + (1.0 - manager.engine_on) * demand_line.N, N_locked)
+  powertrain.N_ref = N_target
   powertrain.engage = manager.engage * max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm)))
   connect(powertrain.spline, differential.flange_b) {^spline_wire}
   connect(differential.flange_left, car.spin_fl) {^left_wire}
@@ -83,11 +85,10 @@ relations
   connect(car.chassis, roadload.chassis) {^chassis_wire}
   connect(powertrain.mdot_fuel, meter.mdot_fuel) {^fuel_wire}
   meter.P_stored = powertrain.E * powertrain.i
-  brakes.u = -manager.tau_friction * powertrain.variator.ratio
-  connect(brakes.tau_fl, car.tau_fl) {^brake_fl_wire}
-  connect(brakes.tau_fr, car.tau_fr) {^brake_fr_wire}
-  connect(brakes.tau_rl, car.tau_rl) {^brake_rl_wire}
-  connect(brakes.tau_rr, car.tau_rr) {^brake_rr_wire}
+  car.tau_fl = manager.tau_friction * powertrain.variator.ratio / 2.0
+  car.tau_fr = car.tau_fl
+  car.tau_rl = 0.0
+  car.tau_rr = 0.0
   der(E_charge) = max(-meter.P_stored, 0.0)
   der(E_regen) = manager.tau_regen * max(manager.w_shaft, 0.0)
   der(E_friction) = car.fl.brake.tau_friction * car.fl.brake.w + car.fr.brake.tau_friction * car.fr.brake.w + car.rl.brake.tau_friction * car.rl.brake.w + car.rr.brake.tau_friction * car.rr.brake.w
@@ -111,7 +112,7 @@ relations
   initial car.rl.brake.tau_actual = 0.0
   initial car.rr.brake.tau_actual = 0.0
   initial powertrain.drive.converter.i_out = 0.0
-metadata {"_links":{"trace":{"Dyad":{"placement":{"diagram":{"x1":0,"y1":140,"x2":70,"y2":210}}}},"no_ff":{"Dyad":{"placement":{"diagram":{"x1":100,"y1":30,"x2":160,"y2":90}}}},"driver":{"Dyad":{"placement":{"diagram":{"x1":130,"y1":150.7,"x2":220,"y2":240.7}}}},"kmh":{"Dyad":{"placement":{"diagram":{"x1":10,"y1":245,"x2":80,"y2":315}}}},"powertrain":{"Dyad":{"placement":{"diagram":{"x1":680,"y1":121.6,"x2":880,"y2":321.6}}}},"mount":{"Dyad":{"placement":{"diagram":{"x1":675,"y1":355,"x2":725,"y2":405}}}},"differential":{"Dyad":{"placement":{"diagram":{"x1":640,"y1":740,"x2":880,"y2":500}}}},"meter":{"Dyad":{"placement":{"diagram":{"x1":930,"y1":16,"x2":1000,"y2":86}}}},"straight":{"Dyad":{"placement":{"diagram":{"x1":735,"y1":745,"x2":785,"y2":795,"rot":180}}}},"car":{"Dyad":{"placement":{"diagram":{"x1":690,"y1":800,"x2":830,"y2":940}}}},"motion":{"Dyad":{"placement":{"diagram":{"x1":880,"y1":810,"x2":1000,"y2":930}}}},"roadload":{"Dyad":{"placement":{"diagram":{"x1":560,"y1":865,"x2":630,"y2":935}}}},"flat":{"Dyad":{"placement":{"diagram":{"x1":480,"y1":880,"x2":520,"y2":920}}}},"manager":{"Dyad":{"placement":{"diagram":{"x1":270,"y1":120,"x2":530,"y2":380}}}},"map":{"Dyad":{"placement":{"diagram":{"x1":575,"y1":152.6,"x2":635,"y2":202.6}}}},"ff_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":175.0,"y":60.0}],"E":2}],"renderStyle":"standard"}},"dem_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":240,"y":195.7},{"x":240,"y":159.0}],"E":2}],"renderStyle":"standard"}},"kmh_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":105,"y":280.0},{"x":105,"y":216.4}],"E":2},{"S":1,"M":[{"x":252,"y":280.0},{"x":252,"y":250.0}],"E":3}],"renderStyle":"standard"}},"line_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":540.0,"y":146.0},{"x":540.0,"y":-100.0}],"E":2}]}},"torque_ref_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2},{"S":1,"M":[{"x":552,"y":187.6},{"x":552,"y":147.6}],"E":3}],"renderStyle":"standard"}},"pedal_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":655,"y":177.6},{"x":655,"y":207.2}],"E":2}],"renderStyle":"standard"}},"machine_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":560,"y":312.4},{"x":560,"y":253.6}],"E":2}],"renderStyle":"standard"}},"mount_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":700.0,"y":321.6}],"E":2}],"renderStyle":"standard"}},"spline_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":975,"y":147.6},{"x":975,"y":488.0}],"E":2}],"renderStyle":"standard"}},"left_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":615,"y":620.0},{"x":615,"y":770},{"x":655,"y":770},{"x":655,"y":835.0}],"E":2}],"renderStyle":"standard"}},"chassis_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":645,"y":940.0},{"x":645,"y":900.0}],"E":2}],"renderStyle":"standard"}},"right_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":860,"y":620.0},{"x":860,"y":835.0}],"E":2}],"renderStyle":"standard"}},"speed_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":960,"y":189.6},{"x":960,"y":444},{"x":224,"y":444},{"x":224,"y":295.5}],"E":2},{"S":1,"M":[{"x":905,"y":189.6},{"x":905,"y":15},{"x":605.0,"y":15}],"E":3}],"renderStyle":"standard"}},"soc_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":945,"y":203.6},{"x":945,"y":436},{"x":236,"y":436},{"x":236,"y":341.0}],"E":2}],"renderStyle":"standard"}},"torque_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":930,"y":217.6},{"x":930,"y":428},{"x":322.0,"y":428}],"E":2}],"renderStyle":"standard"}},"fuel_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":893,"y":175.6},{"x":893,"y":30.0}],"E":2}],"renderStyle":"standard"}},"vx_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":1015,"y":841.2},{"x":1015,"y":990},{"x":-5,"y":990},{"x":-5,"y":280.0}],"E":2},{"S":1,"M":[{"x":1015,"y":841.2},{"x":1015,"y":110},{"x":920,"y":110},{"x":920,"y":72.0}],"E":3}],"renderStyle":"standard"}},"unused_command":{"Dyad":{"placement":{"diagram":{"x1":580,"x2":620,"y1":345,"y2":385}}}},"unused_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":674,"y":365},{"x":674,"y":293.6}],"E":2}],"renderStyle":"standard"}},"speed_command":{"Dyad":{"placement":{"diagram":{"x1":550,"x2":650,"y1":-120,"y2":-20}}}},"drive_power_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":475.0,"y":120.0},{"x":475.0,"y":-70.0}],"E":2}]}},"line_on_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":540.0,"y":229.2},{"x":540.0,"y":-40.0}],"E":2}]}},"speed_command_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":665.0,"y":-70.0},{"x":665.0,"y":273.6}],"E":2}]}},"brakes":{"Dyad":{"placement":{"diagram":{"x1":300,"x2":420,"y1":580,"y2":700}}}},"brake_fl_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":555.0,"y":604.0},{"x":555.0,"y":821.0}],"E":2}]}},"brake_fr_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":625.0,"y":628.0},{"x":625.0,"y":821.0}],"E":2}]}},"brake_rl_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":555.0,"y":652.0},{"x":555.0,"y":891.0}],"E":2}]}},"brake_rr_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":625.0,"y":676.0},{"x":625.0,"y":891.0}],"E":2}]}}}}
+metadata {"_links":{"trace":{"Dyad":{"placement":{"diagram":{"x1":0,"y1":140,"x2":70,"y2":210}}}},"no_ff":{"Dyad":{"placement":{"diagram":{"x1":100,"y1":30,"x2":160,"y2":90}}}},"driver":{"Dyad":{"placement":{"diagram":{"x1":130,"y1":150.7,"x2":220,"y2":240.7}}}},"kmh":{"Dyad":{"placement":{"diagram":{"x1":10,"y1":245,"x2":80,"y2":315}}}},"powertrain":{"Dyad":{"placement":{"diagram":{"x1":680,"y1":121.6,"x2":880,"y2":321.6}}}},"mount":{"Dyad":{"placement":{"diagram":{"x1":675,"y1":355,"x2":725,"y2":405}}}},"differential":{"Dyad":{"placement":{"diagram":{"x1":640,"y1":740,"x2":880,"y2":500}}}},"meter":{"Dyad":{"placement":{"diagram":{"x1":930,"y1":16,"x2":1000,"y2":86}}}},"straight":{"Dyad":{"placement":{"diagram":{"x1":735,"y1":745,"x2":785,"y2":795,"rot":180}}}},"car":{"Dyad":{"placement":{"diagram":{"x1":690,"y1":800,"x2":830,"y2":940}}}},"motion":{"Dyad":{"placement":{"diagram":{"x1":880,"y1":810,"x2":1000,"y2":930}}}},"roadload":{"Dyad":{"placement":{"diagram":{"x1":560,"y1":865,"x2":630,"y2":935}}}},"flat":{"Dyad":{"placement":{"diagram":{"x1":480,"y1":880,"x2":520,"y2":920}}}},"manager":{"Dyad":{"placement":{"diagram":{"x1":270,"y1":120,"x2":530,"y2":380}}}},"line":{"Dyad":{"placement":{"diagram":{"x1":550,"y1":40,"x2":595,"y2":85}}}},"map":{"Dyad":{"placement":{"diagram":{"x1":575,"y1":152.6,"x2":635,"y2":202.6}}}},"demand_line":{"Dyad":{"placement":{"diagram":{"x1":650,"y1":40,"x2":695,"y2":85}}}},"ff_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":175.0,"y":60.0}],"E":2}],"renderStyle":"standard"}},"dem_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":240,"y":195.7},{"x":240,"y":159.0}],"E":2}],"renderStyle":"standard"}},"kmh_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":105,"y":280.0},{"x":105,"y":216.4}],"E":2},{"S":1,"M":[{"x":252,"y":280.0},{"x":252,"y":250.0}],"E":3}],"renderStyle":"standard"}},"line_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":545,"y":146.0},{"x":545,"y":62.5}],"E":2}],"renderStyle":"standard"}},"torque_ref_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2},{"S":1,"M":[{"x":552,"y":187.6},{"x":552,"y":147.6}],"E":3}],"renderStyle":"standard"}},"pedal_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":655,"y":177.6},{"x":655,"y":207.2}],"E":2}],"renderStyle":"standard"}},"machine_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":560,"y":312.4},{"x":560,"y":253.6}],"E":2}],"renderStyle":"standard"}},"mount_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":700.0,"y":321.6}],"E":2}],"renderStyle":"standard"}},"spline_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":975,"y":147.6},{"x":975,"y":488.0}],"E":2}],"renderStyle":"standard"}},"left_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":615,"y":620.0},{"x":615,"y":770},{"x":655,"y":770},{"x":655,"y":835.0}],"E":2}],"renderStyle":"standard"}},"chassis_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":645,"y":940.0},{"x":645,"y":900.0}],"E":2}],"renderStyle":"standard"}},"right_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":860,"y":620.0},{"x":860,"y":835.0}],"E":2}],"renderStyle":"standard"}},"speed_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":960,"y":189.6},{"x":960,"y":444},{"x":224,"y":444},{"x":224,"y":295.5}],"E":2},{"S":1,"M":[{"x":905,"y":189.6},{"x":905,"y":15},{"x":605.0,"y":15}],"E":3}],"renderStyle":"standard"}},"soc_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":945,"y":203.6},{"x":945,"y":436},{"x":236,"y":436},{"x":236,"y":341.0}],"E":2}],"renderStyle":"standard"}},"torque_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":930,"y":217.6},{"x":930,"y":428},{"x":322.0,"y":428}],"E":2}],"renderStyle":"standard"}},"fuel_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":893,"y":175.6},{"x":893,"y":30.0}],"E":2}],"renderStyle":"standard"}},"vx_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":1015,"y":841.2},{"x":1015,"y":990},{"x":-5,"y":990},{"x":-5,"y":280.0}],"E":2},{"S":1,"M":[{"x":1015,"y":841.2},{"x":1015,"y":110},{"x":920,"y":110},{"x":920,"y":72.0}],"E":3}],"renderStyle":"standard"}},"unused_command":{"Dyad":{"placement":{"diagram":{"x1":580,"x2":620,"y1":345,"y2":385}}}},"unused_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":674,"y":365},{"x":674,"y":293.6}],"E":2}],"renderStyle":"standard"}}}}
 end
 
 "Full WLTC hybrid energy-management analysis (derived; Lecture 5 step 3)."
