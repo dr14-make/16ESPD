@@ -298,17 +298,16 @@ routeAlias: build-operating-line
 
 ![The finished step-2 fixture in Studio: driver, operating-line table and P2 powertrain on top, the planar car, differential and road load below, the fuel meter on the right.](/img/lecture-05/step02-operating-line-diagram.png)
 
-**Given:** the starter `Step2OperatingLineWLTC`, the H0 car with its powertrain still on the pedal
-schedule · the best-BSFC line as a data table (`OperatingLine`)
+**Given:** the starter `Step2OperatingLineWLTC`, the H0 car without the electric-only option,
+its powertrain still pedal-scheduled · the best-BSFC line as a data table (`OperatingLine`)
 
 [page: step 2](../lecture/lecture-05/#step-2) · reference `dyad/HandsOn05/P2OperatingLineWLTC.dyad`
 
 </div>
 <div class="stack">
 
-*Place `OperatingLine` as `line` · wire the zero constant to the 2 inputs the speed-commanded CVT
-ignores · set `speed_commanded = true` · type 3 equations · run: pedal → requested power →
-best-BSFC line → engine speed command, floored at 1000 rpm → the CVT holds it*
+*Place `line`, 2 wires, `speed_commanded = true`, 3 equations · pedal → requested power →
+best-BSFC line → speed command, floored at 1000 rpm → the CVT holds it*
 
 ```txt
 line.P = powertrain.engine_pedal * P_peak   # P_peak = 85 kW, a calibration
@@ -331,12 +330,13 @@ request is never checked against the engine, so most points fall on a band below
 Build 02: the operating line. On the left you see the finished step-2 test model in Studio. The
 line's table sits between the driver and the powertrain.
 
-You start from the step-2 starter: the H0 car, with the powertrain's CVT still following the pedal.
-The library gives you the best-BSFC line as a data table, called OperatingLine; you place it and
-name it line. Two wires feed zero to the inputs the CVT no longer reads. Then, in code view, you
+You start from the step-2 starter: the H0 car without the electric-only option, with the
+powertrain's CVT still following the pedal. The library gives you the best-BSFC line as a data
+table, called OperatingLine; you place it and name it line. Two wires feed zero to the CVT pedal and
+the engine torque target, the pair the speed-commanded powertrain ignores. Then, in code view, you
 flip the powertrain's switch, speed_commanded, so the CVT holds an engine speed we command instead
-of following the pedal, and you type the three lines in the code box. Then you run the WLTC.
-Now read the three code lines. First: the driver's pedal becomes a power request, the pedal position
+of following the pedal, and you type the three lines in the code box. Then you run the WLTC. Now
+read the three code lines. First: the driver's pedal becomes a power request, the pedal position
 times 85 kilowatts, a value we chose. Second: the line turns that power into a speed, and we never
 go below 1000 revolutions per minute, so the engine never drops below idle while K0 is locked.
 Third: the CVT holds that speed. Everything else is the same as H0: the same car, driver, brakes and

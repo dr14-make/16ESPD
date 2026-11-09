@@ -17,7 +17,7 @@ Section 07: the results. There are two comparisons. First, the WLTC for three po
 car: the conventional car, your hybrid, and Lecture 4's electric car. Then the five machine
 positions, against the three studies that the ICCT reviewed, and for each study its baseline, the
 car it measured its savings against. That baseline is where most of the disagreement between
-numbers comes from. You finish with build 04, the charge-sustaining WLTC.
+numbers comes from. You finish with build 04, comparing your three runs at equal battery charge.
 -->
 
 ---
@@ -270,7 +270,7 @@ routeAlias: build-charge-sustaining
 <div class="stack">
 
 *Nothing new to build or run: the fuel block is on every starter already · note `fuel_corr` at
-the end of each of your three runs · then read the three cars side by side from the ready table*
+the end of your three runs (H0, the line car, the hybrid) · compare them with the ready table*
 
 ```txt
 # on every starter: stored power, not terminal
@@ -281,7 +281,8 @@ meter.fuel_raw   meter.fuel_corr   meter.energy_corr
 
 <div class="handson">✓ SoC at the end within <b>± 2 %</b> of capacity of its start:
 0.600 → <b>0.612</b> · L/100 km: conventional on this test model
-<b>5.72</b> (Lecture 2: 5.22), hybrid SoC-corrected <b>4.09</b> (raw 4.11), <b>−28.5 %</b>
+<b>5.72</b> (Lecture 2: 5.22), line car <b>5.44</b>, hybrid SoC-corrected <b>4.09</b> (raw 4.11),
+<b>−28.5 %</b>
 · MJ/100 km: conventional <b>184.9</b>, hybrid <b>132.1</b>,
 battery-electric <b>47.2</b></div>
 
@@ -298,17 +299,16 @@ Build 04: compare at equal charge. The hybrid's run must end with the battery as
 started. On the left you see the fuel block on the hybrid test model in Studio. The powertrain's
 fuel flow and the car's speed are wired into it, and the battery power enters as one line of code.
 
-Every starter already carries the library's fuel block, SoCCorrectedFuel, and step 4 adds nothing
-to it and runs nothing new. After each of your three runs you note the meter's reading at the end
-of the 1800 seconds, and step 4 sets them beside a ready table of the reference values. The block
-reads the engine's fuel flow, the power going into and
-out of the battery's store, and the distance. The code line says how the stored power is computed:
-E, the battery's open-circuit voltage, which is the voltage with no current flowing, times i, the
-current. We use the stored power, not the terminal power, because the power at the terminals would
-count the heat lost in the battery's resistance as charge the battery never holds. The block
-reports the raw fuel, the net battery energy, and the SoC-corrected fuel, in liters and in
-megajoules per 100 kilometers. Then you put the three cars side by side, your noted values against
-the table.
+Every starter already carries the library's fuel block, SoCCorrectedFuel, and step 4 adds nothing to
+it and runs nothing new. After each of your three runs you note the meter's reading at the end of
+the 1800 seconds, and step 4 sets them beside a ready table of the reference values. The block reads
+the engine's fuel flow, the power going into and out of the battery's store, and the distance. The
+code line says how the stored power is computed: E, the battery's open-circuit voltage, which is the
+voltage with no current flowing, times i, the current. We use the stored power, not the terminal
+power, because the power at the terminals would count the heat lost in the battery's resistance as
+charge the battery never holds. The block reports the raw fuel, the net battery energy, and the
+SoC-corrected fuel, in liters and in megajoules per 100 kilometers. Then you set your three runs,
+H0, the line car and the hybrid, against the table.
 
 Now the checkpoint. First the honesty check: the state of charge at the end must be within 2
 percent of capacity of where it started. Then the numbers: the SoC-corrected liters per 100
@@ -340,7 +340,7 @@ and they meet at the end, once the battery is back.
 
 <!--
 Section 07 in three lines. Three powertrains on one car and one cycle: 184.9 megajoules per 100
-kilometers for the conventional car, 132.1 for the hybrid of your build 04, and 47.2 for the
+kilometers for the conventional car, 132.1 for the hybrid of your build 03, and 47.2 for the
 electric car. Every saving is measured against a baseline, so always say which one; ours idles at
 stops. And the three studies agree on the ranking, P0 below P1, far below P2, P3 and P4, and so must
 our table.

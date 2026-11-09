@@ -146,8 +146,8 @@ charge, which is how full the battery is; switching with a gap between the on an
 so the modes do not flicker; ending the test with the same charge we started with; and, in one
 slide, an optimizer that we do not build. You build the energy manager, build 03. Section 07 gives
 the results: the WLTC for three powertrains, and the table of the five positions against the
-published studies. There you compare your three cars at equal battery charge, build 04. Section
-08 wraps up.
+published studies. There you compare your three runs, H0, the line car and the hybrid, at equal
+battery charge, build 04. Section 08 wraps up.
 
 So there are four build steps, each right after the theory it puts into practice. Sections 01 to
 03 are theory only.
