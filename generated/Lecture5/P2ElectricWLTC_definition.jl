@@ -186,6 +186,9 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
   # Subcomponent unused_command of type BlockComponents.Sources.Constant
   unused_command_overrides = __pop_subcomponent_overrides!(__overrides, "unused_command")
   push!(__systems, @named unused_command = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = unused_command_overrides))
+  # Subcomponent brakes of type VehicleSystemsComponents.Vehicle.BrakeSplit
+  brakes_overrides = __pop_subcomponent_overrides!(__overrides, "brakes")
+  push!(__systems, @named brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(; brake_gain=brake_gain, __overrides = brakes_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -216,8 +219,6 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
 
   ### Equations
   push!(__eqs, meter.P_stored ~ powertrain.E * powertrain.i)
-  push!(__eqs, car.tau_rl ~ 0.0)
-  push!(__eqs, car.tau_rr ~ 0.0)
   push!(__eqs, connect(unused_command.y, powertrain.N_ref, powertrain.engine_torque_ref))
   push!(__eqs, connect(pedal_command.y, powertrain.cvt_pedal))
   push!(__eqs, connect(car.bus, motion.bus))
@@ -236,20 +237,22 @@ Electric-only fixed fixture (derived; P2WLTC with stopped engine).
   push!(__eqs, connect(powertrain.mdot_fuel, meter.mdot_fuel))
   push!(__eqs, connect(split.tau_motor, machine_gate.u))
   push!(__eqs, connect(machine_gate.y, powertrain.tau_ref))
+  push!(__eqs, connect(brakes.tau_fl, car.tau_fl))
+  push!(__eqs, connect(brakes.tau_fr, car.tau_fr))
+  push!(__eqs, connect(brakes.tau_rl, car.tau_rl))
+  push!(__eqs, connect(brakes.tau_rr, car.tau_rr))
 
   ### Control Structures
   if electric
     push!(__eqs, pedal_command.u ~ driver.y / 150.0)
     push!(__eqs, powertrain.engine_pedal ~ 0.0)
     push!(__eqs, powertrain.engage ~ 0.0)
-    push!(__eqs, car.tau_fl ~ split.tau_brake * powertrain.variator.ratio)
-    push!(__eqs, car.tau_fr ~ car.tau_fl)
+    push!(__eqs, brakes.u ~ -2.0 * split.tau_brake * powertrain.variator.ratio / brake_gain)
   else
     push!(__eqs, powertrain.engine_pedal ~ min(max(driver.y / tau_max, 0.0), 1.0))
     push!(__eqs, pedal_command.u ~ powertrain.engine_pedal)
     push!(__eqs, powertrain.engage ~ max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
-    push!(__eqs, car.tau_fl ~ -min(driver.y, 0.0) * brake_gain / 2.0)
-    push!(__eqs, car.tau_fr ~ car.tau_fl)
+    push!(__eqs, brakes.u ~ driver.y)
   end
 
   # Return completely constructed System
