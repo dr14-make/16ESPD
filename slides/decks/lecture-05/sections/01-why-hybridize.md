@@ -201,9 +201,9 @@ engine and CVT on the same planar car, driveline and mass as the hybrid, and any
 measure belongs to the hybrid alone. You run H0 yourself in build 01: the library's P2 powertrain
 wired into the car with its machine switched off.
 
-H1, build 01, is the P2 powertrain: Lecture 2's engine, then the K0 disconnect clutch, then Lecture
-4's machine at about 30 kilowatts, then the CVT that the course already has, then the planar car's
-differential to the front wheels. A battery of about 1.4 kilowatt-hours feeds the machine.
+H1, from build 01, is the library's P2 powertrain: Lecture 2's engine, then the K0 disconnect
+clutch, then Lecture 4's machine at about 30 kilowatts, then the CVT that the course already has,
+then the planar car's differential to the front wheels. A battery of about 1.4 kilowatt-hours feeds the machine.
 
 H2, build 02, commands the CVT's ratio toward the engine's best-BSFC speed for the power the engine
 is asked for. With no battery, the engine still has to follow the driver's demand, so it only gets

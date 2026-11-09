@@ -15,8 +15,8 @@ Section 04: P0 to P4. In a parallel hybrid, the machine can sit in five places a
 driveline, the chain of shafts and gears from the engine to the wheels. P stands for position, and
 the positions are numbered P0 to P4 from the engine outward. We go through them, compare what each
 can do, and arrive at the main argument of the lecture: a machine that can be decoupled from the
-engine is worth more than a stronger machine that cannot. At the end you build the P2 powertrain,
-build 01.
+engine is worth more than a stronger machine that cannot. At the end you wire the library's P2
+powertrain into the car, build 01.
 -->
 
 ---
@@ -365,8 +365,8 @@ still: electric creep and drive, recuperation while coasting, no engine drag.
 its speed with the engine's.
 
 <div class="handson">The P2 we size after: the 2011 Sonata Hybrid, a <b>30 kW</b> machine where an
-automatic gearbox has its fluid coupling, behind an engine clutch (ORNL). You build it: build
-01.</div>
+automatic gearbox has its fluid coupling, behind an engine clutch (ORNL). Build 01 wires the
+library's P2 powertrain into the car.</div>
 
 </div>
 <div class="tight">
@@ -654,7 +654,7 @@ clutch matters more than the machine's power. Section 07 checks whether our own 
 routeAlias: why-p2
 ---
 
-## Why you build P2
+## Why the build uses P2
 
 <div class="diagram-wide">
 
@@ -682,7 +682,7 @@ all. Moving the machine to P0, P1, P3 and P4 is the same experiment four more ti
 section 07.</div>
 
 <!--
-So why do you build P2, and not another position?
+So why does the build use P2, and not another position?
 
 At the top you see P2 on the driveline: behind K0, and before the CVT. The table lists the modes a
 hybrid can have, and ticks the positions that have them. Electric drive with the engine off: only
@@ -701,7 +701,7 @@ section 07.
 routeAlias: build-p2
 ---
 
-## Build 01: the P2 powertrain
+## Build 01: wire the library's P2 powertrain into the car
 
 <div class="grid grid-cols-[1.1fr_1fr] gap-8 items-start">
 <div>
@@ -711,14 +711,14 @@ routeAlias: build-p2
 **Given:** `Vehicle.P2Powertrain`, placed in the starter `Step1EngineWLTC` with the car, driver
 and fuel meter
 
-[page: step 1](../lecture/lecture-05/#step-1) · reference `dyad/Vehicle/P2Powertrain.dyad`, `dyad/HandsOn05/P2WLTC.dyad`
+[page: step 1](../lecture/lecture-05/#step-1) · from parts: [Go further](../lecture/lecture-05/#go-further) · reference `dyad/Vehicle/P2Powertrain.dyad`, `dyad/HandsOn05/P2WLTC.dyad`
 
 </div>
 <div class="stack">
 
-*Trace `MappedEngine` → K0 → `HybridDrive` (30 kW, 1.4 kWh) on the CVT's input shaft →
-`P2Variator` (the CVT) · wire the powertrain's 7 ports into the car · run engine only (H0), K0
-slipping to start the car*
+*You don't build it: open `Vehicle › P2Powertrain` and trace `MappedEngine` → K0 →
+`HybridDrive` (30 kW, 1.4 kWh) on the CVT's input shaft → `P2Variator` (the CVT) · then wire its 7
+ports into the car · run engine only (H0), K0 slipping to start the car*
 
 ```txt
 powertrain.spline  → differential.flange_b
@@ -739,13 +739,17 @@ moves.</div>
 </div>
 
 <!--
-Build 01: the P2 powertrain. On the left you see the library's powertrain in Studio. Read it from
+Build 01: wire the library's P2 powertrain into the car. You don't build the powertrain today: it
+comes from the library, already placed in the starter. You read it, wire it into the car and run
+it. Building it from its parts is in Go further, at the end of the page.
+
+On the left you see the library's powertrain in Studio. Read it from
 left to right: the engine, the K0 clutch, the hybrid drive, and the variator, which is the CVT. The
 command inputs come in on the left, the outputs and the shaft to the wheels leave on the right, and
 the mount to the car body is at the bottom.
 
-The italic line on the right is the build. You do not build the powertrain from parts today; you
-open the library's and trace it. First comes Lecture 2's engine model. Then the K0 clutch, with its
+The italic line on the right is what you do. First you open Vehicle, P2Powertrain, and trace it.
+First comes Lecture 2's engine model. Then the K0 clutch, with its
 actuator. Then the hybrid drive: a 30 kilowatt machine with its converter and a 1.4 kilowatt-hour
 battery, sized after the 2011 Sonata. It sits on the CVT's input shaft, beside K0, not as another
 gear in series. Then the variator, which already holds the final drive, and no second clutch for

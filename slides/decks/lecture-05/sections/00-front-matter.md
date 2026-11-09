@@ -113,12 +113,12 @@ of today we can put the conventional car, the hybrid and the electric car side b
 
 ## The sections
 
-| # | Section | What it covers | You build |
+| # | Section | What it covers | Build |
 |---|---|---|---|
 | <Link to="why-hybridize">01</Link> | Why hybridize | where Lecture 2's engine spends the WLTC, the three savings | |
 | <Link to="series-and-parallel">02</Link> | Series and parallel | series, parallel, series-parallel with a clutch; other types; the series homework | |
 | <Link to="degree-of-hybridization">03</Link> | Degree of hybridization | the electric share of the power, micro to plug-in, cost | |
-| <Link to="p-positions">04</Link> | P0 to P4 | where the machine sits, and why the clutch decides | 01 the P2 powertrain |
+| <Link to="p-positions">04</Link> | P0 to P4 | where the machine sits, and why the clutch decides | 01 wire the library's P2 powertrain into the car |
 | <Link to="operating-point">05</Link> | Moving the operating point | the engine's most efficient speeds, the CVT, power split | 02 the operating line |
 | <Link to="energy-management">06</Link> | Energy management | driving modes, the battery's charge window, an optimizer | 03 the energy manager |
 | <Link to="results">07</Link> | Results | WLTC three ways, the five positions against published studies | 04 the comparison at equal charge |
@@ -126,7 +126,7 @@ of today we can put the conventional car, the hybrid and the electric car side b
 
 <!--
 Here is the plan for today: seven sections and a wrap-up. The first column links to each section,
-and the last column says what you build at its end.
+and the last column names the build at its end.
 
 Section 01 asks why we hybridize at all. We look at where Lecture 2's engine spends the WLTC on its
 fuel map, and at the three ways a hybrid saves fuel. Section 02 is about the layouts: series,
@@ -136,18 +136,18 @@ machine's power divided by the total power of machine and engine. It runs from a
 which only stops the engine, up to a plug-in, and we look at what it costs.
 
 Section 04 covers the five places a parallel hybrid's machine can sit, P0 to P4, and the argument
-that the clutch matters more than the machine. There you build the P2 powertrain, build 01. Section
-05 moves the engine's operating point: the line of the engine's most efficient speeds, the CVT that
-moves the engine toward that line, and the power-split hybrid that does the same with a planetary
-gear. You build the operating line, build 02.
+that the clutch matters more than the machine. There you wire the library's P2 powertrain into
+the car, build 01. Section 05 moves the engine's operating point: the line of the engine's most
+efficient speeds, the CVT that moves the engine toward that line, and the power-split hybrid that
+does the same with a planetary gear. You build the operating line, build 02.
 
 Section 06 is the energy manager. It covers the driving modes; a window for the battery's state of
 charge, which is how full the battery is; switching with a gap between the on and off thresholds,
 so the modes do not flicker; ending the test with the same charge we started with; and, in one
-slide, an optimizer that we do not build. You build the energy manager, build 03. Section 07 gives
-the results: the WLTC for three powertrains, and the table of the five positions against the
-published studies. There you compare your three runs, H0, the line car and the hybrid, at equal
-battery charge, build 04. Section 08 wraps up.
+slide, an optimizer that we do not build. You wire the library's energy manager into the car,
+build 03. Section 07 gives the results: the WLTC for three powertrains, and the table of the five
+positions against the published studies. There you compare your three runs, H0, the line car and
+the hybrid, at equal battery charge, build 04. Section 08 wraps up.
 
 So there are four build steps, each right after the theory it puts into practice. Sections 01 to
 03 are theory only.
