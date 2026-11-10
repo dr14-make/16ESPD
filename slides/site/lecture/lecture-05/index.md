@@ -392,7 +392,7 @@ recovers energy first and the friction brakes take the rest.
 | Engine starts | 44 |
 | Minimum / mean engine on-time | 1.87 s / 14.72 s |
 | Maximum speed error | 1.32 km/h |
-| K0 slip energy | 111.21 kJ (2.53 kJ per start) |
+| K0 slip energy | 111.20 kJ (2.53 kJ per start) |
 | Corrected fuel | 4.08651 L/100 km |
 | SoC start → end | 0.6 → 0.61221 |
 
@@ -461,7 +461,7 @@ flag, so `P2ElectricWLTC` is a test component that `extends P2WLTC(electric = tr
 | Distance | 3094.989 m |
 | Fuel | 0 |
 | SoC | 0.6 → 0.3864 |
-| Maximum machine speed | 3545.66 rpm |
+| Maximum machine speed | 3545.71 rpm |
 
 Zero fuel is not zero energy: the battery loses charge. The hybrid-drive dyno validates the
 machine to 4000 rpm; the variator schedules up to 6000 rpm, which is not validated here. The
@@ -495,13 +495,13 @@ step-1 fixture at your own powertrain.
 
 The step-3 fixture integrates three energies; read them at 1800 s with `s[m.E_regen][end]` and
 so on. Requested shaft regen `E_regen` is **3.119 MJ**; actual friction-brake dissipation
-`E_friction` is **0.0536 MJ**. The battery accepts `E_charge` = **3.920 MJ** in total, including
+`E_friction` is **0.0542 MJ**. The battery accepts `E_charge` = **3.920 MJ** in total, including
 engine-driven charging. These quantities have different measurement boundaries.
 
 #### Start compensation
 
-Over the first 3 s of starts, the unclamped start-compensation excess peaks at 123.34 N·m for
-2.57 s total; the maximum speed error there is 0.996 km/h. The final machine request peaks at
+Over the first 3 s of starts, the unclamped start-compensation excess peaks at 123.42 N·m for
+2.58 s total; the maximum speed error there is 0.996 km/h. The final machine request peaks at
 205 N·m. The powertrain clamps the sum to the machine's torque and power envelope, so start
 compensation cannot guarantee full driver demand at every start. The torque inverse assumes the
 default engine and air-path calibration.
@@ -520,19 +520,19 @@ samples.
 
 **Line band:** compare actual engine rpm against CSV rpm at actual brake power, within
 **±150 rpm**. For positive demand, power ≥1 kW and command inside `(2.801, 11.999)`, only
-**16.40%** of eligible points meet it. Maximum in-range deviation outside launch saturation is
-**1541.15 rpm**, bounded by 1600 rpm in the test. Including overdrive saturation, the maximum
+**16.39%** of eligible points meet it. Maximum in-range deviation outside launch saturation is
+**1541.62 rpm**, bounded by 1600 rpm in the test. Including overdrive saturation, the maximum
 outside launches is 2307.37 rpm (test bound 2400 rpm). The open-loop pedal calibration is not an
 inverse engine map; most points are not on the line.
 
 | Classification | All points | All fuel |
 | --- | --- | --- |
-| In range, within ±150 rpm | 5.527% | 16.748% |
-| Idle/braking | 47.143% | 8.669% |
-| Launch limit | 3.671% | 6.007% |
+| In range, within ±150 rpm | 5.526% | 16.746% |
+| Idle/braking | 47.144% | 8.670% |
+| Launch limit | 3.671% | 6.005% |
 | Overdrive limit | 15.478% | 25.350% |
-| In range, outside band | 28.182% | 43.226% |
-| Total off line | 94.473% | 83.252% |
+| In range, outside band | 28.182% | 43.229% |
+| Total off line | 94.474% | 83.254% |
 
 Idle/braking takes precedence over saturation. On level stretches of the trace above 12 km/h,
 K0's sampled minimum position is 0.98846; where it is closed, the maximum regularized slip is
@@ -540,7 +540,7 @@ K0's sampled minimum position is 0.98846; where it is closed, the maximum regula
 shaft fall below the 1000 rpm floor, and at low vehicle speed its 50 rpm output-speed floor
 reduces shaft speed enough to open K0 during stops: 37.38 s above 10 km/h, with 4.78 g of fuel
 burned meanwhile. Wherever K0 position exceeds 0.5, the sampled engine-speed minimum is
-815.95 rpm, not a continuous-time lower bound.
+815.92 rpm, not a continuous-time lower bound.
 
 The shallow-slope cruise mask resumes at **54.01 s**, right after a deceleration, while the
 variator's **0.5 s** ratio lag is still settling. At **12.043 km/h** the driver is still braking

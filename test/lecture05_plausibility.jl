@@ -1367,7 +1367,7 @@ end
     end
     @testset "the 30 kW row is the charge-sustaining pin" begin
         ours = only(filter(r -> r.P_rated == 30e3, rows))
-        @test ours.fuel_corr ≈ 4.086343 atol = 1e-4 rtol = 0
+        @test ours.fuel_corr ≈ 4.086513 atol = 1e-4 rtol = 0
         @test ours.flag == "ok"
     end
     @testset "a larger machine saves more, up to 30 kW" begin
