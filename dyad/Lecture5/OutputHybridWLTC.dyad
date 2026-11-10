@@ -15,7 +15,7 @@ test component OutputHybridWLTC
   parameter T_max::Torque = 205.0
   "Launch CVT ratio (derived; SpeedCommandedVariator benchmark)"
   parameter i_launch::Real = 12.0
-  rear_differential = MultibodyComponents.PlanarMechanics.DifferentialGear() if rear {^rear_differential}
+  rear_differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^rear_differential}
   powertrain = VehicleSystemsComponents.Vehicle.OutputHybridPowertrain(speed_commanded = true, rear = rear, i_output = reduction, T_max = T_max, speed_variator(i_launch = i_launch)) {^powertrain}
 relations
   manager.w_shaft = powertrain.speed_variator.w_a
@@ -31,11 +31,9 @@ relations
   connect(speed_command.N_ref, powertrain.N_ref) {^speed_command_wire}
   powertrain.engage = manager.engage * max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.speed_variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm)))
   connect(powertrain.spline, differential.flange_b) {^spline_wire}
-  if rear
-    connect(powertrain.rear_spline, rear_differential.flange_b) {^rear_spline_wire}
-    connect(rear_differential.flange_left, car.spin_rl) {^rear_left_wire}
-    connect(rear_differential.flange_right, car.spin_rr) {^rear_right_wire}
-  end
+  connect(powertrain.rear_spline, rear_differential.flange_b) {^rear_spline_wire}
+  connect(rear_differential.flange_left, car.spin_rl) {^rear_left_wire}
+  connect(rear_differential.flange_right, car.spin_rr) {^rear_right_wire}
   connect(powertrain.support, mount.spline) {^mount_wire}
   connect(powertrain.mdot_fuel, meter.mdot_fuel) {^fuel_wire}
   ratio = powertrain.speed_variator.ratio

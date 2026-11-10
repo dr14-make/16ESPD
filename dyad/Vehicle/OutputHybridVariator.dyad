@@ -1,0 +1,16 @@
+"""
+Speed-commanded CVT with an optional internal pedal-to-speed schedule. Shaft
+connections are identical in both modes. In pedal mode N_ref is internally driven;
+the target-speed defaults match ControlledVariator.
+"""
+component OutputHybridVariator
+  extends VehicleSystemsComponents.Vehicle.SpeedCommandedVariator()
+  structural parameter speed_commanded::Boolean = false
+  pedal = RealInput() if !speed_commanded
+  parameter target_rpm_min::Real = 1800.0
+  parameter target_rpm_max::Real = 6000.0
+relations
+  if !speed_commanded
+    N_ref = target_rpm_min + min(max(pedal, 0.0), 1.0) * (target_rpm_max - target_rpm_min)
+  end
+end
