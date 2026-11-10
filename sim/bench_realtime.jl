@@ -4,7 +4,7 @@
 #   julia +dyad-3.5.0 --project=. sim/bench_realtime.jl
 using VehicleSystemsComponents, ModelingToolkit
 using DyadInterface: simplify_model
-using OrdinaryDiffEqDefault: Rodas5P, init, step!
+using OrdinaryDiffEqDefault: step!
 using ModelingToolkit: getu, remake
 
 const V = VehicleSystemsComponents
@@ -14,8 +14,12 @@ t_build = @elapsed sys = simplify_model(model)
 println("compiled in $(round(t_build, digits = 1)) s; ",
         length(unknowns(sys)), " unknowns")
 
-prob = ODEProblem(sys, [], (0.0, 1e6))
-start(prob) = (V.reset_human_commands!(); init(prob, Rodas5P(); dtmax = 0.005, save_everystep = false))
+# A default RealtimeDrive's solver settings. saveat reserves a slot per frame of the time span,
+# so the span is an open-ended drive's 3600 s rather than unbounded.
+const SPEC = (; dtmax = 0.005, frame = 1 / 60)
+prob = ODEProblem(sys, [], (0.0, 3600.0))
+V.disable_callback_saves!(get(prob.kwargs, :callback, nothing))
+start(prob) = (V.reset_human_commands!(); V.drive_integrator(prob, SPEC))
 
 function driver(time)
     time < 6 ? (1.0, 0.0, 0.0) :
@@ -23,11 +27,10 @@ function driver(time)
     time < 16 ? (0.0, 1.0, 0.0) : (0.0, 0.0, 0.0)
 end
 
-const FRAME = 1 / 60
 function frame!(integ, commands)
     th, br, st = commands(integ.t)
     V.set_human_commands!(throttle = th, brake = br, steer = st)
-    step!(integ, FRAME, true)
+    step!(integ, SPEC.frame, true)
 end
 drive!(integ, stop, commands) = while integ.t < stop
     frame!(integ, commands)
@@ -41,13 +44,18 @@ status(integ) = "t=$(round(integ.t, digits = 1))  v=$(round(3.6speed(integ), dig
 
 # Launch, steer, a brake at speed and the status line each compile on first use, and what a
 # compilation leaves on the heap slows the next young collections. A separate integrator
-# reaches them all, so the measured drive starts from the same state as an unwarmed one.
-warm = start(remake(prob; p = deepcopy(prob.p)))
-drive!(warm, 3.0, driver)
-drive!(warm, 3.2, t -> (0.4, 0.0, 1.0))
-drive!(warm, 3.4, t -> (0.0, 1.0, 0.0))
-drive!(warm, 3.5, t -> (0.0, 0.0, 0.0))
-status(warm)
+# reaches them all, so the measured drive starts from the same state as an unwarmed one; it is
+# local to the function so the full collection before the measured drive can free it.
+function warm_up(prob)
+    warm = start(remake(prob; p = deepcopy(prob.p)))
+    drive!(warm, 3.0, driver)
+    drive!(warm, 3.2, t -> (0.4, 0.0, 1.0))
+    drive!(warm, 3.4, t -> (0.0, 1.0, 0.0))
+    drive!(warm, 3.5, t -> (0.0, 0.0, 0.0))
+    status(warm)
+    return nothing
+end
+warm_up(prob)
 
 integ = start(prob)
 drive!(integ, 0.5, driver)
@@ -59,7 +67,7 @@ function measure!(integ, stop, frame_gc)
     wall = @elapsed while integ.t < stop
         push!(at, integ.t)
         push!(frames, @elapsed (frame!(integ, driver); V.collect_after_frame!(frame_gc)))
-        if integ.t >= next_print - FRAME / 2
+        if integ.t >= next_print - SPEC.frame / 2
             next_print += 2
             println(status(integ))
         end
@@ -72,9 +80,9 @@ wall, frames, at = measure!(integ, 18.0, V.FrameGC())
 ms(x) = round(1000x, digits = 1)
 sorted = sort(frames)
 slowest = argmax(frames)
-over = count(>(FRAME), frames)
+over = count(>(SPEC.frame), frames)
 println("\n$(round(integ.t - t0, digits = 1)) s simulated in $(round(wall, digits = 2)) s wall: ",
         "$(round((integ.t - t0) / wall, digits = 1))x real time, mean frame $(round(1000wall / length(frames), digits = 2)) ms")
-println("frames over the $(ms(FRAME)) ms budget: $over of $(length(frames)); ",
+println("frames over the $(ms(SPEC.frame)) ms budget: $over of $(length(frames)); ",
         "p99 $(ms(sorted[ceil(Int, 0.99length(sorted))])) ms, ",
         "slowest $(ms(frames[slowest])) ms at t=$(round(at[slowest], digits = 2)) s")

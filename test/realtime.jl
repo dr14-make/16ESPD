@@ -197,4 +197,5 @@ end
     foreach(_ -> V.collect_after_frame!(frame_gc), 1:2)
     @test calls == [true, false, false, true]
     @test V.FrameGC().interval == V.FRAME_GC_INTERVAL
+    @test_throws ArgumentError V.FrameGC(; interval = 0)
 end

@@ -106,18 +106,22 @@ const FRAME_GC_INTERVAL = 30
 Garbage-collection schedule for a drive stepped one display frame at a time. Every frame
 allocates about half a megabyte, mostly in the solver's inline linear solves, and a collection
 Julia triggers on its own lands on an arbitrary frame and can stall it for several frame
-budgets. Call [`collect_after_warm_up!`](@ref) once before the first paced frame and
-[`collect_after_frame!`](@ref) after every frame: the full collection clears the warm-up's
-garbage, which the first scheduled young collection would otherwise pay for, and a young
-collection every `interval` frames stays well inside one frame. `collect(full::Bool)` performs
-the collection.
+budgets. Call [`collect_after_warm_up!`](@ref) once everything a frame runs has compiled (in
+a window, after the first drawn frame) and whenever the integrator is replaced, and
+[`collect_after_frame!`](@ref) after every other frame: the full collection clears the garbage
+of warm-up or of the dropped integrator, which the first scheduled young collection would
+otherwise pay for, and a young collection every `interval` frames stays well inside one frame.
+`collect(full::Bool)` performs the collection.
 """
 mutable struct FrameGC{F}
     interval::Int
     collect::F
     frames::Int
 end
-FrameGC(; interval = FRAME_GC_INTERVAL, collect = GC.gc) = FrameGC(interval, collect, 0)
+function FrameGC(; interval = FRAME_GC_INTERVAL, collect = GC.gc)
+    interval >= 1 || throw(ArgumentError("FrameGC interval must be at least 1, got $interval"))
+    return FrameGC(interval, collect, 0)
+end
 
 "Run a full collection and restart the frame count."
 function collect_after_warm_up!(frame_gc::FrameGC)
