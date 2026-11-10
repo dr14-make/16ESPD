@@ -58,7 +58,7 @@ Our P2: DOH = 30 kW / (30 kW + 85.6 kW) ≈ **26 %**
 </div>
 <div>
 
-<img src="/figures/03-doh-sweep.svg" class="w-full" style="max-height: 24rem" alt="WLTC fuel saving of the P2 hybrid against the conventional car, SoC-corrected, for machines of 8, 15, 22, 30 and 40 kW: 22.2, 25.6, 27.6, 28.5 and 28.4 percent. The saving rises by 3.5 and 2.0 points from 8 to 22 kW, then by 0.9 to 30 kW, and 40 kW saves no more than 30 kW; 15 kW is marked at 25.6 percent, DOH 15 percent, and 30 kW at 28.5 percent, DOH 26 percent. The 8 kW point is hollow: that run falls 2.4 km/h behind the trace and does not end charge-sustaining."/>
+<img src="/figures/03-doh-sweep.svg" class="w-full" style="max-height: 24rem" alt="WLTC fuel saving of the P2 hybrid against the conventional car, SoC-corrected, for machines of 8, 15, 22, 30 and 40 kW: 22.1, 25.6, 27.6, 28.5 and 28.4 percent. The saving rises by 3.5 and 2.0 points from 8 to 22 kW, then by 0.9 to 30 kW, and 40 kW saves no more than 30 kW; 15 kW is marked at 25.6 percent, DOH 15 percent, and 30 kW at 28.5 percent, DOH 26 percent. The 8 kW point is hollow: that run falls 2.4 km/h behind the trace and does not end charge-sustaining."/>
 
 <div class="caption">Machine power across, WLTC fuel saving against the conventional car up. Past
 about 22 kW, a bigger machine saves almost nothing more.</div>
