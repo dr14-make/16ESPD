@@ -20,7 +20,7 @@ relations
   else
     y = ramp
   end
-metadata {"_links":{"engine_speed":{"Dyad":{"placement":{"icon":{"x1":-25,"x2":25,"y1":225,"y2":275}}}},"shaft_speed":{"Dyad":{"placement":{"icon":{"x1":-25,"x2":25,"y1":725,"y2":775}}}},"enable":{"Dyad":{"placement":{"icon":{"x1":475,"x2":525,"y1":975,"y2":1025}}}},"y":{"Dyad":{"placement":{"icon":{"x1":975,"x2":1025,"y1":475,"y2":525}}}}}}
+metadata {"_links":{"engine_speed":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":225,"y2":275},"icon":{"x1":-50,"x2":50,"y1":200,"y2":300}}}},"shaft_speed":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":725,"y2":775},"icon":{"x1":-50,"x2":50,"y1":700,"y2":800}}}},"enable":{"Dyad":{"placement":{"diagram":{"x1":475,"x2":525,"y1":975,"y2":1025,"rot":270},"icon":{"x1":450,"x2":550,"y1":950,"y2":1050,"rot":270}}}},"y":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":475,"y2":525},"icon":{"x1":950,"x2":1050,"y1":450,"y2":550}}}}}}
 end
 
 "Fixed-mode bounded engine and CVT pedal requests; electric mode leaves the engine unfired."
@@ -38,4 +38,5 @@ relations
     engine_pedal = min(max(u / tau_max, 0.0), 1.0)
     y = engine_pedal
   end
+metadata {"_links":{"u":{"Dyad":{"placement":{"diagram":{"x1":-25,"y1":475,"x2":25,"y2":525},"icon":{"x1":-50,"y1":450,"x2":50,"y2":550}}}},"engine_pedal":{"Dyad":{"placement":{"diagram":{"x1":975,"y1":225,"x2":1025,"y2":275},"icon":{"x1":950,"y1":200,"x2":1050,"y2":300}}}},"y":{"Dyad":{"placement":{"diagram":{"x1":975,"y1":725,"x2":1025,"y2":775},"icon":{"x1":950,"y1":700,"x2":1050,"y2":800}}}}}}
 end

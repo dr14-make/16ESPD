@@ -114,4 +114,5 @@ relations
   SoC = drive.SoC
   E = drive.battery.E
   i = drive.battery.i
+metadata {"_links":{"shaft_speed":{"Dyad":{"placement":{"diagram":{"x1":975,"y1":225,"x2":1025,"y2":275},"icon":{"x1":950,"y1":200,"x2":1050,"y2":300}}}},"ratio":{"Dyad":{"placement":{"diagram":{"x1":975,"y1":725,"x2":1025,"y2":775},"icon":{"x1":950,"y1":700,"x2":1050,"y2":800}}}}}}
 end
