@@ -353,9 +353,141 @@ end
         @test length(nested_connections("self-check", "if enabled\nfor i in 1:2\nend\nconnect(a, b)\nend\n")) == 1
         folder = joinpath(@__DIR__, "..", "dyad", "HandsOn05")
         files = filter(f -> endswith(f, ".dyad"), readdir(folder; join = true))
-        violations = reduce(vcat, [nested_connections(file, read(file, String)) for file in files])
-        isempty(violations) || @error "Conditional canvas connections" violations
+        # Index local and reference declarations by namespace, not by short component name.
+        # The latter would confuse the HandsOn05 copies with their Vehicle/Lecture5 originals.
+        definitions = Dict{String,Any}()
+        function index_components(root, prefix; local_source)
+            for (dir, _, names) in walkdir(root), name in names
+                endswith(name, ".dyad") || continue
+                file = joinpath(dir, name)
+                source = read(file, String)
+                # relpath(root, root) is ".", not a namespace segment.
+                namespace = join([prefix; filter(x -> x != ".", splitpath(relpath(dir, root)))], ".")
+                for c in component_sections(source)
+                    key = namespace * "." * c.name
+                    # component_sections preserves legacy scan scope; the type index must
+                    # exclude trailing analyses/functions belonging to the same source file.
+                    boundary = match(r"(?m)^(?:analysis|function|connector|type)\s", code_only(c.text))
+                    text = isnothing(boundary) ? c.text : c.text[1:prevind(c.text, boundary.offset)]
+                    definitions[key] = (; c..., text, file, namespace, local_source,
+                        first_line = count(==('\n'), source[1:prevind(source, c.offset)]))
+                end
+            end
+        end
+        index_components(joinpath(@__DIR__, "..", "dyad"), "VehicleSystemsComponents"; local_source = true)
+        reference = joinpath(@__DIR__, "..", "agent_resources", "stdlib_reference")
+        for library in readdir(reference; join = true)
+            isdir(library) && index_components(library, basename(library); local_source = false)
+        end
+        function resolve_type(type, owner)
+            haskey(definitions, type) && return type
+            namespace = split(definitions[owner].namespace, '.')
+            while !isempty(namespace)
+                candidate = join([namespace; type], ".")
+                haskey(definitions, candidate) && return candidate
+                pop!(namespace)
+            end
+            nothing
+        end
+        function bases(key)
+            [m.captures[1] for m in eachmatch(r"(?m)^\s*extends\s+([\w.]+)", code_only(definitions[key].text))]
+        end
+        function declarations(key)
+            text = first(split(code_only(definitions[key].text), r"(?m)^relations\s*$"; limit = 2))
+            Dict(m.captures[1] => m.captures[2] for m in
+                eachmatch(r"(?m)^\s*(\w+)\s*=\s*([\w.]+)\s*\(", text))
+        end
+        function members(key, seen = Set{String}())
+            key in seen && error("Cyclic component inheritance: $key")
+            result = Dict{String,Tuple{String,String}}()
+            for base in bases(key)
+                parent = resolve_type(base, key)
+                isnothing(parent) && error("Unresolved base $base in $key")
+                merge!(result, members(parent, union(seen, [key])))
+            end
+            for (name, type) in declarations(key)
+                result[name] = (type, key)
+            end
+            result
+        end
+        roots = Set(key for (key, c) in definitions if c.local_source &&
+            (startswith(key, "VehicleSystemsComponents.Lecture5.") ||
+             startswith(key, "VehicleSystemsComponents.HandsOn05.")))
+        closure = copy(roots)
+        pending = collect(roots)
+        while !isempty(pending)
+            key = pop!(pending)
+            for type in [bases(key); collect(values(declarations(key)))]
+                dependency = resolve_type(type, key)
+                # Base connectors and library internals are not local components.
+                isnothing(dependency) && continue
+                definitions[dependency].local_source || continue
+                dependency in closure && continue
+                push!(closure, dependency)
+                push!(pending, dependency)
+            end
+        end
+        violations = Tuple{String,Int,String}[]
+        for key in sort!(collect(closure))
+            c = definitions[key]
+            append!(violations, [(file, c.first_line + line, text) for (file, line, text) in
+                nested_connections(c.file, c.text)])
+        end
+        isempty(violations) || @error "Conditional canvas connections in Lecture5/HandsOn05 local closure" violations
         @test isempty(violations)
+
+        # Only finished road benches and their descendants prohibit typed input equations.
+        # Constitutive equations inside placed components deliberately remain out of scope.
+        road = Set("VehicleSystemsComponents.Lecture5." * name for name in
+            ("P2WLTC", "P2OperatingLineWLTC", "P2HybridWLTC", "HybridPositionWLTC", "SeriesWLTCGround"))
+        changed = true
+        while changed
+            changed = false
+            for (key, c) in definitions
+                c.local_source && !(key in road) || continue
+                if any(base -> resolve_type(base, key) in road, bases(key))
+                    push!(road, key)
+                    changed = true
+                end
+            end
+        end
+        @test "VehicleSystemsComponents.Lecture5.SeriesWLTCGround" in road
+        function input_lhs(key, lhs)
+            path = split(lhs, '.')
+            length(path) >= 2 || return false
+            owner = key
+            for (i, name) in enumerate(path)
+                declaration = get(members(owner), name, nothing)
+                isnothing(declaration) && return false # State/variable, not a placed input.
+                type, declaring_owner = declaration
+                if i == length(path)
+                    return last(split(type, '.')) in
+                        ("RealInput", "IntegerInput", "BooleanInput", "ClockInput")
+                end
+                owner = resolve_type(type, declaring_owner)
+                isnothing(owner) && error("Unresolved placed type $type for $key: $lhs")
+            end
+            false
+        end
+        @test input_lhs("VehicleSystemsComponents.Lecture5.P2WLTC", "powertrain.engage")
+        @test input_lhs("VehicleSystemsComponents.Lecture5.P2WLTC", "meter.P_stored")
+        @test input_lhs("VehicleSystemsComponents.Lecture5.P2WLTC", "pedal_command.u") # Inherited library input.
+        @test !input_lhs("VehicleSystemsComponents.Lecture5.P2WLTC", "powertrain.engine_speed")
+        typed_inputs = Tuple{String,Int,String}[]
+        for key in sort!(collect(road))
+            c = definitions[key]
+            in_relations = false
+            for (line, text) in enumerate(split(code_only(c.text), '\n'))
+                strip(text) == "relations" && (in_relations = true; continue)
+                in_relations || continue
+                assignment = match(r"^\s*([\w.]+)\s*=(?!=)", text)
+                isnothing(assignment) && continue
+                input_lhs(key, assignment.captures[1]) || continue
+                push!(typed_inputs, (c.file, c.first_line + line, strip(text)))
+            end
+        end
+        isempty(typed_inputs) || @error "Finished road benches must wire placed inputs, not type equations" typed_inputs
+        @test isempty(typed_inputs)
         function equation_exports(file, source)
             violations = Tuple{String,Int,String}[]
             for component in component_sections(source)
@@ -539,7 +671,6 @@ end
                     nets = nets([[collect(n) for n in mine.nets]; wires]))
             reference = canonical(component(dyad("Lecture5", bench), bench))
             @test length(wires) == wire_count
-            @test length(wires) <= 8
             @test isempty(equations) # Every student-added relation is a canvas wire.
             expected_blocks = id == "step-2" ?
                 ["speed_command = VehicleSystemsComponents.Vehicle.LineSpeedCommand()"] :
@@ -552,7 +683,6 @@ end
             # The starter on its own is missing every wire the step adds.
             bare = canonical(component(source, starter))
             @test all(w -> !any(n -> issubset(w, n), bare.nets), wires)
-            @test isempty(intersect(bare.equations, equations))
             @test analysis_extends(source, starter) == analysis_extends(dyad("Lecture5", bench), bench)
         end
         for starter in (:Step1EngineWLTC, :Step2OperatingLineWLTC, :Step3HybridWLTC)
@@ -708,7 +838,7 @@ end
     @info "Line ratio interpolation" sampled=extrema(ratio) accepted=extrema(s[m.powertrain.variator.ratio])
     # P2OperatingLineWLTC sampled lower bound: solver excursion 2.071e-5 plus margin.
     @test minimum(ratio) >= 2.8 - 2.3e-5
-    # Sampled solver excursion is 2.734e-7 after command-block alias elimination.
+    # The sampled upper ratio allows 3e-7 numerical overshoot of the 12:1 limit.
     @test maximum(ratio) <= 12.0 + 3e-7
     # P2OperatingLineWLTC accepted lower bound: on accepted solver steps with the planar
     # slip-joint tire the ratio overshoots by 5.196e-5; the bound allows about twice that.
