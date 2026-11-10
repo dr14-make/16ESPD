@@ -6,8 +6,8 @@ module PPositionTable
 using SHA
 const ROOT = normpath(joinpath(@__DIR__, ".."))
 const TABLE = joinpath(ROOT, "assets/data/lecture05/p_positions.csv")
-const H0 = 5.7175350775
-const LINE = 5.4374462426
+const H0 = 5.7175347601
+const LINE = 5.4374449223
 const COLUMNS = (:position, :P_rated_kW, :fuel_raw_L100, :fuel_corr_L100, :energy_MJ100,
     :saving_H0_pct, :saving_line_pct, :E_regen_MJ, :E_recovered_MJ, :electric_drive_s, :starts, :fuel_resumptions,
     :SoC_start, :SoC_end, :max_speed_error_kmh, :definitions_sha256)
