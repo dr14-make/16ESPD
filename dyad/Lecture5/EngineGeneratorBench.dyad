@@ -51,6 +51,10 @@ relations
   connect(load.n, link.n, unit.n, ground.g) {^n_wire}
   connect(unit.support, mounts.spline) {^mount_wire}
   initial link.v = sqrt(P_1 * R_load)
+  guess unit.converter.field = 1.0
+  guess unit.converter.d = 0.5
+  guess unit.engine.crankshaft.w = 1500.0 * pi / 30.0
+  guess unit.P_trim = 0.0
 metadata {
   "_links": {
     "unit": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 300, "x2": 600, "y2": 500}}}},

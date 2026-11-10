@@ -161,6 +161,10 @@ generate: a zero power command leaves no bus.
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
+  __guesses[unit.converter.field] = (1.0)
+  __guesses[unit.converter.d] = (0.5)
+  __guesses[unit.engine.crankshaft.w] = (1500.0 * pi / 30.0)
+  __guesses[unit.P_trim] = (0.0)
   isnothing(__ovr_P_cmd__guess) || (__guesses[P_cmd] = __ovr_P_cmd__guess)
 
   ### Initialization Equations
