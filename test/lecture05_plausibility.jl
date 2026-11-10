@@ -708,8 +708,8 @@ end
     @info "Line ratio interpolation" sampled=extrema(ratio) accepted=extrema(s[m.powertrain.variator.ratio])
     # P2OperatingLineWLTC sampled lower bound: solver excursion 2.071e-5 plus margin.
     @test minimum(ratio) >= 2.8 - 2.3e-5
-    # P2OperatingLineWLTC sampled upper bound: solver excursion 2.241e-7 plus margin.
-    @test maximum(ratio) <= 12.0 + 2.5e-7
+    # Sampled solver excursion is 2.734e-7 after command-block alias elimination.
+    @test maximum(ratio) <= 12.0 + 3e-7
     # P2OperatingLineWLTC accepted lower bound: on accepted solver steps with the planar
     # slip-joint tire the ratio overshoots by 5.196e-5; the bound allows about twice that.
     @test minimum(s[m.powertrain.variator.ratio]) >= 2.8 - 1e-4
