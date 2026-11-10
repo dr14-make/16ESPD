@@ -122,8 +122,10 @@ Options/Backspace reset, PS/P pause.
 
 ## Numbers that should hold
 
-- Real time: the by-hand road car, about 11× faster than real time natively
-  (`bench_realtime.jl`), 35 unknowns. Each road grip lookup costs about 20 ns and each slope
+- Real time: the by-hand road car, 35 unknowns, about 2 ms per 16.7 ms frame. `bench_realtime.jl`
+  prints the steady-state figure, 8.0–8.9× faster than real time on a loaded machine (about 11×
+  idle), and on a separate line the frames over budget: 0 of 1049 in most runs (up to 4 under
+  load), p99 about 12 ms, slowest 13–15 ms. Each road grip lookup costs about 20 ns and each slope
   lookup about 35 ns, allocation-free, four grips and one slope per right-hand side.
 - Coast-down from about 105 km/h: N 0.035 g, D 0.059 g, e-Pedal 0.222 g, friction brakes at 0.
 - Road load at 105.6 km/h: 502 N (325 N drag at CdA 0.63 m², 177 N rolling at f_r 0.012).
@@ -131,6 +133,14 @@ Options/Backspace reset, PS/P pause.
 If one of these moves, something changed the physics; find out what before continuing.
 
 ## Decisions and why
+
+- **Scheduled garbage collection between frames.** Each frame allocates about 560 kB, mostly in
+  the inline linear solves `simplify_model` generates, and a young collection Julia triggers on
+  its own lands on an arbitrary frame and can stall it for 20–220 ms. `FrameGC` runs one full
+  collection after warm-up and a young one every `FRAME_GC_INTERVAL` (30) frames, about 10 ms
+  each; the window and the bench share it. Without the full collection, the first scheduled one
+  pays for the warm-up's garbage. Compilation during a drive also slows the next two young
+  collections to 25–30 ms, so the bench warms its status line and a brake at speed as well.
 
 - **Driver commands as clocked causal signals**, emitted by `HumanDriver` from a Julia buffer.
   The loop writes between steps; the model samples and holds commands, and the solver records

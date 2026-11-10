@@ -247,6 +247,8 @@ function window_session!(integ, sys, spec, pad)
     last_wall = time()
     wall_start = last_wall
     wall_acc, work_ms, frames = 0.0, 0.0, 0
+    frame_gc = VehicleSystemsComponents.FrameGC()
+    VehicleSystemsComponents.collect_after_warm_up!(frame_gc)
     try
         while isopen(screen)
             frame_start = time()
@@ -325,6 +327,7 @@ function window_session!(integ, sys, spec, pad)
                 "$(pad === nothing ? "keyboard" : "DualSense + keyboard")$(controls.paused ? "   PAUSED" : "")",
                 "solver $(round(work_ms, digits = 1)) ms / frame"], "\n")
             haptics!(pad, s, controls, wall_acc)
+            VehicleSystemsComponents.collect_after_frame!(frame_gc)
             sleep(max(0.0, spec.frame - (time() - frame_start)))
         end
     catch e

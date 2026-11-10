@@ -185,3 +185,16 @@ end
     @test integ.t >= 2.5
     @test integ[ls.vehicle.motion.vx] > 5
 end
+
+@testset "Frame GC schedule" begin
+    V = VehicleSystemsComponents
+    calls = Bool[]
+    frame_gc = V.FrameGC(; interval = 3, collect = full -> push!(calls, full))
+    V.collect_after_warm_up!(frame_gc)
+    foreach(_ -> V.collect_after_frame!(frame_gc), 1:7)
+    @test calls == [true, false, false]
+    V.collect_after_warm_up!(frame_gc)
+    foreach(_ -> V.collect_after_frame!(frame_gc), 1:2)
+    @test calls == [true, false, false, true]
+    @test V.FrameGC().interval == V.FRAME_GC_INTERVAL
+end
