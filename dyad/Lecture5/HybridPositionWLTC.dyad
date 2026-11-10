@@ -48,7 +48,7 @@ partial component HybridPositionWLTC
   roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
   meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel() {^meter}
   "CVT input-to-output ratio supplied by the position plant"
-  variable ratio::Real
+  ratio = RealOutput() {^ratio}
   "Net stored-power draw including any separate starter [W]"
   variable P_stored::Power
   "Stored-energy charging integral [J]; includes regen and load-point charging"
@@ -57,7 +57,8 @@ partial component HybridPositionWLTC
   variable E_regen::Energy
   "Actual four-wheel friction-brake dissipation [J]"
   variable E_friction::Energy
-  brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(brake_gain = 1.0) {^brakes}
+  brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(gain = 1.0) {^brakes}
+  brake_product = BlockComponents.Math.Product() {^brake_product}
 relations
   connect(car.bus, motion.bus) {^bus_wire}
   connect(trace.y, driver.u_s) {^trace_wire}
@@ -75,7 +76,9 @@ relations
   connect(flat.y, roadload.grade) {^grade_wire}
   connect(car.chassis, roadload.chassis) {^chassis_wire}
   meter.P_stored = P_stored
-  brakes.u = -manager.tau_friction * ratio
+  connect(manager.tau_friction, brake_product.u1) {^friction_input_wire}
+  connect(ratio, brake_product.u2) {^brake_ratio_wire}
+  connect(brake_product.y, brakes.u) {^brake_demand_wire}
   connect(brakes.tau_fl, car.tau_fl) {^brake_fl_wire}
   connect(brakes.tau_fr, car.tau_fr) {^brake_fr_wire}
   connect(brakes.tau_rl, car.tau_rl) {^brake_rl_wire}
@@ -102,7 +105,7 @@ relations
   initial car.fr.brake.tau_actual = 0.0
   initial car.rl.brake.tau_actual = 0.0
   initial car.rr.brake.tau_actual = 0.0
-metadata {"_links":{
+metadata {"_links":{"brake_product":{"Dyad":{"placement":{"diagram":{"x1":160,"y1":460,"x2":240,"y2":540}}}},"friction_input_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":140,"y":476}],"E":2}],"renderStyle":"standard"}},"brake_ratio_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":120,"y":524}],"E":2}],"renderStyle":"standard"}},"brake_demand_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":270,"y":500},{"x":270,"y":640}],"E":2}],"renderStyle":"standard"}},"ratio":{"Dyad":{"placement":{"diagram":{"x1":-20,"y1":480,"x2":20,"y2":520},"icon":{"x1":460,"y1":-40,"x2":540,"y2":40}}}},
   "trace":{"Dyad":{"placement":{"diagram":{"x1":0,"y1":140,"x2":70,"y2":210}}}},
   "driver":{"Dyad":{"placement":{"diagram":{"x1":130,"y1":150.7,"x2":220,"y2":240.7}}}},
   "no_ff":{"Dyad":{"placement":{"diagram":{"x1":100,"y1":30,"x2":160,"y2":90}}}},

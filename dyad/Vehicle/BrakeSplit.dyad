@@ -1,15 +1,16 @@
 """
-Split signed driver torque into positive wheel-brake torque commands.
+Allocate a total positive brake-torque magnitude to four wheel-brake commands.
 
-Assumed Lecture5 brake allocation, extracted from the front-only braking equations
-in Lecture5.P2OperatingLineWLTC. Negative `u` requests braking; nonnegative `u`
-requests no friction braking. Car brake inputs take positive torque magnitudes.
-The default `front_fraction = 1.0` preserves the original per-front-wheel command
-`-min(u, 0.0) * brake_gain / 2.0` and leaves the rear brakes at zero. The rear axle
-receives the complementary fraction; each axle splits its share equally left/right.
+By default `u` is a positive magnitude: total wheel torque is `max(u, 0) * gain`.
+With structural `signed_driver = true`, `u` is instead a signed driver request:
+negative requests braking and total wheel torque is `-min(u, 0) * gain`.
+`front_fraction` assigns the front axle share; the rear receives its complement.
+Each axle splits equally left/right. Outputs are positive braking magnitudes.
+Defaults `gain = 1.0` and `front_fraction = 1.0` give front-only braking.
+Operating-line callers select signed-driver mode and their driver-to-wheel gain.
 """
 component BrakeSplit
-  "Signed driver torque request [N.m]: positive drives, negative brakes"
+  "Brake torque magnitude [N.m], or signed driver request when signed_driver is true"
   u = RealInput() {^u}
   "Front-left brake torque magnitude [N.m], positive for braking"
   tau_fl = RealOutput() {^tau_fl}
@@ -19,14 +20,22 @@ component BrakeSplit
   tau_rl = RealOutput() {^tau_rl}
   "Rear-right brake torque magnitude [N.m], positive for braking"
   tau_rr = RealOutput() {^tau_rr}
-  "Driver-to-wheel brake torque gain (assumed Lecture5 default)"
-  parameter brake_gain::Real = 12.0
+  "Input-to-total-wheel brake torque gain"
+  parameter gain::Real = 1.0
+  "Interpret negative driver requests as braking instead of positive magnitudes"
+  structural parameter signed_driver::Boolean = false
+  variable magnitude::Real
   "Fraction of total braking assigned to the front axle (assumed Lecture5 front-only default)"
   parameter front_fraction::Real(min = 0.0, max = 1.0) = 1.0
 relations
-  tau_fl = -min(u, 0.0) * brake_gain * front_fraction / 2.0
+  if signed_driver
+    magnitude = -min(u, 0.0)
+  else
+    magnitude = max(u, 0.0)
+  end
+  tau_fl = magnitude * gain * front_fraction / 2.0
   tau_fr = tau_fl
-  tau_rl = -min(u, 0.0) * brake_gain * (1.0 - front_fraction) / 2.0
+  tau_rl = magnitude * gain * (1.0 - front_fraction) / 2.0
   tau_rr = tau_rl
 metadata {
   "_links": {

@@ -44,7 +44,7 @@ test component Step2OperatingLineWLTC
   meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel() {^meter}
   "Zero for unused command inputs (assumed; fixed-mode fixture)"
   unused_command = BlockComponents.Sources.Constant(k = 0.0) {^unused_command}
-  brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(brake_gain = brake_gain) {^brakes}
+  brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(gain = brake_gain, signed_driver = true) {^brakes}
   pedal_command = VehicleSystemsComponents.Vehicle.ParameterGate() {^pedal_command}
 relations
   connect(car.bus, motion.bus) {^bus_wire}
