@@ -117,6 +117,7 @@ test component SeriesGroundElectric
   ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
   drive = VehicleSystemsComponents.Vehicle.Electric.TractionDrive(T_max = tau_max, ratio = ratio) {^drive}
   no_fuel = BlockComponents.Sources.Constant(k = 0.0) {^no_fuel}
+  stored_power = BlockComponents.Math.Product() {^stored_power}
 relations
   connect(battery.p, aux.p, drive.p) {^positive_wire}
   connect(battery.n, aux.n, drive.n, ground.g) {^negative_wire}
@@ -124,7 +125,9 @@ relations
   connect(drive.spline, differential.flange_b) {^drive_shaft_wire}
   connect(drive.support, mount.spline) {^drive_mount_wire}
   connect(no_fuel.y, meter.mdot_fuel) {^zero_fuel_wire}
-  meter.P_stored = battery.E * battery.i
+  connect(battery.stored_voltage, stored_power.u1) {^stored_voltage_wire}
+  connect(battery.stored_current, stored_power.u2) {^stored_current_wire}
+  connect(stored_power.y, meter.P_stored) {^stored_power_wire}
   initial drive.converter.i_out = 0.0
 metadata {"_links":{"battery":{"Dyad":{"placement":{"diagram":{"x1":20,"y1":300,"x2":100,"y2":380}}}},"aux":{"Dyad":{"placement":{"diagram":{"x1":140,"y1":300,"x2":220,"y2":380}}}},"ground":{"Dyad":{"placement":{"diagram":{"x1":30,"y1":440,"x2":90,"y2":500}}}},"drive":{"Dyad":{"placement":{"diagram":{"x1":400,"y1":70,"x2":480,"y2":150}}}},"no_fuel":{"Dyad":{"placement":{"diagram":{"x1":680,"y1":865,"x2":740,"y2":925}}}},"positive_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2},{"S":1,"M":[],"E":3}],"renderStyle":"standard"}},"negative_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2},{"S":1,"M":[],"E":3},{"S":1,"M":[],"E":4}],"renderStyle":"standard"}},"machine_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"drive_shaft_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"drive_mount_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"zero_fuel_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}}}}
 end

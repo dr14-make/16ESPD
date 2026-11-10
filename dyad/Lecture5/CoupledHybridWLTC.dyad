@@ -13,9 +13,22 @@ test component CoupledHybridWLTC
   "K0 capacity [N.m] (derived; 390 N.m accommodates combined crank-side torque)"
   parameter k0_capacity::Torque = 390.0
   powertrain = VehicleSystemsComponents.Vehicle.CoupledHybridPowertrain(speed_commanded = true, i_crank = i_crank, eta_crank = eta_crank, T_max = T_max, k0(tau_max = k0_capacity)) {^powertrain}
+  stored_power = BlockComponents.Math.Product() {^stored_power}
+  engagement_command = VehicleSystemsComponents.Vehicle.EngagementCommand(engage_rpm = engage_rpm, engage_width_rpm = engage_width_rpm, lock_rpm = lock_rpm, lock_width_rpm = lock_width_rpm) {^engagement_command}
+  machine_limit = BlockComponents.Sources.Constant(k = T_max * i_crank * eta_crank) {^machine_limit}
+  machine_command = BlockComponents.Math.Gain(k = 1.0 / i_crank) {^machine_command}
+  unused_pedal = BlockComponents.Sources.Constant(k = 0.0) {^unused_pedal}
 relations
-  manager.w_shaft = powertrain.engine_speed
-  manager.T_lim = powertrain.drive.T_max * powertrain.i_crank * powertrain.eta_crank
+  connect(unused_pedal.y, powertrain.cvt_pedal) {^unused_pedal_wire}
+  connect(powertrain.E, stored_power.u1) {^stored_voltage_wire}
+  connect(powertrain.i, stored_power.u2) {^stored_current_wire}
+  connect(stored_power.y, meter.P_stored) {^stored_power_wire}
+  connect(powertrain.engine_speed, engagement_command.engine_speed) {^engagement_engine_wire}
+  connect(powertrain.shaft_speed, engagement_command.shaft_speed) {^engagement_shaft_wire}
+  connect(engagement_command.y, powertrain.engage) {^engagement_wire}
+  connect(manager.tau_machine, machine_command.u) {^machine_command_wire}
+  connect(powertrain.engine_speed, manager.w_shaft) {^manager_shaft_wire}
+  connect(machine_limit.y, manager.T_lim) {^machine_limit_wire}
   connect(powertrain.SoC, manager.SoC) {^soc_wire}
   connect(powertrain.engine_speed, manager.engine_speed, map.omega) {^speed_wire}
   connect(powertrain.available_torque, manager.available_torque) {^torque_wire}
@@ -23,28 +36,16 @@ relations
   connect(map.pedal, powertrain.engine_pedal) {^pedal_wire}
   connect(manager.engine_on, powertrain.engine_on) {^engine_on_wire}
   # The belt applies losses physically; the PI driver supplies the resulting torque deficit.
-  powertrain.tau_ref = manager.tau_machine / powertrain.i_crank
+  connect(machine_command.y, powertrain.tau_ref) {^machine_wire}
   connect(speed_command.N_ref, powertrain.N_ref) {^speed_command_wire}
-  powertrain.engage = max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.speed_variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm)))
+
   connect(powertrain.spline, differential.flange_b) {^spline_wire}
   connect(powertrain.support, mount.spline) {^mount_wire}
   connect(powertrain.mdot_fuel, meter.mdot_fuel) {^fuel_wire}
   ratio = powertrain.speed_variator.ratio
-  P_stored = powertrain.E * powertrain.i
+  P_stored = stored_power.y
   initial powertrain.drive.converter.i_out = 0.0
-metadata {"_links":{
-  "powertrain":{"Dyad":{"placement":{"diagram":{"x1":680,"y1":120,"x2":880,"y2":420}}}},
-  "speed_command_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":660,"y":-70},{"x":660,"y":377.142857}],"E":2}],"renderStyle":"standard"}},
-  "soc_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":945,"y":338.181818},{"x":945,"y":465},{"x":236,"y":465},{"x":236,"y":341}],"E":2}],"renderStyle":"standard"}},
-  "speed_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":960,"y":174.545455},{"x":960,"y":480},{"x":224,"y":480},{"x":224,"y":295.5}],"E":2},{"S":1,"M":[{"x":905,"y":174.545455},{"x":905,"y":15},{"x":605,"y":15}],"E":3}],"renderStyle":"standard"}},
-  "torque_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":930,"y":229.090909},{"x":930,"y":450},{"x":322,"y":450}],"E":2}],"renderStyle":"standard"}},
-  "torque_ref_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":555,"y":187.6},{"x":555,"y":334.285714}],"E":2}],"renderStyle":"standard"}},
-  "pedal_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":655,"y":177.6},{"x":655,"y":162.857143}],"E":2}],"renderStyle":"standard"}},
-  "engine_on_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":548,"y":229.2},{"x":548,"y":291.428571}],"E":2}],"renderStyle":"standard"}},
-  "spline_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":975,"y":270},{"x":975,"y":488},{"x":760,"y":488}],"E":2}],"renderStyle":"standard"}},
-  "mount_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":700,"y":470}],"E":2}],"renderStyle":"standard"}},
-  "fuel_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":910,"y":256.363636},{"x":910,"y":30}],"E":2}],"renderStyle":"standard"}}
-}}
+metadata {"_links":{"powertrain":{"Dyad":{"placement":{"diagram":{"x1":680,"y1":120,"x2":880,"y2":420}}}},"speed_command_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":660,"y":-70},{"x":660,"y":377.142857}],"E":2}],"renderStyle":"standard"}},"soc_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":945,"y":338.181818},{"x":945,"y":465},{"x":236,"y":465},{"x":236,"y":341}],"E":2}],"renderStyle":"standard"}},"speed_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":960,"y":174.545455},{"x":960,"y":480},{"x":224,"y":480},{"x":224,"y":295.5}],"E":2},{"S":1,"M":[{"x":905,"y":174.545455},{"x":905,"y":15},{"x":605,"y":15}],"E":3}],"renderStyle":"standard"}},"torque_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":930,"y":229.090909},{"x":930,"y":450},{"x":322,"y":450}],"E":2}],"renderStyle":"standard"}},"torque_ref_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":555,"y":187.6},{"x":555,"y":334.285714}],"E":2}],"renderStyle":"standard"}},"pedal_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":655,"y":177.6},{"x":655,"y":162.857143}],"E":2}],"renderStyle":"standard"}},"engine_on_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":548,"y":229.2},{"x":548,"y":291.428571}],"E":2}],"renderStyle":"standard"}},"spline_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":975,"y":270},{"x":975,"y":488},{"x":760,"y":488}],"E":2}],"renderStyle":"standard"}},"mount_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":700,"y":470}],"E":2}],"renderStyle":"standard"}},"fuel_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":910,"y":256.363636},{"x":910,"y":30}],"E":2}],"renderStyle":"standard"}},"stored_power":{"Dyad":{"placement":{"diagram":{"x1":1050,"x2":1150,"y1":-180,"y2":-100}}}},"engagement_command":{"Dyad":{"placement":{"diagram":{"x1":1180,"x2":1280,"y1":-180,"y2":-100}}}},"machine_limit":{"Dyad":{"placement":{"diagram":{"x1":1310,"x2":1410,"y1":-180,"y2":-100}}}},"machine_command":{"Dyad":{"placement":{"diagram":{"x1":1050,"x2":1150,"y1":-70,"y2":10}}}},"stored_voltage_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"stored_current_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"stored_power_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"engagement_engine_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"engagement_shaft_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"engagement_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"machine_command_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"manager_shaft_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"machine_limit_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"machine_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"unused_pedal":{"Dyad":{"placement":{"diagram":{"x1":950,"x2":1010,"y1":-160,"y2":-100}}}},"unused_pedal_wire":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}]}}}}
 end
 
 "Full WLTC P0 position analysis (derived; shared duration and solver)."

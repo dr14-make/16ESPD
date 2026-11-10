@@ -1,0 +1,41 @@
+"Launch/lock K0 request, optionally gated by the energy manager or disabled in fixed electric mode."
+component EngagementCommand
+  parameter engage_rpm::Real = 1300.0
+  parameter engage_width_rpm::Real(min = eps(Float64)) = 120.0
+  parameter lock_rpm::Real = 840.0
+  parameter lock_width_rpm::Real(min = eps(Float64)) = 12.0
+  structural parameter enabled::Boolean = true
+  structural parameter managed::Boolean = false
+  engine_speed = RealInput() {^engine_speed}
+  shaft_speed = RealInput() {^shaft_speed}
+  enable = RealInput() if managed {^enable}
+  y = RealOutput() {^y}
+  variable ramp::Real
+relations
+  ramp = max(0.5 * (1 + tanh((engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((shaft_speed * 30 / pi - lock_rpm) / lock_width_rpm)))
+  if !enabled
+    y = 0.0
+  elseif managed
+    y = enable * ramp
+  else
+    y = ramp
+  end
+metadata {"_links":{"engine_speed":{"Dyad":{"placement":{"icon":{"x1":-25,"x2":25,"y1":225,"y2":275}}}},"shaft_speed":{"Dyad":{"placement":{"icon":{"x1":-25,"x2":25,"y1":725,"y2":775}}}},"enable":{"Dyad":{"placement":{"icon":{"x1":475,"x2":525,"y1":975,"y2":1025}}}},"y":{"Dyad":{"placement":{"icon":{"x1":975,"x2":1025,"y1":475,"y2":525}}}}}}
+end
+
+"Fixed-mode bounded engine and CVT pedal requests; electric mode leaves the engine unfired."
+component FixedModePedalCommand
+  structural parameter electric::Boolean = false
+  parameter tau_max::Torque = 150.0
+  u = RealInput() {^u}
+  engine_pedal = RealOutput() {^engine_pedal}
+  y = RealOutput() {^y}
+relations
+  if electric
+    engine_pedal = 0.0
+    y = min(max(u / 150.0, 0.0), 1.0)
+  else
+    engine_pedal = min(max(u / tau_max, 0.0), 1.0)
+    y = engine_pedal
+  end
+end

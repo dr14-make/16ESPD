@@ -33,7 +33,7 @@ component P2Variator
   "Initial total ratio (assumed launch setting; override for initialized cruise)"
   parameter ratio_initial::Real = i_launch
   "Input speed relative to the housing [rad/s]"
-  variable w_a::AngularVelocity
+  w_a = RealOutput() {^w_a}
   "Output speed relative to the housing [rad/s]"
   variable w_b::AngularVelocity
   "Input speed [rpm]"
@@ -45,7 +45,7 @@ component P2Variator
   "Bounded ratio command"
   variable i_command::Real
   "Actual total speed ratio"
-  variable ratio::Real
+  ratio = RealOutput() {^ratio}
 relations
   w_a = der(spline_a.phi) - der(support.phi)
   w_b = der(spline_b.phi) - der(support.phi)
@@ -62,14 +62,5 @@ relations
   0 = ratio * spline_a.tau + spline_b.tau
   support.tau = -spline_a.tau - spline_b.tau
   initial ratio = ratio_initial
-metadata {
-  "Dyad": {"icons": {"default": "dyad://RotationalComponents/IdealGear.svg"}},
-  "_links": {
-    "N_ref": {"Dyad": {"placement": {"icon": {"x1": 650, "x2": 750, "y1": -50, "y2": 50}, "diagram": {"x1": 675, "x2": 725, "y1": -25, "y2": 25}}}},
-    "spline_a": {"Dyad": {"placement": {"icon": {"iconName": "spline_a", "x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"iconName": "spline_a", "x1": -25, "y1": 475, "x2": 25, "y2": 525}}}},
-    "spline_b": {"Dyad": {"placement": {"icon": {"iconName": "spline_b", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"iconName": "spline_b", "x1": 975, "y1": 475, "x2": 1025, "y2": 525}}}},
-    "support": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"x1": 475, "y1": 975, "x2": 525, "y2": 1025}}}},
-    "pedal": {"Dyad": {"placement": {"icon": {"x1": 250, "y1": -50, "x2": 350, "y2": 50}, "diagram": {"x1": 275, "y1": -25, "x2": 325, "y2": 25}}}}
-  }
-}
+metadata {"Dyad":{"icons":{"default":"dyad://RotationalComponents/IdealGear.svg"}},"_links":{"N_ref":{"Dyad":{"placement":{"icon":{"x1":650,"x2":750,"y1":-50,"y2":50},"diagram":{"x1":675,"x2":725,"y1":-25,"y2":25}}}},"spline_a":{"Dyad":{"placement":{"icon":{"iconName":"spline_a","x1":-50,"y1":450,"x2":50,"y2":550},"diagram":{"iconName":"spline_a","x1":-25,"y1":475,"x2":25,"y2":525}}}},"spline_b":{"Dyad":{"placement":{"icon":{"iconName":"spline_b","x1":950,"y1":450,"x2":1050,"y2":550},"diagram":{"iconName":"spline_b","x1":975,"y1":475,"x2":1025,"y2":525}}}},"support":{"Dyad":{"placement":{"icon":{"x1":450,"y1":950,"x2":550,"y2":1050},"diagram":{"x1":475,"y1":975,"x2":525,"y2":1025}}}},"pedal":{"Dyad":{"placement":{"icon":{"x1":250,"y1":-50,"x2":350,"y2":50},"diagram":{"x1":275,"y1":-25,"x2":325,"y2":25}}}},"w_a":{"Dyad":{"placement":{"diagram":{"x1":75,"x2":125,"y1":-25,"y2":25},"icon":{"x1":75,"x2":125,"y1":-25,"y2":25}}}},"ratio":{"Dyad":{"placement":{"diagram":{"x1":875,"x2":925,"y1":-25,"y2":25},"icon":{"x1":875,"x2":925,"y1":-25,"y2":25}}}}}}
 end

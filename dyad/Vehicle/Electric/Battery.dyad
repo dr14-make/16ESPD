@@ -34,7 +34,11 @@ component Battery
   parameter SoC0::Real = 0.9
   "Discharge current, out of p through the load and back into n"
   variable i::Current
+  stored_voltage = RealOutput() {^stored_voltage}
+  stored_current = RealOutput() {^stored_current}
 relations
+  stored_voltage = E
+  stored_current = i
   initial SoC = SoC0
   p.i + n.i = 0
   i = n.i
