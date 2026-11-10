@@ -292,7 +292,6 @@ P1 direct-crank 30 kW hybrid WLTC; ideal crank coupling, shared brake ceiling an
   push!(__eqs, ModelingToolkit.D_nounits(E_charge) ~ max(-P_stored, 0.0))
   push!(__eqs, ModelingToolkit.D_nounits(E_regen) ~ manager.tau_regen * max(manager.w_shaft, 0.0))
   push!(__eqs, ModelingToolkit.D_nounits(E_friction) ~ car.fl.brake.tau_friction * car.fl.brake.w + car.fr.brake.tau_friction * car.fr.brake.w + car.rl.brake.tau_friction * car.rl.brake.w + car.rr.brake.tau_friction * car.rr.brake.w)
-  push!(__eqs, ratio ~ powertrain.speed_variator.ratio)
   push!(__eqs, P_stored ~ stored_power.y)
   push!(__eqs, connect(car.bus, motion.bus))
   push!(__eqs, connect(trace.y, driver.u_s))
@@ -337,6 +336,7 @@ P1 direct-crank 30 kW hybrid WLTC; ideal crank coupling, shared brake ceiling an
   push!(__eqs, connect(powertrain.spline, differential.flange_b))
   push!(__eqs, connect(powertrain.support, mount.spline))
   push!(__eqs, connect(powertrain.mdot_fuel, meter.mdot_fuel))
+  push!(__eqs, connect(powertrain.ratio, ratio))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
