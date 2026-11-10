@@ -42,6 +42,8 @@ numbers, method given; (assumed) the course's choice.
  * `p` - This connector represents an electrical pin with voltage and current as the potential and flow variables, respectively. ([`Pin`](@ref))
  * `n` - This connector represents an electrical pin with voltage and current as the potential and flow variables, respectively. ([`Pin`](@ref))
  * `SoC` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `stored_voltage` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `stored_current` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
 ## Variables
 
@@ -104,6 +106,8 @@ numbers, method given; (assumed) the course's choice.
 
   ### Final Path Parameters
   append!(__vars, @variables (SoC(t)::Real), [output = true])
+  append!(__vars, @variables (stored_voltage(t)::Real), [output = true])
+  append!(__vars, @variables (stored_current(t)::Real), [output = true])
 
   ### Variables (declarations)
   append!(__vars, @variables (v(t)::Real), [description = "Voltage across the component (between pin p and pin n)."])
@@ -139,6 +143,8 @@ numbers, method given; (assumed) the course's choice.
 
   ### Equations
   push!(__eqs, v ~ p.v - n.v)
+  push!(__eqs, stored_voltage ~ E)
+  push!(__eqs, stored_current ~ i)
   push!(__eqs, p.i + n.i ~ 0)
   push!(__eqs, i ~ n.i)
   push!(__eqs, v ~ E - R0 * i)

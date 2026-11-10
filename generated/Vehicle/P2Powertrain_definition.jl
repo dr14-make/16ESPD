@@ -43,6 +43,8 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
  * `SoC` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `E` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `i` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `ratio` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `shaft_speed` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
 ## Variables
 
@@ -122,6 +124,8 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
   append!(__vars, @variables (SoC(t)::Real), [output = true])
   append!(__vars, @variables (E(t)::Real), [output = true])
   append!(__vars, @variables (i(t)::Real), [output = true])
+  append!(__vars, @variables (ratio(t)::Real), [output = true])
+  append!(__vars, @variables (shaft_speed(t)::Real), [output = true])
 
   ### Variables (declarations)
   if start_stop
@@ -176,6 +180,8 @@ MappedEngine drives K0 and the HybridDrive shaft. Connect the housing support to
   __assertions = []
 
   ### Equations
+  push!(__eqs, connect(variator.ratio, ratio))
+  push!(__eqs, connect(variator.w_a, shaft_speed))
   push!(__eqs, connect(engine_pedal, engine.pedal))
   push!(__eqs, connect(engage, k0.engage))
   push!(__eqs, connect(tau_ref, command.u))

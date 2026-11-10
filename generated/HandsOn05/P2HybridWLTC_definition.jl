@@ -193,7 +193,16 @@ The electric-mode CVT target follows demand power to avoid starting against an i
   push!(__systems, @named unused_command = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = unused_command_overrides))
   # Subcomponent brakes of type VehicleSystemsComponents.Vehicle.BrakeSplit
   brakes_overrides = __pop_subcomponent_overrides!(__overrides, "brakes")
-  push!(__systems, @named brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(; brake_gain=Float64(1.0), __overrides = brakes_overrides))
+  push!(__systems, @named brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(; gain=Float64(1.0), __overrides = brakes_overrides))
+  # Subcomponent brake_product of type BlockComponents.Math.Product
+  brake_product_overrides = __pop_subcomponent_overrides!(__overrides, "brake_product")
+  push!(__systems, @named brake_product = BlockComponents.Math.Product(; __overrides = brake_product_overrides))
+  # Subcomponent stored_power of type BlockComponents.Math.Product
+  stored_power_overrides = __pop_subcomponent_overrides!(__overrides, "stored_power")
+  push!(__systems, @named stored_power = BlockComponents.Math.Product(; __overrides = stored_power_overrides))
+  # Subcomponent engagement_command of type VehicleSystemsComponents.Vehicle.EngagementCommand
+  engagement_command_overrides = __pop_subcomponent_overrides!(__overrides, "engagement_command")
+  push!(__systems, @named engagement_command = VehicleSystemsComponents.Vehicle.EngagementCommand(; engage_rpm=engage_rpm, engage_width_rpm=engage_width_rpm, lock_rpm=lock_rpm, lock_width_rpm=lock_width_rpm, managed=true, __overrides = engagement_command_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -229,13 +238,16 @@ The electric-mode CVT target follows demand power to avoid starting against an i
   __assertions = []
 
   ### Equations
-  push!(__eqs, manager.w_shaft ~ powertrain.variator.w_a)
-  push!(__eqs, powertrain.engage ~ manager.engage * max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
-  push!(__eqs, meter.P_stored ~ powertrain.E * powertrain.i)
-  push!(__eqs, brakes.u ~ -manager.tau_friction * powertrain.variator.ratio)
   push!(__eqs, ModelingToolkit.D_nounits(E_charge) ~ max(-meter.P_stored, 0.0))
   push!(__eqs, ModelingToolkit.D_nounits(E_regen) ~ manager.tau_regen * max(manager.w_shaft, 0.0))
   push!(__eqs, ModelingToolkit.D_nounits(E_friction) ~ car.fl.brake.tau_friction * car.fl.brake.w + car.fr.brake.tau_friction * car.fr.brake.w + car.rl.brake.tau_friction * car.rl.brake.w + car.rr.brake.tau_friction * car.rr.brake.w)
+  push!(__eqs, connect(powertrain.E, stored_power.u1))
+  push!(__eqs, connect(powertrain.i, stored_power.u2))
+  push!(__eqs, connect(stored_power.y, meter.P_stored))
+  push!(__eqs, connect(powertrain.engine_speed, engagement_command.engine_speed))
+  push!(__eqs, connect(powertrain.shaft_speed, engagement_command.shaft_speed))
+  push!(__eqs, connect(manager.engage, engagement_command.enable))
+  push!(__eqs, connect(engagement_command.y, powertrain.engage))
   push!(__eqs, connect(unused_command.y, powertrain.cvt_pedal))
   push!(__eqs, connect(car.bus, motion.bus))
   push!(__eqs, connect(trace.y, driver.u_s))
@@ -243,6 +255,7 @@ The electric-mode CVT target follows demand power to avoid starting against an i
   push!(__eqs, connect(kmh.y, driver.u_m, manager.v))
   push!(__eqs, connect(no_ff.y, driver.u_ff))
   push!(__eqs, connect(driver.y, manager.tau_dem))
+  push!(__eqs, connect(powertrain.shaft_speed, manager.w_shaft))
   push!(__eqs, connect(powertrain.SoC, manager.SoC))
   push!(__eqs, connect(powertrain.engine_speed, manager.engine_speed, map.omega))
   push!(__eqs, connect(powertrain.available_torque, manager.available_torque))
@@ -262,6 +275,9 @@ The electric-mode CVT target follows demand power to avoid starting against an i
   push!(__eqs, connect(flat.y, roadload.grade))
   push!(__eqs, connect(car.chassis, roadload.chassis))
   push!(__eqs, connect(powertrain.mdot_fuel, meter.mdot_fuel))
+  push!(__eqs, connect(manager.tau_friction, brake_product.u1))
+  push!(__eqs, connect(powertrain.ratio, brake_product.u2))
+  push!(__eqs, connect(brake_product.y, brakes.u))
   push!(__eqs, connect(brakes.tau_fl, car.tau_fl))
   push!(__eqs, connect(brakes.tau_fr, car.tau_fr))
   push!(__eqs, connect(brakes.tau_rl, car.tau_rl))

@@ -32,11 +32,14 @@ P1 direct-crank 30 kW hybrid WLTC; ideal crank coupling, shared brake ceiling an
 | `T_max`         | Machine peak torque (ORNL-2012 Hyundai HSG)                         | N.m  |   205.0 |
 | `k0_capacity`         | K0 capacity [N.m] (derived; 390 N.m accommodates combined crank-side torque)                         | N.m  |   540.0 |
 
+## Connectors
+
+ * `ratio` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+
 ## Variables
 
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
-| `ratio`         | CVT input-to-output ratio supplied by the position plant                         | --  |
 | `P_stored`         | Net stored-power draw including any separate starter [W]                         | W  |
 | `E_charge`         | Stored-energy charging integral [J]; includes regen and load-point charging                         | J  |
 | `E_regen`         | Requested regenerative energy in the manager torque frame [J]                         | J  |
@@ -152,18 +155,15 @@ P1 direct-crank 30 kW hybrid WLTC; ideal crank coupling, shared brake ceiling an
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
+  append!(__vars, @variables (ratio(t)::Real), [output = true])
 
   ### Variables (declarations)
-  append!(__vars, @variables (ratio(t)::Real), [description = "CVT input-to-output ratio supplied by the position plant"])
   append!(__vars, @variables (P_stored(t)::Real), [description = "Net stored-power draw including any separate starter [W]"])
   append!(__vars, @variables (E_charge(t)::Real), [description = "Stored-energy charging integral [J]; includes regen and load-point charging"])
   append!(__vars, @variables (E_regen(t)::Real), [description = "Requested regenerative energy in the manager torque frame [J]"])
   append!(__vars, @variables (E_friction(t)::Real), [description = "Actual four-wheel friction-brake dissipation [J]"])
 
   ### Variables (assignments)
-  __ovr_ratio = pop!(__overrides, "ratio", nothing); isnothing(__ovr_ratio) || push!(__eqs, ratio ~ __ovr_ratio)
-  __ovr_ratio__initial = pop!(__overrides, "ratio.initial", nothing); isnothing(__ovr_ratio__initial) || (__initial_conditions[ratio] = __ovr_ratio__initial)
-  __ovr_ratio__guess = pop!(__overrides, "ratio.guess", nothing)
   __ovr_P_stored = pop!(__overrides, "P_stored", nothing); isnothing(__ovr_P_stored) || push!(__eqs, P_stored ~ __ovr_P_stored)
   __ovr_P_stored__initial = pop!(__overrides, "P_stored.initial", nothing); isnothing(__ovr_P_stored__initial) || (__initial_conditions[P_stored] = __ovr_P_stored__initial)
   __ovr_P_stored__guess = pop!(__overrides, "P_stored.guess", nothing)
@@ -228,19 +228,36 @@ P1 direct-crank 30 kW hybrid WLTC; ideal crank coupling, shared brake ceiling an
   push!(__systems, @named meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel(; __overrides = meter_overrides))
   # Subcomponent brakes of type VehicleSystemsComponents.Vehicle.BrakeSplit
   brakes_overrides = __pop_subcomponent_overrides!(__overrides, "brakes")
-  push!(__systems, @named brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(; brake_gain=Float64(1.0), __overrides = brakes_overrides))
+  push!(__systems, @named brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(; gain=Float64(1.0), __overrides = brakes_overrides))
+  # Subcomponent brake_product of type BlockComponents.Math.Product
+  brake_product_overrides = __pop_subcomponent_overrides!(__overrides, "brake_product")
+  push!(__systems, @named brake_product = BlockComponents.Math.Product(; __overrides = brake_product_overrides))
   # Subcomponent powertrain of type VehicleSystemsComponents.Vehicle.CoupledHybridPowertrain
   powertrain_overrides = __pop_subcomponent_overrides!(__overrides, "powertrain")
   powertrain_dict = Dict{String, Any}()
   powertrain_dict["k0.tau_max"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(k0_capacity))
   merge!(powertrain_dict, powertrain_overrides)
   push!(__systems, @named powertrain = VehicleSystemsComponents.Vehicle.CoupledHybridPowertrain(; speed_commanded=true, i_crank=i_crank, eta_crank=eta_crank, T_max=T_max, __overrides = powertrain_dict))
+  # Subcomponent stored_power of type BlockComponents.Math.Product
+  stored_power_overrides = __pop_subcomponent_overrides!(__overrides, "stored_power")
+  push!(__systems, @named stored_power = BlockComponents.Math.Product(; __overrides = stored_power_overrides))
+  # Subcomponent engagement_command of type VehicleSystemsComponents.Vehicle.EngagementCommand
+  engagement_command_overrides = __pop_subcomponent_overrides!(__overrides, "engagement_command")
+  push!(__systems, @named engagement_command = VehicleSystemsComponents.Vehicle.EngagementCommand(; engage_rpm=engage_rpm, engage_width_rpm=engage_width_rpm, lock_rpm=lock_rpm, lock_width_rpm=lock_width_rpm, __overrides = engagement_command_overrides))
+  # Subcomponent machine_limit of type BlockComponents.Sources.Constant
+  machine_limit_overrides = __pop_subcomponent_overrides!(__overrides, "machine_limit")
+  push!(__systems, @named machine_limit = BlockComponents.Sources.Constant(; k=T_max * i_crank * eta_crank, __overrides = machine_limit_overrides))
+  # Subcomponent machine_command of type BlockComponents.Math.Gain
+  machine_command_overrides = __pop_subcomponent_overrides!(__overrides, "machine_command")
+  push!(__systems, @named machine_command = BlockComponents.Math.Gain(; k=1.0 / i_crank, __overrides = machine_command_overrides))
+  # Subcomponent unused_pedal of type BlockComponents.Sources.Constant
+  unused_pedal_overrides = __pop_subcomponent_overrides!(__overrides, "unused_pedal")
+  push!(__systems, @named unused_pedal = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = unused_pedal_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
-  isnothing(__ovr_ratio__guess) || (__guesses[ratio] = __ovr_ratio__guess)
   isnothing(__ovr_P_stored__guess) || (__guesses[P_stored] = __ovr_P_stored__guess)
   isnothing(__ovr_E_charge__guess) || (__guesses[E_charge] = __ovr_E_charge__guess)
   isnothing(__ovr_E_regen__guess) || (__guesses[E_regen] = __ovr_E_regen__guess)
@@ -272,17 +289,11 @@ P1 direct-crank 30 kW hybrid WLTC; ideal crank coupling, shared brake ceiling an
   __assertions = []
 
   ### Equations
-  push!(__eqs, meter.P_stored ~ P_stored)
-  push!(__eqs, brakes.u ~ -manager.tau_friction * ratio)
   push!(__eqs, ModelingToolkit.D_nounits(E_charge) ~ max(-P_stored, 0.0))
   push!(__eqs, ModelingToolkit.D_nounits(E_regen) ~ manager.tau_regen * max(manager.w_shaft, 0.0))
   push!(__eqs, ModelingToolkit.D_nounits(E_friction) ~ car.fl.brake.tau_friction * car.fl.brake.w + car.fr.brake.tau_friction * car.fr.brake.w + car.rl.brake.tau_friction * car.rl.brake.w + car.rr.brake.tau_friction * car.rr.brake.w)
-  push!(__eqs, manager.w_shaft ~ powertrain.engine_speed)
-  push!(__eqs, manager.T_lim ~ powertrain.drive.T_max * powertrain.i_crank * powertrain.eta_crank)
-  push!(__eqs, powertrain.tau_ref ~ manager.tau_machine / powertrain.i_crank)
-  push!(__eqs, powertrain.engage ~ max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.speed_variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
   push!(__eqs, ratio ~ powertrain.speed_variator.ratio)
-  push!(__eqs, P_stored ~ powertrain.E * powertrain.i)
+  push!(__eqs, P_stored ~ stored_power.y)
   push!(__eqs, connect(car.bus, motion.bus))
   push!(__eqs, connect(trace.y, driver.u_s))
   push!(__eqs, connect(motion.vx, kmh.u, meter.speed))
@@ -298,16 +309,30 @@ P1 direct-crank 30 kW hybrid WLTC; ideal crank coupling, shared brake ceiling an
   push!(__eqs, connect(car.steering, straight.spline))
   push!(__eqs, connect(flat.y, roadload.grade))
   push!(__eqs, connect(car.chassis, roadload.chassis))
+  push!(__eqs, connect(manager.tau_friction, brake_product.u1))
+  push!(__eqs, connect(ratio, brake_product.u2))
+  push!(__eqs, connect(brake_product.y, brakes.u))
   push!(__eqs, connect(brakes.tau_fl, car.tau_fl))
   push!(__eqs, connect(brakes.tau_fr, car.tau_fr))
   push!(__eqs, connect(brakes.tau_rl, car.tau_rl))
   push!(__eqs, connect(brakes.tau_rr, car.tau_rr))
+  push!(__eqs, connect(unused_pedal.y, powertrain.cvt_pedal))
+  push!(__eqs, connect(powertrain.E, stored_power.u1))
+  push!(__eqs, connect(powertrain.i, stored_power.u2))
+  push!(__eqs, connect(stored_power.y, meter.P_stored))
+  push!(__eqs, connect(powertrain.engine_speed, engagement_command.engine_speed))
+  push!(__eqs, connect(powertrain.shaft_speed, engagement_command.shaft_speed))
+  push!(__eqs, connect(engagement_command.y, powertrain.engage))
+  push!(__eqs, connect(manager.tau_machine, machine_command.u))
+  push!(__eqs, connect(powertrain.engine_speed, manager.w_shaft))
+  push!(__eqs, connect(machine_limit.y, manager.T_lim))
   push!(__eqs, connect(powertrain.SoC, manager.SoC))
   push!(__eqs, connect(powertrain.engine_speed, manager.engine_speed, map.omega))
   push!(__eqs, connect(powertrain.available_torque, manager.available_torque))
   push!(__eqs, connect(manager.tau_engine, powertrain.engine_torque_ref))
   push!(__eqs, connect(map.pedal, powertrain.engine_pedal))
   push!(__eqs, connect(manager.engine_on, powertrain.engine_on))
+  push!(__eqs, connect(machine_command.y, powertrain.tau_ref))
   push!(__eqs, connect(speed_command.N_ref, powertrain.N_ref))
   push!(__eqs, connect(powertrain.spline, differential.flange_b))
   push!(__eqs, connect(powertrain.support, mount.spline))

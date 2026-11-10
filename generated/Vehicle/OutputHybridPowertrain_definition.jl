@@ -14,6 +14,10 @@ unity-ratio axle differential. P4 therefore requires a separate rear differentia
 in the vehicle fixture, not a connection of front and rear shafts inside this model.
 CVT defaults already include the front final drive; i_output is the separate
 machine-to-wheel reduction, not another front engine final drive.
+The rear port is always present and torque-free in P3. An ideal axle router
+selects only the machine branch without locking front and rear shaft speeds.
+Both CVT scheduling modes use the always-present speed_variator; pedal mode
+retains ControlledVariator's target-speed schedule through OutputHybridVariator.
 
 An ideal separate starter accelerates the crank while K0 request is gated by
 firing_fraction, so traction machine torque is not used for push-starting.
@@ -57,6 +61,8 @@ at its assumed electrical efficiency; no starter current or solenoid dynamics ar
  * `E` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `i` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `P_start` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `shaft_speed` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `ratio` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
 ## Variables
 
@@ -155,6 +161,8 @@ at its assumed electrical efficiency; no starter current or solenoid dynamics ar
   append!(__vars, @variables (E(t)::Real), [output = true])
   append!(__vars, @variables (i(t)::Real), [output = true])
   append!(__vars, @variables (P_start(t)::Real), [output = true])
+  append!(__vars, @variables (shaft_speed(t)::Real), [output = true])
+  append!(__vars, @variables (ratio(t)::Real), [output = true])
 
   ### Variables (declarations)
   append!(__vars, @variables (machine_limit(t)::Real))
@@ -181,9 +189,7 @@ at its assumed electrical efficiency; no starter current or solenoid dynamics ar
 
   ### Components
   push!(__systems, @named spline = __Dyad__Spline())
-  if rear
-    push!(__systems, @named rear_spline = __Dyad__Spline())
-  end
+  push!(__systems, @named rear_spline = __Dyad__Spline())
   push!(__systems, @named support = __Dyad__Spline())
   # Subcomponent engine of type VehicleSystemsComponents.Vehicle.Engine.MappedEngine
   engine_overrides = __pop_subcomponent_overrides!(__overrides, "engine")
@@ -197,16 +203,12 @@ at its assumed electrical efficiency; no starter current or solenoid dynamics ar
   # Subcomponent starter of type RotationalComponents.Sources.TorqueSource
   starter_overrides = __pop_subcomponent_overrides!(__overrides, "starter")
   push!(__systems, @named starter = RotationalComponents.Sources.TorqueSource(; __overrides = starter_overrides))
-  # Subcomponent variator of type VehicleSystemsComponents.Vehicle.ControlledVariator
-  variator_overrides = __pop_subcomponent_overrides!(__overrides, "variator")
-  if !speed_commanded
-    push!(__systems, @named variator = VehicleSystemsComponents.Vehicle.ControlledVariator(; __overrides = variator_overrides))
-  end
-  # Subcomponent speed_variator of type VehicleSystemsComponents.Vehicle.SpeedCommandedVariator
+  # Subcomponent speed_variator of type VehicleSystemsComponents.Vehicle.OutputHybridVariator
   speed_variator_overrides = __pop_subcomponent_overrides!(__overrides, "speed_variator")
-  if speed_commanded
-    push!(__systems, @named speed_variator = VehicleSystemsComponents.Vehicle.SpeedCommandedVariator(; __overrides = speed_variator_overrides))
-  end
+  push!(__systems, @named speed_variator = VehicleSystemsComponents.Vehicle.OutputHybridVariator(; speed_commanded=speed_commanded, __overrides = speed_variator_overrides))
+  # Subcomponent axle_router of type VehicleSystemsComponents.Vehicle.OutputHybridAxleRouter
+  axle_router_overrides = __pop_subcomponent_overrides!(__overrides, "axle_router")
+  push!(__systems, @named axle_router = VehicleSystemsComponents.Vehicle.OutputHybridAxleRouter(; rear=rear, __overrides = axle_router_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -227,8 +229,11 @@ at its assumed electrical efficiency; no starter current or solenoid dynamics ar
   __assertions = []
 
   ### Equations
+  push!(__eqs, shaft_speed ~ speed_variator.w_a)
+  push!(__eqs, ratio ~ speed_variator.ratio)
   push!(__eqs, machine_limit ~ min(drive.T_max, drive.P_rated / max(abs(drive.machine.w), 1.0)))
   push!(__eqs, start_compensation ~ engine_torque_ref - k0.tau)
+  push!(__eqs, drive.tau_ref ~ min(max((tau_ref + start_compensation) * speed_variator.ratio / i_output, -machine_limit), machine_limit))
   push!(__eqs, firing_fraction ~ min(max((engine.N - firing_rpm) / firing_width, 0.0), 1.0))
   push!(__eqs, engine.fuel_enable ~ engine_on * firing_fraction ^ 2 * (3.0 - 2.0 * firing_fraction))
   push!(__eqs, k0.engage ~ engage * firing_fraction)
@@ -246,29 +251,19 @@ at its assumed electrical efficiency; no starter current or solenoid dynamics ar
   push!(__eqs, i ~ drive.battery.i)
   push!(__eqs, connect(engine_pedal, engine.pedal))
   push!(__eqs, connect(engine.spline, k0.spline_a, starter.spline))
+  push!(__eqs, connect(k0.spline_b, speed_variator.spline_a))
+  push!(__eqs, connect(speed_variator.spline_b, spline))
+  push!(__eqs, connect(speed_variator.support, support))
+  push!(__eqs, connect(drive.spline, axle_router.machine))
+  push!(__eqs, connect(axle_router.front, spline))
+  push!(__eqs, connect(axle_router.rear_axle, rear_spline))
   push!(__eqs, connect(engine.support, k0.support, starter.support, drive.support, support))
 
   ### Control Structures
   if speed_commanded
-    push!(__eqs, drive.tau_ref ~ min(max((tau_ref + start_compensation) * speed_variator.ratio / i_output, -machine_limit), machine_limit))
+    push!(__eqs, speed_variator.N_ref ~ N_ref)
   else
-    push!(__eqs, drive.tau_ref ~ min(max((tau_ref + start_compensation) * variator.ratio / i_output, -machine_limit), machine_limit))
-  end
-  if speed_commanded
-    push!(__eqs, connect(N_ref, speed_variator.N_ref))
-    push!(__eqs, connect(k0.spline_b, speed_variator.spline_a))
-    push!(__eqs, connect(speed_variator.spline_b, spline))
-    push!(__eqs, connect(speed_variator.support, support))
-  else
-    push!(__eqs, connect(cvt_pedal, variator.pedal))
-    push!(__eqs, connect(k0.spline_b, variator.spline_a))
-    push!(__eqs, connect(variator.spline_b, spline))
-    push!(__eqs, connect(variator.support, support))
-  end
-  if rear
-    push!(__eqs, connect(drive.spline, rear_spline))
-  else
-    push!(__eqs, connect(drive.spline, spline))
+    push!(__eqs, speed_variator.pedal ~ cvt_pedal)
   end
 
   # Return completely constructed System

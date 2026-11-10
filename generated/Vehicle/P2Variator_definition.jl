@@ -33,18 +33,18 @@ a first-order lag. The velocity constraint avoids dependence on accumulated abso
  * `support` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `pedal` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `N_ref` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `w_a` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `ratio` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
 ## Variables
 
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
-| `w_a`         | Input speed relative to the housing [rad/s]                         | rad/s  |
 | `w_b`         | Output speed relative to the housing [rad/s]                         | rad/s  |
 | `N_a`         | Input speed [rpm]                         | --  |
 | `N_b`         | Output speed magnitude [rpm]                         | --  |
 | `N_target`         | Scheduled input-speed target [rpm]                         | --  |
 | `i_command`         | Bounded ratio command                         | --  |
-| `ratio`         | Actual total speed ratio                         | --  |
 """
 @component function P2Variator(; name = nothing, var"speed_commanded"=false, var"i_launch"=Float64(12.0), var"i_overdrive"=2.8, var"target_rpm_min"=Float64(1800.0), var"target_rpm_max"=Float64(6000.0), var"ratio_time"=0.5, var"output_rpm_floor"=Float64(50.0), var"ratio_initial"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -117,20 +117,17 @@ a first-order lag. The velocity constraint avoids dependence on accumulated abso
   ### Final Path Parameters
   append!(__vars, @variables (pedal(t)::Real), [input = true])
   append!(__vars, @variables (N_ref(t)::Real), [input = true])
+  append!(__vars, @variables (w_a(t)::Real), [output = true])
+  append!(__vars, @variables (ratio(t)::Real), [output = true])
 
   ### Variables (declarations)
-  append!(__vars, @variables (w_a(t)::Real), [description = "Input speed relative to the housing [rad/s]"])
   append!(__vars, @variables (w_b(t)::Real), [description = "Output speed relative to the housing [rad/s]"])
   append!(__vars, @variables (N_a(t)::Real), [description = "Input speed [rpm]"])
   append!(__vars, @variables (N_b(t)::Real), [description = "Output speed magnitude [rpm]"])
   append!(__vars, @variables (N_target(t)::Real), [description = "Scheduled input-speed target [rpm]"])
   append!(__vars, @variables (i_command(t)::Real), [description = "Bounded ratio command"])
-  append!(__vars, @variables (ratio(t)::Real), [description = "Actual total speed ratio"])
 
   ### Variables (assignments)
-  __ovr_w_a = pop!(__overrides, "w_a", nothing); isnothing(__ovr_w_a) || push!(__eqs, w_a ~ __ovr_w_a)
-  __ovr_w_a__initial = pop!(__overrides, "w_a.initial", nothing); isnothing(__ovr_w_a__initial) || (__initial_conditions[w_a] = __ovr_w_a__initial)
-  __ovr_w_a__guess = pop!(__overrides, "w_a.guess", nothing)
   __ovr_w_b = pop!(__overrides, "w_b", nothing); isnothing(__ovr_w_b) || push!(__eqs, w_b ~ __ovr_w_b)
   __ovr_w_b__initial = pop!(__overrides, "w_b.initial", nothing); isnothing(__ovr_w_b__initial) || (__initial_conditions[w_b] = __ovr_w_b__initial)
   __ovr_w_b__guess = pop!(__overrides, "w_b.guess", nothing)
@@ -146,9 +143,6 @@ a first-order lag. The velocity constraint avoids dependence on accumulated abso
   __ovr_i_command = pop!(__overrides, "i_command", nothing); isnothing(__ovr_i_command) || push!(__eqs, i_command ~ __ovr_i_command)
   __ovr_i_command__initial = pop!(__overrides, "i_command.initial", nothing); isnothing(__ovr_i_command__initial) || (__initial_conditions[i_command] = __ovr_i_command__initial)
   __ovr_i_command__guess = pop!(__overrides, "i_command.guess", nothing)
-  __ovr_ratio = pop!(__overrides, "ratio", nothing); isnothing(__ovr_ratio) || push!(__eqs, ratio ~ __ovr_ratio)
-  __ovr_ratio__initial = pop!(__overrides, "ratio.initial", nothing); isnothing(__ovr_ratio__initial) || (__initial_conditions[ratio] = __ovr_ratio__initial)
-  __ovr_ratio__guess = pop!(__overrides, "ratio.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -162,13 +156,11 @@ a first-order lag. The velocity constraint avoids dependence on accumulated abso
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
-  isnothing(__ovr_w_a__guess) || (__guesses[w_a] = __ovr_w_a__guess)
   isnothing(__ovr_w_b__guess) || (__guesses[w_b] = __ovr_w_b__guess)
   isnothing(__ovr_N_a__guess) || (__guesses[N_a] = __ovr_N_a__guess)
   isnothing(__ovr_N_b__guess) || (__guesses[N_b] = __ovr_N_b__guess)
   isnothing(__ovr_N_target__guess) || (__guesses[N_target] = __ovr_N_target__guess)
   isnothing(__ovr_i_command__guess) || (__guesses[i_command] = __ovr_i_command__guess)
-  isnothing(__ovr_ratio__guess) || (__guesses[ratio] = __ovr_ratio__guess)
 
   ### Initialization Equations
   push!(__initialization_eqs, ratio ~ ratio_initial)

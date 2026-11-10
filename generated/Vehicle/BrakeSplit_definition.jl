@@ -5,22 +5,24 @@
 
 
 @doc Markdown.doc"""
-   BrakeSplit(; name, brake_gain, front_fraction, __overrides)
+   BrakeSplit(; name, signed_driver, gain, front_fraction, __overrides)
 
-Split signed driver torque into positive wheel-brake torque commands.
+Allocate a total positive brake-torque magnitude to four wheel-brake commands.
 
-Assumed Lecture5 brake allocation, extracted from the front-only braking equations
-in Lecture5.P2OperatingLineWLTC. Negative `u` requests braking; nonnegative `u`
-requests no friction braking. Car brake inputs take positive torque magnitudes.
-The default `front_fraction = 1.0` preserves the original per-front-wheel command
-`-min(u, 0.0) * brake_gain / 2.0` and leaves the rear brakes at zero. The rear axle
-receives the complementary fraction; each axle splits its share equally left/right.
+By default `u` is a positive magnitude: total wheel torque is `max(u, 0) * gain`.
+With structural `signed_driver = true`, `u` is instead a signed driver request:
+negative requests braking and total wheel torque is `-min(u, 0) * gain`.
+`front_fraction` assigns the front axle share; the rear receives its complement.
+Each axle splits equally left/right. Outputs are positive braking magnitudes.
+Defaults `gain = 1.0` and `front_fraction = 1.0` give front-only braking.
+Operating-line callers select signed-driver mode and their driver-to-wheel gain.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `brake_gain`         | Driver-to-wheel brake torque gain (assumed Lecture5 default)                         | --  |   12.0 |
+| `signed_driver`         | Interpret negative driver requests as braking instead of positive magnitudes                         | --  |   false |
+| `gain`         | Input-to-total-wheel brake torque gain                         | --  |   1.0 |
 | `front_fraction`         | Fraction of total braking assigned to the front axle (assumed Lecture5 front-only default)                         | --  |   1.0 |
 
 ## Connectors
@@ -30,8 +32,14 @@ receives the complementary fraction; each axle splits its share equally left/rig
  * `tau_fr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `tau_rl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `tau_rr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+
+## Variables
+
+| Name         | Description                         | Units  | 
+| ------------ | ----------------------------------- | ------ |
+| `magnitude`         |                          | --  |
 """
-@component function BrakeSplit(; name = nothing, var"brake_gain"=Float64(12.0), var"front_fraction"=Float64(1.0), __overrides = Dict{String, Any}())
+@component function BrakeSplit(; name = nothing, var"signed_driver"=false, var"gain"=Float64(1.0), var"front_fraction"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -50,7 +58,8 @@ receives the complementary fraction; each axle splits its share equally left/rig
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
-  haskey(__overrides, "brake_gain") && (brake_gain = pop!(__overrides, "brake_gain"))
+  haskey(__overrides, "signed_driver") && (signed_driver = pop!(__overrides, "signed_driver"))
+  haskey(__overrides, "gain") && (gain = pop!(__overrides, "gain"))
   haskey(__overrides, "front_fraction") && (front_fraction = pop!(__overrides, "front_fraction"))
 
   ### Structural Parameters (functions)
@@ -66,9 +75,9 @@ receives the complementary fraction; each axle splits its share equally left/rig
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
-  __local__brake_gain = brake_gain
-  append!(__params, @parameters (brake_gain::Real), [description = "Driver-to-wheel brake torque gain (assumed Lecture5 default)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, brake_gain, __local__brake_gain)
+  __local__gain = gain
+  append!(__params, @parameters (gain::Real), [description = "Input-to-total-wheel brake torque gain"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, gain, __local__gain)
   __local__front_fraction = front_fraction
   append!(__params, @parameters (front_fraction::Real), [description = "Fraction of total braking assigned to the front axle (assumed Lecture5 front-only default)", bounds = (0.0, 1.0)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, front_fraction, __local__front_fraction)
@@ -83,8 +92,12 @@ receives the complementary fraction; each axle splits its share equally left/rig
   append!(__vars, @variables (tau_rr(t)::Real), [output = true])
 
   ### Variables (declarations)
+  append!(__vars, @variables (magnitude(t)::Real))
 
   ### Variables (assignments)
+  __ovr_magnitude = pop!(__overrides, "magnitude", nothing); isnothing(__ovr_magnitude) || push!(__eqs, magnitude ~ __ovr_magnitude)
+  __ovr_magnitude__initial = pop!(__overrides, "magnitude.initial", nothing); isnothing(__ovr_magnitude__initial) || (__initial_conditions[magnitude] = __ovr_magnitude__initial)
+  __ovr_magnitude__guess = pop!(__overrides, "magnitude.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -95,6 +108,7 @@ receives the complementary fraction; each axle splits its share equally left/rig
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
+  isnothing(__ovr_magnitude__guess) || (__guesses[magnitude] = __ovr_magnitude__guess)
 
   ### Initialization Equations
 
@@ -102,10 +116,17 @@ receives the complementary fraction; each axle splits its share equally left/rig
   __assertions = []
 
   ### Equations
-  push!(__eqs, tau_fl ~ -min(u, 0.0) * brake_gain * front_fraction / 2.0)
+  push!(__eqs, tau_fl ~ magnitude * gain * front_fraction / 2.0)
   push!(__eqs, tau_fr ~ tau_fl)
-  push!(__eqs, tau_rl ~ -min(u, 0.0) * brake_gain * (1.0 - front_fraction) / 2.0)
+  push!(__eqs, tau_rl ~ magnitude * gain * (1.0 - front_fraction) / 2.0)
   push!(__eqs, tau_rr ~ tau_rl)
+
+  ### Control Structures
+  if signed_driver
+    push!(__eqs, magnitude ~ -min(u, 0.0))
+  else
+    push!(__eqs, magnitude ~ max(u, 0.0))
+  end
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

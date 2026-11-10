@@ -175,10 +175,22 @@ completes it to Lecture5.P2OperatingLineWLTC.
   push!(__systems, @named unused_command = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = unused_command_overrides))
   # Subcomponent brakes of type VehicleSystemsComponents.Vehicle.BrakeSplit
   brakes_overrides = __pop_subcomponent_overrides!(__overrides, "brakes")
-  push!(__systems, @named brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(; brake_gain=brake_gain, __overrides = brakes_overrides))
-  # Subcomponent pedal_command of type VehicleSystemsComponents.Vehicle.ParameterGate
+  push!(__systems, @named brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(; gain=brake_gain, signed_driver=true, __overrides = brakes_overrides))
+  # Subcomponent pedal_gain of type BlockComponents.Math.Gain
+  pedal_gain_overrides = __pop_subcomponent_overrides!(__overrides, "pedal_gain")
+  push!(__systems, @named pedal_gain = BlockComponents.Math.Gain(; k=1 / tau_max, __overrides = pedal_gain_overrides))
+  # Subcomponent pedal_command of type BlockComponents.Nonlinear.Limiter
   pedal_command_overrides = __pop_subcomponent_overrides!(__overrides, "pedal_command")
-  push!(__systems, @named pedal_command = VehicleSystemsComponents.Vehicle.ParameterGate(; __overrides = pedal_command_overrides))
+  push!(__systems, @named pedal_command = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0.0), y_max=Float64(1.0), __overrides = pedal_command_overrides))
+  # Subcomponent stored_power of type BlockComponents.Math.Product
+  stored_power_overrides = __pop_subcomponent_overrides!(__overrides, "stored_power")
+  push!(__systems, @named stored_power = BlockComponents.Math.Product(; __overrides = stored_power_overrides))
+  # Subcomponent engagement_command of type VehicleSystemsComponents.Vehicle.EngagementCommand
+  engagement_command_overrides = __pop_subcomponent_overrides!(__overrides, "engagement_command")
+  push!(__systems, @named engagement_command = VehicleSystemsComponents.Vehicle.EngagementCommand(; engage_rpm=engage_rpm, engage_width_rpm=engage_width_rpm, lock_rpm=lock_rpm, lock_width_rpm=lock_width_rpm, __overrides = engagement_command_overrides))
+  # Subcomponent no_machine of type BlockComponents.Sources.Constant
+  no_machine_overrides = __pop_subcomponent_overrides!(__overrides, "no_machine")
+  push!(__systems, @named no_machine = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = no_machine_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -208,10 +220,12 @@ completes it to Lecture5.P2OperatingLineWLTC.
   __assertions = []
 
   ### Equations
-  push!(__eqs, meter.P_stored ~ powertrain.E * powertrain.i)
-  push!(__eqs, pedal_command.u ~ min(max(driver.y / tau_max, 0.0), 1.0))
-  push!(__eqs, powertrain.engage ~ max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
-  push!(__eqs, powertrain.tau_ref ~ 0.0)
+  push!(__eqs, connect(powertrain.E, stored_power.u1))
+  push!(__eqs, connect(powertrain.i, stored_power.u2))
+  push!(__eqs, connect(stored_power.y, meter.P_stored))
+  push!(__eqs, connect(powertrain.engine_speed, engagement_command.engine_speed))
+  push!(__eqs, connect(powertrain.shaft_speed, engagement_command.shaft_speed))
+  push!(__eqs, connect(engagement_command.y, powertrain.engage))
   push!(__eqs, connect(car.bus, motion.bus))
   push!(__eqs, connect(trace.y, driver.u_s))
   push!(__eqs, connect(motion.vx, kmh.u, meter.speed))
@@ -225,7 +239,10 @@ completes it to Lecture5.P2OperatingLineWLTC.
   push!(__eqs, connect(flat.y, roadload.grade))
   push!(__eqs, connect(car.chassis, roadload.chassis))
   push!(__eqs, connect(powertrain.mdot_fuel, meter.mdot_fuel))
+  push!(__eqs, connect(driver.y, pedal_gain.u))
+  push!(__eqs, connect(pedal_gain.y, pedal_command.u))
   push!(__eqs, connect(pedal_command.y, powertrain.engine_pedal))
+  push!(__eqs, connect(no_machine.y, powertrain.tau_ref))
   push!(__eqs, connect(driver.y, brakes.u))
   push!(__eqs, connect(brakes.tau_fl, car.tau_fl))
   push!(__eqs, connect(brakes.tau_fr, car.tau_fr))

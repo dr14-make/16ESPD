@@ -259,6 +259,9 @@ numbers, method given; (assumed) the course's choice.
   # Subcomponent emf of type VehicleSystemsComponents.Vehicle.Electric.FieldEMF
   emf_overrides = __pop_subcomponent_overrides!(__overrides, "emf")
   push!(__systems, @named emf = VehicleSystemsComponents.Vehicle.Electric.FieldEMF(; k=k, __overrides = emf_overrides))
+  # Subcomponent field_command of type BlockComponents.Routing.RealPassThrough
+  field_command_overrides = __pop_subcomponent_overrides!(__overrides, "field_command")
+  push!(__systems, @named field_command = BlockComponents.Routing.RealPassThrough(; __overrides = field_command_overrides))
   # Subcomponent rotor of type RotationalComponents.Components.Inertia
   rotor_overrides = __pop_subcomponent_overrides!(__overrides, "rotor")
   push!(__systems, @named rotor = RotationalComponents.Components.Inertia(; J=J, __overrides = rotor_overrides))
@@ -321,12 +324,13 @@ numbers, method given; (assumed) the course's choice.
   push!(__eqs, connect(emf.rotor, rotor.spline_a, friction.spline, iron.spline, windage.spline, constant_loss.spline))
   push!(__eqs, connect(rotor.spline_b, spline))
   push!(__eqs, connect(emf.housing, friction.support, iron.support, windage.support, constant_loss.support, support))
+  push!(__eqs, connect(field_command.y, emf.field))
 
   ### Control Structures
   if field_weakening
-    push!(__eqs, connect(field, emf.field))
+    push!(__eqs, field_command.u ~ field)
   else
-    push!(__eqs, emf.field ~ 1.0)
+    push!(__eqs, field_command.u ~ 1.0)
   end
 
   # Return completely constructed System
