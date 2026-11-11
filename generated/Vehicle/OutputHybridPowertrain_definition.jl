@@ -228,8 +228,6 @@ at its assumed electrical efficiency; no starter current or solenoid dynamics ar
   __assertions = []
 
   ### Equations
-  push!(__eqs, shaft_speed ~ speed_variator.w_a)
-  push!(__eqs, ratio ~ speed_variator.ratio)
   push!(__eqs, machine_limit ~ min(drive.T_max, drive.P_rated / max(abs(drive.machine.w), 1.0)))
   push!(__eqs, start_compensation ~ engine_torque_ref - k0.tau)
   push!(__eqs, drive.tau_ref ~ min(max((tau_ref + start_compensation) * speed_variator.ratio / i_output, -machine_limit), machine_limit))
@@ -248,6 +246,8 @@ at its assumed electrical efficiency; no starter current or solenoid dynamics ar
   push!(__eqs, SoC ~ drive.SoC)
   push!(__eqs, E ~ drive.battery.E)
   push!(__eqs, i ~ drive.battery.i)
+  push!(__eqs, connect(speed_variator.w_a, shaft_speed))
+  push!(__eqs, connect(speed_variator.ratio, ratio))
   push!(__eqs, connect(engine_pedal, engine.pedal))
   push!(__eqs, connect(engine.spline, k0.spline_a, starter.spline))
   push!(__eqs, connect(N_ref, speed_variator.N_ref))

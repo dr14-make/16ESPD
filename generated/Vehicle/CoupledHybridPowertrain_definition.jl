@@ -204,8 +204,6 @@ Connect support to a stationary reference; spline goes to an external differenti
   __assertions = []
 
   ### Equations
-  push!(__eqs, shaft_speed ~ speed_variator.w_a)
-  push!(__eqs, ratio ~ speed_variator.ratio)
   push!(__eqs, machine_limit ~ min(drive.T_max, drive.P_rated / max(abs(drive.machine.w), 1.0)))
   push!(__eqs, start_compensation ~ min(max(engine_on, 0.0), 1.0) * (1.0 - firing_fraction ^ 2 * (3.0 - 2.0 * firing_fraction)) * (engine_torque_ref - engine.tau_e) / i_crank)
   push!(__eqs, drive.tau_ref ~ min(max(tau_ref + start_compensation, -machine_limit), machine_limit))
@@ -220,6 +218,8 @@ Connect support to a stationary reference; spline goes to an external differenti
   push!(__eqs, SoC ~ drive.SoC)
   push!(__eqs, E ~ drive.battery.E)
   push!(__eqs, i ~ drive.battery.i)
+  push!(__eqs, connect(speed_variator.w_a, shaft_speed))
+  push!(__eqs, connect(speed_variator.ratio, ratio))
   push!(__eqs, connect(engine_pedal, engine.pedal))
   push!(__eqs, connect(engage, k0.engage))
   push!(__eqs, connect(drive.spline, belt.spline_a))
