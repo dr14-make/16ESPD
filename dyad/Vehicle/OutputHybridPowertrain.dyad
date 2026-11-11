@@ -8,8 +8,7 @@ CVT defaults already include the front final drive; i_output is the separate
 machine-to-wheel reduction, not another front engine final drive.
 The rear port is always present and torque-free in P3. An ideal axle router
 selects only the machine branch without locking front and rear shaft speeds.
-Both CVT scheduling modes use the always-present speed_variator; pedal mode
-retains ControlledVariator's target-speed schedule through OutputHybridVariator.
+Both CVT scheduling modes use P2Variator's shared ratio actuator and schedule.
 
 An ideal separate starter accelerates the crank while K0 request is gated by
 firing_fraction, so traction machine torque is not used for push-starting.
@@ -28,8 +27,8 @@ component OutputHybridPowertrain
   engine_torque_ref = RealInput() {^engine_torque_ref}
   variable machine_limit::Torque
   variable start_compensation::Torque
-  cvt_pedal = RealInput() if !speed_commanded {^cvt_pedal}
-  N_ref = RealInput() if speed_commanded {^N_ref}
+  cvt_pedal = RealInput() {^cvt_pedal}
+  N_ref = RealInput() {^N_ref}
   "Front wheel-speed output; connect an external differential"
   spline = Spline() {^spline}
   "Rear wheel-speed output; torque-free for P3, connect a separate rear differential"
@@ -70,7 +69,7 @@ component OutputHybridPowertrain
   k0 = VehicleSystemsComponents.Vehicle.DisconnectClutch(position_start = position_start)
   drive = VehicleSystemsComponents.Vehicle.Electric.HybridDrive(P_rated = P_rated, T_max = T_max, ratio = i_output)
   starter = RotationalComponents.Sources.TorqueSource()
-  speed_variator = VehicleSystemsComponents.Vehicle.OutputHybridVariator(speed_commanded = speed_commanded)
+  speed_variator = VehicleSystemsComponents.Vehicle.P2Variator(speed_commanded = speed_commanded)
   axle_router = VehicleSystemsComponents.Vehicle.OutputHybridAxleRouter(rear = rear)
   shaft_speed = RealOutput() {^shaft_speed}
   ratio = RealOutput() {^ratio}
@@ -93,11 +92,8 @@ relations
   starter.tau = starter_torque * start_fraction
   P_start = max(starter.tau * engine.speed.w, 0.0)
   connect(engine.spline, k0.spline_a, starter.spline)
-  if speed_commanded
-    speed_variator.N_ref = N_ref
-  else
-    speed_variator.pedal = cvt_pedal
-  end
+  connect(N_ref, speed_variator.N_ref)
+  connect(cvt_pedal, speed_variator.pedal)
   connect(k0.spline_b, speed_variator.spline_a)
   connect(speed_variator.spline_b, spline)
   connect(speed_variator.support, support)
