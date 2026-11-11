@@ -543,7 +543,7 @@ end
                 meta = match(r"(?s)metadata (\{.*?\})\nend", text)
                 isnothing(meta) && continue
                 links = JSON.parse(meta.captures[1])["_links"]
-                ports = [m.captures[1] for m in eachmatch(r"(?m)^\s*(\w+) = (?:RealInput|RealOutput|Spline)\(", code_only(text))]
+                ports = [m.captures[1] for m in eachmatch(r"(?m)^\s*(\w+) = (?:RealInput|RealOutput|Spline|VehicleSystemsComponents.Vehicle.GasPort)\(", code_only(text))]
                 tags = Set(m.captures[1] for m in eachmatch(r"\{\^(\w+)\}", text))
                 line = count(==('\n'), source[1:component.offset + meta.offset - 1]) + 1
                 for connection in eachmatch(r"connect\(([^)]*)\)\s*\{\^(\w+_wire)\}", code_only(text))
