@@ -247,10 +247,10 @@ routeAlias: how-the-build-works
 - **Clone the course repository** at the tag `lecture-05-dyad-3.5`, on a branch `handson-05`;
   step 0 of the guide has the clicks.
 - **Open the step's starter** in `HandsOn05`. It already holds the car, cycle, driver, fuel meter
-  and everything that can only be written as code, plus its analysis.
+  and initial conditions and diagnostic equations, plus its analysis.
 - Each step lists the blocks to place, every wire, and the numbers to check before you go on.
   About 90 minutes in all.
-- **Use the names given.** The starter's equations read the placed blocks by name.
+- **Use the names given.** The wire tables identify the placed blocks by name.
 - **Plot in the Julia REPL.** After ▷ **Run Analysis**, keep the result: `r1 = solution`.
 - **Fell behind?** Every step names its finished reference; the next starter does not need yours.
 
@@ -274,12 +274,12 @@ Today you work inside the course repository itself. Clone it at the tag lecture-
 make a branch handson-05; step 0 of the guide has the clicks.
 
 Each step starts from a starter model in the HandsOn05 folder. The starter already holds the car,
-the drive cycle, the driver, the fuel meter and everything that can only be written as code, and
+the drive cycle, the driver, the fuel meter and initial conditions and diagnostic equations, and
 it comes with its analysis. You place a block or two from the library and draw a few wires. The
 whole build takes about ninety minutes.
 
-Please use the names given. The starter's equations read the blocks you place by name, so if you
-keep Studio's default name, the error shows up far away from its cause.
+Please use the names given. The wire tables identify the blocks you place by name; matching those names
+keeps each endpoint easy to find.
 
 You plot in the Julia REPL. After each run, keep the result under its own name, r1, r2 and r3, so
 that the comparison at the end can read all three.

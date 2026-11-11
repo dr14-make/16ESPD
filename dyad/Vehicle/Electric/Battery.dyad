@@ -34,7 +34,11 @@ component Battery
   parameter SoC0::Real = 0.9
   "Discharge current, out of p through the load and back into n"
   variable i::Current
+  stored_voltage = RealOutput() {^stored_voltage}
+  stored_current = RealOutput() {^stored_current}
 relations
+  stored_voltage = E
+  stored_current = i
   initial SoC = SoC0
   p.i + n.i = 0
   i = n.i
@@ -43,7 +47,9 @@ relations
 metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/Battery.svg"}},
   "_links": {
-    "SoC": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}}}}
+    "SoC": {"Dyad": {"placement": {"diagram": {"x1": 475, "y1": -25, "x2": 525, "y2": 25, "rot": 270}, "icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}}}},
+    "stored_voltage": {"Dyad": {"placement": {"diagram": {"x1": 275, "y1": 975, "x2": 325, "y2": 1025, "rot": 90}, "icon": {"x1": 250, "y1": 950, "x2": 350, "y2": 1050, "rot": 90}}}},
+    "stored_current": {"Dyad": {"placement": {"diagram": {"x1": 675, "y1": 975, "x2": 725, "y2": 1025, "rot": 90}, "icon": {"x1": 650, "y1": 950, "x2": 750, "y2": 1050, "rot": 90}}}}
   }
 }
 end

@@ -154,7 +154,7 @@ routeAlias: p-position-table
 **Ranking, all three studies:** P0 < P1 ≪ P2 ≈ P3 ≈ P4 <span class="text-xs opacity-70">(< below,
 ≪ far below, ≈ about equal)</span>
 
-<img src="/figures/07-p-position-table.svg" class="w-full" alt="WLTC results per position, each with a 30 kW machine and a 270 V battery. Corrected fuel in L/100 km: P0 4.82, P1 4.51, P2 4.09, P3 4.08, P4 4.09. Saving against H0: 15.74, 21.10, 28.53, 28.65 and 28.53 percent; against the line car: 11.40, 17.03, 24.85, 24.97 and 24.84. Braking energy stored: 1.60, 2.14, 2.64, 2.72 and 2.72 MJ. Engine-off electric driving: 19.7 and 18.8 s for P0 and P1, about 531 to 534 s for P2, P3 and P4."/>
+<img src="/figures/07-p-position-table.svg" class="w-full" alt="WLTC results per position, each with a 30 kW machine and a 270 V battery. Corrected fuel in L/100 km: P0 4.82, P1 4.51, P2 4.09, P3 4.08, P4 4.09. Saving against H0: 15.74, 21.10, 28.53, 28.65 and 28.53 percent; against the line car: 11.40, 17.03, 24.84, 24.97 and 24.84. Braking energy stored: 1.60, 2.14, 2.64, 2.72 and 2.72 MJ. Engine-off electric driving: 19.7 and 19.1 s for P0 and P1, about 531 to 534 s for P2, P3 and P4."/>
 
 <div class="caption">Fuel before and after the battery correction · saving against three
 baselines · braking energy stored and asked for · seconds with the engine off · engine starts</div>
@@ -176,7 +176,7 @@ are within 0.12 points of each other. Our P4 is not the studies' P4 plus P0. It 
 axle, and an ideal crank starter stands in for the P0, only to start the engine, with no second
 machine to boost or recuperate. Our absolute numbers are higher than the bands, for two reasons: our
 baseline idles, as the last slide explained, and our machine is twice the studies' size. We did not
-run the positions at 15 kilowatts. Only P2 has a 15 kilowatt figure, 25.3 percent, from the
+run the positions at 15 kilowatts. Only P2 has a 15 kilowatt figure, 25.6 percent, from the
 machine-size sweep.
 
 The figure below is a table, one row per position, all at 30 kilowatts. It adds what a percentage
@@ -208,7 +208,7 @@ routeAlias: reading-the-table
 - The **ranking**: the coupled positions well below the decoupled ones.
 - The **gap** P0 to P2 or P3: **15–16 percentage points** in Chalmers at 15 kW; ours
   **12.8–12.9** at 30 kW, not like for like.
-- More power: 20–30 kW adds **5–10 %** on P2, P3, P4 (ICCT). Our P2, 15 → 30 kW: **25.3 → 28.5 %**;
+- More power: 20–30 kW adds **5–10 %** on P2, P3, P4 (ICCT). Our P2, 15 → 30 kW: **25.6 → 28.5 %**;
   past 22 kW the machine already covers the regen and the low-power driving.
 
 </div>
@@ -238,7 +238,7 @@ and P3 is 12.9 above. That is not like for like, since the studies' gap is at 15
 ran the positions only at 30. And the effect of power: the ICCT finds that going from 15 to 20 or
 30 kilowatts adds 5 to 10 percent on P2, P3 and P4, while P0 and P1 gain little, because their limit
 is the coupled engine, not the machine. Ours gains less. The machine-size sweep of section 03 takes
-our P2 from 25.3 percent at 15 kilowatts to 28.5 at 30, about 3 points, and most of that by 22
+our P2 from 25.6 percent at 15 kilowatts to 28.5 at 30, about 3 points, and most of that by 22
 kilowatts. Once the machine covers the regen and the low-power driving, more power buys nothing.
 
 Second, what will differ. The baseline: ours idles, while two of the three studies' cars stop. The
@@ -260,7 +260,7 @@ routeAlias: build-charge-sustaining
 <div class="grid grid-cols-[1.1fr_1fr] gap-8 items-start">
 <div>
 
-![The meter in P2HybridWLTC: the powertrain's fuel flow and the vehicle speed wired in; the stored battery power enters as an equation.](/img/lecture-05/step04-charge-sustaining.png)
+![The meter in P2HybridWLTC: the powertrain's fuel flow and the vehicle speed wired in; the stored_power Product multiplies battery voltage E by current i and is wired to the meter.](/img/lecture-05/step04-charge-sustaining.png)
 
 **Given:** the SoC-corrected fuel calculation (`SoCCorrectedFuel`)
 
@@ -273,8 +273,10 @@ routeAlias: build-charge-sustaining
 the end of your three runs (H0, the line car, the hybrid) · compare them with the ready table*
 
 ```txt
-# on every starter: stored power, not terminal
-meter.P_stored = powertrain.E * powertrain.i
+# already wired on every starter: stored power, not terminal
+powertrain.E → stored_power.u1
+powertrain.i → stored_power.u2
+stored_power.y → meter.P_stored
 # noted at t = 1800 s after each run
 meter.fuel_raw   meter.fuel_corr   meter.energy_corr
 ```
@@ -297,13 +299,13 @@ meet once the battery is back</div>
 <!--
 Build 04: compare at equal charge. The hybrid's run must end with the battery as full as it
 started. On the left you see the fuel block on the hybrid test model in Studio. The powertrain's
-fuel flow and the car's speed are wired into it, and the battery power enters as one line of code.
+fuel flow and the car's speed are wired into it, and the battery power arrives through the stored_power Product and its wires.
 
 Every starter already carries the library's fuel block, SoCCorrectedFuel, and step 4 adds nothing to
 it and runs nothing new. After each of your three runs you note the meter's reading at the end of
 the 1800 seconds, and step 4 sets them beside a ready table of the reference values. The block reads
 the engine's fuel flow, the power going into and out of the battery's store, and the distance. The
-code line says how the stored power is computed: E, the battery's open-circuit voltage, which is the
+Product computes the stored power: E, the battery's open-circuit voltage, which is the
 voltage with no current flowing, times i, the current. We use the stored power, not the terminal
 power, because the power at the terminals would count the heat lost in the battery's resistance as
 charge the battery never holds. The block reports the raw fuel, the net battery energy, and the

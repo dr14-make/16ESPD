@@ -46,6 +46,7 @@ component DCMachine
   resistor = ElectricalComponents.Analog.Basic.Resistor(R = R) {^resistor}
   inductor = ElectricalComponents.Analog.Basic.Inductor(L = L) {^inductor}
   emf = VehicleSystemsComponents.Vehicle.Electric.FieldEMF(k = k) {^emf}
+  field_command = BlockComponents.Routing.RealPassThrough() {^field_command}
   rotor = RotationalComponents.Components.Inertia(J = J) {^rotor}
   friction = RotationalComponents.Sources.SignTorque(tau_nominal = -T_f, reg = RotationalComponents.Sources.Regularization.Linear(), w0 = w_reg) {^friction}
   iron = RotationalComponents.Sources.SignTorque(tau_nominal = -K_i, reg = RotationalComponents.Sources.Regularization.Linear(), w0 = w_reg) {^iron}
@@ -117,10 +118,11 @@ relations
   connect(rotor.spline_b, spline) {^id6}
   connect(emf.housing, friction.support, iron.support, windage.support, constant_loss.support, support) {^id7}
   if field_weakening
-    connect(field, emf.field) {^id8}
+    field_command.u = field
   else
-    emf.field = 1.0
+    field_command.u = 1.0
   end
+  connect(field_command.y, emf.field) {^id8}
   i = p.i
   E = emf.v
   tau_em = -emf.tau
@@ -137,6 +139,7 @@ relations
 metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/DCMachine.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1150, "rot": 0}]},
   "_links": {
+    "field_command": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 360, "y1": 250, "y2": 310}}}},
     "id8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 80, "y": 500}, {"x": 80, "y": 320}, {"x": 470, "y": 320}], "E": 2}]}},
     "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 120, "y": 450}], "E": -1}, {"S": 2, "M": [], "E": -1}, {"S": -1, "M": [{"x": 120, "y": 880}], "E": -2}, {"S": 3, "M": [{"x": 360, "y": 800}], "E": -2}, {"S": -2, "M": [], "E": -3}, {"S": -3, "M": [], "E": 6}, {"S": -3, "M": [], "E": -4}, {"S": 4, "M": [{"x": 545, "y": 800}], "E": -4}, {"S": 5, "M": [{"x": 720, "y": 800}, {"x": 720, "y": 880}], "E": -4}], "junctions": [{"x": 120, "y": 800}, {"x": 360, "y": 880}, {"x": 500, "y": 880}, {"x": 545, "y": 880}]}},
     "id6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},

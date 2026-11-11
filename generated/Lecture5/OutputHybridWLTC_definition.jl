@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   OutputHybridWLTC(; name, electric_drive, rear, m, radius, k, Ti, tau_max, tau_engine_peak, tau_brake, dv_wheel, engage_rpm, engage_width_rpm, lock_rpm, lock_width_rpm, N_locked, reduction, eta_start, T_max, i_launch, __overrides)
+   OutputHybridWLTC(; name, electric_drive, m, radius, k, Ti, tau_max, tau_engine_peak, tau_brake, dv_wheel, engage_rpm, engage_width_rpm, lock_rpm, lock_width_rpm, N_locked, reduction, eta_start, T_max, i_launch, __overrides)
 
-P3 output-coupled hybrid WLTC; rear=true selects the P4 through-the-road plant.
+P3 output-coupled hybrid WLTC. Use P4HybridWLTC for the rear-axle plant and differential.
 The manager retains CVT-input torque coordinates. The plant converts its machine
 command to the physical output-side shaft and accounts for starter power separately.
 
@@ -16,7 +16,6 @@ command to the physical output-side shaft and accounts for starter power separat
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `electric_drive`         | Permit electric-only operation (derived; false for crank-coupled P0)                         | --  |   true |
-| `rear`         | Rear machine axle selector (derived; P3 false, P4 true)                         | --  |   false |
 | `m`         | Vehicle and road-load mass (assumed; shared planar benchmark)                         | kg  |   1500.0 |
 | `radius`         | Wheel radius (derived; shared planar benchmark)                         | m  |   0.31 |
 | `k`         | PI gain [N.m per km/h] (assumed; shared WLTC driver)                         | --  |   110.0 |
@@ -35,18 +34,20 @@ command to the physical output-side shaft and accounts for starter power separat
 | `T_max`         | Machine peak torque (ORNL-2011 Sonata comparison anchor)                         | N.m  |   205.0 |
 | `i_launch`         | Launch CVT ratio (derived; SpeedCommandedVariator benchmark)                         | --  |   12.0 |
 
+## Connectors
+
+ * `ratio` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+
 ## Variables
 
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
-| `ratio`         | CVT input-to-output ratio supplied by the position plant                         | --  |
 | `P_stored`         | Net stored-power draw including any separate starter [W]                         | W  |
-| `N_target`         | CVT target blended between electric demand and engine operating line [rpm]                         | --  |
 | `E_charge`         | Stored-energy charging integral [J]; includes regen and load-point charging                         | J  |
 | `E_regen`         | Requested regenerative energy in the manager torque frame [J]                         | J  |
 | `E_friction`         | Actual four-wheel friction-brake dissipation [J]                         | J  |
 """
-@component function OutputHybridWLTC(; name = nothing, var"electric_drive"=true, var"rear"=false, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(110.0), var"Ti"=Float64(1.0), var"tau_engine_peak"=150.233567, var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"N_locked"=Float64(1000.0), var"reduction"=8.193, var"eta_start"=0.7, var"T_max"=Float64(205.0), var"i_launch"=Float64(12.0), var"tau_brake"=nothing, var"tau_max"=nothing, __overrides = Dict{String, Any}())
+@component function OutputHybridWLTC(; name = nothing, var"electric_drive"=true, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(110.0), var"Ti"=Float64(1.0), var"tau_engine_peak"=150.233567, var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"N_locked"=Float64(1000.0), var"reduction"=8.193, var"eta_start"=0.7, var"T_max"=Float64(205.0), var"i_launch"=Float64(12.0), var"tau_brake"=nothing, var"tau_max"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -66,7 +67,6 @@ command to the physical output-side shaft and accounts for starter power separat
 
   ### Keyword argument overrides
   haskey(__overrides, "electric_drive") && (electric_drive = pop!(__overrides, "electric_drive"))
-  haskey(__overrides, "rear") && (rear = pop!(__overrides, "rear"))
   haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
   haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
   haskey(__overrides, "k") && (k = pop!(__overrides, "k"))
@@ -157,25 +157,18 @@ command to the physical output-side shaft and accounts for starter power separat
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
+  append!(__vars, @variables (ratio(t)::Real), [output = true])
 
   ### Variables (declarations)
-  append!(__vars, @variables (ratio(t)::Real), [description = "CVT input-to-output ratio supplied by the position plant"])
   append!(__vars, @variables (P_stored(t)::Real), [description = "Net stored-power draw including any separate starter [W]"])
-  append!(__vars, @variables (N_target(t)::Real), [description = "CVT target blended between electric demand and engine operating line [rpm]"])
   append!(__vars, @variables (E_charge(t)::Real), [description = "Stored-energy charging integral [J]; includes regen and load-point charging"])
   append!(__vars, @variables (E_regen(t)::Real), [description = "Requested regenerative energy in the manager torque frame [J]"])
   append!(__vars, @variables (E_friction(t)::Real), [description = "Actual four-wheel friction-brake dissipation [J]"])
 
   ### Variables (assignments)
-  __ovr_ratio = pop!(__overrides, "ratio", nothing); isnothing(__ovr_ratio) || push!(__eqs, ratio ~ __ovr_ratio)
-  __ovr_ratio__initial = pop!(__overrides, "ratio.initial", nothing); isnothing(__ovr_ratio__initial) || (__initial_conditions[ratio] = __ovr_ratio__initial)
-  __ovr_ratio__guess = pop!(__overrides, "ratio.guess", nothing)
   __ovr_P_stored = pop!(__overrides, "P_stored", nothing); isnothing(__ovr_P_stored) || push!(__eqs, P_stored ~ __ovr_P_stored)
   __ovr_P_stored__initial = pop!(__overrides, "P_stored.initial", nothing); isnothing(__ovr_P_stored__initial) || (__initial_conditions[P_stored] = __ovr_P_stored__initial)
   __ovr_P_stored__guess = pop!(__overrides, "P_stored.guess", nothing)
-  __ovr_N_target = pop!(__overrides, "N_target", nothing); isnothing(__ovr_N_target) || push!(__eqs, N_target ~ __ovr_N_target)
-  __ovr_N_target__initial = pop!(__overrides, "N_target.initial", nothing); isnothing(__ovr_N_target__initial) || (__initial_conditions[N_target] = __ovr_N_target__initial)
-  __ovr_N_target__guess = pop!(__overrides, "N_target.guess", nothing)
   __ovr_E_charge = pop!(__overrides, "E_charge", nothing); isnothing(__ovr_E_charge) || push!(__eqs, E_charge ~ __ovr_E_charge)
   __ovr_E_charge__initial = pop!(__overrides, "E_charge.initial", nothing); isnothing(__ovr_E_charge__initial) || (__initial_conditions[E_charge] = __ovr_E_charge__initial)
   __ovr_E_charge__guess = pop!(__overrides, "E_charge.guess", nothing)
@@ -208,12 +201,9 @@ command to the physical output-side shaft and accounts for starter power separat
   # Subcomponent map of type VehicleSystemsComponents.Vehicle.TorqueToPedal
   map_overrides = __pop_subcomponent_overrides!(__overrides, "map")
   push!(__systems, @named map = VehicleSystemsComponents.Vehicle.TorqueToPedal(; __overrides = map_overrides))
-  # Subcomponent line of type VehicleSystemsComponents.Vehicle.OperatingLine
-  line_overrides = __pop_subcomponent_overrides!(__overrides, "line")
-  push!(__systems, @named line = VehicleSystemsComponents.Vehicle.OperatingLine(; __overrides = line_overrides))
-  # Subcomponent demand_line of type VehicleSystemsComponents.Vehicle.OperatingLine
-  demand_line_overrides = __pop_subcomponent_overrides!(__overrides, "demand_line")
-  push!(__systems, @named demand_line = VehicleSystemsComponents.Vehicle.OperatingLine(; __overrides = demand_line_overrides))
+  # Subcomponent speed_command of type VehicleSystemsComponents.Vehicle.HybridLineSpeedCommand
+  speed_command_overrides = __pop_subcomponent_overrides!(__overrides, "speed_command")
+  push!(__systems, @named speed_command = VehicleSystemsComponents.Vehicle.HybridLineSpeedCommand(; N_locked=N_locked, __overrides = speed_command_overrides))
   # Subcomponent differential of type MultibodyComponents.PlanarMechanics.DifferentialGear
   differential_overrides = __pop_subcomponent_overrides!(__overrides, "differential")
   push!(__systems, @named differential = MultibodyComponents.PlanarMechanics.DifferentialGear(; __overrides = differential_overrides))
@@ -238,25 +228,45 @@ command to the physical output-side shaft and accounts for starter power separat
   # Subcomponent meter of type VehicleSystemsComponents.Vehicle.SoCCorrectedFuel
   meter_overrides = __pop_subcomponent_overrides!(__overrides, "meter")
   push!(__systems, @named meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel(; __overrides = meter_overrides))
-  # Subcomponent rear_differential of type MultibodyComponents.PlanarMechanics.DifferentialGear
-  rear_differential_overrides = __pop_subcomponent_overrides!(__overrides, "rear_differential")
-  if rear
-    push!(__systems, @named rear_differential = MultibodyComponents.PlanarMechanics.DifferentialGear(; __overrides = rear_differential_overrides))
-  end
+  # Subcomponent brakes of type VehicleSystemsComponents.Vehicle.BrakeSplit
+  brakes_overrides = __pop_subcomponent_overrides!(__overrides, "brakes")
+  push!(__systems, @named brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(; gain=Float64(1.0), __overrides = brakes_overrides))
+  # Subcomponent brake_product of type BlockComponents.Math.Product
+  brake_product_overrides = __pop_subcomponent_overrides!(__overrides, "brake_product")
+  push!(__systems, @named brake_product = BlockComponents.Math.Product(; __overrides = brake_product_overrides))
   # Subcomponent powertrain of type VehicleSystemsComponents.Vehicle.OutputHybridPowertrain
   powertrain_overrides = __pop_subcomponent_overrides!(__overrides, "powertrain")
   powertrain_dict = Dict{String, Any}()
   powertrain_dict["speed_variator.i_launch"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(i_launch))
   merge!(powertrain_dict, powertrain_overrides)
-  push!(__systems, @named powertrain = VehicleSystemsComponents.Vehicle.OutputHybridPowertrain(; speed_commanded=true, rear=rear, i_output=reduction, T_max=T_max, __overrides = powertrain_dict))
+  push!(__systems, @named powertrain = VehicleSystemsComponents.Vehicle.OutputHybridPowertrain(; speed_commanded=true, rear=false, i_output=reduction, T_max=T_max, __overrides = powertrain_dict))
+  # Subcomponent stored_power of type BlockComponents.Math.Product
+  stored_power_overrides = __pop_subcomponent_overrides!(__overrides, "stored_power")
+  push!(__systems, @named stored_power = BlockComponents.Math.Product(; __overrides = stored_power_overrides))
+  # Subcomponent starter_power of type BlockComponents.Math.Gain
+  starter_power_overrides = __pop_subcomponent_overrides!(__overrides, "starter_power")
+  push!(__systems, @named starter_power = BlockComponents.Math.Gain(; k=1.0 / eta_start, __overrides = starter_power_overrides))
+  # Subcomponent total_stored_power of type BlockComponents.Math.Add
+  total_stored_power_overrides = __pop_subcomponent_overrides!(__overrides, "total_stored_power")
+  push!(__systems, @named total_stored_power = BlockComponents.Math.Add(; __overrides = total_stored_power_overrides))
+  # Subcomponent engagement_command of type VehicleSystemsComponents.Vehicle.EngagementCommand
+  engagement_command_overrides = __pop_subcomponent_overrides!(__overrides, "engagement_command")
+  push!(__systems, @named engagement_command = VehicleSystemsComponents.Vehicle.EngagementCommand(; engage_rpm=engage_rpm, engage_width_rpm=engage_width_rpm, lock_rpm=lock_rpm, lock_width_rpm=lock_width_rpm, managed=true, __overrides = engagement_command_overrides))
+  # Subcomponent machine_limit of type BlockComponents.Sources.Constant
+  machine_limit_overrides = __pop_subcomponent_overrides!(__overrides, "machine_limit")
+  push!(__systems, @named machine_limit = BlockComponents.Sources.Constant(; k=powertrain.drive.T_max * reduction, __overrides = machine_limit_overrides))
+  # Subcomponent referred_limit of type BlockComponents.Math.Division
+  referred_limit_overrides = __pop_subcomponent_overrides!(__overrides, "referred_limit")
+  push!(__systems, @named referred_limit = BlockComponents.Math.Division(; __overrides = referred_limit_overrides))
+  # Subcomponent unused_pedal of type BlockComponents.Sources.Constant
+  unused_pedal_overrides = __pop_subcomponent_overrides!(__overrides, "unused_pedal")
+  push!(__systems, @named unused_pedal = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = unused_pedal_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
-  isnothing(__ovr_ratio__guess) || (__guesses[ratio] = __ovr_ratio__guess)
   isnothing(__ovr_P_stored__guess) || (__guesses[P_stored] = __ovr_P_stored__guess)
-  isnothing(__ovr_N_target__guess) || (__guesses[N_target] = __ovr_N_target__guess)
   isnothing(__ovr_E_charge__guess) || (__guesses[E_charge] = __ovr_E_charge__guess)
   isnothing(__ovr_E_regen__guess) || (__guesses[E_regen] = __ovr_E_regen__guess)
   isnothing(__ovr_E_friction__guess) || (__guesses[E_friction] = __ovr_E_friction__guess)
@@ -287,35 +297,47 @@ command to the physical output-side shaft and accounts for starter power separat
   __assertions = []
 
   ### Equations
-  push!(__eqs, demand_line.P ~ manager.P_drive)
-  push!(__eqs, N_target ~ max(manager.engine_on * line.N + (1.0 - manager.engine_on) * demand_line.N, N_locked))
-  push!(__eqs, meter.P_stored ~ P_stored)
-  push!(__eqs, car.tau_fl ~ manager.tau_friction * ratio / 2.0)
-  push!(__eqs, car.tau_fr ~ car.tau_fl)
-  push!(__eqs, car.tau_rl ~ 0.0)
-  push!(__eqs, car.tau_rr ~ 0.0)
   push!(__eqs, ModelingToolkit.D_nounits(E_charge) ~ max(-P_stored, 0.0))
   push!(__eqs, ModelingToolkit.D_nounits(E_regen) ~ manager.tau_regen * max(manager.w_shaft, 0.0))
   push!(__eqs, ModelingToolkit.D_nounits(E_friction) ~ car.fl.brake.tau_friction * car.fl.brake.w + car.fr.brake.tau_friction * car.fr.brake.w + car.rl.brake.tau_friction * car.rl.brake.w + car.rr.brake.tau_friction * car.rr.brake.w)
-  push!(__eqs, manager.w_shaft ~ powertrain.speed_variator.w_a)
-  push!(__eqs, manager.T_lim ~ powertrain.drive.T_max * reduction / ratio)
-  push!(__eqs, powertrain.N_ref ~ N_target)
-  push!(__eqs, powertrain.engage ~ manager.engage * max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.speed_variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
-  push!(__eqs, ratio ~ powertrain.speed_variator.ratio)
-  push!(__eqs, P_stored ~ powertrain.E * powertrain.i + powertrain.P_start / eta_start)
+  push!(__eqs, P_stored ~ total_stored_power.y)
   push!(__eqs, connect(car.bus, motion.bus))
   push!(__eqs, connect(trace.y, driver.u_s))
   push!(__eqs, connect(motion.vx, kmh.u, meter.speed))
   push!(__eqs, connect(kmh.y, driver.u_m, manager.v))
   push!(__eqs, connect(no_ff.y, driver.u_ff))
   push!(__eqs, connect(driver.y, manager.tau_dem))
-  push!(__eqs, connect(manager.P_engine, line.P))
+  push!(__eqs, connect(manager.P_engine, speed_command.P_engine))
   push!(__eqs, connect(manager.tau_engine, map.tau))
+  push!(__eqs, connect(manager.P_drive, speed_command.P_drive))
+  push!(__eqs, connect(manager.engine_on, speed_command.engine_on))
   push!(__eqs, connect(differential.flange_left, car.spin_fl))
   push!(__eqs, connect(differential.flange_right, car.spin_fr))
   push!(__eqs, connect(car.steering, straight.spline))
   push!(__eqs, connect(flat.y, roadload.grade))
   push!(__eqs, connect(car.chassis, roadload.chassis))
+  push!(__eqs, connect(manager.tau_friction, brake_product.u1))
+  push!(__eqs, connect(ratio, brake_product.u2))
+  push!(__eqs, connect(brake_product.y, brakes.u))
+  push!(__eqs, connect(brakes.tau_fl, car.tau_fl))
+  push!(__eqs, connect(brakes.tau_fr, car.tau_fr))
+  push!(__eqs, connect(brakes.tau_rl, car.tau_rl))
+  push!(__eqs, connect(brakes.tau_rr, car.tau_rr))
+  push!(__eqs, connect(unused_pedal.y, powertrain.cvt_pedal))
+  push!(__eqs, connect(powertrain.E, stored_power.u1))
+  push!(__eqs, connect(powertrain.i, stored_power.u2))
+  push!(__eqs, connect(powertrain.P_start, starter_power.u))
+  push!(__eqs, connect(starter_power.y, total_stored_power.u2))
+  push!(__eqs, connect(stored_power.y, total_stored_power.u1))
+  push!(__eqs, connect(total_stored_power.y, meter.P_stored))
+  push!(__eqs, connect(powertrain.engine_speed, engagement_command.engine_speed))
+  push!(__eqs, connect(powertrain.shaft_speed, engagement_command.shaft_speed))
+  push!(__eqs, connect(manager.engage, engagement_command.enable))
+  push!(__eqs, connect(engagement_command.y, powertrain.engage))
+  push!(__eqs, connect(machine_limit.y, referred_limit.u1))
+  push!(__eqs, connect(powertrain.ratio, referred_limit.u2))
+  push!(__eqs, connect(powertrain.shaft_speed, manager.w_shaft))
+  push!(__eqs, connect(referred_limit.y, manager.T_lim))
   push!(__eqs, connect(powertrain.SoC, manager.SoC))
   push!(__eqs, connect(powertrain.engine_speed, manager.engine_speed, map.omega))
   push!(__eqs, connect(powertrain.available_torque, manager.available_torque))
@@ -323,17 +345,11 @@ command to the physical output-side shaft and accounts for starter power separat
   push!(__eqs, connect(map.pedal, powertrain.engine_pedal))
   push!(__eqs, connect(manager.engine_on, powertrain.engine_on))
   push!(__eqs, connect(manager.tau_machine, powertrain.tau_ref))
+  push!(__eqs, connect(speed_command.N_ref, powertrain.N_ref))
   push!(__eqs, connect(powertrain.spline, differential.flange_b))
   push!(__eqs, connect(powertrain.support, mount.spline))
   push!(__eqs, connect(powertrain.mdot_fuel, meter.mdot_fuel))
-
-  ### Control Structures
-  if rear
-    push!(__eqs, connect(powertrain.rear_spline, rear_differential.flange_b))
-    push!(__eqs, connect(rear_differential.flange_left, car.spin_rl))
-    push!(__eqs, connect(rear_differential.flange_right, car.spin_rr))
-  else
-  end
+  push!(__eqs, connect(powertrain.ratio, ratio))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

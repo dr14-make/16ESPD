@@ -48,6 +48,8 @@ Connect support to a stationary reference; spline goes to an external differenti
  * `SoC` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `E` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `i` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `shaft_speed` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `ratio` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
 ## Variables
 
@@ -143,6 +145,8 @@ Connect support to a stationary reference; spline goes to an external differenti
   append!(__vars, @variables (SoC(t)::Real), [output = true])
   append!(__vars, @variables (E(t)::Real), [output = true])
   append!(__vars, @variables (i(t)::Real), [output = true])
+  append!(__vars, @variables (shaft_speed(t)::Real), [output = true])
+  append!(__vars, @variables (ratio(t)::Real), [output = true])
 
   ### Variables (declarations)
   append!(__vars, @variables (machine_limit(t)::Real))
@@ -178,16 +182,9 @@ Connect support to a stationary reference; spline goes to an external differenti
   # Subcomponent belt of type VehicleSystemsComponents.Vehicle.BeltDrive
   belt_overrides = __pop_subcomponent_overrides!(__overrides, "belt")
   push!(__systems, @named belt = VehicleSystemsComponents.Vehicle.BeltDrive(; ratio=i_crank, eta=eta_crank, __overrides = belt_overrides))
-  # Subcomponent variator of type VehicleSystemsComponents.Vehicle.ControlledVariator
-  variator_overrides = __pop_subcomponent_overrides!(__overrides, "variator")
-  if !speed_commanded
-    push!(__systems, @named variator = VehicleSystemsComponents.Vehicle.ControlledVariator(; __overrides = variator_overrides))
-  end
-  # Subcomponent speed_variator of type VehicleSystemsComponents.Vehicle.SpeedCommandedVariator
+  # Subcomponent speed_variator of type VehicleSystemsComponents.Vehicle.P2Variator
   speed_variator_overrides = __pop_subcomponent_overrides!(__overrides, "speed_variator")
-  if speed_commanded
-    push!(__systems, @named speed_variator = VehicleSystemsComponents.Vehicle.SpeedCommandedVariator(; __overrides = speed_variator_overrides))
-  end
+  push!(__systems, @named speed_variator = VehicleSystemsComponents.Vehicle.P2Variator(; speed_commanded=speed_commanded, __overrides = speed_variator_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -221,24 +218,18 @@ Connect support to a stationary reference; spline goes to an external differenti
   push!(__eqs, SoC ~ drive.SoC)
   push!(__eqs, E ~ drive.battery.E)
   push!(__eqs, i ~ drive.battery.i)
+  push!(__eqs, connect(speed_variator.w_a, shaft_speed))
+  push!(__eqs, connect(speed_variator.ratio, ratio))
   push!(__eqs, connect(engine_pedal, engine.pedal))
   push!(__eqs, connect(engage, k0.engage))
   push!(__eqs, connect(drive.spline, belt.spline_a))
   push!(__eqs, connect(belt.spline_b, engine.spline, k0.spline_a))
+  push!(__eqs, connect(N_ref, speed_variator.N_ref))
+  push!(__eqs, connect(cvt_pedal, speed_variator.pedal))
+  push!(__eqs, connect(k0.spline_b, speed_variator.spline_a))
+  push!(__eqs, connect(speed_variator.spline_b, spline))
+  push!(__eqs, connect(speed_variator.support, support))
   push!(__eqs, connect(engine.support, belt.support, k0.support, drive.support, support))
-
-  ### Control Structures
-  if speed_commanded
-    push!(__eqs, connect(N_ref, speed_variator.N_ref))
-    push!(__eqs, connect(k0.spline_b, speed_variator.spline_a))
-    push!(__eqs, connect(speed_variator.spline_b, spline))
-    push!(__eqs, connect(speed_variator.support, support))
-  else
-    push!(__eqs, connect(cvt_pedal, variator.pedal))
-    push!(__eqs, connect(k0.spline_b, variator.spline_a))
-    push!(__eqs, connect(variator.spline_b, spline))
-    push!(__eqs, connect(variator.support, support))
-  end
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -1,0 +1,50 @@
+enum BrakeInput =
+  | Magnitude
+  | SignedDriver
+  | FixedEngine
+  | FixedElectric
+
+"""
+Allocate braking to four positive per-wheel torque magnitudes.
+
+Magnitude uses max(u, 0) * gain as total wheel torque. SignedDriver and
+FixedEngine use -min(u, 0) * gain. FixedElectric uses the per-wheel brake
+input referred through ratio; its total is 2 * max(brake, 0) * ratio and
+does not use gain. Fixed modes expose brake and ratio for a fixed-mode bench.
+front_fraction assigns the front axle share; both axles split equally left/right.
+"""
+component BrakeSplit
+  structural parameter input::BrakeInput = BrakeInput.Magnitude()
+  "Positive brake magnitude or signed driver torque [N.m], according to input"
+  u = RealInput() {^u}
+  "Front-left per-wheel braking magnitude [N.m]"
+  tau_fl = RealOutput() {^tau_fl}
+  "Front-right per-wheel braking magnitude [N.m]"
+  tau_fr = RealOutput() {^tau_fr}
+  "Rear-left per-wheel braking magnitude [N.m]"
+  tau_rl = RealOutput() {^tau_rl}
+  "Rear-right per-wheel braking magnitude [N.m]"
+  tau_rr = RealOutput() {^tau_rr}
+  "Input-to-total-wheel torque gain in magnitude and signed-driver modes"
+  parameter gain::Real = 1.0
+  "Per-wheel brake magnitude before the CVT [N.m], used in FixedElectric"
+  brake = RealInput() if input == BrakeInput.FixedEngine() or input == BrakeInput.FixedElectric() {^brake}
+  "Actual CVT input-to-wheel reduction, used in FixedElectric"
+  ratio = RealInput() if input == BrakeInput.FixedEngine() or input == BrakeInput.FixedElectric() {^ratio}
+  variable magnitude::Real
+  "Fraction of total braking assigned to the front axle"
+  parameter front_fraction::Real(min = 0.0, max = 1.0) = 1.0
+relations
+  if input == BrakeInput.FixedElectric()
+    magnitude = 2.0 * max(brake, 0.0) * ratio
+  elseif input == BrakeInput.Magnitude()
+    magnitude = max(u, 0.0) * gain
+  else
+    magnitude = -min(u, 0.0) * gain
+  end
+  tau_fl = magnitude * front_fraction / 2.0
+  tau_fr = tau_fl
+  tau_rl = magnitude * (1.0 - front_fraction) / 2.0
+  tau_rr = tau_rl
+metadata {"_links":{"u":{"Dyad":{"placement":{"diagram":{"x1":-25,"y1":475,"x2":25,"y2":525},"icon":{"x1":-50,"y1":450,"x2":50,"y2":550}}}},"tau_fl":{"Dyad":{"placement":{"diagram":{"x1":975,"y1":175,"x2":1025,"y2":225},"icon":{"x1":950,"y1":150,"x2":1050,"y2":250}}}},"tau_fr":{"Dyad":{"placement":{"diagram":{"x1":975,"y1":375,"x2":1025,"y2":425},"icon":{"x1":950,"y1":350,"x2":1050,"y2":450}}}},"tau_rl":{"Dyad":{"placement":{"diagram":{"x1":975,"y1":575,"x2":1025,"y2":625},"icon":{"x1":950,"y1":550,"x2":1050,"y2":650}}}},"tau_rr":{"Dyad":{"placement":{"diagram":{"x1":975,"y1":775,"x2":1025,"y2":825},"icon":{"x1":950,"y1":750,"x2":1050,"y2":850}}}},"brake":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":175,"y2":225},"icon":{"x1":-25,"x2":25,"y1":175,"y2":225}}}},"ratio":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":775,"y2":825},"icon":{"x1":-25,"x2":25,"y1":775,"y2":825}}}}}}
+end

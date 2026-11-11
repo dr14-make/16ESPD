@@ -182,12 +182,21 @@ lists, completes it to Lecture5.P2WLTC; `electric` stays false for the engine-on
   # Subcomponent machine_gate of type VehicleSystemsComponents.Vehicle.ParameterGate
   machine_gate_overrides = __pop_subcomponent_overrides!(__overrides, "machine_gate")
   push!(__systems, @named machine_gate = VehicleSystemsComponents.Vehicle.ParameterGate(; on=electric, __overrides = machine_gate_overrides))
-  # Subcomponent pedal_command of type BlockComponents.Nonlinear.Limiter
+  # Subcomponent pedal_command of type VehicleSystemsComponents.Vehicle.FixedModePedalCommand
   pedal_command_overrides = __pop_subcomponent_overrides!(__overrides, "pedal_command")
-  push!(__systems, @named pedal_command = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0.0), y_max=Float64(1.0), __overrides = pedal_command_overrides))
+  push!(__systems, @named pedal_command = VehicleSystemsComponents.Vehicle.FixedModePedalCommand(; electric=electric, tau_max=tau_max, __overrides = pedal_command_overrides))
   # Subcomponent unused_command of type BlockComponents.Sources.Constant
   unused_command_overrides = __pop_subcomponent_overrides!(__overrides, "unused_command")
   push!(__systems, @named unused_command = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = unused_command_overrides))
+  # Subcomponent brakes of type VehicleSystemsComponents.Vehicle.BrakeSplit
+  brakes_overrides = __pop_subcomponent_overrides!(__overrides, "brakes")
+  push!(__systems, @named brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(; gain=brake_gain, input=ifelse(electric, VehicleSystemsComponents.Vehicle.BrakeInput.FixedElectric(), VehicleSystemsComponents.Vehicle.BrakeInput.FixedEngine()), __overrides = brakes_overrides))
+  # Subcomponent stored_power of type BlockComponents.Math.Product
+  stored_power_overrides = __pop_subcomponent_overrides!(__overrides, "stored_power")
+  push!(__systems, @named stored_power = BlockComponents.Math.Product(; __overrides = stored_power_overrides))
+  # Subcomponent engagement_command of type VehicleSystemsComponents.Vehicle.EngagementCommand
+  engagement_command_overrides = __pop_subcomponent_overrides!(__overrides, "engagement_command")
+  push!(__systems, @named engagement_command = VehicleSystemsComponents.Vehicle.EngagementCommand(; engage_rpm=engage_rpm, engage_width_rpm=engage_width_rpm, lock_rpm=lock_rpm, lock_width_rpm=lock_width_rpm, enabled=!electric, __overrides = engagement_command_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -217,9 +226,17 @@ lists, completes it to Lecture5.P2WLTC; `electric` stays false for the engine-on
   __assertions = []
 
   ### Equations
-  push!(__eqs, meter.P_stored ~ powertrain.E * powertrain.i)
-  push!(__eqs, car.tau_rl ~ 0.0)
-  push!(__eqs, car.tau_rr ~ 0.0)
+  push!(__eqs, connect(powertrain.E, stored_power.u1))
+  push!(__eqs, connect(powertrain.i, stored_power.u2))
+  push!(__eqs, connect(stored_power.y, meter.P_stored))
+  push!(__eqs, connect(powertrain.engine_speed, engagement_command.engine_speed))
+  push!(__eqs, connect(powertrain.shaft_speed, engagement_command.shaft_speed))
+  push!(__eqs, connect(engagement_command.y, powertrain.engage))
+  push!(__eqs, connect(driver.y, pedal_command.u))
+  push!(__eqs, connect(pedal_command.engine_pedal, powertrain.engine_pedal))
+  push!(__eqs, connect(driver.y, brakes.u))
+  push!(__eqs, connect(split.tau_brake, brakes.brake))
+  push!(__eqs, connect(powertrain.ratio, brakes.ratio))
   push!(__eqs, connect(car.bus, motion.bus))
   push!(__eqs, connect(trace.y, driver.u_s))
   push!(__eqs, connect(motion.vx, kmh.u, meter.speed))
@@ -232,21 +249,10 @@ lists, completes it to Lecture5.P2WLTC; `electric` stays false for the engine-on
   push!(__eqs, connect(car.chassis, roadload.chassis))
   push!(__eqs, connect(driver.y, split.tau_ref))
   push!(__eqs, connect(split.tau_motor, machine_gate.u))
-
-  ### Control Structures
-  if electric
-    push!(__eqs, pedal_command.u ~ driver.y / 150.0)
-    push!(__eqs, powertrain.engine_pedal ~ 0.0)
-    push!(__eqs, powertrain.engage ~ 0.0)
-    push!(__eqs, car.tau_fl ~ split.tau_brake * powertrain.variator.ratio)
-    push!(__eqs, car.tau_fr ~ car.tau_fl)
-  else
-    push!(__eqs, powertrain.engine_pedal ~ min(max(driver.y / tau_max, 0.0), 1.0))
-    push!(__eqs, pedal_command.u ~ powertrain.engine_pedal)
-    push!(__eqs, powertrain.engage ~ max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
-    push!(__eqs, car.tau_fl ~ -min(driver.y, 0.0) * brake_gain / 2.0)
-    push!(__eqs, car.tau_fr ~ car.tau_fl)
-  end
+  push!(__eqs, connect(brakes.tau_fl, car.tau_fl))
+  push!(__eqs, connect(brakes.tau_fr, car.tau_fr))
+  push!(__eqs, connect(brakes.tau_rl, car.tau_rl))
+  push!(__eqs, connect(brakes.tau_rr, car.tau_rr))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

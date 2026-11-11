@@ -170,6 +170,9 @@ ground and the traction drive follow the trace; a charge-depleting run, not a se
   # Subcomponent meter of type VehicleSystemsComponents.Vehicle.SoCCorrectedFuel
   meter_overrides = __pop_subcomponent_overrides!(__overrides, "meter")
   push!(__systems, @named meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel(; __overrides = meter_overrides))
+  # Subcomponent brakes of type VehicleSystemsComponents.Vehicle.BrakeSplit
+  brakes_overrides = __pop_subcomponent_overrides!(__overrides, "brakes")
+  push!(__systems, @named brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(; gain=Float64(2.0), __overrides = brakes_overrides))
   # Subcomponent battery of type VehicleSystemsComponents.Vehicle.Electric.Battery
   battery_overrides = __pop_subcomponent_overrides!(__overrides, "battery")
   push!(__systems, @named battery = VehicleSystemsComponents.Vehicle.Electric.Battery(; E=E_pack, Q_nom=Q_pack, R0=R0_pack, SoC0=SoC0, __overrides = battery_overrides))
@@ -185,6 +188,9 @@ ground and the traction drive follow the trace; a charge-depleting run, not a se
   # Subcomponent no_fuel of type BlockComponents.Sources.Constant
   no_fuel_overrides = __pop_subcomponent_overrides!(__overrides, "no_fuel")
   push!(__systems, @named no_fuel = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = no_fuel_overrides))
+  # Subcomponent stored_power of type BlockComponents.Math.Product
+  stored_power_overrides = __pop_subcomponent_overrides!(__overrides, "stored_power")
+  push!(__systems, @named stored_power = BlockComponents.Math.Product(; __overrides = stored_power_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -214,27 +220,31 @@ ground and the traction drive follow the trace; a charge-depleting run, not a se
   __assertions = []
 
   ### Equations
-  push!(__eqs, car.tau_rl ~ 0.0)
-  push!(__eqs, car.tau_rr ~ 0.0)
-  push!(__eqs, meter.P_stored ~ battery.E * battery.i)
   push!(__eqs, connect(car.bus, motion.bus))
   push!(__eqs, connect(trace.y, driver.u_s))
   push!(__eqs, connect(motion.vx, kmh.u, meter.speed))
   push!(__eqs, connect(kmh.y, driver.u_m, split.v))
   push!(__eqs, connect(no_ff.y, driver.u_ff))
   push!(__eqs, connect(driver.y, split.tau_ref))
-  push!(__eqs, connect(split.tau_brake, car.tau_fl, car.tau_fr))
+  push!(__eqs, connect(split.tau_brake, brakes.u))
+  push!(__eqs, connect(brakes.tau_fl, car.tau_fl))
+  push!(__eqs, connect(brakes.tau_fr, car.tau_fr))
   push!(__eqs, connect(differential.flange_left, car.spin_fl))
   push!(__eqs, connect(differential.flange_right, car.spin_fr))
   push!(__eqs, connect(car.steering, straight.spline))
   push!(__eqs, connect(flat.y, roadload.grade))
   push!(__eqs, connect(car.chassis, roadload.chassis))
+  push!(__eqs, connect(brakes.tau_rl, car.tau_rl))
+  push!(__eqs, connect(brakes.tau_rr, car.tau_rr))
   push!(__eqs, connect(battery.p, aux.p, drive.p))
   push!(__eqs, connect(battery.n, aux.n, drive.n, ground.g))
   push!(__eqs, connect(split.tau_motor, drive.tau_ref))
   push!(__eqs, connect(drive.spline, differential.flange_b))
   push!(__eqs, connect(drive.support, mount.spline))
   push!(__eqs, connect(no_fuel.y, meter.mdot_fuel))
+  push!(__eqs, connect(battery.stored_voltage, stored_power.u1))
+  push!(__eqs, connect(battery.stored_current, stored_power.u2))
+  push!(__eqs, connect(stored_power.y, meter.P_stored))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

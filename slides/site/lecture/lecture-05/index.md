@@ -17,8 +17,8 @@ under an energy manager. Then you compare the fuel at equal battery charge.
 | --- | --- | --- |
 | [0 · Setup](#step-0) | clone the course repository at its tag, compile, start the Julia REPL | 10 min |
 | [1 · The P2 layout](#step-1) | trace `Vehicle.P2Powertrain`; 7 wires into the step-1 starter; run H0 | 20 min |
-| [2 · Operating line](#step-2) | place `OperatingLine`, 2 wires, one flag and 3 equations; run | 20 min |
-| [3 · Energy manager](#step-3) | place `TorqueToPedal`, 7 wires, one flag; run | 30 min |
+| [2 · Operating line](#step-2) | place `LineSpeedCommand`, 4 wires, one flag; run | 20 min |
+| [3 · Energy manager](#step-3) | place `HybridLineSpeedCommand`, 8 wires, one flag; run | 30 min |
 | [4 · Compare](#step-4) | read the fuel of the three cars | 10 min |
 
 An optional [Go further](#go-further) section at the end builds the powertrain from its parts and
@@ -141,16 +141,18 @@ step 2), `start_stop` (energy manager may start and stop the engine, step 3) and
 
 On the canvas, trace engine → K0 → shared machine/variator input → variator → `spline`. All
 housings reach `support`. There is one final drive (inside the variator) and no launch clutch.
+In each finished bench, active input ports are wired; open ports are outputs nothing reads.
+Studio also shows the inactive `engine_on` input when start/stop is off, as explained below.
 
 :::
 
 #### Wire it into the car (10 min)
 
 Open `HandsOn05 › Step1EngineWLTC`. The powertrain is already placed in the middle, set up as the
-conventional car H0. Its engine pedal and K0 request are set in code; no port is wired on the
-canvas yet.
+conventional car H0. The pedal command, K0 engagement command, stored-power Product and
+brake split are already wired; complete the seven connections below.
 
-[![The step-1 starter as it opens: drive cycle, PI driver, torque split and machine gate on the left, the unwired powertrain block in the middle with the fuel meter beside it, the zero constant and pedal limiter loose, the planar car, differential and road load below.](/lecture/lecture-05/img/step01-starter-unwired.png)](/lecture/lecture-05/img/step01-starter-unwired.png)
+[![The step-1 starter as it opens: drive cycle, PI driver, torque split and machine gate on the left, the unwired powertrain block in the middle with the fuel meter beside it, the zero constant and fixed-mode pedal command loose, the planar car, differential and road load below.](/lecture/lecture-05/img/step01-starter-unwired.png)](/lecture/lecture-05/img/step01-starter-unwired.png)
 
 Wire:
 
@@ -174,7 +176,7 @@ Your first canvas wire renames every `connect` tag in the file to `id…` and re
 metadata. That is expected: the model is unchanged, but a text diff against the reference is
 noisy.
 
-What the starter already does, in code: the pedal is the PI driver's output divided by 150 N·m;
+What the starter's wired blocks already do: the pedal is the PI driver's output divided by 150 N·m;
 K0 closes smoothly as the engine passes 1300 rpm (a launch, like a centrifugal clutch) and opens
 again when the shaft falls toward the 800 rpm idle, so the engine does not stall at stops; front
 friction brakes take the negative driver output; and the machine's losses and inertia are zeroed,
@@ -219,7 +221,7 @@ different bench.
 
 :::
 
-[![Studio diagram of the finished step-1 fixture: drive cycle, PI driver, torque split and machine gate in one line into the powertrain's torque request; a zero constant wired to the unused N_ref and engine-torque inputs and the pedal limiter to the CVT pedal; the powertrain turns the planar car's front wheels through the differential, with road load below the car, vehicle-speed feedback to the driver and split, and the fuel meter beside the powertrain](/lecture/lecture-05/img/step01-p2wltc-fixture.png)](/lecture/lecture-05/img/step01-p2wltc-fixture.png)
+[![Studio diagram of the finished step-1 fixture: drive cycle, PI driver, torque split and machine gate in one line into the powertrain's torque request; a zero constant wired to the unused N_ref and engine-torque inputs and the fixed-mode pedal command to the CVT pedal; the powertrain turns the planar car's front wheels through the differential, with road load below the car, vehicle-speed feedback to the driver and split, and the fuel meter beside the powertrain](/lecture/lecture-05/img/step01-p2wltc-fixture.png)](/lecture/lecture-05/img/step01-p2wltc-fixture.png)
 
 [![Engine-only WLTC speed tracking, engine speed, K0 position and slip, and fuel consumption](/lecture/lecture-05/img/step01-engine-only-wltc.png)](/lecture/lecture-05/img/step01-engine-only-wltc.png)
 
@@ -241,9 +243,9 @@ K0 launch, car, road load and brakes. Then measure whether it saves fuel.
 #### Given
 
 `HandsOn05 › Step2OperatingLineWLTC` is the H0 car without the electric-only option, with its
-powertrain still pedal-scheduled (`speed_commanded = false`). It already declares the full-pedal
-power `P_peak = 85000` W, the floor `N_locked = 1000` rpm and the variable `N_target`, the
-commanded transmission input speed.
+powertrain still pedal-scheduled (`speed_commanded = false`). The engine pedal is available as
+`pedal_command.y`. The command block you add contains the 85 kW power calibration, the best-BSFC
+table and the 1000 rpm speed floor; you do not write any equations.
 
 [![The step-2 starter as it opens: the H0 car with its powertrain wired to the wheels, mount and fuel meter, its command inputs open, and the zero constant beside it.](/lecture/lecture-05/img/step02-starter-unwired.png)](/lecture/lecture-05/img/step02-starter-unwired.png)
 
@@ -253,28 +255,21 @@ commanded transmission input speed.
 
    | Name | Library path |
    | --- | --- |
-   | `line` | VehicleSystemsComponents › Vehicle › OperatingLine |
+   | `speed_command` | VehicleSystemsComponents › Vehicle › LineSpeedCommand |
 
-   `OperatingLine` turns a requested power `P` [W] into the best-BSFC engine speed `N` [rpm].
-2. Wire the zero constant to the two inputs the speed-commanded powertrain ignores:
+   `LineSpeedCommand` turns pedal × 85 kW into a best-BSFC speed command, floored at 1000 rpm.
+2. Wire the command and the two inputs the speed-commanded powertrain ignores:
 
    | From | To |
    | --- | --- |
    | `unused_command.y` | `powertrain.cvt_pedal` |
    | `unused_command.y` | `powertrain.engine_torque_ref` |
+   | `pedal_command.y` | `speed_command.pedal` |
+   | `speed_command.N_ref` | `powertrain.N_ref` |
 
 3. Open code view (⇄). In the `powertrain = ...` line, change `speed_commanded = false` to
-   `speed_commanded = true`. Then add these three lines to `relations` (type or paste them; press
-   Esc to dismiss a suggestion before Enter):
-
-   ```dyad
-   line.P = powertrain.engine_pedal * P_peak
-   N_target = max(line.N, N_locked)
-   powertrain.N_ref = N_target
-   ```
-
-   These are equations, not wires: the line's input is a product (pedal × 85 kW) and the target
-   is floored at 1000 rpm, above the 800 rpm idle; no port carries either value.
+   `speed_commanded = true`. This is a structural flag, not an equation to add. Leave the
+   command block's default parameters unchanged.
 4. Save, close the diagram, reopen it, press ▷ and click `Step2OperatingLineWLTCTransient` (second row). In
    the REPL, `r2 = solution`, rerun the setup block with `r = r2`, then plot the operating
    points over the line:
@@ -286,7 +281,7 @@ rows = [parse.(Float64, split(l, ',')) for l in
         readlines(joinpath(dirname(Base.active_project()), "assets", "data", "engine", "bsfc_line.csv"))[2:end]]
 line = reduce(vcat, permutedims.(rows))
 plot!(line[:,2], line[:,3], label="best-BSFC line", linewidth=2)
-plot(t, [at(m.powertrain.engine_speed) .* (30/pi) at(m.N_target)],
+plot(t, [at(m.powertrain.engine_speed) .* (30/pi) at(m.speed_command.N_ref)],
      label=["engine" "commanded"], xlabel="Time [s]", ylabel="Speed [rpm]")
 ```
 
@@ -311,7 +306,7 @@ driver, brakes and K0 lock-up as H0, and no machine assistance or regen.
 
 :::
 
-[![Studio diagram of the finished step-2 fixture: drive cycle, PI driver, operating-line table and a zero constant wired to the powertrain's ignored CVT pedal and engine-torque inputs; the P2 powertrain turns the planar car through the differential, with road load, speed feedback and fuel meter](/lecture/lecture-05/img/step02-operating-line-diagram.png)](/lecture/lecture-05/img/step02-operating-line-diagram.png)
+[![Studio diagram of the finished step-2 fixture: drive cycle, PI driver, LineSpeedCommand and a zero constant wired to the powertrain's ignored CVT pedal and engine-torque inputs; the P2 powertrain turns the planar car through the differential, with road load, speed feedback and fuel meter](/lecture/lecture-05/img/step02-operating-line-diagram.png)](/lecture/lecture-05/img/step02-operating-line-diagram.png)
 
 [![Engine operating points on the best-BSFC line and full-load map for the operating-line WLTC](/lecture/lecture-05/img/step02-operating-points.png)](/lecture/lecture-05/img/step02-operating-points.png)
 
@@ -333,12 +328,14 @@ stop the engine, and keep the battery charged over the cycle.
 The `manager` (`Vehicle.EnergyManager`) is placed and already reads the driver's demand, vehicle
 speed, SoC, engine speed and available engine torque, but none of its commands are wired yet. The
 powertrain is speed-commanded with start/stop still off (`start_stop = false`). The starter
-already holds, in code: the CVT target (the engine's line speed while it runs, a second line
-`demand_line` following the demand power while it is off), K0 engagement gated by the manager,
-the friction-brake split, and driver limits of ±(150.233567 + 205.0) N·m, engine peak plus
-machine limit. The manager is set to `SoC_on = 0.52`, `SoC_off = 0.55` and `P_line_max = 30 kW`.
+already holds K0 engagement gated by the manager, the `BrakeSplit` block and driver limits of
+±(150.233567 + 205.0) N·m, engine peak plus machine limit. The inverse engine map `map`
+(`Vehicle.TorqueToPedal`) is placed: `powertrain.engine_speed` feeds `map.omega`, and `map.pedal`
+feeds `powertrain.engine_pedal`. Only its torque input remains open. The manager is set to
+`SoC_on = 0.52`, `SoC_off = 0.55` and `P_line_max = 30 kW`. You add the CVT command block;
+no equations are needed.
 
-[![The step-3 starter as it opens: the energy manager reading driver demand, speed, SoC, engine speed and available torque, all six of its outputs unwired; the line and demand_line tables above; the powertrain on the wheels with only its CVT pedal fed by the zero constant.](/lecture/lecture-05/img/step03-starter-unwired.png)](/lecture/lecture-05/img/step03-starter-unwired.png)
+[![The step-3 starter as it opens: the energy manager reading driver demand, speed, SoC, engine speed and available torque, all six of its outputs unwired; the HybridLineSpeedCommand to be placed above; the powertrain on the wheels with only its CVT pedal fed by the zero constant.](/lecture/lecture-05/img/step03-starter-unwired.png)](/lecture/lecture-05/img/step03-starter-unwired.png)
 
 #### Do this
 
@@ -352,18 +349,19 @@ machine limit. The manager is set to `SoC_on = 0.52`, `SoC_off = 0.55` and `P_li
 
    | Name | Library path |
    | --- | --- |
-   | `map` | VehicleSystemsComponents › Vehicle › TorqueToPedal |
+   | `speed_command` | VehicleSystemsComponents › Vehicle › HybridLineSpeedCommand |
 
-   The search also lists `HandsOn05 › TorqueToPedal`; drag the one under `Vehicle`.
-   `TorqueToPedal` is the inverse engine map: the pedal that gives a torque `tau` at speed `omega`.
+   This block blends the engine-power line while running with the drive-demand line while off,
+   and floors the speed at 1000 rpm. Leave its defaults unchanged.
 3. Wire the manager's commands:
 
    | From | To |
    | --- | --- |
-   | `manager.P_engine` | `line.P` |
+   | `manager.P_engine` | `speed_command.P_engine` |
+   | `manager.P_drive` | `speed_command.P_drive` |
+   | `manager.engine_on` | `speed_command.engine_on` |
+   | `speed_command.N_ref` | `powertrain.N_ref` |
    | `manager.tau_engine` | `map.tau` |
-   | `powertrain.engine_speed` | `map.omega` |
-   | `map.pedal` | `powertrain.engine_pedal` |
    | `manager.tau_engine` | `powertrain.engine_torque_ref` |
    | `manager.engine_on` | `powertrain.engine_on` |
    | `manager.tau_machine` | `powertrain.tau_ref` |
@@ -394,8 +392,8 @@ recovers energy first and the friction brakes take the rest.
 | Engine starts | 44 |
 | Minimum / mean engine on-time | 1.87 s / 14.72 s |
 | Maximum speed error | 1.32 km/h |
-| K0 slip energy | 111.21 kJ (2.53 kJ per start) |
-| Corrected fuel | 4.08634 L/100 km |
+| K0 slip energy | 111.20 kJ (2.53 kJ per start) |
+| Corrected fuel | 4.08651 L/100 km |
 | SoC start → end | 0.6 → 0.61221 |
 
 All four modes occur and their fractions sum to one. While stopped, the engine burns no fuel
@@ -404,7 +402,7 @@ small amount of fuel is booked to electric mode; settled electric operation burn
 
 :::
 
-[![Studio diagram of the finished step-3 fixture: driver demand into the energy manager, whose outputs drive the torque-to-pedal map and the powertrain; engine speed, available torque and SoC loop back under the manager; operating-line tables above; a zero constant below the powertrain feeds its ignored CVT pedal; planar car, road load and fuel meter as in step 2](/lecture/lecture-05/img/step03-hybrid-diagram.png)](/lecture/lecture-05/img/step03-hybrid-diagram.png)
+[![Studio diagram of the finished step-3 fixture: driver demand into the energy manager, whose outputs drive the torque-to-pedal map and the powertrain; engine speed, available torque and SoC loop back under the manager; HybridLineSpeedCommand above; a zero constant below the powertrain feeds its ignored CVT pedal; planar car, road load and fuel meter as in step 2](/lecture/lecture-05/img/step03-hybrid-diagram.png)](/lecture/lecture-05/img/step03-hybrid-diagram.png)
 
 [![Hybrid WLTC speed tracking, engine starts, K0 position, battery SoC and energy-manager modes](/lecture/lecture-05/img/step03-hybrid-wltc.png)](/lecture/lecture-05/img/step03-hybrid-wltc.png)
 
@@ -431,7 +429,7 @@ The hybrid starts at SoC **0.60000**, finishes at **0.61221**, and stays between
 |---|---:|---:|---:|
 | Conventional H0 | 5.718 | 5.718 | 184.87 |
 | Step-2 line car | 5.437 | 5.437 | 175.81 |
-| Charge-sustaining P2 hybrid | 4.114 | 4.086 | 132.12 |
+| Charge-sustaining P2 hybrid | 4.114 | 4.086 | 132.13 |
 | Lecture-4 BEV | — | — | 47.25 |
 
 H0, the line car and the hybrid share the same driver gains (`k = 110`, `Ti = 1 s`); the wider
@@ -463,7 +461,7 @@ flag, so `P2ElectricWLTC` is a test component that `extends P2WLTC(electric = tr
 | Distance | 3094.989 m |
 | Fuel | 0 |
 | SoC | 0.6 → 0.3864 |
-| Maximum machine speed | 3545.66 rpm |
+| Maximum machine speed | 3545.71 rpm |
 
 Zero fuel is not zero energy: the battery loses charge. The hybrid-drive dyno validates the
 machine to 4000 rpm; the variator schedules up to 6000 rpm, which is not validated here. The
@@ -497,13 +495,13 @@ step-1 fixture at your own powertrain.
 
 The step-3 fixture integrates three energies; read them at 1800 s with `s[m.E_regen][end]` and
 so on. Requested shaft regen `E_regen` is **3.119 MJ**; actual friction-brake dissipation
-`E_friction` is **0.0536 MJ**. The battery accepts `E_charge` = **3.920 MJ** in total, including
+`E_friction` is **0.0542 MJ**. The battery accepts `E_charge` = **3.920 MJ** in total, including
 engine-driven charging. These quantities have different measurement boundaries.
 
 #### Start compensation
 
-Over the first 3 s of starts, the unclamped start-compensation excess peaks at 123.34 N·m for
-2.57 s total; the maximum speed error there is 0.996 km/h. The final machine request peaks at
+Over the first 3 s of starts, the unclamped start-compensation excess peaks at 123.42 N·m for
+2.58 s total; the maximum speed error there is 0.996 km/h. The final machine request peaks at
 205 N·m. The powertrain clamps the sum to the machine's torque and power envelope, so start
 compensation cannot guarantee full driver demand at every start. The torque inverse assumes the
 default engine and air-path calibration.
@@ -522,19 +520,19 @@ samples.
 
 **Line band:** compare actual engine rpm against CSV rpm at actual brake power, within
 **±150 rpm**. For positive demand, power ≥1 kW and command inside `(2.801, 11.999)`, only
-**16.40%** of eligible points meet it. Maximum in-range deviation outside launch saturation is
-**1541.15 rpm**, bounded by 1600 rpm in the test. Including overdrive saturation, the maximum
+**16.39%** of eligible points meet it. Maximum in-range deviation outside launch saturation is
+**1541.62 rpm**, bounded by 1600 rpm in the test. Including overdrive saturation, the maximum
 outside launches is 2307.37 rpm (test bound 2400 rpm). The open-loop pedal calibration is not an
 inverse engine map; most points are not on the line.
 
 | Classification | All points | All fuel |
 | --- | --- | --- |
-| In range, within ±150 rpm | 5.527% | 16.748% |
-| Idle/braking | 47.143% | 8.669% |
-| Launch limit | 3.671% | 6.007% |
+| In range, within ±150 rpm | 5.526% | 16.746% |
+| Idle/braking | 47.144% | 8.670% |
+| Launch limit | 3.671% | 6.005% |
 | Overdrive limit | 15.478% | 25.350% |
-| In range, outside band | 28.182% | 43.226% |
-| Total off line | 94.473% | 83.252% |
+| In range, outside band | 28.182% | 43.229% |
+| Total off line | 94.474% | 83.254% |
 
 Idle/braking takes precedence over saturation. On level stretches of the trace above 12 km/h,
 K0's sampled minimum position is 0.98846; where it is closed, the maximum regularized slip is
@@ -542,7 +540,7 @@ K0's sampled minimum position is 0.98846; where it is closed, the maximum regula
 shaft fall below the 1000 rpm floor, and at low vehicle speed its 50 rpm output-speed floor
 reduces shaft speed enough to open K0 during stops: 37.38 s above 10 km/h, with 4.78 g of fuel
 burned meanwhile. Wherever K0 position exceeds 0.5, the sampled engine-speed minimum is
-815.95 rpm, not a continuous-time lower bound.
+815.92 rpm, not a continuous-time lower bound.
 
 The shallow-slope cruise mask resumes at **54.01 s**, right after a deceleration, while the
 variator's **0.5 s** ratio lag is still settling. At **12.043 km/h** the driver is still braking
@@ -560,7 +558,7 @@ be the duration since `engine_on > 0.5` became true (zero while off). For
 `(on_age .> 3) .& (at(m.manager.on_line) .> 0.9)`, compute
 `abs.(at(m.powertrain.engine_torque) .* at(m.powertrain.engine_speed) .- at(m.manager.P_engine))`.
 Its sample mean and maximum define the power errors below. The fuel-band share is
-`sum(fuel[abs.(at(m.powertrain.engine.N) .- at(m.line.N)) .<= 150]) / sum(fuel)`, with
+`sum(fuel[abs.(at(m.powertrain.engine.N) .- at(m.speed_command.line.N)) .<= 150]) / sum(fuel)`, with
 `fuel = at(m.powertrain.mdot_fuel)`. Outside the first 3 s of each start, on-line-mode engine
 power has mean absolute error **171 W**, maximum **3298 W**. Across the whole run, **58.92%** of
 fuel is burned within ±150 rpm of the line, versus step 2's 16.75%. The inverse map needs no PI

@@ -58,7 +58,7 @@ Our P2: DOH = 30 kW / (30 kW + 85.6 kW) ≈ **26 %**
 </div>
 <div>
 
-<img src="/figures/03-doh-sweep.svg" class="w-full" style="max-height: 24rem" alt="WLTC fuel saving of the P2 hybrid against the conventional car, SoC-corrected, for machines of 8, 15, 22, 30 and 40 kW: 22.2, 25.3, 27.6, 28.5 and 28.4 percent. The saving rises by 3.1 and 2.3 points from 8 to 22 kW, then by 0.9 to 30 kW, and 40 kW saves no more than 30 kW; 15 kW is marked at 25.3 percent, DOH 15 percent, and 30 kW at 28.5 percent, DOH 26 percent. The 8 kW point is hollow: that run falls 2.3 km/h behind the trace and does not end charge-sustaining."/>
+<img src="/figures/03-doh-sweep.svg" class="w-full" style="max-height: 24rem" alt="WLTC fuel saving of the P2 hybrid against the conventional car, SoC-corrected, for machines of 8, 15, 22, 30 and 40 kW: 22.1, 25.6, 27.6, 28.5 and 28.4 percent. The saving rises by 3.5 and 2.0 points from 8 to 22 kW, then by 0.9 to 30 kW, and 40 kW saves no more than 30 kW; 15 kW is marked at 25.6 percent, DOH 15 percent, and 30 kW at 28.5 percent, DOH 26 percent. The 8 kW point is hollow: that run falls 2.4 km/h behind the trace and does not end charge-sustaining."/>
 
 <div class="caption">Machine power across, WLTC fuel saving against the conventional car up. Past
 about 22 kW, a bigger machine saves almost nothing more.</div>
@@ -102,7 +102,7 @@ Each green dot is one run. A filled dot is a run that ends with the battery at i
 the hollow dot is a run that does not, so we flag it.
 
 The ICCT review expects the saving to grow with power. It says that going from 15 to 20 or 30
-kilowatts adds 5 to 10 percent on P2, P3 and P4. Ours grows from 25.3 percent at 15 kilowatts to
+kilowatts adds 5 to 10 percent on P2, P3 and P4. Ours grows from 25.6 percent at 15 kilowatts to
 28.5 at 30, about 3 percentage points, and most of it comes by 22 kilowatts. Then it is flat: 40
 kilowatts saves 28.4, no more than 30. That is the one thing to take from the plot. Once the
 machine covers the regen and the low-power driving, more power buys nothing. The 8 kilowatt point
@@ -128,7 +128,7 @@ routeAlias: micro-to-plug-in
 </div>
 
 <div class="handson">Today's car is a full hybrid. Section 07 compares the positions at its 30 kW;
-at 15 kW, the size the mild-hybrid studies compare at, only P2 ran: 25.3 %, in this sweep.</div>
+at 15 kW, the size the mild-hybrid studies compare at, only P2 ran: 25.6 %, in this sweep.</div>
 
 <!--
 Here is the degree of hybridization in four classes, from small to large.
@@ -160,7 +160,7 @@ section 06 says why that matters for honest numbers.
 
 The green box: today's car is a full hybrid. Section 07 compares the five positions at its 30
 kilowatts. The published studies compare them at 15. Of our runs, only P2 ran at that size, in this
-sweep, and it saves 25.3 percent.
+sweep, and it saves 25.6 percent.
 -->
 
 ---

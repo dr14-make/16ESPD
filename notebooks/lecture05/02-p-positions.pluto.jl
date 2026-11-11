@@ -52,8 +52,8 @@ md"""
 
 For a reference fuel consumption ``F_b``, saving is ``100(1-F_{corr}/F_b)``.
 
-1. **H0 = 5.7175350775 L/100 km:** the engine-only car with its scheduled transmission.
-2. **Line = 5.4374434065 L/100 km:** the engine-only best-BSFC-line reference. The difference
+1. **H0 = 5.7175359101 L/100 km:** the engine-only car with its scheduled transmission.
+2. **Line = 5.4374449223 L/100 km:** the engine-only best-BSFC-line reference. The difference
    from H0 includes the operating-point benefit; it is not all an electric-machine benefit.
 3. **Line minus measured idle fuel:** subtract only the line run's measured idle fuel,
    in L/100 km, from Line (fuel at engine power ≤1 kW, including low-power creep).

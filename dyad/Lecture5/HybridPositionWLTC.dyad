@@ -32,55 +32,56 @@ partial component HybridPositionWLTC
   parameter N_locked::Real = 1000.0
   "Permit electric-only operation (derived; false for crank-coupled P0)"
   structural parameter electric_drive::Boolean = true
-  trace = VehicleSystemsComponents.Vehicle.DriveCycle()
-  driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_brake)
-  no_ff = BlockComponents.Sources.Constant(k = 0.0)
-  kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour()
-  manager = VehicleSystemsComponents.Vehicle.EnergyManager(mapped_limits = true, geared_limit = true, electric_drive = electric_drive, SoC_on = 0.52, SoC_off = 0.55, P_line_max = 30.0e3)
-  map = VehicleSystemsComponents.Vehicle.TorqueToPedal()
-  line = VehicleSystemsComponents.Vehicle.OperatingLine()
-  demand_line = VehicleSystemsComponents.Vehicle.OperatingLine()
-  differential = MultibodyComponents.PlanarMechanics.DifferentialGear()
-  mount = RotationalComponents.Components.Fixed()
-  straight = RotationalComponents.Components.Fixed()
-  flat = BlockComponents.Sources.Constant(k = 0.0)
-  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius)
-  motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion()
-  roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m)
-  meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel()
+  trace = VehicleSystemsComponents.Vehicle.DriveCycle() {^trace}
+  driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_brake) {^driver}
+  no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
+  kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
+  manager = VehicleSystemsComponents.Vehicle.EnergyManager(mapped_limits = true, geared_limit = true, electric_drive = electric_drive, SoC_on = 0.52, SoC_off = 0.55, P_line_max = 30.0e3) {^manager}
+  map = VehicleSystemsComponents.Vehicle.TorqueToPedal() {^map}
+  speed_command = VehicleSystemsComponents.Vehicle.HybridLineSpeedCommand(N_locked = N_locked) {^speed_command}
+  differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
+  mount = RotationalComponents.Components.Fixed() {^mount}
+  straight = RotationalComponents.Components.Fixed() {^straight}
+  flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius) {^car}
+  motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
+  roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
+  meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel() {^meter}
   "CVT input-to-output ratio supplied by the position plant"
-  variable ratio::Real
+  ratio = RealOutput() {^ratio}
   "Net stored-power draw including any separate starter [W]"
   variable P_stored::Power
-  "CVT target blended between electric demand and engine operating line [rpm]"
-  variable N_target::Real
   "Stored-energy charging integral [J]; includes regen and load-point charging"
   variable E_charge::Energy
   "Requested regenerative energy in the manager torque frame [J]"
   variable E_regen::Energy
   "Actual four-wheel friction-brake dissipation [J]"
   variable E_friction::Energy
+  brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(gain = 1.0) {^brakes}
+  brake_product = BlockComponents.Math.Product() {^brake_product}
 relations
-  connect(car.bus, motion.bus)
-  connect(trace.y, driver.u_s)
-  connect(motion.vx, kmh.u, meter.speed)
-  connect(kmh.y, driver.u_m, manager.v)
-  connect(no_ff.y, driver.u_ff)
-  connect(driver.y, manager.tau_dem)
-  connect(manager.P_engine, line.P)
-  connect(manager.tau_engine, map.tau)
-  demand_line.P = manager.P_drive
-  N_target = max(manager.engine_on * line.N + (1.0 - manager.engine_on) * demand_line.N, N_locked)
-  connect(differential.flange_left, car.spin_fl)
-  connect(differential.flange_right, car.spin_fr)
-  connect(car.steering, straight.spline)
-  connect(flat.y, roadload.grade)
-  connect(car.chassis, roadload.chassis)
-  meter.P_stored = P_stored
-  car.tau_fl = manager.tau_friction * ratio / 2.0
-  car.tau_fr = car.tau_fl
-  car.tau_rl = 0.0
-  car.tau_rr = 0.0
+  connect(car.bus, motion.bus) {^bus_wire}
+  connect(trace.y, driver.u_s) {^trace_wire}
+  connect(motion.vx, kmh.u, meter.speed) {^vx_wire}
+  connect(kmh.y, driver.u_m, manager.v) {^kmh_wire}
+  connect(no_ff.y, driver.u_ff) {^ff_wire}
+  connect(driver.y, manager.tau_dem) {^dem_wire}
+  connect(manager.P_engine, speed_command.P_engine) {^line_wire}
+  connect(manager.tau_engine, map.tau) {^map_torque_wire}
+  connect(manager.P_drive, speed_command.P_drive) {^drive_power_wire}
+  connect(manager.engine_on, speed_command.engine_on) {^line_on_wire}
+  connect(differential.flange_left, car.spin_fl) {^left_wire}
+  connect(differential.flange_right, car.spin_fr) {^right_wire}
+  connect(car.steering, straight.spline) {^steering_wire}
+  connect(flat.y, roadload.grade) {^grade_wire}
+  connect(car.chassis, roadload.chassis) {^chassis_wire}
+  connect(manager.tau_friction, brake_product.u1) {^friction_input_wire}
+  connect(ratio, brake_product.u2) {^brake_ratio_wire}
+  connect(brake_product.y, brakes.u) {^brake_demand_wire}
+  connect(brakes.tau_fl, car.tau_fl) {^brake_fl_wire}
+  connect(brakes.tau_fr, car.tau_fr) {^brake_fr_wire}
+  connect(brakes.tau_rl, car.tau_rl) {^brake_rl_wire}
+  connect(brakes.tau_rr, car.tau_rr) {^brake_rr_wire}
   der(E_charge) = max(-P_stored, 0.0)
   der(E_regen) = manager.tau_regen * max(manager.w_shaft, 0.0)
   der(E_friction) = car.fl.brake.tau_friction * car.fl.brake.w + car.fr.brake.tau_friction * car.fr.brake.w + car.rl.brake.tau_friction * car.rl.brake.w + car.rr.brake.tau_friction * car.rr.brake.w
@@ -103,4 +104,5 @@ relations
   initial car.fr.brake.tau_actual = 0.0
   initial car.rl.brake.tau_actual = 0.0
   initial car.rr.brake.tau_actual = 0.0
+metadata {"_links":{"brake_product":{"Dyad":{"placement":{"diagram":{"x1":160,"y1":460,"x2":240,"y2":540}}}},"friction_input_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":343.0,"y":354.0},{"x":343.0,"y":476.0}],"S":1}],"renderStyle":"standard"}},"brake_ratio_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":78.0,"y":500.0},{"x":78.0,"y":524.0}],"S":1}],"renderStyle":"standard"}},"brake_demand_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":272.0,"y":500.0},{"x":272.0,"y":640.0}],"S":1}],"renderStyle":"standard"}},"ratio":{"Dyad":{"placement":{"diagram":{"x1":-20,"y1":480,"x2":20,"y2":520},"icon":{"x1":460,"y1":-40,"x2":540,"y2":40}}}},"trace":{"Dyad":{"placement":{"diagram":{"x1":0,"y1":140,"x2":70,"y2":210}}}},"driver":{"Dyad":{"placement":{"diagram":{"x1":130,"y1":150.7,"x2":220,"y2":240.7}}}},"no_ff":{"Dyad":{"placement":{"diagram":{"x1":100,"y1":30,"x2":160,"y2":90}}}},"kmh":{"Dyad":{"placement":{"diagram":{"x1":10,"y1":245,"x2":80,"y2":315}}}},"manager":{"Dyad":{"placement":{"diagram":{"x1":270,"y1":120,"x2":530,"y2":380}}}},"map":{"Dyad":{"placement":{"diagram":{"x1":575,"y1":152.6,"x2":635,"y2":202.6}}}},"speed_command":{"Dyad":{"placement":{"diagram":{"x1":550,"x2":650,"y1":20,"y2":100}}}},"differential":{"Dyad":{"placement":{"diagram":{"x1":640,"y1":740,"x2":880,"y2":500}}}},"mount":{"Dyad":{"placement":{"diagram":{"x1":675,"y1":435,"x2":725,"y2":485}}}},"straight":{"Dyad":{"placement":{"diagram":{"x1":735,"y1":745,"x2":785,"y2":795,"rot":180}}}},"flat":{"Dyad":{"placement":{"diagram":{"x1":480,"y1":880,"x2":520,"y2":920}}}},"car":{"Dyad":{"placement":{"diagram":{"x1":690,"y1":800,"x2":830,"y2":940}}}},"motion":{"Dyad":{"placement":{"diagram":{"x1":880,"y1":810,"x2":1000,"y2":930}}}},"roadload":{"Dyad":{"placement":{"diagram":{"x1":560,"y1":865,"x2":630,"y2":935}}}},"meter":{"Dyad":{"placement":{"diagram":{"x1":930,"y1":16,"x2":1000,"y2":86}}}},"brakes":{"Dyad":{"placement":{"diagram":{"x1":300,"x2":420,"y1":580,"y2":700}}}},"bus_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"trace_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":110,"y":175},{"x":110,"y":175.0}],"E":2}],"renderStyle":"standard"}},"vx_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":1015,"y":841.2},{"x":1015,"y":990},{"x":-5,"y":990},{"x":-5,"y":280}],"E":2},{"S":1,"M":[{"x":1015,"y":841.2},{"x":1015,"y":110},{"x":920,"y":110},{"x":920,"y":72}],"E":3}],"renderStyle":"standard"}},"kmh_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":105,"y":280},{"x":105,"y":216.4}],"E":2},{"S":1,"M":[{"x":252,"y":280},{"x":252,"y":250}],"E":3}],"renderStyle":"standard"}},"ff_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":175,"y":60}],"E":2}],"renderStyle":"standard"}},"dem_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":240,"y":195.7},{"x":240,"y":159}],"E":2}],"renderStyle":"standard"}},"line_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":540.0,"y":146.0},{"x":540.0,"y":36.0}],"S":1}],"renderStyle":"standard"}},"map_torque_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"drive_power_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":475.0,"y":120.0},{"x":475.0,"y":60.0}],"S":1}],"renderStyle":"standard"}},"line_on_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":540.0,"y":229.2},{"x":540.0,"y":84.0}],"S":1}],"renderStyle":"standard"}},"left_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":615,"y":620},{"x":615,"y":770},{"x":655,"y":770},{"x":655,"y":835}],"E":2}],"renderStyle":"standard"}},"right_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":860,"y":620},{"x":860,"y":835}],"E":2}],"renderStyle":"standard"}},"steering_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"grade_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"chassis_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":645,"y":940},{"x":645,"y":900}],"E":2}],"renderStyle":"standard"}},"brake_fl_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":555.0,"y":604.0},{"x":555.0,"y":821.0}],"S":1}],"renderStyle":"standard"}},"brake_fr_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":625.0,"y":628.0},{"x":625.0,"y":821.0}],"S":1}],"renderStyle":"standard"}},"brake_rl_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":555.0,"y":652.0},{"x":555.0,"y":891.0}],"S":1}],"renderStyle":"standard"}},"brake_rr_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":625.0,"y":676.0},{"x":625.0,"y":891.0}],"S":1}],"renderStyle":"standard"}}}}
 end

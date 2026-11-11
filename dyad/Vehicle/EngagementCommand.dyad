@@ -1,0 +1,25 @@
+"Launch/lock K0 request, optionally gated by the energy manager or disabled in fixed electric mode."
+component EngagementCommand
+  parameter engage_rpm::Real = 1300.0
+  parameter engage_width_rpm::Real(min = eps(Float64)) = 120.0
+  parameter lock_rpm::Real = 840.0
+  parameter lock_width_rpm::Real(min = eps(Float64)) = 12.0
+  structural parameter enabled::Boolean = true
+  structural parameter managed::Boolean = false
+  engine_speed = RealInput() {^engine_speed}
+  shaft_speed = RealInput() {^shaft_speed}
+  enable = RealInput() if managed {^enable}
+  y = RealOutput() {^y}
+  variable ramp::Real
+relations
+  ramp = max(0.5 * (1 + tanh((engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((shaft_speed * 30 / pi - lock_rpm) / lock_width_rpm)))
+  if !enabled
+    y = 0.0
+  elseif managed
+    y = enable * ramp
+  else
+    y = ramp
+  end
+metadata {"_links":{"engine_speed":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":225,"y2":275},"icon":{"x1":-50,"x2":50,"y1":200,"y2":300}}}},"shaft_speed":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":725,"y2":775},"icon":{"x1":-50,"x2":50,"y1":700,"y2":800}}}},"enable":{"Dyad":{"placement":{"diagram":{"x1":475,"x2":525,"y1":975,"y2":1025,"rot":270},"icon":{"x1":450,"x2":550,"y1":950,"y2":1050,"rot":270}}}},"y":{"Dyad":{"placement":{"diagram":{"x1":975,"x2":1025,"y1":475,"y2":525},"icon":{"x1":950,"x2":1050,"y1":450,"y2":550}}}}}}
+end
+

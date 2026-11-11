@@ -168,7 +168,7 @@ component EnergyManager
   "Braking part of the demand [N.m]"
   variable tau_brake_demand::Torque
   "Driving demand power [W]"
-  variable P_drive::Power
+  P_drive = RealOutput() {^P_drive}
   "Engine request after the charge shift, which stops at P_line_max [W]"
   variable P_shift::Power
   "Engine power ceiling: P_peak, or while boosting what the machine cannot cover above P_line_max [W]"
@@ -284,6 +284,7 @@ metadata {
     "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
   },
   "_links": {
+    "P_drive": {"Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": -50, "y2": 50}, "diagram": {"x1": 475, "x2": 525, "y1": -25, "y2": 25}}}},
     "tau_dem": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 100, "x2": 50, "y2": 200}, "diagram": {"x1": -25, "y1": 125, "x2": 25, "y2": 175}}}},
     "w_shaft": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 275, "x2": 50, "y2": 375}, "diagram": {"x1": -25, "y1": 300, "x2": 25, "y2": 350}}}},
     "v": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -25, "y1": 475, "x2": 25, "y2": 525}}}},

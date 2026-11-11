@@ -151,7 +151,7 @@ export P1HybridWLTCTransient__System
   var"specialization"::SpecializationLevel.Type = SpecializationLevel.Despecialize()
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
-  # P1 direct-crank 30 kW hybrid WLTC; ideal crank coupling, shared brake ceiling and 540 N.m K0 capacity.
+  # P1 direct-crank 30 kW hybrid WLTC; unit crank ratio and efficiency, shared brake ceiling and 540 N.m K0 capacity.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture5.P1HybridWLTC(; name=:P1HybridWLTC)
   __system::System = P1HybridWLTCTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file")
 end

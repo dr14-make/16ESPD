@@ -362,17 +362,19 @@ brake sharing · `TorqueToPedal`, the engine map read backwards: torque in, peda
 </div>
 <div class="stack">
 
-*In the starter `Step3HybridWLTC`: set `start_stop = true` · place `TorqueToPedal` as `map` ·
-draw 7 wires from the manager's commands to the line, the map and the powertrain · run the WLTC*
+*30 min · in `Step3HybridWLTC`: set `start_stop = true` · place `HybridLineSpeedCommand` as
+`speed_command` · 8 canvas wires · no equations to type · run the WLTC*
 
 ```txt
-manager.P_engine        → line.P
-manager.tau_engine      → map.tau, powertrain.engine_torque_ref
-powertrain.engine_speed → map.omega
-map.pedal               → powertrain.engine_pedal
-manager.engine_on       → powertrain.engine_on
-manager.tau_machine     → powertrain.tau_ref
+manager.P_engine    → speed_command.P_engine
+manager.P_drive     → speed_command.P_drive
+manager.engine_on   → speed_command.engine_on, powertrain.engine_on
+speed_command.N_ref → powertrain.N_ref
+manager.tau_engine  → map.tau, powertrain.engine_torque_ref
+manager.tau_machine → powertrain.tau_ref
 ```
+
+The starter already wires engine speed → `map.omega` and `map.pedal` → engine pedal.
 
 <div class="handson">✓ over the WLTC the modes switch without chatter: <b>44</b> engine starts, the
 shortest on for <b>1.9 s</b> · SoC from 0.600 down to <b>0.513</b>, back up to <b>0.613</b> ·
@@ -398,13 +400,14 @@ the state of charge, for charging. It also has Lecture 4's regen brake sharing.
 
 The starter already holds the full hybrid drive, with its losses, its 30 kilowatts and its 1.4
 kilowatt-hours, and the manager, set up and reading its measurements. What you add, as the italic
-line says, are its commands. First you switch on start and stop in the powertrain. Then you place
-an inverse engine map, TorqueToPedal, which turns the engine torque the manager wants into a pedal
-position. Then you draw seven wires: the engine power to the operating line, the engine torque to
-the map and to the powertrain, the engine speed to the map, the map's pedal to the engine, the
-engine-on command, and the machine torque. The manager's modes then switch the engine on, close K0
-and pick the CVT's speed target, and its friction-brake share goes to the wheels through the CVT's
-ratio.
+line says, are its commands. First switch on start and stop in the powertrain. The inverse engine
+map, TorqueToPedal, is already placed, with engine-speed feedback and pedal output wired. Place
+Vehicle.HybridLineSpeedCommand as speed_command. It contains both operating-line tables and
+blends engine-request speed while running with drive-demand speed while off, floored at 1000 rpm.
+Draw eight canvas wires as listed: three manager signals into the command, its N_ref to the
+powertrain, engine torque to map and powertrain, engine-on to the powertrain, and machine torque.
+No equations to type; the build stays at 30 minutes. The modes switch the engine on, close K0 and
+pick the CVT target; BrakeSplit carries the friction-brake share to the wheels through the ratio.
 
 The checkpoint: over the WLTC the modes switch without chatter, and the state of charge stays in
 its window. The reference run starts the engine 44 times, and the shortest time the engine stays on

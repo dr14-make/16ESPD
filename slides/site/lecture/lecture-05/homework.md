@@ -73,11 +73,10 @@ input wired. These are the ends it leaves open for you:
 | `differential.flange_b` | the traction drive's output shaft, which turns the front wheels |
 | `mount.spline` | every powertrain housing (`support`) |
 | `meter.mdot_fuel` | the engine's fuel mass flow [kg/s] |
-| `meter.P_stored` | the power out of the battery's store [W], by an equation, not a wire |
+| `meter.P_stored` | the power out of the battery's store [W], from a Product block |
 
-`meter.P_stored` has no port on the battery to wire to: write it as an equation in your
-component's `relations`, `meter.P_stored = battery.E * battery.i`, with `battery` your pack's
-name.
+Place a `BlockComponents.Math.Product` as `stored_power`. Wire your pack's `E` to
+`stored_power.u1`, its `i` to `stored_power.u2`, and `stored_power.y` to `meter.P_stored`.
 
 Its parameters, which you leave at their defaults: driver `k = 50` N·m per km/h, `Ti = 2` s,
 `tau_max = 250` N·m (the traction machine's peak torque); split `ratio = 8.193` (the traction

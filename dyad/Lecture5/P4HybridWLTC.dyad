@@ -1,6 +1,12 @@
-"P4 rear-axle hybrid WLTC with the output bench's launch-referred drive ceiling and shared brake ceiling."
+"P4 rear-axle hybrid WLTC with launch-referred drive capacity, plant-bound planning limit and shared brake ceiling."
 test component P4HybridWLTC
-  extends OutputHybridWLTC(rear = true)
+  extends OutputHybridWLTC(powertrain(rear = true))
+  rear_differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^rear_differential}
+relations
+  connect(powertrain.rear_spline, rear_differential.flange_b) {^rear_spline_wire}
+  connect(rear_differential.flange_left, car.spin_rl) {^rear_left_wire}
+  connect(rear_differential.flange_right, car.spin_rr) {^rear_right_wire}
+metadata {"_links":{"rear_differential":{"Dyad":{"placement":{"diagram":{"x1":440,"x2":620,"y1":720,"y2":860}}}},"rear_left_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":560.5,"y":790.0},{"x":560.5,"y":905.0}],"S":1}],"renderStyle":"standard"}},"rear_right_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":729.5,"y":790.0},{"x":729.5,"y":905.0}],"S":1}],"renderStyle":"standard"}},"rear_spline_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":705.0,"y":151.71428571428572},{"x":705.0,"y":867.0}],"S":1}],"renderStyle":"standard"}}}}
 end
 
 "Full WLTC P4 position analysis (derived; shared duration and solver)."

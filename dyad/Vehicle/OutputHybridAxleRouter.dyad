@@ -1,0 +1,24 @@
+"""
+Ideal P3/P4 shaft selector with a fixed connector topology. The selected axle
+shares the machine angle and balances its torque. In P4 the front is torque-free.
+No speed or angle constraint couples the front and rear axles.
+In P3 rear_axle is grounded in angle and must stay externally unconnected:
+its unconnected flow closes torque. Wiring it to a rear differential locks that axle;
+it is not a torque-free output when connected.
+"""
+component OutputHybridAxleRouter
+  structural parameter rear::Boolean = false
+  machine = Spline()
+  front = Spline()
+  rear_axle = Spline()
+relations
+  if rear
+    machine.phi = rear_axle.phi
+    machine.tau + rear_axle.tau = 0.0
+    front.tau = 0.0
+  else
+    machine.phi = front.phi
+    machine.tau + front.tau = 0.0
+    rear_axle.phi = 0.0
+  end
+end

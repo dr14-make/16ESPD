@@ -5,7 +5,16 @@ const POSITION_ENGINE_PEAK = Ref{Float64}(NaN)
 
 using .PPositionTable
 
+@testset "P3 with unconnected rear spline" begin
+    run = VehicleSystemsComponents.Lecture5.OutputHybridWLTCTransient(stop = 0.1)
+    m, s = symbolic_container(run), run.sol
+    @test string(s.retcode) == "Success"
+    @test maximum(abs, s[m.powertrain.rear_spline.tau]) < 1e-12
+    @test maximum(abs, s[m.powertrain.rear_spline.phi]) < 1e-12
+end
+
 @testset "Belt power directions" begin
+
     V = VehicleSystemsComponents.Vehicle
     for demand in (40.0, -40.0)
         bench = V.TestBeltDrive(; name = :bench, demand)
@@ -58,7 +67,10 @@ end
     @test p2.E_recovered_MJ < min(p3.E_recovered_MJ, p4.E_recovered_MJ)
     @test p3.electric_drive_s > 0
     @test p4.electric_drive_s > 0
-    @test p2.fuel_corr_L100 ≈ 4.0863406523 atol = 1e-9 rtol = 0
+    for (row, pin) in zip(rows, (4.8178093394, 4.5113793080, 4.0865140557,
+            4.0794804768, 4.0865885501))
+        @test row.fuel_corr_L100 ≈ pin atol = 1e-9 rtol = 0
+    end
 
     @testset "P4 live run matches pin" begin
         run = VehicleSystemsComponents.Lecture5.P4HybridWLTCTransient()
@@ -95,8 +107,26 @@ end
         value
     end
     resolved(model, p) = parse(Float64, string(resolved_value(model, p)))
+    # Planning capacity must follow a machine-size override at the plant interface.
+    for constructor in (L.CoupledHybridWLTC, L.OutputHybridWLTC, L.P4HybridWLTC)
+        nominal = constructor(name = :nominal)
+        smaller = constructor(name = :smaller,
+            __overrides = Dict{String,Any}("powertrain.drive.T_max" => 20.0))
+        @test resolved(smaller, smaller.machine_limit.k) < resolved(nominal, nominal.machine_limit.k)
+        @test resolved(smaller, smaller.machine_limit.k) / resolved(nominal, nominal.machine_limit.k) ≈
+            20.0 / resolved(nominal, nominal.powertrain.drive.T_max)
+        analysis = getproperty(L, Symbol(string(nameof(constructor)) * "Transient"))
+        run = analysis(model = smaller, stop = 0.1)
+        m = symbolic_container(run)
+        @test string(run.sol.retcode) == "Success"
+        expected = 20.0 * (constructor === L.CoupledHybridWLTC ?
+            resolved(smaller, smaller.i_crank) * resolved(smaller, smaller.eta_crank) :
+            resolved(smaller, smaller.reduction) / run.sol(0.0, idxs = m.powertrain.ratio))
+        @test run.sol(0.0, idxs = m.manager.T_lim) ≈ expected
+    end
     paths = Tuple[(p,) for p in (:m, :radius, :k, :Ti, :tau_brake, :dv_wheel,
-        :engage_rpm, :engage_width_rpm, :lock_rpm, :lock_width_rpm, :N_locked)]
+        :engage_rpm, :engage_width_rpm, :lock_rpm, :lock_width_rpm)]
+    push!(paths, (:speed_command, :N_locked))
     append!(paths, [(:manager, p) for p in (:SoC_on, :SoC_off, :SoC_full,
         :dSoC_full, :P_line_max, :P_on, :P_off, :P_chg, :P_max, :P_regen, :v_fade,
         :tau_coupled_on, :tau_coupled_off, :dP_boost, :P_peak, :P_dis,

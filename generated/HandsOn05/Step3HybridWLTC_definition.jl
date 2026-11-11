@@ -5,11 +5,12 @@
 
 
 @doc Markdown.doc"""
-   Step3HybridWLTC(; name, m, radius, k, Ti, tau_max, tau_brake, dv_wheel, engage_rpm, engage_width_rpm, lock_rpm, lock_width_rpm, N_locked, __overrides)
+   Step3HybridWLTC(; name, m, radius, k, Ti, tau_max, tau_brake, dv_wheel, engage_rpm, engage_width_rpm, lock_rpm, lock_width_rpm, __overrides)
 
 Hands-on 05 step 3 starter: the hybrid fixture with the energy manager reading its measurements but
-commanding nothing yet, start/stop off and no torque-to-pedal map. Placing TorqueToPedal as
-`map`, wiring the manager's commands as the guide lists and setting `start_stop = true`
+commanding nothing yet, start/stop off and the torque-to-pedal map feedback prewired.
+Placing HybridLineSpeedCommand as `speed_command`, wiring the manager's commands and
+setting `start_stop = true`
 completes it to Lecture5.P2HybridWLTC.
 
 ## Parameters:
@@ -27,18 +28,16 @@ completes it to Lecture5.P2HybridWLTC.
 | `engage_width_rpm`         | Width of K0 launch engagement [rpm] (assumed; step 2)                         | --  |   120.0 |
 | `lock_rpm`         | Center of machine-side K0 lock-up [rpm] (assumed; step 2)                         | --  |   840.0 |
 | `lock_width_rpm`         | Width of machine-side K0 lock-up [rpm] (assumed; step 2)                         | --  |   12.0 |
-| `N_locked`         | Minimum transmission input target [rpm] (assumed; step 2)                         | --  |   1000.0 |
 
 ## Variables
 
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
-| `N_target`         | CVT target blended from demand in electric mode to engine request when running [rpm]                         | --  |
 | `E_charge`         | Stored-energy charging integral [J]; includes regen and engine-driven charging                         | J  |
 | `E_regen`         | Requested regenerative braking energy at the machine shaft [J], excludes load-point charging                         | J  |
 | `E_friction`         | Actual wheel friction-brake dissipation [J]                         | J  |
 """
-@component function Step3HybridWLTC(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(110.0), var"Ti"=Float64(1.0), var"tau_max"=150.233567 + 205.0, var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"N_locked"=Float64(1000.0), var"tau_brake"=nothing, __overrides = Dict{String, Any}())
+@component function Step3HybridWLTC(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(110.0), var"Ti"=Float64(1.0), var"tau_max"=150.233567 + 205.0, var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"tau_brake"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -67,7 +66,6 @@ completes it to Lecture5.P2HybridWLTC.
   haskey(__overrides, "engage_width_rpm") && (engage_width_rpm = pop!(__overrides, "engage_width_rpm"))
   haskey(__overrides, "lock_rpm") && (lock_rpm = pop!(__overrides, "lock_rpm"))
   haskey(__overrides, "lock_width_rpm") && (lock_width_rpm = pop!(__overrides, "lock_width_rpm"))
-  haskey(__overrides, "N_locked") && (N_locked = pop!(__overrides, "N_locked"))
   haskey(__overrides, "tau_brake") && (tau_brake = pop!(__overrides, "tau_brake"))
 
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
@@ -119,24 +117,17 @@ completes it to Lecture5.P2HybridWLTC.
   __local__lock_width_rpm = lock_width_rpm
   append!(__params, @parameters (lock_width_rpm::Real), [description = "Width of machine-side K0 lock-up [rpm] (assumed; step 2)", bounds = (eps(Float64), Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, lock_width_rpm, __local__lock_width_rpm)
-  __local__N_locked = N_locked
-  append!(__params, @parameters (N_locked::Real), [description = "Minimum transmission input target [rpm] (assumed; step 2)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, N_locked, __local__N_locked)
 
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
 
   ### Variables (declarations)
-  append!(__vars, @variables (N_target(t)::Real), [description = "CVT target blended from demand in electric mode to engine request when running [rpm]"])
   append!(__vars, @variables (E_charge(t)::Real), [description = "Stored-energy charging integral [J]; includes regen and engine-driven charging"])
   append!(__vars, @variables (E_regen(t)::Real), [description = "Requested regenerative braking energy at the machine shaft [J], excludes load-point charging"])
   append!(__vars, @variables (E_friction(t)::Real), [description = "Actual wheel friction-brake dissipation [J]"])
 
   ### Variables (assignments)
-  __ovr_N_target = pop!(__overrides, "N_target", nothing); isnothing(__ovr_N_target) || push!(__eqs, N_target ~ __ovr_N_target)
-  __ovr_N_target__initial = pop!(__overrides, "N_target.initial", nothing); isnothing(__ovr_N_target__initial) || (__initial_conditions[N_target] = __ovr_N_target__initial)
-  __ovr_N_target__guess = pop!(__overrides, "N_target.guess", nothing)
   __ovr_E_charge = pop!(__overrides, "E_charge", nothing); isnothing(__ovr_E_charge) || push!(__eqs, E_charge ~ __ovr_E_charge)
   __ovr_E_charge__initial = pop!(__overrides, "E_charge.initial", nothing); isnothing(__ovr_E_charge__initial) || (__initial_conditions[E_charge] = __ovr_E_charge__initial)
   __ovr_E_charge__guess = pop!(__overrides, "E_charge.guess", nothing)
@@ -169,12 +160,9 @@ completes it to Lecture5.P2HybridWLTC.
   # Subcomponent manager of type VehicleSystemsComponents.Vehicle.EnergyManager
   manager_overrides = __pop_subcomponent_overrides!(__overrides, "manager")
   push!(__systems, @named manager = VehicleSystemsComponents.Vehicle.EnergyManager(; mapped_limits=true, SoC_on=0.52, SoC_off=0.55, P_line_max=Float64(30000.0), __overrides = manager_overrides))
-  # Subcomponent line of type VehicleSystemsComponents.Vehicle.OperatingLine
-  line_overrides = __pop_subcomponent_overrides!(__overrides, "line")
-  push!(__systems, @named line = VehicleSystemsComponents.Vehicle.OperatingLine(; __overrides = line_overrides))
-  # Subcomponent demand_line of type VehicleSystemsComponents.Vehicle.OperatingLine
-  demand_line_overrides = __pop_subcomponent_overrides!(__overrides, "demand_line")
-  push!(__systems, @named demand_line = VehicleSystemsComponents.Vehicle.OperatingLine(; __overrides = demand_line_overrides))
+  # Subcomponent map of type VehicleSystemsComponents.Vehicle.TorqueToPedal
+  map_overrides = __pop_subcomponent_overrides!(__overrides, "map")
+  push!(__systems, @named map = VehicleSystemsComponents.Vehicle.TorqueToPedal(; __overrides = map_overrides))
   # Subcomponent differential of type MultibodyComponents.PlanarMechanics.DifferentialGear
   differential_overrides = __pop_subcomponent_overrides!(__overrides, "differential")
   push!(__systems, @named differential = MultibodyComponents.PlanarMechanics.DifferentialGear(; __overrides = differential_overrides))
@@ -202,12 +190,23 @@ completes it to Lecture5.P2HybridWLTC.
   # Subcomponent unused_command of type BlockComponents.Sources.Constant
   unused_command_overrides = __pop_subcomponent_overrides!(__overrides, "unused_command")
   push!(__systems, @named unused_command = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = unused_command_overrides))
+  # Subcomponent brakes of type VehicleSystemsComponents.Vehicle.BrakeSplit
+  brakes_overrides = __pop_subcomponent_overrides!(__overrides, "brakes")
+  push!(__systems, @named brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(; gain=Float64(1.0), __overrides = brakes_overrides))
+  # Subcomponent brake_product of type BlockComponents.Math.Product
+  brake_product_overrides = __pop_subcomponent_overrides!(__overrides, "brake_product")
+  push!(__systems, @named brake_product = BlockComponents.Math.Product(; __overrides = brake_product_overrides))
+  # Subcomponent stored_power of type BlockComponents.Math.Product
+  stored_power_overrides = __pop_subcomponent_overrides!(__overrides, "stored_power")
+  push!(__systems, @named stored_power = BlockComponents.Math.Product(; __overrides = stored_power_overrides))
+  # Subcomponent engagement_command of type VehicleSystemsComponents.Vehicle.EngagementCommand
+  engagement_command_overrides = __pop_subcomponent_overrides!(__overrides, "engagement_command")
+  push!(__systems, @named engagement_command = VehicleSystemsComponents.Vehicle.EngagementCommand(; engage_rpm=engage_rpm, engage_width_rpm=engage_width_rpm, lock_rpm=lock_rpm, lock_width_rpm=lock_width_rpm, managed=true, __overrides = engagement_command_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
-  isnothing(__ovr_N_target__guess) || (__guesses[N_target] = __ovr_N_target__guess)
   isnothing(__ovr_E_charge__guess) || (__guesses[E_charge] = __ovr_E_charge__guess)
   isnothing(__ovr_E_regen__guess) || (__guesses[E_regen] = __ovr_E_regen__guess)
   isnothing(__ovr_E_friction__guess) || (__guesses[E_friction] = __ovr_E_friction__guess)
@@ -238,19 +237,16 @@ completes it to Lecture5.P2HybridWLTC.
   __assertions = []
 
   ### Equations
-  push!(__eqs, manager.w_shaft ~ powertrain.variator.w_a)
-  push!(__eqs, demand_line.P ~ manager.P_drive)
-  push!(__eqs, N_target ~ max(manager.engine_on * line.N + (1.0 - manager.engine_on) * demand_line.N, N_locked))
-  push!(__eqs, powertrain.N_ref ~ N_target)
-  push!(__eqs, powertrain.engage ~ manager.engage * max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
-  push!(__eqs, meter.P_stored ~ powertrain.E * powertrain.i)
-  push!(__eqs, car.tau_fl ~ manager.tau_friction * powertrain.variator.ratio / 2.0)
-  push!(__eqs, car.tau_fr ~ car.tau_fl)
-  push!(__eqs, car.tau_rl ~ 0.0)
-  push!(__eqs, car.tau_rr ~ 0.0)
   push!(__eqs, ModelingToolkit.D_nounits(E_charge) ~ max(-meter.P_stored, 0.0))
   push!(__eqs, ModelingToolkit.D_nounits(E_regen) ~ manager.tau_regen * max(manager.w_shaft, 0.0))
   push!(__eqs, ModelingToolkit.D_nounits(E_friction) ~ car.fl.brake.tau_friction * car.fl.brake.w + car.fr.brake.tau_friction * car.fr.brake.w + car.rl.brake.tau_friction * car.rl.brake.w + car.rr.brake.tau_friction * car.rr.brake.w)
+  push!(__eqs, connect(powertrain.E, stored_power.u1))
+  push!(__eqs, connect(powertrain.i, stored_power.u2))
+  push!(__eqs, connect(stored_power.y, meter.P_stored))
+  push!(__eqs, connect(powertrain.engine_speed, engagement_command.engine_speed))
+  push!(__eqs, connect(powertrain.shaft_speed, engagement_command.shaft_speed))
+  push!(__eqs, connect(manager.engage, engagement_command.enable))
+  push!(__eqs, connect(engagement_command.y, powertrain.engage))
   push!(__eqs, connect(unused_command.y, powertrain.cvt_pedal))
   push!(__eqs, connect(car.bus, motion.bus))
   push!(__eqs, connect(trace.y, driver.u_s))
@@ -258,8 +254,10 @@ completes it to Lecture5.P2HybridWLTC.
   push!(__eqs, connect(kmh.y, driver.u_m, manager.v))
   push!(__eqs, connect(no_ff.y, driver.u_ff))
   push!(__eqs, connect(driver.y, manager.tau_dem))
+  push!(__eqs, connect(powertrain.shaft_speed, manager.w_shaft))
   push!(__eqs, connect(powertrain.SoC, manager.SoC))
-  push!(__eqs, connect(powertrain.engine_speed, manager.engine_speed))
+  push!(__eqs, connect(powertrain.engine_speed, manager.engine_speed, map.omega))
+  push!(__eqs, connect(map.pedal, powertrain.engine_pedal))
   push!(__eqs, connect(powertrain.available_torque, manager.available_torque))
   push!(__eqs, connect(powertrain.spline, differential.flange_b))
   push!(__eqs, connect(differential.flange_left, car.spin_fl))
@@ -269,6 +267,13 @@ completes it to Lecture5.P2HybridWLTC.
   push!(__eqs, connect(flat.y, roadload.grade))
   push!(__eqs, connect(car.chassis, roadload.chassis))
   push!(__eqs, connect(powertrain.mdot_fuel, meter.mdot_fuel))
+  push!(__eqs, connect(manager.tau_friction, brake_product.u1))
+  push!(__eqs, connect(powertrain.ratio, brake_product.u2))
+  push!(__eqs, connect(brake_product.y, brakes.u))
+  push!(__eqs, connect(brakes.tau_fl, car.tau_fl))
+  push!(__eqs, connect(brakes.tau_fr, car.tau_fr))
+  push!(__eqs, connect(brakes.tau_rl, car.tau_rl))
+  push!(__eqs, connect(brakes.tau_rr, car.tau_rr))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

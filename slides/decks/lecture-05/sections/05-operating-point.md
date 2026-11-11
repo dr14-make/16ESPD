@@ -331,21 +331,22 @@ routeAlias: build-operating-line
 ![The finished step-2 fixture in Studio: driver, operating-line table and P2 powertrain on top, the planar car, differential and road load below, the fuel meter on the right.](/img/lecture-05/step02-operating-line-diagram.png)
 
 **Given:** the starter `Step2OperatingLineWLTC`, the H0 car without the electric-only option,
-its powertrain still pedal-scheduled · the best-BSFC line as a data table (`OperatingLine`)
+its powertrain still pedal-scheduled · `LineSpeedCommand` wraps the best-BSFC table and speed floor
 
 [page: step 2](../lecture/lecture-05/#step-2) · reference `dyad/HandsOn05/P2OperatingLineWLTC.dyad`
 
 </div>
 <div class="stack">
 
-*Place `line`, 2 wires, `speed_commanded = true`, 3 equations · pedal → requested power →
-best-BSFC line → speed command, floored at 1000 rpm → the CVT holds it*
+*20 min · place `LineSpeedCommand` as `speed_command` · 4 wires ·
+`speed_commanded = true` · no equations to type*
 
-```txt
-line.P = powertrain.engine_pedal * P_peak   # P_peak = 85 kW, a calibration
-N_target = max(line.N, N_locked)            # 1000 rpm
-powertrain.N_ref = N_target
-```
+- `pedal_command.y` → `speed_command.pedal`
+- `speed_command.N_ref` → `powertrain.N_ref`
+- zero → ignored CVT pedal and engine torque target
+
+Pedal → requested power (85 kW at full pedal) → best-BSFC line → speed command,
+floored at 1000 rpm → the CVT holds it.
 
 <div class="handson">✓ same car, driver and K0 as H0 · WLTC: <b>5.44</b> L/100 km against H0's
 <b>5.72</b>, <b>−4.9 %</b></div>
@@ -365,16 +366,12 @@ Build 02: the operating line. On the left you see the finished step-2 test model
 line's table sits between the driver and the powertrain.
 
 You start from the step-2 starter: the H0 car without the electric-only option, with the
-powertrain's CVT still following the pedal. The library gives you the best-BSFC line as a data
-table, called OperatingLine; you place it and name it line. Two wires feed zero to the CVT pedal and
-the engine torque target, the pair the speed-commanded powertrain ignores. Then, in code view, you
-flip the powertrain's switch, speed_commanded, so the CVT holds an engine speed we command instead
-of following the pedal, and you type the three lines in the code box. Then you run the WLTC. Now
-read the three code lines. First: the driver's pedal becomes a power request, the pedal position
-times 85 kilowatts, a value we chose. Second: the line turns that power into a speed, and we never
-go below 1000 revolutions per minute, so the engine never drops below idle while K0 is locked.
-Third: the CVT holds that speed. Everything else is the same as H0: the same car, driver, brakes and
-K0.
+powertrain's CVT still following the pedal. Place Vehicle.LineSpeedCommand and name it
+speed_command. It wraps the OperatingLine table, pedal-times-85-kilowatts calibration and
+1000 rpm floor. Four canvas wires: pedal_command.y to its pedal input, its N_ref output to the
+powertrain, and zero to the two ignored inputs. In code view change only the structural flag
+speed_commanded to true; no equations to type. Save, close and reopen the diagram, then run the
+WLTC. This build stays at 20 minutes. Everything else is the same as H0: car, driver, brakes and K0.
 
 The checkpoint: over the WLTC the car burns 5.44 liters per 100 kilometers, against H0's 5.72. That
 is 4.9 percent less, with no electric machine at all, just from moving the engine to lower speed

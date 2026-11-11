@@ -24,6 +24,8 @@ component HybridDriveDyno
 relations
   initial dyno.phi = 0.0
   initial drive.converter.i_out = 0.0
+  guess drive.converter.field = 1.0
+  guess drive.converter.d = 0.1
   connect(request.y, drive.tau_ref)
   connect(speed.y, dyno.w_ref)
   connect(drive.spline, dyno.spline)

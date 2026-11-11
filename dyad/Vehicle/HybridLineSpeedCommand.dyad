@@ -1,0 +1,20 @@
+"Best-BSFC speed command blended between engine request and electric-mode drive demand."
+component HybridLineSpeedCommand
+  "Requested engine power [W] (derived; EnergyManager.P_engine)"
+  P_engine = RealInput() {^P_engine}
+  "Requested drive power [W] (derived; EnergyManager.P_drive)"
+  P_drive = RealInput() {^P_drive}
+  "Engine running fraction (derived; EnergyManager.engine_on)"
+  engine_on = RealInput() {^engine_on}
+  "Transmission speed command [rpm] (derived; blended operating lines with idle floor)"
+  N_ref = RealOutput() {^N_ref}
+  "Minimum locked speed [rpm] (assumed; Lecture 5 lock-up calibration, 1000 rpm)"
+  parameter N_locked::Real = 1000.0
+  line = VehicleSystemsComponents.Vehicle.OperatingLine() {^line}
+  demand_line = VehicleSystemsComponents.Vehicle.OperatingLine() {^demand_line}
+relations
+  connect(P_engine, line.P) {^engine_wire}
+  connect(P_drive, demand_line.P) {^drive_wire}
+  N_ref = max(engine_on * line.N + (1.0 - engine_on) * demand_line.N, N_locked)
+metadata {"_links":{"P_engine":{"Dyad":{"placement":{"icon":{"x1":-50,"x2":50,"y1":150,"y2":250},"diagram":{"x1":-25,"x2":25,"y1":175,"y2":225}}}},"P_drive":{"Dyad":{"placement":{"icon":{"x1":-50,"x2":50,"y1":450,"y2":550},"diagram":{"x1":-25,"x2":25,"y1":475,"y2":525}}}},"engine_on":{"Dyad":{"placement":{"icon":{"x1":-50,"x2":50,"y1":750,"y2":850},"diagram":{"x1":-25,"x2":25,"y1":775,"y2":825}}}},"N_ref":{"Dyad":{"placement":{"icon":{"x1":950,"x2":1050,"y1":450,"y2":550},"diagram":{"x1":975,"x2":1025,"y1":475,"y2":525}}}},"line":{"Dyad":{"placement":{"diagram":{"x1":350,"x2":550,"y1":100,"y2":300}}}},"demand_line":{"Dyad":{"placement":{"diagram":{"x1":350,"x2":550,"y1":400,"y2":600}}}},"engine_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":150,"y":200}],"E":2}]}},"drive_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":150,"y":500}],"E":2}]}}}}
+end

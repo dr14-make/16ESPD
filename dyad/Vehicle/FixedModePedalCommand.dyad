@@ -1,0 +1,19 @@
+"Fixed-mode bounded engine and CVT pedal requests; electric mode leaves the engine unfired."
+component FixedModePedalCommand
+  structural parameter electric::Boolean = false
+  parameter tau_max::Torque = 150.0
+  "Electric-mode driver torque corresponding to a full CVT pedal request [N.m]"
+  parameter tau_pedal::Torque(min = eps(Float64)) = 150.0
+  u = RealInput() {^u}
+  engine_pedal = RealOutput() {^engine_pedal}
+  y = RealOutput() {^y}
+relations
+  if electric
+    engine_pedal = 0.0
+    y = min(max(u / tau_pedal, 0.0), 1.0)
+  else
+    engine_pedal = min(max(u / tau_max, 0.0), 1.0)
+    y = engine_pedal
+  end
+metadata {"_links":{"u":{"Dyad":{"placement":{"diagram":{"x1":-25,"y1":475,"x2":25,"y2":525},"icon":{"x1":-50,"y1":450,"x2":50,"y2":550}}}},"engine_pedal":{"Dyad":{"placement":{"diagram":{"x1":975,"y1":225,"x2":1025,"y2":275},"icon":{"x1":950,"y1":200,"x2":1050,"y2":300}}}},"y":{"Dyad":{"placement":{"diagram":{"x1":975,"y1":725,"x2":1025,"y2":775},"icon":{"x1":950,"y1":700,"x2":1050,"y2":800}}}}}}
+end

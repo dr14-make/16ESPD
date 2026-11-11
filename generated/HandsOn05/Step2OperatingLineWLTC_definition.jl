@@ -5,11 +5,11 @@
 
 
 @doc Markdown.doc"""
-   Step2OperatingLineWLTC(; name, m, radius, k, Ti, tau_max, dv_wheel, engage_rpm, engage_width_rpm, tau_brake, brake_gain, lock_rpm, lock_width_rpm, P_peak, N_locked, __overrides)
+   Step2OperatingLineWLTC(; name, m, radius, k, Ti, tau_max, dv_wheel, engage_rpm, engage_width_rpm, tau_brake, brake_gain, lock_rpm, lock_width_rpm, __overrides)
 
 Hands-on 05 step 2 starter: the operating-line fixture without its line, with the powertrain still
-pedal-commanded. Placing OperatingLine as `line`, wiring the zero command to the two ignored
-inputs, setting `speed_commanded = true` and adding the three line equations the guide lists
+pedal-commanded. Placing LineSpeedCommand as `speed_command`, wiring its pedal and speed ports
+and the zero command to the ignored inputs, and setting `speed_commanded = true`
 completes it to Lecture5.P2OperatingLineWLTC.
 
 ## Parameters:
@@ -28,16 +28,8 @@ completes it to Lecture5.P2OperatingLineWLTC.
 | `brake_gain`         | Total wheel brake torque per negative driver N.m, launch ratio reference                         | --  |   12.0 |
 | `lock_rpm`         | Center of machine-side K0 lock-up ramp [rpm]; open at 800 rpm idle, closed by 880 rpm                         | --  |   840.0 |
 | `lock_width_rpm`         | Width of machine-side K0 lock-up ramp [rpm]                         | --  |   12.0 |
-| `P_peak`         | Full-pedal requested power [W], mapped engine peak                         | W  |   85000.0 |
-| `N_locked`         | Minimum locked engine speed [rpm]; replaces lower line rows                         | --  |   1000.0 |
-
-## Variables
-
-| Name         | Description                         | Units  | 
-| ------------ | ----------------------------------- | ------ |
-| `N_target`         | Commanded transmission input speed [rpm], line speed floored at N_locked                         | --  |
 """
-@component function Step2OperatingLineWLTC(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(110.0), var"Ti"=Float64(1.0), var"tau_max"=Float64(150.0), var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"tau_brake"=Float64(205.0), var"brake_gain"=Float64(12.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"P_peak"=Float64(85000.0), var"N_locked"=Float64(1000.0), __overrides = Dict{String, Any}())
+@component function Step2OperatingLineWLTC(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(110.0), var"Ti"=Float64(1.0), var"tau_max"=Float64(150.0), var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"tau_brake"=Float64(205.0), var"brake_gain"=Float64(12.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -68,8 +60,6 @@ completes it to Lecture5.P2OperatingLineWLTC.
   haskey(__overrides, "brake_gain") && (brake_gain = pop!(__overrides, "brake_gain"))
   haskey(__overrides, "lock_rpm") && (lock_rpm = pop!(__overrides, "lock_rpm"))
   haskey(__overrides, "lock_width_rpm") && (lock_width_rpm = pop!(__overrides, "lock_width_rpm"))
-  haskey(__overrides, "P_peak") && (P_peak = pop!(__overrides, "P_peak"))
-  haskey(__overrides, "N_locked") && (N_locked = pop!(__overrides, "N_locked"))
 
   ### Structural Parameters (functions)
 
@@ -120,24 +110,14 @@ completes it to Lecture5.P2OperatingLineWLTC.
   __local__lock_width_rpm = lock_width_rpm
   append!(__params, @parameters (lock_width_rpm::Real), [description = "Width of machine-side K0 lock-up ramp [rpm]", bounds = (eps(Float64), Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, lock_width_rpm, __local__lock_width_rpm)
-  __local__P_peak = P_peak
-  append!(__params, @parameters (P_peak::Real), [description = "Full-pedal requested power [W], mapped engine peak"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, P_peak, __local__P_peak)
-  __local__N_locked = N_locked
-  append!(__params, @parameters (N_locked::Real), [description = "Minimum locked engine speed [rpm]; replaces lower line rows"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, N_locked, __local__N_locked)
 
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
 
   ### Variables (declarations)
-  append!(__vars, @variables (N_target(t)::Real), [description = "Commanded transmission input speed [rpm], line speed floored at N_locked"])
 
   ### Variables (assignments)
-  __ovr_N_target = pop!(__overrides, "N_target", nothing); isnothing(__ovr_N_target) || push!(__eqs, N_target ~ __ovr_N_target)
-  __ovr_N_target__initial = pop!(__overrides, "N_target.initial", nothing); isnothing(__ovr_N_target__initial) || (__initial_conditions[N_target] = __ovr_N_target__initial)
-  __ovr_N_target__guess = pop!(__overrides, "N_target.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -193,12 +173,29 @@ completes it to Lecture5.P2OperatingLineWLTC.
   # Subcomponent unused_command of type BlockComponents.Sources.Constant
   unused_command_overrides = __pop_subcomponent_overrides!(__overrides, "unused_command")
   push!(__systems, @named unused_command = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = unused_command_overrides))
+  # Subcomponent brakes of type VehicleSystemsComponents.Vehicle.BrakeSplit
+  brakes_overrides = __pop_subcomponent_overrides!(__overrides, "brakes")
+  push!(__systems, @named brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(; gain=brake_gain, input=VehicleSystemsComponents.Vehicle.BrakeInput.SignedDriver(), __overrides = brakes_overrides))
+  # Subcomponent pedal_gain of type BlockComponents.Math.Gain
+  pedal_gain_overrides = __pop_subcomponent_overrides!(__overrides, "pedal_gain")
+  push!(__systems, @named pedal_gain = BlockComponents.Math.Gain(; k=1 / tau_max, __overrides = pedal_gain_overrides))
+  # Subcomponent pedal_command of type BlockComponents.Nonlinear.Limiter
+  pedal_command_overrides = __pop_subcomponent_overrides!(__overrides, "pedal_command")
+  push!(__systems, @named pedal_command = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0.0), y_max=Float64(1.0), __overrides = pedal_command_overrides))
+  # Subcomponent stored_power of type BlockComponents.Math.Product
+  stored_power_overrides = __pop_subcomponent_overrides!(__overrides, "stored_power")
+  push!(__systems, @named stored_power = BlockComponents.Math.Product(; __overrides = stored_power_overrides))
+  # Subcomponent engagement_command of type VehicleSystemsComponents.Vehicle.EngagementCommand
+  engagement_command_overrides = __pop_subcomponent_overrides!(__overrides, "engagement_command")
+  push!(__systems, @named engagement_command = VehicleSystemsComponents.Vehicle.EngagementCommand(; engage_rpm=engage_rpm, engage_width_rpm=engage_width_rpm, lock_rpm=lock_rpm, lock_width_rpm=lock_width_rpm, __overrides = engagement_command_overrides))
+  # Subcomponent no_machine of type BlockComponents.Sources.Constant
+  no_machine_overrides = __pop_subcomponent_overrides!(__overrides, "no_machine")
+  push!(__systems, @named no_machine = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = no_machine_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
-  isnothing(__ovr_N_target__guess) || (__guesses[N_target] = __ovr_N_target__guess)
 
   ### Initialization Equations
   push!(__initialization_eqs, car.body.r ~ [0, 0])
@@ -223,14 +220,12 @@ completes it to Lecture5.P2OperatingLineWLTC.
   __assertions = []
 
   ### Equations
-  push!(__eqs, meter.P_stored ~ powertrain.E * powertrain.i)
-  push!(__eqs, powertrain.engine_pedal ~ min(max(driver.y / tau_max, 0.0), 1.0))
-  push!(__eqs, powertrain.engage ~ max(0.5 * (1 + tanh((powertrain.engine_speed * 30 / pi - engage_rpm) / engage_width_rpm)), 0.5 * (1 + tanh((powertrain.variator.w_a * 30 / pi - lock_rpm) / lock_width_rpm))))
-  push!(__eqs, powertrain.tau_ref ~ 0.0)
-  push!(__eqs, car.tau_fl ~ -min(driver.y, 0.0) * brake_gain / 2.0)
-  push!(__eqs, car.tau_fr ~ car.tau_fl)
-  push!(__eqs, car.tau_rl ~ 0.0)
-  push!(__eqs, car.tau_rr ~ 0.0)
+  push!(__eqs, connect(powertrain.E, stored_power.u1))
+  push!(__eqs, connect(powertrain.i, stored_power.u2))
+  push!(__eqs, connect(stored_power.y, meter.P_stored))
+  push!(__eqs, connect(powertrain.engine_speed, engagement_command.engine_speed))
+  push!(__eqs, connect(powertrain.shaft_speed, engagement_command.shaft_speed))
+  push!(__eqs, connect(engagement_command.y, powertrain.engage))
   push!(__eqs, connect(car.bus, motion.bus))
   push!(__eqs, connect(trace.y, driver.u_s))
   push!(__eqs, connect(motion.vx, kmh.u, meter.speed))
@@ -244,6 +239,15 @@ completes it to Lecture5.P2OperatingLineWLTC.
   push!(__eqs, connect(flat.y, roadload.grade))
   push!(__eqs, connect(car.chassis, roadload.chassis))
   push!(__eqs, connect(powertrain.mdot_fuel, meter.mdot_fuel))
+  push!(__eqs, connect(driver.y, pedal_gain.u))
+  push!(__eqs, connect(pedal_gain.y, pedal_command.u))
+  push!(__eqs, connect(pedal_command.y, powertrain.engine_pedal))
+  push!(__eqs, connect(no_machine.y, powertrain.tau_ref))
+  push!(__eqs, connect(driver.y, brakes.u))
+  push!(__eqs, connect(brakes.tau_fl, car.tau_fl))
+  push!(__eqs, connect(brakes.tau_fr, car.tau_fr))
+  push!(__eqs, connect(brakes.tau_rl, car.tau_rl))
+  push!(__eqs, connect(brakes.tau_rr, car.tau_rr))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

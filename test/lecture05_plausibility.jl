@@ -3,13 +3,14 @@
 include("../scripts/bsfc_line.jl")
 using .BsfcLine
 using JSON
+using TOML
 
 const BSFC_LINE = read_line()
 # The machine-size sweep's baseline is H0's pinned fuel; one constant serves the sweep and these tests.
 include("../scripts/machine_size_sweep.jl")
 const H0_L100 = MachineSizeSweep.H0_L100
 const H0_MJ100 = 184.86508896
-const LINE_L100 = 5.4374434065
+const LINE_L100 = 5.4374449223
 const RPM_ENGINE_IDLE = 800.0
 
 # H0 is both a P2 fixed-mode check and the operating-line baseline; one 1800 s run serves both.
@@ -353,9 +354,142 @@ end
         @test length(nested_connections("self-check", "if enabled\nfor i in 1:2\nend\nconnect(a, b)\nend\n")) == 1
         folder = joinpath(@__DIR__, "..", "dyad", "HandsOn05")
         files = filter(f -> endswith(f, ".dyad"), readdir(folder; join = true))
-        violations = reduce(vcat, [nested_connections(file, read(file, String)) for file in files])
-        isempty(violations) || @error "Conditional canvas connections" violations
+        # Local and reference declarations are indexed by namespace.
+        definitions = Dict{String,Any}()
+        function index_components(root, prefix; local_source)
+            for (dir, _, names) in walkdir(root), name in names
+                endswith(name, ".dyad") || continue
+                file = joinpath(dir, name)
+                source = read(file, String)
+                # relpath(root, root) is ".", not a namespace segment.
+                namespace = join([prefix; filter(x -> x != ".", splitpath(relpath(dir, root)))], ".")
+                for c in component_sections(source)
+                    key = namespace * "." * c.name
+                    # Analyses and functions are not members of the component type.
+                    boundary = match(r"(?m)^(?:analysis|function|connector|type)\s", code_only(c.text))
+                    text = isnothing(boundary) ? c.text : c.text[1:prevind(c.text, boundary.offset)]
+                    definitions[key] = (; c..., text, file, namespace, local_source,
+                        first_line = count(==('\n'), source[1:prevind(source, c.offset)]))
+                end
+            end
+        end
+        index_components(joinpath(@__DIR__, "..", "dyad"), "VehicleSystemsComponents"; local_source = true)
+        project = TOML.parsefile(joinpath(@__DIR__, "..", "Project.toml"))
+        for library in keys(project["deps"])
+            entry = Base.find_package(library)
+            isnothing(entry) && error("Project dependency $library is not installed")
+            source = joinpath(dirname(dirname(entry)), "dyad")
+            isdir(source) && index_components(source, library; local_source = false)
+        end
+        function resolve_type(type, owner)
+            haskey(definitions, type) && return type
+            namespace = split(definitions[owner].namespace, '.')
+            while !isempty(namespace)
+                candidate = join([namespace; type], ".")
+                haskey(definitions, candidate) && return candidate
+                pop!(namespace)
+            end
+            nothing
+        end
+        function bases(key)
+            [m.captures[1] for m in eachmatch(r"(?m)^\s*extends\s+([\w.]+)", code_only(definitions[key].text))]
+        end
+        function declarations(key)
+            text = first(split(code_only(definitions[key].text), r"(?m)^relations\s*$"; limit = 2))
+            Dict(m.captures[1] => m.captures[2] for m in
+                eachmatch(r"(?m)^\s*(\w+)\s*=\s*([\w.]+)\s*\(", text))
+        end
+        function members(key, seen = Set{String}())
+            key in seen && error("Cyclic component inheritance: $key")
+            result = Dict{String,Tuple{String,String}}()
+            for base in bases(key)
+                parent = resolve_type(base, key)
+                isnothing(parent) && error("Unresolved base $base in $key")
+                merge!(result, members(parent, union(seen, [key])))
+            end
+            for (name, type) in declarations(key)
+                result[name] = (type, key)
+            end
+            result
+        end
+        roots = Set(key for (key, c) in definitions if c.local_source &&
+            (startswith(key, "VehicleSystemsComponents.Lecture5.") ||
+             startswith(key, "VehicleSystemsComponents.HandsOn05.")))
+        closure = copy(roots)
+        pending = collect(roots)
+        while !isempty(pending)
+            key = pop!(pending)
+            for type in [bases(key); collect(values(declarations(key)))]
+                dependency = resolve_type(type, key)
+                # Base connectors and library internals are not local components.
+                isnothing(dependency) && continue
+                definitions[dependency].local_source || continue
+                dependency in closure && continue
+                push!(closure, dependency)
+                push!(pending, dependency)
+            end
+        end
+        violations = Tuple{String,Int,String}[]
+        for key in sort!(collect(closure))
+            c = definitions[key]
+            append!(violations, [(file, c.first_line + line, text) for (file, line, text) in
+                nested_connections(c.file, c.text)])
+        end
+        isempty(violations) || @error "Conditional canvas connections in Lecture5/HandsOn05 local closure" violations
         @test isempty(violations)
+
+        # Only finished road benches and their descendants prohibit typed input equations.
+        # Constitutive equations define component behavior, not bench signal wiring.
+        road = Set("VehicleSystemsComponents.Lecture5." * name for name in
+            ("P2WLTC", "P2OperatingLineWLTC", "P2HybridWLTC", "HybridPositionWLTC", "SeriesWLTCGround"))
+        changed = true
+        while changed
+            changed = false
+            for (key, c) in definitions
+                c.local_source && !(key in road) || continue
+                if any(base -> resolve_type(base, key) in road, bases(key))
+                    push!(road, key)
+                    changed = true
+                end
+            end
+        end
+        @test "VehicleSystemsComponents.Lecture5.SeriesWLTCGround" in road
+        function input_lhs(key, lhs)
+            path = split(lhs, '.')
+            length(path) >= 2 || return false
+            owner = key
+            for (i, name) in enumerate(path)
+                declaration = get(members(owner), name, nothing)
+                isnothing(declaration) && return false # State/variable, not a placed input.
+                type, declaring_owner = declaration
+                if i == length(path)
+                    return last(split(type, '.')) in
+                        ("RealInput", "IntegerInput", "BooleanInput", "ClockInput")
+                end
+                owner = resolve_type(type, declaring_owner)
+                isnothing(owner) && error("Unresolved placed type $type for $key: $lhs")
+            end
+            false
+        end
+        @test input_lhs("VehicleSystemsComponents.Lecture5.P2WLTC", "powertrain.engage")
+        @test input_lhs("VehicleSystemsComponents.Lecture5.P2WLTC", "meter.P_stored")
+        @test input_lhs("VehicleSystemsComponents.Lecture5.P2WLTC", "pedal_command.u") # Inherited library input.
+        @test !input_lhs("VehicleSystemsComponents.Lecture5.P2WLTC", "powertrain.engine_speed")
+        typed_inputs = Tuple{String,Int,String}[]
+        for key in sort!(collect(road))
+            c = definitions[key]
+            in_relations = false
+            for (line, text) in enumerate(split(code_only(c.text), '\n'))
+                strip(text) == "relations" && (in_relations = true; continue)
+                in_relations || continue
+                assignment = match(r"^\s*([\w.]+)\s*=(?!=)", text)
+                isnothing(assignment) && continue
+                input_lhs(key, assignment.captures[1]) || continue
+                push!(typed_inputs, (c.file, c.first_line + line, strip(text)))
+            end
+        end
+        isempty(typed_inputs) || @error "Finished road benches must wire placed inputs, not type equations" typed_inputs
+        @test isempty(typed_inputs)
         function equation_exports(file, source)
             violations = Tuple{String,Int,String}[]
             for component in component_sections(source)
@@ -380,10 +514,16 @@ end
             "Vehicle/P2Powertrain.dyad", "Vehicle/Electric/HybridDrive.dyad",
             "Vehicle/Engine/MappedEngine.dyad", "Vehicle/DisconnectClutch.dyad",
             "Vehicle/P2TorqueCommand.dyad", "Vehicle/P2Variator.dyad",
+            "Vehicle/LineSpeedCommand.dyad", "Vehicle/HybridLineSpeedCommand.dyad",
+            "Vehicle/BrakeSplit.dyad", "Vehicle/EngagementCommand.dyad",
+            "Vehicle/FixedModePedalCommand.dyad", "Vehicle/Electric/DCMachine.dyad",
+            "Vehicle/OutputHybridPowertrain.dyad", "Vehicle/CoupledHybridPowertrain.dyad",
             "Vehicle/ParameterGate.dyad", "Vehicle/OptionalShaftHold.dyad",
             "Vehicle/Engine/TorqueMap.dyad", "Lecture5/FuelEnableBench.dyad",
             "Lecture5/P2WLTC.dyad", "Lecture5/P2OperatingLineWLTC.dyad",
-            "Lecture5/P2HybridWLTC.dyad")]
+            "Lecture5/P2HybridWLTC.dyad", "Lecture5/HybridPositionWLTC.dyad",
+            "Lecture5/CoupledHybridWLTC.dyad", "Lecture5/OutputHybridWLTC.dyad",
+            "Lecture5/P4HybridWLTC.dyad")]
         function indirect_endpoints(file, source)
             violations = Tuple{String,Int,String}[]
             for connection in eachmatch(r"\bconnect\s*\(([^)]*)\)", code_only(source))
@@ -409,7 +549,7 @@ end
                 meta = match(r"(?s)metadata (\{.*?\})\nend", text)
                 isnothing(meta) && continue
                 links = JSON.parse(meta.captures[1])["_links"]
-                ports = [m.captures[1] for m in eachmatch(r"(?m)^\s*(\w+) = (?:RealInput|RealOutput|Spline)\(", code_only(text))]
+                ports = [m.captures[1] for m in eachmatch(r"(?m)^\s*(\w+) = (?:RealInput|RealOutput|Spline|Pin|VehicleSystemsComponents.Vehicle.GasPort)\(", code_only(text))]
                 tags = Set(m.captures[1] for m in eachmatch(r"\{\^(\w+)\}", text))
                 line = count(==('\n'), source[1:component.offset + meta.offset - 1]) + 1
                 for connection in eachmatch(r"connect\(([^)]*)\)\s*\{\^(\w+_wire)\}", code_only(text))
@@ -418,6 +558,25 @@ end
                     edges = get(get(get(links, tag, Dict()), "Dyad", Dict()), "edges", [])
                     connection_line = count(==('\n'), source[1:component.offset + connection.offset - 1]) + 1
                     isempty(edges) && push!(routing, (file, connection_line, tag))
+                end
+                new_blocks = Set(("stored_power", "engagement_command", "no_machine",
+                    "starter_power", "total_stored_power", "machine_limit", "referred_limit",
+                    "machine_command", "unused_pedal", "speed_command", "brakes",
+                    "brake_product", "pedal_command", "pedal_gain", "field_command"))
+                for (key, link) in links
+                    box = get(get(get(link, "Dyad", Dict()), "placement", Dict()), "diagram", nothing)
+                    isnothing(box) && continue
+                    # Connector glyphs straddle the frame; their centers must lie on it.
+                    coordinates = key in ports ? [(box[k*"1"] + box[k*"2"]) / 2 for k in ("x", "y")] :
+                        [box[k] for k in ("x1", "x2", "y1", "y2")]
+                    @test all(x -> 0 <= x <= 1000, coordinates)
+                end
+                for connection in eachmatch(r"connect\(([^)]*)\)\s*\{\^(\w+)\}", code_only(text))
+                    ends = strip.(split(connection.captures[1], ','))
+                    any(first(split(e, '.')) in new_blocks for e in ends) || continue
+                    edges = get(get(get(links, connection.captures[2], Dict()), "Dyad", Dict()), "edges", [])
+                    @test length(edges) == length(ends) - 1
+                    @test all(!isempty(get(edge, "M", [])) for edge in edges)
                 end
                 for key in keys(links)
                     key in tags || push!(orphans, (file, line, key))
@@ -453,6 +612,11 @@ end
                 "VehicleSystemsComponents.HandsOn05.TorqueToPedal" => "VehicleSystemsComponents.Vehicle.TorqueToPedal",
                 "VehicleSystemsComponents.HandsOn05.P2WLTC" => "VehicleSystemsComponents.Lecture5.P2WLTC")
             @test normalize(source("HandsOn05")) == normalize(source(original))
+            if name in ("P2OperatingLineWLTC", "P2HybridWLTC")
+                command = name == "P2OperatingLineWLTC" ? "LineSpeedCommand" : "HybridLineSpeedCommand"
+                @test occursin("speed_command = VehicleSystemsComponents.Vehicle.$command()", source("HandsOn05"))
+                @test !occursin(r"(?m)^\s*(?:line|demand_line) = .*OperatingLine\(", source("HandsOn05"))
+            end
         end
     end
     @testset "guide steps complete each starter to its Lecture 5 bench" begin
@@ -508,8 +672,8 @@ end
         library(path) = replace(strip(path), " › " => ".") * "()"
         for (id, starter, bench, wire_count, flag_count) in (
                 ("step-1", "Step1EngineWLTC", "P2WLTC", 7, 0),
-                ("step-2", "Step2OperatingLineWLTC", "P2OperatingLineWLTC", 2, 1),
-                ("step-3", "Step3HybridWLTC", "P2HybridWLTC", 7, 1))
+                ("step-2", "Step2OperatingLineWLTC", "P2OperatingLineWLTC", 4, 1),
+                ("step-3", "Step3HybridWLTC", "P2HybridWLTC", 8, 1))
             text = section(id)
             source = dyad("HandsOn05", starter)
             completed = component(source, starter)
@@ -531,13 +695,18 @@ end
                     nets = nets([[collect(n) for n in mine.nets]; wires]))
             reference = canonical(component(dyad("Lecture5", bench), bench))
             @test length(wires) == wire_count
+            @test isempty(equations) # Every student-added relation is a canvas wire.
+            expected_blocks = id == "step-2" ?
+                ["speed_command = VehicleSystemsComponents.Vehicle.LineSpeedCommand()"] :
+                id == "step-3" ?
+                ["speed_command = VehicleSystemsComponents.Vehicle.HybridLineSpeedCommand()"] : String[]
+            @test placed == expected_blocks
             @test mine.declarations == reference.declarations
             @test mine.equations == reference.equations
             @test mine.nets == reference.nets
-            # The starter on its own is missing every wire and equation the step adds.
+            # The starter on its own is missing every wire the step adds.
             bare = canonical(component(source, starter))
             @test all(w -> !any(n -> issubset(w, n), bare.nets), wires)
-            @test isempty(intersect(bare.equations, equations))
             @test analysis_extends(source, starter) == analysis_extends(dyad("Lecture5", bench), bench)
         end
         for starter in (:Step1EngineWLTC, :Step2OperatingLineWLTC, :Step3HybridWLTC)
@@ -555,7 +724,7 @@ end
         speed_error = maximum(abs, 3.6 .* checkpoint(m.car.bus.vx) .- checkpoint(m.trace.y))
         trace_distance = sum(diff(s.t) .* (s[m.trace.y][1:end-1] .+ s[m.trace.y][2:end])) / 7.2
         @test speed_error <= 2.0
-        @test speed_error ≈ (electric ? 1.502830 : 1.167635) atol = 1e-4
+        @test speed_error ≈ (electric ? 1.5028697230 : 1.167635) atol = (electric ? 1e-6 : 1e-4)
         @test s[m.meter.s][end] ≈ trace_distance rtol=5e-4
         if electric
             @test maximum(abs, s[m.powertrain.position]) < 1e-9
@@ -691,10 +860,13 @@ end
     cmd = at(m.powertrain.variator.i_command)
     ratio = at(m.powertrain.variator.ratio)
     @info "Line ratio interpolation" sampled=extrema(ratio) accepted=extrema(s[m.powertrain.variator.ratio])
-    # P2OperatingLineWLTC sampled lower bound: solver excursion 2.071e-5 plus margin.
-    @test minimum(ratio) >= 2.8 - 2.3e-5
-    # P2OperatingLineWLTC sampled upper bound: solver excursion 2.241e-7 plus margin.
-    @test maximum(ratio) <= 12.0 + 2.5e-7
+    # Rodas5P is not bound-preserving when the clamped command leaves 2.8. At
+    # t=1532.1916125 its accepted ratio is 2.799977794 with command 2.804728768;
+    # dense output reaches 2.799969019 at t=1532.19 (3.0981e-5 below the bound).
+    # The first-order state has no projection; this allowance covers both errors.
+    @test minimum(ratio) >= 2.8 - 4e-5
+    # The sampled upper ratio allows 3e-7 numerical overshoot of the 12:1 limit.
+    @test maximum(ratio) <= 12.0 + 3e-7
     # P2OperatingLineWLTC accepted lower bound: on accepted solver steps with the planar
     # slip-joint tire the ratio overshoots by 5.196e-5; the bound allows about twice that.
     @test minimum(s[m.powertrain.variator.ratio]) >= 2.8 - 1e-4
@@ -708,8 +880,9 @@ end
     # ±150 rpm at actual brake power; demand scheduling need not follow realized power.
     @test maximum(deviation[eligible]) < 1600.0
     @test maximum(deviation[.!idle .& .!launch]) < 2400.0
-    @test maximum(abs.(at(m.line.P) .- at(m.powertrain.engine_pedal) .* s.ps[m.P_peak])) < 1e-8
-    @test all(isapprox.(at(m.N_target), max.(at(m.line.N), s.ps[m.N_locked]); atol = 1e-9))
+    command = m.speed_command
+    @test maximum(abs.(at(command.line.P) .- at(m.powertrain.engine_pedal) .* s.ps[command.P_peak])) < 1e-8
+    @test all(isapprox.(at(command.N_ref), max.(at(command.line.N), s.ps[command.N_locked]); atol = 1e-9))
     moving = at(m.car.bus.vx) .* 3.6 .> 10.0
     cruise_min_position = k0_cruise_min_position(m, at, dt)
     # At 54.01 s the shallow-slope mask resumes before the 0.5 s variator lag has settled;
@@ -1234,8 +1407,8 @@ include("torque_to_pedal.jl")
     @test maximum(soc) <= 0.8
     corrected = last(s[m.meter.fuel_corr])
     @test corrected < H0_L100
-    @test corrected ≈ 4.0863406523 atol = 1e-9 rtol = 0
-    @test last(s[m.meter.energy_corr]) ≈ 132.1237260121 atol = 5e-4 rtol = 0
+    @test corrected ≈ 4.0865140557 atol = 1e-9 rtol = 0
+    @test last(s[m.meter.energy_corr]) ≈ 132.1292589629 atol = 5e-4 rtol = 0
     on = at(m.manager.engine_on) .> 0.5
     starts = findall(diff(on) .== 1)
     stops = findall(diff(on) .== -1)
@@ -1276,7 +1449,7 @@ include("torque_to_pedal.jl")
     mean_power_error = sum(error_W[tracking]) / sum(tracking)
     max_power_error = maximum(error_W[tracking])
     fuel = at(m.powertrain.mdot_fuel)
-    line_fuel_share = sum(fuel[abs.(at(m.powertrain.engine.N) .- at(m.line.N)) .<= 150.0]) / sum(fuel)
+    line_fuel_share = sum(fuel[abs.(at(m.powertrain.engine.N) .- at(m.speed_command.line.N)) .<= 150.0]) / sum(fuel)
     @test mean_power_error < 500.0
     @test max_power_error < 5000.0
     @test line_fuel_share > 0.45
@@ -1351,7 +1524,7 @@ end
     end
     @testset "the 30 kW row is the charge-sustaining pin" begin
         ours = only(filter(r -> r.P_rated == 30e3, rows))
-        @test ours.fuel_corr ≈ 4.086343 atol = 1e-4 rtol = 0
+        @test ours.fuel_corr ≈ 4.086513 atol = 1e-4 rtol = 0
         @test ours.flag == "ok"
     end
     @testset "a larger machine saves more, up to 30 kW" begin

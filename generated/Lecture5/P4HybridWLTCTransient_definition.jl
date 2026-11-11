@@ -151,7 +151,7 @@ export P4HybridWLTCTransient__System
   var"specialization"::SpecializationLevel.Type = SpecializationLevel.Despecialize()
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
-  # P4 rear-axle hybrid WLTC with the output bench's launch-referred drive ceiling and shared brake ceiling.
+  # P4 rear-axle hybrid WLTC with launch-referred drive capacity, plant-bound planning limit and shared brake ceiling.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture5.P4HybridWLTC(; name=:P4HybridWLTC)
   __system::System = P4HybridWLTCTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file")
 end
