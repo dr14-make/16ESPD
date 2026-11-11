@@ -259,7 +259,7 @@ command to the physical output-side shaft and accounts for starter power separat
   push!(__systems, @named engagement_command = VehicleSystemsComponents.Vehicle.EngagementCommand(; engage_rpm=engage_rpm, engage_width_rpm=engage_width_rpm, lock_rpm=lock_rpm, lock_width_rpm=lock_width_rpm, managed=true, __overrides = engagement_command_overrides))
   # Subcomponent machine_limit of type BlockComponents.Sources.Constant
   machine_limit_overrides = __pop_subcomponent_overrides!(__overrides, "machine_limit")
-  push!(__systems, @named machine_limit = BlockComponents.Sources.Constant(; k=T_max * reduction, __overrides = machine_limit_overrides))
+  push!(__systems, @named machine_limit = BlockComponents.Sources.Constant(; k=powertrain.drive.T_max * reduction, __overrides = machine_limit_overrides))
   # Subcomponent referred_limit of type BlockComponents.Math.Division
   referred_limit_overrides = __pop_subcomponent_overrides!(__overrides, "referred_limit")
   push!(__systems, @named referred_limit = BlockComponents.Math.Division(; __overrides = referred_limit_overrides))
