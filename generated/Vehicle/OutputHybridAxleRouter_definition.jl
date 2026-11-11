@@ -8,9 +8,11 @@
    OutputHybridAxleRouter(; name, rear, __overrides)
 
 Ideal P3/P4 shaft selector with a fixed connector topology. The selected axle
-shares the machine angle and balances its torque; the other axle is torque-free.
+shares the machine angle and balances its torque. In P4 the front is torque-free.
 No speed or angle constraint couples the front and rear axles.
-In P3 the unused rear angle is fixed; its external unconnected flow closes torque.
+In P3 rear_axle is grounded in angle and must stay externally unconnected:
+its unconnected flow closes torque. Wiring it to a rear differential locks that axle;
+it is not a torque-free output when connected.
 
 ## Parameters:
 

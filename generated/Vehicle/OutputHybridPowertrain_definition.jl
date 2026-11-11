@@ -14,7 +14,9 @@ unity-ratio axle differential. P4 therefore requires a separate rear differentia
 in the vehicle fixture, not a connection of front and rear shafts inside this model.
 CVT defaults already include the front final drive; i_output is the separate
 machine-to-wheel reduction, not another front engine final drive.
-The rear port is always present and torque-free in P3. An ideal axle router
+The rear port is always present. In P3 it is grounded in angle and MUST remain
+unconnected; connecting a rear differential locks the rear wheels, not a torque-free
+axle. Use rear=true with a separate rear differential for P4. An ideal axle router
 selects only the machine branch without locking front and rear shaft speeds.
 Both CVT scheduling modes use P2Variator's shared ratio actuator and schedule.
 
