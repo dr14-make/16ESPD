@@ -3,6 +3,7 @@
 include("../scripts/bsfc_line.jl")
 using .BsfcLine
 using JSON
+using TOML
 
 const BSFC_LINE = read_line()
 # The machine-size sweep's baseline is H0's pinned fuel; one constant serves the sweep and these tests.
@@ -373,9 +374,12 @@ end
             end
         end
         index_components(joinpath(@__DIR__, "..", "dyad"), "VehicleSystemsComponents"; local_source = true)
-        reference = joinpath(@__DIR__, "..", "agent_resources", "stdlib_reference")
-        for library in readdir(reference; join = true)
-            isdir(library) && index_components(library, basename(library); local_source = false)
+        project = TOML.parsefile(joinpath(@__DIR__, "..", "Project.toml"))
+        for library in keys(project["deps"])
+            entry = Base.find_package(library)
+            isnothing(entry) && error("Project dependency $library is not installed")
+            source = joinpath(dirname(dirname(entry)), "dyad")
+            isdir(source) && index_components(source, library; local_source = false)
         end
         function resolve_type(type, owner)
             haskey(definitions, type) && return type
