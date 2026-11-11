@@ -58,8 +58,10 @@ end
     @test p2.E_recovered_MJ < min(p3.E_recovered_MJ, p4.E_recovered_MJ)
     @test p3.electric_drive_s > 0
     @test p4.electric_drive_s > 0
-    @test p2.fuel_corr_L100 ≈ 4.0865140557 atol = 1e-9 rtol = 0
-    @test p4.fuel_corr_L100 ≈ 4.0865885501 atol = 1e-9 rtol = 0
+    for (row, pin) in zip(rows, (4.8178093394, 4.5113793080, 4.0865140557,
+            4.0794804768, 4.0865885501))
+        @test row.fuel_corr_L100 ≈ pin atol = 1e-9 rtol = 0
+    end
 
     @testset "P4 live run matches pin" begin
         run = VehicleSystemsComponents.Lecture5.P4HybridWLTCTransient()
