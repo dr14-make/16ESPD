@@ -45,7 +45,7 @@ test component P2WLTC
   pedal_command = VehicleSystemsComponents.Vehicle.FixedModePedalCommand(electric = electric, tau_max = tau_max) {^pedal_command}
   "Zero for unused command inputs (assumed; fixed-mode fixture)"
   unused_command = BlockComponents.Sources.Constant(k = 0.0) {^unused_command}
-  brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(gain = brake_gain, signed_driver = true, fixed_mode = true, electric = electric) {^brakes}
+  brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(gain = ifelse(electric, 1.0, brake_gain), signed_driver = true, fixed_mode = true, electric = electric) {^brakes}
   stored_power = BlockComponents.Math.Product() {^stored_power}
   engagement_command = VehicleSystemsComponents.Vehicle.EngagementCommand(engage_rpm = engage_rpm, engage_width_rpm = engage_width_rpm, lock_rpm = lock_rpm, lock_width_rpm = lock_width_rpm, enabled = !electric) {^engagement_command}
 relations
