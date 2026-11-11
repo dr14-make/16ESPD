@@ -18,9 +18,7 @@ The driver's braking ceiling `tau_brake`, friction and regen together, stays at 
 model's value. The pack and every other manager parameter are fixed: its demand-power
 thresholds, charging power and line cap are strategy and engine settings, not machine limits. A
 row whose run does not end charge-sustaining (`SOC_BAND`) or does not follow the trace
-(`SPEED_ERROR_MAX`) is still written, flagged. The converter's rounded current-limit law is
-part of this comparison: its fixed 1 A corner rounding can change machine-limited trajectories
-and the manager's charge/start decisions, especially at 8 and 15 kW.
+(`SPEED_ERROR_MAX`) is still written, flagged.
 
 Every default this file derives from is read from the default model's parameters
 (`DEFAULTS`); the 30 kW size runs that model unchanged. The first line of the file records the
