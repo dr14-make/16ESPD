@@ -518,7 +518,8 @@ end
             "Vehicle/Engine/TorqueMap.dyad", "Lecture5/FuelEnableBench.dyad",
             "Lecture5/P2WLTC.dyad", "Lecture5/P2OperatingLineWLTC.dyad",
             "Lecture5/P2HybridWLTC.dyad", "Lecture5/HybridPositionWLTC.dyad",
-            "Lecture5/CoupledHybridWLTC.dyad", "Lecture5/OutputHybridWLTC.dyad")]
+            "Lecture5/CoupledHybridWLTC.dyad", "Lecture5/OutputHybridWLTC.dyad",
+            "Lecture5/P4HybridWLTC.dyad")]
         function indirect_endpoints(file, source)
             violations = Tuple{String,Int,String}[]
             for connection in eachmatch(r"\bconnect\s*\(([^)]*)\)", code_only(source))
