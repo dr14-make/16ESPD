@@ -7,7 +7,7 @@
 @doc Markdown.doc"""
    P4HybridWLTC(; name, electric_drive, rear, m, radius, k, Ti, tau_max, tau_engine_peak, tau_brake, dv_wheel, engage_rpm, engage_width_rpm, lock_rpm, lock_width_rpm, N_locked, reduction, eta_start, T_max, i_launch, __overrides)
 
-P4 rear-axle hybrid WLTC with the output bench's launch-referred drive ceiling and shared brake ceiling.
+P4 rear-axle hybrid WLTC with launch-referred drive capacity, plant-bound planning limit and shared brake ceiling.
 
 ## Parameters:
 

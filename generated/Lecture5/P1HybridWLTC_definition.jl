@@ -7,7 +7,7 @@
 @doc Markdown.doc"""
    P1HybridWLTC(; name, electric_drive, m, radius, k, Ti, tau_max, tau_engine_peak, tau_brake, dv_wheel, engage_rpm, engage_width_rpm, lock_rpm, lock_width_rpm, N_locked, i_crank, eta_crank, T_max, k0_capacity, __overrides)
 
-P1 direct-crank 30 kW hybrid WLTC; ideal crank coupling, shared brake ceiling and 540 N.m K0 capacity.
+P1 direct-crank 30 kW hybrid WLTC; unit crank ratio and efficiency, shared brake ceiling and 540 N.m K0 capacity.
 
 ## Parameters:
 
