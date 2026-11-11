@@ -512,7 +512,9 @@ end
             "Vehicle/Engine/MappedEngine.dyad", "Vehicle/DisconnectClutch.dyad",
             "Vehicle/P2TorqueCommand.dyad", "Vehicle/P2Variator.dyad",
             "Vehicle/LineSpeedCommand.dyad", "Vehicle/HybridLineSpeedCommand.dyad",
-            "Vehicle/BrakeSplit.dyad",
+            "Vehicle/BrakeSplit.dyad", "Vehicle/EngagementCommand.dyad",
+            "Vehicle/FixedModePedalCommand.dyad", "Vehicle/Electric/DCMachine.dyad",
+            "Vehicle/OutputHybridPowertrain.dyad", "Vehicle/CoupledHybridPowertrain.dyad",
             "Vehicle/ParameterGate.dyad", "Vehicle/OptionalShaftHold.dyad",
             "Vehicle/Engine/TorqueMap.dyad", "Lecture5/FuelEnableBench.dyad",
             "Lecture5/P2WLTC.dyad", "Lecture5/P2OperatingLineWLTC.dyad",
@@ -543,7 +545,7 @@ end
                 meta = match(r"(?s)metadata (\{.*?\})\nend", text)
                 isnothing(meta) && continue
                 links = JSON.parse(meta.captures[1])["_links"]
-                ports = [m.captures[1] for m in eachmatch(r"(?m)^\s*(\w+) = (?:RealInput|RealOutput|Spline|VehicleSystemsComponents.Vehicle.GasPort)\(", code_only(text))]
+                ports = [m.captures[1] for m in eachmatch(r"(?m)^\s*(\w+) = (?:RealInput|RealOutput|Spline|Pin|VehicleSystemsComponents.Vehicle.GasPort)\(", code_only(text))]
                 tags = Set(m.captures[1] for m in eachmatch(r"\{\^(\w+)\}", text))
                 line = count(==('\n'), source[1:component.offset + meta.offset - 1]) + 1
                 for connection in eachmatch(r"connect\(([^)]*)\)\s*\{\^(\w+_wire)\}", code_only(text))
@@ -556,7 +558,7 @@ end
                 new_blocks = Set(("stored_power", "engagement_command", "no_machine",
                     "starter_power", "total_stored_power", "machine_limit", "referred_limit",
                     "machine_command", "unused_pedal", "speed_command", "brakes",
-                    "brake_command", "brake_product", "pedal_command", "pedal_gain"))
+                    "brake_product", "pedal_command", "pedal_gain", "field_command"))
                 for (key, link) in links
                     box = get(get(get(link, "Dyad", Dict()), "placement", Dict()), "diagram", nothing)
                     isnothing(box) && continue
