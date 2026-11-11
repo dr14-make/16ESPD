@@ -554,6 +554,25 @@ end
                     connection_line = count(==('\n'), source[1:component.offset + connection.offset - 1]) + 1
                     isempty(edges) && push!(routing, (file, connection_line, tag))
                 end
+                new_blocks = Set(("stored_power", "engagement_command", "no_machine",
+                    "starter_power", "total_stored_power", "machine_limit", "referred_limit",
+                    "machine_command", "unused_pedal", "speed_command", "brakes",
+                    "brake_command", "brake_product", "pedal_command", "pedal_gain"))
+                for (key, link) in links
+                    box = get(get(get(link, "Dyad", Dict()), "placement", Dict()), "diagram", nothing)
+                    isnothing(box) && continue
+                    # Connector glyphs straddle the frame; their centers must lie on it.
+                    coordinates = key in ports ? [(box[k*"1"] + box[k*"2"]) / 2 for k in ("x", "y")] :
+                        [box[k] for k in ("x1", "x2", "y1", "y2")]
+                    @test all(x -> 0 <= x <= 1000, coordinates)
+                end
+                for connection in eachmatch(r"connect\(([^)]*)\)\s*\{\^(\w+)\}", code_only(text))
+                    ends = strip.(split(connection.captures[1], ','))
+                    any(first(split(e, '.')) in new_blocks for e in ends) || continue
+                    edges = get(get(get(links, connection.captures[2], Dict()), "Dyad", Dict()), "edges", [])
+                    @test length(edges) == length(ends) - 1
+                    @test all(!isempty(get(edge, "M", [])) for edge in edges)
+                end
                 for key in keys(links)
                     key in tags || push!(orphans, (file, line, key))
                 end

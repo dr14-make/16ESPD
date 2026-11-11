@@ -7,32 +7,32 @@ against engine drag. `i_crank=1, eta_crank=1` models an ideal direct-crank P1 co
 Connect support to a stationary reference; spline goes to an external differential.
 """
 component CoupledHybridPowertrain
-  engine_pedal = RealInput()
-  engage = RealInput()
-  tau_ref = RealInput()
-  engine_on = RealInput()
+  engine_pedal = RealInput() {^engine_pedal}
+  engage = RealInput() {^engage}
+  tau_ref = RealInput() {^tau_ref}
+  engine_on = RealInput() {^engine_on}
   "Cranking torque target [N.m]; compensates the target minus actual engine torque only while latched on below firing"
-  engine_torque_ref = RealInput()
+  engine_torque_ref = RealInput() {^engine_torque_ref}
   variable machine_limit::Torque
   "Machine-side cranking deficit [N.m], gated by engine_on and the smooth unfired fraction; never cancels fuel-cut drag"
   variable start_compensation::Torque
   "Select speed-commanded CVT control instead of pedal scheduling (assumed comparison option)"
   structural parameter speed_commanded::Boolean = false
   "Pedal schedule input; drive with zero when speed_commanded is true"
-  cvt_pedal = RealInput()
+  cvt_pedal = RealInput() {^cvt_pedal}
   "Speed target [rpm]; drive with zero when speed_commanded is false"
-  N_ref = RealInput()
-  spline = Spline()
-  support = Spline()
-  engine_speed = RealOutput()
-  engine_torque = RealOutput()
-  available_torque = RealOutput()
-  mdot_fuel = RealOutput()
-  machine_torque = RealOutput()
-  position = RealOutput()
-  SoC = RealOutput()
-  E = RealOutput()
-  i = RealOutput()
+  N_ref = RealInput() {^N_ref}
+  spline = Spline() {^spline}
+  support = Spline() {^support}
+  engine_speed = RealOutput() {^engine_speed}
+  engine_torque = RealOutput() {^engine_torque}
+  available_torque = RealOutput() {^available_torque}
+  mdot_fuel = RealOutput() {^mdot_fuel}
+  machine_torque = RealOutput() {^machine_torque}
+  position = RealOutput() {^position}
+  SoC = RealOutput() {^SoC}
+  E = RealOutput() {^E}
+  i = RealOutput() {^i}
   "Machine/crank speed ratio (assumed: illustrative P0 pulley sizing, not vehicle data)"
   parameter i_crank::Real(min = eps(Float64)) = 2.5
   "Crank transmission efficiency in both directions (assumed: illustrative belt)"
@@ -60,8 +60,8 @@ component CoupledHybridPowertrain
   shaft_speed = RealOutput() {^shaft_speed}
   ratio = RealOutput() {^ratio}
 relations
-  shaft_speed = speed_variator.w_a
-  ratio = speed_variator.ratio
+  shaft_speed = speed_variator.w_a {^shaft_speed}
+  ratio = speed_variator.ratio {^ratio}
   initial engine.air.manifold.p = 101325.0
   initial engine.crankshaft.w = engine_speed_start
   initial engine.crankshaft.phi = 0.0
@@ -82,14 +82,14 @@ relations
   connect(speed_variator.spline_b, spline)
   connect(speed_variator.support, support)
   connect(engine.support, belt.support, k0.support, drive.support, support)
-  engine_speed = engine.speed.w
-  engine_torque = engine.tau_e
-  available_torque = engine.torque_map.full_load.y
-  mdot_fuel = engine.mdot_fuel
-  machine_torque = drive.machine.tau
-  position = k0.position
-  SoC = drive.SoC
-  E = drive.battery.E
-  i = drive.battery.i
-metadata {"_links":{"shaft_speed":{"Dyad":{"placement":{"diagram":{"x1":975,"y1":225,"x2":1025,"y2":275},"icon":{"x1":950,"y1":200,"x2":1050,"y2":300}}}},"ratio":{"Dyad":{"placement":{"diagram":{"x1":975,"y1":725,"x2":1025,"y2":775},"icon":{"x1":950,"y1":700,"x2":1050,"y2":800}}}}}}
+  engine_speed = engine.speed.w {^engine_speed}
+  engine_torque = engine.tau_e {^engine_torque}
+  available_torque = engine.torque_map.full_load.y {^available_torque}
+  mdot_fuel = engine.mdot_fuel {^mdot_fuel}
+  machine_torque = drive.machine.tau {^machine_torque}
+  position = k0.position {^position}
+  SoC = drive.SoC {^SoC}
+  E = drive.battery.E {^E}
+  i = drive.battery.i {^i}
+metadata {"_links":{"shaft_speed":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":863.3333333333334,"y2":903.3333333333334},"icon":{"x1":980,"x2":1020,"y1":863.3333333333334,"y2":903.3333333333334}}}},"ratio":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":940.0,"y2":980.0},"icon":{"x1":980,"x2":1020,"y1":940.0,"y2":980.0}}}},"engine_pedal":{"Dyad":{"placement":{"diagram":{"x1":-20,"x2":20,"y1":20.0,"y2":60.0},"icon":{"x1":-20,"x2":20,"y1":20.0,"y2":60.0}}}},"engage":{"Dyad":{"placement":{"diagram":{"x1":-20,"x2":20,"y1":173.33333333333334,"y2":213.33333333333334},"icon":{"x1":-20,"x2":20,"y1":173.33333333333334,"y2":213.33333333333334}}}},"tau_ref":{"Dyad":{"placement":{"diagram":{"x1":-20,"x2":20,"y1":326.6666666666667,"y2":366.6666666666667},"icon":{"x1":-20,"x2":20,"y1":326.6666666666667,"y2":366.6666666666667}}}},"engine_on":{"Dyad":{"placement":{"diagram":{"x1":-20,"x2":20,"y1":480.0,"y2":520.0},"icon":{"x1":-20,"x2":20,"y1":480.0,"y2":520.0}}}},"engine_torque_ref":{"Dyad":{"placement":{"diagram":{"x1":-20,"x2":20,"y1":633.3333333333334,"y2":673.3333333333334},"icon":{"x1":-20,"x2":20,"y1":633.3333333333334,"y2":673.3333333333334}}}},"cvt_pedal":{"Dyad":{"placement":{"diagram":{"x1":-20,"x2":20,"y1":786.6666666666666,"y2":826.6666666666666},"icon":{"x1":-20,"x2":20,"y1":786.6666666666666,"y2":826.6666666666666}}}},"N_ref":{"Dyad":{"placement":{"diagram":{"x1":-20,"x2":20,"y1":940.0,"y2":980.0},"icon":{"x1":-20,"x2":20,"y1":940.0,"y2":980.0}}}},"spline":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":20.0,"y2":60.0},"icon":{"x1":980,"x2":1020,"y1":20.0,"y2":60.0}}}},"support":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":96.66666666666667,"y2":136.66666666666669},"icon":{"x1":980,"x2":1020,"y1":96.66666666666667,"y2":136.66666666666669}}}},"engine_speed":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":173.33333333333334,"y2":213.33333333333334},"icon":{"x1":980,"x2":1020,"y1":173.33333333333334,"y2":213.33333333333334}}}},"engine_torque":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":250.0,"y2":290.0},"icon":{"x1":980,"x2":1020,"y1":250.0,"y2":290.0}}}},"available_torque":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":326.6666666666667,"y2":366.6666666666667},"icon":{"x1":980,"x2":1020,"y1":326.6666666666667,"y2":366.6666666666667}}}},"mdot_fuel":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":403.3333333333333,"y2":443.3333333333333},"icon":{"x1":980,"x2":1020,"y1":403.3333333333333,"y2":443.3333333333333}}}},"machine_torque":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":480.0,"y2":520.0},"icon":{"x1":980,"x2":1020,"y1":480.0,"y2":520.0}}}},"position":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":556.6666666666666,"y2":596.6666666666666},"icon":{"x1":980,"x2":1020,"y1":556.6666666666666,"y2":596.6666666666666}}}},"SoC":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":633.3333333333334,"y2":673.3333333333334},"icon":{"x1":980,"x2":1020,"y1":633.3333333333334,"y2":673.3333333333334}}}},"E":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":710.0,"y2":750.0},"icon":{"x1":980,"x2":1020,"y1":710.0,"y2":750.0}}}},"i":{"Dyad":{"placement":{"diagram":{"x1":980,"x2":1020,"y1":786.6666666666666,"y2":826.6666666666666},"icon":{"x1":980,"x2":1020,"y1":786.6666666666666,"y2":826.6666666666666}}}}}}
 end
