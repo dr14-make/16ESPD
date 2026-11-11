@@ -41,7 +41,7 @@ test component P2WLTC
   split = VehicleSystemsComponents.Vehicle.Electric.TorqueSplit(ratio = 1.0) {^split}
   meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel() {^meter}
   machine_gate = VehicleSystemsComponents.Vehicle.ParameterGate(on = electric) {^machine_gate}
-  "Bounded CVT pedal request (derived; electric driver torque / 150 N.m, otherwise engine pedal)"
+  "Bounded CVT pedal request (derived; driver torque / tau_max, otherwise engine pedal)"
   pedal_command = VehicleSystemsComponents.Vehicle.FixedModePedalCommand(electric = electric, tau_max = tau_max) {^pedal_command}
   "Zero for unused command inputs (assumed; fixed-mode fixture)"
   unused_command = BlockComponents.Sources.Constant(k = 0.0) {^unused_command}
