@@ -149,8 +149,8 @@ Studio also shows the inactive `engine_on` input when start/stop is off, as expl
 #### Wire it into the car (10 min)
 
 Open `HandsOn05 › Step1EngineWLTC`. The powertrain is already placed in the middle, set up as the
-conventional car H0. Its engine pedal and K0 request are set in code; no port is wired on the
-canvas yet.
+conventional car H0. The pedal command, K0 engagement command, stored-power Product and
+brake split are already wired; complete the seven connections below.
 
 [![The step-1 starter as it opens: drive cycle, PI driver, torque split and machine gate on the left, the unwired powertrain block in the middle with the fuel meter beside it, the zero constant and fixed-mode pedal command loose, the planar car, differential and road load below.](/lecture/lecture-05/img/step01-starter-unwired.png)](/lecture/lecture-05/img/step01-starter-unwired.png)
 
@@ -176,7 +176,7 @@ Your first canvas wire renames every `connect` tag in the file to `id…` and re
 metadata. That is expected: the model is unchanged, but a text diff against the reference is
 noisy.
 
-What the starter already does, in code: the pedal is the PI driver's output divided by 150 N·m;
+What the starter's wired blocks already do: the pedal is the PI driver's output divided by 150 N·m;
 K0 closes smoothly as the engine passes 1300 rpm (a launch, like a centrifugal clutch) and opens
 again when the shaft falls toward the 800 rpm idle, so the engine does not stall at stops; front
 friction brakes take the negative driver output; and the machine's losses and inertia are zeroed,
