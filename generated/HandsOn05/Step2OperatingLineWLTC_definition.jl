@@ -175,7 +175,7 @@ completes it to Lecture5.P2OperatingLineWLTC.
   push!(__systems, @named unused_command = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = unused_command_overrides))
   # Subcomponent brakes of type VehicleSystemsComponents.Vehicle.BrakeSplit
   brakes_overrides = __pop_subcomponent_overrides!(__overrides, "brakes")
-  push!(__systems, @named brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(; gain=brake_gain, signed_driver=true, __overrides = brakes_overrides))
+  push!(__systems, @named brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(; gain=brake_gain, input=VehicleSystemsComponents.Vehicle.BrakeInput.SignedDriver(), __overrides = brakes_overrides))
   # Subcomponent pedal_gain of type BlockComponents.Math.Gain
   pedal_gain_overrides = __pop_subcomponent_overrides!(__overrides, "pedal_gain")
   push!(__systems, @named pedal_gain = BlockComponents.Math.Gain(; k=1 / tau_max, __overrides = pedal_gain_overrides))

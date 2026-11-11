@@ -44,7 +44,7 @@ test component Step2OperatingLineWLTC
   meter = VehicleSystemsComponents.Vehicle.SoCCorrectedFuel() {^meter}
   "Zero for unused command inputs (assumed; fixed-mode fixture)"
   unused_command = BlockComponents.Sources.Constant(k = 0.0) {^unused_command}
-  brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(gain = brake_gain, signed_driver = true) {^brakes}
+  brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(gain = brake_gain, input = VehicleSystemsComponents.Vehicle.BrakeInput.SignedDriver()) {^brakes}
   pedal_gain = BlockComponents.Math.Gain(k = 1 / tau_max) {^pedal_gain}
   pedal_command = BlockComponents.Nonlinear.Limiter(y_min = 0.0, y_max = 1.0) {^pedal_command}
   stored_power = BlockComponents.Math.Product() {^stored_power}

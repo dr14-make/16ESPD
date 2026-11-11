@@ -188,7 +188,7 @@ Planar P2 fixed-mode WLTC fixture (derived; PlanarBEVWLTC, Lecture 5 step 1).
   push!(__systems, @named unused_command = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = unused_command_overrides))
   # Subcomponent brakes of type VehicleSystemsComponents.Vehicle.BrakeSplit
   brakes_overrides = __pop_subcomponent_overrides!(__overrides, "brakes")
-  push!(__systems, @named brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(; gain=ifelse(electric, 1.0, brake_gain), signed_driver=true, fixed_mode=true, electric=electric, __overrides = brakes_overrides))
+  push!(__systems, @named brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(; gain=brake_gain, input=ifelse(electric, VehicleSystemsComponents.Vehicle.BrakeInput.FixedElectric(), VehicleSystemsComponents.Vehicle.BrakeInput.FixedEngine()), __overrides = brakes_overrides))
   # Subcomponent stored_power of type BlockComponents.Math.Product
   stored_power_overrides = __pop_subcomponent_overrides!(__overrides, "stored_power")
   push!(__systems, @named stored_power = BlockComponents.Math.Product(; __overrides = stored_power_overrides))

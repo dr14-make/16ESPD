@@ -11,3 +11,5 @@ if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Vehicle"
   include(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Vehicle", "types.jl"))
 end
 
+
+include("BrakeInput_type.jl")

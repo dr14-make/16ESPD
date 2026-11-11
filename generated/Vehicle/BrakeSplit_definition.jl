@@ -5,28 +5,23 @@
 
 
 @doc Markdown.doc"""
-   BrakeSplit(; name, signed_driver, fixed_mode, electric, gain, front_fraction, __overrides)
+   BrakeSplit(; name, input, gain, front_fraction, __overrides)
 
-Allocate a total positive brake-torque magnitude to four wheel-brake commands.
+Allocate braking to four positive per-wheel torque magnitudes.
 
-By default `u` is a positive magnitude: total wheel torque is `max(u, 0) * gain`.
-With structural `signed_driver = true`, `u` is instead a signed driver request:
-negative requests braking and total wheel torque is `-min(u, 0) * gain`.
-`front_fraction` assigns the front axle share; the rear receives its complement.
-Each axle splits equally left/right. Outputs are positive braking magnitudes.
-Defaults `gain = 1.0` and `front_fraction = 1.0` give front-only braking.
-With fixed_mode, electric brake input is already per front wheel; ratio refers it
-to wheel torque without a second axle split. Engine mode uses signed u.
+Magnitude uses max(u, 0) * gain as total wheel torque. SignedDriver and
+FixedEngine use -min(u, 0) * gain. FixedElectric uses the per-wheel brake
+input referred through ratio; its total is 2 * max(brake, 0) * ratio and
+does not use gain. Fixed modes expose brake and ratio for a fixed-mode bench.
+front_fraction assigns the front axle share; both axles split equally left/right.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `signed_driver`         | Interpret negative driver requests as braking instead of positive magnitudes                         | --  |   false |
-| `fixed_mode`         |                          | --  |   false |
-| `electric`         |                          | --  |   false |
-| `gain`         | Input-to-total-wheel brake torque gain                         | --  |   1.0 |
-| `front_fraction`         | Fraction of total braking assigned to the front axle (assumed Lecture5 front-only default)                         | --  |   1.0 |
+| `input`         |                          | --  |   BrakeInput.Magnitude() |
+| `gain`         | Input-to-total-wheel torque gain in magnitude and signed-driver modes                         | --  |   1.0 |
+| `front_fraction`         | Fraction of total braking assigned to the front axle                         | --  |   1.0 |
 
 ## Connectors
 
@@ -43,9 +38,8 @@ to wheel torque without a second axle split. Engine mode uses signed u.
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
 | `magnitude`         |                          | --  |
-| `axle_divisor`         |                          | --  |
 """
-@component function BrakeSplit(; name = nothing, var"signed_driver"=false, var"fixed_mode"=false, var"electric"=false, var"gain"=Float64(1.0), var"front_fraction"=Float64(1.0), __overrides = Dict{String, Any}())
+@component function BrakeSplit(; name = nothing, var"input"=VehicleSystemsComponents.Vehicle.BrakeInput.Magnitude(), var"gain"=Float64(1.0), var"front_fraction"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -64,9 +58,7 @@ to wheel torque without a second axle split. Engine mode uses signed u.
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
-  haskey(__overrides, "signed_driver") && (signed_driver = pop!(__overrides, "signed_driver"))
-  haskey(__overrides, "fixed_mode") && (fixed_mode = pop!(__overrides, "fixed_mode"))
-  haskey(__overrides, "electric") && (electric = pop!(__overrides, "electric"))
+  haskey(__overrides, "input") && (input = pop!(__overrides, "input"))
   haskey(__overrides, "gain") && (gain = pop!(__overrides, "gain"))
   haskey(__overrides, "front_fraction") && (front_fraction = pop!(__overrides, "front_fraction"))
 
@@ -84,10 +76,10 @@ to wheel torque without a second axle split. Engine mode uses signed u.
 
   ### Symbolic Parameters
   __local__gain = gain
-  append!(__params, @parameters (gain::Real), [description = "Input-to-total-wheel brake torque gain"])
+  append!(__params, @parameters (gain::Real), [description = "Input-to-total-wheel torque gain in magnitude and signed-driver modes"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, gain, __local__gain)
   __local__front_fraction = front_fraction
-  append!(__params, @parameters (front_fraction::Real), [description = "Fraction of total braking assigned to the front axle (assumed Lecture5 front-only default)", bounds = (0.0, 1.0)])
+  append!(__params, @parameters (front_fraction::Real), [description = "Fraction of total braking assigned to the front axle", bounds = (0.0, 1.0)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, front_fraction, __local__front_fraction)
 
   ### Final Parameters (assignments)
@@ -103,15 +95,11 @@ to wheel torque without a second axle split. Engine mode uses signed u.
 
   ### Variables (declarations)
   append!(__vars, @variables (magnitude(t)::Real))
-  append!(__vars, @variables (axle_divisor(t)::Real))
 
   ### Variables (assignments)
   __ovr_magnitude = pop!(__overrides, "magnitude", nothing); isnothing(__ovr_magnitude) || push!(__eqs, magnitude ~ __ovr_magnitude)
   __ovr_magnitude__initial = pop!(__overrides, "magnitude.initial", nothing); isnothing(__ovr_magnitude__initial) || (__initial_conditions[magnitude] = __ovr_magnitude__initial)
   __ovr_magnitude__guess = pop!(__overrides, "magnitude.guess", nothing)
-  __ovr_axle_divisor = pop!(__overrides, "axle_divisor", nothing); isnothing(__ovr_axle_divisor) || push!(__eqs, axle_divisor ~ __ovr_axle_divisor)
-  __ovr_axle_divisor__initial = pop!(__overrides, "axle_divisor.initial", nothing); isnothing(__ovr_axle_divisor__initial) || (__initial_conditions[axle_divisor] = __ovr_axle_divisor__initial)
-  __ovr_axle_divisor__guess = pop!(__overrides, "axle_divisor.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -123,7 +111,6 @@ to wheel torque without a second axle split. Engine mode uses signed u.
 
   ### Guesses
   isnothing(__ovr_magnitude__guess) || (__guesses[magnitude] = __ovr_magnitude__guess)
-  isnothing(__ovr_axle_divisor__guess) || (__guesses[axle_divisor] = __ovr_axle_divisor__guess)
 
   ### Initialization Equations
 
@@ -131,21 +118,18 @@ to wheel torque without a second axle split. Engine mode uses signed u.
   __assertions = []
 
   ### Equations
-  push!(__eqs, tau_fl ~ magnitude * gain * front_fraction / axle_divisor)
+  push!(__eqs, tau_fl ~ magnitude * front_fraction / 2.0)
   push!(__eqs, tau_fr ~ tau_fl)
-  push!(__eqs, tau_rl ~ magnitude * gain * (1.0 - front_fraction) / axle_divisor)
+  push!(__eqs, tau_rl ~ magnitude * (1.0 - front_fraction) / 2.0)
   push!(__eqs, tau_rr ~ tau_rl)
 
   ### Control Structures
-  if (fixed_mode) && (electric)
-    push!(__eqs, magnitude ~ max(brake, 0.0) * ratio)
-    push!(__eqs, axle_divisor ~ 1.0)
-  elseif signed_driver
-    push!(__eqs, axle_divisor ~ 2.0)
-    push!(__eqs, magnitude ~ -min(u, 0.0))
+  if input == BrakeInput.FixedElectric()
+    push!(__eqs, magnitude ~ 2.0 * max(brake, 0.0) * ratio)
+  elseif input == BrakeInput.Magnitude()
+    push!(__eqs, magnitude ~ max(u, 0.0) * gain)
   else
-    push!(__eqs, axle_divisor ~ 2.0)
-    push!(__eqs, magnitude ~ max(u, 0.0))
+    push!(__eqs, magnitude ~ -min(u, 0.0) * gain)
   end
 
   # Return completely constructed System
