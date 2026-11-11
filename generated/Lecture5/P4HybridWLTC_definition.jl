@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   P4HybridWLTC(; name, electric_drive, rear, m, radius, k, Ti, tau_max, tau_engine_peak, tau_brake, dv_wheel, engage_rpm, engage_width_rpm, lock_rpm, lock_width_rpm, N_locked, reduction, eta_start, T_max, i_launch, __overrides)
+   P4HybridWLTC(; name, electric_drive, m, radius, k, Ti, tau_max, tau_engine_peak, tau_brake, dv_wheel, engage_rpm, engage_width_rpm, lock_rpm, lock_width_rpm, N_locked, reduction, eta_start, T_max, i_launch, __overrides)
 
 P4 rear-axle hybrid WLTC with launch-referred drive capacity, plant-bound planning limit and shared brake ceiling.
 
@@ -14,7 +14,6 @@ P4 rear-axle hybrid WLTC with launch-referred drive capacity, plant-bound planni
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `electric_drive`         | Permit electric-only operation (derived; false for crank-coupled P0)                         | --  |   true |
-| `rear`         | Rear machine axle selector (derived; P3 false, P4 true)                         | --  |   true |
 | `m`         | Vehicle and road-load mass (assumed; shared planar benchmark)                         | kg  |   1500.0 |
 | `radius`         | Wheel radius (derived; shared planar benchmark)                         | m  |   0.31 |
 | `k`         | PI gain [N.m per km/h] (assumed; shared WLTC driver)                         | --  |   110.0 |
@@ -46,7 +45,7 @@ P4 rear-axle hybrid WLTC with launch-referred drive capacity, plant-bound planni
 | `E_regen`         | Requested regenerative energy in the manager torque frame [J]                         | J  |
 | `E_friction`         | Actual four-wheel friction-brake dissipation [J]                         | J  |
 """
-@component function P4HybridWLTC(; name = nothing, var"electric_drive"=true, var"rear"=true, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(110.0), var"Ti"=Float64(1.0), var"tau_engine_peak"=150.233567, var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"N_locked"=Float64(1000.0), var"reduction"=8.193, var"eta_start"=0.7, var"T_max"=Float64(205.0), var"i_launch"=Float64(12.0), var"tau_brake"=nothing, var"tau_max"=nothing, __overrides = Dict{String, Any}())
+@component function P4HybridWLTC(; name = nothing, var"electric_drive"=true, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(110.0), var"Ti"=Float64(1.0), var"tau_engine_peak"=150.233567, var"dv_wheel"=0.01, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"lock_rpm"=Float64(840.0), var"lock_width_rpm"=Float64(12.0), var"N_locked"=Float64(1000.0), var"reduction"=8.193, var"eta_start"=0.7, var"T_max"=Float64(205.0), var"i_launch"=Float64(12.0), var"tau_brake"=nothing, var"tau_max"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -66,7 +65,6 @@ P4 rear-axle hybrid WLTC with launch-referred drive capacity, plant-bound planni
 
   ### Keyword argument overrides
   haskey(__overrides, "electric_drive") && (electric_drive = pop!(__overrides, "electric_drive"))
-  haskey(__overrides, "rear") && (rear = pop!(__overrides, "rear"))
   haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
   haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
   haskey(__overrides, "k") && (k = pop!(__overrides, "k"))
@@ -239,7 +237,7 @@ P4 rear-axle hybrid WLTC with launch-referred drive capacity, plant-bound planni
   powertrain_dict = Dict{String, Any}()
   powertrain_dict["speed_variator.i_launch"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(i_launch))
   merge!(powertrain_dict, powertrain_overrides)
-  push!(__systems, @named powertrain = VehicleSystemsComponents.Vehicle.OutputHybridPowertrain(; speed_commanded=true, rear=rear, i_output=reduction, T_max=T_max, __overrides = powertrain_dict))
+  push!(__systems, @named powertrain = VehicleSystemsComponents.Vehicle.OutputHybridPowertrain(; speed_commanded=true, i_output=reduction, T_max=T_max, rear=true, __overrides = powertrain_dict))
   # Subcomponent stored_power of type BlockComponents.Math.Product
   stored_power_overrides = __pop_subcomponent_overrides!(__overrides, "stored_power")
   push!(__systems, @named stored_power = BlockComponents.Math.Product(; __overrides = stored_power_overrides))

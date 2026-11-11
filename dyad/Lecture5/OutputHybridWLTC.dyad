@@ -1,12 +1,10 @@
 """
-P3 output-coupled hybrid WLTC; rear=true selects the P4 through-the-road plant.
+P3 output-coupled hybrid WLTC. Use P4HybridWLTC for the rear-axle plant and differential.
 The manager retains CVT-input torque coordinates. The plant converts its machine
 command to the physical output-side shaft and accounts for starter power separately.
 """
 test component OutputHybridWLTC
   extends HybridPositionWLTC(tau_max = tau_engine_peak + T_max * reduction / i_launch)
-  "Rear machine axle selector (derived; P3 false, P4 true)"
-  structural parameter rear::Boolean = false
   "Machine-to-wheel reduction (derived; Lecture 4 electric driveline benchmark)"
   parameter reduction::Real(min = eps(Float64)) = 8.193
   "Separate engine-starter electrical efficiency (assumed; starter accounting)"
@@ -15,7 +13,7 @@ test component OutputHybridWLTC
   parameter T_max::Torque = 205.0
   "Launch CVT ratio (derived; SpeedCommandedVariator benchmark)"
   parameter i_launch::Real = 12.0
-  powertrain = VehicleSystemsComponents.Vehicle.OutputHybridPowertrain(speed_commanded = true, rear = rear, i_output = reduction, T_max = T_max, speed_variator(i_launch = i_launch)) {^powertrain}
+  powertrain = VehicleSystemsComponents.Vehicle.OutputHybridPowertrain(speed_commanded = true, rear = false, i_output = reduction, T_max = T_max, speed_variator(i_launch = i_launch)) {^powertrain}
   stored_power = BlockComponents.Math.Product() {^stored_power}
   starter_power = BlockComponents.Math.Gain(k = 1.0 / eta_start) {^starter_power}
   total_stored_power = BlockComponents.Math.Add() {^total_stored_power}

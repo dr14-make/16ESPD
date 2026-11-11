@@ -151,7 +151,7 @@ export OutputHybridWLTCTransient__System
   var"specialization"::SpecializationLevel.Type = SpecializationLevel.Despecialize()
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
-  # P3 output-coupled hybrid WLTC; rear=true selects the P4 through-the-road plant.
+  # P3 output-coupled hybrid WLTC. Use P4HybridWLTC for the rear-axle plant and differential.
   # The manager retains CVT-input torque coordinates. The plant converts its machine
   # command to the physical output-side shaft and accounts for starter power separately.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture5.OutputHybridWLTC(; name=:OutputHybridWLTC)

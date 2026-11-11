@@ -1,6 +1,6 @@
 "P4 rear-axle hybrid WLTC with launch-referred drive capacity, plant-bound planning limit and shared brake ceiling."
 test component P4HybridWLTC
-  extends OutputHybridWLTC(rear = true)
+  extends OutputHybridWLTC(powertrain(rear = true))
   rear_differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^rear_differential}
 relations
   connect(powertrain.rear_spline, rear_differential.flange_b) {^rear_spline_wire}
