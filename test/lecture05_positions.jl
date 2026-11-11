@@ -106,6 +106,14 @@ end
         @test resolved(smaller, smaller.machine_limit.k) < resolved(nominal, nominal.machine_limit.k)
         @test resolved(smaller, smaller.machine_limit.k) / resolved(nominal, nominal.machine_limit.k) ≈
             20.0 / resolved(nominal, nominal.powertrain.drive.T_max)
+        analysis = getproperty(L, Symbol(string(nameof(constructor)) * "Transient"))
+        run = analysis(model = smaller, stop = 0.1)
+        m = symbolic_container(run)
+        @test string(run.sol.retcode) == "Success"
+        expected = 20.0 * (constructor === L.CoupledHybridWLTC ?
+            resolved(smaller, smaller.i_crank) * resolved(smaller, smaller.eta_crank) :
+            resolved(smaller, smaller.reduction) / run.sol(0.0, idxs = m.powertrain.ratio))
+        @test run.sol(0.0, idxs = m.manager.T_lim) ≈ expected
     end
     paths = Tuple[(p,) for p in (:m, :radius, :k, :Ti, :tau_brake, :dv_wheel,
         :engage_rpm, :engage_width_rpm, :lock_rpm, :lock_width_rpm)]
