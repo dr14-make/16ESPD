@@ -720,7 +720,7 @@ end
         speed_error = maximum(abs, 3.6 .* checkpoint(m.car.bus.vx) .- checkpoint(m.trace.y))
         trace_distance = sum(diff(s.t) .* (s[m.trace.y][1:end-1] .+ s[m.trace.y][2:end])) / 7.2
         @test speed_error <= 2.0
-        @test speed_error ≈ (electric ? 1.502830 : 1.167635) atol = 1e-4
+        @test speed_error ≈ (electric ? 1.5028697230 : 1.167635) atol = (electric ? 1e-6 : 1e-4)
         @test s[m.meter.s][end] ≈ trace_distance rtol=5e-4
         if electric
             @test maximum(abs, s[m.powertrain.position]) < 1e-9
