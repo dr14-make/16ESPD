@@ -353,8 +353,7 @@ end
         @test length(nested_connections("self-check", "if enabled\nfor i in 1:2\nend\nconnect(a, b)\nend\n")) == 1
         folder = joinpath(@__DIR__, "..", "dyad", "HandsOn05")
         files = filter(f -> endswith(f, ".dyad"), readdir(folder; join = true))
-        # Index local and reference declarations by namespace, not by short component name.
-        # The latter would confuse the HandsOn05 copies with their Vehicle/Lecture5 originals.
+        # Local and reference declarations are indexed by namespace.
         definitions = Dict{String,Any}()
         function index_components(root, prefix; local_source)
             for (dir, _, names) in walkdir(root), name in names
