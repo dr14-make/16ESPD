@@ -10,6 +10,7 @@
 Ideal P3/P4 shaft selector with a fixed connector topology. The selected axle
 shares the machine angle and balances its torque; the other axle is torque-free.
 No speed or angle constraint couples the front and rear axles.
+In P3 the unused rear angle is fixed; its external unconnected flow closes torque.
 
 ## Parameters:
 
@@ -94,7 +95,7 @@ No speed or angle constraint couples the front and rear axles.
   else
     push!(__eqs, machine.phi ~ front.phi)
     push!(__eqs, machine.tau + front.tau ~ 0.0)
-    push!(__eqs, rear_axle.tau ~ 0.0)
+    push!(__eqs, rear_axle.phi ~ 0.0)
   end
 
   # Return completely constructed System

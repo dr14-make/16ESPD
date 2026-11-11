@@ -236,9 +236,6 @@ command to the physical output-side shaft and accounts for starter power separat
   # Subcomponent brake_product of type BlockComponents.Math.Product
   brake_product_overrides = __pop_subcomponent_overrides!(__overrides, "brake_product")
   push!(__systems, @named brake_product = BlockComponents.Math.Product(; __overrides = brake_product_overrides))
-  # Subcomponent rear_differential of type MultibodyComponents.PlanarMechanics.DifferentialGear
-  rear_differential_overrides = __pop_subcomponent_overrides!(__overrides, "rear_differential")
-  push!(__systems, @named rear_differential = MultibodyComponents.PlanarMechanics.DifferentialGear(; __overrides = rear_differential_overrides))
   # Subcomponent powertrain of type VehicleSystemsComponents.Vehicle.OutputHybridPowertrain
   powertrain_overrides = __pop_subcomponent_overrides!(__overrides, "powertrain")
   powertrain_dict = Dict{String, Any}()
@@ -352,9 +349,6 @@ command to the physical output-side shaft and accounts for starter power separat
   push!(__eqs, connect(manager.tau_machine, powertrain.tau_ref))
   push!(__eqs, connect(speed_command.N_ref, powertrain.N_ref))
   push!(__eqs, connect(powertrain.spline, differential.flange_b))
-  push!(__eqs, connect(powertrain.rear_spline, rear_differential.flange_b))
-  push!(__eqs, connect(rear_differential.flange_left, car.spin_rl))
-  push!(__eqs, connect(rear_differential.flange_right, car.spin_rr))
   push!(__eqs, connect(powertrain.support, mount.spline))
   push!(__eqs, connect(powertrain.mdot_fuel, meter.mdot_fuel))
   push!(__eqs, connect(powertrain.ratio, ratio))

@@ -5,7 +5,16 @@ const POSITION_ENGINE_PEAK = Ref{Float64}(NaN)
 
 using .PPositionTable
 
+@testset "P3 with unconnected rear spline" begin
+    run = VehicleSystemsComponents.Lecture5.OutputHybridWLTCTransient(stop = 0.1)
+    m, s = symbolic_container(run), run.sol
+    @test string(s.retcode) == "Success"
+    @test maximum(abs, s[m.powertrain.rear_spline.tau]) < 1e-12
+    @test maximum(abs, s[m.powertrain.rear_spline.phi]) < 1e-12
+end
+
 @testset "Belt power directions" begin
+
     V = VehicleSystemsComponents.Vehicle
     for demand in (40.0, -40.0)
         bench = V.TestBeltDrive(; name = :bench, demand)

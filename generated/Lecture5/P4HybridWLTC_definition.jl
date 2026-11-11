@@ -234,9 +234,6 @@ P4 rear-axle hybrid WLTC with launch-referred drive capacity, plant-bound planni
   # Subcomponent brake_product of type BlockComponents.Math.Product
   brake_product_overrides = __pop_subcomponent_overrides!(__overrides, "brake_product")
   push!(__systems, @named brake_product = BlockComponents.Math.Product(; __overrides = brake_product_overrides))
-  # Subcomponent rear_differential of type MultibodyComponents.PlanarMechanics.DifferentialGear
-  rear_differential_overrides = __pop_subcomponent_overrides!(__overrides, "rear_differential")
-  push!(__systems, @named rear_differential = MultibodyComponents.PlanarMechanics.DifferentialGear(; __overrides = rear_differential_overrides))
   # Subcomponent powertrain of type VehicleSystemsComponents.Vehicle.OutputHybridPowertrain
   powertrain_overrides = __pop_subcomponent_overrides!(__overrides, "powertrain")
   powertrain_dict = Dict{String, Any}()
@@ -264,6 +261,9 @@ P4 rear-axle hybrid WLTC with launch-referred drive capacity, plant-bound planni
   # Subcomponent unused_pedal of type BlockComponents.Sources.Constant
   unused_pedal_overrides = __pop_subcomponent_overrides!(__overrides, "unused_pedal")
   push!(__systems, @named unused_pedal = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = unused_pedal_overrides))
+  # Subcomponent rear_differential of type MultibodyComponents.PlanarMechanics.DifferentialGear
+  rear_differential_overrides = __pop_subcomponent_overrides!(__overrides, "rear_differential")
+  push!(__systems, @named rear_differential = MultibodyComponents.PlanarMechanics.DifferentialGear(; __overrides = rear_differential_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -350,12 +350,12 @@ P4 rear-axle hybrid WLTC with launch-referred drive capacity, plant-bound planni
   push!(__eqs, connect(manager.tau_machine, powertrain.tau_ref))
   push!(__eqs, connect(speed_command.N_ref, powertrain.N_ref))
   push!(__eqs, connect(powertrain.spline, differential.flange_b))
-  push!(__eqs, connect(powertrain.rear_spline, rear_differential.flange_b))
-  push!(__eqs, connect(rear_differential.flange_left, car.spin_rl))
-  push!(__eqs, connect(rear_differential.flange_right, car.spin_rr))
   push!(__eqs, connect(powertrain.support, mount.spline))
   push!(__eqs, connect(powertrain.mdot_fuel, meter.mdot_fuel))
   push!(__eqs, connect(powertrain.ratio, ratio))
+  push!(__eqs, connect(powertrain.rear_spline, rear_differential.flange_b))
+  push!(__eqs, connect(rear_differential.flange_left, car.spin_rl))
+  push!(__eqs, connect(rear_differential.flange_right, car.spin_rr))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
