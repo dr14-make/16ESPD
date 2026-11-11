@@ -263,6 +263,9 @@ command to the physical output-side shaft and accounts for starter power separat
   # Subcomponent referred_limit of type BlockComponents.Math.Division
   referred_limit_overrides = __pop_subcomponent_overrides!(__overrides, "referred_limit")
   push!(__systems, @named referred_limit = BlockComponents.Math.Division(; __overrides = referred_limit_overrides))
+  # Subcomponent unused_pedal of type BlockComponents.Sources.Constant
+  unused_pedal_overrides = __pop_subcomponent_overrides!(__overrides, "unused_pedal")
+  push!(__systems, @named unused_pedal = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = unused_pedal_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -325,6 +328,7 @@ command to the physical output-side shaft and accounts for starter power separat
   push!(__eqs, connect(brakes.tau_fr, car.tau_fr))
   push!(__eqs, connect(brakes.tau_rl, car.tau_rl))
   push!(__eqs, connect(brakes.tau_rr, car.tau_rr))
+  push!(__eqs, connect(unused_pedal.y, powertrain.cvt_pedal))
   push!(__eqs, connect(powertrain.E, stored_power.u1))
   push!(__eqs, connect(powertrain.i, stored_power.u2))
   push!(__eqs, connect(powertrain.P_start, starter_power.u))

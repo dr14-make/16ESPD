@@ -246,7 +246,7 @@ P1 direct-crank 30 kW hybrid WLTC; ideal crank coupling, shared brake ceiling an
   push!(__systems, @named engagement_command = VehicleSystemsComponents.Vehicle.EngagementCommand(; engage_rpm=engage_rpm, engage_width_rpm=engage_width_rpm, lock_rpm=lock_rpm, lock_width_rpm=lock_width_rpm, __overrides = engagement_command_overrides))
   # Subcomponent machine_limit of type BlockComponents.Sources.Constant
   machine_limit_overrides = __pop_subcomponent_overrides!(__overrides, "machine_limit")
-  push!(__systems, @named machine_limit = BlockComponents.Sources.Constant(; k=T_max * i_crank * eta_crank, __overrides = machine_limit_overrides))
+  push!(__systems, @named machine_limit = BlockComponents.Sources.Constant(; k=powertrain.drive.T_max * i_crank * eta_crank, __overrides = machine_limit_overrides))
   # Subcomponent machine_command of type BlockComponents.Math.Gain
   machine_command_overrides = __pop_subcomponent_overrides!(__overrides, "machine_command")
   push!(__systems, @named machine_command = BlockComponents.Math.Gain(; k=1.0 / i_crank, __overrides = machine_command_overrides))

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   BrakeSplit(; name, signed_driver, gain, front_fraction, __overrides)
+   BrakeSplit(; name, signed_driver, fixed_mode, electric, gain, front_fraction, __overrides)
 
 Allocate a total positive brake-torque magnitude to four wheel-brake commands.
 
@@ -15,13 +15,16 @@ negative requests braking and total wheel torque is `-min(u, 0) * gain`.
 `front_fraction` assigns the front axle share; the rear receives its complement.
 Each axle splits equally left/right. Outputs are positive braking magnitudes.
 Defaults `gain = 1.0` and `front_fraction = 1.0` give front-only braking.
-Operating-line callers select signed-driver mode and their driver-to-wheel gain.
+With fixed_mode, electric brake input is already per front wheel; ratio refers it
+to wheel torque without a second axle split. Engine mode uses signed u.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `signed_driver`         | Interpret negative driver requests as braking instead of positive magnitudes                         | --  |   false |
+| `fixed_mode`         |                          | --  |   false |
+| `electric`         |                          | --  |   false |
 | `gain`         | Input-to-total-wheel brake torque gain                         | --  |   1.0 |
 | `front_fraction`         | Fraction of total braking assigned to the front axle (assumed Lecture5 front-only default)                         | --  |   1.0 |
 
@@ -32,14 +35,17 @@ Operating-line callers select signed-driver mode and their driver-to-wheel gain.
  * `tau_fr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `tau_rl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `tau_rr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `brake` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `ratio` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 
 ## Variables
 
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
 | `magnitude`         |                          | --  |
+| `axle_divisor`         |                          | --  |
 """
-@component function BrakeSplit(; name = nothing, var"signed_driver"=false, var"gain"=Float64(1.0), var"front_fraction"=Float64(1.0), __overrides = Dict{String, Any}())
+@component function BrakeSplit(; name = nothing, var"signed_driver"=false, var"fixed_mode"=false, var"electric"=false, var"gain"=Float64(1.0), var"front_fraction"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -59,6 +65,8 @@ Operating-line callers select signed-driver mode and their driver-to-wheel gain.
 
   ### Keyword argument overrides
   haskey(__overrides, "signed_driver") && (signed_driver = pop!(__overrides, "signed_driver"))
+  haskey(__overrides, "fixed_mode") && (fixed_mode = pop!(__overrides, "fixed_mode"))
+  haskey(__overrides, "electric") && (electric = pop!(__overrides, "electric"))
   haskey(__overrides, "gain") && (gain = pop!(__overrides, "gain"))
   haskey(__overrides, "front_fraction") && (front_fraction = pop!(__overrides, "front_fraction"))
 
@@ -90,14 +98,20 @@ Operating-line callers select signed-driver mode and their driver-to-wheel gain.
   append!(__vars, @variables (tau_fr(t)::Real), [output = true])
   append!(__vars, @variables (tau_rl(t)::Real), [output = true])
   append!(__vars, @variables (tau_rr(t)::Real), [output = true])
+  append!(__vars, @variables (brake(t)::Real), [input = true])
+  append!(__vars, @variables (ratio(t)::Real), [input = true])
 
   ### Variables (declarations)
   append!(__vars, @variables (magnitude(t)::Real))
+  append!(__vars, @variables (axle_divisor(t)::Real))
 
   ### Variables (assignments)
   __ovr_magnitude = pop!(__overrides, "magnitude", nothing); isnothing(__ovr_magnitude) || push!(__eqs, magnitude ~ __ovr_magnitude)
   __ovr_magnitude__initial = pop!(__overrides, "magnitude.initial", nothing); isnothing(__ovr_magnitude__initial) || (__initial_conditions[magnitude] = __ovr_magnitude__initial)
   __ovr_magnitude__guess = pop!(__overrides, "magnitude.guess", nothing)
+  __ovr_axle_divisor = pop!(__overrides, "axle_divisor", nothing); isnothing(__ovr_axle_divisor) || push!(__eqs, axle_divisor ~ __ovr_axle_divisor)
+  __ovr_axle_divisor__initial = pop!(__overrides, "axle_divisor.initial", nothing); isnothing(__ovr_axle_divisor__initial) || (__initial_conditions[axle_divisor] = __ovr_axle_divisor__initial)
+  __ovr_axle_divisor__guess = pop!(__overrides, "axle_divisor.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -109,6 +123,7 @@ Operating-line callers select signed-driver mode and their driver-to-wheel gain.
 
   ### Guesses
   isnothing(__ovr_magnitude__guess) || (__guesses[magnitude] = __ovr_magnitude__guess)
+  isnothing(__ovr_axle_divisor__guess) || (__guesses[axle_divisor] = __ovr_axle_divisor__guess)
 
   ### Initialization Equations
 
@@ -116,15 +131,20 @@ Operating-line callers select signed-driver mode and their driver-to-wheel gain.
   __assertions = []
 
   ### Equations
-  push!(__eqs, tau_fl ~ magnitude * gain * front_fraction / 2.0)
+  push!(__eqs, tau_fl ~ magnitude * gain * front_fraction / axle_divisor)
   push!(__eqs, tau_fr ~ tau_fl)
-  push!(__eqs, tau_rl ~ magnitude * gain * (1.0 - front_fraction) / 2.0)
+  push!(__eqs, tau_rl ~ magnitude * gain * (1.0 - front_fraction) / axle_divisor)
   push!(__eqs, tau_rr ~ tau_rl)
 
   ### Control Structures
-  if signed_driver
+  if (fixed_mode) && (electric)
+    push!(__eqs, magnitude ~ max(brake, 0.0) * ratio)
+    push!(__eqs, axle_divisor ~ 1.0)
+  elseif signed_driver
+    push!(__eqs, axle_divisor ~ 2.0)
     push!(__eqs, magnitude ~ -min(u, 0.0))
   else
+    push!(__eqs, axle_divisor ~ 2.0)
     push!(__eqs, magnitude ~ max(u, 0.0))
   end
 

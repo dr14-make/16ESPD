@@ -188,10 +188,7 @@ Planar P2 fixed-mode WLTC fixture (derived; PlanarBEVWLTC, Lecture 5 step 1).
   push!(__systems, @named unused_command = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = unused_command_overrides))
   # Subcomponent brakes of type VehicleSystemsComponents.Vehicle.BrakeSplit
   brakes_overrides = __pop_subcomponent_overrides!(__overrides, "brakes")
-  push!(__systems, @named brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(; gain=Float64(1.0), __overrides = brakes_overrides))
-  # Subcomponent brake_command of type VehicleSystemsComponents.Vehicle.BrakeTorqueCommand
-  brake_command_overrides = __pop_subcomponent_overrides!(__overrides, "brake_command")
-  push!(__systems, @named brake_command = VehicleSystemsComponents.Vehicle.BrakeTorqueCommand(; electric=electric, brake_gain=brake_gain, __overrides = brake_command_overrides))
+  push!(__systems, @named brakes = VehicleSystemsComponents.Vehicle.BrakeSplit(; gain=ifelse(electric, 1.0, brake_gain), signed_driver=true, fixed_mode=true, electric=electric, __overrides = brakes_overrides))
   # Subcomponent stored_power of type BlockComponents.Math.Product
   stored_power_overrides = __pop_subcomponent_overrides!(__overrides, "stored_power")
   push!(__systems, @named stored_power = BlockComponents.Math.Product(; __overrides = stored_power_overrides))
@@ -235,10 +232,9 @@ Planar P2 fixed-mode WLTC fixture (derived; PlanarBEVWLTC, Lecture 5 step 1).
   push!(__eqs, connect(engagement_command.y, powertrain.engage))
   push!(__eqs, connect(driver.y, pedal_command.u))
   push!(__eqs, connect(pedal_command.engine_pedal, powertrain.engine_pedal))
-  push!(__eqs, connect(driver.y, brake_command.driver))
-  push!(__eqs, connect(split.tau_brake, brake_command.brake))
-  push!(__eqs, connect(powertrain.ratio, brake_command.ratio))
-  push!(__eqs, connect(brake_command.magnitude, brakes.u))
+  push!(__eqs, connect(driver.y, brakes.u))
+  push!(__eqs, connect(split.tau_brake, brakes.brake))
+  push!(__eqs, connect(powertrain.ratio, brakes.ratio))
   push!(__eqs, connect(unused_command.y, powertrain.N_ref, powertrain.engine_torque_ref))
   push!(__eqs, connect(pedal_command.y, powertrain.cvt_pedal))
   push!(__eqs, connect(car.bus, motion.bus))

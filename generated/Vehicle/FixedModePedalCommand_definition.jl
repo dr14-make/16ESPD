@@ -92,7 +92,7 @@ Fixed-mode bounded engine and CVT pedal requests; electric mode leaves the engin
   ### Control Structures
   if electric
     push!(__eqs, engine_pedal ~ 0.0)
-    push!(__eqs, y ~ min(max(u / 150.0, 0.0), 1.0))
+    push!(__eqs, y ~ min(max(u / tau_max, 0.0), 1.0))
   else
     push!(__eqs, engine_pedal ~ min(max(u / tau_max, 0.0), 1.0))
     push!(__eqs, y ~ engine_pedal)

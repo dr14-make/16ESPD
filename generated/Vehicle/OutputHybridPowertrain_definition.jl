@@ -16,8 +16,7 @@ CVT defaults already include the front final drive; i_output is the separate
 machine-to-wheel reduction, not another front engine final drive.
 The rear port is always present and torque-free in P3. An ideal axle router
 selects only the machine branch without locking front and rear shaft speeds.
-Both CVT scheduling modes use the always-present speed_variator; pedal mode
-retains ControlledVariator's target-speed schedule through OutputHybridVariator.
+Both CVT scheduling modes use P2Variator's shared ratio actuator and schedule.
 
 An ideal separate starter accelerates the crank while K0 request is gated by
 firing_fraction, so traction machine torque is not used for push-starting.
@@ -203,9 +202,9 @@ at its assumed electrical efficiency; no starter current or solenoid dynamics ar
   # Subcomponent starter of type RotationalComponents.Sources.TorqueSource
   starter_overrides = __pop_subcomponent_overrides!(__overrides, "starter")
   push!(__systems, @named starter = RotationalComponents.Sources.TorqueSource(; __overrides = starter_overrides))
-  # Subcomponent speed_variator of type VehicleSystemsComponents.Vehicle.OutputHybridVariator
+  # Subcomponent speed_variator of type VehicleSystemsComponents.Vehicle.P2Variator
   speed_variator_overrides = __pop_subcomponent_overrides!(__overrides, "speed_variator")
-  push!(__systems, @named speed_variator = VehicleSystemsComponents.Vehicle.OutputHybridVariator(; speed_commanded=speed_commanded, __overrides = speed_variator_overrides))
+  push!(__systems, @named speed_variator = VehicleSystemsComponents.Vehicle.P2Variator(; speed_commanded=speed_commanded, __overrides = speed_variator_overrides))
   # Subcomponent axle_router of type VehicleSystemsComponents.Vehicle.OutputHybridAxleRouter
   axle_router_overrides = __pop_subcomponent_overrides!(__overrides, "axle_router")
   push!(__systems, @named axle_router = VehicleSystemsComponents.Vehicle.OutputHybridAxleRouter(; rear=rear, __overrides = axle_router_overrides))
@@ -251,6 +250,8 @@ at its assumed electrical efficiency; no starter current or solenoid dynamics ar
   push!(__eqs, i ~ drive.battery.i)
   push!(__eqs, connect(engine_pedal, engine.pedal))
   push!(__eqs, connect(engine.spline, k0.spline_a, starter.spline))
+  push!(__eqs, connect(N_ref, speed_variator.N_ref))
+  push!(__eqs, connect(cvt_pedal, speed_variator.pedal))
   push!(__eqs, connect(k0.spline_b, speed_variator.spline_a))
   push!(__eqs, connect(speed_variator.spline_b, spline))
   push!(__eqs, connect(speed_variator.support, support))
@@ -258,13 +259,6 @@ at its assumed electrical efficiency; no starter current or solenoid dynamics ar
   push!(__eqs, connect(axle_router.front, spline))
   push!(__eqs, connect(axle_router.rear_axle, rear_spline))
   push!(__eqs, connect(engine.support, k0.support, starter.support, drive.support, support))
-
-  ### Control Structures
-  if speed_commanded
-    push!(__eqs, speed_variator.N_ref ~ N_ref)
-  else
-    push!(__eqs, speed_variator.pedal ~ cvt_pedal)
-  end
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
