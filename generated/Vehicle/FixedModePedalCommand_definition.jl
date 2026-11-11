@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   FixedModePedalCommand(; name, electric, tau_max, __overrides)
+   FixedModePedalCommand(; name, electric, tau_max, tau_pedal, __overrides)
 
 Fixed-mode bounded engine and CVT pedal requests; electric mode leaves the engine unfired.
 
@@ -15,6 +15,7 @@ Fixed-mode bounded engine and CVT pedal requests; electric mode leaves the engin
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `electric`         |                          | --  |   false |
 | `tau_max`         |                          | N.m  |   150.0 |
+| `tau_pedal`         | Electric-mode driver torque corresponding to a full CVT pedal request [N.m]                         | N.m  |   150.0 |
 
 ## Connectors
 
@@ -22,7 +23,7 @@ Fixed-mode bounded engine and CVT pedal requests; electric mode leaves the engin
  * `engine_pedal` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `y` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function FixedModePedalCommand(; name = nothing, var"electric"=false, var"tau_max"=Float64(150.0), __overrides = Dict{String, Any}())
+@component function FixedModePedalCommand(; name = nothing, var"electric"=false, var"tau_max"=Float64(150.0), var"tau_pedal"=Float64(150.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -43,6 +44,7 @@ Fixed-mode bounded engine and CVT pedal requests; electric mode leaves the engin
   ### Keyword argument overrides
   haskey(__overrides, "electric") && (electric = pop!(__overrides, "electric"))
   haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
+  haskey(__overrides, "tau_pedal") && (tau_pedal = pop!(__overrides, "tau_pedal"))
 
   ### Structural Parameters (functions)
 
@@ -60,6 +62,9 @@ Fixed-mode bounded engine and CVT pedal requests; electric mode leaves the engin
   __local__tau_max = tau_max
   append!(__params, @parameters (tau_max::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, tau_max, __local__tau_max)
+  __local__tau_pedal = tau_pedal
+  append!(__params, @parameters (tau_pedal::Real), [description = "Electric-mode driver torque corresponding to a full CVT pedal request [N.m]", bounds = (eps(Float64), Inf)])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_pedal, __local__tau_pedal)
 
   ### Final Parameters (assignments)
 
@@ -92,7 +97,7 @@ Fixed-mode bounded engine and CVT pedal requests; electric mode leaves the engin
   ### Control Structures
   if electric
     push!(__eqs, engine_pedal ~ 0.0)
-    push!(__eqs, y ~ min(max(u / tau_max, 0.0), 1.0))
+    push!(__eqs, y ~ min(max(u / tau_pedal, 0.0), 1.0))
   else
     push!(__eqs, engine_pedal ~ min(max(u / tau_max, 0.0), 1.0))
     push!(__eqs, y ~ engine_pedal)

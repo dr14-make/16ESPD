@@ -2,13 +2,15 @@
 component FixedModePedalCommand
   structural parameter electric::Boolean = false
   parameter tau_max::Torque = 150.0
+  "Electric-mode driver torque corresponding to a full CVT pedal request [N.m]"
+  parameter tau_pedal::Torque(min = eps(Float64)) = 150.0
   u = RealInput() {^u}
   engine_pedal = RealOutput() {^engine_pedal}
   y = RealOutput() {^y}
 relations
   if electric
     engine_pedal = 0.0
-    y = min(max(u / tau_max, 0.0), 1.0)
+    y = min(max(u / tau_pedal, 0.0), 1.0)
   else
     engine_pedal = min(max(u / tau_max, 0.0), 1.0)
     y = engine_pedal
