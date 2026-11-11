@@ -152,7 +152,7 @@ Open `HandsOn05 › Step1EngineWLTC`. The powertrain is already placed in the mi
 conventional car H0. Its engine pedal and K0 request are set in code; no port is wired on the
 canvas yet.
 
-[![The step-1 starter as it opens: drive cycle, PI driver, torque split and machine gate on the left, the unwired powertrain block in the middle with the fuel meter beside it, the zero constant and pedal limiter loose, the planar car, differential and road load below.](/lecture/lecture-05/img/step01-starter-unwired.png)](/lecture/lecture-05/img/step01-starter-unwired.png)
+[![The step-1 starter as it opens: drive cycle, PI driver, torque split and machine gate on the left, the unwired powertrain block in the middle with the fuel meter beside it, the zero constant and fixed-mode pedal command loose, the planar car, differential and road load below.](/lecture/lecture-05/img/step01-starter-unwired.png)](/lecture/lecture-05/img/step01-starter-unwired.png)
 
 Wire:
 
@@ -221,7 +221,7 @@ different bench.
 
 :::
 
-[![Studio diagram of the finished step-1 fixture: drive cycle, PI driver, torque split and machine gate in one line into the powertrain's torque request; a zero constant wired to the unused N_ref and engine-torque inputs and the pedal limiter to the CVT pedal; the powertrain turns the planar car's front wheels through the differential, with road load below the car, vehicle-speed feedback to the driver and split, and the fuel meter beside the powertrain](/lecture/lecture-05/img/step01-p2wltc-fixture.png)](/lecture/lecture-05/img/step01-p2wltc-fixture.png)
+[![Studio diagram of the finished step-1 fixture: drive cycle, PI driver, torque split and machine gate in one line into the powertrain's torque request; a zero constant wired to the unused N_ref and engine-torque inputs and the fixed-mode pedal command to the CVT pedal; the powertrain turns the planar car's front wheels through the differential, with road load below the car, vehicle-speed feedback to the driver and split, and the fuel meter beside the powertrain](/lecture/lecture-05/img/step01-p2wltc-fixture.png)](/lecture/lecture-05/img/step01-p2wltc-fixture.png)
 
 [![Engine-only WLTC speed tracking, engine speed, K0 position and slip, and fuel consumption](/lecture/lecture-05/img/step01-engine-only-wltc.png)](/lecture/lecture-05/img/step01-engine-only-wltc.png)
 
@@ -306,7 +306,7 @@ driver, brakes and K0 lock-up as H0, and no machine assistance or regen.
 
 :::
 
-[![Studio diagram of the finished step-2 fixture: drive cycle, PI driver, operating-line table and a zero constant wired to the powertrain's ignored CVT pedal and engine-torque inputs; the P2 powertrain turns the planar car through the differential, with road load, speed feedback and fuel meter](/lecture/lecture-05/img/step02-operating-line-diagram.png)](/lecture/lecture-05/img/step02-operating-line-diagram.png)
+[![Studio diagram of the finished step-2 fixture: drive cycle, PI driver, LineSpeedCommand and a zero constant wired to the powertrain's ignored CVT pedal and engine-torque inputs; the P2 powertrain turns the planar car through the differential, with road load, speed feedback and fuel meter](/lecture/lecture-05/img/step02-operating-line-diagram.png)](/lecture/lecture-05/img/step02-operating-line-diagram.png)
 
 [![Engine operating points on the best-BSFC line and full-load map for the operating-line WLTC](/lecture/lecture-05/img/step02-operating-points.png)](/lecture/lecture-05/img/step02-operating-points.png)
 
@@ -335,7 +335,7 @@ feeds `powertrain.engine_pedal`. Only its torque input remains open. The manager
 `SoC_on = 0.52`, `SoC_off = 0.55` and `P_line_max = 30 kW`. You add the CVT command block;
 no equations are needed.
 
-[![The step-3 starter as it opens: the energy manager reading driver demand, speed, SoC, engine speed and available torque, all six of its outputs unwired; the line and demand_line tables above; the powertrain on the wheels with only its CVT pedal fed by the zero constant.](/lecture/lecture-05/img/step03-starter-unwired.png)](/lecture/lecture-05/img/step03-starter-unwired.png)
+[![The step-3 starter as it opens: the energy manager reading driver demand, speed, SoC, engine speed and available torque, all six of its outputs unwired; the HybridLineSpeedCommand to be placed above; the powertrain on the wheels with only its CVT pedal fed by the zero constant.](/lecture/lecture-05/img/step03-starter-unwired.png)](/lecture/lecture-05/img/step03-starter-unwired.png)
 
 #### Do this
 
@@ -402,7 +402,7 @@ small amount of fuel is booked to electric mode; settled electric operation burn
 
 :::
 
-[![Studio diagram of the finished step-3 fixture: driver demand into the energy manager, whose outputs drive the torque-to-pedal map and the powertrain; engine speed, available torque and SoC loop back under the manager; operating-line tables above; a zero constant below the powertrain feeds its ignored CVT pedal; planar car, road load and fuel meter as in step 2](/lecture/lecture-05/img/step03-hybrid-diagram.png)](/lecture/lecture-05/img/step03-hybrid-diagram.png)
+[![Studio diagram of the finished step-3 fixture: driver demand into the energy manager, whose outputs drive the torque-to-pedal map and the powertrain; engine speed, available torque and SoC loop back under the manager; HybridLineSpeedCommand above; a zero constant below the powertrain feeds its ignored CVT pedal; planar car, road load and fuel meter as in step 2](/lecture/lecture-05/img/step03-hybrid-diagram.png)](/lecture/lecture-05/img/step03-hybrid-diagram.png)
 
 [![Hybrid WLTC speed tracking, engine starts, K0 position, battery SoC and energy-manager modes](/lecture/lecture-05/img/step03-hybrid-wltc.png)](/lecture/lecture-05/img/step03-hybrid-wltc.png)
 
