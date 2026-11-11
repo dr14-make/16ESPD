@@ -7,7 +7,8 @@ negative requests braking and total wheel torque is `-min(u, 0) * gain`.
 `front_fraction` assigns the front axle share; the rear receives its complement.
 Each axle splits equally left/right. Outputs are positive braking magnitudes.
 Defaults `gain = 1.0` and `front_fraction = 1.0` give front-only braking.
-Operating-line callers select signed-driver mode and their driver-to-wheel gain.
+With fixed_mode, electric brake input is already per front wheel; ratio refers it
+to wheel torque without a second axle split. Engine mode uses signed u.
 """
 component BrakeSplit
   "Brake torque magnitude [N.m], or signed driver request when signed_driver is true"
@@ -24,26 +25,30 @@ component BrakeSplit
   parameter gain::Real = 1.0
   "Interpret negative driver requests as braking instead of positive magnitudes"
   structural parameter signed_driver::Boolean = false
+  structural parameter fixed_mode::Boolean = false
+  structural parameter electric::Boolean = false
+  "Per-front-wheel brake magnitude before the CVT [N.m]"
+  brake = RealInput() if fixed_mode {^brake}
+  "Actual CVT input-to-wheel reduction"
+  ratio = RealInput() if fixed_mode {^ratio}
   variable magnitude::Real
+  variable axle_divisor::Real
   "Fraction of total braking assigned to the front axle (assumed Lecture5 front-only default)"
   parameter front_fraction::Real(min = 0.0, max = 1.0) = 1.0
 relations
-  if signed_driver
+  if fixed_mode && electric
+    magnitude = max(brake, 0.0) * ratio
+    axle_divisor = 1.0
+  elseif signed_driver
+    axle_divisor = 2.0
     magnitude = -min(u, 0.0)
   else
+    axle_divisor = 2.0
     magnitude = max(u, 0.0)
   end
-  tau_fl = magnitude * gain * front_fraction / 2.0
+  tau_fl = magnitude * gain * front_fraction / axle_divisor
   tau_fr = tau_fl
-  tau_rl = magnitude * gain * (1.0 - front_fraction) / 2.0
+  tau_rl = magnitude * gain * (1.0 - front_fraction) / axle_divisor
   tau_rr = tau_rl
-metadata {
-  "_links": {
-    "u": {"Dyad": {"placement": {"diagram": {"x1": -25, "y1": 475, "x2": 25, "y2": 525}, "icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
-    "tau_fl": {"Dyad": {"placement": {"diagram": {"x1": 975, "y1": 175, "x2": 1025, "y2": 225}, "icon": {"x1": 950, "y1": 150, "x2": 1050, "y2": 250}}}},
-    "tau_fr": {"Dyad": {"placement": {"diagram": {"x1": 975, "y1": 375, "x2": 1025, "y2": 425}, "icon": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}}}},
-    "tau_rl": {"Dyad": {"placement": {"diagram": {"x1": 975, "y1": 575, "x2": 1025, "y2": 625}, "icon": {"x1": 950, "y1": 550, "x2": 1050, "y2": 650}}}},
-    "tau_rr": {"Dyad": {"placement": {"diagram": {"x1": 975, "y1": 775, "x2": 1025, "y2": 825}, "icon": {"x1": 950, "y1": 750, "x2": 1050, "y2": 850}}}}
-  }
-}
+metadata {"_links":{"u":{"Dyad":{"placement":{"diagram":{"x1":-25,"y1":475,"x2":25,"y2":525},"icon":{"x1":-50,"y1":450,"x2":50,"y2":550}}}},"tau_fl":{"Dyad":{"placement":{"diagram":{"x1":975,"y1":175,"x2":1025,"y2":225},"icon":{"x1":950,"y1":150,"x2":1050,"y2":250}}}},"tau_fr":{"Dyad":{"placement":{"diagram":{"x1":975,"y1":375,"x2":1025,"y2":425},"icon":{"x1":950,"y1":350,"x2":1050,"y2":450}}}},"tau_rl":{"Dyad":{"placement":{"diagram":{"x1":975,"y1":575,"x2":1025,"y2":625},"icon":{"x1":950,"y1":550,"x2":1050,"y2":650}}}},"tau_rr":{"Dyad":{"placement":{"diagram":{"x1":975,"y1":775,"x2":1025,"y2":825},"icon":{"x1":950,"y1":750,"x2":1050,"y2":850}}}},"brake":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":175,"y2":225},"icon":{"x1":-25,"x2":25,"y1":175,"y2":225}}}},"ratio":{"Dyad":{"placement":{"diagram":{"x1":-25,"x2":25,"y1":775,"y2":825},"icon":{"x1":-25,"x2":25,"y1":775,"y2":825}}}}}}
 end
