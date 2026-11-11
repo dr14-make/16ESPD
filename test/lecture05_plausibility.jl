@@ -855,8 +855,10 @@ end
     cmd = at(m.powertrain.variator.i_command)
     ratio = at(m.powertrain.variator.ratio)
     @info "Line ratio interpolation" sampled=extrema(ratio) accepted=extrema(s[m.powertrain.variator.ratio])
-    # Dense interpolation can undershoot the first-order actuator's clamped command;
-    # the measured 3.099e-5 excursion is covered with a 4e-5 numerical allowance.
+    # Rodas5P is not bound-preserving when the clamped command leaves 2.8. At
+    # t=1532.1916125 its accepted ratio is 2.799977794 with command 2.804728768;
+    # dense output reaches 2.799969019 at t=1532.19 (3.0981e-5 below the bound).
+    # The first-order state has no projection; this allowance covers both errors.
     @test minimum(ratio) >= 2.8 - 4e-5
     # The sampled upper ratio allows 3e-7 numerical overshoot of the 12:1 limit.
     @test maximum(ratio) <= 12.0 + 3e-7
