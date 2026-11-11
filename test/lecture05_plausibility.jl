@@ -365,8 +365,7 @@ end
                 namespace = join([prefix; filter(x -> x != ".", splitpath(relpath(dir, root)))], ".")
                 for c in component_sections(source)
                     key = namespace * "." * c.name
-                    # component_sections preserves legacy scan scope; the type index must
-                    # exclude trailing analyses/functions belonging to the same source file.
+                    # Analyses and functions are not members of the component type.
                     boundary = match(r"(?m)^(?:analysis|function|connector|type)\s", code_only(c.text))
                     text = isnothing(boundary) ? c.text : c.text[1:prevind(c.text, boundary.offset)]
                     definitions[key] = (; c..., text, file, namespace, local_source,
@@ -437,7 +436,7 @@ end
         @test isempty(violations)
 
         # Only finished road benches and their descendants prohibit typed input equations.
-        # Constitutive equations inside placed components deliberately remain out of scope.
+        # Constitutive equations define component behavior, not bench signal wiring.
         road = Set("VehicleSystemsComponents.Lecture5." * name for name in
             ("P2WLTC", "P2OperatingLineWLTC", "P2HybridWLTC", "HybridPositionWLTC", "SeriesWLTCGround"))
         changed = true

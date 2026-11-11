@@ -55,7 +55,6 @@ component CoupledHybridPowertrain
   k0 = VehicleSystemsComponents.Vehicle.DisconnectClutch(position_start = position_start)
   drive = VehicleSystemsComponents.Vehicle.Electric.HybridDrive(P_rated = P_rated, T_max = T_max)
   belt = VehicleSystemsComponents.Vehicle.BeltDrive(ratio = i_crank, eta = eta_crank)
-  # Keep the speed_variator path used by the P0/P1 benches in both control modes.
   speed_variator = VehicleSystemsComponents.Vehicle.P2Variator(speed_commanded = speed_commanded)
   shaft_speed = RealOutput() {^shaft_speed}
   ratio = RealOutput() {^ratio}
