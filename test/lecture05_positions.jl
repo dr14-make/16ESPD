@@ -101,7 +101,8 @@ end
     # Planning capacity must follow a machine-size override at the plant interface.
     for constructor in (L.CoupledHybridWLTC, L.OutputHybridWLTC, L.P4HybridWLTC)
         nominal = constructor(name = :nominal)
-        smaller = constructor(name = :smaller, powertrain = (; drive = (; T_max = 20.0)))
+        smaller = constructor(name = :smaller,
+            __overrides = Dict{String,Any}("powertrain.drive.T_max" => 20.0))
         @test resolved(smaller, smaller.machine_limit.k) < resolved(nominal, nominal.machine_limit.k)
         @test resolved(smaller, smaller.machine_limit.k) / resolved(nominal, nominal.machine_limit.k) ≈
             20.0 / resolved(nominal, nominal.powertrain.drive.T_max)
