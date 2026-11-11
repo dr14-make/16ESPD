@@ -260,7 +260,7 @@ routeAlias: build-charge-sustaining
 <div class="grid grid-cols-[1.1fr_1fr] gap-8 items-start">
 <div>
 
-![The meter in P2HybridWLTC: the powertrain's fuel flow and the vehicle speed wired in; the stored battery power enters as an equation.](/img/lecture-05/step04-charge-sustaining.png)
+![The meter in P2HybridWLTC: the powertrain's fuel flow and the vehicle speed wired in; the stored_power Product multiplies battery voltage E by current i and is wired to the meter.](/img/lecture-05/step04-charge-sustaining.png)
 
 **Given:** the SoC-corrected fuel calculation (`SoCCorrectedFuel`)
 
@@ -273,8 +273,10 @@ routeAlias: build-charge-sustaining
 the end of your three runs (H0, the line car, the hybrid) · compare them with the ready table*
 
 ```txt
-# on every starter: stored power, not terminal
-meter.P_stored = powertrain.E * powertrain.i
+# already wired on every starter: stored power, not terminal
+powertrain.E → stored_power.u1
+powertrain.i → stored_power.u2
+stored_power.y → meter.P_stored
 # noted at t = 1800 s after each run
 meter.fuel_raw   meter.fuel_corr   meter.energy_corr
 ```
@@ -297,13 +299,13 @@ meet once the battery is back</div>
 <!--
 Build 04: compare at equal charge. The hybrid's run must end with the battery as full as it
 started. On the left you see the fuel block on the hybrid test model in Studio. The powertrain's
-fuel flow and the car's speed are wired into it, and the battery power enters as one line of code.
+fuel flow and the car's speed are wired into it, and the battery power arrives through the stored_power Product and its wires.
 
 Every starter already carries the library's fuel block, SoCCorrectedFuel, and step 4 adds nothing to
 it and runs nothing new. After each of your three runs you note the meter's reading at the end of
 the 1800 seconds, and step 4 sets them beside a ready table of the reference values. The block reads
 the engine's fuel flow, the power going into and out of the battery's store, and the distance. The
-code line says how the stored power is computed: E, the battery's open-circuit voltage, which is the
+Product computes the stored power: E, the battery's open-circuit voltage, which is the
 voltage with no current flowing, times i, the current. We use the stored power, not the terminal
 power, because the power at the terminals would count the heat lost in the battery's resistance as
 charge the battery never holds. The block reports the raw fuel, the net battery energy, and the
