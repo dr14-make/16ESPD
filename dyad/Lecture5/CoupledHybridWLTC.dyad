@@ -15,7 +15,7 @@ test component CoupledHybridWLTC
   powertrain = VehicleSystemsComponents.Vehicle.CoupledHybridPowertrain(speed_commanded = true, i_crank = i_crank, eta_crank = eta_crank, T_max = T_max, k0(tau_max = k0_capacity)) {^powertrain}
   stored_power = BlockComponents.Math.Product() {^stored_power}
   engagement_command = VehicleSystemsComponents.Vehicle.EngagementCommand(engage_rpm = engage_rpm, engage_width_rpm = engage_width_rpm, lock_rpm = lock_rpm, lock_width_rpm = lock_width_rpm) {^engagement_command}
-  machine_limit = BlockComponents.Sources.Constant(k = T_max * i_crank * eta_crank) {^machine_limit}
+  machine_limit = BlockComponents.Sources.Constant(k = powertrain.drive.T_max * i_crank * eta_crank) {^machine_limit}
   machine_command = BlockComponents.Math.Gain(k = 1.0 / i_crank) {^machine_command}
   unused_pedal = BlockComponents.Sources.Constant(k = 0.0) {^unused_pedal}
 relations

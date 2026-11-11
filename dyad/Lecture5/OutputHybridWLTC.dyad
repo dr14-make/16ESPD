@@ -21,7 +21,7 @@ test component OutputHybridWLTC
   starter_power = BlockComponents.Math.Gain(k = 1.0 / eta_start) {^starter_power}
   total_stored_power = BlockComponents.Math.Add() {^total_stored_power}
   engagement_command = VehicleSystemsComponents.Vehicle.EngagementCommand(engage_rpm = engage_rpm, engage_width_rpm = engage_width_rpm, lock_rpm = lock_rpm, lock_width_rpm = lock_width_rpm, managed = true) {^engagement_command}
-  machine_limit = BlockComponents.Sources.Constant(k = T_max * reduction) {^machine_limit}
+  machine_limit = BlockComponents.Sources.Constant(k = powertrain.drive.T_max * reduction) {^machine_limit}
   referred_limit = BlockComponents.Math.Division() {^referred_limit}
 relations
   connect(powertrain.E, stored_power.u1) {^stored_voltage_wire}

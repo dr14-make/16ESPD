@@ -98,6 +98,14 @@ end
         value
     end
     resolved(model, p) = parse(Float64, string(resolved_value(model, p)))
+    # Planning capacity must follow a machine-size override at the plant interface.
+    for constructor in (L.CoupledHybridWLTC, L.OutputHybridWLTC, L.P4HybridWLTC)
+        nominal = constructor(name = :nominal)
+        smaller = constructor(name = :smaller, powertrain = (; drive = (; T_max = 20.0)))
+        @test resolved(smaller, smaller.machine_limit.k) < resolved(nominal, nominal.machine_limit.k)
+        @test resolved(smaller, smaller.machine_limit.k) / resolved(nominal, nominal.machine_limit.k) ≈
+            20.0 / resolved(nominal, nominal.powertrain.drive.T_max)
+    end
     paths = Tuple[(p,) for p in (:m, :radius, :k, :Ti, :tau_brake, :dv_wheel,
         :engage_rpm, :engage_width_rpm, :lock_rpm, :lock_width_rpm)]
     push!(paths, (:speed_command, :N_locked))
