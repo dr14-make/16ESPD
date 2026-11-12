@@ -101,18 +101,5 @@ relations
   connect(machine.support, reduction.support, support) {^mount_wire}
   converter.i_ref = tau_ref / (converter.field * machine.k)
   P_elec = (p.v - n.v) * p.i
-metadata {
-  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/ElectricDrive.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
-  "_links": {
-    "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
-    "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 150, "y1": -50, "x2": 250, "y2": 50}, "diagram": {"iconName": "pos", "x1": 150, "y1": -50, "x2": 250, "y2": 50}}}},
-    "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 150, "y1": 950, "x2": 250, "y2": 1050}, "diagram": {"iconName": "neg", "x1": 150, "y1": 950, "x2": 250, "y2": 1050}}}},
-    "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 400, "x2": 1050, "y2": 500}}}},
-    "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 788, "y1": 950, "x2": 888, "y2": 1050}}}},
-    "P_elec": {"Dyad": {"placement": {"icon": {"x1": 650, "y1": -50, "x2": 750, "y2": 50, "rot": 270}, "diagram": {"x1": 650, "y1": -50, "x2": 750, "y2": 50, "rot": 270}}}},
-    "converter": {"Dyad": {"placement": {"diagram": {"x1": 380, "y1": 360, "x2": 560, "y2": 540}}}},
-    "machine": {"Dyad": {"placement": {"diagram": {"x1": 640, "y1": 360, "x2": 820, "y2": 540}}}},
-    "reduction": {"Dyad": {"placement": {"diagram": {"x1": 855, "y1": 405, "x2": 945, "y2": 495}}}}
-  }
-}
+metadata {"Dyad":{"icons":{"default":"dyad://VehicleSystemsComponents/Vehicle/Electric/ElectricDrive.svg"},"labels":[{"label":"$(instance)","x":500,"y":1100,"rot":0}]},"_links":{"tau_ref":{"Dyad":{"placement":{"icon":{"x1":-50,"y1":450,"x2":50,"y2":550},"diagram":{"x1":-50,"y1":450,"x2":50,"y2":550}}}},"p":{"Dyad":{"placement":{"icon":{"iconName":"pos","x1":150,"y1":-50,"x2":250,"y2":50},"diagram":{"x1":-50,"x2":50,"y1":250,"y2":350}}}},"n":{"Dyad":{"placement":{"icon":{"iconName":"neg","x1":150,"y1":950,"x2":250,"y2":1050},"diagram":{"x1":-50,"x2":50,"y1":650,"y2":750}}}},"spline":{"Dyad":{"placement":{"icon":{"x1":950,"y1":450,"x2":1050,"y2":550},"diagram":{"x1":950,"y1":400,"x2":1050,"y2":500}}}},"support":{"Dyad":{"placement":{"icon":{"iconName":"support","x1":450,"y1":950,"x2":550,"y2":1050},"diagram":{"iconName":"support","x1":788,"y1":950,"x2":888,"y2":1050}}}},"P_elec":{"Dyad":{"placement":{"icon":{"x1":650,"y1":-50,"x2":750,"y2":50,"rot":270},"diagram":{"x1":650,"y1":-50,"x2":750,"y2":50,"rot":270}}}},"converter":{"Dyad":{"placement":{"diagram":{"x1":380,"y1":360,"x2":560,"y2":540}}}},"machine":{"Dyad":{"placement":{"diagram":{"x1":640,"y1":360,"x2":820,"y2":540}}}},"reduction":{"Dyad":{"placement":{"diagram":{"x1":855,"y1":405,"x2":945,"y2":495}}}},"shaft_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"output_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"machine_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"field_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":630,"y":486},{"x":630,"y":450}],"E":2}],"renderStyle":"standard"}},"bus_p_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":370,"y":300},{"x":370,"y":396}],"E":2}],"renderStyle":"standard"}},"mount_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":840,"y":540},{"x":840,"y":495}],"E":2},{"S":1,"M":[{"x":838,"y":540}],"E":3}],"renderStyle":"standard"}},"bus_n_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":420,"y":700},{"x":420,"y":540}],"E":2},{"S":1,"M":[{"x":630,"y":700},{"x":630,"y":504}],"E":3}],"renderStyle":"standard"}}}}
 end
