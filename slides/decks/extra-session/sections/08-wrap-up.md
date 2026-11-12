@@ -7,10 +7,50 @@ layout: section
 
 # Wrap-up
 
-The session in seven lines, the take-home exercises, and the sources.
+Plug or nozzle, the session in seven lines, the take-home exercises, and the sources.
 
 <!--
-Section 08, the wrap-up: the session in seven lines, the exercises to take home, and the sources.
+The wrap-up: the plug and the nozzle side by side, the session in seven lines, and the exercises to
+take home.
+-->
+
+---
+routeAlias: plug-or-nozzle
+---
+
+## Plug or nozzle: the answer
+
+<div class="tight">
+
+| | Plug: Leaf 40 kWh / IONIQ 5 | Nozzle: Mirai |
+|---|---|---|
+| Refill | 10–80 % in **43 min** / **18 min** | full in **≈ 3.2 min** (US average) |
+| Energy cost, Czechia, per 100 km | **60–120 CZK** at home, 222–289 on DC | **394 CZK** (H₂ price Jan 2024) |
+| Electricity per 100 km | **17.1 kWh** at the wall | **≈ 46 kWh** |
+| Power plant to wheel | **69 %** | **26 %** |
+| Where to refill in Czechia | **7,669** public charging points | **2** ORLEN public stations |
+
+</div>
+
+<div class="caption text-left">All from this session's slides: sections 04, 06 and 07.</div>
+
+<div class="handson">Energy on board decides what the car is.</div>
+
+<!--
+Back to the sentence on the first slide, and to your guesses. How fast does the energy go back in,
+and what does it cost to get it there? Here are the two ways side by side.
+
+The nozzle wins on time: about three minutes against 18 to 43, because a tank has no CV phase and
+no rapidgate. The plug wins everywhere else. At home it costs a third of the Mirai per 100
+kilometers or less. It needs a third of the electricity from the power plant. And there are seven
+and a half thousand places to plug in against two nozzles. The comparison is not perfectly fair, a
+Mirai is a larger car of nearly two tonnes, but no row is close.
+
+So for a car the battery has won, and the fuel-cell car's one advantage, the three-minute fill, is
+the thing 800 volt charging keeps closing in on. Where the fill time matters more than the
+electricity, in trucks and buses that run all day, the question is still open.
+
+*[ask]* Which column would you buy? *[pause]*
 -->
 
 ---
@@ -19,41 +59,70 @@ routeAlias: session-summary
 
 ## Summary of the session
 
-- **01** LFP is over half of EV batteries: cheaper ($81 vs $128/kWh), lighter on energy (205 vs
-  265 Wh/kg cell).
+- **01** LFP is over half of EV batteries: cheaper ($81 vs $128/kWh), but stores less per
+  kilogram (205 vs 265 Wh/kg best cell).
 - **02** the Thevenin cell: OCV(SoC), *R*₀ at once, *R*₁*C*₁ slowly — and SoC can no longer pass
   zero unnoticed.
-- **03** the BMS counts charge, resets the count from the OCV after a rest, and balances the
-  string to its weakest cells.
+- **03** the BMS counts charge, resets the count from the OCV after a rest, and bleeds the
+  fullest cells so the string fills together.
 - **04** CC-CV because the limit is on the terminal voltage; heat and the curve's shape, not the
   peak, set the charge time; 800 V halves the current.
 - **05** a fuel cell's efficiency is its voltage: best at light load.
 - **06** 700 bar in 3 minutes needs −40 °C gas and ~3 kWh/kg of compression; stations are closing.
 - **07** the fuel-cell car is Lecture 5's series hybrid; **69 % vs 26 %** from power plant to wheel.
 
+<div class="grid grid-cols-4 gap-x-6 gap-y-1 mt-3 items-end">
+<div>
+<img src="/figures/01-chemistry.svg" style="height: 7.5rem" alt="Bars of best cell specific energy and 2025 pack price for NMC, LFP and sodium-ion."/>
+<div class="caption">01</div>
+</div>
+<div>
+<img src="/diagrams/02-thevenin.svg" style="height: 7.5rem" alt="The Thevenin cell: OCV(SoC), R0 and one RC pair."/>
+<div class="caption">02</div>
+</div>
+<div>
+<img src="/figures/03-soc-drift.svg" style="height: 7.5rem" alt="SoC error from a current-sensor offset, sawing back to zero at each OCV reset."/>
+<div class="caption">03</div>
+</div>
+<div>
+<img src="/figures/04-dc-curves.svg" style="height: 7.5rem" alt="Charging power against state of charge for three modern cars and the Leaf."/>
+<div class="caption">04</div>
+</div>
+<div>
+<img src="/figures/05-polarization.svg" style="height: 7.5rem" alt="The fuel cell polarization curve with the Mirai stack points."/>
+<div class="caption">05</div>
+</div>
+<div>
+<img src="/diagrams/06-fill-700bar.svg" style="height: 7.5rem" alt="Sketch of a 700 bar fill: pressure ramp and tank gas temperature under their limits."/>
+<div class="caption">06</div>
+</div>
+<div>
+<img src="/figures/07-efficiency-chain.svg" style="height: 7.5rem" alt="Power plant to wheel: 69 percent for the battery car, 26 for the fuel-cell car."/>
+<div class="caption">07</div>
+</div>
+</div>
+
 <!--
-The session in seven lines, one per section.
+The session in seven lines; read them on the slide, I will only pull out the thread. The strip at
+the bottom is one picture from each section, to find it again in the handout.
 
-01: LFP is now over half of the EV batteries deployed; it is cheaper, 81 against 128 dollars per
-kilowatt-hour for NMC, and stores less, 205 against 265 watt-hours per kilogram at best cell level.
-02: the Thevenin cell, with an open-circuit voltage that follows the charge, R0 acting at once and
-an RC pair acting slowly; its voltage collapses near empty, so the state of charge can no longer run
-through zero unnoticed. 03: the battery management system counts the charge, resets the count from
-the open-circuit voltage after a rest, and balances the cells, because the string is only as good as
-its extreme cells.
+The first four lines are the plug: chemistry sets the price and the voltage ceiling; the Thevenin
+cell gives the voltage meaning; the BMS reads it, resets its count, and bleeds the fullest cells; and
+the charger obeys the BMS, which is why the last fifth is slow and why heat, not the peak, sets the
+time. The last three are the nozzle: efficient at light load, filled in three minutes with gas
+compressed and chilled to minus 40, and 26 percent from power plant to wheel against the battery car's 69.
 
-04: charging switches from constant current to constant voltage because the limit is on the
-terminal voltage; heat and the shape of the curve, not the peak power, set the charging time; and
-800 volts halves the current. 05: a fuel cell's efficiency is its voltage, so it is best at light
-load. 06: filling 700 bar in three minutes needs gas precooled to minus 40 and about 3
-kilowatt-hours per kilogram of compression, and in Germany the public stations fell from over 80 to
-50 in two years. 07: the fuel-cell car is Lecture 5's series hybrid with a stack for a
-source, and from the power plant to the wheel it delivers 26 percent against the battery car's 69.
+Energy on board decides what the car is: how fast it goes back in, and what it costs to get it
+there. That is the sentence we started with.
 -->
 
 ---
 routeAlias: take-home
 ---
+
+<!-- TODO(lecturer): confirm the four exercises and write worked answers; none are in the plan or
+the research notes. Exercise 1 checks out against the why-CV slide: 250 A, 0.26 V per cell, CC ends
+near 3.94 V per cell. -->
 
 ## Take-home exercises
 
@@ -66,31 +135,15 @@ routeAlias: take-home
 4. **Your own bill.** Cost per 100 km of the Leaf, the Mirai and your family's car at today's
    prices — home tariff, public DC, ORLEN's hydrogen, petrol — with each price's source and date.
 
-<div class="handson">TODO(lecturer): confirm the extra-pack exercises and their answers; none are in
-the plan or the research notes yet.</div>
+<div class="handson">Every number you need is on tonight's slides; for exercise 4 you find your
+own.</div>
 
 <!--
-Four exercises to take home, each built on a slide from today.
-
-One: redo the CV slide for an 800 volt pack at 200 kilowatts. Find the current, the voltage drop per
-cell across the resistance, and the open-circuit voltage at which constant current must end. Take
-the pack as two Leaf packs in series: the course's 96s2p pack of ZE1-class cells is about 0.1 ohm,
-from the teaching-materials note, so 0.2 ohm.
-
-Two: the coulomb-counting drift. With Lecture 4's 114.3 ampere-hour pack and a 50 milliampere sensor offset, the one
-the BMS slide used on a single cell,
-how long until the counted state of charge is 5 percent off, and so how often the BMS must reset it
-from the open-circuit voltage.
-
-Three: the Mirai's hydrogen. From Faraday's 12.41 grams per hour per ampere and a cell voltage of 0.7
-volts, find the stack current and the hydrogen flow at 30 kilowatts, and
-the cell area that would put 0.7 volts at 1 ampere per square centimeter.
-
-Four: your own bill. Look up today's prices and their dates, and compute the cost per 100 kilometers
-of the Leaf at home and on public DC, the Mirai at ORLEN's current hydrogen price, and your family's
-car.
-
-The green box is for the lecturer: these drafts need confirming, with worked answers.
+Four exercises to take home, each built on a slide from tonight. One, the CV slide again for an 800
+volt pack at 200 kilowatts. Two, the coulomb-counting drift on your Lecture 4 pack. Three, the
+Mirai's hydrogen flow at 30 kilowatts. Four, your own bill: today's prices, with their sources and
+dates, for the Leaf, the Mirai and your family's car. While you are at it, check whether ORLEN has
+published a newer hydrogen price than ours.
 -->
 
 ---
@@ -141,9 +194,21 @@ routeAlias: sources
 </div>
 </div>
 
+<div class="text-xs mt-3 opacity-80">
+
+**Photos, all from Wikimedia Commons:** Nissan Leaf cutaway · Norsk Elbilforening, CC BY 2.0 ·
+BMW i3 cells · RudolfSimon, CC BY-SA 3.0 · Leaf pack · Gereon Meyer, CC BY-SA 4.0 · BMS board ·
+Drazny, CC BY-SA 4.0 · Type 2, CCS2, CHAdeMO · D-Kuru/Wikimedia Commons, CC BY-SA 4.0 · NACS ·
+RickyCourtney, CC BY-SA 4.0 · MCS · SRago91, CC BY-SA 4.0 · IONITY · Андрей Романенко, CC BY-SA 4.0
+· ČEZ charger · Yopic, CC0 · Mirai cutaway, stack, tank · Mariordo, CC BY-SA 4.0 · Magdeburg ·
+Michał Beim, CC BY-SA 4.0 · Offenbach nozzles · L. Willms, CC BY-SA 3.0 · Frankfurt · Zgonnik,
+public domain · Mirai gen 2, Herten bus · Icke68746, CC0 · XCIENT · JoachimKohler-HB, CC BY-SA 4.0
+
+</div>
+
 <!--
-The sources behind today's numbers, for reference. Every number on a slide carries its source tag
-from the research notes, and the notes give the full citation, the date and whether it was verified
-from the primary, read off a figure, or only reported by a secondary source. Secondary numbers are
-labeled where they appear.
+The sources behind tonight's numbers, for reference. Every number on a slide carries its source tag,
+and the research notes give the full citation and how firm it is. Where a number rests on a press
+report, the slide says so. The photo credits at the bottom name each photograph's author and
+license; every photograph is from Wikimedia Commons.
 -->

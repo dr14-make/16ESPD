@@ -112,10 +112,10 @@ Labels as in the research notes; secondary numbers are flagged and need a primar
 | 700 bar fueling | precool −40 °C, tank gas ≤ 85 °C, dispenser ≤ 875 bar | verified, DOE |
 | Compression and precooling energy | ≈ 3 kWh/kg (1.7–6.4) + 0.15–0.2 kWh/kg | verified, DOE |
 | Mirai | 5.6 kg H₂, 0.79 kg/100 km, 128 kW, 330 cells | verified, Toyota |
-| H₂ price | DE ≈ €13–19/kg; CA $34.55/kg (Oct 2024); Praha 278 CZK/kg (2023) | mixed, see note |
+| H₂ price | DE up to €19/kg (Jan 2026); CA $34.55/kg (Oct 2024); CZ 499 CZK/kg last reported (Jan 2024), 278 CZK/kg the 2023 introductory price | mixed, see note |
 | Stations | world 1,160 (end 2024); DE ≈ 50 (Jan 2026, was 80+); CA 50 retail, 74 % availability | secondary / CARB verified |
 | FCEV sales 2025 | world 16,011; Europe 566; Germany 49 registrations | secondary / KBA verified |
-| Power to wheel | BEV 69 %, FCEV 26 %; Mirai ≈ 46 kWh electricity/100 km ≈ 2.5× BEV | Agora / computed |
+| Power to wheel | BEV 69 %, FCEV 26 %; Mirai ≈ 46 kWh electricity/100 km ≈ 2.7× the Leaf's 17.1; 69/26 also gives 2.7 | Agora / computed |
 | Grey H₂ | 10–14 kg CO₂e/kg H₂ | verified, IEA |
 | PEM slide curve | V = 0.950 − 0.178(1 − e^(−10i)) − 0.1575i − i(0.390i/2.2)²: 0.82/0.69/0.58/0.43 V at 0.1/0.5/1.0/1.5 A/cm²; b₁₁ = 0.005139 | verified, Pukrushpan thesis 2003 |
 | Mirai gen 1 measured | ≈ 0.74 V/cell at 0.95 A/cm² | read from figure, ANL 2018 |

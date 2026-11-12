@@ -10,11 +10,23 @@ layout: section
 Deck 8's tour cut to what is on the road now: LFP, NMC and sodium-ion, their specific energy, and
 what a kilowatt-hour costs today.
 
+<img class="hero" src="/photos/01-bmw-i3-cells.jpg" alt="Rows of flat aluminum prismatic cells, each with two threaded terminal posts and a vent window, labeled SB LiMotive, sample cells for the BMW i3."/>
+
+<div class="caption">BMW i3 prismatic cells, SB LiMotive · RudolfSimon, CC BY-SA 3.0</div>
+
 <!--
-Section 01, cells and chemistries. Deck 8 walks through every battery chemistry from lead acid
-onwards. We cut it to the three that matter in a car bought today: lithium iron phosphate, LFP;
-nickel manganese cobalt, NMC; and sodium-ion, which is just arriving. For each: what one kilogram
-stores, what one kilowatt-hour costs, and the voltage it is charged to.
+Before we ask how fast energy goes back into a car, we need to know what it goes into. Three
+chemistries are in cars sold today: NMC, LFP and, just arriving, sodium-ion. The choice sets three
+numbers you will meet again tonight: what a kilogram of cells stores, what a kilowatt-hour costs,
+and the voltage the charger must stop at. That last one is where section 04 starts.
+
+*[ask]* A question to carry through the section: if you were buying batteries for a city bus,
+which chemistry would you pick, and why? *[pause]* We will have the answer by the end of section
+03.
+
+*[show photo]* What a car cell looks like: flat aluminum cans with two terminal posts and a vent,
+sample cells made by SB LiMotive for the BMW i3. Photograph by the user RudolfSimon, Wikimedia
+Commons.
 -->
 
 ---
@@ -52,19 +64,36 @@ recalled its Ragone plot.
 </div>
 
 <!--
-Deck 8 tours the chemistries in historical order: lead acid, nickel-cadmium, nickel-metal hydride
-and finally lithium-ion. Lecture 4 showed its Ragone plot for lead acid and nickel-cadmium. Today
-every new electric car carries lithium-ion, in two families, and a third is arriving.
+Deck 8 tours the chemistries in historical order: lead acid, nickel-cadmium, nickel-metal hydride,
+and finally lithium-ion. Lecture 4 showed its Ragone plot. Read off the deck, a lead-acid traction
+battery stores about 35 watt-hours per kilogram at low power, nickel-cadmium about 52. Today's best
+lithium-ion cells, next slide, reach 265: five times lead acid or more. That is why the tour now
+ends at lithium-ion. Every new electric car carries it, in two families, and a third is arriving.
 
-NMC has a cathode of layered nickel, manganese and cobalt oxide; it stores the most energy per
-kilogram. LFP has a cathode of lithium iron phosphate; it is cheaper, runs at a lower voltage, and
-its voltage curve is nearly flat, which matters for the battery management system in section 03.
-Sodium-ion replaces lithium with sodium, a far more common element.
+NMC has a layered oxide cathode of nickel, manganese and cobalt. It stores the most energy per
+kilogram, and it is charged to 4.2 volts. LFP has a lithium iron phosphate cathode. It stores less,
+costs less, is charged to only 3.6 volts, and its voltage hardly changes over most of its charge.
+Keep that last property in mind: in section 03 it makes the BMS's job much harder. Sodium-ion
+swaps lithium for sodium, a far more common element, and its first cells are only now in cars. Its
+best cells already store 175 watt-hours per kilogram against LFP's 205, so it is aimed squarely at
+LFP's market: cheap cars and storage, where the price per kilowatt-hour matters more than the
+mass.
 
-On the right, the market, from the IEA's Global EV Outlook 2026. In 2025 LFP made up over 55 percent
-of the EV batteries deployed worldwide, up from nearly 50 percent in 2024. The IEA counts this by
-the battery capacity of new electric cars registered. In the EU it is still more than 10 percent of
-demand: European cars mostly carry NMC. The total deployed in 2025 was 1.2 terawatt-hours.
+On the right, the market, from the International Energy Agency's 2026 outlook. In 2025, LFP was
+over 55 percent of the EV batteries deployed worldwide, up from nearly 50 percent the year before.
+The IEA counts by the battery capacity of the new electric cars registered. In the EU, though, LFP
+was only just over a tenth of demand, so Europe is still a nickel market; in the US its share almost
+halved in 2025.
+
+The range to keep in mind for lithium-ion as a whole: the IEA puts today's cells between about 90
+and 300 watt-hours per kilogram, and LFP conventionally 20 to 30 percent below the high-nickel
+cells. The best of each are on the next slide.
+
+*[ask]* The world deployed 1.2 terawatt-hours of EV batteries in 2025. How many 40 kilowatt-hour
+Leaf packs is that? *[pause]* 1.2 billion kilowatt-hours over 40: thirty million packs, in one year.
+
+So LFP has taken half the world while storing less per kilogram. The next slide puts the three
+chemistries side by side and shows why.
 -->
 
 ---
@@ -73,44 +102,58 @@ routeAlias: chemistry-table
 
 ## LFP, NMC and sodium-ion side by side
 
-<div class="tight">
+<div class="grid grid-cols-[2fr_1fr] gap-8 items-start">
+<div>
 
-| | NMC | LFP | Sodium-ion |
-|---|---|---|---|
-| Best cell specific energy (2026) | up to **265 Wh/kg** | up to **205 Wh/kg** | up to **175 Wh/kg** |
-| Pack specific energy | — | about **one-fifth lower** than NMC | TODO: no source in the notes |
-| Average pack price, 2025 | **$128/kWh** | **$81/kWh** | TODO: no source in the notes |
-| Charge voltage (CV), example cell | **4.20 V** (LG M50LT, NMC 811) | **3.6 V** (A123 26650) | TODO: no source in the notes |
+<img src="/figures/01-chemistry.svg" alt="Two bar panels. Left, best-in-class cell specific energy: NMC up to 265 Wh/kg, LFP up to 205, sodium-ion up to 175. Right, 2025 average pack price, all segments: NMC 128 $/kWh, LFP 81; sodium-ion has no price in the source."/>
+
+<div class="caption">Cell: IEA Global EV Outlook 2026 p. 101 [IEA-GEVO-2026], "up to" values, the IEA does not say
+"cell" for LFP and NMC explicitly · pack: BloombergNEF survey, Dec 2025 [BNEF-2025] · no sodium-ion
+pack price published there.</div>
 
 </div>
+<div>
 
-<div class="caption text-left">Cells: IEA GEVO 2026 p. 101 [IEA-GEVO-2026] · pack Wh/kg: IEA GEVO
-2025 [IEA-GEVO-2025] · prices: BloombergNEF, Dec 2025 [BNEF-2025] · CV: datasheets [LG-M50LT-2020],
-[LW-26650-2022]</div>
+**Pack specific energy:** LFP about **one-fifth lower** than NMC.
+
+**Charge voltage (CV), example cell:** NMC **4.20 V** (LG M50LT, NMC 811), LFP **3.6 V** (A123
+26650); sodium-ion: no figure in our sources.
 
 **For scale:** the 2018 Leaf's 40 kWh pack weighs 303 kg, about **132 Wh/kg** at pack level.
 
+<div class="caption text-left">Pack Wh/kg: IEA GEVO 2025 [IEA-GEVO-2025] · CV: datasheets
+[LG-M50LT-2020], [LW-26650-2022]</div>
+
+</div>
+</div>
+
 <!--
-The one table to take from this section. Three columns, one per chemistry; four rows.
+The one chart to take from this section. *[show figure]* Left, what the best cell of each chemistry
+stores per kilogram; right, what a pack cost on average in 2025.
 
-First row: the best cell specific energy, in watt-hours per kilogram of cell, from the IEA's 2026
-outlook. The latest NMC cells reach up to 265, LFP up to 205, sodium-ion up to 175. These are best
-in class, not fleet averages, and the IEA's sentence reads as cell level, though it does not say
-"cell" for NMC and LFP explicitly.
+*[ask]* Look at the two panels and tell me: LFP stores less per kilogram than NMC. Why is it
+now over half of the EV batteries the world deploys? *[pause]*
 
-Second row: at pack level the IEA gives only a ratio: an LFP pack stores about one-fifth less per
-kilogram than an NMC pack. No source in our notes gives an absolute pack value per chemistry, or a
-sodium-ion pack figure.
+The answer is the second pair of numbers. The best LFP cells store 205 watt-hours per kilogram
+against NMC's 265, and the IEA says an LFP pack is about one-fifth lighter on energy than an NMC
+pack. But an LFP pack cost 81 dollars per kilowatt-hour on average in 2025, against 128 for NMC:
+about two-thirds of the price. For a cheap car or a bus, a quarter more battery mass is a good trade for
+a third off its price. That is why, in 2025, LFP was over 55 percent of the EV batteries deployed
+worldwide.
 
-Third row: average pack prices across all uses in BloombergNEF's December 2025 survey: LFP 81
-dollars per kilowatt-hour, NMC 128. No sodium-ion price in our notes.
+Sodium-ion reaches up to 175 per kilogram at cell level. The empty place in the price panel says
+that our sources give no price for it, and no pack figure or charge voltage either: the chemistry is
+that new.
 
-Fourth row: the voltage a cell is charged to, read from two datasheets: 4.20 volts for the LG M50LT,
-an NMC 811 cell, and 3.6 volts for the A123 LFP cell. Section 04 comes back to these.
+Read the cell figures as best in class, not fleet averages: a car built today with LFP may carry
+cells well below 205.
 
-The line at the bottom gives scale: Nissan's dismantling guide puts the 2018 Leaf's 40
-kilowatt-hour pack at 303 kilograms, so about 132 watt-hours per kilogram for the whole pack, half
-of the best NMC cell. That is my division, 40 over 303.
+The charge voltage on the right is the one for tonight. An NMC cell is charged up to 4.20 volts, an LFP cell up to 3.6.
+Section 04 starts from exactly that limit.
+
+The last line on the right gives the scale of a real pack. The 2018 Leaf's 40 kilowatt-hour pack weighs
+303 kilograms, about 132 watt-hours per kilogram: half the best NMC cell. The other half goes to the
+casing, the cooling, the wiring and the electronics, and to 2018 cells rather than 2026 ones.
 -->
 
 ---
@@ -142,17 +185,41 @@ pack split chart.</div>
 </div>
 
 <!--
-Lecture 4 showed this price curve once; here it is with the split between cell and pack. Across
-are the years 2013 to 2025. Up is the average pack price in dollars per kilowatt-hour, in real 2025
-dollars, so every year is on one basis. Each bar is split in two: the cell, and the rest of the
-pack, meaning the casing, the cooling, the wiring and the electronics.
+Lecture 4 showed this price curve once; here it is split between the cells and the rest of the
+pack. Across, the years 2013 to 2025. Up, the average pack price in dollars per kilowatt-hour, every
+year in 2025 dollars, so the bars compare directly. Each bar is split in two: the cells, and the
+rest of the pack, meaning the casing, the cooling, the wiring and the electronics.
 
-In 2013 a pack cost 827 dollars per kilowatt-hour, 568 of it the cell. In 2025 it cost 108, of
-which 74 is the cell. That is BloombergNEF's survey average across cars, buses, two-wheelers and
-stationary storage. Battery-electric car packs alone were the cheapest segment at 99 dollars per
-kilowatt-hour.
+*[show figure]* In 2013 a pack cost 827 dollars per kilowatt-hour, 568 of it cells. In 2025 it cost
+108, of which 74 is cells. That is an eighth of the 2013 price. The fall was not smooth: 2022 is the
+one year the bar went up. And notice the split: the rest of the pack is about a third of the price
+in both 2013 and 2025. The rest of the pack got cheaper as fast as the cells did.
 
-The IEA puts the decade in one sentence: average pack energy density up about 60 percent, price
-down about 75 percent. And the price depends on where the pack is made: 84 dollars in China, 44
-and 56 percent more in North America and Europe.
+These are averages over everything BloombergNEF surveyed: cars, buses, two-wheelers and stationary
+storage. Battery-electric car packs alone were the cheapest transport segment, at 99 dollars.
+
+*[ask]* At 99 dollars per kilowatt-hour, what does a 40 kilowatt-hour pack like the Leaf's cost to
+make today? *[pause]* About 4,000 dollars. At the 2013 average it would have cost over 30,000.
+
+One trap when you read old price headlines: BloombergNEF restates its whole history in each year's
+dollars. Last year's survey announced 115 dollars for 2024; in this chart, in 2025 dollars, 2024 is
+118. Same survey, different dollar. Use one series, as the chart does, and never mix press releases
+from different years.
+
+And the cheapest batteries of all are not in cars: stationary storage packs averaged 70 dollars per
+kilowatt-hour in 2025, 45 percent down in a year. That matters for charging too: a fast-charging
+station with a battery can draw a steady current from a weak grid connection.
+
+*[ask]* Put the two chemistries into the Leaf's 40 kilowatt-hour pack at 2025 average prices. How
+much cheaper is LFP, and how much heavier? *[pause]* 47 dollars a kilowatt-hour less, times 40:
+about 1,900 dollars. And with a pack one-fifth lighter on energy, 303 kilograms become about 380:
+some 75 kilograms more. For a city car, many buyers would take the money.
+
+Two more facts on the right. The IEA puts the last decade in one sentence: average pack energy
+density up about 60 percent, price down about 75. And place matters: a pack made in China cost 84
+dollars per kilowatt-hour; North America and Europe paid 44 and 56 percent more, which puts a
+European pack at about 130.
+
+So a cell is cheap, getting cheaper, and stores 200 to 265 watt-hours per kilogram at its best.
+What it does not have is the fixed voltage Lecture 4 gave it. That is section 02.
 -->
