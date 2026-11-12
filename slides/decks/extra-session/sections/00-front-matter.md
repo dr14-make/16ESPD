@@ -38,18 +38,18 @@ presenter mode from the nav bar, bottom left
 </div>
 
 <!--
-Welcome to the extra session, the last one of the electric and hybrid block. Tonight is theory
-only, with four exercises to take home.
+Welcome to the extra session, the last one of the electric and hybrid block. Tonight is theory only,
+with four exercises to take home.
 
 *[ask]* A show of hands. How long does it take to fill a hydrogen car? Under five minutes? Under
 ten? *[pause]* And a Nissan Leaf, 10 to 80 percent on a fast charger: a quarter of an hour? Half an
-hour? *[pause]* Remember your guess; by the end we will have both numbers, measured.
+hour? *[pause]* Remember your guess. By the end we will have both numbers, measured.
 
-The sentence on the slide is the whole session: how fast the energy goes back in, and what it costs
-to get it there. A battery car refills through a plug, a fuel-cell car through a nozzle.
+The line on the slide is tonight's topic: how fast energy goes back into the car, and what that
+costs. A battery car refills through a plug. A fuel-cell car refills through a nozzle.
 
-*[show photos]* The two cars, cut open: the Leaf's battery fills the floor; the Mirai has its stack
-under the front seats and the hydrogen tanks under the rear seat. -->
+*[show photos]* The two cars, cut open. The Leaf's battery fills the floor. The Mirai has its
+fuel-cell stack under the front seats and its hydrogen tanks under the rear seat. -->
 
 ---
 routeAlias: from-lectures-4-and-5
@@ -93,17 +93,17 @@ engine-generator.
 two ways to refill a car — a plug and a nozzle — and what each costs.</div>
 
 <!--
-Where we left the car. *[show figure]* Your Lecture 4 battery: E minus R0 times i, E fixed at 350
-volts. E never moves, so full and empty look the same, and nothing stops the state of charge at zero:
-at 330 amperes yours ended at minus 0.54. Section 02 fixes that with the circuit on the right, the
-Thevenin cell.
+Where we left the car. *[show figure]* Your Lecture 4 battery: E minus R0 times i, with E fixed at
+350 volts. E never moves, so full and empty give the same voltage. Nothing stops the state of charge
+at zero. At 330 amperes, yours ended at minus 0.54. Section 02 fixes this with the second circuit,
+the Thevenin cell.
 
-On the right, Lecture 5's series hybrid. In section 07 a fuel-cell stack replaces the
-engine-generator, and that is the Toyota Mirai. The stepped gearbox Lecture 5 promised moves to a
-later lecture.
+On the right is Lecture 5's series hybrid. In section 07 a fuel-cell stack replaces the engine and
+generator: that is the Toyota Mirai. The stepped gearbox Lecture 5 promised moves to a later
+lecture.
 
-And your Lecture 4 energy bill said "tank to wheel only: the electricity is made somewhere".
-Tonight we follow it back to the power plant.
+Your Lecture 4 energy bill said "tank to wheel only: the electricity is made somewhere". Tonight we
+follow it back to the power plant.
 -->
 
 ---
@@ -133,17 +133,17 @@ Not tonight: the stepped gearbox and the dq model of the motor, promised in Lect
 later lecture.
 
 <!--
-The evening: eight sections, a break after charging; the last two columns are minutes for the full
-three hours and the 90-minute version.
+Eight sections tonight, with a break after charging. The last two columns are minutes: the full
+three hours, and the 90-minute version.
 
 The first half is the plug. Section 01 gives the battery's terms and the cells on the road today.
 Section 02 gives the cell a voltage that follows its charge. Section 03 is the battery management
-system, which has to know that charge without a fuel gauge. Section 04, the longest, is charging:
-why the last fifth is slow, why some cars charge twice as fast as others, what is lost, and how many
-chargers Czechia has. After the break, the nozzle: the fuel cell, hydrogen from tank to
-station and price, and the fuel-cell car as Lecture 5's series hybrid, followed back to the power
-plant. Section 08 puts the plug and the nozzle side by side.
+system, which must know that charge without a fuel gauge. Section 04, the longest, is charging: why
+the last fifth is slow, why some cars charge twice as fast as others, what is lost, and how many
+chargers Czechia has. After the break comes the nozzle: the fuel cell, hydrogen from tank to station
+and its price, and the fuel-cell car as Lecture 5's series hybrid, traced back to the power plant.
+Section 08 puts the plug and the nozzle side by side.
 
-For browsing on your own afterwards: the arrow keys and the space bar move, O opens the overview, G
-jumps to a slide.
+To browse on your own: the arrow keys and the space bar move, O opens the overview, G jumps to a
+slide.
 -->

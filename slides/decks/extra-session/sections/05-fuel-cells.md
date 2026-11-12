@@ -16,9 +16,9 @@ and the balance of plant around it.
 
 <!--
 Welcome back. Before the break: the plug, 18 to 43 minutes. Now the nozzle. A fuel-cell car is an
-electric car with a chemical power plant on board instead of a big battery. One curve says what the
-hydrogen turns into and at what efficiency: the polarization curve. Then the stack, and the
-machinery around it.
+electric car that makes its electricity on board from hydrogen, instead of carrying a big battery.
+The polarization curve shows what the hydrogen turns into and how efficiently. Then the stack, and
+the machines around it.
 
 *[show photo]* The first Mirai's stack under a cut-away show car. Photograph by Mariordo, Wikimedia
 Commons.
@@ -59,14 +59,14 @@ Two electrons per H₂, through every cell in series.
 </div>
 
 <!--
-*[show figure]* One cell of a proton-exchange-membrane fuel cell, PEM, the kind every fuel-cell car
-uses. A platinum catalyst splits hydrogen into protons and electrons. The membrane passes only the
-protons, so the electrons take the external circuit: that is our current. At the cathode, oxygen
-from the air meets both and makes water. A battery that never runs flat, as long as you feed it.
+*[show figure]* One cell of a proton exchange membrane fuel cell, PEM, the kind every fuel-cell car
+uses. A platinum catalyst splits hydrogen into protons and electrons. The membrane lets only the
+protons through, so the electrons take the outside circuit: our current. At the cathode, air's
+oxygen meets both, making water. A battery that never runs flat, as long as you feed it.
 
-The voltages on the right are the references. 1.229 volts is the reversible voltage; 1.253 is
-hydrogen's lower heating value over two Faraday constants; 1.481 the higher heating value. A real
-cell runs well below all three. How far below is the next slide.
+On the right, the ideal voltages. 1.229 volts is the reversible voltage, the theoretical maximum.
+1.253 is hydrogen's lower heating value over two Faraday constants; 1.481 uses the higher heating
+value. A real cell runs well below all three, as the next slide shows.
 -->
 
 ---
@@ -89,28 +89,29 @@ skipInCut: true
 </div>
 
 <!--
-Deck 8 lists five types of fuel cell, named after their electrolyte. Only the first matters for
-cars: the proton-exchange membrane, a thin polymer film. The Mirai's spec sheet calls its stack
+Deck 8 lists five types of fuel cell, each named after its electrolyte. Only the first matters for
+cars: the proton exchange membrane, a thin plastic film. The Mirai's spec sheet calls its stack
 polymer electrolyte, and the model we use next is a PEM stack too.
 
 *[ask]* Why PEM, for a car? Think of what a car asks of its power source. *[pause]* It must start in
 seconds on a cold morning, follow the driver's foot, and fit under the floor. The PEM cell runs
-cool, near 80 degrees in the model we use, so it starts quickly and needs no furnace. It is compact
-and it changes power fast.
+cool, near 80 degrees in the model we use. So it starts quickly. It is compact, and it changes power
+fast.
 
-The others answer different questions. The alkaline cell flew in space; it needs air without carbon
-dioxide, which a car on a road cannot offer. The phosphoric acid cell is a stationary power plant.
-Molten carbonate and solid oxide cells run hot, which suits a building or a factory that runs for
-months and can use the heat, not a car that is parked most of the day. Deck 8's table gives their
-operating temperatures and efficiencies if you want to compare.
+The other types suit other uses. The alkaline cell was used in space. It needs air free of carbon
+dioxide, which a car on a road cannot get. The phosphoric acid cell is a stationary power plant.
+Molten carbonate and solid oxide cells run hot. That suits a building or factory that runs for
+months and uses the heat, not a car parked most of the day. Deck 8's table gives their operating
+temperatures and efficiencies if you want to compare.
 
-And within PEM the progress has been fast. Toyota says the first Mirai's stack reached 2.4 times
-the current density of its 2008 model, through three changes: a finer flow field for the gas, a
-new platinum-cobalt catalyst, and a thinner membrane. The second Mirai raised the output per cell by
-another 26 percent, and so needed 330 cells instead of 370. Argonne's measurement of the first
-Mirai's stack gave 3.1 kilowatts per liter; Toyota quotes 5.4 for the second, excluding end plates.
+PEM cells have improved fast. Toyota says the first Mirai's stack reached 2.4 times the current
+density of its 2008 model, that is, current per square centimeter. Three changes did it: finer gas
+channels, a new platinum-cobalt catalyst, and a thinner membrane. The second Mirai raised the power
+per cell by another 26 percent, so it needed 330 cells instead of 370. Argonne National Laboratory
+measured the first Mirai's stack at 3.1 kilowatts per liter. Toyota quotes 5.4 for the second,
+without the end plates.
 
-So from here on, a fuel cell means a PEM cell, and its characteristic is the next slide.
+From here on, a fuel cell means a PEM cell. The next slide shows how it behaves.
 -->
 
 ---
@@ -158,20 +159,20 @@ At ≈ 1 A/cm²: **Mirai gen 1 ≈ 0.74 V** vs **P2000 model 0.58 V** — mostly
 </div>
 
 <!--
-The polarization curve is the fuel cell's characteristic: current density across, cell voltage up.
-The black curve is the Pukrushpan model, fitted to Ford's P2000 stack.
+The polarization curve shows the cell voltage at each current density, the current per square
+centimeter. The black curve is Pukrushpan's model, fitted to Ford's P2000 stack.
 
-It starts at 0.950 volts and subtracts three losses, shaded. Activation, the price of driving the
-reaction at the catalyst, saturating at 0.178 volts. Ohmic, the membrane's resistance, a straight
-line. Concentration: at high current the gas cannot reach the catalyst, and the curve dives toward
-2.2 amperes per square centimeter.
+It starts at 0.950 volts minus three shaded losses. Activation loss, the voltage spent to drive the
+reaction at the catalyst, levels off at 0.178 volts. Ohmic loss is the membrane's resistance, a
+straight line. Concentration loss: at high current gas cannot reach the catalyst, and the curve
+drops toward 2.2 amperes per square centimeter.
 
-The table reads the curve: 0.82 volts at 0.1 amperes per square centimeter, 0.69 at 0.5, 0.58 at 1.
-Power, voltage times current, peaks at about 1.4; past that, more current gives less power.
+The table: 0.82 volts at 0.1, 0.69 at 0.5, 0.58 at 1. Power, voltage times current, peaks at about
+1.4. Beyond that, more current gives less power.
 
-*[show figure]* The red dots are the real 2017 Mirai, measured by Argonne: 0.74 volts at about 1
-ampere per square centimeter against the model's 0.58. Most of the gap is the ohmic line; Toyota
-names a thinner membrane as one reason.
+*[show figure]* The red dots are the real 2017 Mirai, measured by Argonne National Laboratory: 0.74
+volts at about 1 ampere per square centimeter, against the model's 0.58. Most of the gap is ohmic.
+Toyota names a thinner membrane as one reason.
 
 *[ask]* The right-hand scale says efficiency. Where is the cell most efficient? *[pause]* At the
 left: light load. The next slide says why.
@@ -214,17 +215,18 @@ at μ<sub>f</sub> = 1 and g H₂/kWh from Faraday's law [<code>pem-polarization.
 </div>
 
 <!--
-A fuel cell's efficiency is its voltage. Every hydrogen molecule delivers two electrons whatever the
-voltage, so the energy out per molecule is proportional to the cell voltage. Divide by 1.253 volts
-and multiply by the fuel utilization.
+A fuel cell's efficiency is its voltage. Every hydrogen molecule gives two electrons, whatever the
+voltage, so the energy per molecule is proportional to the voltage. Divide by 1.253 volts, and
+multiply by the fuel utilization.
 
-*[show figure]* At 0.6, 0.7 and 0.8 volts: 48, 56 and 64 percent leave as electricity, the rest as
+*[show figure]* At 0.6, 0.7 and 0.8 volts, 48, 56 and 64 percent leave as electricity, the rest as
 heat. On the last slide's right-hand scale, the curve reads 66 percent at light load, 55 at half an
-ampere, 46 at 1, 34 at 1.5. So a fuel cell is most efficient at light load and least at full power: the opposite of the
-engine of Lecture 2.
+ampere, 46 at 1, 34 at 1.5. A fuel cell is most efficient at light load and least at full power: the
+opposite of the engine of Lecture 2.
 
-Argonne measured the 2017 Mirai at 66.0 percent peak for the stack, 63.7 for the system: about 0.83
-volts per cell, at low load. And in grams: 63 of hydrogen per kilowatt-hour at 0.6 volts, 47 at 0.8.
+Argonne measured the 2017 Mirai at 66.0 percent peak for the stack, 63.7 for the system. That is
+about 0.83 volts per cell, at low load. In grams: 63 of hydrogen per kilowatt-hour at 0.6 volts, 47
+at 0.8.
 -->
 
 ---
@@ -272,20 +274,20 @@ per-cell and Faraday: derived (<code>hydrogen.md</code> §4, §6)</div>
 </div>
 
 <!--
-One cell gives under a volt, so a car stacks hundreds in series: the same current through every
-cell, the voltages added. *[show figure]* A bipolar plate, hydrogen channels on one face and air on
-the other, carries the current straight through from one cell to the next.
+One cell gives under a volt, so a car stacks hundreds in series. The same current flows through
+every cell, and the voltages add. *[show figure]* A bipolar plate, with hydrogen channels on one
+face and air on the other, carries the current straight through from one cell to the next.
 
-The formula is Faraday's law for the stack: one hydrogen molecule per two electrons, in every cell.
-For the Mirai's 330 cells, 12.41 grams per hour for every ampere. The check: the official 0.79
-kilograms per 100 kilometers is 63.7 ampere-hours of stack current.
+The formula is Faraday's law for the stack: one hydrogen molecule for two electrons, in every cell.
+For the Mirai's 330 cells, 12.41 grams per hour for every ampere. Check: the official 0.79 kilograms
+per 100 kilometers is 63.7 ampere-hours of stack current.
 
-The second Mirai has 330 cells and 128 kilowatts, up from 114 with 370 cells in the first: fewer
-cells, more power, 388 watts each, in 52 kilograms. The model stack of the polarization slide,
-Ford's P2000, had 381 cells of 280 square centimeters, limiting current 2.2 amperes per square centimeter.
+The second Mirai has 330 cells and 128 kilowatts; the first had 370 and 114. Fewer cells, more
+power: 388 watts each, in 52 kilograms. The model stack of the polarization slide, Ford's P2000, had
+381 cells of 280 square centimeters, maximum current 2.2 amperes per square centimeter.
 
-*[3 h: give the room five minutes on take-home exercise 3, the stack current and hydrogen flow at
-30 kilowatts and 0.7 volts.]*
+*[3 h: give the room five minutes on take-home exercise 3, the stack current and hydrogen flow at 30
+kilowatts and 0.7 volts.]*
 -->
 
 ---
@@ -316,13 +318,13 @@ routeAlias: balance-of-plant
 </div>
 
 <!--
-The stack does not run on its own. *[show figure]* Around it is the balance of plant, four loops.
-Air: a compressor supplies twice the oxygen the reaction needs. Hydrogen: unreacted gas goes back
-round, and a purge valve vents the nitrogen and water. Water: the membrane must stay wet but must not
-flood. Heat: a coolant loop holds the stack near 80 degrees. And a DC-DC converter matches the stack
-voltage to the bus.
+The stack cannot run alone. *[show figure]* Around it is the balance of plant, the equipment that
+keeps it running: four loops. Air: a compressor supplies twice the oxygen the reaction needs.
+Hydrogen: unused gas goes back in, and a purge valve lets out nitrogen and water. Water: the
+membrane must stay wet but must not flood. Heat: a coolant loop holds the stack near 80 degrees. And
+a DC-DC converter matches the stack voltage to the bus.
 
-The price of all this: 66.0 percent for the stack, 63.7 for the system.
+The price: 66.0 percent for the stack, 63.7 for the system.
 
 *[90 min, last slide of the section:]* That is the car's side of the nozzle. Section 06 is the other
 side: five kilograms of hydrogen into a tank in three minutes.
@@ -365,27 +367,27 @@ difference to the air than an engine's.
 
 <!--
 Everything the cell does not turn into electricity turns into heat. Per cell, the heat is roughly
-1.253 volts minus the cell voltage, times the current. That assumes the water leaves as vapor,
-which is why we use the lower heating value.
+1.253 volts minus the cell voltage, times the current. That assumes the water leaves as vapor, which
+is why we use the lower heating value.
 
 *[ask]* At 0.6 volts per cell, how does the heat compare with the electrical output? *[pause]* 1.253
 minus 0.6 is 0.65, against 0.6 out: the heat is about as large as the electricity.
 
-And that heat is harder to get rid of than an engine's. An engine throws much of its heat out with a
-hot exhaust, and its coolant runs hotter. A PEM stack runs near 80 degrees and its exhaust carries
-little heat, so almost all of it goes through a radiator working on a small temperature difference
+This heat is harder to get rid of than an engine's. An engine sends much of its heat out with the
+hot exhaust, and its coolant runs hotter. A PEM stack runs near 80 degrees, and its exhaust carries
+little heat. So almost all of it goes through a radiator, with only a small temperature difference
 to the outside air.
 
 *[ask]* And at 0.7 volts, a cell running more efficiently? *[pause]* 0.55 of heat for 0.7 of
-electricity: still almost as much heat as power. Running the stack at light load helps the radiator
-as well as the hydrogen bill.
+electricity: still almost as much heat as power. Light load helps both the radiator and the hydrogen
+bill.
 
-Argonne saw the consequence on the first Mirai. Climbing a 25 percent grade at about 22 degrees
-outside, the stack peaked at 111.6 kilowatts, then derated to about 73 after six minutes, to protect
-itself. Argonne tested the same car on a dynamometer from minus 18 to plus 35 degrees outside, and
-the stack's maximum varied with the thermal conditions, from about 110 to 114 kilowatts. That is the
-fuel cell's rapidgate: like the Leaf's battery, the stack is limited by heat, not
-by its chemistry.
+Argonne saw the result on the first Mirai. Climbing a 25 percent grade at about 22 degrees outside,
+the stack peaked at 111.6 kilowatts. After six minutes it cut its power to about 73, to protect
+itself. Argonne also tested the car on a dynamometer, a rolling road, from minus 18 to plus 35
+degrees outside. The stack's maximum changed with the temperature, from about 110 to 114 kilowatts.
+This is the fuel cell's rapidgate. Like the Leaf's battery, the stack is limited by heat, not by its
+chemistry.
 
 That is the car's side of the nozzle. Section 06 is the other side: what it takes to push five
 kilograms of hydrogen into a tank in three minutes.

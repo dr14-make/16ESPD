@@ -17,16 +17,14 @@ AC and DC losses, and the network in Czechia and the EU.
 <!--
 Now the first half of the sentence: how fast does the energy go back in? A 40 kilowatt-hour Leaf
 needs 43 minutes from 10 to 80 percent on a fast charger. An IONIQ 5 needs 18. After the break we
-meet a car that refills in about three minutes. So what sets the charging time? Three things, and
-we take them in this order: the cell's voltage ceiling, which forces the constant-voltage phase;
-heat; and the cable and the grid behind it. Then what is lost on the way, and how many chargers
-there are.
+meet a car that refills in about three minutes. What sets the charging time? Three things, in
+this order. The cell's voltage limit, which forces the constant-voltage phase. Heat. And the cable
+and the grid behind it. Then what is lost on the way, and how many chargers there are.
 
-In the short version we skip the standards and the question of battery wear; both are in the
-handout.
+In the short version we skip the standards and battery wear. Both are in the handout.
 
-*[show photo]* A motorway charging site in Germany, an IONITY row at Raststätte Altenburger Land
-Nord on the A4. Photograph by Andrei Romanenko, Wikimedia Commons.
+*[show photo]* A motorway charging site in Germany: a row of IONITY chargers at Raststätte
+Altenburger Land Nord on the A4. Photograph by Andrei Romanenko, Wikimedia Commons.
 -->
 
 ---
@@ -68,21 +66,22 @@ CV 4.20 V, stop at C/50.</div>
 </div>
 
 <!--
-Every lithium-ion cell charges the same way: CC-CV, constant current, then constant voltage.
+Every lithium-ion cell charges the same way, called CC-CV: constant current, then constant
+voltage.
 
-*[show figure]* A formula plot: the Thevenin cell of section 02 charging from 10 percent. Top, the
-current. Middle, the terminal voltage, with the open-circuit voltage dashed below it. Bottom, the
-state of charge. Across all three, time in minutes.
+*[show figure]* A formula plot of the Thevenin cell from section 02, charging from 10 percent. Top,
+the current. Middle, the voltage at the cell's terminals, with the open-circuit voltage, OCV, dashed
+below it. Bottom, the state of charge. Time in minutes runs across all three.
 
-Step one, CC: the charger pushes a constant current, here half a C, and the
-terminal voltage climbs. Step two, CV: when the terminal voltage reaches 4.20 volts, the charger
-holds it there, and the current decays by itself. Look at the dashed line: at the switch the OCV is
-still below 4.2, and the cell is at 96 percent, not 100. Step three: when the current has fallen to
-the end value, the charge stops, at 99.8.
+Step one, CC. The charger pushes a constant current, here half a C, and the terminal voltage climbs.
+Step two, CV. At 4.20 volts the charger holds the voltage there, and the current falls by itself.
+Look at the dashed line. At the switch the OCV is still below 4.2, and the cell is at 96 percent.
+Step three: when the current has fallen to the end value, charging stops, at 99.8.
 
-The table gives three real datasheets. Two nickel-based cells, 4.20 volts; one LFP cell, 3.6 volts, the
-last row of section 01's table. And look at the end current: all three stop between C over 50 and C
-over 100, in section 01's C-rate. Not the C over 20 that is often quoted. The CV phase is long, and it is gentle.
+The table shows three real datasheets. Two nickel-based cells stop at 4.20 volts. One LFP cell
+stops at 3.6 volts, the last row of section 01's table. Now look at the end current. All three stop
+between C over 50 and C over 100. The often-quoted C over 20 is higher. The CV phase is
+long, and its current is small.
 -->
 
 ---
@@ -121,25 +120,24 @@ full**. Holding *v* lets *i* fall, so the OCV can rise to the limit.
 
 <!--
 Why not push constant current until the cell is full? Because the limit applies to the terminal
-voltage, and while charging, the terminal voltage is the OCV plus R times i. The current itself
-pushes the terminal voltage up. So the terminal voltage hits the ceiling while the OCV, the one that
-says how full the cell is, is still below it. Holding the voltage lets the current fall, R i
-shrinks, and the OCV can climb the rest of the way without the terminal ever passing the limit.
+voltage. While charging, the terminal voltage is the OCV plus R times i. The current itself pushes
+the terminal voltage up. It hits the limit while the OCV, which tells how full the cell is, is still
+below it. Holding the voltage lets the current fall, so R i shrinks. The OCV can then
+climb the rest of the way, and the terminal voltage never passes the limit.
 
-There is a second reason, inside the cell. A large current into a nearly full cell drives the
-graphite anode's potential down. Below 0 volts against lithium, lithium metal plates onto the anode
-instead of slipping into it. Plated lithium is lost capacity; in the extreme it grows dendrites that
-can pierce the separator.
+There is a second reason, inside the cell. A large current into a nearly full cell pushes the
+graphite anode's potential down. Below 0 volts against lithium, lithium metal coats the anode
+instead of moving into it. This is plating. Plated lithium is lost capacity. At worst it grows
+metal needles, dendrites, that can pierce the separator.
 
 *[ask]* Now your Lecture 4 pack: 0.1 ohm, charging at 50 kilowatts at about 350 volts. How many
-volts are lost across R? *[pause]* 50 kilowatts over 350 volts is about 143 amperes; times 0.1 ohm,
+volts are lost across R? *[pause]* 50 kilowatts over 350 volts is about 143 amperes. Times 0.1 ohm,
 14 volts. Per cell, 0.15.
 
-*[show figure]* The two bars finish it. 96 cells at 4.2 volts make a 403 volt ceiling, the dashed
-red line. With 14 volts across
-R, constant current must stop when the OCV is about 389 volts, 4.05 volts per cell: well short of
-full: the left bar. At C over 20, 3.3 amperes, the right bar, the drop is a third of a volt for
-the whole pack, and the cell is effectively at its OCV.
+*[show figure]* The two bars show it. 96 cells at 4.2 volts make a 403 volt limit, the dashed red
+line. With 14 volts across R, constant current must stop when the OCV is about 389 volts, 4.05
+volts per cell. That is the left bar, well short of full. At C over 20, 3.3 amperes, the right bar,
+the drop is a third of a volt for the whole pack. The cell is almost at its OCV.
 
 *[3 h: give the room five minutes on take-home exercise 1, the same sum for an 800 volt pack at
 200 kilowatts, and take one answer. It comes out at 250 amperes, 0.26 volts per cell, and CC ending
@@ -187,35 +185,37 @@ potential falls below 0 V vs Li/Li⁺.
 <!--
 The datasheet limits of section 03 all slow the charge in the cold. Here is why.
 
-Das and Shrotriya's 2024 review: plating typically appears above 1C or near 0 degrees. Normally the
-anode sits 65 to 200 millivolts above lithium, and lithium slips into the graphite. In the cold,
-lithium diffuses more slowly inside the graphite and piles up at its surface, and the local anode
-potential falls below zero. The same happens at high current, and when a cell is overcharged to
-around 4.5 volts. The worst case is a dendrite through the separator, an internal short, and
+A 2024 review by Das and Shrotriya says plating usually appears above 1C or near 0 degrees.
+Normally the anode sits 65 to 200 millivolts above lithium, and lithium moves into the graphite
+layers, called intercalation. In the cold, lithium moves more slowly inside the
+graphite. It piles up at the surface, and the anode potential there falls below zero. The same
+happens at high current, and when a cell is overcharged to about 4.5 volts. At worst, a dendrite
+grows through the separator and shorts the cell inside, which then overheats out of control:
 thermal runaway.
 
-*[ask]* Look back at the CV slide. Plating needs a low anode potential; a high current near full
-charge pushes it down. Which part of the charge is most at risk? *[pause]* The end of CC, at high
-charge and high current. That is one more reason the CV phase exists, and one more reason chargers
-slow down above 80 percent.
+*[ask]* Look back at the CV slide. Plating needs a low anode potential, and a high current near
+full charge pushes it down. Which part of the charge is most at risk? *[pause]* The end of CC, nearly
+full, with the current still high. That is one more reason for the CV phase,
+and for chargers slowing down above 80 percent.
 
-So the cold is not just slower chemistry. It is a margin that shrinks toward a failure mode, and
-that is why the datasheets on the right cut the current hard: a quarter C below 10 degrees for the
-Panasonic cell, 0.3C below 25 for the LG cell, under 250 milliamperes below zero for the LFP cell.
+In the cold, the safety margin against plating shrinks. That is why the datasheets on the right
+cut the current hard: a quarter C below 10 degrees for the Panasonic cell, 0.3C below 25 for the
+LG cell, under 250 milliamperes below zero for the LFP cell.
 
 *[ask]* What can a car do about it, on its way to a fast charger in January? *[pause]* Heat the
-pack before it arrives. That is preconditioning: the car warms its battery while driving, so it
-reaches the charger warm enough to take full current.
+pack before it arrives. This is preconditioning: the car warms its battery while driving, so it
+can take full current at the charger.
 
-ADAC measured what it costs. Preconditioning saves time at the charger, but not energy. Two slides
-on you will see the energy: a cold pack that was not preconditioned lost up to 10 percent inside the
-car on DC, and heating the pack at the charger cost 2 to 8 percent more.
+ADAC, the German automobile club, measured the cost. Preconditioning saves time at the charger,
+but not energy. The numbers are two slides on. On DC, a cold pack that was not
+preconditioned lost up to 10 percent inside the car. Heating the pack at the charger cost 2 to 8
+percent more.
 
-Your Lecture 4 winter bill showed the cold costing energy on the road. Here it costs time at the
-plug as well, and the two add up on a winter trip.
+Your Lecture 4 winter bill showed the cold costing energy on the road. Here it also
+costs time at the plug. On a winter trip you pay both.
 
-So the chemistry sets two limits on charging speed: the voltage ceiling, and the temperature. The
-next car shows the temperature limit at work.
+The chemistry sets two limits on charging speed: the voltage limit and the temperature. The next
+car shows the temperature limit at work.
 -->
 
 ---
@@ -257,28 +257,28 @@ the next charge starts warmer.
 </div>
 
 <!--
-Our reference car, the 40 kilowatt-hour Leaf, on a CHAdeMO fast charger: the round plug at the
-bottom right, a photograph by D-Kuru on Wikimedia Commons.
+Our reference car, the 40 kilowatt-hour Leaf, on CHAdeMO, the Japanese fast-charging plug: the round
+one at the bottom right, photographed by D-Kuru, Wikimedia Commons.
 
-*[show figure]* Fastned's own measured curve, one charge on a pack at about 30 degrees. Across,
-state of charge; up, charging power. Flat at 43 to 46 kilowatts up to 60 percent, then it steps
-down: 33 kilowatts at 70, 26 at 80, 20 at 90. That step-down is the CV logic from the start of
-this section, at pack level, and it comes early. From 10 to 80 percent: 43 minutes, 40 kilowatts on
-average.
+*[show figure]* Fastned, a charging company, measured this curve: one charge, pack at about 30
+degrees. State of charge across, charging power up. Flat at 43 to 46 kilowatts up to 60 percent,
+then it steps down: 33 kilowatts at 70, 26 at 80, 20 at 90. This is the CV phase again, on the whole
+pack, and it starts early. 10 to 80 percent: 43 minutes, 40 kilowatts on average.
 
-That is a good day. Now rapidgate. In a test reported by CleanTechnica, the Leaf throttled DC
-charging whenever its pack was above 32 degrees. At 41 degrees, adding 70 percent took 54 minutes
-on the old software, just under 40 after an update. A hot pack still cost a quarter of an hour.
+That is a good day. Now rapidgate, the nickname for the Leaf slowing its fast charge when hot. In a
+test reported by CleanTechnica, the Leaf cut DC power whenever its pack was above 32 degrees. At 41
+degrees, adding 70 percent took 54 minutes on the old software, just under 40 after an update. A hot
+pack still cost a quarter of an hour.
 
 *[ask]* Why does the Leaf overheat when the IONIQ does not? *[pause]* Its pack has no active
-cooling. Idaho measured it on the 2012 Leaf, the same air-cooled design: each 50 kilowatt DC charge
-warmed the pack by 6.5 degrees on average, against 2.9 on AC. With no cooling, the heat of one
-charge is still there at the next. On a long trip, the second and third fast charges start hot and
-get throttled, exactly when you need them.
+cooling. Idaho National Laboratory measured the 2012 Leaf, the same air-cooled design: each 50
+kilowatt DC charge warmed the pack 6.5 degrees on average, against 2.9 on AC. The heat of one charge
+is still there at the next. On a long trip, the second and third fast charges start hot and are
+slowed, just when you need them.
 
-Nissan's answer is the third-generation Leaf of 2025: a liquid-cooled pack, CCS in Europe instead
-of CHAdeMO, and 10 to 80 percent in as little as 35 minutes on a 150 kilowatt charger. So heat is the second limit, and it is the one you
-can engineer away.
+Nissan's answer is the third-generation Leaf of 2025. It has a liquid-cooled pack and uses CCS,
+Europe's standard plug, instead of CHAdeMO: 10 to 80 percent in as little as 35 minutes on a 150
+kilowatt charger. Heat is the second limit, and a liquid-cooled pack removes most of it.
 -->
 
 ---
@@ -312,23 +312,23 @@ lines.</div>
 </div>
 
 <!--
-Three modern cars on the same axes, again Fastned's own data at about 30 degrees, with the Leaf for
+Three modern cars on the same axes, again Fastned's data at about 30 degrees, with the Leaf for
 scale. Two 400 volt cars, the ID.3 and the Model Y; one 800 volt car, the IONIQ 5.
 
 *[ask]* The Model Y's quoted peak is 250 kilowatts, the IONIQ 5's 263: nearly the same. Which one
 charges 10 to 80 percent faster, and by how much? *[pause]*
 
-*[show figure]* Look at the shapes. The two 400 volt cars are fastest early, around 180 kilowatts
-at 20 percent, and have fallen to about 100 by half charge. The IONIQ 5 does the opposite: it
-climbs to its peak at about half charge and only then falls. So the IONIQ needs 18 minutes and the
-Model Y 27. The Model Y has nearly the IONIQ's peak, but only two-thirds of its average power: 124
-kilowatts against 196. The 2024 Porsche Taycan, also 800 volts, matches the IONIQ's 18 minutes.
+*[show figure]* Look at the shapes. The two 400 volt cars are fastest early, around 180 kilowatts at
+20 percent. By half charge they have fallen to about 100. The IONIQ 5 does the opposite: it climbs
+to its peak at about half charge, and only then falls. The IONIQ needs 18 minutes, the Model Y 27.
+The Model Y has nearly the IONIQ's peak, but only two-thirds of its average power: 124 kilowatts
+against 196. The 2024 Porsche Taycan, also 800 volts, matches the IONIQ's 18 minutes.
 
-So the peak on the brochure says little. The shape of the curve, and where it starts to fall,
-decides the time: that is the CV phase and the heat, both set by the BMS.
+The peak in the brochure tells you little. The time depends on the shape of the curve and where it
+starts to fall. That comes from the CV phase and the heat, and the BMS controls both.
 
-Two caveats for the curious. The 10 to 80 times for the Model Y and the ID.3 come from EV Database,
-an aggregator, and the Model Y figure is for the rear-drive version; Fastned does not say which one
+Two warnings about the data. The 10 to 80 times for the Model Y and the ID.3 come from EV Database,
+a secondary source. The Model Y time is for the rear-drive version; Fastned does not say which one
 it measured. And Fastned's Model Y data start at 8 percent, already below its quoted peak.
 -->
 
@@ -371,22 +371,23 @@ The current is capped by the **cable and contacts**, not the charger's electroni
 </div>
 
 <!--
-Why does 800 volts win? Charging power is voltage times current. The current is limited by the
-cable and the connector contacts heating up, I squared R, not by the charger's electronics. *[show figure]* So at a
-given current limit, twice the voltage is twice the power, the right-hand panel: at 500 amperes, a 400 volt car gets 200
-kilowatts, an 800 volt car 400. Or turn it round: the same power at twice the voltage needs half the
-current, and a quarter of the I squared R loss in the cable, the contacts and the pack. Your Lecture
-4 pack at 50 kilowatts drew 143 amperes; at 200 kilowatts it would draw over 500.
+Why does 800 volts charge faster? Charging power is voltage times current. The current is limited by
+heat in the cable and the plug contacts, I squared R, not by the charger's electronics.
+*[show figure]* So at the same current limit, twice the voltage gives twice the power. That is the
+right-hand panel: at 500 amperes, a 400 volt car gets 200 kilowatts, an 800 volt car 400. The same
+power at twice the voltage needs half the current, and a quarter of the I squared R loss in the
+cable, the contacts and the pack. Your Lecture 4 pack drew 143 amperes at 50 kilowatts. At 200
+kilowatts it would draw over 500.
 
-The right column grounds it. A liquid-cooled CCS2 cable is rated about 500 amperes, 700 for short
-boosts; without liquid cooling, about 200 to 250. Those are makers' figures we could not check. ADAC
-measured the loss inside the car on DC at 23 degrees: 1 percent for the 800 volt IONIQ 6, 3 percent
-for the 400 volt Model Y and ID.3.
+The right column gives real numbers. A liquid-cooled CCS2 cable is rated about 500 amperes, 700 for
+short bursts. Without liquid cooling, about 200 to 250. These are makers' figures we could not
+check. ADAC, the German automobile club, measured the loss inside the car on DC at 23 degrees: 1
+percent for the 800 volt IONIQ 6, 3 percent for the 400 volt Model Y and ID.3.
 
 *[ask]* So should everyone buy an 800 volt car? *[pause]* Only if the chargers can deliver it.
-Hyundai's own page gives the IONIQ 5 76 minutes from 10 to 80 percent on a 50 kilowatt charger,
-against 18 on a 350 kilowatt one. And at an older 400 volt charger the car must step the voltage up:
-Hyundai uses the drive motor and its inverter as the boost converter.
+Hyundai's own page says the IONIQ 5 needs 76 minutes from 10 to 80 percent on a 50 kilowatt charger,
+against 18 on a 350 kilowatt one. At an older 400 volt charger the car must step the voltage up
+itself, using its drive motor and inverter.
 -->
 
 ---
@@ -430,25 +431,26 @@ post.
 </div>
 
 <!--
-What you actually plug in. *[show figure]* The charging modes of IEC 61851, one pictogram each. Mode 1, a plain socket
-with no communication, restricted in many countries. Mode 2, a household socket with a protection
-box in the cable, up to 32 amperes. Mode 3, a wallbox or public post that talks to the car over the
-control pilot wire; the Type 2 coupler is rated up to 63 amperes three-phase. Mode 4, DC from a
-charger outside the car, through CCS2 in the EU. *[show photos]* Below, the two plug faces: Type 2
-for AC, and CCS2, which adds two large DC pins under it.
+What you plug in. *[show figure]* The charging modes of the standard IEC 61851, one picture each.
+Mode 1: a plain socket with no communication, restricted in many countries. Mode 2: a household
+socket with a protection box in the cable, up to 32 amperes. Mode 3: a wallbox or public post that
+talks to the car over the control pilot, a signal wire. The Type 2 plug takes up to 63 amperes,
+three-phase. Mode 4: DC from a charger outside the car, through CCS2 in the EU. *[show photos]*
+Below, the two plug faces: Type 2 for AC, and CCS2, which adds two large DC pins under it.
 
-On AC, the car's own on-board charger turns AC into DC, and its rating sets the power. At 230 volts
-per phase: 16 amperes on one phase is 3.7 kilowatts; three phases at 16 amperes, 11; three at 32,
-22. The ID.3, the Model Y and the IONIQ 5 have 11 kilowatt chargers. The 40 kilowatt-hour Leaf has a
+On AC, the car's own on-board charger turns AC into DC, and its rating sets the power. One phase at
+16 amperes and 230 volts is 3.7 kilowatts. Three phases give 11, and three at 32 amperes give 22.
+The ID.3, the Model Y and the IONIQ 5 have 11 kilowatt chargers. The 40 kilowatt-hour Leaf has a
 single-phase 3.6 or 6.6.
 
 *[ask]* You plug that Leaf into a 22 kilowatt public post. What do you get? *[pause]* 3.6 or 6.6
-kilowatts. The post offers 22; the car's charger takes what it can. On DC the off-board charger
-bypasses the car's charger entirely, which is the whole point of DC: the grayed-out OBC in Mode 4.
+kilowatts. The post offers 22; the car takes what its charger can. On DC, the charger outside the
+car bypasses the car's own charger. That is the point of DC: the grayed-out on-board charger in Mode
+4.
 
-The household socket deserves one warning. A socket is not built to carry its full current for
-hours; that is why the Mode 2 box exists, and why Denmark, for example, caps a household-socket
-charge that can run over two hours at 8 amperes.
+One warning: a household socket is not built to carry its full current for hours. That is why the
+Mode 2 box exists. And why Denmark, for example, limits a socket charge that can run over two hours
+to 8 amperes.
 -->
 
 ---
@@ -500,35 +502,35 @@ skipInCut: true
 [NISSAN-LEAF3-2025] verified; MW computed (<code>charging.md</code> §3)</div>
 
 <!--
-The connectors outside the EU's CCS2, for reference. *[show photos]* Three of the faces: CHAdeMO,
-NACS and the truck connector MCS; the photographs are from Wikimedia Commons, by D-Kuru,
-RickyCourtney and SRago91.
+The connectors other than the EU's CCS2, for reference. *[show photos]* Three plug faces: CHAdeMO,
+NACS, and MCS for trucks. The photographs are by D-Kuru, RickyCourtney and SRago91, on Wikimedia
+Commons.
 
-CHAdeMO, the Japanese standard on the old Leaf: its 2017 high-power version runs 100 kilowatts
-continuous, 150 to 200 peak, at 400 amperes and 500 volts. Its successor, ChaoJi, developed with
-China: up to 600 amperes at 1 to 1.5 kilovolts, 500 to 900 kilowatts. China's own GB/T coupler of
-2023 is reported at up to 1500 volts and 800 amperes. NACS, Tesla's connector, standardized as SAE
-J3400: one hand-sized coupler carrying DC or single-phase AC on the same two pins.
+CHAdeMO is the Japanese standard on the old Leaf. Its 2017 high-power version gives 100 kilowatts
+continuously and 150 to 200 at peak, at 400 amperes and 500 volts. Its successor, ChaoJi, was
+developed with China: up to 600 amperes at 1 to 1.5 kilovolts, 500 to 900 kilowatts. China's own
+GB/T plug of 2023 is reported at up to 1500 volts and 800 amperes. NACS is Tesla's connector, now
+the standard SAE J3400. It is one hand-sized plug that carries DC or single-phase AC on the same two
+pins.
 
-And MCS, the megawatt charging system for trucks: 1250 volts and 3000 amperes, which multiplies to
-3.75 megawatts, about eighty times the old Leaf's 46 kilowatts. *[ask]* Who needs megawatts at a plug?
-*[pause]* A battery truck, which must refill a very large pack during a driver's break rather than
-overnight. Remember that in section 07, when we ask where hydrogen trucks still make sense:
-this is what they compete with. The first certified chargers are reported at about 1 to 1.2
-megawatts, and SAE's MCS document covers the coupler, the communication, cooled cables and automatic
-connection: a truck need not wait for a driver to plug it in.
+MCS, the Megawatt Charging System, is for trucks. 1250 volts times 3000 amperes is 3.75 megawatts,
+about eighty times the old Leaf's 46 kilowatts. *[ask]* Who needs megawatts at a plug? *[pause]* A
+battery truck. It must refill a very large pack during the driver's break, not overnight. Remember
+this in section 07, when we ask where hydrogen trucks still make sense. This is what they compete
+with. The first certified chargers are reported at about 1 to 1.2 megawatts. SAE's MCS document
+covers the plug, the communication, cooled cables and automatic connection, so a truck need not wait
+for a driver to plug it in.
 
-ChaoJi is also built to be backward compatible, through adapters, with both GB/T and CHAdeMO, so
-the two Asian systems may yet merge; NACS likewise has an SAE adapter standard to CCS.
+With adapters, ChaoJi also works with GB/T and CHAdeMO, so the two Asian systems may merge. NACS
+also has an SAE standard for an adapter to CCS.
 
-And one more way to refill a battery car, which needs no cable at all: swap the battery. In China,
-NIO ran 4,090 battery-swap stations in September 2026, the trade press reports. A swap takes
-minutes, like a nozzle, but needs a station full of charged packs, and only works for the maker's
-own cars.
+There is one more way to refill a battery car, with no cable at all: swap the battery. The trade
+press reports that NIO ran 4,090 battery-swap stations in China in September 2026. A swap takes
+minutes, like a nozzle. But the station needs a stock of charged packs, and it only works for the
+maker's own cars.
 
-In Europe CHAdeMO is on its way out. Nissan's new Leaf takes CCS in Europe, NACS in North America,
-and keeps CHAdeMO only in Japan. The old Leaf drivers will be looking for an ever thinner row of
-CHAdeMO posts.
+In Europe, CHAdeMO is disappearing. Nissan's new Leaf uses CCS in Europe and NACS in North America,
+and keeps CHAdeMO only in Japan. Drivers of the old Leaf will find fewer and fewer CHAdeMO posts.
 -->
 
 ---
@@ -546,23 +548,23 @@ the DC total is 5–15 %, and heating the pack at the charger adds 2–8 %.</div
 lowest at 11 or 22 kW.
 
 <!--
-Where the energy goes between the grid and the battery, from ADAC's 2026 measurements.
+Energy lost between grid and battery, as ADAC measured it in 2026.
 
-*[show figure]* Left, AC, for five current cars, one dumbbell each: red the socket, green the
-wallbox. At a 2.3 kilowatt household socket the losses run from 12.7
-percent for the Model Y to 24.2 for the Mercedes. At an 11 kilowatt wallbox they fall to 5 to 7
-percent. *[ask]* Why would charging slowly waste more? *[pause]* The car's control units, pumps and
-BMS draw a fixed power for as long as the charge lasts, and on a socket that is many hours.
+*[show figure]* On the left, AC, for five current cars, one line each, red for the socket, green for
+the wallbox. At a 2.3 kilowatt household socket losses range from 12.7 percent for the Model Y to
+24.2 for the Mercedes. At an 11 kilowatt wallbox they fall to 5 to 7 percent. *[ask]* Why would
+charging slowly waste more? *[pause]* The car's control units, pumps and BMS draw a fixed power for
+as long as the charge lasts. On a socket, that is many hours.
 
-Right, DC, the losses inside the car only, at 23 degrees and at 0 degrees. "Precond." means the car
-heated the pack on its way to the charger. Warm: 1 percent for the 800 volt IONIQ 6, 3 to 4 for the
-others. Cold and not preconditioned: 6 to 10 percent. Add the charger's own conversion, about 3
-percent, and ADAC puts DC losses at 5 to 15 percent in all, as the caption says; heating the pack at
-the charger costs 2 to 8 percent more.
+On the right, DC: the losses inside the car only, at 23 degrees and at 0 degrees. "Precond." means
+the car heated the pack on its way to the charger. Warm: 1 percent for the 800 volt IONIQ 6, 3 to 4
+for the others. Cold and not preconditioned: 6 to 10 percent. The charger itself loses about 3
+percent. ADAC puts the total DC loss at 5 to 15 percent. Heating the pack at the charger costs
+another 2 to 8 percent.
 
-Your Lecture 4 energy bill assumed 13 percent between the wall and the battery. That sits right in
-this range. For the old Leaf's own on-board charger, Argonne measured 86 to 87 percent efficiency;
-today's cars reach 93 to 95 at 11 kilowatts.
+Your Lecture 4 energy bill assumed 13 percent between the wall and the battery. That fits this
+range. Argonne, a US national lab, measured the old Leaf's on-board charger at 86 to 87 percent
+efficiency. Today's cars reach 93 to 95 at 11 kilowatts.
 -->
 
 ---
@@ -604,29 +606,27 @@ skipInCut: true
 </div>
 
 <!--
-A modern charger and car talk to each other. The signal rides on the control pilot wire as
-powerline communication. Most CCS chargers in service still speak an older, DC-only protocol, DIN
-SPEC 70121.
+A modern charger and car talk to each other. The data is sent as a high-frequency signal on the
+control pilot wire. Most CCS chargers in use still speak an older, DC-only protocol, DIN SPEC 70121.
 
-ISO 15118-20, published in 2022, adds the messages for bidirectional power: the car can also feed
-the grid. The EU made it mandatory through an amendment of AFIR, the alternative fuels
-infrastructure regulation. Every public AC or DC point installed or renovated from 8 January 2026
-must support ISO 15118 parts 1 to 5; from 1 January 2027, part 20. Plug and Charge, where the car
-identifies itself and you need no card or app, stays optional for the operator; but an operator
-who offers it must do it through ISO 15118, so that every car can use every charger. Existing
+ISO 15118 sets the rules for this. Part 20, published in 2022, adds the messages for power in both
+directions, so the car can also feed the grid. The EU made it compulsory by amending AFIR, its law
+on charging and fueling stations. Every public AC or DC point installed or renovated from 8 January
+2026 must support ISO 15118 parts 1 to 5. From 1 January 2027, also part 20. With Plug and Charge,
+the car identifies itself; you need no card or app. It stays optional for the operator. But an
+operator who offers it must use ISO 15118, so that every car can use every charger. Existing
 chargers are exempt, and cards and apps may stay until the market has moved over.
 
-On the right, vehicle-to-grid on the road. Renault and Mobilize launched it in France in October
-2024 with the Renault 5. The car's own on-board charger is bidirectional, so this is AC V2G: the
-car's charger is the inverter and the wallbox stays simple, 7 to 22 kilowatts. Renault says the cost
-of charging is cut by half on average; that is the maker's claim. Nissan's new Leaf is
-V2G-compatible in Europe too. France came first; Great Britain was next, and Germany was still
-waiting for its rules when Renault launched.
+On the right, V2G, vehicle-to-grid, on the road. Renault and Mobilize launched it in France in
+October 2024 with the Renault 5. The car's on-board charger works in both directions and acts as the
+inverter. This is AC V2G, and the wallbox stays simple, 7 to 22 kilowatts. Renault claims this
+halves the cost of charging on average. Nissan's new Leaf can also do V2G in Europe. France came
+first, then Great Britain. Germany was still waiting for its rules when Renault launched.
 
 *[ask]* Most cars stand parked most of the day with a full battery. Who would want to use that
-battery, and for what? *[pause]* The grid operator, to cover evening peaks and absorb midday solar.
-The car stops being only a load. That is the one way in which a plug offers something a nozzle never
-can: the energy can go back out.
+battery, and for what? *[pause]* The grid operator, to cover the evening peak and store midday
+solar. The car is then more than a load. Here a plug can do something a nozzle never can: the energy
+can go back out.
 -->
 
 ---
@@ -656,29 +656,29 @@ capacity loss"
 </div>
 
 <!--
-Does fast charging wear the battery out? Two sources, one large and loose, one small and tight.
+Does fast charging wear out the battery? Two sources: one large but rough, one small but careful.
 
-*[show figure]* On the left, Geotab's fleet data from January 2026: more than 22,700 electric cars of 21 models.
-Average capacity loss, 2.3 percent per year. Cars that mostly fast-charge above 100 kilowatts lose
-up to 3.0 percent a year; cars charged mostly on AC about 1.5. Hot regions add 0.4. And the state of
-charge matters only at the extremes: degradation speeds up when a car spends more than 80 percent of
-its time very full or very empty.
+*[show figure]* On the left, fleet data from Geotab, January 2026: more than 22,700 electric cars of
+21 models. Average capacity loss: 2.3 percent per year. Cars that mostly fast-charge above 100
+kilowatts lose up to 3.0 percent a year. Cars charged mostly on AC lose about 1.5. Hot regions add
+0.4. The battery wears faster only when a car spends more than 80 percent of its time very full or
+very empty.
 
 *[ask]* Over eight years, what does 3 percent a year against 1.5 mean for a car's range? *[pause]*
-Roughly a quarter of the capacity against an eighth: real, but not the end of the car. A trade
-report on the same data puts it the same way: after eight years about 12 percent lost on AC, up to
-22 on DC.
+Roughly a quarter of the capacity against an eighth. Real, but not the end of the car. A trade
+report on the same data gives similar numbers: after eight years, about 12 percent lost on AC and up
+to 22 on DC.
 
-On the right, Idaho's controlled experiment: four 2012 Leafs in Phoenix, two charged only on 50
-kilowatt DC, two only on 3.3 kilowatt AC, twice a day, in a very hot climate. At 50,000 miles, read
-off their figure to about 2 percent: the DC cars had lost about 27 percent of their capacity, the AC
-cars about 24. In range at a steady 45 miles an hour, one AC car went from 106 to 81 miles, one DC
-car from 104 to 69. Idaho's own conclusion: the difference is small relative to the total loss. And
-these cars were charged twice a day, twice as often as Nissan recommends, in desert heat: a torture
-test.
+On the right, a controlled test by Idaho National Laboratory: four 2012 Leafs in Phoenix. Two
+charged only on 50 kilowatt DC, two only on 3.3 kilowatt AC, twice a day, in a very hot climate. At
+50,000 miles the DC cars had lost about 27 percent of their capacity, the AC cars about 24. Values
+read off their figure, to about 2 percent. In range at a steady 45 miles an hour, one AC car dropped
+from 106 to 81 miles, one DC car from 104 to 69. The lab's own conclusion: the difference is small
+compared with the total loss. And these cars were charged twice a day, twice as often as Nissan
+recommends, in desert heat: a very hard test.
 
-And their DC packs spent 95 percent of the time below 46 degrees. That links back to rapidgate:
-heat, more than the plug, is what ages the pack. A car that keeps its pack cool can charge fast.
+Their DC packs spent 95 percent of the time below 46 degrees. This links back to rapidgate. Heat
+ages the pack more than the plug does. A car that keeps its pack cool can charge fast.
 -->
 
 ---
@@ -714,26 +714,26 @@ every **60 km**, ≥ **400 kW** with one ≥ 150 kW point by end 2025, **600 kW*
 </div>
 
 <!--
-How many public chargers are there? *[show figure]* The public charging points by power class, as
-the EU's Alternative Fuels Observatory counts them, for 2024, 2025 and September 2026: Czechia on
-the left, the EU 27 on the right. AC at the bottom, the ordinary 7 to 22 kilowatt posts that are
-the bulk; DC classes above.
+How many public chargers are there? *[show figure]* Public charging points by power class, counted
+by the EU's Alternative Fuels Observatory, for 2024, 2025 and September 2026. Czechia is on the
+left, the EU 27 on the right. AC at the bottom: the ordinary 7 to 22 kilowatt posts, most of the
+total. DC above.
 
-*[show photo]* One of them, a ČEZ fast charger on Evropská in Prague 6, photographed by the user
-Yopic. At the end of 2025 Czechia had 7,574 public points; a third of them DC, and one in eight at 150
-kilowatts or more. The EU average is lower: 18 percent DC. So Czechia has few chargers but a lot of
-fast ones. By September 2026 it had barely grown, to 7,669 points, but the mix shifted: the AC
-count fell by about 170 while DC rose by 260, to 36 percent of all points. Slow posts are being
-replaced by fast ones.
+*[show photo]* A ČEZ fast charger on Evropská in Prague 6, photographed by the user Yopic. At the
+end of 2025 Czechia had 7,574 public points. A third of them were DC, and one in eight gave 150
+kilowatts or more. The EU average is lower: 18 percent DC. Czechia has few chargers, but many fast
+ones. By September 2026 the total had barely grown, to 7,669 points, but the mix changed. The AC
+count fell by about 170, while DC rose by 260, to 36 percent of all points. Fast posts are replacing
+slow ones.
 
-For scale, the world: over 7 million public charging points at the end of 2025, about 11 electric
-cars for every one, the IEA counts.
+Worldwide there were over 7 million public charging points at the end of 2025, about 11 electric
+cars for each one, says the International Energy Agency.
 
-The EU rule, AFIR Article 3: for every battery-electric car registered, 1.3 kilowatts of public
-charging power; and along the core trans-European roads a charging pool every 60 kilometers in each
-direction, at least 400 kilowatts by the end of 2025, 600 by the end of 2027.
+The EU law on charging, AFIR, sets targets in Article 3. For every registered battery-electric car,
+1.3 kilowatts of public charging power. Along the main trans-European roads, a charging site every
+60 kilometers in each direction: at least 400 kilowatts by the end of 2025, 600 by the end of 2027.
 
-So, the plug. 18 to 43 minutes from 10 to 80 percent, set by the CV phase and by heat. 5 to 15
+The plug, in short: 18 to 43 minutes from 10 to 80 percent, set by the CV phase and by heat. 5 to 15
 percent lost on DC. About 7,700 public points in Czechia. Keep two numbers for after the break: 18
 minutes, and 17.1 kilowatt-hours per 100 kilometers, what the Leaf takes from the wall.
 

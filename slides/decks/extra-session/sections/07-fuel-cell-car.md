@@ -15,14 +15,13 @@ engine-generator, and its efficiency from the power plant to the wheel against a
 <div class="caption">Mirai (gen 2) · Icke68746, CC0</div>
 
 <!--
-You have already met this car. A fuel-cell car is Lecture 5's series hybrid, with a stack where the
-engine-generator was. So there is nothing new to model, only a new source to drop in. Then the
-question your Lecture 4 bill left open, when it said "tank to wheel only": how much electricity, from
-the power plant, reaches the wheel of each car? That decides whether the nozzle's three minutes are
-worth it.
+You have already met this car. A fuel-cell car is Lecture 5's series hybrid, where only the electric
+motor drives the wheels. A stack takes the place of the engine-generator. Nothing new to model, only
+a new source. Then the question your Lecture 4 bill left open when it said "tank to wheel only": how
+much electricity from the power plant reaches the wheel of each car? That decides whether the
+nozzle's three minutes are worth it.
 
-*[show photo]* The car: a second-generation Mirai, a CC0 photograph by the user Icke68746 on
-Wikimedia Commons.
+*[show photo]* A second-generation Mirai. CC0 photograph by the user Icke68746, Wikimedia Commons.
 -->
 
 ---
@@ -67,24 +66,25 @@ driving.
 
 <!--
 *[show figure]* Lecture 5's series hybrid, redrawn. Orange lines are electrical, black lines are
-shafts, as in Lecture 5. Where you had the engine turning a generator, the Mirai has three hydrogen
-tanks feeding the stack. The stack's voltage falls with load, so a boost converter lifts it onto the
-DC link. The battery sits on the same link. The inverter and the motor drive the rear wheels, and
-regen goes back to the battery. No shaft runs from the source to the wheels. *[show photo]* Below the table, the same blocks in a
-real car, the first Mirai cut open: the stack under the front seats, the tanks under the rear.
+shafts. Where you had the engine turning a generator, the Mirai has three hydrogen tanks feeding the
+stack. The stack's voltage falls with load, so a boost converter lifts it onto the DC link. The
+battery sits on the same link. The inverter and the motor drive the rear wheels, and braking energy
+goes back to the battery. No shaft runs from the source to the wheels. *[show photo]* Below the
+table, the same blocks in a real car, the first Mirai cut open: the stack under the front seats, the
+tanks under the rear.
 
 The table maps the parts. Engine-generator: the 128 kilowatt stack. Battery: 84 cells at 310.8 volts
-and 4 ampere-hours, so 1.24 kilowatt-hours, smaller than the 1.4 in your Lecture 5 P2 hybrid and the
-first Mirai's 1.6. Motor:
-134 kilowatts, rear drive. Fuel: 5.6 kilograms of hydrogen at 0.79 per 100 kilometers.
+and 4 ampere-hours, so 1.24 kilowatt-hours. Smaller than the 1.4 in your Lecture 5 P2 hybrid and the
+first Mirai's 1.6. Motor: 134 kilowatts, rear drive. Fuel: 5.6 kilograms of hydrogen, 0.79 per 100
+kilometers.
 
-*[ask]* With a 1.24 kilowatt-hour battery, what is the battery for? *[pause]* It is a power buffer,
-not an energy store. It catches the braking energy and covers the moments when the stack cannot
-follow the driver's foot; the stack does the driving.
+*[ask]* With a 1.24 kilowatt-hour battery, what is it for? *[pause]* It is a power buffer: it moves
+power in and out quickly but stores little energy. It catches the braking energy and covers the
+moments when the stack cannot follow the driver's foot. The stack does the driving.
 
-And the energy manager's job is the one you wrote for the series hybrid, with section 05's efficiency
-curve in place of the engine's fuel map. Only now the source is most efficient at light load, not
-near full power.
+The energy manager's job is the one you wrote for the series hybrid, with section 05's efficiency
+curve in place of the engine's fuel map. Now the source is most efficient at light load, not near
+full power.
 -->
 
 ---
@@ -119,30 +119,31 @@ drives on its battery first (CR-V).
 </div>
 
 <!--
-How big should the stack be, and how big the battery? *[show figure]* Four vehicles: fuel-cell
-power up, battery energy across, on a log scale.
+How big should the stack be, and how big the battery? *[show figure]* Four vehicles: fuel-cell power
+up, battery energy across, on a log scale.
 
 The Mirai: 128 kilowatt stack, 1.24 kilowatt-hour battery, 134 kilowatt motor. Nearly all the power
-comes from the stack. The new Nexo: 110 kilowatts gross, 94 net after the balance of plant takes its
-share, and a bigger buffer, 2.64 kilowatt-hours that can give 80 kilowatts, for a 150 kilowatt motor.
-The battery now carries a large share of the peak power, and the stack can be smaller.
+comes from the stack. The new Nexo: 110 kilowatts gross, 94 net after the balance of plant from
+section 05 takes its share. Its buffer battery is bigger: 2.64 kilowatt-hours that can give 80
+kilowatts, for a 150 kilowatt motor. The battery carries a large share of the peak power, so the
+stack can be smaller.
 
 Honda's CR-V e:FCEV goes further: a 92 kilowatt fuel cell and a 17.7 kilowatt-hour battery you plug
-in, good for 29 miles on electricity alone by the US rating. It is a plug-in hybrid with a fuel cell
-as its range extender.
+in, good for 29 miles on electricity alone by the US rating. It is a plug-in hybrid, with a fuel
+cell to extend its range.
 
-And a truck for contrast: Hyundai's XCIENT, a 180 kilowatt fuel cell, 72 kilowatt-hours of battery,
-a 350 kilowatt motor, about 68 kilograms of hydrogen, up to 450 miles.
+For contrast, a truck: Hyundai's XCIENT. A 180 kilowatt fuel cell, 72 kilowatt-hours of battery, a
+350 kilowatt motor, about 68 kilograms of hydrogen, up to 450 miles.
 
-*[ask]* In Lecture 5 you put hybrids on a line from micro to plug-in by the degree of
-hybridization. Place these four on it. *[pause]* The Mirai is near the full-hybrid end: battery as a
-buffer. The Nexo moves along. The CR-V is a plug-in, which drives on its battery first.
+*[ask]* In Lecture 5 you put hybrids on a line from micro to plug-in, by the degree of
+hybridization. Place these four on it. *[pause]* The Mirai is near the full-hybrid end, battery as a
+buffer. The Nexo is further along. The CR-V is a plug-in: it drives on its battery first.
 
-Honda also claims the CR-V's fuel-cell system costs two-thirds less than its predecessor's, and
-lasts twice as long; the Nexo's total system output rose from 135 to 190 kilowatts. The systems are
-improving fast. What they cannot change is the chain behind the nozzle, which is the next slide.
+Honda says the CR-V's fuel-cell system costs two-thirds less than the old one, and lasts twice as
+long. The Nexo's total system output rose from 135 to 190 kilowatts. The systems are improving fast.
+What they cannot change is the chain behind the nozzle: the next slide.
 
-The CR-V is also an admission. If most trips are short, the cheapest energy is the plug. The nozzle
+The CR-V also admits something. If most trips are short, the cheapest energy is the plug. The nozzle
 is kept for the long ones.
 -->
 
@@ -181,27 +182,26 @@ verified · Leaf: <code>energy-prices-cz.md</code> · 46.0 and 2.7: derived</div
 </div>
 
 <!--
-The decisive comparison. *[show figure]* The figure follows 100 units of renewable electricity to the
-wheel, step by step, for a battery car and a fuel-cell car, redrawn from an Agora Energiewende
-slide.
+The main comparison. *[show figure]* The figure follows 100 units of renewable electricity to the
+wheel, step by step, for a battery car and a fuel-cell car, redrawn from a 2018 study.
 
-The battery car, top. 95 percent survives the grid, 90 percent of that survives charging and
-discharging the battery, the motor passes 85, the gears 95. At the wheel: 69 percent. The fuel-cell
-car, bottom. Same grid. Electrolysis turns 70 percent of the electricity into hydrogen; compressing
-and transporting it keeps 80; the fuel cell turns 60 back into electricity; then the same motor and
-gears. At the wheel: 26. The difference is two extra conversions, into hydrogen and back.
+The battery car, on top. 95 percent survives the grid. 90 percent of that survives charging and
+discharging the battery. The motor passes 85, the gears 95. At the wheel: 69 percent. The fuel-cell
+car, below. Same grid. Electrolysis turns 70 percent of the electricity into hydrogen. Compressing
+and transporting it keeps 80. The fuel cell turns 60 back into electricity. Then the same motor and
+gears. At the wheel: 26. The difference is two extra conversions: into hydrogen and back.
 
-*[ask]* So for the same distance, how many times the electricity does the fuel-cell car need?
-*[pause]* 69 over 26: about 2.7.
+*[ask]* For the same distance, how many times the electricity does the fuel-cell car need? *[pause]*
+69 over 26: about 2.7.
 
 On the right, the same from the bottom up, with our own numbers. A PEM electrolyzer today uses 55
-kilowatt-hours per kilogram; compression about 3.0, precooling 0.2. Times the Mirai's 0.79 kilograms
-per 100 kilometers: 46 kilowatt-hours of electricity per 100 kilometers, before any transport or
-station losses. The Leaf takes 17.1 from the wall. Ratio: again about 2.7.
+kilowatt-hours per kilogram. Compression takes about 3.0, precooling 0.2. Times the Mirai's 0.79
+kilograms per 100 kilometers: 46 kilowatt-hours of electricity per 100 kilometers, before any
+transport or station losses. The Leaf takes 17.1 from the wall. Again about 2.7.
 
-The two routes differ inside: DOE's electrolyzer is 61 percent efficient, Agora assumes 70. They
-land on the same answer anyway: about 2.7 times the electricity. Agora's slide has a third bar, a combustion car on synthetic fuel made from electricity: 13 percent, about
-five times the battery car's electricity.
+The two methods differ inside. The US Department of Energy's electrolyzer is 61 percent efficient;
+the study assumes 70. Both still give about 2.7. The study also has a third bar: a combustion car on
+synthetic fuel made from electricity. 13 percent: about five times the battery car's electricity.
 -->
 
 ---
@@ -237,28 +237,29 @@ CO₂-eq/kWh.</div>
 </div>
 
 <!--
-And where does the hydrogen come from today? Not from the renewable electricity of the last slide.
-All of this is from the IEA.
+Where does the hydrogen come from today? Not from the renewable electricity of the last slide. All
+of this is from the International Energy Agency.
 
-*[show figure]* Kilograms of CO2 equivalent per kilogram of hydrogen. From natural gas without carbon
-capture: 10 to 14, of which about 9 is the plant itself and the rest methane and CO2 upstream. From
-coal: 22 to 26. From electrolysis on the world's average grid, 460 grams per kilowatt-hour: 24, as
-bad as coal. On Sweden's grid: as low as 0.5. The world average in 2021 was 12 to 13.
+*[show figure]* Kilograms of CO2 equivalent per kilogram of hydrogen. From natural gas without
+carbon capture: 10 to 14. About 9 of that is the plant itself; the rest is methane and CO2 from the
+gas supply chain. From coal: 22 to 26. From electrolysis on the world's average grid, 460 grams per
+kilowatt-hour: 24, as bad as coal. On Sweden's grid: as low as 0.5. The world average in 2021 was 12
+to 13.
 
-*[ask]* Grey hydrogen at about 12 kilograms of CO2 per kilogram: what does a Mirai emit per 100
-kilometers on it? *[pause]* 0.79 times 12: about 9.5 kilograms of CO2 per 100 kilometers, before
-the station's compressor.
+*[ask]* Grey hydrogen, from fossil fuel without carbon capture, at about 12 kilograms of CO2 per
+kilogram: what does a Mirai emit per 100 kilometers? *[pause]* 0.79 times 12: about 9.5 kilograms of
+CO2, before the station's compressor.
 
 Production today is 62 percent natural gas and about a fifth coal. Low-emissions hydrogen reached
 almost a million tonnes in 2025, and electrolyzer capacity doubled to over 4 gigawatts.
 
-*[ask]* And on Europe's grid? The EEA puts EU electricity at 183 grams of CO2 per kilowatt-hour in
-2024. A PEM electrolyzer at 55 kilowatt-hours per kilogram? *[pause]* About 10 kilograms of CO2 per
-kilogram of hydrogen: no better than making it from natural gas.
+*[ask]* And on Europe's grid? The European Environment Agency puts EU electricity at 183 grams per
+kilowatt-hour in 2024. With an electrolyzer at 55 kilowatt-hours per kilogram? *[pause]* About 10
+kilograms of CO2 per kilogram. No better than natural gas.
 
-That is why the IEA proposes defining hydrogen by its measured emissions rather than by color, grey,
-blue or green: hydrogen from electrolysis is only as clean as the electricity behind it, and it needs
-2.7 times as much of that electricity as a battery car.
+So the agency proposes defining hydrogen by its measured emissions, not by colors such as green,
+from renewable power. Hydrogen from electrolysis is only as clean as the electricity behind it. And
+it needs 2.7 times as much electricity as a battery car.
 -->
 
 ---
@@ -307,13 +308,13 @@ about 640 kilometers, and no grid connection where the car parks. Against: 2.7 t
 of a battery car per kilometer; a thin and shrinking network, 50 public stations in Germany and two
 in Czechia; and an energy cost above petrol at the last reported Prague price.
 
-*[ask]* Where would the three-minute fill matter more than the electricity?
-*[pause]* In heavy vehicles that run all day: *[show photos]* a Hyundai XCIENT fuel-cell truck on
-Coop's deliveries in Switzerland, photographed by JoachimKohler-HB, and a fuel-cell bus refueling
-in Herten, by Icke68746, both on Wikimedia Commons. And that is where hydrogen is growing: trucks and buses
-use about 90 percent of the hydrogen on the road, and the growth comes from trucks in China. Even
-there it is not settled: Daimler pushed series production of its hydrogen truck to the early 2030s,
-and Ostrava's recent bus orders are battery-electric.
+*[ask]* Where would the three-minute fill matter more than the electricity? *[pause]* In heavy
+vehicles that run all day. *[show photos]* A Hyundai XCIENT fuel-cell truck making deliveries for
+Coop in Switzerland, photographed by JoachimKohler-HB. A fuel-cell bus refueling in Herten, by
+Icke68746. Both are on Wikimedia Commons. That is where hydrogen is growing. Trucks and buses use
+about 90 percent of the hydrogen on the road, and the growth comes from trucks in China. Even there
+it is not settled. Daimler pushed full production of its hydrogen truck to the early 2030s, and
+Ostrava's recent bus orders are battery-electric.
 
-So we have every number we need to answer the question from the first slide. Next slide.
+We now have every number we need to answer the question from the first slide. Next slide.
 -->

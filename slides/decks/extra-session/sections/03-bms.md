@@ -18,12 +18,12 @@ imbalance and passive balancing, and the limits the battery management system en
 
 <!--
 The Thevenin cell says what a cell does. The BMS, the battery management system, has to know it
-with only voltage, current and temperature to measure. Every limit a charger obeys comes from the
-BMS. So this section is the bridge from the cell to the plug: how the BMS counts the charge,
-corrects the count, and keeps 96 cells in step.
+while it can measure only voltage, current and temperature. Every limit a charger obeys comes from
+the BMS. This section links the cell to the plug: how the BMS counts the charge, corrects the count,
+and keeps 96 cells in step.
 
-*[show photo]* A BMS cell board from the Czech maker MGM compro; the two transistors on the right
-edge are the bleed switches of the balancing slide. Photograph by Drazny, Wikimedia Commons.
+*[show photo]* A BMS cell board from the Czech maker MGM compro. The two transistors on the right
+edge are its balancing switches, on a later slide. Photograph by Drazny, Wikimedia Commons.
 -->
 
 ---
@@ -64,29 +64,28 @@ translator's excerpt</div>
 </div>
 
 <!--
-The BMS in three verbs. It measures: the voltage of every series cell, 96 on the Leaf, the pack
-current, and temperatures across the pack. It estimates what it cannot measure: the state of
-charge; the state of health, meaning how much capacity and how much extra resistance the pack has
-against new; and the power it can allow right now, in and out. And it acts: it opens the main
-contactors on a fault, tells the inverter and the charger their current limits, balances the
-cells, and asks the thermal system for heat or cooling.
+The BMS has three jobs. It measures the voltage of every series cell, 96 on the Leaf, the pack
+current, and temperatures across the pack. It estimates what it cannot measure: the state of charge,
+SoC; the state of health, SoH, meaning how much capacity and extra resistance the pack has against
+new; and the power it can allow right now, in and out. And it acts. On a fault it opens the main
+contactors, the high-voltage switches. It tells the inverter and the charger their current limits,
+balances the cells, and asks for heat or cooling.
 
-*[show figure]* How it is built: each module of 14 to 16 cells has a monitoring chip that measures and balances
-its cells. The chips talk over an isolated daisy chain to one pack controller, which runs the
-estimates and drives the contactors.
+*[show figure]* How it is built. Each module of 14 to 16 cells has a monitoring chip that measures
+and balances its cells. The chips pass data along an isolated chain to one pack controller, which
+runs the estimates and drives the contactors.
 
-How well it measures, in the side note of the drawing: the chips claim 1.5 millivolts for TI's part and 0.8 for NXP's. China's
-national BMS standard, GB/T 38661, asks for at most 10 millivolts and 2 degrees. We have that
-standard only as a translated excerpt, but it is the one published requirement we found.
+The side note gives how well it measures. The chips claim 1.5 millivolts for Texas Instruments' part
+and 0.8 for NXP's. China's national BMS standard, GB/T 38661, asks for at most 10 millivolts and 2
+degrees. We have it only as a translated excerpt, but it is the one published requirement we found.
 
-*[ask]* Why would anyone need a cell voltage to a millivolt or two? A cell spans more than a volt.
-*[pause]* Hold that thought: two slides on, on an LFP cell, 10 millivolts is worth about 7 percent
-of charge.
+*[ask]* Why measure a cell voltage to a millivolt or two, when a cell spans more than a volt?
+*[pause]* Two slides on, on an LFP cell, 10 millivolts is worth about 7 percent of charge.
 
-And how safe: ISO 26262 grades hazards from ASIL A to D. In Infineon's worked example, "prevent
-thermal runaway" is an ASIL D goal: on overvoltage, undervoltage, overcurrent or overtemperature
-the BMS must open the high-voltage circuit within 800 milliseconds. It is a training example, not
-a production design, but it shows the order of magnitude: under a second.
+And safety: the standard ISO 26262 grades hazards from ASIL A, the mildest, to D. In Infineon's
+worked example, "prevent thermal runaway" is an ASIL D goal. On overvoltage, undervoltage,
+overcurrent or overtemperature, the BMS must open the high-voltage circuit within 800 milliseconds.
+It is a training example, not a real product, but it shows the scale: under a second.
 -->
 
 ---
@@ -125,15 +124,15 @@ Zero-mean 10 mA noise on a 1.5 Ah cell: **0.054 %** after 24 h.
 </div>
 
 <!--
-The first job: the state of charge. Lecture 4's model counted it, and so does every BMS. But the
-integral integrates its errors too: a sensor offset grows with time, a wrong start is carried
-forever, and an aged pack makes the count read high.
+The first job: state of charge. Lecture 4's model counted it, and so does every BMS. But adding up
+the current also adds up its errors. A sensor offset grows with time. A wrong start stays forever.
+An aged pack makes the count read high.
 
 *[ask]* A current sensor reads 50 milliamperes high on a 33 ampere-hour Leaf cell. The Chinese
 standard allows 5 percent error. How long until you are 5 percent off? *[pause]* 50 milliamperes for
 a day is 1.2 ampere-hours, 3.6 percent. So about 1.4 days: the straight line.
 
-Noise averages out; an offset never does. The count needs a second measurement to reset it.
+Noise averages out. An offset never does. The count needs a second measurement to reset it.
 -->
 
 ---
@@ -175,16 +174,16 @@ impedance model **≈ 1 %**. GB/T 38661 allows **≤ 5 %**.
 
 <!--
 The second measurement is the cell's own voltage. *[show figure]* After the car has stood, the RC
-pair has relaxed and the terminal voltage is the OCV, a known curve of the charge. Read the voltage,
-look up the charge, reset the counter.
+pair has settled. The terminal voltage is then the open-circuit voltage, OCV, a known curve of the
+charge. Read the voltage, look up the charge, reset the counter.
 
 It works where the curve is steep: about 9 millivolts per percent on NMC between 30 and 70 percent.
 
-*[ask]* LFP's curve is about four times flatter. What does a 10 millivolt error cost on each?
-*[pause]* 1.7 percent on NMC; 6.8 on LFP, more than the whole allowance from one reading.
+*[ask]* LFP's curve is about four times flatter. What does a 10 millivolt error cost? *[pause]* 1.7
+percent on NMC. 6.8 on LFP, more than the whole allowance from one reading.
 
-The rest must last about an hour, so the reset happens while parked. In a TI bench test, counting
-alone peaked at 6 percent error; with voltage corrections, about 1.
+The rest takes about an hour, so the reset happens while parked. In a Texas Instruments test,
+counting alone peaked at 6 percent error. With voltage corrections, about 1.
 -->
 
 ---
@@ -223,18 +222,18 @@ derived (<code>bms.md</code> §3)</div>
 </div>
 
 <!--
-The third job. In series every cell carries the same current, but no two cells are equal: even fresh
+The third job. In series every cell carries the same current, but no two cells are equal. Even fresh
 LFP cells varied 0.28 percent in capacity, and aging widens that.
 
-*[show figure]* The fullest cell stops the charge; the emptiest stops the discharge. Passive
-balancing bleeds the fullest cells through a resistor near the top of the charge.
+*[show figure]* The fullest cell stops the charge. The emptiest stops the discharge. Passive
+balancing drains the fullest cells through a resistor, near the top of the charge.
 
-*[ask]* How long to bleed 1 percent of a 33 ampere-hour cell at 240 milliamperes? *[pause]* 1.4
+*[ask]* How long to drain 1 percent of a 33 ampere-hour cell at 240 milliamperes? *[pause]* 1.4
 hours, and almost a watt of heat per cell. Balancing is slow; it happens on the charger.
 
-*[ask]* Back to section 01's question: which chemistry for the city bus? *[pause]* LFP. It is cheaper
-per kilowatt-hour and the bus has room for the extra mass. Its price is the flat voltage curve: a
-harder job for the BMS, as we have just seen.
+*[ask]* Back to section 01's question: which chemistry for the city bus? *[pause]* LFP. It is
+cheaper per kilowatt-hour, and the bus has room for the extra mass. The cost is the flat voltage
+curve, which makes the BMS's job harder, as we have just seen.
 
 What the BMS does with all this is enforce limits, and those limits are what a fast charger obeys.
 -->
@@ -267,25 +266,24 @@ skipInCut: true
 onset: self-heating &gt; 0.02 °C/min.</div>
 
 <!--
-The limits the BMS enforces. The table is for reference; three rows carry the point.
+The limits the BMS enforces. The table is for reference. Three rows matter most.
 
-The cold rows. The Panasonic cell may be charged only between 0 and 45 degrees, and below 10
-degrees only at a quarter of its capacity per hour. The LG cell allows 0.3C up to 25 degrees, 0.7C
-above. The A123 LFP cell allows under 250 milliamperes below zero. Every chemistry charges slowly
-in the cold; section 04 says why.
+The cold rows. The Panasonic cell may be charged only between 0 and 45 degrees, and below 10 degrees
+only at a quarter of its capacity per hour. The LG cell allows 0.3C up to 25 degrees, 0.7C above.
+The A123 LFP cell allows under 250 milliamperes below zero. Every chemistry charges slowly in the
+cold. Section 04 says why.
 
-The Leaf row: it pauses charging when the pack is above 55 degrees. That is the hard version of
-rapidgate, which we meet in section 04.
+The Leaf pack pauses charging above 55 degrees. That is the extreme case of rapidgate, the slowdown
+we meet in section 04.
 
-And thermal runaway, the reason for all the others. *[show figure]* Ohneseit and colleagues heated fully charged
-21700 cells in a calorimeter. The NMC cell started heating itself at 85.5 degrees and ran away at
-198. The LFP cell started at 124 and ran away at 256: about 40 degrees later to start, nearly
-60 later to run away.
+And thermal runaway, a cell heating itself out of control: the reason for all the other limits.
+*[show figure]* Ohneseit and colleagues heated fully charged 21700 cells in a calorimeter, a box
+that measures heat. The NMC cell started heating itself at 85.5 degrees and ran away at 198. The LFP
+cell started at 124 and ran away at 256. About 40 degrees later to start, nearly 60 later to run
+away. That is one more reason LFP suits the bus.
 
-One more reason LFP suits the bus: it starts heating itself about 40 degrees later.
-
-The power row is a link back: Idaho measured 80.5 kilowatts of charge for 10 seconds on the 2013
-pack, the regen ceiling you used in Lecture 4.
+The power row links back. Idaho measured 80.5 kilowatts of charge for 10 seconds on the 2013 pack,
+the regen limit you used in Lecture 4.
 
 So the BMS sets the voltage, the current and the temperature a charger may use. Section 04 is what
 happens when a charger pushes right up against them.

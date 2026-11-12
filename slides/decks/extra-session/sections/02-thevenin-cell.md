@@ -15,11 +15,12 @@ the slow sag and the recovery after a current pulse.
 <div class="caption">Nissan Leaf pack, 2010 · Gereon Meyer, CC BY-SA 4.0</div>
 
 <!--
-Your Lecture 4 battery had one voltage, 350 volts, full or empty. But the charger, the BMS and the
-range display all read the cell's voltage to learn what is inside it. So the cell needs a voltage
-that follows the state of charge, and a slow part that lags behind the current: the Thevenin cell.
+Your Lecture 4 battery had one voltage, 350 volts, full or empty. But the charger, the battery
+management system and the range display all read the cell's voltage to learn what is inside. The
+cell needs a voltage that follows the state of charge, and a slow part that lags behind the current:
+the Thevenin cell.
 
-*[show photo]* A first-generation Leaf pack, opened: 192 cells your Lecture 4 model lumped into one
+*[show photo]* An opened first-generation Leaf pack: 192 cells your Lecture 4 model lumped into one
 source and one resistor.
 -->
 
@@ -67,23 +68,23 @@ skipInCut: true
 </div>
 
 <!--
-*[show figure]* Lecture 4's battery, with its three faults numbered. One: E does not move, so the
-model cannot tell full from empty by its voltage. Two: the voltage drops only at the instant the
-current changes, while a real cell keeps sagging for tens of seconds and recovers slowly. Three:
-nothing stops the state of charge at zero.
+*[show figure]* Lecture 4's battery, with its three faults numbered. One: E does not move, so its
+voltage cannot tell full from empty. Two: the voltage drops only at the moment the current changes.
+A real cell keeps sagging for tens of seconds and recovers slowly. Three: nothing stops the state of
+charge at zero.
 
 *[ask]* Your pack at 330 amperes ran to minus 0.54. What would a real pack have done long before
 that? *[pause]* Its voltage would have collapsed, and its BMS would have cut the current.
 
-On the right, the evidence: Idaho National Laboratory discharged a whole 2013 Leaf pack at about a
-third of its capacity per hour, read off their figure to about 3 volts. Full, 400 volts. At 47
+On the right is the evidence. Idaho National Laboratory discharged a whole 2013 Leaf pack at about a
+third of its capacity per hour. We read their figure to about 3 volts. Full, 400 volts. At 47
 percent, 372. At 12 percent, 347. At 3 percent, 296. Your Lecture 4 pack at 330 amperes passed zero
-after about 19 minutes and kept going; the real pack would have announced the end by collapsing by
-50 volts first.
+after about 19 minutes and kept going. The real pack would have warned you first, by dropping 50
+volts.
 
-Read the row again: 28 volts lost between full and half, 25 between half and 12 percent, then 51 in
-the last nine percent. The voltage carries the charge, and near empty it carries it very loudly.
-The next slide plots it per cell.
+Look at the row again: 28 volts lost between full and half, 25 between half and 12 percent, then 51
+in the last nine percent. The voltage tells you the charge, and near empty it tells you very
+clearly. The next slide plots it per cell.
 -->
 
 ---
@@ -126,23 +127,23 @@ skipInCut: true
 </div>
 
 <!--
-*[show figure]* The open-circuit voltage of one cell against its state of charge. The solid line is
-an NMC 811 cell, computed from a published parameter set, so use it for the shape. The second line
-is the Leaf's loaded voltage per cell from the last slide.
+*[show figure]* The open-circuit voltage of one cell, its voltage at rest, against its state of
+charge. The solid line is an NMC 811 cell, computed from a published parameter set, so trust its
+shape. The dashed line is the Leaf's voltage per cell under load, from the last slide.
 
 The table reads the solid line: 2.5 volts empty, 3.3 at 10 percent, 3.75 at half, 4.10 at 90, 4.2
 full. Between 10 and 90 percent it climbs steadily, about 0.8 volts. Below 10 percent there is a
-knee, and the voltage falls away. That knee is why the usable window stops at about 10 percent; for
-the first-generation Leaf cell, Gao and colleagues give the 10 to 90 percent window as 3.2 to 4.1
-volts, and their aged cells add anchor points: 3.6 volts at about 20 percent, 4.15 at about 92.
+knee, and the voltage falls away. That knee is why the usable range stops at about 10 percent. For
+the first-generation Leaf cell, Gao and colleagues give the 10 to 90 percent range as 3.2 to 4.1
+volts. Their aged cells add two points: 3.6 volts at about 20 percent, 4.15 at about 92.
 
 *[ask]* If you had to tell the state of charge from this voltage, where would you trust it, and
 where not? *[pause]* In the steep middle, yes: a few millivolts per percent. At the flat top and in
 the knee, much less.
 
-The bottom line on the right: an LFP cell is about four times flatter, 0.148 volts against 0.583 for
-NMC on Nejad's curves. Trust the ratio rather than the values. A curve four times flatter means a
-voltage reading four times less informative; section 03 shows what that costs the BMS.
+The last line on the right: an LFP cell is about four times flatter, 0.148 volts against 0.583 for
+NMC on Nejad's curves. Trust the ratio, not the values. So a voltage reading tells you four times
+less. Section 03 shows what that costs the BMS.
 -->
 
 ---
@@ -182,17 +183,18 @@ $$
 </div>
 
 <!--
-The Thevenin cell, the standard equivalent circuit. The OCV, now a function of state of charge. In
-series, R0, as in Lecture 4. And R1 in parallel with C1.
+The Thevenin cell, the standard equivalent circuit: a circuit that behaves like the cell. The OCV, now a function
+of state of charge. In series, R0, as in Lecture 4. And R1 in parallel with C1.
 
-The terminal voltage is the OCV minus R0 i minus v1; v1 lags toward R1 i with time constant tau1, R1
-times C1. R0 acts at once; the RC pair lumps the slow processes at the electrodes.
+Terminal voltage: OCV minus R0 i minus v1. v1 lags toward R1 i with time constant tau1, R1 times C1.
+R0 acts at once. The RC pair stands for the slow electrode processes.
 
-The numbers: a 2013 Leaf cell at about 60 percent, fitted to Oak Ridge's pulse-test log. R0 1.60
-milliohms, R1 1.34, tau1 25.7 seconds.
+A 2013 Leaf cell at about 60 percent, fitted to Oak Ridge pulse tests: R0 1.60 milliohms, R1 1.34,
+tau1 25.7 seconds.
 
-Scaled to your Lecture 4 pack, 96 in series and 2 in parallel: 77 milliohms at once, 141 after half a
-minute. Idaho measured 0.136 to 0.145 ohm on a whole pack with 30-second pulses. Your 0.1 ohm sat between the two: a fair single number, but only one.
+Scaled to your Lecture 4 pack, 96 in series and 2 in parallel: 77 milliohms at once, 141 after half
+a minute. Idaho measured 0.136 to 0.145 ohm on a whole pack with 30-second pulses. Your 0.1 ohm sat
+between the two: a fair single number, but only one.
 -->
 
 ---
@@ -235,16 +237,16 @@ $$
 </div>
 
 <!--
-*[ask]* Before I show the trace: Lecture 4's model drops 48 millivolts at once at 30 amperes and
+*[ask]* Before I show the plot: Lecture 4's model drops 48 millivolts at once at 30 amperes and
 stays there. What does a real cell do in the next 30 seconds? *[pause]*
 
-*[show figure]* The standard pulse test: 30 seconds of discharge, 40 of rest, 10 of regen. At
-switch-on, 48 millivolts at once, R0 times I. Then it keeps sagging, another 27.7 by 30 seconds:
-75.7 in all, against 75.9 measured. At switch-off it jumps back by 48, then creeps toward the OCV.
-That is how the parameters are measured: R0 from the step, R1 and tau1 from the tail.
+*[show figure]* The standard pulse test: 30 seconds of discharge, 40 of rest, 10 of regenerative
+braking. At switch-on, 48 millivolts at once, R0 times I. Then it keeps sagging, another 27.7 by 30
+seconds. 75.7 in all, against 75.9 measured. At switch-off it jumps back by 48, then creeps toward
+the OCV. This is how we measure the parameters: R0 from the step, R1 and tau1 from the tail.
 
-After the current stops, the terminal voltage is not yet the OCV. A BMS that wants to read the
-charge from the voltage has to wait. Section 03 is how long.
+After the current stops, the terminal voltage is not yet the OCV. A BMS that reads the charge from
+the voltage has to wait. Section 03 says how long.
 -->
 
 ---
@@ -270,21 +272,21 @@ skipInCut: true
 50 Ah cell, preprint, search summary (<code>teaching_materials.md</code> §3.3)</div>
 
 <!--
-The two models side by side: Lecture 4's faults, how the Thevenin cell answers each, and what it
-still leaves out.
+The two models side by side: Lecture 4's faults, how the Thevenin cell fixes each, and what it still
+leaves out.
 
 E fixed at 350 volts becomes an OCV table against state of charge. It still ignores hysteresis: the
 charge curve sits a little above the discharge curve, worst for LFP. The instant-only sag becomes R0
-at once plus the RC pair slowly; more pairs, or a diffusion model, fit better. The state of charge
-running through zero is caught, because the voltage collapses below 10 percent and reaches the 2.50
-volt cutoff; in a car the BMS stops the current first.
+at once plus the RC pair slowly. More pairs, or a diffusion model, fit better. The state of charge
+no longer runs through zero: the voltage collapses below 10 percent and reaches the 2.50 volt
+cutoff. In a car the BMS stops the current first.
 
-The resistance is still one number per part, but real resistance depends on temperature: 50 to 60
-percent over 15 to 35 degrees for a similar manganese cell, from a preprint we could not check, so
-take it as an indication. Cold makes everything tonight slower; section 04 comes back to that.
+The resistance is still one number per part, but it really depends on temperature. For a similar
+manganese cell it changes 50 to 60 percent over 15 to 35 degrees. It is from an unreviewed paper we
+could not check: a rough guide. Cold makes everything tonight slower. Section 04 comes back to that.
 
 *[ask]* The last row: the pack is one cell times 96 in series and 2 in parallel. What does that
-assume about the 192 cells? *[pause]* That they are identical. They are not, and the BMS has to deal
+assume about the 192 cells? *[pause]* That they are identical. They are not, and the BMS must deal
 with that too.
 
 So the cell now has a voltage that tells the truth, slowly. Section 03 is the electronics that
