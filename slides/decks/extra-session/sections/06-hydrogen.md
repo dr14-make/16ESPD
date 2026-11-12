@@ -452,7 +452,7 @@ days, with 10.5 kilograms on board and about 350 kilometers of range. Then, from
 buses were delivered for the lines around Mníšek pod Brdy. ČEZ is building an electrolyzer, which
 makes hydrogen from electricity, and a station for them. On 12 October 2026 none was yet carrying
 passengers; the station was not yet running. That is from a press report last month. Ústí nad Labem
-stopped its hydrogen bus project in 2025. The mayor said local hydrogen at 6 to 8 euros a kilogram
+put its hydrogen bus project on hold in 2025. The mayor said local hydrogen at 6 to 8 euros a kilogram
 did not pay. A Czech hydrogen industry group puts the price that would compete with diesel at about
 6 euros.
 
