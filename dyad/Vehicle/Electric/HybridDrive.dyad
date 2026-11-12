@@ -90,36 +90,18 @@ component HybridDrive
   ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
   reduction = RotationalComponents.Components.IdealGear(ratio = ratio) {^reduction}
 relations
-  connect(battery.p, converter.p_in, aux.p)
-  connect(battery.n, converter.n, aux.n, machine.n, ground.g)
-  connect(converter.p_out, machine.p)
-  connect(converter.field, machine.field)
-  connect(machine.spline, reduction.spline_a)
-  connect(reduction.spline_b, spline)
-  connect(machine.support, reduction.support, support)
-  connect(battery.SoC, SoC)
+  connect(battery.p, converter.p_in, aux.p) {^battery_p_wire}
+  connect(battery.n, converter.n, aux.n, machine.n, ground.g) {^battery_n_wire}
+  connect(converter.p_out, machine.p) {^converter_p_out_wire}
+  connect(converter.field, machine.field) {^converter_field_wire}
+  connect(machine.spline, reduction.spline_a) {^machine_spline_wire}
+  connect(reduction.spline_b, spline) {^reduction_spline_b_wire}
+  connect(machine.support, reduction.support, support) {^machine_support_wire}
+  connect(battery.SoC, SoC) {^battery_SoC_wire}
   converter.i_ref = tau_ref / (converter.field * machine.k)
   machine_torque = machine.tau
   machine_speed = machine.w
   battery_voltage = battery.E
   battery_current = battery.i
-metadata {
-  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/ElectricDrive.svg"}},
-  "_links": {
-    "machine_speed": {"Dyad":{"placement":{"diagram":{"x1":975.0,"x2":1025.0,"y1":275.0,"y2":325.0},"icon":{"x1":960.0,"x2":1040.0,"y1":260.0,"y2":340.0}}}},
-    "machine_torque": {"Dyad":{"placement":{"diagram":{"x1":975.0,"x2":1025.0,"y1":125.0,"y2":175.0},"icon":{"x1":960.0,"x2":1040.0,"y1":110.0,"y2":190.0}}}},
-    "battery_voltage": {"Dyad":{"placement":{"diagram":{"x1":975.0,"x2":1025.0,"y1":625.0,"y2":675.0},"icon":{"x1":960.0,"x2":1040.0,"y1":610.0,"y2":690.0}}}},
-    "battery_current": {"Dyad":{"placement":{"diagram":{"x1":975.0,"x2":1025.0,"y1":775.0,"y2":825.0},"icon":{"x1":960.0,"x2":1040.0,"y1":760.0,"y2":840.0}}}},
-    "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
-    "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 400, "x2": 1050, "y2": 500}}}},
-    "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 788, "y1": 950, "x2": 888, "y2": 1050}}}},
-    "SoC": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}, "diagram": {"x1": 135, "y1": -50, "x2": 235, "y2": 50, "rot": 270}}}},
-    "battery": {"Dyad": {"placement": {"diagram": {"x1": 30, "y1": 390, "x2": 150, "y2": 510, "rot": 90}}}},
-    "aux": {"Dyad": {"placement": {"diagram": {"x1": 230, "y1": 390, "x2": 350, "y2": 510, "rot": 90}}}},
-    "converter": {"Dyad": {"placement": {"diagram": {"x1": 380, "y1": 360, "x2": 560, "y2": 540}}}},
-    "machine": {"Dyad": {"placement": {"diagram": {"x1": 640, "y1": 360, "x2": 820, "y2": 540}}}},
-    "ground": {"Dyad": {"placement": {"diagram": {"x1": 545, "y1": 720, "x2": 625, "y2": 800}}}},
-    "reduction": {"Dyad": {"placement": {"diagram": {"x1": 855, "y1": 405, "x2": 945, "y2": 495}}}}
-  }
-}
+metadata {"Dyad":{"icons":{"default":"dyad://VehicleSystemsComponents/Vehicle/Electric/ElectricDrive.svg"}},"_links":{"machine_speed":{"Dyad":{"placement":{"diagram":{"x1":975.0,"x2":1025.0,"y1":275.0,"y2":325.0},"icon":{"x1":960.0,"x2":1040.0,"y1":260.0,"y2":340.0}}}},"machine_torque":{"Dyad":{"placement":{"diagram":{"x1":975.0,"x2":1025.0,"y1":125.0,"y2":175.0},"icon":{"x1":960.0,"x2":1040.0,"y1":110.0,"y2":190.0}}}},"battery_voltage":{"Dyad":{"placement":{"diagram":{"x1":975.0,"x2":1025.0,"y1":625.0,"y2":675.0},"icon":{"x1":960.0,"x2":1040.0,"y1":610.0,"y2":690.0}}}},"battery_current":{"Dyad":{"placement":{"diagram":{"x1":975.0,"x2":1025.0,"y1":775.0,"y2":825.0},"icon":{"x1":960.0,"x2":1040.0,"y1":760.0,"y2":840.0}}}},"tau_ref":{"Dyad":{"placement":{"icon":{"x1":-50,"y1":450,"x2":50,"y2":550},"diagram":{"x1":-50,"y1":60,"x2":50,"y2":160}}}},"spline":{"Dyad":{"placement":{"icon":{"x1":950,"y1":450,"x2":1050,"y2":550},"diagram":{"x1":950,"y1":400,"x2":1050,"y2":500}}}},"support":{"Dyad":{"placement":{"icon":{"iconName":"support","x1":450,"y1":950,"x2":550,"y2":1050},"diagram":{"iconName":"support","x1":788,"y1":950,"x2":888,"y2":1050}}}},"SoC":{"Dyad":{"placement":{"icon":{"x1":450,"y1":-50,"x2":550,"y2":50,"rot":270},"diagram":{"x1":-50,"x2":50,"y1":270,"y2":370}}}},"battery":{"Dyad":{"placement":{"diagram":{"x1":30,"y1":390,"x2":150,"y2":510,"rot":90}}}},"aux":{"Dyad":{"placement":{"diagram":{"x1":230,"y1":390,"x2":350,"y2":510,"rot":90}}}},"converter":{"Dyad":{"placement":{"diagram":{"x1":380,"y1":360,"x2":560,"y2":540}}}},"machine":{"Dyad":{"placement":{"diagram":{"x1":640,"y1":360,"x2":820,"y2":540}}}},"ground":{"Dyad":{"placement":{"diagram":{"x1":545,"y1":720,"x2":625,"y2":800}}}},"reduction":{"Dyad":{"placement":{"diagram":{"x1":855,"y1":405,"x2":945,"y2":495}}}},"machine_spline_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"reduction_spline_b_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"converter_p_out_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"converter_field_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":630,"y":486},{"x":630,"y":450}],"E":2}],"renderStyle":"standard"}},"battery_SoC_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":160,"y":450},{"x":160,"y":320}],"E":2}],"renderStyle":"standard"}},"battery_p_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":90,"y":380},{"x":370,"y":380},{"x":370,"y":396}],"E":2},{"S":1,"M":[{"x":90,"y":380},{"x":290,"y":380}],"E":3}],"renderStyle":"standard"}},"machine_support_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":840,"y":540},{"x":840,"y":495}],"E":2},{"S":1,"M":[{"x":838,"y":540}],"E":3}],"renderStyle":"standard"}},"battery_n_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":90,"y":540}],"E":2},{"S":1,"M":[{"x":90,"y":540},{"x":290,"y":540}],"E":3},{"S":1,"M":[{"x":90,"y":540},{"x":370,"y":540},{"x":370,"y":580},{"x":630,"y":580},{"x":630,"y":504}],"E":4},{"S":1,"M":[{"x":90,"y":540},{"x":370,"y":540},{"x":370,"y":580},{"x":585,"y":580}],"E":5}],"renderStyle":"standard"}}}}
 end

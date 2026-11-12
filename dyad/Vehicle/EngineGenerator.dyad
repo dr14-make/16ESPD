@@ -185,28 +185,5 @@ relations
   guess converter.d = 0.5
   guess p.v = V_nom
   guess engine.crankshaft.w = 200.0
-metadata {
-  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/MappedEngine.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
-  "_links": {
-    "P_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}, "diagram": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
-    "N_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}, "diagram": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
-    "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 950, "y1": 150, "x2": 1050, "y2": 250}, "diagram": {"iconName": "pos", "x1": 950, "y1": 150, "x2": 1050, "y2": 250}}}},
-    "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 950, "y1": 750, "x2": 1050, "y2": 850}, "diagram": {"iconName": "neg", "x1": 950, "y1": 750, "x2": 1050, "y2": 850}}}},
-    "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
-    "mdot_fuel": {"Dyad": {"placement": {"icon": {"x1": 150, "y1": -50, "x2": 250, "y2": 50, "rot": 270}, "diagram": {"x1": 150, "y1": -50, "x2": 250, "y2": 50, "rot": 270}}}},
-    "N": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}, "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}}}},
-    "P_elec": {"Dyad": {"placement": {"icon": {"x1": 650, "y1": -50, "x2": 750, "y2": 50, "rot": 270}, "diagram": {"x1": 650, "y1": -50, "x2": 750, "y2": 50, "rot": 270}}}},
-    "P_shaft": {"Dyad": {"placement": {"icon": {"x1": 850, "y1": -50, "x2": 950, "y2": 50, "rot": 270}, "diagram": {"x1": 850, "y1": -50, "x2": 950, "y2": 50, "rot": 270}}}},
-    "engine": {"Dyad": {"placement": {"diagram": {"x1": 120, "y1": 360, "x2": 300, "y2": 540}}}},
-    "machine": {"Dyad": {"placement": {"diagram": {"x1": 420, "y1": 360, "x2": 600, "y2": 540}}}},
-    "converter": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 360, "x2": 880, "y2": 540}}}},
-    "shaft_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "mount_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 210, "y": 800}], "E": -1}, {"S": 2, "M": [], "E": -1}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 510, "y": 800}]}},
-    "machine_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "field_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 900, "y": 486}, {"x": 900, "y": 600}, {"x": 640, "y": 600}], "E": 2}]}},
-    "bus_p_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 680, "y": 200}], "E": 2}]}},
-    "bus_n_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 790, "y": 800}], "E": -1}, {"S": 2, "M": [{"x": 620, "y": 800}], "E": -1}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 790, "y": 800}]}},
-    "fuel_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 300}], "E": 2}]}}
-  }
-}
+metadata {"Dyad":{"icons":{"default":"dyad://VehicleSystemsComponents/Vehicle/Engine/MappedEngine.svg"},"labels":[{"label":"$(instance)","x":500,"y":1100,"rot":0}]},"_links":{"P_ref":{"Dyad":{"placement":{"icon":{"x1":-50,"y1":250,"x2":50,"y2":350},"diagram":{"x1":-50,"y1":150,"x2":50,"y2":250}}}},"N_ref":{"Dyad":{"placement":{"icon":{"x1":-50,"y1":650,"x2":50,"y2":750},"diagram":{"x1":-50,"y1":650,"x2":50,"y2":750}}}},"p":{"Dyad":{"placement":{"icon":{"iconName":"pos","x1":950,"y1":150,"x2":1050,"y2":250},"diagram":{"x1":-50,"x2":50,"y1":780,"y2":880}}}},"n":{"Dyad":{"placement":{"icon":{"iconName":"neg","x1":950,"y1":750,"x2":1050,"y2":850},"diagram":{"x1":-50,"x2":50,"y1":920,"y2":1020}}}},"support":{"Dyad":{"placement":{"icon":{"iconName":"support","x1":450,"y1":950,"x2":550,"y2":1050},"diagram":{"iconName":"support","x1":450,"y1":950,"x2":550,"y2":1050}}}},"mdot_fuel":{"Dyad":{"placement":{"icon":{"x1":150,"y1":-50,"x2":250,"y2":50,"rot":270},"diagram":{"x1":950,"x2":1050,"y1":250,"y2":350}}}},"N":{"Dyad":{"placement":{"icon":{"x1":450,"y1":-50,"x2":550,"y2":50,"rot":270},"diagram":{"x1":450,"y1":-50,"x2":550,"y2":50,"rot":270}}}},"P_elec":{"Dyad":{"placement":{"icon":{"x1":650,"y1":-50,"x2":750,"y2":50,"rot":270},"diagram":{"x1":650,"y1":-50,"x2":750,"y2":50,"rot":270}}}},"P_shaft":{"Dyad":{"placement":{"icon":{"x1":850,"y1":-50,"x2":950,"y2":50,"rot":270},"diagram":{"x1":850,"y1":-50,"x2":950,"y2":50,"rot":270}}}},"engine":{"Dyad":{"placement":{"diagram":{"x1":120,"y1":360,"x2":300,"y2":540}}}},"machine":{"Dyad":{"placement":{"diagram":{"x1":600,"x2":420,"y1":432,"y2":612}}}},"converter":{"Dyad":{"placement":{"diagram":{"x1":680,"x2":860,"y1":660,"y2":840}}}},"shaft_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"mount_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":410,"y":540},{"x":410,"y":612}],"E":2},{"S":1,"M":[{"x":410,"y":540},{"x":410,"y":940},{"x":500,"y":940}],"E":3}],"renderStyle":"standard"}},"machine_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":870,"y":696},{"x":870,"y":468}],"E":2}],"renderStyle":"standard"}},"field_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":890,"y":786},{"x":890,"y":522}],"E":2}],"renderStyle":"standard"}},"bus_p_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":60,"y":696},{"x":60,"y":830}],"E":2}],"renderStyle":"standard"}},"bus_n_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":610,"y":840},{"x":610,"y":576}],"E":2},{"S":1,"M":[{"x":70,"y":840},{"x":70,"y":970}],"E":3}],"renderStyle":"standard"}},"fuel_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":410,"y":432},{"x":410,"y":300}],"E":2}],"renderStyle":"standard"}}}}
 end
