@@ -47,25 +47,7 @@ relations
   force.force_x = -F
   force.force_y = 0.0
   force.torque = 0.0
-metadata {
-  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Planar/PlanarRoadLoad.svg"}},
-  "_links": {
-    "chassis": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
-    "grade": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
-    "vel": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 150, "x2": 650, "y2": 250}}}},
-    "follower": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 150, "x2": 350, "y2": 250}}}},
-    "ground": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 150, "x2": 250, "y2": 250, "rot": 90}}}},
-    "sensor": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 400, "x2": 450, "y2": 500, "rot": 90}}}},
-    "roadload": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 650, "x2": 450, "y2": 750, "rot": 90}}}},
-    "force": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 400, "x2": 750, "y2": 500}}}},
-    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 850, "y": 200}], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 850, "y": 450}]}},
-    "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 400, "y": 300}], "E": 2}]}},
-    "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 700}], "E": 2}]}}
-  }
-}
+metadata {"Dyad":{"icons":{"default":"dyad://VehicleSystemsComponents/Vehicle/Planar/PlanarRoadLoad.svg"}},"_links":{"chassis":{"Dyad":{"placement":{"icon":{"x1":950,"y1":450,"x2":1050,"y2":550},"diagram":{"x1":950,"y1":450,"x2":1050,"y2":550}}}},"grade":{"Dyad":{"placement":{"icon":{"x1":-50,"y1":450,"x2":50,"y2":550},"diagram":{"x1":-50,"y1":650,"x2":50,"y2":750}}}},"vel":{"Dyad":{"placement":{"diagram":{"x1":750,"y1":150,"x2":650,"y2":250}}}},"follower":{"Dyad":{"placement":{"diagram":{"x1":450,"y1":150,"x2":350,"y2":250}}}},"ground":{"Dyad":{"placement":{"diagram":{"x1":150,"y1":150,"x2":250,"y2":250,"rot":90}}}},"sensor":{"Dyad":{"placement":{"diagram":{"x1":350,"y1":400,"x2":450,"y2":500,"rot":90}}}},"roadload":{"Dyad":{"placement":{"diagram":{"x1":350,"y1":650,"x2":450,"y2":750,"rot":270}}}},"force":{"Dyad":{"placement":{"diagram":{"x1":650,"y1":400,"x2":750,"y2":500}}}},"w1":{"Dyad":{"edges":[{"S":1,"M":[{"x":760,"y":500},{"x":760,"y":200}],"E":2},{"S":1,"M":[{"x":760,"y":500},{"x":760,"y":450}],"E":3}],"renderStyle":"standard"}},"w2":{"Dyad":{"edges":[{"S":1,"M":[{"x":460,"y":169},{"x":460,"y":200}],"E":2}],"renderStyle":"standard"}},"w3":{"Dyad":{"edges":[{"S":1,"M":[{"x":260,"y":250},{"x":260,"y":200}],"E":2}],"renderStyle":"standard"}},"w4":{"Dyad":{"edges":[{"S":1,"M":[{"x":340,"y":200},{"x":340,"y":390},{"x":400,"y":390}],"E":2}],"renderStyle":"standard"}},"w5":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"w6":{"Dyad":{"edges":[{"S":1,"M":[{"x":340,"y":700},{"x":340,"y":760},{"x":400,"y":760}],"E":2}],"renderStyle":"standard"}}}}
 end
 
 """
