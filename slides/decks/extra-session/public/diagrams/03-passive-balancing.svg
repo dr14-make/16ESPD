@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 500" width="640" height="500">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .wire { stroke: #16202c; stroke-width: 2.5; fill: none; }
+    .cell { fill: none; stroke: #1f5fa8; stroke-width: 2; }
+    .soc { fill: #cfe3d6; }
+    .res { fill: #fff; stroke: #16202c; stroke-width: 2.5; }
+    .hot { fill: #f6d5d3; stroke: #c0392b; stroke-width: 2.5; }
+    .bleed { stroke: #c0392b; stroke-width: 3; fill: none; }
+    .heat { stroke: #c0392b; stroke-width: 2; fill: none; }
+    .t { font-size: 17px; font-weight: 600; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+    .red { font-size: 17px; font-weight: 600; fill: #c0392b; }
+    .sig { font-size: 16px; font-weight: 600; }
+  </style>
+  <defs>
+    <marker id="pb-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#c0392b"/></marker>
+  </defs>
+
+  <!-- busbars between cells; string terminals at the ends -->
+  <path class="wire" d="M60 50 H440 M200 140 H440 M200 230 H440 M200 320 H440 M60 410 H440"/>
+  <circle cx="60" cy="50" r="6" fill="#fff" stroke="#16202c" stroke-width="2.5"/>
+  <circle cx="60" cy="410" r="6" fill="#fff" stroke="#16202c" stroke-width="2.5"/>
+  <text x="42" y="57" text-anchor="end" class="t">+</text>
+  <text x="42" y="417" text-anchor="end" class="t">−</text>
+  <circle cx="200" cy="140" r="4.5" fill="#16202c"/>
+  <circle cx="200" cy="230" r="4.5" fill="#16202c"/>
+  <circle cx="200" cy="320" r="4.5" fill="#16202c"/>
+  <circle cx="440" cy="140" r="4.5" fill="#16202c"/>
+  <circle cx="440" cy="230" r="4.5" fill="#16202c"/>
+  <circle cx="440" cy="320" r="4.5" fill="#16202c"/>
+
+  <!-- cells: bar filled to its SoC (bar width 180 = 100 %) -->
+  <path class="wire" d="M200 50 V70 M200 120 V140 M200 140 V160 M200 210 V230 M200 230 V250 M200 300 V320 M200 320 V340 M200 390 V410"/>
+  <rect class="soc" x="110" y="70" width="144" height="50"/>
+  <rect class="cell" x="110" y="70" width="180" height="50" rx="3"/>
+  <text x="200" y="101" text-anchor="middle" class="t">80 %</text>
+  <rect class="soc" x="110" y="160" width="149.4" height="50"/>
+  <rect class="cell" x="110" y="160" width="180" height="50" rx="3" style="stroke: #c0392b; stroke-width: 3"/>
+  <text x="200" y="191" text-anchor="middle" class="red">83 %</text>
+  <rect class="soc" x="110" y="250" width="140.4" height="50"/>
+  <rect class="cell" x="110" y="250" width="180" height="50" rx="3"/>
+  <text x="200" y="281" text-anchor="middle" class="t">78 %</text>
+  <rect class="soc" x="110" y="340" width="144" height="50"/>
+  <rect class="cell" x="110" y="340" width="180" height="50" rx="3"/>
+  <text x="200" y="371" text-anchor="middle" class="t">80 %</text>
+  <text x="98" y="100" text-anchor="end" class="lbl">cell 1</text>
+  <text x="98" y="190" text-anchor="end" class="lbl">cell 2</text>
+  <text x="98" y="280" text-anchor="end" class="lbl">cell 3</text>
+  <text x="98" y="370" text-anchor="end" class="lbl">cell 4</text>
+
+  <!-- bleed branch across each cell: resistor, then switch -->
+  <path class="wire" d="M440 50 V62 M440 92 V100 M440 126 V140"/>
+  <rect class="res" x="430" y="62" width="20" height="30"/>
+  <circle cx="440" cy="100" r="3.5" fill="#16202c"/>
+  <path class="wire" d="M440 100 L458 122"/>
+  <circle cx="440" cy="126" r="3.5" fill="#16202c"/>
+
+  <path class="wire" d="M440 140 V152 M440 182 V190 M440 216 V230"/>
+  <rect class="hot" x="430" y="152" width="20" height="30"/>
+  <circle cx="440" cy="190" r="3.5" fill="#16202c"/>
+  <path class="wire" d="M440 190 V216"/>
+  <circle cx="440" cy="216" r="3.5" fill="#16202c"/>
+
+  <path class="wire" d="M440 230 V242 M440 272 V280 M440 306 V320"/>
+  <rect class="res" x="430" y="242" width="20" height="30"/>
+  <circle cx="440" cy="280" r="3.5" fill="#16202c"/>
+  <path class="wire" d="M440 280 L458 302"/>
+  <circle cx="440" cy="306" r="3.5" fill="#16202c"/>
+
+  <path class="wire" d="M440 320 V332 M440 362 V370 M440 396 V410"/>
+  <rect class="res" x="430" y="332" width="20" height="30"/>
+  <circle cx="440" cy="370" r="3.5" fill="#16202c"/>
+  <path class="wire" d="M440 370 L458 392"/>
+  <circle cx="440" cy="396" r="3.5" fill="#16202c"/>
+
+  <text x="470" y="82" class="lbl">bleed resistor</text>
+  <text x="470" y="120" class="lbl">switch open</text>
+
+  <!-- the fullest cell bleeds -->
+  <path class="bleed" d="M212 150 H420 V204" marker-end="url(#pb-red)"/>
+  <path class="heat" d="M470 180 q6 -6 0 -12 q-6 -6 0 -12 M484 180 q6 -6 0 -12 q-6 -6 0 -12 M498 180 q6 -6 0 -12 q-6 -6 0 -12"/>
+  <text x="514" y="174" class="red">heat</text>
+  <text x="470" y="210" class="lbl">switch closed</text>
+
+  <text x="320" y="452" text-anchor="middle" class="sig">charge stops when the fullest cell hits the CV limit;</text>
+  <text x="320" y="476" text-anchor="middle" class="sig">discharge stops when the emptiest hits cutoff</text>
+</svg>

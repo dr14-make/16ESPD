@@ -26,17 +26,9 @@ routeAlias: mirai-series-hybrid
 <div class="grid grid-cols-[1.25fr_1fr] gap-8 items-center">
 <div>
 
-<div class="placeholder">
+![Lecture 5's series-hybrid diagram with the engine-generator replaced. Three H2 tanks holding 5.6 kilograms feed the fuel-cell stack, 330 cells and 128 kilowatts; the stack feeds a boost DC-DC converter, which feeds the DC link. The battery, lithium-ion, 84 cells, 310.8 volts, 1.24 kilowatt-hours, sits on the same link, and a dashed regen arrow returns energy to it. The link feeds the inverter, then the motor, 134 kilowatts and 300 newton meters, whose shaft alone drives the rear wheels. No shaft runs from the source to the wheels; the battery is a power buffer and the stack does the driving.](/diagrams/07-mirai-series.svg)
 
-**Diagram** `/diagrams/07-mirai-series.svg`
-
-Lecture 5's series-hybrid diagram (`lecture-05/public/diagrams/02-series.svg`) redrawn with the
-engine-generator replaced: three H₂ tanks (5.6 kg) → stack (330 cells, 128 kW) → boost DC-DC
-converter → DC link; buffer battery (Li-ion, 84 cells, 310.8 V, 1.24 kWh) on the same link;
-inverter → motor (134 kW, 300 N·m) → rear wheels; regen arrow back to the battery. Orange
-electrical, black shafts, as in Lecture 5. Values: `hydrogen.md` §4.
-
-</div>
+<div class="caption">Orange: electric connections · black: shafts · blue: hydrogen</div>
 
 </div>
 <div class="text-[0.95rem]">
@@ -128,17 +120,10 @@ routeAlias: power-to-wheel
 <div class="grid grid-cols-[1.3fr_1fr] gap-6 items-start">
 <div>
 
-<div class="placeholder">
+<img src="/figures/07-efficiency-chain.svg" alt="Horizontal bars of the energy left from 100 % renewable electricity. BEV: transmission ×95 % leaves 95, battery charge and discharge ×90 % leaves 85.5, electric motor ×85 % leaves 72.7, mechanical drivetrain ×95 % leaves 69 %. FCEV: transmission ×95 % leaves 95, electrolysis ×70 % leaves 66.5, compression and transport ×80 % leaves 53.2, fuel cell ×60 % leaves 31.9, electric motor ×85 % leaves 27.1, mechanical drivetrain ×95 % leaves 26 %."/>
 
-**Figure** `/figures/07-efficiency-chain.svg`
-
-Two horizontal step-down bars from 100 % renewable electricity. BEV: transmission 95 % → battery
-charge/discharge 90 % → motor 85 % → drivetrain 95 % = **69 %**. FCEV: transmission 95 % →
-electrolysis 70 % → compression/transport 80 % → fuel cell 60 % → motor 85 % → drivetrain 95 % =
-**26 %**. Values printed on each step. Redrawn from Agora 2018 slide 7 (`hydrogen.md` §5,
-[AGORA-SYNCOST-2018], read from figure ±0.5 %).
-
-</div>
+<div class="caption">Agora Verkehrswende and Agora Energiewende 2018, slide 7, after acatech 2017: step
+efficiencies and totals as printed (±0.5 %); the values between multiplied out, derived.</div>
 
 </div>
 <div class="text-[0.9rem]">

@@ -27,16 +27,9 @@ skipInCut: true
 <div class="grid grid-cols-[1.1fr_1fr] gap-8 items-center">
 <div>
 
-<div class="placeholder">
+![Cross-section of one PEM fuel cell, layers from left to right: anode flow plate with gas channels, gas diffusion layer, catalyst layer, the membrane, catalyst layer, gas diffusion layer, cathode flow plate. Hydrogen enters the anode plate from the left; air enters the cathode plate from the right, and water leaves it with the spent air. Protons, H plus, cross the membrane from anode to cathode. Electrons leave the anode plate through an external wire, pass through the load and return to the cathode plate. Below the anode: H2 gives 2 H plus and 2 electrons. Below the cathode: half O2 plus 2 H plus plus 2 electrons gives H2O.](/diagrams/05-pem-cell.svg)
 
-**Diagram** `/diagrams/05-pem-cell.svg`
-
-Cross-section of one PEM cell: anode flow field with H₂ in, catalyst layer, the proton-exchange
-membrane, catalyst layer, cathode flow field with air in and water out. H₂ → 2H⁺ + 2e⁻ at the anode;
-protons through the membrane; electrons through the external load; ½O₂ + 2H⁺ + 2e⁻ → H₂O at the
-cathode. Hand-drawn, after deck 8.
-
-</div>
+<div class="caption">Orange: electrons · blue: gases · black: protons</div>
 
 </div>
 <div>
@@ -117,17 +110,11 @@ routeAlias: polarization-curve
 <div class="grid grid-cols-[1.3fr_1fr] gap-6 items-start">
 <div>
 
-<div class="placeholder">
+<img src="/figures/05-polarization.svg" alt="Cell voltage against current density, 0 to 2.2 A/cm². Black: the P2000 model at 80 °C and 2.5 bar, 0.950 V at zero current, 0.822 V at 0.1, 0.690 at 0.5, 0.583 at 1.0, 0.430 at 1.5 and 0.09 at 2.2 A/cm². Shaded between the 0.950 V line and the curve: the activation loss, saturating at 0.178 V; the ohmic loss, 0.1575 Ω·cm² times the current density; and the concentration loss, growing toward 2.2 A/cm². Red dots with ±0.014 V bars: the 2017 Mirai stack per cell, ANL: 0.85 V at 0.05, 0.78 at 0.32, 0.74 at 0.95, 0.71 at 1.27, 0.65 at 1.64 and 0.68 at about 1.8 A/cm². A right-hand scale gives the efficiency η_LHV = V / 1.253 V, 0 to 70 %."/>
 
-**Figure** `/figures/05-polarization.svg`
-
-Formula plot, notebook: cell voltage (V) against current density (A/cm², 0–2.2) for the P2000
-model at 80 °C, 2.5 bar, λ_m = 14 (`pem-polarization.md` §1, "recommended slide curve"), with the
-three losses shaded between 0.950 V and the curve (activation, ohmic, concentration); the measured
-2017 Mirai stack points (ANL, ±0.014 V/cell, `pem-polarization.md` §4.1) overlaid as dots; a
-second axis η_LHV = V / 1.253.
-
-</div>
+<div class="caption">Formula plot: [PUKRUSHPAN-2003] with b₁₁ = 0.005139, the recommended slide curve, derived ·
+dots: [ANL-MIRAI-2018], read from figure, on ANL's assumed 237 cm² · right scale: η<sub>LHV</sub> =
+<i>V</i> / 1.253 V at μ<sub>f</sub> = 1.</div>
 
 </div>
 <div class="text-[0.85rem]">
@@ -174,7 +161,8 @@ catalyst fast enough, and the curve bends down toward the 2.2 ampere limit.
 
 The table reads the curve. 0.822 volts at 0.1 amperes per square centimeter; 0.690 at 0.5; 0.583
 at 1; 0.430 at 1.5. The last row is power per square centimeter, voltage times current: it rises to
-0.64 watts at 1.5, and the maximum lies near there. Past it, more current gives less power.
+0.64 watts at 1.5. The maximum is just before that, 0.65 watts at about 1.4 amperes per square
+centimeter. Past it, more current gives less power.
 
 The dots are the real 2017 Mirai's stack, measured by Argonne and read off their figure. At about
 1 ampere per square centimeter the Mirai holds about 0.74 volts against the model's 0.58. The P2000
@@ -317,16 +305,9 @@ routeAlias: balance-of-plant
 <div class="grid grid-cols-[1.2fr_1fr] gap-8 items-center">
 <div>
 
-<div class="placeholder">
+![Block diagram of the balance of plant around the fuel-cell stack, which is split into anode and cathode. Hydrogen: the H2 tank feeds a pressure regulator, then the anode; unreacted hydrogen leaving the anode is recirculated back into the feed, and a purge valve on that loop vents nitrogen and water. Air: from the right through a filter, a compressor and a humidifier into the cathode; the cathode exhaust returns through the humidifier and leaves as air and water. Coolant: from the stack to a radiator, a pump, and back to the stack, holding it near 80 degrees Celsius in the model. Power: the stack's DC output goes through a boost DC-DC converter to the bus.](/diagrams/05-balance-of-plant.svg)
 
-**Diagram** `/diagrams/05-balance-of-plant.svg`
-
-Block diagram around the stack: hydrogen tank → pressure regulator → anode, with a recirculation
-loop and a purge valve; air filter → compressor → humidifier → cathode, exhaust back through the
-humidifier; a coolant loop with pump and radiator; the stack's DC out to a boost converter. Hand-
-drawn, after deck 8.
-
-</div>
+<div class="caption">Black: gas · blue: coolant · orange: electric</div>
 
 </div>
 <div>

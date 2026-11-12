@@ -1,0 +1,15 @@
+# 2017 Toyota Mirai stack mapping points, ANL/ESD-18/12 slide 37, read from figure: ±5 A, ±5 V
+# stack (±0.014 V per cell). i = stack current / 237 cm² (ANL's assumed area); V_cell = stack V
+# / 370. The last row is the 421-438 A cluster at its mid current (pem-polarization.md §4.1).
+stack_a,i_a_per_cm2,stack_v,v_cell
+12,0.05,315,0.85
+76,0.32,289,0.78
+150,0.63,276,0.75
+189,0.80,276,0.75
+225,0.95,273,0.74
+267,1.13,267,0.72
+300,1.27,261,0.71
+331,1.40,246,0.66
+373,1.57,244,0.66
+389,1.64,240,0.65
+430,1.815,252,0.68

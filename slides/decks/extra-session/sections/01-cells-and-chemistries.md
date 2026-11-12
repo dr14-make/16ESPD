@@ -123,15 +123,10 @@ skipInCut: true
 <div class="grid grid-cols-[1.2fr_1fr] gap-8 items-start">
 <div>
 
-<div class="placeholder">
+<img src="/figures/01-pack-price.svg" alt="Stacked bars of the volume-weighted average lithium-ion pack price, all segments, in real 2025 dollars per kWh, split into cell and rest of pack: 827 (568 cell + 259) in 2013, 475 (318 + 157) in 2015, 273 (192 + 81) in 2017, 194 (136 + 58) in 2019, 159 (122 + 37) in 2021, 170 (136 + 34) in 2022, 148 (114 + 34) in 2023, 118 (78 + 40) in 2024 and 108 (74 + 34) in 2025."/>
 
-**Figure** `/figures/01-pack-price.svg`
-
-Bars, 2013–2025: volume-weighted average lithium-ion pack price in real 2025 $/kWh, each bar split
-into cell and rest of pack — 827 (568 + 259) in 2013 down to 108 (74 + 34) in 2025. From
-`teaching_materials.md` §6.2, [BNEF-2025] chart table.
-
-</div>
+<div class="caption">BloombergNEF battery price survey, December 2025, real 2025 $: the bar labels of its cell and
+pack split chart.</div>
 
 </div>
 <div>

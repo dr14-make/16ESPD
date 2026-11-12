@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 50 720 345" width="720" height="345">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box-e { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .box-f { fill: #fdf3e6; stroke: #a75d00; stroke-width: 2; }
+    .h2 { stroke: #1f5fa8; stroke-width: 4; fill: none; }
+    .shaft { stroke: #16202c; stroke-width: 6; fill: none; }
+    .dc { stroke: #a75d00; stroke-width: 3; fill: none; }
+    .dc-d { stroke: #a75d00; stroke-width: 3; fill: none; stroke-dasharray: 6 4; }
+    .wheel { fill: #2b3440; stroke: #16202c; stroke-width: 2; }
+    .b { font-size: 15px; font-weight: 600; }
+    .lbl { font-size: 13px; fill: #4a5a6b; }
+  </style>
+  <defs>
+    <marker id="ms-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+  </defs>
+
+  <rect class="box-f" x="20" y="70" width="100" height="60" rx="6"/>
+  <text x="70" y="105" text-anchor="middle" class="b">H₂ tanks</text>
+  <text x="70" y="150" text-anchor="middle" class="lbl">three, 5.6 kg</text>
+  <path class="h2" d="M120 100 H160"/>
+  <rect class="box-e" x="160" y="70" width="120" height="60" rx="6"/>
+  <text x="220" y="105" text-anchor="middle" class="b">stack</text>
+  <text x="220" y="150" text-anchor="middle" class="lbl">330 cells, 128 kW</text>
+  <path class="dc" d="M280 100 H310"/>
+  <rect class="box-e" x="310" y="70" width="100" height="60" rx="6"/>
+  <text x="360" y="97" text-anchor="middle" class="b">boost</text>
+  <text x="360" y="115" text-anchor="middle" class="lbl">DC-DC</text>
+  <path class="dc" d="M410 100 H440 V190"/>
+
+  <rect class="box-e" x="20" y="230" width="110" height="60" rx="6"/>
+  <text x="75" y="265" text-anchor="middle" class="b">battery</text>
+  <text x="75" y="310" text-anchor="middle" class="lbl">Li-ion, 84 cells</text>
+  <text x="75" y="327" text-anchor="middle" class="lbl">310.8 V, 1.24 kWh</text>
+  <path class="dc" d="M130 260 H440 V190"/>
+  <circle cx="440" cy="190" r="6" fill="#a75d00"/>
+  <text x="430" y="215" text-anchor="end" class="lbl">DC link</text>
+  <path class="dc-d" d="M430 280 H140" marker-end="url(#ms-orange)"/>
+  <text x="285" y="300" text-anchor="middle" class="lbl">regen</text>
+
+  <path class="dc" d="M440 190 H470"/>
+  <rect class="box-e" x="470" y="160" width="100" height="60" rx="6"/>
+  <text x="520" y="195" text-anchor="middle" class="b">inverter</text>
+  <path class="dc" d="M570 190 H600"/>
+  <rect class="box-e" x="600" y="160" width="100" height="60" rx="6"/>
+  <text x="650" y="195" text-anchor="middle" class="b">motor</text>
+  <text x="650" y="150" text-anchor="middle" class="lbl">134 kW, 300 N·m</text>
+  <path class="shaft" d="M650 220 V280"/>
+  <rect class="wheel" x="615" y="280" width="70" height="30" rx="6"/>
+  <text x="650" y="335" text-anchor="middle" class="lbl">rear wheels</text>
+
+  <text x="360" y="378" text-anchor="middle" class="lbl">no shaft from the source to the wheels; the battery is a power buffer, the stack does the driving</text>
+</svg>

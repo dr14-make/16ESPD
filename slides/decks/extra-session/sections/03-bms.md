@@ -99,17 +99,10 @@ routeAlias: coulomb-counting
 <div class="grid grid-cols-[1.2fr_1fr] gap-8 items-start">
 <div>
 
-<div class="placeholder">
+<img src="/figures/03-soc-drift.svg" alt="SoC error in percent against time, 0 to 7 days, for a 33 Ah cell. A 50 mA current-sensor offset grows the error at 3.6 % per day; with OCV resets on days 2, 4 and 6, the dashed vertical lines, it saws between 0 and 7.3 %, crossing the dashed 5 % line of GB/T 38661 1.4 days after each reset. Never reset, dotted, it leaves the top of the plot on day 4 and would reach 25 % on day 7. Zero-mean 10 mA noise spreads the error by only ±0.0065 % after 7 days, a band too thin to see on the zero line."/>
 
-**Figure** `/figures/03-soc-drift.svg`
-
-Formula plot, notebook: SoC error against time over 7 days for a 33 Ah Leaf cell. Line 1: a 50 mA
-current-sensor offset, error growing straight at 3.6 %/day (derived, `bms.md` §2). Band 2: zero-mean
-10 mA noise, error spread growing as √t — 0.054 % after 24 h on a 1.5 Ah cell [MOVASSAGH-2021],
-scaled to 33 Ah. A dashed horizontal line at GB/T 38661's 5 %; dashed vertical lines where an OCV
-reset (next slide) pulls the offset line back to zero.
-
-</div>
+<div class="caption">Formula plot · offset: derived (`bms.md` §2) · noise: σ = 0.0544 % at 24 h on 1.5 A·h
+[MOVASSAGH-2021], scaled to 33 A·h, growing as √t · reset days: illustrative.</div>
 
 </div>
 <div>
@@ -141,7 +134,7 @@ current sensor becomes an error that grows linearly in time: the offset times th
 A wrong starting value is carried forever. And a wrong Q nom scales every step: the pack loses
 capacity as it ages, and a counter that still divides by the new capacity reads too high.
 
-The figure, a formula plot to be drawn, shows the error of the count over a week, for one Leaf
+The figure, a formula plot, shows the error of the count over a week, for one Leaf
 cell of 33 ampere-hours. Across: days. Up: state-of-charge error in percent.
 
 The straight line is an offset. A current sensor that reads 50 milliamperes too high, all the time,
@@ -149,11 +142,11 @@ adds 0.05 amperes times 24 hours, 1.2 ampere-hours a day, which is 3.6 percent o
 day, always in the same direction. That is arithmetic in the BMS note. In a little over a day it
 uses up the 5 percent that China's standard allows; that standard is the dashed horizontal line.
 
-The thin band is noise. Movassagh and colleagues worked out that zero-mean noise of 10 milliamperes
+The band on the zero line, too thin to see, is noise. Movassagh and colleagues worked out that zero-mean noise of 10 milliamperes
 on a 1.5 ampere-hour cell spreads the error by only 0.054 percent after 24 hours, because noise
 averages out; it grows with the square root of time. An offset does not average out. So the enemy is
 the bias, and that is why the count needs a reset, the next slide; the vertical dashed lines are
-where it happens.
+where it happens, every second day here, a schedule picked for the picture.
 -->
 
 ---
@@ -234,17 +227,9 @@ routeAlias: balancing
 <div class="grid grid-cols-[1.2fr_1fr] gap-8 items-center">
 <div>
 
-<div class="placeholder">
+![Four cells in series between the pack's plus and minus terminals, each drawn as a bar filled to its state of charge: 80, 83, 78 and 80 percent from the top. Across each cell sits a bleed resistor in series with a switch. Three switches are open; on cell 2, the fullest at 83 percent, the switch is closed and an arrow shows its current leaving the cell through the resistor, which glows red and gives off heat. Below: charge stops when the fullest cell hits the CV limit; discharge stops when the emptiest hits cutoff.](/diagrams/03-passive-balancing.svg)
 
-**Diagram** `/diagrams/03-passive-balancing.svg`
-
-Four series cells drawn as bars filled to different SoC (e.g. 78, 80, 80, 83 %), each with a
-bleed resistor and a switch across it; the highest cell's switch closed, its current drawn as an
-arrow into the resistor as heat. Below: "charge stops when the fullest cell hits the CV limit;
-discharge stops when the emptiest hits cutoff". Hand-drawn; SoC values illustrative (no source gives
-an aged-pack spread; `bms.md` gap 5).
-
-</div>
+<div class="caption">SoC values illustrative</div>
 
 </div>
 <div>

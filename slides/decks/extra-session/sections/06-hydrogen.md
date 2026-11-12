@@ -215,15 +215,9 @@ routeAlias: station-chain
 
 ## The station chain
 
-<div class="placeholder">
+<div class="diagram-wide">
 
-**Diagram** `/diagrams/06-station-chain.svg`
-
-Left to right: supply (tube trailer, liquid tanker with cryopump and vaporizer, or on-site
-electrolysis/SMR) → bulk storage → compressor → high-pressure cascade buffer (300–950 bar) →
-precooler/chiller (−40 °C) → dispenser (H70 up to 875 bar, H35) → car (5.6 kg at 700 bar); energy
-per kg printed under compressor (≈ 3.0 kWh/kg) and chiller (0.15–0.2 kWh/kg). After TIAX's layout
-and `hydrogen.md` §1.2 [DOE-REC-21002-2020], [TIAX-PD068-2010], [DOE-ST100-2020].
+![A hydrogen station from left to right. Supply, outside the station, arrives three ways: tube trailer, liquid tanker with cryopump and vaporizer, or on-site electrolysis or SMR. Inside the station: bulk storage at low pressure; a compressor, about 3.0 kilowatt-hours per kilogram; cascade storage at 300 to 950 bar; a chiller to minus 40 degrees Celsius, 0.15 to 0.2 kilowatt-hours per kilogram; a dispenser, H70 up to 875 bar, or H35. Then the car, outside the station: 5.6 kilograms at 700 bar, tank gas at most 85 degrees Celsius.](/diagrams/06-station-chain.svg)
 
 </div>
 

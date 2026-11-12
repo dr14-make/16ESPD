@@ -75,16 +75,10 @@ skipInCut: true
 <div class="grid grid-cols-[1.2fr_1fr] gap-8 items-start">
 <div>
 
-<div class="placeholder">
+<img src="/figures/02-ocv-soc.svg" alt="Voltage per cell against state of charge, 0 to 100 percent. Solid: the NMC 811 cell (LG M50) OCV, derived from PyBaMM Chen2020: 2.500 V at 0 %, 3.296 at 10 %, 3.581 at 30 %, 3.751 at 50 %, 3.948 at 70 %, 4.097 at 90 % and 4.200 at 100 %. Dashed: the 2013 Leaf's loaded voltage per series element at C/3, INL: 4.17 V at 100 %, 3.88 at 47 %, 3.61 at 12 %, 3.08 at 3 % and 2.49 at 0 %. The 10 to 90 % window is shaded."/>
 
-**Figure** `/figures/02-ocv-soc.svg`
-
-OCV per cell (V) against SoC (%), 0–100: the NMC 811 cell (LG M50, PyBaMM Chen2020, derived) from
-2.500 V at 0 % through 3.751 V at 50 % to 4.200 V at 100 %; overlaid, the Leaf's loaded C/3
-per-cell voltage from INL (4.17 V at 100 % to 2.49 V at 0 %). From `teaching_materials.md` §3.2
-and §3.4.
-
-</div>
+<div class="caption">NMC 811: [CHEN-2020] via PyBaMM, derived; a smooth curve through the 10 % points · Leaf:
+[INL-5045] Fig. 1, read by eye (±0.03 V), loaded, not OCV.</div>
 
 </div>
 <div class="text-[0.95rem]">
@@ -139,15 +133,7 @@ routeAlias: thevenin-circuit
 <div class="grid grid-cols-[1fr_1.1fr] gap-8 items-center">
 <div>
 
-<div class="placeholder">
-
-**Diagram** `/diagrams/02-thevenin.svg`
-
-Circuit: a voltage source OCV(SoC) in series with R₀ and one parallel R₁‖C₁ pair, to the terminals
-+ and −; current *i* marked positive out of +, the voltage *v*₁ across the RC pair, *v* at the
-terminals. Hand-drawn, after the standard equivalent-circuit model.
-
-</div>
+![Circuit of the Thevenin cell. On the left a voltage source, the open-circuit voltage as a function of state of charge, plus at the top. From its plus side the top wire runs through the resistor R0, then through a parallel pair of the resistor R1 and the capacitor C1, to the plus terminal; the voltage v1 is marked across the parallel pair, plus on the left. The bottom wire runs straight from the source's minus side to the minus terminal. The current i is marked flowing out of the plus terminal, and v is the voltage between the terminals.](/diagrams/02-thevenin.svg)
 
 </div>
 <div>
@@ -210,18 +196,10 @@ routeAlias: pulse-response
 <div class="grid grid-cols-[1.3fr_1fr] gap-8 items-start">
 <div>
 
-<div class="placeholder">
+<img src="/figures/02-pulse-response.svg" alt="Top: current, 30 A discharge from 0 to 30 s, rest until 70 s, 22.5 A regen from 70 to 80 s. Bottom: terminal voltage minus the OCV of 3.949 V, in mV, for the Leaf cell with R0 1.60 mΩ, R1 1.34 mΩ and τ1 25.7 s: an instant drop of 48 mV, sagging to −75.7 mV by 30 s; at release a step back to −27.7 mV and an exponential recovery to −5.8 mV by 70 s; during regen +30 mV rising to +42 mV; then a recovery toward zero. Dashed: Lecture 4's E − R0 i, −48 mV during discharge and +36 mV during regen."/>
 
-**Figure** `/figures/02-pulse-response.svg`
-
-Formula plot, notebook: the 2013 Leaf cell at ≈ 60 % SoC through one USABC/INL EV HPPC profile —
-30 A discharge for 30 s, 40 s rest, 22.5 A (0.75×) regen for 10 s. Top: current. Bottom: terminal
-voltage — the instant drop *R*₀*I* = 48 mV, the sag of 27.7 mV by 30 s, the step back at release and
-the exponential recovery, then the regen pulse above OCV. Lecture 4's *E* − *R*₀*i* dashed. Parameters
-*R*₀ 1.60 mΩ, *R*₁ 1.34 mΩ, *τ*₁ 25.7 s (`bms.md` §1, [ORNL-LEAF-ECM] fit, derived; profile
-[USABC-EV-R4]); ORNL's measured trace overlaid if the notebook loads the CSV.
-
-</div>
+<div class="caption">Formula plot of the 1-RC cell, [ORNL-LEAF-ECM] pulse-5 fit (derived), through the [USABC-EV-R4]
+profile at 30 A; OCV held at 3.949 V.</div>
 
 </div>
 <div>
@@ -249,7 +227,7 @@ $$
 </div>
 
 <!--
-The figure is a formula plot from a notebook, of the standard pulse test from the USABC and Idaho
+The figure is a formula plot of the standard pulse test from the USABC and Idaho
 battery test manual for electric vehicles: 30 seconds of discharge, 40 seconds of rest, then 10
 seconds of charging, regen, at three quarters of the current, repeated at every 10 percent of depth
 of discharge. Here it is the Leaf cell from the last slide at about 60 percent, at 30 amperes. The top

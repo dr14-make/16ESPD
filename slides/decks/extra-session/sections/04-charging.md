@@ -27,17 +27,11 @@ routeAlias: cc-cv
 <div class="grid grid-cols-[1.2fr_1fr] gap-8 items-start">
 <div>
 
-<div class="placeholder">
+<img src="/figures/04-cc-cv.svg" alt="Three panels against time in minutes. Current: constant 16.55 A, 0.5C of 33.1 Ah, until 103 minutes, then decaying to the C/50 cutoff of 0.66 A at 120 minutes. Voltage: the terminal voltage rises from 3.32 V to 4.20 V at 103 minutes and holds there; the OCV, dashed, runs below it, 4.15 V at the switch to CV and 4.198 V at the end. SoC: from 10 % rising linearly to 95.6 % at the switch and 99.8 % at the end."/>
 
-**Figure** `/figures/04-cc-cv.svg`
-
-Formula plot, notebook: one NMC cell (Thevenin cell of section 02) charged CC-CV from 10 % SoC.
-Top: current, flat at the CC value, then decaying after the switch to CV until the C/50 cutoff.
-Middle: terminal voltage rising to 4.20 V and holding; OCV dashed, reaching 4.20 V only at the end.
-Bottom: SoC. Parameters: CV 4.20 V and cutoff from [PAN-NCR18650B]/[LG-M50LT-2020] (`charging.md`
-§1); R₀, R₁ from [GAO-2024].
-
-</div>
+<div class="caption">Formula plot · the section 02 Leaf cell (R₀ 1.60 mΩ, R₁ 1.34 mΩ, τ₁ 25.7 s, 33.1 A·h;
+[ORNL-LEAF-ECM] fit, derived) with the NMC 811 OCV curve · assumed: 0.5C from rest at 10 %,
+CV 4.20 V, stop at C/50.</div>
 
 </div>
 <div class="text-[0.9rem]">
@@ -207,16 +201,10 @@ routeAlias: leaf-chademo
 <div class="grid grid-cols-[1.3fr_1fr] gap-8 items-start">
 <div>
 
-<div class="placeholder">
+<img src="/figures/04-leaf-chademo.svg" alt="Charging power in kW against state of charge for the Nissan Leaf 40 kWh on CHAdeMO, Fastned data: 42.2 kW at 17 %, 43.1 at 20 %, 44.8 at 50 %, a peak of 45.63 at 57 and 60 %, then 32.75 at 70 %, 26.03 at 80 % and 20.17 at 90 %."/>
 
-**Figure** `/figures/04-leaf-chademo.svg`
-
-Charging power (kW) against SoC (%) for the Leaf 40 kWh on CHAdeMO, Fastned's per-1 % data,
-17–92 %: flat at 43–46 kW to 60 % (peak 45.63 kW at 57 and 60 %), then stepping down to 32.75 kW at
-70 %, 26.03 at 80 %, 20.17 at 90 %. One charge, pack around 30 °C. From `charging.md` §2(d)
-[FASTNED-CURVES].
-
-</div>
+<div class="caption">Fastned, one charge, pack about 30 °C: the 10 % points, first point and peak of its per-1 %
+data, joined by straight lines.</div>
 
 </div>
 <div class="text-[0.9rem]">
@@ -271,16 +259,10 @@ routeAlias: three-curves
 <div class="grid grid-cols-[1.3fr_1fr] gap-6 items-start">
 <div>
 
-<div class="placeholder">
+<img src="/figures/04-dc-curves.svg" alt="Charging power in kW against state of charge, Fastned data at about 30 °C. Hyundai IONIQ 5 84 kWh, 800 V: 203 kW at 10 %, 238 at 20 %, a peak of 263.6 at 51 %, 201 at 60 %, 81 at 80 % and 67 at 82 %. Tesla Model Y LR 2025+, 400 V: 231 at 8 %, 182 at 20 %, 105 at 50 %, 48 at 80 % and 34 at 90 %. VW ID.3 Pro S 77 kWh, 400 V: 175 at 10 %, a peak of 179 at 18 %, 101 at 50 %, 69 at 80 % and 46 at 89 %. Nissan Leaf 40 kWh: 42 to 46 kW up to 60 %, 26 at 80 % and 20 at 90 %."/>
 
-**Figure** `/figures/04-dc-curves.svg`
-
-Charging power (kW) against SoC (%), Fastned's per-1 % data, ~30 °C: VW ID.3 Pro S 77 kWh (400 V,
-3–89 %, peak 178.84 kW at 18 %), Tesla Model Y LR 2025+ (400 V, 8–90 %, 230.75 kW at 8 %), Hyundai
-IONIQ 5 84 kWh (800 V, 3–82 %, 263.57 kW at 51 %), with the Leaf 40 kWh from the last slide for
-scale. From `charging.md` §2(d) [FASTNED-CURVES].
-
-</div>
+<div class="caption">[FASTNED-CURVES]: each series' 10 % points, first and last point and peak, joined by straight
+lines.</div>
 
 </div>
 <div class="text-[0.85rem]">
@@ -677,16 +659,10 @@ routeAlias: network
 <div class="grid grid-cols-[1.2fr_1fr] gap-6 items-start">
 <div>
 
-<div class="placeholder">
+<img src="/figures/04-network.svg" alt="Stacked bars of public charging points by AFIR power class, AC in blues and DC in oranges, for 2024, 2025 and September 2026. Czechia: 6,359, 7,574 and 7,669 points, most of them AC 7.4 to 22 kW (4,369, 4,971 and 4,801); DC share 29.8, 33.1 and 36.1 %; share of 150 kW and above 9.1, 12.8 and 15.0 %. EU27, in thousands: 882,012, 1,061,890 and 1,176,554 points; DC share 15.7, 18.3 and 19.2 %; share of 150 kW and above 9.3, 11.2 and 12.0 %."/>
 
-**Figure** `/figures/04-network.svg`
-
-Stacked bars of public charging points by AFIR class (AC < 7.4, AC 7.4–22, AC > 22, DC < 50,
-DC 50–150, DC 150–350, DC ≥ 350 kW) for 2024, 2025 and Sep 2026; two panels, Czechia (6,359 →
-7,574 → 7,669) and EU27 (882,012 → 1,061,890 → 1,176,554), each with the DC share and ≥ 150 kW share
-printed. From `charging.md` §8 [EAFO-CZ], [EAFO-EU27].
-
-</div>
+<div class="caption">European Alternative Fuels Observatory [EAFO-CZ], [EAFO-EU27]: counts verified, shares
+computed; Sep 2026 is the latest update.</div>
 
 </div>
 <div class="text-[0.9rem]">
