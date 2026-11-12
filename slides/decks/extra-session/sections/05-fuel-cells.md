@@ -16,13 +16,12 @@ and the balance of plant around it.
 
 <!--
 Welcome back. Before the break: the plug, 18 to 43 minutes. Now the nozzle. A fuel-cell car is an
-electric car with a chemical power plant on board instead of a big battery. Before we fill it with
-hydrogen, we need to know what the hydrogen turns into, and at what efficiency. One curve answers
-that, the polarization curve, as the torque-speed curve answered it for the motor. Then the stack,
-and the machinery around it.
+electric car with a chemical power plant on board instead of a big battery. One curve says what the
+hydrogen turns into and at what efficiency: the polarization curve. Then the stack, and the
+machinery around it.
 
-*[show photo]* The first Mirai's stack in its cast housing, under the floor of a cut-away show car
-in São Paulo. Photograph by the user Mariordo, Wikimedia Commons.
+*[show photo]* The first Mirai's stack under a cut-away show car. Photograph by Mariordo, Wikimedia
+Commons.
 -->
 
 ---
@@ -61,18 +60,13 @@ Two electrons per H₂, through every cell in series.
 
 <!--
 *[show figure]* One cell of a proton-exchange-membrane fuel cell, PEM, the kind every fuel-cell car
-uses. Hydrogen enters on the anode side, on the left. A platinum catalyst splits each molecule into
-two protons and two electrons. The membrane in the middle passes protons but not electrons, so the
-electrons take the long way, through the external circuit: that is our current. On the cathode
-side, oxygen from the air meets the protons and the electrons and makes water. A battery that never
-runs flat, as long as you feed it.
+uses. A platinum catalyst splits hydrogen into protons and electrons. The membrane passes only the
+protons, so the electrons take the external circuit: that is our current. At the cathode, oxygen
+from the air meets both and makes water. A battery that never runs flat, as long as you feed it.
 
-The voltages on the right are the references for everything that follows. The reversible voltage
-at 25 degrees is 1.229 volts. If all of hydrogen's lower heating value turned into electricity, the
-cell would show 1.253 volts: the heating value over two Faraday constants, because each molecule
-moves two electrons. Counting the heat of condensing the water too, the higher heating value, 1.481.
-The membrane in the model we use next is Nafion 117, about 0.13 millimeters thick; remember the
-thickness, because it is where the Mirai gains most. A real cell runs well below all three. How far below is the next slide.
+The voltages on the right are the references. 1.229 volts is the reversible voltage; 1.253 is
+hydrogen's lower heating value over two Faraday constants; 1.481 the higher heating value. A real
+cell runs well below all three. How far below is the next slide.
 -->
 
 ---
@@ -164,28 +158,23 @@ At ≈ 1 A/cm²: **Mirai gen 1 ≈ 0.74 V** vs **P2000 model 0.58 V** — mostly
 </div>
 
 <!--
-The polarization curve is the fuel cell's characteristic. Across, current density, amperes per
-square centimeter of cell; up, cell voltage. The black curve is the Pukrushpan model, the standard
-automotive model, fitted to Ford's 75 kilowatt P2000 stack at 80 degrees and 2.5 bar.
+The polarization curve is the fuel cell's characteristic: current density across, cell voltage up.
+The black curve is the Pukrushpan model, fitted to Ford's P2000 stack.
 
-It starts at 0.950 volts with no current and subtracts three losses, shaded in the figure; the
-three labels on the curve are deck 8's names for its shape: a rapid initial fall, a fairly linear
-middle, and a fall that speeds up at high current.
-Activation, the price of driving the reaction at the catalyst: it rises fast and saturates at 0.178
-volts. Ohmic, the membrane's resistance: a straight line. Concentration: at high current the gas
-cannot reach the catalyst fast enough, and the curve dives toward 2.2 amperes per square
-centimeter, the limiting current.
+It starts at 0.950 volts and subtracts three losses, shaded. Activation, the price of driving the
+reaction at the catalyst, saturating at 0.178 volts. Ohmic, the membrane's resistance, a straight
+line. Concentration: at high current the gas cannot reach the catalyst, and the curve dives toward
+2.2 amperes per square centimeter.
 
-The table reads the curve: 0.82 volts at 0.1, 0.69 at 0.5, 0.58 at 1. Power, voltage times current,
-peaks at about 1.4; past that, more current gives less power.
+The table reads the curve: 0.82 volts at 0.1 amperes per square centimeter, 0.69 at 0.5, 0.58 at 1.
+Power, voltage times current, peaks at about 1.4; past that, more current gives less power.
 
-*[show figure]* The red dots are the real 2017 Mirai's stack, measured by Argonne. At about 1 ampere
-per square centimeter it holds 0.74 volts against the model's 0.58. The P2000 is a 1999-era stack
-with a thick membrane; most of the gap is the ohmic line, and Toyota names a thinner membrane as one
-reason for its gain.
+*[show figure]* The red dots are the real 2017 Mirai, measured by Argonne: 0.74 volts at about 1
+ampere per square centimeter against the model's 0.58. Most of the gap is the ohmic line; Toyota
+names a thinner membrane as one reason.
 
-*[ask]* The right-hand scale says efficiency. Where on this curve is the cell most efficient?
-*[pause]* At the left: light load. The next slide says why.
+*[ask]* The right-hand scale says efficiency. Where is the cell most efficient? *[pause]* At the
+left: light load. The next slide says why.
 -->
 
 ---
@@ -225,24 +214,17 @@ at μ<sub>f</sub> = 1 and g H₂/kWh from Faraday's law [<code>pem-polarization.
 </div>
 
 <!--
-A fuel cell's efficiency is its voltage. Every hydrogen molecule delivers two electrons, whatever the
-voltage, so the energy out per molecule is proportional to the cell voltage while the energy in is
-fixed. Divide by 1.253 volts and multiply by the fuel utilization, the share of the hydrogen that
-reacts rather than being purged.
+A fuel cell's efficiency is its voltage. Every hydrogen molecule delivers two electrons whatever the
+voltage, so the energy out per molecule is proportional to the cell voltage. Divide by 1.253 volts
+and multiply by the fuel utilization.
 
-*[show figure]* Three cells, at 0.6, 0.7 and 0.8 volts: of the hydrogen's energy, 48, 56 and 64
-percent leave as electricity, the rest as heat. On the last slide's right-hand scale, the four
-points of the curve read 66 percent at light load, 55 at half an ampere, 46 at 1, 34 at 1.5. So
-a fuel cell is most efficient at light load and least at full power: the opposite of the engine of
-Lecture 2, which was worst at light load and in town.
+*[show figure]* At 0.6, 0.7 and 0.8 volts: 48, 56 and 64 percent leave as electricity, the rest as
+heat. On the last slide's right-hand scale, the curve reads 66 percent at light load, 55 at half an
+ampere, 46 at 1, 34 at 1.5. So a fuel cell is most efficient at light load and least at full power: the opposite of the
+engine of Lecture 2.
 
-The measured lines on the left check the real car. Argonne measured the 2017 Mirai at 66.0 percent peak for the
-stack, 63.7 for the whole system. 66 percent means about 0.83 volts per cell, which is what Argonne
-saw at low load.
-
-The grams under each flow are Faraday's law per kilowatt-hour: 63 grams of hydrogen at 0.6 volts,
-47 at 0.8.
-Higher voltage, less hydrogen.
+Argonne measured the 2017 Mirai at 66.0 percent peak for the stack, 63.7 for the system: about 0.83
+volts per cell, at low load. And in grams: 63 of hydrogen per kilowatt-hour at 0.6 volts, 47 at 0.8.
 -->
 
 ---
@@ -290,26 +272,20 @@ per-cell and Faraday: derived (<code>hydrogen.md</code> §4, §6)</div>
 </div>
 
 <!--
-One cell gives under a volt, so a car stacks hundreds in series. Every cell carries the same
-current, and the voltages add. *[show figure]* Left, the naive way: cells joined at their edges,
-so the electrons must run across the whole face of each electrode to reach the wire. Middle, the
-real way: a bipolar plate, hydrogen channels on one face and air on the other, carries the current
-straight through the face from one cell to the next. Right, one cell's layers, with the gaskets
-that seal the gas at the edge.
+One cell gives under a volt, so a car stacks hundreds in series: the same current through every
+cell, the voltages added. *[show figure]* A bipolar plate, hydrogen channels on one face and air on
+the other, carries the current straight through from one cell to the next.
 
-The formula is Faraday's law for the stack: each cell uses one hydrogen molecule per two electrons,
-and every cell sees the full current. So the hydrogen flow is the number of cells times the current
-times the molar mass over twice the Faraday constant. For the Mirai's 330 cells: 12.41 grams per hour
-for every ampere; the first Mirai's 370 cells, 13.92; Ford's P2000 model stack, 381 cells, 14.33. The check: the Mirai's official 0.79 kilograms per 100 kilometers is
-63.7 ampere-hours of stack current.
+The formula is Faraday's law for the stack: one hydrogen molecule per two electrons, in every cell.
+For the Mirai's 330 cells, 12.41 grams per hour for every ampere. The check: the official 0.79
+kilograms per 100 kilometers is 63.7 ampere-hours of stack current.
 
-In the middle, the Mirai's stack from Toyota, and on the right the first Mirai's, in its housing: 330 cells, 128 kilowatts, up from 114 with 370 cells in
-the first generation. Fewer cells, more power: each cell now gives 388 watts. And 52 kilograms for
-the whole stack. The model stack of the polarization slide, Ford's P2000, had 381 cells of 280
-square centimeters, with a limiting current of 2.2 amperes per square centimeter.
+The second Mirai has 330 cells and 128 kilowatts, up from 114 with 370 cells in the first: fewer
+cells, more power, 388 watts each, in 52 kilograms. The model stack of the polarization slide,
+Ford's P2000, had 381 cells of 280 square centimeters, limiting current 2.2 amperes per square centimeter.
 
-*[3 h: give the room five minutes on take-home exercise 3: the stack current and hydrogen flow at 30
-kilowatts with cells at 0.7 volts. Take one answer for the current and one for the flow.]*
+*[3 h: give the room five minutes on take-home exercise 3, the stack current and hydrogen flow at
+30 kilowatts and 0.7 volts.]*
 -->
 
 ---
@@ -340,20 +316,16 @@ routeAlias: balance-of-plant
 </div>
 
 <!--
-The stack does not run on its own. *[show figure]* The machinery around it is what deck 8 calls the
-balance of plant: four loops.
-
-Air: a compressor sets the cathode's pressure and flow, supplying twice the oxygen the reaction needs
-so the far end of each channel is not starved. Hydrogen: a regulator drops the tank pressure;
-unreacted gas is pumped back round, and a purge valve vents the nitrogen and water that collect.
-Water: the membrane conducts only when wet, so the air is humidified, but the product water must get
-out or it floods the cells. Heat: a coolant loop holds the stack near 80 degrees, which is harder
-than it sounds. And power: a DC-DC converter matches the falling stack voltage to the car's bus.
+The stack does not run on its own. *[show figure]* Around it is the balance of plant, four loops.
+Air: a compressor supplies twice the oxygen the reaction needs. Hydrogen: unreacted gas goes back
+round, and a purge valve vents the nitrogen and water. Water: the membrane must stay wet but must not
+flood. Heat: a coolant loop holds the stack near 80 degrees. And a DC-DC converter matches the stack
+voltage to the bus.
 
 The price of all this: 66.0 percent for the stack, 63.7 for the system.
 
 *[90 min, last slide of the section:]* That is the car's side of the nozzle. Section 06 is the other
-side: what it takes to push five kilograms of hydrogen into a tank in three minutes.
+side: five kilograms of hydrogen into a tank in three minutes.
 -->
 
 ---

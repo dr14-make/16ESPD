@@ -74,7 +74,7 @@ Every lithium-ion cell charges the same way: CC-CV, constant current, then const
 current. Middle, the terminal voltage, with the open-circuit voltage dashed below it. Bottom, the
 state of charge. Across all three, time in minutes.
 
-Step one, CC: the charger pushes a constant current, here half the capacity per hour, and the
+Step one, CC: the charger pushes a constant current, here half a C, and the
 terminal voltage climbs. Step two, CV: when the terminal voltage reaches 4.20 volts, the charger
 holds it there, and the current decays by itself. Look at the dashed line: at the switch the OCV is
 still below 4.2, and the cell is at 96 percent, not 100. Step three: when the current has fallen to
@@ -82,8 +82,7 @@ the end value, the charge stops, at 99.8.
 
 The table gives three real datasheets. Two nickel-based cells, 4.20 volts; one LFP cell, 3.6 volts, the
 last row of section 01's table. And look at the end current: all three stop between C over 50 and C
-over 100, a fiftieth to a hundredth of the capacity per hour. Not the C over 20 that is often
-quoted. The CV phase is long, and it is gentle.
+over 100, in section 01's C-rate. Not the C over 20 that is often quoted. The CV phase is long, and it is gentle.
 -->
 
 ---
@@ -268,9 +267,8 @@ this section, at pack level, and it comes early. From 10 to 80 percent: 43 minut
 average.
 
 That is a good day. Now rapidgate. In a test reported by CleanTechnica, the Leaf throttled DC
-charging whenever its pack was above 32 degrees. With the pack at 41 degrees, adding 70 percent took
-54 minutes on the old software, just under 40 after an update. At 45 degrees, 72 minutes against
-48. The update helped, but a hot pack still cost a quarter of an hour.
+charging whenever its pack was above 32 degrees. At 41 degrees, adding 70 percent took 54 minutes
+on the old software, just under 40 after an update. A hot pack still cost a quarter of an hour.
 
 *[ask]* Why does the Leaf overheat when the IONIQ does not? *[pause]* Its pack has no active
 cooling. Idaho measured it on the 2012 Leaf, the same air-cooled design: each 50 kilowatt DC charge
@@ -278,9 +276,8 @@ warmed the pack by 6.5 degrees on average, against 2.9 on AC. With no cooling, t
 charge is still there at the next. On a long trip, the second and third fast charges start hot and
 get throttled, exactly when you need them.
 
-Nissan's answer is the third-generation Leaf of 2025: a liquid-cooled pack with thermal
-conditioning, CCS in Europe instead of CHAdeMO, up to 150 kilowatts, and 10 to 80 percent in as
-little as 35 minutes on a 150 kilowatt charger. So heat is the second limit, and it is the one you
+Nissan's answer is the third-generation Leaf of 2025: a liquid-cooled pack, CCS in Europe instead
+of CHAdeMO, and 10 to 80 percent in as little as 35 minutes on a 150 kilowatt charger. So heat is the second limit, and it is the one you
 can engineer away.
 -->
 
@@ -725,8 +722,7 @@ the bulk; DC classes above.
 *[show photo]* One of them, a ČEZ fast charger on Evropská in Prague 6, photographed by the user
 Yopic. At the end of 2025 Czechia had 7,574 public points; a third of them DC, and one in eight at 150
 kilowatts or more. The EU average is lower: 18 percent DC. So Czechia has few chargers but a lot of
-fast ones; by count it ranks 14th in the EU and 21st per head, according to the transport research
-center CDV. By September 2026 it had barely grown, to 7,669 points, but the mix shifted: the AC
+fast ones. By September 2026 it had barely grown, to 7,669 points, but the mix shifted: the AC
 count fell by about 170 while DC rose by 260, to 36 percent of all points. Slow posts are being
 replaced by fast ones.
 

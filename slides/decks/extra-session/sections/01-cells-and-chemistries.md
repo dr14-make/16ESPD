@@ -7,8 +7,8 @@ layout: section
 
 # Cells and chemistries
 
-Deck 8's tour cut to what is on the road now: LFP, NMC and sodium-ion, their specific energy, and
-what a kilowatt-hour costs today.
+A battery's terms on the Leaf's pack, then deck 8's tour cut to what is on the road now: LFP, NMC
+and sodium-ion, their specific energy, and what a kilowatt-hour costs today.
 
 <img class="hero" src="/photos/01-bmw-i3-cells.jpg" alt="Rows of flat aluminum prismatic cells, each with two threaded terminal posts and a vent window, labeled SB LiMotive, sample cells for the BMW i3."/>
 
@@ -16,17 +16,244 @@ what a kilowatt-hour costs today.
 
 <!--
 Before we ask how fast energy goes back into a car, we need to know what it goes into. Three
-chemistries are in cars sold today: NMC, LFP and, just arriving, sodium-ion. The choice sets three
-numbers you will meet again tonight: what a kilogram of cells stores, what a kilowatt-hour costs,
-and the voltage the charger must stop at. That last one is where section 04 starts.
+chemistries are in cars sold today: NMC, LFP and, just arriving, sodium-ion. The choice sets what a
+kilogram of cells stores, what a kilowatt-hour costs, and the voltage the charger must stop at.
 
-*[ask]* A question to carry through the section: if you were buying batteries for a city bus,
-which chemistry would you pick, and why? *[pause]* We will have the answer by the end of section
-03.
+*[ask]* A question to carry through: if you were buying batteries for a city bus, which chemistry
+would you pick, and why? *[pause]* We will have the answer by the end of section 03.
 
-*[show photo]* What a car cell looks like: flat aluminum cans with two terminal posts and a vent,
-sample cells made by SB LiMotive for the BMW i3. Photograph by the user RudolfSimon, Wikimedia
-Commons.
+*[show photo]* Car cells: flat aluminum cans with two terminal posts and a vent, sample cells made by
+SB LiMotive for the BMW i3. But first the
+words: a spec sheet uses a dozen terms, and the next four slides put them on the Leaf's pack.
+-->
+
+---
+routeAlias: battery-terms
+---
+
+## A battery's terms, on the Leaf's pack
+
+<div>
+
+| Term | What it means | Unit | Leaf 40 kWh |
+|---|---|---|---|
+| **Capacity** *Q* | the charge it delivers from full to empty | A·h | **113 A·h** (2 × 56.3) |
+| **Nominal voltage** | the average voltage over a full discharge | V | **350 V** (96 × 3.65 V) |
+| **Energy**, gross | *Q* × nominal voltage: what the cells hold | kWh | **40 kWh** |
+| **Energy**, usable | what the car lets you take out | kWh | **39 kWh** |
+| **State of charge** *SoC* | the share of *Q* still in the cells | % | counted (section 03) |
+| **Specific energy** | energy per kilogram | Wh/kg | **132** pack (303 kg) |
+| **Energy density** | energy per liter | Wh/L | **≈ 82** pack (485 L box) |
+| **Specific power** | power per kilogram | W/kg | **≈ 360** at the motor's 110 kW |
+| **Energy efficiency** | energy out ÷ energy in, round trip | % | **95–98** (2013 Leaf) |
+
+</div>
+
+<div class="caption text-left">40 kWh, 350 V, 110 kW: Nissan [N-JP-ZE1] · 303 kg, 1547 × 1188 × 264 mm: Nissan US
+guide · 39 kWh usable, 96s2p: EV Database, secondary · 56.3 Ah: Gao et al. 2024 · round trip:
+ANL 2013 · Wh/kg, Wh/L, W/kg: derived</div>
+
+<div class="handson">New tonight: nominal voltage, and gross against usable. The rest is Lecture 4's.</div>
+
+<!--
+The vocabulary on one pack, so every number tonight has a place to land. Lecture 4 gave you
+capacity, energy, state of charge and the efficiencies; two words are new.
+
+Nominal voltage is the average over a full discharge, not the highest or the lowest: 3.65 volts per
+cell, 96 in series, 350 volts. The pack actually swings from about 240 volts empty to 420 full, and
+the next slides need that swing.
+
+Gross against usable: gross is what the cells hold, usable is what the car lets you take out,
+because the BMS keeps a margin at the top and the bottom, where the cell ages fastest. On the Leaf,
+40 against 39; some cars keep ten percent back.
+
+*[ask]* Two cars, both advertised at 77 kilowatt-hours, one gross, one usable. Which goes further,
+other things equal? *[pause]* The usable one: its 77 all come out.
+
+Energy is capacity times nominal voltage: 113 ampere-hours times 350 volts, about 40 kilowatt-hours.
+When a spec sheet gives one number, ask whether it is gross or usable.
+
+The per-kilogram numbers: 132 watt-hours per kilogram for the pack, about 82 per liter of its box,
+and about 360 watts per kilogram at the motor's 110 kilowatts peak. That is the motor's limit, not
+the pack's; the next slide shows what the pack itself can give. And the round trip, 95 to 98
+percent: the rest is R zero i squared heating the pack.
+-->
+
+---
+routeAlias: c-rate
+---
+
+## C-rate: current per capacity, and power per energy
+
+<div class="grid grid-cols-2 gap-8">
+<div>
+
+$$
+\text{C-rate} = \frac{I}{Q} \approx \frac{P}{E}
+\qquad 1\,\text{C} \;\Rightarrow\; \text{full to empty in 1 h}
+$$
+
+- Size-free: a cell and its pack share the C-rate.
+- Each limit on a datasheet is a C-rate: charge, discharge, pulse.
+
+<div class="tight">
+
+| | Power | C-rate |
+|---|---|---|
+| Leaf, WLTC average | ≈ 8 kW | **0.2 C** |
+| Leaf, motor peak | 110 kW | **2.8 C** |
+| Leaf, DC charge peak | 46 kW | **1.2 C** |
+| IONIQ 5 84 kWh, DC peak | 263 kW | **3.1 C** |
+
+</div>
+
+</div>
+<div>
+
+**Peak against continuous.** A peak lasts seconds, a continuous rating holds until the heat
+settles:
+
+- Leaf motor: **110 kW** peak, **85 kW** rated.
+- 2013 Leaf pack (24 kWh): **103 kW** for 30 s discharging (**4.3 C**), **80 kW** for 10 s
+  charging.
+
+**Power depends on the state.** Measured at every 10 % of depth of discharge: an empty pack has a
+higher resistance, so it gives less power; a full pack takes less.
+
+<div class="caption text-left">Leaf: Nissan [N-JP-ZE1], INL 2014 [INL-5045] · IONIQ 5 and Leaf DC: Fastned, Hyundai
+[charging.md] · WLTC: 17.1 kWh/100 km × 46.5 km/h · C-rates derived</div>
+
+</div>
+</div>
+
+<!--
+The one new unit tonight, and you will hear it at every charger: the C-rate, current divided by
+capacity. One C empties the battery in an hour, two C in half an hour. Multiply top and bottom by
+the voltage and it is power over energy: kilowatts over kilowatt-hours, read straight off a car.
+
+It does not care about size: a cell at 1 C and its pack at 1 C do the same thing to every cell. So a
+datasheet gives its limits as C-rates, and you multiply by your pack's capacity.
+
+*[show table]* The Leaf on the WLTC averages about 8 kilowatts, a fifth of a C. Its motor peak is 2.8
+C, its DC charge peak 1.2 C. The IONIQ 5 charges at up to 263 kilowatts on an 84
+kilowatt-hour pack: 3.1 C.
+
+*[ask]* Which of these worries the cell most? *[pause]* The charge, 3.1 C. Pushed too hard, too cold,
+the lithium plates on the graphite as metal instead of going in, and that metal never fully
+comes back. A few seconds of discharge at 2.8 C
+is easy by comparison. Section 04 comes back to this.
+
+On the right, peak against continuous: a peak lasts seconds, a continuous rating holds until the
+temperature settles. The Leaf's motor: 110 kilowatts peak, 85 rated. The 2013 Leaf pack gave 103
+kilowatts for 30 seconds, more than 4 C, so the motor, not the pack, sets the car's peak. And the
+power is measured at every ten percent of depth of discharge, because it changes: an empty, cold
+pack gives little, a full one takes little. Keep that for the charging curves.
+-->
+
+---
+routeAlias: cell-to-pack
+skipInCut: true
+---
+
+## From cell to pack: series adds volts, parallel adds amp-hours
+
+<div class="diagram-wide">
+
+<img src="/diagrams/01-cell-to-pack.svg" alt="Leaf pack schematic: 96 groups in series, each two cells in parallel. Two in parallel add amp-hours, 2 × 56 Ah = 113 Ah; 96 in series add volts, 96 × 3.65 V = 350 V; E = Ns · Np · V_cell · Q_cell ≈ 40 kWh."/>
+
+</div>
+
+<div class="tight">
+
+| | Cells | Cell | Pack | Gross / usable | Cell / pack Wh/kg |
+|---|---|---|---|---|---|
+| **Leaf 40 kWh** | 192, **96s2p**, 24 modules | 56.3 Ah, 3.65 V, 914 g | 113 Ah, **350 V** | 40 / 39 kWh | **224 / 132**: cells are 58 % of the mass |
+| **IONIQ 5 84 kWh** | 384, **192s2p**, 32 modules | ≈ 60 Ah, 3.63 V | 120.6 Ah, **697 V** | 84 / 80 kWh | pack mass: no primary |
+
+</div>
+
+<div class="caption text-left">Leaf cell: AESC product page (2019) · 96s2p, modules: secondary · IONIQ 5: Hyundai spec
+sheet and emergency response guide (IONIQ 5 N, same pack) · usable: EV Database, secondary · cell
+values for the IONIQ 5 and the mass share: derived [battery-terms.md]</div>
+
+<!--
+How cells become a pack. *[show diagram]* Cells in parallel share one voltage and add their
+amp-hours; groups in series carry one current and add their volts. The Leaf pairs 56 amp-hour cells
+into 113 amp-hour groups, then puts 96 groups in series: 350 volts. The energy is the product at the
+bottom: 96 times 2 times 3.65 times 56.3, about 39.5 kilowatt-hours. Nissan sells it as 40.
+
+*[ask]* The IONIQ 5 is an 800 volt car. Did Hyundai use bigger cells? *[pause]* No: its cells are
+about the Leaf's size, 60 amp-hours, 3.63 volts. It puts 192 groups in series instead of 96, so the
+voltage doubles to 697 volts nominal. For the same power the current halves, and with it the R i
+squared loss in every cable. Section 04's 800 volt story starts here, in the series count.
+
+The last column is what the box costs you. AESC gives the Leaf cell as 914 grams and 224 watt-hours
+per kilogram; the pack is 132. The cells are only 58 percent of the mass; the rest is module frames,
+busbars, cooling, case and electronics. That ratio is where much of the progress since 2018 went:
+cell-to-pack designs drop the module frames altogether.
+
+The usable figures come from a database, not the makers, so treat them as close, not exact.
+-->
+
+---
+routeAlias: soc-dod-soh
+skipInCut: true
+---
+
+## How full, how deep, how worn: SoC, DoD and SoH
+
+<div class="grid grid-cols-[3fr_2fr] gap-6 items-start">
+<div>
+
+<img src="/figures/01-ageing.svg" alt="Two bar panels for NMC 18650 cells. Left, full cycles to 80 percent capacity at 25 °C: about 450 cycling 0–100 percent SoC, 1,650 at 20–80, 2,150 at 40–60. Right, capacity lost after 10 months of storage: at 25 °C about 2.5 percent at 50 percent SoC against 6.5 at 100; at 50 °C about 12 against 23."/>
+
+<div class="caption">NMC 18650 cells, not car cells · read from figures: Preger et al., JES 2020, Fig. 2a; Keil et al.,
+JES 2016, Fig. 2b</div>
+
+</div>
+<div>
+
+$$
+DoD = 1 - SoC
+$$
+
+$$
+SoH = \frac{Q_\text{now}}{Q_\text{new}}
+$$
+
+- **Cycle ageing** grows with the window: shallow cycles last longer.
+- **Calendar ageing** runs parked: faster when full and hot. LFP: ≈ 0.2 points a month at 25 °C.
+- **Euro 7**, new cars: **≥ 80 %** of usable energy at 5 years or 100,000 km, **≥ 72 %** at 8
+  years or 160,000 km (types from 29 Nov 2026).
+- **Warranties:** 8 years or 160,000 km, to **70 %** (Hyundai) or 9 of 12 bars (Nissan).
+
+<div class="caption text-left">EU 2024/1257 Annex II, Art. 10 · Hyundai EU, Nissan BE · LFP: Keil 2016</div>
+
+</div>
+</div>
+
+<!--
+Three words for the state of the battery. State of charge: how full. Depth of discharge, one minus
+SoC: how far down you have gone. State of health: the capacity now over the capacity new; Euro 7
+measures it in usable energy, but the idea is the same.
+
+*[show figure]* The depth decides how long a cell lives. Sandia cycled one NMC cell over three SoC
+windows at 25 degrees until it had lost a fifth of its capacity. Full to empty: about 450 full
+cycles. Between 20 and 80 percent: 1,650. Between 40 and 60: 2,150. These are equivalent full
+cycles, so a 40 to 60 cycle counts as a fifth of one; the shallow windows are not cheating. The ends,
+nearly full and nearly empty, do the damage. That is why the car keeps a margin, and why the app
+suggests charging to 80 percent.
+
+On the right, ageing while parked, ten months in storage. At 25 degrees, kept half full, the cell lost
+about 2.5 percent; kept full, 6.5. At 50 degrees, 12 against 23. Full and hot is the worst way to
+park a battery. LFP ages far less sitting still: about 0.2 points a month.
+
+These are small laboratory cells, 18650s, not car cells, so take the shape, not the numbers; section 04 has the fleet: 2.3
+percent a year.
+
+*[ask]* Euro 7 demands at least 72 percent at 8 years for new types from the end of this month.
+Hyundai's warranty pays out below 70. Which is the stricter promise? *[pause]* The law, by two
+points.
 -->
 
 ---
@@ -65,35 +292,25 @@ recalled its Ragone plot.
 
 <!--
 Deck 8 tours the chemistries in historical order: lead acid, nickel-cadmium, nickel-metal hydride,
-and finally lithium-ion. Lecture 4 showed its Ragone plot. Read off the deck, a lead-acid traction
-battery stores about 35 watt-hours per kilogram at low power, nickel-cadmium about 52. Today's best
-lithium-ion cells, next slide, reach 265: five times lead acid or more. That is why the tour now
-ends at lithium-ion. Every new electric car carries it, in two families, and a third is arriving.
+lithium-ion. Lead acid stores about 35 watt-hours per kilogram, nickel-cadmium about 52; today's
+best lithium-ion cells reach 265, five times lead acid. Every new electric car carries lithium-ion,
+in two families, and a third is arriving.
 
-NMC has a layered oxide cathode of nickel, manganese and cobalt. It stores the most energy per
-kilogram, and it is charged to 4.2 volts. LFP has a lithium iron phosphate cathode. It stores less,
-costs less, is charged to only 3.6 volts, and its voltage hardly changes over most of its charge.
-Keep that last property in mind: in section 03 it makes the BMS's job much harder. Sodium-ion
-swaps lithium for sodium, a far more common element, and its first cells are only now in cars. Its
-best cells already store 175 watt-hours per kilogram against LFP's 205, so it is aimed squarely at
-LFP's market: cheap cars and storage, where the price per kilowatt-hour matters more than the
-mass.
+NMC has a layered nickel-manganese-cobalt oxide cathode: the most energy per kilogram, charged to
+4.2 volts. LFP has an iron phosphate cathode: it stores less, costs less, is charged to only 3.6
+volts, and its voltage hardly changes over most of its charge. Keep that in mind: in section 03 it
+makes the BMS's job much harder. Sodium-ion swaps lithium for a far more common element; its best
+cells store 175 watt-hours per kilogram against LFP's 205, aimed at LFP's market.
 
-On the right, the market, from the International Energy Agency's 2026 outlook. In 2025, LFP was
-over 55 percent of the EV batteries deployed worldwide, up from nearly 50 percent the year before.
-The IEA counts by the battery capacity of the new electric cars registered. In the EU, though, LFP
-was only just over a tenth of demand, so Europe is still a nickel market; in the US its share almost
-halved in 2025.
-
-The range to keep in mind for lithium-ion as a whole: the IEA puts today's cells between about 90
-and 300 watt-hours per kilogram, and LFP conventionally 20 to 30 percent below the high-nickel
-cells. The best of each are on the next slide.
+On the right, the market, from the IEA's 2026 outlook. In 2025 LFP was over 55 percent of the EV
+batteries deployed worldwide, up from nearly 50 the year before. In the EU only just over a tenth:
+Europe is still a nickel market. For lithium-ion as a whole, the IEA puts today's cells between
+about 90 and 300 watt-hours per kilogram.
 
 *[ask]* The world deployed 1.2 terawatt-hours of EV batteries in 2025. How many 40 kilowatt-hour
-Leaf packs is that? *[pause]* 1.2 billion kilowatt-hours over 40: thirty million packs, in one year.
+Leaf packs is that? *[pause]* Thirty million, in one year.
 
-So LFP has taken half the world while storing less per kilogram. The next slide puts the three
-chemistries side by side and shows why.
+So LFP has taken half the world while storing less per kilogram. The next slide shows why.
 -->
 
 ---
@@ -131,29 +348,23 @@ pack price published there.</div>
 The one chart to take from this section. *[show figure]* Left, what the best cell of each chemistry
 stores per kilogram; right, what a pack cost on average in 2025.
 
-*[ask]* Look at the two panels and tell me: LFP stores less per kilogram than NMC. Why is it
-now over half of the EV batteries the world deploys? *[pause]*
+*[ask]* LFP stores less per kilogram than NMC. Why is it now over half of the EV batteries the world
+deploys? *[pause]*
 
-The answer is the second pair of numbers. The best LFP cells store 205 watt-hours per kilogram
-against NMC's 265, and the IEA says an LFP pack is about one-fifth lighter on energy than an NMC
-pack. But an LFP pack cost 81 dollars per kilowatt-hour on average in 2025, against 128 for NMC:
-about two-thirds of the price. For a cheap car or a bus, a quarter more battery mass is a good trade for
-a third off its price. That is why, in 2025, LFP was over 55 percent of the EV batteries deployed
-worldwide.
-
-Sodium-ion reaches up to 175 per kilogram at cell level. The empty place in the price panel says
-that our sources give no price for it, and no pack figure or charge voltage either: the chemistry is
-that new.
+The second pair of numbers. The best LFP cells store 205 watt-hours per kilogram against NMC's 265,
+and an LFP pack is about one-fifth lighter on energy. But it cost 81 dollars per kilowatt-hour in
+2025 against 128: about two-thirds of the price. For a cheap car or a bus, a quarter more battery
+mass is a good trade for a third off the price. Sodium-ion reaches up to 175 per kilogram at cell level,
+but our sources give no price, pack figure or charge voltage for it yet: it is that new.
 
 Read the cell figures as best in class, not fleet averages: a car built today with LFP may carry
 cells well below 205.
 
-The charge voltage on the right is the one for tonight. An NMC cell is charged up to 4.20 volts, an LFP cell up to 3.6.
-Section 04 starts from exactly that limit.
+The charge voltage on the right is the one for tonight: NMC up to 4.20 volts, LFP up to 3.6. Section
+04 starts from exactly that limit.
 
-The last line on the right gives the scale of a real pack. The 2018 Leaf's 40 kilowatt-hour pack weighs
-303 kilograms, about 132 watt-hours per kilogram: half the best NMC cell. The other half goes to the
-casing, the cooling, the wiring and the electronics, and to 2018 cells rather than 2026 ones.
+And the scale of a real pack: the Leaf's 132 watt-hours per kilogram is half the best NMC cell. The
+other half is casing, cooling, wiring and electronics, and 2018 cells rather than 2026 ones.
 -->
 
 ---
@@ -185,41 +396,30 @@ pack split chart.</div>
 </div>
 
 <!--
-Lecture 4 showed this price curve once; here it is split between the cells and the rest of the
-pack. Across, the years 2013 to 2025. Up, the average pack price in dollars per kilowatt-hour, every
-year in 2025 dollars, so the bars compare directly. Each bar is split in two: the cells, and the
-rest of the pack, meaning the casing, the cooling, the wiring and the electronics.
+Lecture 4 showed this price curve once; here it is split into the cells and the rest of the pack,
+every year in 2025 dollars.
 
-*[show figure]* In 2013 a pack cost 827 dollars per kilowatt-hour, 568 of it cells. In 2025 it cost
-108, of which 74 is cells. That is an eighth of the 2013 price. The fall was not smooth: 2022 is the
-one year the bar went up. And notice the split: the rest of the pack is about a third of the price
-in both 2013 and 2025. The rest of the pack got cheaper as fast as the cells did.
+*[show figure]* In 2013 a pack cost 827 dollars per kilowatt-hour, 568 of it cells. In 2025, 108, of
+which 74 is cells: an eighth of the 2013 price. 2022 is the one year it went up. The rest of the
+pack stayed about a third of the price throughout: it got cheaper as fast as the cells did.
+These are averages over everything BloombergNEF surveyed, cars, buses, two-wheelers and storage;
+battery-electric car packs alone were 99 dollars.
 
-These are averages over everything BloombergNEF surveyed: cars, buses, two-wheelers and stationary
-storage. Battery-electric car packs alone were the cheapest transport segment, at 99 dollars.
+*[ask]* At 99 dollars, what does a 40 kilowatt-hour pack like the Leaf's cost to make today?
+*[pause]* About 4,000 dollars. At the 2013 average, over 30,000.
 
-*[ask]* At 99 dollars per kilowatt-hour, what does a 40 kilowatt-hour pack like the Leaf's cost to
-make today? *[pause]* About 4,000 dollars. At the 2013 average it would have cost over 30,000.
+One trap with price headlines: BloombergNEF restates its history in each year's dollars, so last
+year's 115 for 2024 is 118 here. Use one series; never mix press releases from different years.
 
-One trap when you read old price headlines: BloombergNEF restates its whole history in each year's
-dollars. Last year's survey announced 115 dollars for 2024; in this chart, in 2025 dollars, 2024 is
-118. Same survey, different dollar. Use one series, as the chart does, and never mix press releases
-from different years.
+Stationary storage packs averaged 70 dollars, 45 percent down in a year. That matters for charging:
+a station with a battery can draw a steady current from a weak grid connection.
 
-And the cheapest batteries of all are not in cars: stationary storage packs averaged 70 dollars per
-kilowatt-hour in 2025, 45 percent down in a year. That matters for charging too: a fast-charging
-station with a battery can draw a steady current from a weak grid connection.
+*[ask]* Put LFP instead of NMC into the Leaf's pack at 2025 prices. How much cheaper, and how much
+heavier? *[pause]* 47 dollars times 40, about 1,900 dollars; and 303 kilograms become about 380.
 
-*[ask]* Put the two chemistries into the Leaf's 40 kilowatt-hour pack at 2025 average prices. How
-much cheaper is LFP, and how much heavier? *[pause]* 47 dollars a kilowatt-hour less, times 40:
-about 1,900 dollars. And with a pack one-fifth lighter on energy, 303 kilograms become about 380:
-some 75 kilograms more. For a city car, many buyers would take the money.
+On the right: over the decade, energy density up about 60 percent and price down about 75; a
+European pack costs about 130, half again China's 84.
 
-Two more facts on the right. The IEA puts the last decade in one sentence: average pack energy
-density up about 60 percent, price down about 75. And place matters: a pack made in China cost 84
-dollars per kilowatt-hour; North America and Europe paid 44 and 56 percent more, which puts a
-European pack at about 130.
-
-So a cell is cheap, getting cheaper, and stores 200 to 265 watt-hours per kilogram at its best.
-What it does not have is the fixed voltage Lecture 4 gave it. That is section 02.
+So a cell is cheap, getting cheaper, and stores up to 265 watt-hours per kilogram. What it does not
+have is the fixed voltage Lecture 4 gave it. That is section 02.
 -->

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 300" width="640" height="300">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .wire { stroke: #16202c; stroke-width: 2.5; fill: none; }
+    .cell { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2.5; }
+    .t { font-size: 18px; font-weight: 600; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+    .blue { font-size: 17px; font-weight: 600; fill: #1f5fa8; }
+    .orange { font-size: 17px; font-weight: 600; fill: #a75d00; }
+    .brace { stroke: #a75d00; stroke-width: 2; fill: none; }
+    .braceb { stroke: #1f5fa8; stroke-width: 2; fill: none; }
+  </style>
+
+  <path class="wire" d="M40 150 H70 M150 150 H190 M270 150 H310 M470 150 H510 M590 150 H610"/>
+  <text x="390" y="157" text-anchor="middle" class="t">· · ·</text>
+  <path class="wire" d="M310 150 H350 M430 150 H470"/>
+
+  <path class="wire" d="M70 150 V115 H85 M70 150 V185 H85 M135 115 H150 V185 H135"/>
+  <rect class="cell" x="85" y="102" width="50" height="26" rx="3"/>
+  <rect class="cell" x="85" y="172" width="50" height="26" rx="3"/>
+  <path class="wire" d="M190 150 V115 H205 M190 150 V185 H205 M255 115 H270 V185 H255"/>
+  <rect class="cell" x="205" y="102" width="50" height="26" rx="3"/>
+  <rect class="cell" x="205" y="172" width="50" height="26" rx="3"/>
+  <path class="wire" d="M510 150 V115 H525 M510 150 V185 H525 M575 115 H590 V185 H575"/>
+  <rect class="cell" x="525" y="102" width="50" height="26" rx="3"/>
+  <rect class="cell" x="525" y="172" width="50" height="26" rx="3"/>
+
+  <text x="110" y="92" text-anchor="middle" class="lbl">1</text>
+  <text x="230" y="92" text-anchor="middle" class="lbl">2</text>
+  <text x="550" y="92" text-anchor="middle" class="lbl">96</text>
+  <text x="26" y="156" text-anchor="middle" class="t">+</text>
+  <text x="624" y="156" text-anchor="middle" class="t">−</text>
+
+  <path class="braceb" d="M60 102 h-6 v96 h6"/>
+  <text x="110" y="226" text-anchor="middle" class="blue">2 in parallel</text>
+  <text x="110" y="246" text-anchor="middle" class="blue">add amp-hours</text>
+  <text x="110" y="266" text-anchor="middle" class="lbl">2 × 56 Ah = 113 Ah</text>
+
+  <path class="brace" d="M70 60 v-8 H590 v8"/>
+  <text x="330" y="36" text-anchor="middle" class="orange">96 in series add volts: 96 × 3.65 V = 350 V</text>
+
+  <text x="420" y="236" text-anchor="middle" class="t">E = N<tspan baseline-shift="sub" font-size="13">s</tspan> · N<tspan baseline-shift="sub" font-size="13">p</tspan> · V<tspan baseline-shift="sub" font-size="13">cell</tspan> · Q<tspan baseline-shift="sub" font-size="13">cell</tspan></text>
+  <text x="420" y="262" text-anchor="middle" class="lbl">= 350 V × 113 Ah ≈ 40 kWh (Leaf, 96s2p, 192 cells)</text>
+</svg>

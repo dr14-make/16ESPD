@@ -12,6 +12,7 @@ The design document for the extra session that closes the electric and hybrid bl
 | `research_notes/Electric and hybrid vehicles/teaching_materials.md` §3 | OCV(SoC), Leaf pack resistance |
 | `research_notes/Electric and hybrid vehicles/charging.md` (new) | charging physics, curves, standards, network |
 | `research_notes/Electric and hybrid vehicles/hydrogen.md` (new) | stations, fueling protocol, FCEVs, efficiency chain |
+| `research_notes/Electric and hybrid vehicles/battery-terms.md` (new) | cell and pack layouts, C-rate, SoH, cycle and calendar ageing, Euro 7 durability |
 | `research_notes/Electric and hybrid vehicles/pem-polarization.md` (new) | the polarization curve for the slide, Mirai comparison, Faraday |
 | `research_notes/Electric and hybrid vehicles/bms.md` (new) | Thevenin parameters, SoC drift, balancing, safety limits |
 | `research_notes/Electric and hybrid vehicles/energy-prices-cz.md` (new) | Czech prices and cost per 100 km |
@@ -46,7 +47,7 @@ the car but long and lossy before it.
 | # | Section | Content | Model / figure |
 |---|---|---|---|
 | 00 | Front matter | where this sits after L4 and L5, what is a take-home | — |
-| 01 | Cells and chemistries | deck 8 tour cut to what is on the road now: LFP vs NMC, sodium-ion; specific energy and cost today | table, prices |
+| 01 | Cells and chemistries | the battery's terms on the Leaf pack (capacity, nominal voltage, gross vs usable, specific energy and power), C-rate, peak vs continuous power, cell to pack, SoC/DoD/SoH and ageing; then deck 8 tour cut to what is on the road now: LFP vs NMC, sodium-ion; specific energy and cost today | terms table, cell-to-pack diagram, ageing bars, prices |
 | 02 | The Thevenin cell | OCV(SoC), R0, one RC pair; pulse response; what it fixes in L4's battery | formula plot |
 | 03 | The BMS | SoC by coulomb counting and its drift; OCV correction; cell imbalance and passive balancing; limits (temperature, current, voltage) | diagrams |
 | 04 | Charging | CC-CV at the cell; real DC curves (Leaf CHAdeMO with rapidgate, 400 V, 800 V); modes and connectors (Type 2, CCS2, NACS, MCS); AC vs DC losses; ISO 15118 and V2G; network in CZ/EU and AFIR | CC-CV formula plot, measured curves redrawn |
@@ -62,21 +63,21 @@ The dq PMSM model and the stepped gearbox are dropped from this deck; they move 
 | # | Section | 3 h | 90 min | What the cut keeps |
 |---|---|---|---|---|
 | 00 | Front matter | 5 | 3 | one slide: where this sits after L4 and L5 |
-| 01 | Cells and chemistries | 15 | 5 | the comparison table only (LFP, NMC, sodium-ion, cost) |
-| 02 | The Thevenin cell | 15 | 5 | the circuit and the pulse-response plot |
-| 03 | The BMS | 15 | 7 | SoC drift and its OCV reset; balancing as one picture |
+| 01 | Cells and chemistries | 22 | 10 | the terms table, C-rate, and the comparison table (LFP, NMC, sodium-ion, cost) |
+| 02 | The Thevenin cell | 12 | 4 | the circuit and the pulse-response plot |
+| 03 | The BMS | 12 | 5 | SoC drift and its OCV reset; balancing as one picture |
 | 04 | Charging | 40 | 25 | CC-CV, the three measured curves, losses, 400 V vs 800 V, CZ network; drops connector history, ISO 15118 detail, degradation |
 | — | Break | 15 | — | |
-| 05 | Fuel cells | 20 | 10 | polarization curve and the stack; drops chemistry types and thermal detail |
+| 05 | Fuel cells | 19 | 9 | polarization curve and the stack; drops chemistry types and thermal detail |
 | 06 | Hydrogen | 35 | 20 | fueling at 700 bar, station chain, counts and closures, price; drops storage alternatives (hydrides, chemical) |
-| 07 | The fuel-cell car | 15 | 10 | Mirai as a series hybrid, the efficiency chain BEV vs FCEV |
+| 07 | The fuel-cell car | 15 | 9 | Mirai as a series hybrid, the efficiency chain BEV vs FCEV |
 | 08 | Wrap-up | 5 | 5 | |
 | | **Total** | **180** | **90** | |
 
 The cut is not a second deck. Each slide the 90-minute version skips is marked in its frontmatter,
 so the same source builds both; skipped slides stay in the handout. The cut protects charging and
 hydrogen, the topics this session exists for, and takes its time from the battery sections, which
-recall Lecture 4.
+recall Lecture 4. Section 01 opens with the battery's terms; 02 and 03 give up time for them.
 
 ## Settled decisions
 

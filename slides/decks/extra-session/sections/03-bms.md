@@ -17,15 +17,13 @@ imbalance and passive balancing, and the limits the battery management system en
 <div class="caption">BMS cell board, MGM compro (CZ), cropped · Drazny, CC BY-SA 4.0</div>
 
 <!--
-The Thevenin cell says what a cell does. The BMS, the battery management system, is the part of the
-car that has to know it, without a fuel gauge: it can measure only voltage, current and temperature.
-And every limit a charger obeys, how much current and up to which voltage, comes from the BMS. So
-this section is the bridge from the cell to the plug: how the BMS counts the charge, how it corrects
-the count, and how it keeps 96 cells in step.
+The Thevenin cell says what a cell does. The BMS, the battery management system, has to know it
+with only voltage, current and temperature to measure. Every limit a charger obeys comes from the
+BMS. So this section is the bridge from the cell to the plug: how the BMS counts the charge,
+corrects the count, and keeps 96 cells in step.
 
-*[show photo]* A BMS cell board from a Czech maker, MGM compro: it measures a module's cells and
-balances them; the two transistors with heat tabs on the right edge are the bleed switches of the
-balancing slide. Photograph by the user Drazny, Wikimedia Commons.
+*[show photo]* A BMS cell board from the Czech maker MGM compro; the two transistors on the right
+edge are the bleed switches of the balancing slide. Photograph by Drazny, Wikimedia Commons.
 -->
 
 ---
@@ -127,18 +125,15 @@ Zero-mean 10 mA noise on a 1.5 Ah cell: **0.054 %** after 24 h.
 </div>
 
 <!--
-The first job: the state of charge. Your Lecture 4 model counted it: start at SoC0 and subtract the
-integral of the current over Q nom. That is coulomb counting, and every BMS does it. But the integral
-integrates its errors too. A sensor offset grows linearly with time; a wrong starting value is
-carried forever; and as the pack ages, a counter still dividing by the new capacity reads high.
+The first job: the state of charge. Lecture 4's model counted it, and so does every BMS. But the
+integral integrates its errors too: a sensor offset grows with time, a wrong start is carried
+forever, and an aged pack makes the count read high.
 
-*[ask]* A current sensor reads 50 milliamperes high, always, on a 33 ampere-hour Leaf cell. China's
-national BMS standard, GB/T 38661, allows 5 percent error. How long until you are 5 percent off?
-Thirty seconds, on paper. *[pause]* 50 milliamperes for a day is 1.2 ampere-hours, 3.6 percent of the
-cell. So 5 percent in about 1.4 days: the straight line in the figure.
+*[ask]* A current sensor reads 50 milliamperes high on a 33 ampere-hour Leaf cell. The Chinese
+standard allows 5 percent error. How long until you are 5 percent off? *[pause]* 50 milliamperes for
+a day is 1.2 ampere-hours, 3.6 percent. So about 1.4 days: the straight line.
 
-The thin band on the zero line is noise. It averages out; an offset never does. So the count needs a
-second, independent measurement to reset it: the vertical dashed lines, and the next slide.
+Noise averages out; an offset never does. The count needs a second measurement to reset it.
 -->
 
 ---
@@ -179,27 +174,17 @@ impedance model **≈ 1 %**. GB/T 38661 allows **≤ 5 %**.
 </div>
 
 <!--
-The second measurement is the cell's own voltage. *[show figure]* The solid line is the NMC cell's
-open-circuit voltage against its charge, the curve of section 02's cell. After the car has stood for a
-while, the RC pair
-has relaxed, v1 is zero, and the terminal voltage equals the OCV. And the OCV is a known curve of the
-charge: for an NMC cell about 3.3 volts per cell at 10 percent, 3.75 at half, 4.1 at 90. Read the
-voltage, look up the charge, reset the counter: no memory of past errors.
+The second measurement is the cell's own voltage. *[show figure]* After the car has stood, the RC
+pair has relaxed and the terminal voltage is the OCV, a known curve of the charge. Read the voltage,
+look up the charge, reset the counter.
 
-It works where the curve is steep: from 30 to 70 percent the NMC cell rises from 3.581 to 3.948
-volts, about 9 millivolts per percent of charge.
+It works where the curve is steep: about 9 millivolts per percent on NMC between 30 and 70 percent.
 
-*[ask]* An LFP cell's curve is about four times flatter. Take a 10 millivolt error, what the Chinese
-standard allows. What does it cost in charge on each chemistry? *[pause]* On NMC, 1.7 percent. On
-LFP, 6.8: more than the whole 5 percent allowance, from one reading. An LFP car learns little from
-its voltage in the middle of the range.
+*[ask]* LFP's curve is about four times flatter. What does a 10 millivolt error cost on each?
+*[pause]* 1.7 percent on NMC; 6.8 on LFP, more than the whole allowance from one reading.
 
-The rest must be long: the US test manual waits an hour, or until the voltage moves under 5
-millivolts an hour. So the reset happens after the car has been parked, not at a traffic light.
-
-Does it help? In a Texas Instruments bench test, counting alone peaked at about 6 percent error;
-with voltage corrections, about 1. Kalman filters go further: they run the Thevenin cell beside the
-count and correct it continuously.
+The rest must last about an hour, so the reset happens while parked. In a TI bench test, counting
+alone peaked at 6 percent error; with voltage corrections, about 1.
 -->
 
 ---
@@ -238,23 +223,20 @@ derived (<code>bms.md</code> §3)</div>
 </div>
 
 <!--
-The third job. In series every cell carries the same current, but no two cells are the same: 1100
-fresh LFP cells measured by Rumpf and colleagues varied 0.28 percent in capacity, and aging widens
-that. The numbers in the diagram are illustrative.
+The third job. In series every cell carries the same current, but no two cells are equal: even fresh
+LFP cells varied 0.28 percent in capacity, and aging widens that.
 
-*[show figure]* The string is only as good as its extreme cells. Charging, the fullest cell hits the
-voltage limit first and the charge stops. Discharging, the emptiest hits the cutoff first.
+*[show figure]* The fullest cell stops the charge; the emptiest stops the discharge. Passive
+balancing bleeds the fullest cells through a resistor near the top of the charge.
 
-Passive balancing is the simple fix: a resistor and a switch across each cell. Near the top of the
-charge the BMS bleeds the fullest cells as heat until the others catch up. The monitoring chips have
-the switches built in: 240 milliamperes on TI's, 300 on NXP's.
+*[ask]* How long to bleed 1 percent of a 33 ampere-hour cell at 240 milliamperes? *[pause]* 1.4
+hours, and almost a watt of heat per cell. Balancing is slow; it happens on the charger.
 
-*[ask]* How long to bleed 1 percent of a 33 ampere-hour cell at 240 milliamperes? *[pause]* 0.33 over
-0.24: 1.4 hours, and almost a watt of heat per cell. So balancing is slow, and happens while the car
-sits on its charger.
+*[ask]* Back to section 01's question: which chemistry for the city bus? *[pause]* LFP. It is cheaper
+per kilowatt-hour and the bus has room for the extra mass. Its price is the flat voltage curve: a
+harder job for the BMS, as we have just seen.
 
-So the BMS knows each cell's charge to within a few percent and keeps them in step. What it does with
-that is enforce limits, and those limits are what a fast charger has to obey.
+What the BMS does with all this is enforce limits, and those limits are what a fast charger obeys.
 -->
 
 ---
@@ -300,9 +282,7 @@ And thermal runaway, the reason for all the others. *[show figure]* Ohneseit and
 198. The LFP cell started at 124 and ran away at 256: about 40 degrees later to start, nearly
 60 later to run away.
 
-*[ask]* Back to the question from section 01: which chemistry for the city bus? *[pause]* LFP. It is
-cheaper per kilowatt-hour, the bus has room for the extra mass, and it starts heating itself
-about 40 degrees later. The price is the flat voltage curve of the last slides: a harder job for the BMS.
+One more reason LFP suits the bus: it starts heating itself about 40 degrees later.
 
 The power row is a link back: Idaho measured 80.5 kilowatts of charge for 10 seconds on the 2013
 pack, the regen ceiling you used in Lecture 4.

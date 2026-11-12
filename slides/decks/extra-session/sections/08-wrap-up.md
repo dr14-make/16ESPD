@@ -41,10 +41,9 @@ Back to the sentence on the first slide, and to your guesses. How fast does the 
 and what does it cost to get it there? Here are the two ways side by side.
 
 The nozzle wins on time: about three minutes against 18 to 43, because a tank has no CV phase and
-no rapidgate. The plug wins everywhere else. At home it costs a third of the Mirai per 100
-kilometers or less. It needs a third of the electricity from the power plant. And there are seven
-and a half thousand places to plug in against two nozzles. The comparison is not perfectly fair, a
-Mirai is a larger car of nearly two tonnes, but no row is close.
+no rapidgate. The plug wins everywhere else: at home a third of the Mirai's cost per 100 kilometers
+or less, a third of the electricity, and seven and a half thousand places to plug in against two
+nozzles. A Mirai is a larger car, but no row is close.
 
 So for a car the battery has won, and the fuel-cell car's one advantage, the three-minute fill, is
 the thing 800 volt charging keeps closing in on. Where the fill time matters more than the
@@ -59,8 +58,8 @@ routeAlias: session-summary
 
 ## Summary of the session
 
-- **01** LFP is over half of EV batteries: cheaper ($81 vs $128/kWh), but stores less per
-  kilogram (205 vs 265 Wh/kg best cell).
+- **01** the terms: C-rate, series and parallel, gross vs usable, SoH; LFP is over half of EV
+  batteries: cheaper ($81 vs $128/kWh), stores less (205 vs 265 Wh/kg best cell).
 - **02** the Thevenin cell: OCV(SoC), *R*₀ at once, *R*₁*C*₁ slowly — and SoC can no longer pass
   zero unnoticed.
 - **03** the BMS counts charge, resets the count from the OCV after a rest, and bleeds the
@@ -103,14 +102,13 @@ routeAlias: session-summary
 </div>
 
 <!--
-The session in seven lines; read them on the slide, I will only pull out the thread. The strip at
-the bottom is one picture from each section, to find it again in the handout.
+The session in seven lines; I will only pull out the thread.
 
-The first four lines are the plug: chemistry sets the price and the voltage ceiling; the Thevenin
-cell gives the voltage meaning; the BMS reads it, resets its count, and bleeds the fullest cells; and
-the charger obeys the BMS, which is why the last fifth is slow and why heat, not the peak, sets the
-time. The last three are the nozzle: efficient at light load, filled in three minutes with gas
-compressed and chilled to minus 40, and 26 percent from power plant to wheel against the battery car's 69.
+The first four lines are the plug: the terms and the chemistry set the price and the voltage
+ceiling; the Thevenin cell gives the voltage meaning; the BMS reads it, resets its count, and bleeds
+the fullest cells; and the charger obeys the BMS, which is why the last fifth is slow and why heat
+sets the time. The last three are the nozzle: efficient at light load, filled in three minutes with
+gas chilled to minus 40, and 26 percent from power plant to wheel against the battery car's 69.
 
 Energy on board decides what the car is: how fast it goes back in, and what it costs to get it
 there. That is the sentence we started with.
@@ -208,7 +206,6 @@ public domain · Mirai gen 2, Herten bus · Icke68746, CC0 · XCIENT · JoachimK
 
 <!--
 The sources behind tonight's numbers, for reference. Every number on a slide carries its source tag,
-and the research notes give the full citation and how firm it is. Where a number rests on a press
-report, the slide says so. The photo credits at the bottom name each photograph's author and
-license; every photograph is from Wikimedia Commons.
+and the research notes give the full citation and how firm it is. Every photograph is from Wikimedia
+Commons, credited at the bottom.
 -->

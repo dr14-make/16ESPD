@@ -182,9 +182,8 @@ verified · Leaf: <code>energy-prices-cz.md</code> · 46.0 and 2.7: derived</div
 
 <!--
 The decisive comparison. *[show figure]* The figure follows 100 units of renewable electricity to the
-wheel, step by step, for a battery car and a fuel-cell car. It is redrawn from an Agora Energiewende
-slide; the totals and the step efficiencies are printed on their slide, and the values in between are
-multiplied out.
+wheel, step by step, for a battery car and a fuel-cell car, redrawn from an Agora Energiewende
+slide.
 
 The battery car, top. 95 percent survives the grid, 90 percent of that survives charging and
 discharging the battery, the motor passes 85, the gears 95. At the wheel: 69 percent. The fuel-cell
@@ -200,10 +199,8 @@ kilowatt-hours per kilogram; compression about 3.0, precooling 0.2. Times the Mi
 per 100 kilometers: 46 kilowatt-hours of electricity per 100 kilometers, before any transport or
 station losses. The Leaf takes 17.1 from the wall. Ratio: again about 2.7.
 
-Agora's own text rounds it to "about two and a half times". The two routes differ inside: DOE's
-electrolyzer is 61 percent efficient, Agora assumes 70; the bottom-up count leaves out the grid and
-transport. They land on the same answer anyway: the nozzle needs about 2.7 times the electricity. Agora's
-slide has a third bar, a combustion car on synthetic fuel made from electricity: 13 percent, about
+The two routes differ inside: DOE's electrolyzer is 61 percent efficient, Agora assumes 70. They
+land on the same answer anyway: about 2.7 times the electricity. Agora's slide has a third bar, a combustion car on synthetic fuel made from electricity: 13 percent, about
 five times the battery car's electricity.
 -->
 
@@ -315,9 +312,8 @@ in Czechia; and an energy cost above petrol at the last reported Prague price.
 Coop's deliveries in Switzerland, photographed by JoachimKohler-HB, and a fuel-cell bus refueling
 in Herten, by Icke68746, both on Wikimedia Commons. And that is where hydrogen is growing: trucks and buses
 use about 90 percent of the hydrogen on the road, and the growth comes from trucks in China. Even
-there it is not settled. Daimler pushed series production of its hydrogen truck to the early 2030s,
-and Ostrava's recent bus orders are battery-electric, as reported in the press. AFIR's stations, for
-their part, must serve heavy vehicles too.
+there it is not settled: Daimler pushed series production of its hydrogen truck to the early 2030s,
+and Ostrava's recent bus orders are battery-electric.
 
 So we have every number we need to answer the question from the first slide. Next slide.
 -->

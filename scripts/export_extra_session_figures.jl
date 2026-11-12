@@ -629,6 +629,34 @@ function degradation_plot()
     return plot(p1, p2; layout = grid(1, 2; widths = [0.58, 0.42]), size = (1100, 520))
 end
 
+function ageing_plot()
+    rows = read_table("ageing_nmc.csv")
+    cyc = filter(r -> r.study == "preger", rows)
+    cal = filter(r -> r.study == "keil", rows)
+    p1 = plot(; title = "cycling, 25 °C (Preger 2020)", ylabel = "full cycles to 80 % capacity",
+        xticks = (1:3, String.(getfield.(cyc, :group))), xlabel = "SoC window",
+        xlims = (0.4, 3.6), ylims = (0, 2600), legend = :none)
+    for (k, r) in enumerate(cyc)
+        v = num(r.value)
+        c = [ORANGE, BLUE, GREEN][k]
+        plot!(p1, box(k - 0.32, k + 0.32, 0, v); color = c, linecolor = c)
+        annotate!(p1, k, v + 40, text("≈ $(thousands(v))", 13, :bottom))
+    end
+    p2 = plot(; title = "storage, 10 months (Keil 2016)", ylabel = "capacity lost [%]",
+        xticks = (1:2, ["25 °C", "50 °C"]), xlims = (0.4, 2.6), ylims = (0, 27),
+        legend = :topleft)
+    for (k, temp) in enumerate(["25 °C", "50 °C"]), (j, soc) in enumerate(["50 % SoC", "100 % SoC"])
+        r = only(filter(r -> r.condition == temp && r.group == soc, cal))
+        v = num(r.value)
+        c = j == 1 ? BLUE : ORANGE
+        x0 = k - 0.34 + (j - 1) * 0.35
+        plot!(p2, box(x0, x0 + 0.33, 0, v); color = c, linecolor = c,
+            label = k == 1 ? "stored at $soc" : "")
+        annotate!(p2, x0 + 0.165, v + 0.3, text("≈ $(r.value)", 13, :bottom))
+    end
+    return plot(p1, p2; layout = grid(1, 2; widths = [0.55, 0.45]), size = (1100, 480))
+end
+
 function fcev_sales_plot()
     rows = reverse(read_table("fcev_sales_2025.csv"))
     m = length(rows)
@@ -683,6 +711,7 @@ end
 const FIGURES = [
     "01-pack-price" => pack_price_plot,
     "01-chemistry" => chemistry_plot,
+    "01-ageing" => ageing_plot,
     "02-ocv-soc" => ocv_soc_plot,
     "02-pulse-response" => pulse_response_plot,
     "03-soc-drift" => soc_drift_plot,

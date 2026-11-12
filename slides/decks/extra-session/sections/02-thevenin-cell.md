@@ -16,14 +16,11 @@ the slow sag and the recovery after a current pulse.
 
 <!--
 Your Lecture 4 battery had one voltage, 350 volts, full or empty. But the charger, the BMS and the
-range display in a real car all read the cell's voltage to learn what is inside it. So the cell
-needs a voltage that means something: an open-circuit voltage that follows the state of charge,
-and a slow part that makes it lag behind the current. That is the Thevenin cell. We build it, and
-then watch what a current pulse does to it.
+range display all read the cell's voltage to learn what is inside it. So the cell needs a voltage
+that follows the state of charge, and a slow part that lags behind the current: the Thevenin cell.
 
-*[show photo]* A first-generation Leaf pack, opened: 48 modules of four cells, 192 cells in all, the
-pack your Lecture 4 model lumped into one source and one resistor. Photograph by Gereon Meyer,
-Wikimedia Commons.
+*[show photo]* A first-generation Leaf pack, opened: 192 cells your Lecture 4 model lumped into one
+source and one resistor.
 -->
 
 ---
@@ -70,27 +67,23 @@ skipInCut: true
 </div>
 
 <!--
-*[show figure]* Lecture 4's battery on the left of the drawing, tonight's cell on the right. The
-left one, with its three faults numbered. One: E does not move, so the model cannot
-tell a full pack from an empty one by its voltage. Two: the voltage drops only at the instant the
-current changes. A real cell keeps sagging for tens of seconds under a steady load, and recovers
-slowly afterwards. Three: nothing stops the state of charge at zero.
+*[show figure]* Lecture 4's battery, with its three faults numbered. One: E does not move, so the
+model cannot tell full from empty by its voltage. Two: the voltage drops only at the instant the
+current changes, while a real cell keeps sagging for tens of seconds and recovers slowly. Three:
+nothing stops the state of charge at zero.
 
 *[ask]* Your pack at 330 amperes ran to minus 0.54. What would a real pack have done long before
 that? *[pause]* Its voltage would have collapsed, and its BMS would have cut the current.
 
-On the right is the evidence. Idaho National Laboratory discharged a whole 2013 Leaf pack at 22
-amperes, about a third of its capacity per hour, and logged the voltage. These values are read
-off their figure, to about 3 volts. Full, the pack shows 400 volts. At 47 percent, 372. At 12
-percent, 347. At 3 percent it has collapsed to 296. These are loaded voltages; at rest each cell
-would sit about 0.03 volts higher.
+On the right, the evidence: Idaho National Laboratory discharged a whole 2013 Leaf pack at about a
+third of its capacity per hour, read off their figure to about 3 volts. Full, 400 volts. At 47
+percent, 372. At 12 percent, 347. At 3 percent, 296. Your Lecture 4 pack at 330 amperes passed zero
+after about 19 minutes and kept going; the real pack would have announced the end by collapsing by
+50 volts first.
 
-Your Lecture 4 pack at 330 amperes passed zero after about 19 minutes and kept going. On this row,
-the real pack would have announced the end by collapsing by 50 volts first.
-
-Read the row again: 28 volts lost between full and half, 25 between half and 12 percent, and then
-51 in the last nine percent. The voltage carries the charge, and near empty it carries it very
-loudly. The next slide plots it per cell.
+Read the row again: 28 volts lost between full and half, 25 between half and 12 percent, then 51 in
+the last nine percent. The voltage carries the charge, and near empty it carries it very loudly.
+The next slide plots it per cell.
 -->
 
 ---
@@ -133,27 +126,23 @@ skipInCut: true
 </div>
 
 <!--
-*[show figure]* The open-circuit voltage of one cell against its state of charge. Across: state of
-charge, empty on the left. Up: volts per cell. The solid line is an NMC 811 cell, the LG M50. Its
-curve is computed from a published model parameter set, so use it for the shape, not as a
-measurement. The second line is the Leaf's loaded voltage per cell from the last slide.
+*[show figure]* The open-circuit voltage of one cell against its state of charge. The solid line is
+an NMC 811 cell, computed from a published parameter set, so use it for the shape. The second line
+is the Leaf's loaded voltage per cell from the last slide.
 
 The table reads the solid line: 2.5 volts empty, 3.3 at 10 percent, 3.75 at half, 4.10 at 90, 4.2
-full. Between 10 and 90 percent the curve climbs steadily, about 0.8 volts. Below 10 percent there
-is a knee, and the voltage falls away. That knee is why the usable window stops at about 10
-percent. For the first-generation Leaf cell, Gao and colleagues give the window of 10 to 90
-percent as 3.2 to 4.1 volts. Their aged cells give more anchor points: 3.3 volts at about 10
-percent, 3.6 at about 20, 4.15 at about 92.
+full. Between 10 and 90 percent it climbs steadily, about 0.8 volts. Below 10 percent there is a
+knee, and the voltage falls away. That knee is why the usable window stops at about 10 percent; for
+the first-generation Leaf cell, Gao and colleagues give the 10 to 90 percent window as 3.2 to 4.1
+volts, and their aged cells add anchor points: 3.6 volts at about 20 percent, 4.15 at about 92.
 
 *[ask]* If you had to tell the state of charge from this voltage, where would you trust it, and
-where not? *[pause]* In the steep middle, yes: a few millivolts per percent. At the flat top and
-in the knee, much less.
+where not? *[pause]* In the steep middle, yes: a few millivolts per percent. At the flat top and in
+the knee, much less.
 
-Now the bottom line on the right. An LFP cell is much flatter. Nejad and colleagues' review marks
-the slope on their curves: 0.148 volts for an LFP cell against 0.583 for an NMC cell, about four
-times flatter. They do not say over which span of charge, so trust the ratio rather than the
-values. A curve four times flatter means a voltage reading four times less informative. Section 03
-shows what that costs the BMS.
+The bottom line on the right: an LFP cell is about four times flatter, 0.148 volts against 0.583 for
+NMC on Nejad's curves. Trust the ratio rather than the values. A curve four times flatter means a
+voltage reading four times less informative; section 03 shows what that costs the BMS.
 -->
 
 ---
@@ -193,22 +182,17 @@ $$
 </div>
 
 <!--
-The Thevenin cell, the standard equivalent circuit of a battery cell. A voltage source, the
-open-circuit voltage, now a function of the state of charge. In series, R0, as in your Lecture 4
-battery. And one resistor R1 in parallel with a capacitor C1.
+The Thevenin cell, the standard equivalent circuit. The OCV, now a function of state of charge. In
+series, R0, as in Lecture 4. And R1 in parallel with C1.
 
-The first formula: the terminal voltage is the OCV at the present charge, minus R0 i, minus v1, the
-voltage across the RC pair. The second: v1 is a first-order lag toward R1 times i, with time
-constant tau1 equal to R1 C1. The third is your coulomb counter, unchanged. R0 is the electrolyte,
-contacts and busbars, and acts at once; the RC pair lumps the slow processes at the electrodes.
+The terminal voltage is the OCV minus R0 i minus v1; v1 lags toward R1 i with time constant tau1, R1
+times C1. R0 acts at once; the RC pair lumps the slow processes at the electrodes.
 
-The numbers are a 2013 Leaf cell at about 60 percent, fitted to Oak Ridge's published pulse-test
-log: R0 1.60 milliohms, R1 1.34, tau1 25.7 seconds. Across the pulses tau1 comes out between 16 and
-29 seconds depending on the fit, so it is good to a few seconds.
+The numbers: a 2013 Leaf cell at about 60 percent, fitted to Oak Ridge's pulse-test log. R0 1.60
+milliohms, R1 1.34, tau1 25.7 seconds.
 
-Now scale it to your Lecture 4 pack, 96 in series and 2 in parallel: 77 milliohms at once, 141
-after half a minute. Idaho measured 0.136 to 0.145 ohm on a whole 2013 pack with 30-second pulses.
-Your 0.1 ohm sat between the instant and the slow value: a fair single number, but only one.
+Scaled to your Lecture 4 pack, 96 in series and 2 in parallel: 77 milliohms at once, 141 after half a
+minute. Idaho measured 0.136 to 0.145 ohm on a whole pack with 30-second pulses. Your 0.1 ohm sat between the two: a fair single number, but only one.
 -->
 
 ---
@@ -251,21 +235,16 @@ $$
 </div>
 
 <!--
-*[ask]* Before I show the trace: Lecture 4's model, given this cell's R0, drops 48 millivolts at
-once at 30 amperes and stays there. What does a real cell do in the next 30 seconds? *[pause]*
+*[ask]* Before I show the trace: Lecture 4's model drops 48 millivolts at once at 30 amperes and
+stays there. What does a real cell do in the next 30 seconds? *[pause]*
 
-*[show figure]* The standard pulse test from the US battery test manual: 30 seconds of discharge,
-40 of rest, 10 of regen. Top, the current; bottom, the voltage relative to the OCV; dashed, your
-Lecture 4 model.
+*[show figure]* The standard pulse test: 30 seconds of discharge, 40 of rest, 10 of regen. At
+switch-on, 48 millivolts at once, R0 times I. Then it keeps sagging, another 27.7 by 30 seconds:
+75.7 in all, against 75.9 measured. At switch-off it jumps back by 48, then creeps toward the OCV.
+That is how the parameters are measured: R0 from the step, R1 and tau1 from the tail.
 
-At switch-on the voltage drops 48 millivolts at once, R0 times I. Then it keeps sagging along the
-exponential, another 27.7 by 30 seconds: 75.7 in all, against 75.9 measured. At switch-off it jumps
-back by the same 48, then creeps toward the OCV with the same time constant. That is also how the
-parameters are measured: R0 from the step, R1 and tau1 from the tail.
-
-And the slow recovery is the point for the next section. After the current stops, the terminal
-voltage is not yet the open-circuit voltage. A BMS that wants to read the charge from the voltage
-has to wait. Section 03 is how long, and what it does meanwhile.
+After the current stops, the terminal voltage is not yet the OCV. A BMS that wants to read the
+charge from the voltage has to wait. Section 03 is how long.
 -->
 
 ---
@@ -291,24 +270,22 @@ skipInCut: true
 50 Ah cell, preprint, search summary (<code>teaching_materials.md</code> §3.3)</div>
 
 <!--
-The two models side by side: on the left Lecture 4's faults, in the middle how the Thevenin cell
-answers each, on the right what it still leaves out.
+The two models side by side: Lecture 4's faults, how the Thevenin cell answers each, and what it
+still leaves out.
 
-E fixed at 350 volts becomes an OCV read from a table against the state of charge. It still
-ignores hysteresis: the curve on charge sits a little above the curve on discharge, which is worst
-for LFP. The instant-only sag becomes R0 at once plus the RC pair slowly; more pairs, or a full
-diffusion model, would fit better. The state of charge running through zero is caught, because the
-voltage now collapses below 10 percent and reaches the Leaf cell's cutoff of 2.50 volts. In a car
-the BMS stops the current before that.
+E fixed at 350 volts becomes an OCV table against state of charge. It still ignores hysteresis: the
+charge curve sits a little above the discharge curve, worst for LFP. The instant-only sag becomes R0
+at once plus the RC pair slowly; more pairs, or a diffusion model, fit better. The state of charge
+running through zero is caught, because the voltage collapses below 10 percent and reaches the 2.50
+volt cutoff; in a car the BMS stops the current first.
 
-The resistance is still one number per part, but real resistance depends on temperature. The
-figure in the table, 50 to 60 percent over 15 to 35 degrees, is for a similar manganese cell, from
-a 2026 preprint we could not check, so take it as an indication. Cold makes every part of tonight
-slower; section 04 comes back to that.
+The resistance is still one number per part, but real resistance depends on temperature: 50 to 60
+percent over 15 to 35 degrees for a similar manganese cell, from a preprint we could not check, so
+take it as an indication. Cold makes everything tonight slower; section 04 comes back to that.
 
-*[ask]* And the last row: the pack is one cell times 96 in series and 2 in parallel. What does
-that assume about the 192 cells? *[pause]* That they are identical. They are not, and the BMS has
-to deal with that too.
+*[ask]* The last row: the pack is one cell times 96 in series and 2 in parallel. What does that
+assume about the 192 cells? *[pause]* That they are identical. They are not, and the BMS has to deal
+with that too.
 
 So the cell now has a voltage that tells the truth, slowly. Section 03 is the electronics that
 listen to it.

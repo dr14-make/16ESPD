@@ -39,22 +39,17 @@ presenter mode from the nav bar, bottom left
 
 <!--
 Welcome to the extra session, the last one of the electric and hybrid block. Tonight is theory
-only: no build, no Dyad model, and four exercises to take home at the end.
+only, with four exercises to take home.
 
-*[ask]* First, a show of hands. How long does it take to fill a hydrogen car? Under five minutes?
-Under ten? *[pause]* And a Nissan Leaf, 10 to 80 percent on a fast charger: a quarter of an hour?
-Half an hour? An hour? *[pause]* Remember your guess; by the end we will have both numbers, measured.
+*[ask]* A show of hands. How long does it take to fill a hydrogen car? Under five minutes? Under
+ten? *[pause]* And a Nissan Leaf, 10 to 80 percent on a fast charger: a quarter of an hour? Half an
+hour? *[pause]* Remember your guess; by the end we will have both numbers, measured.
 
-The sentence on the slide is the whole session. Energy on board decides what the car is: how fast
-the energy goes back in, and what it costs to get it there. A battery car refills through a plug, a
-fuel-cell car through a nozzle. At the wheel both are electric; tonight is about everything before
-the wheel.
+The sentence on the slide is the whole session: how fast the energy goes back in, and what it costs
+to get it there. A battery car refills through a plug, a fuel-cell car through a nozzle.
 
-*[show photos]* The two cars of tonight, cut open. Left, a Leaf: the orange battery fills the whole
-floor. Right, a first Mirai: the stack under the front seats, the yellow hydrogen tanks under the
-rear seat. Both photographs are from Wikimedia Commons: the Leaf by the Norwegian EV Association,
-Norsk Elbilforening, the Mirai by the user Mariordo, at the São Paulo motor show.
--->
+*[show photos]* The two cars, cut open: the Leaf's battery fills the floor; the Mirai has its stack
+under the front seats and the hydrogen tanks under the rear seat. -->
 
 ---
 routeAlias: from-lectures-4-and-5
@@ -98,18 +93,14 @@ engine-generator.
 two ways to refill a car — a plug and a nozzle — and what each costs.</div>
 
 <!--
-Where we left the car. *[show figure]* On the left, your Lecture 4 battery, the left circuit: E minus R0 times i, with E fixed at 350
-volts and R0 at 0.1 ohm, and the state of charge counted from the current. Its faults: E never
-moves, so full and empty look the same; the voltage sags only at the instant the current changes;
-and nothing stops the state of charge at zero. At 330 amperes yours ended at minus 0.54. Section 02
-fixes all three, with the circuit on its right: the Thevenin cell.
+Where we left the car. *[show figure]* Your Lecture 4 battery: E minus R0 times i, E fixed at 350
+volts. E never moves, so full and empty look the same, and nothing stops the state of charge at zero:
+at 330 amperes yours ended at minus 0.54. Section 02 fixes that with the circuit on the right, the
+Thevenin cell.
 
-On the right, Lecture 5's series hybrid: only the motor drives the wheels, a source on the DC link
-feeds it, a battery buffers it. In section 07 a fuel-cell stack replaces the engine-generator, and
-that is the Toyota Mirai.
-
-Lecture 5 promised the stepped gearbox for tonight; it moves to a later lecture, with the more
-detailed motor model.
+On the right, Lecture 5's series hybrid. In section 07 a fuel-cell stack replaces the
+engine-generator, and that is the Toyota Mirai. The stepped gearbox Lecture 5 promised moves to a
+later lecture.
 
 And your Lecture 4 energy bill said "tank to wheel only: the electricity is made somewhere".
 Tonight we follow it back to the power plant.
@@ -126,14 +117,14 @@ skipInCut: true
 
 | # | Section | What it covers | 3 h | 90 min |
 |---|---|---|---:|---:|
-| <Link to="cells-and-chemistries">01</Link> | Cells and chemistries | LFP, NMC, sodium-ion; specific energy and cost today | 15 | 5 |
-| <Link to="thevenin-cell">02</Link> | The Thevenin cell | OCV(SoC), R₀, one RC pair; the pulse response | 15 | 5 |
-| <Link to="bms">03</Link> | The BMS | coulomb counting and its drift, the OCV reset, balancing, limits | 15 | 7 |
+| <Link to="cells-and-chemistries">01</Link> | Cells and chemistries | the battery terms: C-rate, cell to pack, SoC, DoD, SoH; LFP, NMC, sodium-ion; cost | 22 | 10 |
+| <Link to="thevenin-cell">02</Link> | The Thevenin cell | OCV(SoC), R₀, one RC pair; the pulse response | 12 | 4 |
+| <Link to="bms">03</Link> | The BMS | coulomb counting and its drift, the OCV reset, balancing, limits | 12 | 5 |
 | <Link to="charging">04</Link> | Charging | CC-CV, measured DC curves, 400 V vs 800 V, modes, losses, ISO 15118, the network | 40 | 25 |
 | — | Break | | 15 | — |
-| <Link to="fuel-cells">05</Link> | Fuel cells | the polarization curve, the stack, balance of plant | 20 | 10 |
+| <Link to="fuel-cells">05</Link> | Fuel cells | the polarization curve, the stack, balance of plant | 19 | 9 |
 | <Link to="hydrogen">06</Link> | Hydrogen | 700 bar storage and fueling, the station chain, counts, price, AFIR Art. 6 | 35 | 20 |
-| <Link to="fuel-cell-car">07</Link> | The fuel-cell car | a series hybrid with a different source; well-to-wheel against the BEV | 15 | 10 |
+| <Link to="fuel-cell-car">07</Link> | The fuel-cell car | a series hybrid with a different source; well-to-wheel against the BEV | 15 | 9 |
 | <Link to="wrap-up">08</Link> | Wrap-up | plug or nozzle, the summary, the take-home exercises | 5 | 5 |
 
 </div>
@@ -142,22 +133,17 @@ Not tonight: the stepped gearbox and the dq model of the motor, promised in Lect
 later lecture.
 
 <!--
-Here is the evening: eight sections, with a break after charging. The first column links to each
-section; the last two columns are minutes, for the full three hours and for the 90-minute version
-built from the same slides.
+The evening: eight sections, a break after charging; the last two columns are minutes for the full
+three hours and the 90-minute version.
 
-The first half is the plug. Section 01 is the cells on the road today. Section 02 gives the cell a
-voltage that follows its charge. Section 03 is the battery management system, the BMS, which has
-to know that charge without a fuel gauge. Section 04, the longest, is charging: why the last
-fifth is slow, why some cars charge twice as fast as others, what is lost, and how many chargers
-Czechia has.
+The first half is the plug. Section 01 gives the battery's terms and the cells on the road today.
+Section 02 gives the cell a voltage that follows its charge. Section 03 is the battery management
+system, which has to know that charge without a fuel gauge. Section 04, the longest, is charging:
+why the last fifth is slow, why some cars charge twice as fast as others, what is lost, and how many
+chargers Czechia has. After the break, the nozzle: the fuel cell, hydrogen from tank to
+station and price, and the fuel-cell car as Lecture 5's series hybrid, followed back to the power
+plant. Section 08 puts the plug and the nozzle side by side.
 
-After the break, the nozzle. Section 05 is the fuel cell and its one characteristic curve.
-Section 06 is the hydrogen: how it gets into a tank in three minutes, what a station needs to do
-that, how many stations there are, and what a kilogram costs. Section 07 puts the stack into
-Lecture 5's series hybrid and follows the electricity from the power plant to the wheel for both
-cars. Section 08 puts the plug and the nozzle side by side.
-
-For browsing on your own afterwards, the line on the cover: the arrow keys and the space bar move,
-O opens the overview, G jumps to a slide.
+For browsing on your own afterwards: the arrow keys and the space bar move, O opens the overview, G
+jumps to a slide.
 -->
