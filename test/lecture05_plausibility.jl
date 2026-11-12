@@ -356,6 +356,7 @@ end
         files = filter(f -> endswith(f, ".dyad"), readdir(folder; join = true))
         # Local and reference declarations are indexed by namespace.
         definitions = Dict{String,Any}()
+        connectors = Set{String}()
         function index_components(root, prefix; local_source)
             for (dir, _, names) in walkdir(root), name in names
                 endswith(name, ".dyad") || continue
@@ -363,6 +364,9 @@ end
                 source = read(file, String)
                 # relpath(root, root) is ".", not a namespace segment.
                 namespace = join([prefix; filter(x -> x != ".", splitpath(relpath(dir, root)))], ".")
+                for m in eachmatch(r"(?m)^connector (\w+)", code_only(source))
+                    push!(connectors, namespace * "." * m.captures[1])
+                end
                 for c in component_sections(source)
                     key = namespace * "." * c.name
                     # Analyses and functions are not members of the component type.
@@ -399,7 +403,9 @@ end
             Dict(m.captures[1] => m.captures[2] for m in
                 eachmatch(r"(?m)^\s*(\w+)\s*=\s*([\w.]+)\s*\(", text))
         end
+        member_cache = Dict{String,Dict{String,Tuple{String,String}}}()
         function members(key, seen = Set{String}())
+            haskey(member_cache, key) && return member_cache[key]
             key in seen && error("Cyclic component inheritance: $key")
             result = Dict{String,Tuple{String,String}}()
             for base in bases(key)
@@ -410,7 +416,7 @@ end
             for (name, type) in declarations(key)
                 result[name] = (type, key)
             end
-            result
+            member_cache[key] = result
         end
         roots = Set(key for (key, c) in definitions if c.local_source &&
             (startswith(key, "VehicleSystemsComponents.Lecture5.") ||
@@ -537,6 +543,11 @@ end
         end
         @test isempty(indirect_endpoints("self-check", "connect(port, child.port) # connect(a.b.c, d)\n"))
         @test length(indirect_endpoints("self-check", "\"λ\"\nconnect(a.b.c, d.e)\n")) == 1
+        function meta_of(text)
+            m = match(r"(?s)metadata (\{.*?\})\nend", text)
+            isnothing(m) ? nothing : JSON.parse(m.captures[1])
+        end
+        placement(links, name, kind) = get(get(get(get(links, name, Dict()), "Dyad", Dict()), "placement", Dict()), kind, nothing)
         endpoints = Tuple{String,Int,String}[]
         violations = Tuple{String,Int,String}[]
         orphans = Tuple{String,Int,String}[]
@@ -546,12 +557,12 @@ end
             append!(endpoints, indirect_endpoints(file, source))
             for component in component_sections(source)
                 text = component.text
-                meta = match(r"(?s)metadata (\{.*?\})\nend", text)
+                meta = meta_of(text)
                 isnothing(meta) && continue
-                links = JSON.parse(meta.captures[1])["_links"]
+                links = meta["_links"]
                 ports = [m.captures[1] for m in eachmatch(r"(?m)^\s*(\w+) = (?:RealInput|RealOutput|Spline|Pin|VehicleSystemsComponents.Vehicle.GasPort)\(", code_only(text))]
                 tags = Set(m.captures[1] for m in eachmatch(r"\{\^(\w+)\}", text))
-                line = count(==('\n'), source[1:component.offset + meta.offset - 1]) + 1
+                line = count(==('\n'), source[1:component.offset + findfirst("\nmetadata ", text)[1]]) + 1
                 for connection in eachmatch(r"connect\(([^)]*)\)\s*\{\^(\w+_wire)\}", code_only(text))
                     length(split(connection.captures[1], ',')) >= 3 || continue
                     tag = connection.captures[2]
@@ -564,7 +575,7 @@ end
                     "machine_command", "unused_pedal", "speed_command", "brakes",
                     "brake_product", "pedal_command", "pedal_gain", "field_command"))
                 for (key, link) in links
-                    box = get(get(get(link, "Dyad", Dict()), "placement", Dict()), "diagram", nothing)
+                    box = placement(links, key, "diagram")
                     isnothing(box) && continue
                     # Connector glyphs straddle the frame; their centers must lie on it.
                     coordinates = key in ports ? [(box[k*"1"] + box[k*"2"]) / 2 for k in ("x", "y")] :
@@ -581,10 +592,8 @@ end
                     key in tags || push!(orphans, (file, line, key))
                 end
                 for kind in ("icon", "diagram"), (i, a) in enumerate(ports), b in ports[i+1:end]
-                    pa = get(get(get(links, a, Dict()), "Dyad", Dict()), "placement", Dict())
-                    pb = get(get(get(links, b, Dict()), "Dyad", Dict()), "placement", Dict())
-                    haskey(pa, kind) && haskey(pb, kind) || continue
-                    aa, bb = pa[kind], pb[kind]
+                    aa, bb = placement(links, a, kind), placement(links, b, kind)
+                    (isnothing(aa) || isnothing(bb)) && continue
                     overlap = all(max(min(aa[k*"1"], aa[k*"2"]), min(bb[k*"1"], bb[k*"2"])) <=
                         min(max(aa[k*"1"], aa[k*"2"]), max(bb[k*"1"], bb[k*"2"])) for k in ("x", "y"))
                     overlap && push!(violations, (file, line, "$kind: $a intersects $b"))
@@ -601,25 +610,24 @@ end
         @test isempty(orphans)
 
         # Studio draws a component from its own metadata merged over its bases'.
-        function own_meta(key)
-            m = match(r"(?s)metadata (\{.*?\})\nend", definitions[key].text)
-            isnothing(m) ? Dict{String,Any}() : JSON.parse(m.captures[1])
-        end
+        own_meta(key) = something(meta_of(definitions[key].text), Dict{String,Any}())
+        meta_cache = Dict{String,Any}()
         function merged_meta(key)
-            links, labels = Dict{String,Any}(), nothing
-            for base in bases(key)
-                parent = resolve_type(base, key)
-                isnothing(parent) && continue
-                l, lab = merged_meta(parent)
-                merge!(links, l)
-                isnothing(lab) || (labels = lab)
+            get!(meta_cache, key) do
+                links, labels = Dict{String,Any}(), nothing
+                for base in bases(key)
+                    parent = resolve_type(base, key)
+                    isnothing(parent) && continue
+                    l, lab = merged_meta(parent)
+                    merge!(links, l)
+                    isnothing(lab) || (labels = lab)
+                end
+                meta = own_meta(key)
+                merge!(links, get(meta, "_links", Dict{String,Any}()))
+                lab = get(get(meta, "Dyad", Dict{String,Any}()), "labels", nothing)
+                (links, isnothing(lab) ? labels : lab)
             end
-            meta = own_meta(key)
-            merge!(links, get(meta, "_links", Dict{String,Any}()))
-            lab = get(get(meta, "Dyad", Dict{String,Any}()), "labels", nothing)
-            (links, isnothing(lab) ? labels : lab)
         end
-        placement(links, name, kind) = get(get(get(get(links, name, Dict()), "Dyad", Dict()), "placement", Dict()), kind, nothing)
         # Maps a point of a child's 0-1000 icon frame onto the parent canvas; a box with x1 > x2
         # or y1 > y2 is mirrored and "rot" turns it clockwise.
         function on_canvas(box, u, v)
@@ -629,11 +637,23 @@ end
             (box["x1"] + (box["x2"] - box["x1"]) * u / 1000, box["y1"] + (box["y2"] - box["y1"]) * v / 1000)
         end
         is_component(type, owner) = !isnothing(resolve_type(type, owner))
+        # Connectors the Dyad language defines; library connectors are indexed from source.
+        builtin_connectors = Set(("RealInput", "RealOutput", "BooleanInput", "BooleanOutput",
+            "IntegerInput", "IntegerOutput", "Spline", "Pin", "Frame", "Flange", "HeatPort"))
+        function is_connector(type, owner)
+            type in builtin_connectors && return true
+            namespace = split(definitions[owner].namespace, '.')
+            while true
+                join([namespace; type], ".") in connectors && return true
+                isempty(namespace) && return false
+                pop!(namespace)
+            end
+        end
         function canvas(key)
             links, _ = merged_meta(key)
-            decl = Dict(name => (type, owner) for (name, (type, owner)) in members(key))
             ports, blocks = Dict{String,Tuple{Float64,Float64}}(), Dict{String,Any}()
-            for (name, (type, owner)) in decl
+            unresolved = String[]
+            for (name, (type, owner)) in members(key)
                 box = placement(links, name, "diagram")
                 isnothing(box) && continue
                 if is_component(type, owner)
@@ -643,15 +663,20 @@ end
                         is_component(ptype, powner) && continue
                         icon = something(placement(child_links, port, "icon"), placement(child_links, port, "diagram"), Some(nothing))
                         isnothing(icon) && continue
+                        is_connector(ptype, powner) || (push!(unresolved, "$name.$port::$ptype"); continue)
                         ports[name * "." * port] = on_canvas(box, (icon["x1"] + icon["x2"]) / 2, (icon["y1"] + icon["y2"]) / 2)
                     end
-                    label_ys = [on_canvas(box, l["x"], l["y"])[2] for l in something(child_labels, [Dict("x" => 500, "y" => 1100)])]
+                    anchors = something(child_labels, [Dict("x" => 500, "y" => 1100)])
+                    label_ys = [on_canvas(box, l["x"], l["y"])[2] for l in anchors]
                     x1, x2 = minmax(box["x1"], box["x2"])
                     y1, y2 = minmax(box["y1"], box["y2"])
-                    # A label is about 16 units tall, centered on its anchor.
-                    blocks[name] = (x1, min(y1, minimum(label_ys) - 8), x2, max(y2, maximum(label_ys) + 8))
-                else
+                    # A label is about 16 units tall, centered on its anchor; no labels, no band.
+                    blocks[name] = isempty(label_ys) ? (x1, y1, x2, y2) :
+                        (x1, min(y1, minimum(label_ys) - 8), x2, max(y2, maximum(label_ys) + 8))
+                elseif is_connector(type, owner)
                     ports[name] = ((box["x1"] + box["x2"]) / 2, (box["y1"] + box["y2"]) / 2)
+                else
+                    push!(unresolved, "$name::$type")
                 end
             end
             wires = Tuple{String,Vector{Tuple{Float64,Float64}}}[]
@@ -661,56 +686,82 @@ end
                     parent = resolve_type(base, k)
                     isnothing(parent) || collect_connects(parent)
                 end
-                for c in eachmatch(r"connect\(([^)]*)\)\s*\{\^(\w+)\}", code_only(definitions[k].text))
+                # An untagged connect has no metadata and is drawn as one straight edge per target.
+                for c in eachmatch(r"connect\(([^)]*)\)(?:\s*\{\^(\w+)\})?", code_only(definitions[k].text))
                     ends = strip.(split(c.captures[1], ','))
-                    tag = c.captures[2]
+                    tag = something(c.captures[2], "untagged connect(" * c.captures[1] * ")")
                     dyad = get(get(links, tag, Dict()), "Dyad", Dict())
                     js = [(j["x"], j["y"]) for j in get(dyad, "junctions", [])]
                     append!(junctions, [(tag, x, y) for (x, y) in js])
                     point(i) = i < 0 ? js[-i] : get(ports, ends[i], nothing)
                     for edge in get(dyad, "edges", [Dict("S" => 1, "E" => i, "M" => []) for i in 2:length(ends)])
                         a, b = point(edge["S"]), point(edge["E"])
-                        (isnothing(a) || isnothing(b)) && continue
+                        if isnothing(a) || isnothing(b)
+                            push!(unresolved, "wire $tag: " * join(ends[[i for i in (edge["S"], edge["E"]) if i > 0]], " -> "))
+                            continue
+                        end
                         push!(wires, (tag, [a; [(m["x"], m["y"]) for m in edge["M"]]; b]))
                     end
                 end
             end
             collect_connects(key)
-            (; blocks, wires, junctions)
+            (; blocks, wires, junctions, unresolved)
         end
-        laid_out = ["Lecture5.P2WLTC", "Lecture5.P2OperatingLineWLTC", "Lecture5.P2HybridWLTC",
-            "HandsOn05.P2WLTC", "HandsOn05.P2OperatingLineWLTC", "HandsOn05.P2HybridWLTC",
-            "HandsOn05.Step1EngineWLTC", "HandsOn05.Step2OperatingLineWLTC", "HandsOn05.Step3HybridWLTC",
-            "Vehicle.P2Powertrain", "HandsOn05.P2Powertrain", "Vehicle.Engine.MappedEngine",
-            "Vehicle.Electric.DCMachine", "Lecture5.HybridPositionWLTC", "Lecture5.CoupledHybridWLTC",
-            "Lecture5.P1HybridWLTC", "Lecture5.OutputHybridWLTC", "Lecture5.P4HybridWLTC"]
-        outside, diagonals, crowded = String[], String[], String[]
-        for name in laid_out
-            view = canvas("VehicleSystemsComponents." * name)
-            @test !isempty(view.wires)
+        # Every Lecture 5 and Hands-on 05 component, and every local Vehicle component they place.
+        lecture = sort!([k for (k, c) in definitions if c.local_source &&
+            (startswith(k, "VehicleSystemsComponents.Lecture5.") || startswith(k, "VehicleSystemsComponents.HandsOn05."))])
+        placed = Set{String}()
+        for k in lecture, (_, (type, owner)) in members(k)
+            child = resolve_type(type, owner)
+            !isnothing(child) && definitions[child].local_source &&
+                startswith(child, "VehicleSystemsComponents.Vehicle.") && push!(placed, child)
+        end
+        laid_out = sort!(unique([lecture; collect(placed);
+            "VehicleSystemsComponents.Vehicle.Engine.MappedEngine"; "VehicleSystemsComponents.Vehicle.Electric.DCMachine"]))
+        @test length(laid_out) >= 60
+        # PlanarCar's canvas spans about 1700 by 1200 units with ports inside its multibody
+        # blocks; it needs a full redraw, so its findings are tracked as broken.
+        redraw = Set(["VehicleSystemsComponents.Vehicle.Planar.PlanarCar"])
+        outside, diagonals, crowded, unresolved = String[], String[], String[], String[]
+        pending = String[]
+        for key in laid_out
+            view = canvas(key)
+            name = replace(key, "VehicleSystemsComponents." => "")
+            append!(unresolved, ["$name $u" for u in view.unresolved])
+            found = String[]
             for (tag, path) in view.wires
                 for (x, y) in path[2:end-1]
-                    0 <= x <= 1000 && 0 <= y <= 1000 || push!(outside, "$name $tag bend ($x, $y)")
+                    0 <= x <= 1000 && 0 <= y <= 1000 || push!(found, "outside: $name $tag bend ($x, $y)")
                 end
                 for (p, q) in zip(path, path[2:end])
-                    abs(p[1] - q[1]) > 0.5 && abs(p[2] - q[2]) > 0.5 && push!(diagonals, "$name $tag $p -> $q")
+                    abs(p[1] - q[1]) > 0.5 && abs(p[2] - q[2]) > 0.5 && push!(found, "diagonal: $name $tag $p -> $q")
                 end
             end
             for (tag, x, y) in view.junctions
-                0 <= x <= 1000 && 0 <= y <= 1000 || push!(outside, "$name $tag junction ($x, $y)")
+                0 <= x <= 1000 && 0 <= y <= 1000 || push!(found, "outside: $name $tag junction ($x, $y)")
             end
             names = sort!(collect(keys(view.blocks)))
             for (i, a) in enumerate(names), b in names[i+1:end]
                 A, B = view.blocks[a], view.blocks[b]
-                A[1] < B[3] && B[1] < A[3] && A[2] < B[4] && B[2] < A[4] && push!(crowded, "$name: $a and $b")
+                A[1] < B[3] && B[1] < A[3] && A[2] < B[4] && B[2] < A[4] && push!(found, "crowded: $name: $a and $b")
+            end
+            if key in redraw
+                append!(pending, found)
+            else
+                append!(outside, filter(startswith("outside"), found))
+                append!(diagonals, filter(startswith("diagonal"), found))
+                append!(crowded, filter(startswith("crowded"), found))
             end
         end
+        isempty(unresolved) || @error "Canvas members or wires the audit could not resolve" unresolved
+        @test isempty(unresolved)
         isempty(outside) || @error "Canvas bend points or junctions outside the frame" outside
         @test isempty(outside)
         isempty(diagonals) || @error "Diagonal canvas wire segments" diagonals
         @test isempty(diagonals)
         isempty(crowded) || @error "Blocks overlapping another block or its label band" crowded
         @test isempty(crowded)
+        @test_broken isempty(pending)
     end
 
     @testset "HandsOn05 sources stay in sync" begin
