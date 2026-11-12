@@ -1,0 +1,8 @@
+# Emissions intensity of hydrogen production, kg CO2-eq per kg H2, IEA "Towards hydrogen
+# definitions based on their emissions intensity", April 2023 (hydrogen.md §5, verified). Ranges
+# as printed; grid electrolysis at the 2023 world-average 460 g CO2-eq/kWh and at the Swedish grid.
+route,lo,hi
+natural gas (SMR) without CCS,10,14
+coal gasification without CCS,22,26
+electrolysis on the world-average grid,24,24
+electrolysis on the Swedish grid,0.5,0.5

@@ -1,0 +1,11 @@
+# Energy cost per 100 km in Czechia, prices of 12 Nov 2026 unless dated (energy-prices-cz.md,
+# results table; all costs derived = consumption × price). Leaf 17.1 kWh/100 km WLTP at the
+# socket, Mirai 0.79 kg/100 km, petrol 5.22 L/100 km (Lecture 2 engine, WLTC). A row with lo < hi
+# is a range: Leaf DC between PRE 13.00 and ČEZ 16.90 CZK/kWh; Mirai between ORLEN's 278 CZK/kg
+# (2023, verified) and 499 CZK/kg (Jan 2024, secondary, the latest found).
+label,price,lo_czk,hi_czk
+Leaf at home: low tariff (D27d),3.514 CZK/kWh,60.1,60.1
+Leaf at home: average price,7.0108 CZK/kWh,119.9,119.9
+Leaf on public DC,13.00–16.90 CZK/kWh,222.3,289.0
+petrol car,42.98 CZK/L,224.4,224.4
+Mirai,278 (2023) – 499 (Jan 2024) CZK/kg,219.6,394.2

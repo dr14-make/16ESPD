@@ -6,10 +6,13 @@ Writes the extra session deck's figures into `slides/decks/extra-session/public/
 Figure names as arguments (e.g. `04-cc-cv`) write only those. Two kinds of figure, neither from a
 Dyad model, so none needs a notebook:
 
-- published data redrawn from the tables in `data/extra_session/` (pack prices, OCV, charging
-  curves, charging points, Mirai polarization points, the power-to-wheel chain);
+- published data redrawn from the tables in `data/extra_session/` (pack prices, chemistries,
+  OCV, runaway temperatures, charging curves, charging losses, degradation, charging points,
+  Mirai polarization points, hydrogen stations, FCEV sales and sizing, cost per 100 km, the
+  power-to-wheel chain, hydrogen emissions);
 - formula plots of the closed-form cell and stack models (pulse response, SoC drift, CC-CV,
-  polarization curve), with their parameters as constants below.
+  CV voltage budget, 400 V against 800 V, polarization curve), with their parameters as
+  constants below.
 
 Every value and its source is in `data/extra_session/README.md`, which points into
 `docs/research_notes/Electric and hybrid vehicles/`.
@@ -352,6 +355,10 @@ function polarization_plot()
     scatter!(p, column(mirai, :i_a_per_cm2), column(mirai, :v_cell); yerror = 0.014,
         color = RED, ms = 6, markerstrokecolor = RED, label = "2017 Mirai stack, ANL")
     annotate!(p, 2.18, 0.962, text("0.950 V", 12, :right, :bottom, GRAY))
+    # The curve's three shapes, as Larminie and Lowry annotate it (deck 8, slide 24).
+    annotate!(p, [(0.12, 0.600, text("rapid initial fall", 13, :left)),
+        (0.80, 0.505, text("fairly linear", 13, :left)),
+        (1.60, 0.300, text("falls faster", 13, :right))])
     # A second Plots axis does not survive the Kaleido export, and Plots drops annotations
     # outside the axes, so the η scale is drawn by hand inside a widened x range.
     plot!(p, [2.2, 2.2], [0, 1.0]; color = :black, lw = 1, label = "")
@@ -396,17 +403,305 @@ function efficiency_chain_plot()
         left_margin = 4Plots.mm)
 end
 
+function chemistry_plot()
+    rows = read_table("chemistry_iea_bnef.csv")
+    names = String.(getfield.(rows, :chemistry))
+    colors = [BLUE, ORANGE, GREEN]
+    n = length(names)
+    panel(title, ylabel, ymax) = plot(; title, ylabel, xticks = (1:n, names),
+        xlims = (0.4, n + 0.6), ylims = (0, ymax), legend = :none)
+    energy = panel("cell, best in class", "specific energy [Wh/kg]", 310)
+    price = panel("pack, all segments, 2025", "pack price [\$/kWh]", 150)
+    for (k, r) in enumerate(rows)
+        wh = num(r.cell_wh_per_kg)
+        plot!(energy, box(k - 0.32, k + 0.32, 0, wh); color = colors[k], linecolor = colors[k])
+        annotate!(energy, k, wh + 4, text("up to $(round(Int, wh))", 13, :bottom))
+        if isempty(r.pack_usd_per_kwh)
+            annotate!(price, k, 6, text("no price<br>in the source", 12, :bottom, GRAY))
+        else
+            usd = num(r.pack_usd_per_kwh)
+            plot!(price, box(k - 0.32, k + 0.32, 0, usd); color = colors[k],
+                linecolor = colors[k])
+            annotate!(price, k, usd + 2, text("$(round(Int, usd))", 13, :bottom))
+        end
+    end
+    return plot(energy, price; layout = grid(1, 2), size = (960, 520))
+end
+
+# Course Leaf pack at the end of CC (charging.md §1, computed): 96 series cells at 4.20 V,
+# 50 kW at ≈ 350 V gives 143 A through R_pack ≈ 0.1 Ω; C/20 of 66 A·h (2p) is 3.3 A.
+const CV_BUDGET = (; ceiling = 403.0, cells = 96, cases = [
+    ("end of CC<br>50 kW, 143 A", 14.0), ("C/20<br>3.3 A", 0.33)])
+
+function cv_budget_plot()
+    (; ceiling, cells, cases) = CV_BUDGET
+    y0 = 370.0
+    p = plot(; ylabel = "pack terminal voltage [V]", size = (760, 640), legend = :none,
+        xticks = (1:length(cases), first.(cases)), xlims = (0.3, length(cases) + 0.7),
+        ylims = (y0, 411), yticks = 370:10:410, grid = false)
+    for (k, (_, ir)) in enumerate(cases)
+        ocv = ceiling - ir
+        plot!(p, box(k - 0.3, k + 0.3, y0, ocv); color = BLUE, linecolor = BLUE)
+        plot!(p, box(k - 0.3, k + 0.3, ocv, ceiling); color = ORANGE, linecolor = ORANGE)
+        annotate!(p, k, (y0 + ocv) / 2, text(@sprintf("OCV %.1f V<br>%.2f V per cell", ocv,
+            ocv / cells), 13, :center, :white))
+        ir > 1 && annotate!(p, k, (ocv + ceiling) / 2, text(@sprintf("I·R %.0f V", ir), 13,
+            :center, :white))
+        ir > 1 || annotate!(p, k + 0.33, ceiling - 1.2, text(@sprintf("I·R %.2f V", ir), 13,
+            :left, :top, ORANGE))
+    end
+    plot!(p, [0.3, length(cases) + 0.7], [ceiling, ceiling]; color = RED, lw = 2, ls = :dash)
+    annotate!(p, 0.35, ceiling + 0.6, text("ceiling 96 × 4.20 V = 403 V", 13, :left, :bottom,
+        RED))
+    annotate!(p, 1.5, y0 + 0.6, text("axis starts<br>at 370 V", 12, :center, :bottom, GRAY))
+    return p
+end
+
+function charging_losses_plot()
+    rows = read_table("adac_charging_losses.csv")
+    loss(kind, car, cond) = num(only(filter(r -> r.kind == kind && r.car == car &&
+                                                  r.condition == cond, rows)).loss_pct)
+    ac_cars = unique(String.(getfield.(filter(r -> r.kind == "AC", rows), :car)))
+    sort!(ac_cars; by = c -> loss("AC", c, "2.3 kW"))
+    m = length(ac_cars)
+    ac = plot(; title = "AC, grid to battery", xlabel = "charging loss [%]",
+        yticks = (1:m, ac_cars), ylims = (0.2, m + 0.9), xlims = (0, 30), legend = :none,
+        xticks = 0:5:30)
+    for (y, car) in enumerate(ac_cars)
+        a, b, c = (loss("AC", car, s) for s in ("11 kW", "4.1 kW", "2.3 kW"))
+        plot!(ac, [a, c], [y, y]; color = GRAY, lw = 3, label = "")
+        scatter!(ac, [a], [y]; color = GREEN, ms = 10, markerstrokewidth = 0, label = "")
+        scatter!(ac, [b], [y]; color = GRAY, ms = 7, markerstrokewidth = 0, label = "")
+        scatter!(ac, [c], [y]; color = RED, ms = 10, markerstrokewidth = 0, label = "")
+        y == m && annotate!(ac, [(a, y + 0.3, text("11 kW<br>wallbox", 12, :bottom, GREEN)),
+            (c, y + 0.3, text("2.3 kW<br>socket", 12, :bottom, RED))])
+        y == 1 && annotate!(ac, b, y - 0.3, text("4.1 kW", 12, :top, GRAY))
+        annotate!(ac, [(a - 0.9, y, text(@sprintf("%.1f", a), 12, :right, GREEN)),
+            (c + 0.9, y, text(@sprintf("%.1f", c), 12, :left, RED))])
+    end
+    conds = ["23 °C precond.", "0 °C precond.", "0 °C not precond."]
+    colors = ["#9dbbe0", BLUE, ORANGE]
+    dc_cars = unique(String.(getfield.(filter(r -> r.kind == "DC", rows), :car)))
+    n = length(dc_cars)
+    dc = plot(; title = "DC, inside the car", xlabel = "charging loss [%]",
+        yticks = (1:n, dc_cars), ylims = (0.4, n + 0.6), xlims = (0, 17), xticks = 0:2:12,
+        legend = :none)
+    for (y, car) in enumerate(dc_cars), (k, cond) in enumerate(conds)
+        x = loss("DC", car, cond)
+        yc = y + 0.26 * (k - 2)
+        plot!(dc, box(0, x, yc - 0.12, yc + 0.12); color = colors[k], linecolor = colors[k],
+            label = "")
+        label = y == n ? "$(round(Int, x))  $cond" : "$(round(Int, x))"
+        annotate!(dc, x + 0.15, yc, text(label, 11, :left,
+            y == n ? ["#5b84b8", BLUE, ORANGE][k] : :black))
+    end
+    return plot(ac, dc; layout = grid(1, 2), size = (1240, 560), left_margin = 4Plots.mm)
+end
+
+function voltage_class_plot()
+    # charging.md §6, computed: P = U I at a 500 A cable; I = P / U at 200 kW; I²R ∝ I².
+    volts = [400, 800]
+    colors = [BLUE, GREEN]
+    names = ["400 V", "800 V"]
+    panel(title, ylabel, ymax) = plot(; title, ylabel, xticks = (1:2, names),
+        xlims = (0.4, 2.6), ylims = (0, ymax), legend = :none)
+    current = panel("current for 200 kW", "current [A]", 600)
+    heat = panel("cable I²R for 200 kW", "relative to 400 V", 1.2)
+    power = panel("power at a 500 A cable", "power [kW]", 480)
+    for (k, u) in enumerate(volts)
+        i = 200e3 / u
+        bars = [(current, i, "$(round(Int, i)) A"), (heat, (i / 500)^2, i == 500 ? "×1" : "×$((i / 500)^2)"),
+            (power, u * 500 / 1e3, "$(round(Int, u * 500 / 1e3)) kW")]
+        for (q, v, label) in bars
+            plot!(q, box(k - 0.32, k + 0.32, 0, v); color = colors[k], linecolor = colors[k])
+            annotate!(q, k, v + 0.015 * ylims(q)[2], text(label, 13, :bottom))
+        end
+    end
+    return plot(current, heat, power; layout = grid(1, 3), size = (1200, 480))
+end
+
+function station_counts_plot()
+    rows = read_table("h2_stations.csv")
+    closures = read_table("h2_closures_de.csv")
+    world = sort(filter(r -> r.panel == "world", rows); by = r -> num(r.stations))
+    m = length(world)
+    p1 = plot(; title = "worldwide, end 2024: 1,160", xlabel = "stations",
+        yticks = (1:m, String.(getfield.(world, :label))), ylims = (0.4, m + 0.6),
+        xlims = (0, 470), legend = :none)
+    for (y, r) in enumerate(world)
+        x = num(r.stations)
+        plot!(p1, box(0, x, y - 0.34, y + 0.34); color = GREEN, linecolor = GREEN)
+        annotate!(p1, x + 6, y, text("$(round(Int, x))", 13, :left))
+        if r.label == "Europe"
+            plot!(p1, box(0, 113, y - 0.34, y + 0.34); color = "#1d5c3a", linecolor = "#1d5c3a")
+            annotate!(p1, 56, y, text("Germany 113", 12, :center, :white))
+        end
+    end
+    public = filter(r -> r.panel == "public", rows)
+    n = length(public)
+    p2 = plot(; title = "public car stations", ylabel = "stations",
+        xticks = (1:n, ["$(r.label)<br>$(r.date)" for r in public]), xlims = (0.4, n + 0.6),
+        ylims = (0, 108), legend = :none)
+    for (x, r) in enumerate(public)
+        y = num(r.stations)
+        lower = r.lower_bound == "yes"
+        c = lower ? "#9fd3b4" : GREEN
+        plot!(p2, box(x - 0.32, x + 0.32, 0, y); color = c, linecolor = c)
+        annotate!(p2, x, y + 1.5, text(lower ? "over $(round(Int, y))" : "$(round(Int, y))",
+            13, :bottom))
+    end
+    h2m = filter(r -> r.operator == "H2 MOBILITY", closures)
+    total = only(filter(r -> r.operator == "all operators", closures))
+    steps = join(["$(r.closed) ($(r.when))" for r in h2m], ",<br>")
+    annotate!(p2, 2.4, 104, text("H2 MOBILITY closed<br>$steps;<br><br>$(total.closed) " *
+        "public stations off<br>the network in 2025,<br>all operators", 12, :left, :top))
+    return plot(p1, p2; layout = grid(1, 2; widths = [0.5, 0.5]), size = (1240, 560))
+end
+
+function cost_per_100km_plot()
+    rows = reverse(read_table("cost_per_100km_cz.csv"))
+    m = length(rows)
+    color(label) = startswith(label, "Leaf") ? BLUE : startswith(label, "Mirai") ? GREEN : GRAY
+    p = plot(; xlabel = "energy cost [CZK per 100 km]", size = (1100, 560), legend = :none,
+        yticks = (1:m, ["$(r.label)<br><span style=\"font-size:12px\">$(r.price)</span>"
+                        for r in rows]),
+        ylims = (0.4, m + 0.6), xlims = (0, 450), xticks = 0:50:450)
+    for (y, r) in enumerate(rows)
+        lo, hi = num(r.lo_czk), num(r.hi_czk)
+        c = color(r.label)
+        if lo == hi
+            plot!(p, box(0, hi, y - 0.32, y + 0.32); color = c, linecolor = c)
+            annotate!(p, hi + 5, y, text("$(round(Int, hi))", 13, :left))
+        else
+            plot!(p, box(0, lo, y - 0.32, y + 0.32); color = c, linecolor = c)
+            plot!(p, box(lo, hi, y - 0.32, y + 0.32); color = c, fillalpha = 0.35,
+                linecolor = c, ls = :dash)
+            annotate!(p, hi + 5, y, text("$(round(Int, lo))–$(round(Int, hi))", 13, :left))
+        end
+    end
+    return p
+end
+
+function runaway_plot()
+    rows = read_table("runaway_ohneseit.csv")
+    n = length(rows)
+    p = plot(; xlabel = "cell temperature [°C]", size = (960, 500), legend = :none,
+        yticks = (1:n, reverse(String.(getfield.(rows, :cell)))), ylims = (0.5, n + 0.9),
+        xlims = (0, 300), xticks = 0:50:300)
+    for (y, r) in enumerate(reverse(rows))
+        a, b = num(r.onset), num(r.start_tr)
+        c = r.cell == "LFP" ? ORANGE : BLUE
+        plot!(p, [a, b], [y, y]; color = c, lw = 3, label = "")
+        scatter!(p, [a], [y]; xerror = num(r.onset_sd), color = c, ms = 8,
+            markerstrokecolor = c, marker = :circle, label = "")
+        scatter!(p, [b], [y]; xerror = num(r.start_tr_sd), color = c, ms = 9,
+            markerstrokecolor = c, marker = :diamond, label = "")
+        annotate!(p, [(a, y - 0.16, text(@sprintf("%.1f", a), 12, :top, c)),
+            (b, y - 0.16, text(@sprintf("%.1f", b), 12, :top, c))])
+        y == n && annotate!(p, [(a, y + 0.2, text("self-heating onset", 13, :bottom)),
+            (b, y + 0.2, text("thermal runaway", 13, :bottom))])
+    end
+    return p
+end
+
+function degradation_plot()
+    rows = read_table("degradation.csv")
+    geo = filter(r -> r.study == "geotab", rows)
+    inl = filter(r -> r.study == "inl", rows)
+    colors = [GREEN, GRAY, ORANGE]
+    p1 = plot(; title = "22,700 EVs (Geotab 2026)", ylabel = "capacity lost [% per year]",
+        xticks = (1:3, replace.(String.(getfield.(geo, :group)), " " => "<br>"; count = 1)),
+        xlims = (0.4, 3.6), ylims = (0, 3.6), legend = :none)
+    for (k, r) in enumerate(geo)
+        v = num(r.value)
+        plot!(p1, box(k - 0.32, k + 0.32, 0, v); color = colors[k], linecolor = colors[k])
+        annotate!(p1, k, v + 0.05, text(k == 3 ? "up to $v" : "≈ $v", 13, :bottom))
+    end
+    p2 = plot(; title = "four 2012 Leafs, Phoenix (INL)", ylabel = "capacity lost at 50,000 mi [%]",
+        xticks = (1:2, String.(getfield.(inl, :group))), xlims = (0.4, 2.6), ylims = (0, 32),
+        legend = :none)
+    for (k, r) in enumerate(inl)
+        v = num(r.value)
+        c = [GREEN, ORANGE][k]
+        plot!(p2, box(k - 0.32, k + 0.32, 0, v); color = c, linecolor = c)
+        annotate!(p2, k, v + 0.5, text("≈ $(round(Int, v)) ± 2", 13, :bottom))
+    end
+    return plot(p1, p2; layout = grid(1, 2; widths = [0.58, 0.42]), size = (1100, 520))
+end
+
+function fcev_sales_plot()
+    rows = reverse(read_table("fcev_sales_2025.csv"))
+    m = length(rows)
+    p = plot(; xlabel = "fuel-cell vehicles sold in 2025", size = (900, 440), legend = :none,
+        yticks = (1:m, String.(getfield.(rows, :market))), ylims = (0.4, m + 0.6),
+        xlims = (0, 9200), xformatter = x -> thousands(x))
+    for (y, r) in enumerate(rows)
+        x = num(r.units)
+        plot!(p, box(0, x, y - 0.34, y + 0.34); color = GREEN, linecolor = GREEN)
+        annotate!(p, x + 80, y, text(thousands(x), 13, :left))
+    end
+    return p
+end
+
+function h2_emissions_plot()
+    rows = reverse(read_table("h2_emissions_iea.csv"))
+    m = length(rows)
+    p = plot(; xlabel = "kg CO₂-eq per kg H₂", size = (1000, 440), legend = :none,
+        yticks = (1:m, String.(getfield.(rows, :route))), ylims = (0.4, m + 0.6),
+        xlims = (0, 30), xticks = 0:5:30)
+    for (y, r) in enumerate(rows)
+        lo, hi = num(r.lo), num(r.hi)
+        c = startswith(r.route, "electrolysis") ? BLUE : GRAY
+        plot!(p, box(0, lo, y - 0.32, y + 0.32); color = c, linecolor = c)
+        lo < hi && plot!(p, box(lo, hi, y - 0.32, y + 0.32); color = c, fillalpha = 0.35,
+            linecolor = c, ls = :dash)
+        label = lo < hi ? "$(round(Int, lo))–$(round(Int, hi))" : lo < 1 ? "$lo" : "$(round(Int, lo))"
+        annotate!(p, hi + 0.4, y, text(label, 13, :left))
+    end
+    return p
+end
+
+function fcev_hybridization_plot()
+    rows = read_table("fcev_hybridization.csv")
+    kwh, kw = column(rows, :battery_kwh), column(rows, :fc_kw)
+    p = plot(; xlabel = "buffer battery [kWh], log scale", ylabel = "fuel cell [kW]",
+        size = (960, 560), legend = :none, xscale = :log10, xlims = (0.8, 150),
+        xticks = ([1, 2, 5, 10, 20, 50, 100], ["1", "2", "5", "10", "20", "50", "100"]),
+        ylims = (0, 210))
+    colors = [GREEN, GREEN, ORANGE, BLUE]
+    for (k, r) in enumerate(rows)
+        scatter!(p, [kwh[k]], [kw[k]]; color = colors[k], ms = 11, markerstrokewidth = 0)
+        place = kwh[k] > 30 ? :right : :left
+        dx = place === :left ? 1.12 : 1 / 1.12
+        # Plotly places annotations on a log axis by log10 of the value.
+        annotate!(p, log10(kwh[k] * dx), kw[k], text("$(r.vehicle)<br>$(r.fc_kw) kW, $(r.battery_kwh) kWh, " *
+            "$(r.h2_kg) kg H₂", 12, place))
+    end
+    return p
+end
+
 const FIGURES = [
     "01-pack-price" => pack_price_plot,
+    "01-chemistry" => chemistry_plot,
     "02-ocv-soc" => ocv_soc_plot,
     "02-pulse-response" => pulse_response_plot,
     "03-soc-drift" => soc_drift_plot,
+    "03-runaway" => runaway_plot,
     "04-cc-cv" => cc_cv_plot,
+    "04-cv-budget" => cv_budget_plot,
     "04-leaf-chademo" => leaf_chademo_plot,
     "04-dc-curves" => dc_curves_plot,
+    "04-voltage-class" => voltage_class_plot,
+    "04-charging-losses" => charging_losses_plot,
+    "04-degradation" => degradation_plot,
     "04-network" => network_plot,
     "05-polarization" => polarization_plot,
+    "06-station-counts" => station_counts_plot,
+    "06-fcev-sales" => fcev_sales_plot,
+    "06-cost-per-100km" => cost_per_100km_plot,
     "07-efficiency-chain" => efficiency_chain_plot,
+    "07-h2-emissions" => h2_emissions_plot,
+    "07-fcev-hybridization" => fcev_hybridization_plot,
 ]
 
 function main(wanted = String[])

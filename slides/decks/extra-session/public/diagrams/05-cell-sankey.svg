@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 540" width="860" height="540">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .h2 { fill: #9dbbe0; stroke: #1f5fa8; stroke-width: 2; }
+    .el { fill: #f5a25d; stroke: #a75d00; stroke-width: 1.5; }
+    .heat { fill: #f2c4bd; stroke: #c0392b; stroke-width: 1.5; }
+    .v { font-size: 20px; font-weight: 600; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+    .blue { font-size: 16px; font-weight: 600; fill: #1f5fa8; }
+    .orange { font-size: 17px; font-weight: 600; fill: #a75d00; }
+    .red { font-size: 17px; font-weight: 600; fill: #c0392b; }
+  </style>
+
+  <text x="180" y="34" text-anchor="middle" class="blue">H₂ in, LHV</text>
+  <text x="180" y="54" text-anchor="middle" class="lbl">100 %</text>
+  <text x="420" y="34" text-anchor="middle" class="lbl">cell voltage V: η = V / 1.253 V, all fuel reacts</text>
+
+  <!-- 0.6 V: electricity 47.9 %, heat 52.1 % -->
+  <text x="40" y="116" class="v">0.6 V</text>
+  <text x="40" y="138" class="lbl">62.7 g H₂/kWh</text>
+  <rect class="h2" x="160" y="70" width="40" height="100"/>
+  <path class="el" d="M200 70 H600 L624 94.0 L600 117.9 H200 Z"/>
+  <path class="heat" d="M200 117.9 C 300 117.9, 320 139.9, 420 139.9 H560 L584 165.9 L560 192 H420 C 320 192, 300 170, 200 170 Z"/>
+  <text x="636" y="100.0" class="orange">electricity 47.9 %</text>
+  <text x="596" y="171.9" class="red">heat 52.1 %</text>
+
+  <!-- 0.7 V: electricity 55.9 %, heat 44.1 % -->
+  <text x="40" y="266" class="v">0.7 V</text>
+  <text x="40" y="288" class="lbl">53.7 g H₂/kWh</text>
+  <rect class="h2" x="160" y="220" width="40" height="100"/>
+  <path class="el" d="M200 220 H600 L624 247.9 L600 275.9 H200 Z"/>
+  <path class="heat" d="M200 275.9 C 300 275.9, 320 297.9, 420 297.9 H560 L584 319.9 L560 342 H420 C 320 342, 300 320, 200 320 Z"/>
+  <text x="636" y="253.9" class="orange">electricity 55.9 %</text>
+  <text x="596" y="325.9" class="red">heat 44.1 %</text>
+
+  <!-- 0.8 V: electricity 63.8 %, heat 36.2 % -->
+  <text x="40" y="416" class="v">0.8 V</text>
+  <text x="40" y="438" class="lbl">47.0 g H₂/kWh</text>
+  <rect class="h2" x="160" y="370" width="40" height="100"/>
+  <path class="el" d="M200 370 H600 L624 401.9 L600 433.8 H200 Z"/>
+  <path class="heat" d="M200 433.8 C 300 433.8, 320 455.8, 420 455.8 H560 L584 473.9 L560 492 H420 C 320 492, 300 470, 200 470 Z"/>
+  <text x="636" y="407.9" class="orange">electricity 63.8 %</text>
+  <text x="596" y="479.9" class="red">heat 36.2 %</text>
+</svg>

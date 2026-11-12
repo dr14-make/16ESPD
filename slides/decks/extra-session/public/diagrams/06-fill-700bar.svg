@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .axis { stroke: #16202c; stroke-width: 2; fill: none; }
+    .limit { stroke: #c0392b; stroke-width: 2; stroke-dasharray: 8 5; fill: none; }
+    .ref { stroke: #4a5a6b; stroke-width: 1.5; stroke-dasharray: 8 5; fill: none; }
+    .mark { stroke: #4a5a6b; stroke-width: 1.5; stroke-dasharray: 3 4; fill: none; }
+    .press { stroke: #1f5fa8; stroke-width: 4; fill: none; }
+    .temp { stroke: #a75d00; stroke-width: 4; fill: none; }
+    .cold { fill: #cfe0f3; stroke: #1f5fa8; stroke-width: 1.5; }
+    .t { font-size: 17px; font-weight: 600; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+    .red { font-size: 15px; font-weight: 600; fill: #c0392b; }
+    .blue { font-size: 15px; font-weight: 600; fill: #1f5fa8; }
+    .orange { font-size: 15px; font-weight: 600; fill: #a75d00; }
+    .ax { font-size: 15px; }
+    .halo { paint-order: stroke; stroke: #fff; stroke-width: 6px; stroke-linejoin: round; }
+  </style>
+
+  <!-- time markers: 83 s floor, 3 min target, 3.22 min field mean (x = 130 + 200 t[min]) -->
+  <path class="mark" d="M407 58 V452"/>
+  <text x="407" y="34" text-anchor="middle" class="lbl">83 s: 5 kg</text>
+  <text x="407" y="52" text-anchor="middle" class="lbl">at 60 g/s</text>
+  <path class="mark" d="M730 58 V452"/>
+  <text x="724" y="34" text-anchor="end" class="lbl">J2601 target</text>
+  <text x="724" y="52" text-anchor="end" class="lbl">3 min</text>
+  <path class="mark" d="M774 58 V452"/>
+  <text x="780" y="34" class="lbl">field mean 3.22 min,</text>
+  <text x="780" y="52" class="lbl">1.85 M fills</text>
+
+  <!-- pressure panel -->
+  <text transform="translate(40 150) rotate(-90)" text-anchor="middle" class="ax">pressure</text>
+  <path class="axis" d="M130 64 V240 H900"/>
+  <path class="limit" d="M130 82 H900"/>
+  <text x="896" y="76" text-anchor="end" class="red halo">dispenser ≤ 875 bar</text>
+  <path class="ref" d="M130 112 H900"/>
+  <text x="896" y="132" text-anchor="end" class="lbl halo">700 bar nominal (H70)</text>
+  <path class="press" d="M130 222 L730 86"/>
+  <circle cx="730" cy="86" r="5" fill="#1f5fa8"/>
+  <text x="300" y="168" class="blue halo" transform="rotate(-12.8 300 168)">pressure ramp at a set rate (APRR)</text>
+
+  <!-- temperature panel -->
+  <text transform="translate(40 355) rotate(-90)" text-anchor="middle" class="ax">gas temperature</text>
+  <path class="axis" d="M130 270 V452 H900"/>
+  <path class="limit" d="M130 288 H900"/>
+  <text x="896" y="282" text-anchor="end" class="red halo">tank gas ≤ 85 °C</text>
+  <rect class="cold" x="130" y="424" width="600" height="14"/>
+  <text x="140" y="416" class="blue halo">gas into the car precooled: −40 to −33 °C (T40)</text>
+  <path class="temp" d="M130 372 C 240 330, 420 306, 730 296"/>
+  <circle cx="730" cy="296" r="5" fill="#a75d00"/>
+  <text x="430" y="336" class="orange halo">gas in the tank heats up</text>
+
+  <!-- time axis -->
+  <text x="130" y="474" text-anchor="middle" class="ax">0</text>
+  <text x="330" y="474" text-anchor="middle" class="ax">1</text>
+  <text x="530" y="474" text-anchor="middle" class="ax">2</text>
+  <text x="730" y="474" text-anchor="middle" class="ax">3</text>
+  <path class="axis" d="M330 452 v6 M530 452 v6 M730 452 v6"/>
+  <text x="515" y="502" text-anchor="middle" class="ax">time [min]</text>
+  <text x="515" y="528" text-anchor="middle" class="lbl">curve shapes illustrative; the labeled limits and times are sourced</text>
+</svg>

@@ -1,0 +1,14 @@
+# Hydrogen refueling stations (hydrogen.md §3). World by region: LBST / H2stations.org 17th
+# assessment, end 2024, via Motor1 (secondary); Europe includes Germany's 113 (all stations,
+# depots too). Public car stations: Germany per H2 MOBILITY via ecomento 2026-01-16 ("über 80"
+# two years earlier, a lower bound; 50 in January 2026), secondary; Czechia: ORLEN's two public
+# stations, Syslog 2026-04-21, secondary.
+panel,label,date,stations,lower_bound
+world,China,end 2024,384,no
+world,Europe,end 2024,294,no
+world,South Korea,end 2024,198,no
+world,Japan,end 2024,161,no
+world,USA,end 2024,89,no
+public,Germany,Jan 2024,80,yes
+public,Germany,Jan 2026,50,no
+public,Czechia,Apr 2026,2,no

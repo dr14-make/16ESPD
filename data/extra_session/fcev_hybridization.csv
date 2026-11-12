@@ -1,0 +1,9 @@
+# Fuel-cell power against buffer-battery energy (hydrogen.md §4). Mirai gen 2: Toyota spec PDF
+# 2024 (128 kW; battery 310.8 V × 4.0 Ah = 1.24 kWh, derived), verified. Nexo 2025: Hyundai Europe
+# release, 94 kW net (110 gross), 2.64 kWh, verified. CR-V e:FCEV: Honda release via Automotive
+# World, 92.2 kW, 17.7 kWh, secondary. XCIENT 2025: Hyundai release, 180 kW, 72 kWh, verified.
+vehicle,fc_kw,battery_kwh,h2_kg
+Toyota Mirai gen 2,128,1.24,5.6
+Hyundai Nexo 2025,94,2.64,6.69
+Honda CR-V e:FCEV,92.2,17.7,4.3
+Hyundai XCIENT truck,180,72,68
