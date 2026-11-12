@@ -8,9 +8,9 @@ no compliance, slip, torque limit, preload loss or standstill drag is represente
 Power direction is regularized with tanh(P_a / P_reg).
 """
 component BeltDrive
-  spline_a = Spline()
-  spline_b = Spline()
-  support = Spline()
+  spline_a = Spline() {^spline_a}
+  spline_b = Spline() {^spline_b}
+  support = Spline() {^support}
   "Machine/crank speed ratio (assumed: illustrative P0 pulley ratio)"
   parameter ratio::Real(min = eps(Float64)) = 2.5
   "Efficiency in either power direction (assumed: illustrative belt, not measured)"
@@ -24,7 +24,7 @@ component BeltDrive
   "Power entering machine-side port (derived: torque times relative speed)"
   variable P_a::Power
   "Dissipated mechanical power, nonnegative in both directions (derived: port balance)"
-  P_loss = RealOutput()
+  P_loss = RealOutput() {^P_loss}
 relations
   spline_a.phi - support.phi = ratio * (spline_b.phi - support.phi)
   w_a = der(spline_a.phi) - der(support.phi)
@@ -33,6 +33,7 @@ relations
   spline_b.tau = -ratio * spline_a.tau * eta ^ tanh(P_a / P_reg)
   support.tau = -spline_a.tau - spline_b.tau
   P_loss = P_a + spline_b.tau * w_b
+metadata {"_links":{"spline_a":{"Dyad":{"placement":{"icon":{"x1":-50.0,"x2":50.0,"y1":450.0,"y2":550.0},"diagram":{"x1":-50.0,"x2":50.0,"y1":450.0,"y2":550.0}}}},"spline_b":{"Dyad":{"placement":{"icon":{"x1":950.0,"x2":1050.0,"y1":450.0,"y2":550.0},"diagram":{"x1":950.0,"x2":1050.0,"y1":450.0,"y2":550.0}}}},"support":{"Dyad":{"placement":{"icon":{"x1":450.0,"x2":550.0,"y1":950.0,"y2":1050.0},"diagram":{"x1":450.0,"x2":550.0,"y1":950.0,"y2":1050.0}}}},"P_loss":{"Dyad":{"placement":{"icon":{"x1":450.0,"x2":550.0,"y1":-50.0,"y2":50.0},"diagram":{"x1":450.0,"x2":550.0,"y1":-50.0,"y2":50.0}}}}}}
 end
 
 """

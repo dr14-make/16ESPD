@@ -8,9 +8,9 @@ it is not a torque-free output when connected.
 """
 component OutputHybridAxleRouter
   structural parameter rear::Boolean = false
-  machine = Spline()
-  front = Spline()
-  rear_axle = Spline()
+  machine = Spline() {^machine}
+  front = Spline() {^front}
+  rear_axle = Spline() {^rear_axle}
 relations
   if rear
     machine.phi = rear_axle.phi
@@ -21,4 +21,5 @@ relations
     machine.tau + front.tau = 0.0
     rear_axle.phi = 0.0
   end
+metadata {"_links":{"machine":{"Dyad":{"placement":{"icon":{"x1":-50.0,"x2":50.0,"y1":450.0,"y2":550.0},"diagram":{"x1":-50.0,"x2":50.0,"y1":450.0,"y2":550.0}}}},"front":{"Dyad":{"placement":{"icon":{"x1":950.0,"x2":1050.0,"y1":250.0,"y2":350.0},"diagram":{"x1":950.0,"x2":1050.0,"y1":250.0,"y2":350.0}}}},"rear_axle":{"Dyad":{"placement":{"icon":{"x1":950.0,"x2":1050.0,"y1":650.0,"y2":750.0},"diagram":{"x1":950.0,"x2":1050.0,"y1":650.0,"y2":750.0}}}}}}
 end
