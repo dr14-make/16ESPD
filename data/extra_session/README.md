@@ -23,6 +23,7 @@ read and its verification label; change a value only together with that note.
 | `chemistry_iea_bnef.csv` | best-in-class cell Wh/kg for NMC, LFP, sodium-ion; 2025 pack $/kWh for NMC and LFP | `01-chemistry.svg` | `teaching_materials.md` §6.2, [IEA-GEVO-2026] p. 101, [BNEF-2025] |
 | `runaway_ohneseit.csv` | self-heating onset and start of thermal runaway, 21700 NMC, NCA, LFP at 100 % SoC | `03-runaway.svg` | `bms.md` §4, [OHNESEIT-2023] Table 10 |
 | `ageing_nmc.csv` | NMC cycle life to 80 % by SoC window; calendar capacity loss by storage SoC and temperature | `01-ageing.svg` | `battery-terms.md`, [PREGER-2020] Fig. 2a, [KEIL-2016] Fig. 2b |
+| `rate_capability_m50.csv` | simulated discharge of an LG M50-class cell at 0.2–3 C: voltage curves, charge and energy delivered | `01-rate-capability.svg` | `battery-terms.md` §7, PyBaMM DFN, [CHEN-2020] |
 | `adac_charging_losses.csv` | AC losses at 2.3, 4.1 and 11 kW for five cars; in-car DC losses for four cars at 23 °C and 0 °C | `04-charging-losses.svg` | `charging.md` §4, [ADAC-LADEVERLUST-2026] |
 | `degradation.csv` | capacity fade per year by charging habit; capacity lost at 50,000 mi, L2 against DC | `04-degradation.svg` | `charging.md` §7, [GEOTAB-2026], [INL-DCFC-2015] |
 | `h2_stations.csv` | hydrogen stations by world region, end 2024; public car stations in Germany and Czechia | `06-station-counts.svg` | `hydrogen.md` §3, [LBST-H2STATIONS-2025], [ECOMENTO-DE-50-2026], [SYSLOG-ORLEN-2026] |

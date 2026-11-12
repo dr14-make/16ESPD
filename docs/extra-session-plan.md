@@ -47,7 +47,7 @@ the car but long and lossy before it.
 | # | Section | Content | Model / figure |
 |---|---|---|---|
 | 00 | Front matter | where this sits after L4 and L5, what is a take-home | — |
-| 01 | Cells and chemistries | the battery's terms on the Leaf pack (capacity, nominal voltage, gross vs usable, specific energy and power), C-rate, peak vs continuous power, cell to pack, SoC/DoD/SoH and ageing; then deck 8 tour cut to what is on the road now: LFP vs NMC, sodium-ion; specific energy and cost today | terms table, cell-to-pack diagram, ageing bars, prices |
+| 01 | Cells and chemistries | the battery's terms on the Leaf pack (capacity, nominal voltage, gross vs usable, specific energy and power), C-rate, peak vs continuous power, specific energy against specific power (why fast discharge delivers less), cell to pack, SoC/DoD/SoH and ageing; then deck 8 tour cut to what is on the road now: LFP vs NMC, sodium-ion; specific energy and cost today | terms table, rate-capability and Ragone plot (PyBaMM), cell-to-pack diagram, ageing bars, prices |
 | 02 | The Thevenin cell | OCV(SoC), R0, one RC pair; pulse response; what it fixes in L4's battery | formula plot |
 | 03 | The BMS | SoC by coulomb counting and its drift; OCV correction; cell imbalance and passive balancing; limits (temperature, current, voltage) | diagrams |
 | 04 | Charging | CC-CV at the cell; real DC curves (Leaf CHAdeMO with rapidgate, 400 V, 800 V); modes and connectors (Type 2, CCS2, NACS, MCS); AC vs DC losses; ISO 15118 and V2G; network in CZ/EU and AFIR | CC-CV formula plot, measured curves redrawn |
@@ -63,7 +63,7 @@ The dq PMSM model and the stepped gearbox are dropped from this deck; they move 
 | # | Section | 3 h | 90 min | What the cut keeps |
 |---|---|---|---|---|
 | 00 | Front matter | 5 | 3 | one slide: where this sits after L4 and L5 |
-| 01 | Cells and chemistries | 22 | 10 | the terms table, C-rate, and the comparison table (LFP, NMC, sodium-ion, cost) |
+| 01 | Cells and chemistries | 22 | 10 | the terms table, C-rate, power against energy, and the comparison table (LFP, NMC, sodium-ion, cost) |
 | 02 | The Thevenin cell | 12 | 4 | the circuit and the pulse-response plot |
 | 03 | The BMS | 12 | 5 | SoC drift and its OCV reset; balancing as one picture |
 | 04 | Charging | 40 | 25 | CC-CV, the three measured curves, losses, 400 V vs 800 V, CZ network; drops connector history, ISO 15118 detail, degradation |

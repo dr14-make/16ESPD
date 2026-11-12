@@ -657,6 +657,40 @@ function ageing_plot()
     return plot(p1, p2; layout = grid(1, 2; widths = [0.55, 0.45]), size = (1100, 480))
 end
 
+# LG M50LT datasheet mass, 68.2 g [LG-M50LT-2020]: puts the simulated M50-class cell per kilogram.
+const M50_KG = 0.0682
+# The Chen2020 cell's 1 C current, which the experiment's C-rates are relative to.
+const M50_AH = 5.0
+
+function rate_capability_plot()
+    rows = read_table("rate_capability_m50.csv")
+    curves = filter(r -> r.kind == "curve", rows)
+    totals = filter(r -> r.kind == "total", rows)
+    colors = Dict("0.2" => GRAY, "1" => BLUE, "2" => ORANGE, "3" => RED)
+    p1 = plot(; title = "discharge faster, get less (simulated)", xlabel = "charge delivered [Ah]",
+        ylabel = "terminal voltage [V]", xlims = (0, 5.4), ylims = (2.4, 4.25), legend = :bottomleft)
+    for c in ["0.2", "1", "2", "3"]
+        rs = filter(r -> r.c_rate == c, curves)
+        q, v = column(rs, :ah), column(rs, :v_or_wh)
+        plot!(p1, q, v; color = colors[c], linewidth = 3, label = "$c C: $(@sprintf("%.1f", q[end])) Ah")
+    end
+    hline!(p1, [2.5]; color = :black, linestyle = :dash, label = "cutoff 2.5 V")
+    p2 = plot(; title = "Ragone: the same cell, faster", xlabel = "specific power [W/kg]",
+        ylabel = "specific energy [Wh/kg]", xscale = :log10, yscale = :log10,
+        xlims = (30, 1500), ylims = (80, 400), legend = :none,
+        xticks = ([30, 100, 300, 1000], ["30", "100", "300", "1000"]),
+        yticks = ([100, 200, 300], ["100", "200", "300"]))
+    w = [num(r.v_or_wh) for r in totals] ./ M50_KG
+    # Average power = energy over discharge time; time = charge delivered over the C-rate current.
+    pw = [num(r.v_or_wh) * num(r.c_rate) * M50_AH / num(r.ah) for r in totals] ./ M50_KG
+    plot!(p2, pw, w; color = BLUE, linewidth = 3, marker = :circle, markersize = 7)
+    # Plotly places annotations on a log axis in log10 units.
+    for (x, y, r) in zip(pw, w, totals)
+        annotate!(p2, log10(x * 1.15), log10(y), text("$(r.c_rate) C", 13, :left))
+    end
+    return plot(p1, p2; layout = grid(1, 2), size = (1150, 500))
+end
+
 function fcev_sales_plot()
     rows = reverse(read_table("fcev_sales_2025.csv"))
     m = length(rows)
@@ -712,6 +746,7 @@ const FIGURES = [
     "01-pack-price" => pack_price_plot,
     "01-chemistry" => chemistry_plot,
     "01-ageing" => ageing_plot,
+    "01-rate-capability" => rate_capability_plot,
     "02-ocv-soc" => ocv_soc_plot,
     "02-pulse-response" => pulse_response_plot,
     "03-soc-drift" => soc_drift_plot,

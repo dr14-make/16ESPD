@@ -274,6 +274,41 @@ Per cell, the IONIQ 5 peak is 377 A / 2 = 189 A on a 60.3 Ah cell, the same 3.1 
 
 ---
 
+## 7. Rate capability: specific energy against specific power
+
+**Simulated (`derived`).** PyBaMM (current release via `uv run --with pybamm`), DFN model, parameter
+set `Chen2020` (LG M50, NMC 811 / graphite-SiOx [CHEN-2020], nominal 5.0 Ah), isothermal 25 °C,
+constant-current discharge from full to 2.50 V. Per kilogram with the M50LT datasheet mass of
+68.2 g [LG-M50LT-2020]; average power = energy ÷ discharge time.
+
+| C-rate | Charge delivered | Energy | Wh/kg | Average W/kg |
+|---|---|---|---|---|
+| 0.2 C | 5.06 Ah | 18.56 Wh | 272 | 54 |
+| 0.5 C | 5.02 Ah | 18.05 Wh | 265 | 132 |
+| 1 C | 4.94 Ah | 17.29 Wh | 254 | 257 |
+| 2 C | 4.73 Ah | 15.68 Wh | 230 | 486 |
+| 3 C | 2.30 Ah | 7.50 Wh | 110 | 716 |
+
+What ends the 3 C run, from the same model with a lumped thermal option: the minimum electrolyte
+concentration at the end of discharge is 505 mol/m³ at 1 C, 60 at 2 C and 0 at 3 C (initial
+1000), and the negative-electrode stoichiometry at cutoff is 0.05 at 1 C against 0.49 at 3 C. So at
+3 C the electrolyte is depleted and about half the lithium is still in the anode. The parameter set
+is a model fit, not a rate-capability measurement; the M50LT datasheet allows 3.0 C continuous
+discharge (10–25 °C), so the 3 C cliff is the model's and its value should not be quoted as the
+real cell's.
+
+**Datasheets.**
+
+- [LG-M50LT-2020], `verified` (EV West mirror; text extracted with pdftotext): "2.1 Energy … Nom.
+  18.2 Wh … Min. 17.6 Wh"; "2.2 Nominal Voltage … 3.69V"; "2.8 Min. Discharge Voltage … 2.50V";
+  "2.9 Max. Discharge Current … 10 ~ 25ºC … 3.0C (14,400mA)"; "2.12 Weight … 68.2 ± 1.0g (TBD)".
+- [LW-26650-2022], `verified`: "Capacity @ 23 ºC Typical (Min) 2.6 Ah (2.5 Ah)"; "Energy @ 23 ºC
+  8.58 Wh"; "Specific Power @ 25 ºC, 2 sec pulse > 4000 W/kg"; "Max Continuous Discharge Current
+  52 A (20C rate)"; "Max Pulse Discharge Current (10s) 120 A (48C rate)"; "Mass 76.0 g +/- 1.5 g".
+- `derived`: M50LT 18.2 / 0.0682 = 267 Wh/kg; 14.4 A × 3.69 V / 0.0682 kg ≈ 780 W/kg. A123
+  8.58 / 0.076 = 113 Wh/kg; 52 A × 3.3 V / 0.076 kg ≈ 2,260 W/kg. Max current × nominal voltage
+  overstates the power a little, since the voltage sags under that current.
+
 ## Not found / open
 
 1. **IONIQ 5 84 kWh pack mass**: no Hyundai document gives it. 477 kg is `search summary` from spec aggregators. No IONIQ 5 cell or pack Wh/kg is given here for that reason.

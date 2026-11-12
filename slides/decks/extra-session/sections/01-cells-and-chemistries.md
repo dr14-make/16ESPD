@@ -15,16 +15,15 @@ and sodium-ion, their specific energy, and what a kilowatt-hour costs today.
 <div class="caption">BMW i3 prismatic cells, SB LiMotive · RudolfSimon, CC BY-SA 3.0</div>
 
 <!--
-Before we ask how fast energy goes back into a car, we need to know what it goes into. Three
-chemistries are in cars sold today: NMC, LFP and, just arriving, sodium-ion. The choice sets what a
-kilogram of cells stores, what a kilowatt-hour costs, and the voltage the charger must stop at.
+Before we ask how fast energy goes back into a car, we need to know what it goes into. NMC, LFP and,
+just arriving, sodium-ion: the choice sets what a kilogram stores, what a kilowatt-hour costs, and
+the voltage the charger must stop at.
 
-*[ask]* A question to carry through: if you were buying batteries for a city bus, which chemistry
-would you pick, and why? *[pause]* We will have the answer by the end of section 03.
+*[ask]* A question to carry through: which chemistry would you buy for a city bus, and why?
+*[pause]* We answer it in section 03.
 
-*[show photo]* Car cells: flat aluminum cans with two terminal posts and a vent, sample cells made by
-SB LiMotive for the BMW i3. But first the
-words: a spec sheet uses a dozen terms, and the next four slides put them on the Leaf's pack.
+*[show photo]* Car cells: sample prismatic cans for the BMW i3. But first the words a spec sheet
+uses, on the Leaf's pack.
 -->
 
 ---
@@ -59,24 +58,16 @@ ANL 2013 · Wh/kg, Wh/L, W/kg: derived</div>
 The vocabulary on one pack, so every number tonight has a place to land. Lecture 4 gave you
 capacity, energy, state of charge and the efficiencies; two words are new.
 
-Nominal voltage is the average over a full discharge, not the highest or the lowest: 3.65 volts per
-cell, 96 in series, 350 volts. The pack actually swings from about 240 volts empty to 420 full, and
-the next slides need that swing.
+Nominal voltage is the average over a full discharge: 3.65 volts per cell, 96 in series, 350 volts.
+The pack actually swings from about 240 volts empty to 420 full.
 
-Gross against usable: gross is what the cells hold, usable is what the car lets you take out,
-because the BMS keeps a margin at the top and the bottom, where the cell ages fastest. On the Leaf,
-40 against 39; some cars keep ten percent back.
+Gross is what the cells hold; usable is what the car lets you take out, because the BMS keeps a
+margin at the top and the bottom, where the cell ages fastest. On the Leaf, 40 against 39.
 
-*[ask]* Two cars, both advertised at 77 kilowatt-hours, one gross, one usable. Which goes further,
-other things equal? *[pause]* The usable one: its 77 all come out.
+*[ask]* Two cars advertised at 77 kilowatt-hours, one gross, one usable. Which goes further?
+*[pause]* The usable one: all its 77 come out.
 
-Energy is capacity times nominal voltage: 113 ampere-hours times 350 volts, about 40 kilowatt-hours.
-When a spec sheet gives one number, ask whether it is gross or usable.
-
-The per-kilogram numbers: 132 watt-hours per kilogram for the pack, about 82 per liter of its box,
-and about 360 watts per kilogram at the motor's 110 kilowatts peak. That is the motor's limit, not
-the pack's; the next slide shows what the pack itself can give. And the round trip, 95 to 98
-percent: the rest is R zero i squared heating the pack.
+Per kilogram: 132 watt-hours for the pack, and about 360 watts at the motor's 110 kilowatts peak.
 -->
 
 ---
@@ -127,27 +118,87 @@ higher resistance, so it gives less power; a full pack takes less.
 </div>
 
 <!--
-The one new unit tonight, and you will hear it at every charger: the C-rate, current divided by
-capacity. One C empties the battery in an hour, two C in half an hour. Multiply top and bottom by
-the voltage and it is power over energy: kilowatts over kilowatt-hours, read straight off a car.
+The one new unit tonight, and you will hear it at every charger: the C-rate, current over capacity,
+or power over energy. One C empties the battery in an hour. It does not care about size, so a
+datasheet gives its limits as C-rates.
 
-It does not care about size: a cell at 1 C and its pack at 1 C do the same thing to every cell. So a
-datasheet gives its limits as C-rates, and you multiply by your pack's capacity.
+*[show table]* The Leaf on the WLTC: a fifth of a C. Its motor peak 2.8 C, its DC charge 1.2 C. The
+IONIQ 5 charges at 3.1 C.
 
-*[show table]* The Leaf on the WLTC averages about 8 kilowatts, a fifth of a C. Its motor peak is 2.8
-C, its DC charge peak 1.2 C. The IONIQ 5 charges at up to 263 kilowatts on an 84
-kilowatt-hour pack: 3.1 C.
+*[ask]* Which of these worries the cell most? *[pause]* The charge. Pushed too hard, too cold, the
+lithium plates on the graphite as metal instead of going in. A few seconds of discharge at 2.8 C is
+easy by comparison. Section 04 comes back to this.
 
-*[ask]* Which of these worries the cell most? *[pause]* The charge, 3.1 C. Pushed too hard, too cold,
-the lithium plates on the graphite as metal instead of going in, and that metal never fully
-comes back. A few seconds of discharge at 2.8 C
-is easy by comparison. Section 04 comes back to this.
+On the right: a peak lasts seconds, a continuous rating holds until the temperature settles. The
+2013 Leaf pack gave 103 kilowatts for 30 seconds, so the motor, not the pack, sets the car's peak.
+And power changes with the state: an empty, cold pack gives little, a full one takes little.
+-->
 
-On the right, peak against continuous: a peak lasts seconds, a continuous rating holds until the
-temperature settles. The Leaf's motor: 110 kilowatts peak, 85 rated. The 2013 Leaf pack gave 103
-kilowatts for 30 seconds, more than 4 C, so the motor, not the pack, sets the car's peak. And the
-power is measured at every ten percent of depth of discharge, because it changes: an empty, cold
-pack gives little, a full one takes little. Keep that for the charging curves.
+---
+routeAlias: power-costs-energy
+---
+
+## Specific energy against specific power: why one costs the other
+
+<div class="diagram-wide">
+
+<img src="/figures/01-rate-capability.svg" style="max-height: 23rem" alt="Left, terminal voltage against charge delivered for one NMC 21700 cell discharged to 2.5 V: 5.1 Ah at 0.2 C, 4.9 at 1 C, 4.7 at 2 C, 2.3 at 3 C; the faster curves sit lower and reach the cutoff sooner. Right, the same runs as specific energy against specific power: 272 Wh/kg at 54 W/kg, falling to 230 at about 490 W/kg at 2 C and 110 at about 720 W/kg at 3 C."/>
+
+</div>
+
+<div class="caption">Simulated: PyBaMM DFN model, Chen2020 parameters of the LG M50 cell, 25 °C, per 68.2 g (M50LT
+datasheet). A model, not a measurement: take the shape.</div>
+
+<div class="grid grid-cols-3 gap-6 text-sm mt-2">
+<div>
+
+**1 · Resistance.** *V* = OCV − *R i*: the curve drops and hits the cutoff sooner; *R i*² heats
+the cell.
+
+</div>
+<div>
+
+**2 · Transport.** At 3 C the electrolyte runs out of ions near one electrode: the voltage
+collapses with half the lithium still in the anode.
+
+</div>
+<div>
+
+**3 · Design.** Thin electrodes are fast but carry more foil per Wh:
+
+<div class="tight">
+
+| Cell | Wh/kg | W/kg |
+|---|---|---|
+| LG M50LT, energy | **267** | ≈ 780 (3 C) |
+| A123 26650, power | **113** | ≈ 2,300 (20 C) |
+
+</div>
+</div>
+</div>
+
+<div class="caption text-left">Datasheets [LG-M50LT-2020], [LW-26650-2022]: rated Wh and mass; W/kg = max continuous
+current × nominal V, derived</div>
+
+<!--
+Lecture 4 showed the deck's Ragone plot: more power, less energy. Here is why, on one cell of today.
+
+*[show figure]* One NMC cell, simulated, emptied at four currents. At a fifth of a C it gives 5.1
+ampere-hours; at 2 C, 4.7; at 3 C only 2.3. The faster curves sit lower and hit the cutoff sooner.
+
+*[ask]* Where did the missing charge go at 3 C? *[pause]* Nowhere: it is still in the cell. The
+cell could not deliver it in time.
+
+Three reasons. Resistance: OCV minus R i shifts the curve down, and R i squared is heat. Transport,
+which makes the cliff: at 3 C the electrolyte runs out of ions near one electrode, and the voltage
+collapses with half the lithium still in the anode. On the right, the same runs per kilogram: flat,
+then over the edge. Take the shape, not the 3 C number; the real cell is allowed 3 C.
+
+And design: thin electrodes carry ions fast but more foil and separator per watt-hour. LG's energy
+cell stores 267 watt-hours per kilogram at up to 3 C; A123's power cell 113, at 20 C.
+
+*[ask]* Which for a hybrid's buffer battery, which for a battery car? *[pause]* Power cells for the
+hybrid's small, hard-worked pack; energy cells for range, enough that the C-rate stays low.
 -->
 
 ---
@@ -346,25 +397,18 @@ pack price published there.</div>
 
 <!--
 The one chart to take from this section. *[show figure]* Left, what the best cell of each chemistry
-stores per kilogram; right, what a pack cost on average in 2025.
+stores per kilogram; right, what a pack cost in 2025.
 
-*[ask]* LFP stores less per kilogram than NMC. Why is it now over half of the EV batteries the world
-deploys? *[pause]*
+*[ask]* LFP stores less per kilogram than NMC. Why is it over half of the EV batteries the world
+deploys? *[pause]* Price: 81 dollars per kilowatt-hour against 128, about two-thirds. For a cheap
+car or a bus, a quarter more battery mass is a good trade for a third off the price. Sodium-ion
+reaches 175 per kilogram, but our sources give no price for it yet.
 
-The second pair of numbers. The best LFP cells store 205 watt-hours per kilogram against NMC's 265,
-and an LFP pack is about one-fifth lighter on energy. But it cost 81 dollars per kilowatt-hour in
-2025 against 128: about two-thirds of the price. For a cheap car or a bus, a quarter more battery
-mass is a good trade for a third off the price. Sodium-ion reaches up to 175 per kilogram at cell level,
-but our sources give no price, pack figure or charge voltage for it yet: it is that new.
+The cell figures are best in class, not fleet averages.
 
-Read the cell figures as best in class, not fleet averages: a car built today with LFP may carry
-cells well below 205.
-
-The charge voltage on the right is the one for tonight: NMC up to 4.20 volts, LFP up to 3.6. Section
-04 starts from exactly that limit.
-
-And the scale of a real pack: the Leaf's 132 watt-hours per kilogram is half the best NMC cell. The
-other half is casing, cooling, wiring and electronics, and 2018 cells rather than 2026 ones.
+The charge voltage on the right is the one for tonight: NMC up to 4.20 volts, LFP 3.6. Section 04
+starts from that limit. And the Leaf's 132 per kilogram is half the best NMC cell: the rest is
+casing, cooling and wiring.
 -->
 
 ---
