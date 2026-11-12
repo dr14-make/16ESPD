@@ -196,8 +196,10 @@ drive_complete(integ, spec) = integ.t >= (spec.duration > 0 ? spec.duration : 36
 
 function window_session!(integ, sys, spec, pad)
     initial_prob = remake(integ.sol.prob; p = deepcopy(integ.p), u0 = copy(integ.u))
+    frame_gc = VehicleSystemsComponents.FrameGC()
     function reset!()
         integ = fresh_integrator(initial_prob, spec)
+        VehicleSystemsComponents.collect_after_warm_up!(frame_gc)
         return nothing
     end
     ctx = context(integ, sys)
@@ -325,6 +327,13 @@ function window_session!(integ, sys, spec, pad)
                 "$(pad === nothing ? "keyboard" : "DualSense + keyboard")$(controls.paused ? "   PAUSED" : "")",
                 "solver $(round(work_ms, digits = 1)) ms / frame"], "\n")
             haptics!(pad, s, controls, wall_acc)
+            # warm_up! leaves the HUD, axis limits and haptics to compile in the first pass, and
+            # the render task draws that pass during its sleep.
+            if frames == 2
+                VehicleSystemsComponents.collect_after_warm_up!(frame_gc)
+            elseif frames > 2
+                VehicleSystemsComponents.collect_after_frame!(frame_gc)
+            end
             sleep(max(0.0, spec.frame - (time() - frame_start)))
         end
     catch e
