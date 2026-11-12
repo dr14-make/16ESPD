@@ -244,7 +244,7 @@ routeAlias: how-the-build-works
 <div class="grid grid-cols-[1.1fr_1fr] gap-8 items-start">
 <div>
 
-- **Clone the course repository** at the tag `lecture-05-dyad-3.5`, on a branch `handson-05`;
+- **Clone the course repository** at the tag `lecture-05-dyad-3.5-r2`, on a branch `handson-05`;
   step 0 of the guide has the clicks.
 - **Open the step's starter** in `HandsOn05`. It already holds the car, cycle, driver, fuel meter
   and initial conditions and diagnostic equations, plus its analysis.
@@ -270,7 +270,7 @@ The build guide holds every block, line and number:
 <!--
 Before the first build, here is how the build works.
 
-Today you work inside the course repository itself. Clone it at the tag lecture-05-dyad-3.5 and
+Today you work inside the course repository itself. Clone it at the tag lecture-05-dyad-3.5-r2 and
 make a branch handson-05; step 0 of the guide has the clicks.
 
 Each step starts from a starter model in the HandsOn05 folder. The starter already holds the car,
