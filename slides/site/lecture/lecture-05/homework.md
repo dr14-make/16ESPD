@@ -37,7 +37,7 @@ and every powertrain part. You write no new physics: the work is the wiring and 
 
    ```julia
    using Pkg
-   Pkg.add(url = "https://github.com/dr14-make/16ESPD", rev = "lecture-05-dyad-3.5")
+   Pkg.add(url = "https://github.com/dr14-make/16ESPD", rev = "lecture-05-dyad-3.5-r2")
    ```
 
    Skipped Lecture 4? Also add the two packages your code names directly:

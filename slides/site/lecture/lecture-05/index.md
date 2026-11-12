@@ -77,18 +77,18 @@ solves on different machines: your run can differ past them.
 
 Start this before the talk ends: the first compile and the first REPL start take several minutes.
 Today you edit the starters inside the course repository itself, at the tag
-`lecture-05-dyad-3.5`: the Lecture 5 version for Dyad 3.5. Clone it before class if you can.
+`lecture-05-dyad-3.5-r2`: the Lecture 5 version for Dyad 3.5. Clone it before class if you can.
 
 1. In Studio, press F1 › **Git: Clone**, paste `https://github.com/dr14-make/16ESPD`, pick an
    empty folder, and click **Open** when asked. At the trust prompt, choose "Yes, I trust the
    authors".
 2. Press F1 › **Git: Create Branch From…**, type `handson-05`, and pick the tag
-   `lecture-05-dyad-3.5` from the list.
+   `lecture-05-dyad-3.5-r2` from the list.
 
    From a terminal instead, then open the `16ESPD` folder in Studio and trust it the same way:
 
    ```sh
-   git clone --branch lecture-05-dyad-3.5 https://github.com/dr14-make/16ESPD
+   git clone --branch lecture-05-dyad-3.5-r2 https://github.com/dr14-make/16ESPD
    cd 16ESPD && git switch -c handson-05
    ```
 
