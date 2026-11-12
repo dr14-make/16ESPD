@@ -75,17 +75,7 @@ relations
   P_m = manager.tau_machine * manager.w_shaft
   E_cap * der(SoC) = -(max(P_m, 0.0) / eta + min(P_m, 0.0) * eta)
   initial SoC = SoC0
-metadata {
-  "_links": {
-    "P_table": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 100, "x2": 100, "y2": 200}}}},
-    "dither_table": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 300, "x2": 100, "y2": 400}}}},
-    "tau_table": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 500, "x2": 100, "y2": 600}}}},
-    "v_table": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 700, "x2": 100, "y2": 800}}}},
-    "manager": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 300, "x2": 550, "y2": 500}}}},
-    "line": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 250, "x2": 800, "y2": 350}}}},
-    "line_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
-  }
-}
+metadata {"_links":{"P_table":{"Dyad":{"placement":{"diagram":{"x1":0,"y1":100,"x2":100,"y2":200}}}},"dither_table":{"Dyad":{"placement":{"diagram":{"x1":0,"y1":300,"x2":100,"y2":400}}}},"tau_table":{"Dyad":{"placement":{"diagram":{"x1":0,"y1":500,"x2":100,"y2":600}}}},"v_table":{"Dyad":{"placement":{"diagram":{"x1":0,"y1":700,"x2":100,"y2":800}}}},"manager":{"Dyad":{"placement":{"diagram":{"x1":350,"y1":300,"x2":550,"y2":500}}}},"line":{"Dyad":{"placement":{"diagram":{"x1":700,"x2":800,"y1":270,"y2":370}}}},"line_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}}}}
 end
 
 "Energy-manager bench through every mode and the closed SoC loop (assumed bench)"
