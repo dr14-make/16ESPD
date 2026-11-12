@@ -55,24 +55,7 @@ relations
   guess unit.converter.d = 0.5
   guess unit.engine.crankshaft.w = 1500.0 * pi / 30.0
   guess unit.P_trim = 0.0
-metadata {
-  "_links": {
-    "unit": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 300, "x2": 600, "y2": 500}}}},
-    "line": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 400, "x2": 300, "y2": 500}}}},
-    "step_2": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 150, "x2": 80, "y2": 230}}}},
-    "step_3": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 270, "x2": 80, "y2": 350}}}},
-    "step_4": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 390, "x2": 80, "y2": 470}}}},
-    "load": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 350, "x2": 850, "y2": 450, "rot": 90}}}},
-    "link": {"Dyad": {"placement": {"diagram": {"x1": 900, "y1": 350, "x2": 1000, "y2": 450, "rot": 90}}}},
-    "ground": {"Dyad": {"placement": {"diagram": {"x1": 760, "y1": 600, "x2": 840, "y2": 680}}}},
-    "mounts": {"Dyad": {"placement": {"diagram": {"x1": 460, "y1": 600, "x2": 540, "y2": 680}}}},
-    "line_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 590, "y": 250}, {"x": 160, "y": 250}, {"x": 160, "y": 450}], "E": 2}]}},
-    "speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "p_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 320}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 950, "y": 320}], "E": 3}], "junctions": [{"x": 800, "y": 320}]}},
-    "n_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": 2, "M": [{"x": 950, "y": 560}], "E": -1}, {"S": 3, "M": [{"x": 620, "y": 560}], "E": -1}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 800, "y": 560}]}},
-    "mount_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
-  }
-}
+metadata {"_links":{"unit":{"Dyad":{"placement":{"diagram":{"x1":400,"y1":300,"x2":600,"y2":500}}}},"line":{"Dyad":{"placement":{"diagram":{"x1":200,"x2":300,"y1":390,"y2":490}}}},"step_2":{"Dyad":{"placement":{"diagram":{"x1":0,"y1":150,"x2":80,"y2":230}}}},"step_3":{"Dyad":{"placement":{"diagram":{"x1":0,"y1":270,"x2":80,"y2":350}}}},"step_4":{"Dyad":{"placement":{"diagram":{"x1":0,"y1":390,"x2":80,"y2":470}}}},"load":{"Dyad":{"placement":{"diagram":{"x1":750,"y1":350,"x2":850,"y2":450,"rot":90}}}},"link":{"Dyad":{"placement":{"diagram":{"x1":900,"y1":350,"x2":1000,"y2":450,"rot":90}}}},"ground":{"Dyad":{"placement":{"diagram":{"x1":760,"y1":600,"x2":840,"y2":680}}}},"mounts":{"Dyad":{"placement":{"diagram":{"x1":460,"y1":600,"x2":540,"y2":680}}}},"line_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":580,"y":290},{"x":190,"y":290},{"x":190,"y":440}],"E":2}],"renderStyle":"standard"}},"speed_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"p_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":800,"y":340}],"E":2},{"S":1,"M":[{"x":950,"y":340}],"E":3}],"renderStyle":"standard"}},"n_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":800,"y":460},{"x":950,"y":460}],"E":2},{"S":1,"M":[{"x":800,"y":460}],"E":3},{"S":1,"M":[],"E":4}],"renderStyle":"standard"}},"mount_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":530,"y":500},{"x":530,"y":590},{"x":500,"y":590}],"E":2}],"renderStyle":"standard"}}}}
 end
 
 """
@@ -142,25 +125,7 @@ relations
   connect(unit.p, battery.p) {^p_wire}
   connect(battery.n, unit.n, ground.g) {^n_wire}
   connect(unit.support, mounts.spline) {^mount_wire}
-metadata {
-  "_links": {
-    "unit": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 300, "x2": 600, "y2": 500}}}},
-    "line": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 400, "x2": 300, "y2": 500}}}},
-    "step_2": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 50, "x2": 80, "y2": 130}}}},
-    "step_3": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 150, "x2": 80, "y2": 230}}}},
-    "step_4": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 250, "x2": 80, "y2": 330}}}},
-    "step_5": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 350, "x2": 80, "y2": 430}}}},
-    "step_6": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 450, "x2": 80, "y2": 530}}}},
-    "battery": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 350, "x2": 850, "y2": 450, "rot": 90}}}},
-    "ground": {"Dyad": {"placement": {"diagram": {"x1": 760, "y1": 600, "x2": 840, "y2": 680}}}},
-    "mounts": {"Dyad": {"placement": {"diagram": {"x1": 460, "y1": 600, "x2": 540, "y2": 680}}}},
-    "line_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 590, "y": 250}, {"x": 160, "y": 250}, {"x": 160, "y": 450}], "E": 2}]}},
-    "speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "p_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 320}], "E": 2}]}},
-    "n_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": 2, "M": [{"x": 620, "y": 560}], "E": -1}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 800, "y": 560}]}},
-    "mount_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
-  }
-}
+metadata {"_links":{"unit":{"Dyad":{"placement":{"diagram":{"x1":400,"y1":300,"x2":600,"y2":500}}}},"line":{"Dyad":{"placement":{"diagram":{"x1":200,"x2":300,"y1":390,"y2":490}}}},"step_2":{"Dyad":{"placement":{"diagram":{"x1":0,"y1":50,"x2":80,"y2":130}}}},"step_3":{"Dyad":{"placement":{"diagram":{"x1":0,"y1":150,"x2":80,"y2":230}}}},"step_4":{"Dyad":{"placement":{"diagram":{"x1":0,"y1":250,"x2":80,"y2":330}}}},"step_5":{"Dyad":{"placement":{"diagram":{"x1":0,"y1":350,"x2":80,"y2":430}}}},"step_6":{"Dyad":{"placement":{"diagram":{"x1":0,"y1":450,"x2":80,"y2":530}}}},"battery":{"Dyad":{"placement":{"diagram":{"x1":750,"y1":350,"x2":850,"y2":450,"rot":90}}}},"ground":{"Dyad":{"placement":{"diagram":{"x1":760,"y1":600,"x2":840,"y2":680}}}},"mounts":{"Dyad":{"placement":{"diagram":{"x1":460,"y1":600,"x2":540,"y2":680}}}},"line_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":580,"y":290},{"x":190,"y":290},{"x":190,"y":440}],"E":2}],"renderStyle":"standard"}},"speed_wire":{"Dyad":{"edges":[{"S":1,"M":[],"E":2}],"renderStyle":"standard"}},"p_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":800,"y":340}],"E":2}],"renderStyle":"standard"}},"n_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":800,"y":460}],"E":2},{"S":1,"M":[],"E":3}],"renderStyle":"standard"}},"mount_wire":{"Dyad":{"edges":[{"S":1,"M":[{"x":530,"y":500},{"x":530,"y":590},{"x":500,"y":590}],"E":2}],"renderStyle":"standard"}}}}
 end
 
 """
