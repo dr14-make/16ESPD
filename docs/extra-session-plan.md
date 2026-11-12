@@ -11,7 +11,10 @@ The design document for the extra session that closes the electric and hybrid bl
 | `lecture-05-plan.md` | the series-hybrid architecture and energy manager the fuel-cell car reuses |
 | `research_notes/Electric and hybrid vehicles/teaching_materials.md` §3 | OCV(SoC), Leaf pack resistance |
 | `research_notes/Electric and hybrid vehicles/charging.md` (new) | charging physics, curves, standards, network |
-| `research_notes/Electric and hybrid vehicles/hydrogen.md` (new) | stations, fueling protocol, FCEVs, efficiency chain, PEM data |
+| `research_notes/Electric and hybrid vehicles/hydrogen.md` (new) | stations, fueling protocol, FCEVs, efficiency chain |
+| `research_notes/Electric and hybrid vehicles/pem-polarization.md` (new) | the polarization curve for the slide, Mirai comparison, Faraday |
+| `research_notes/Electric and hybrid vehicles/bms.md` (new) | Thevenin parameters, SoC drift, balancing, safety limits |
+| `research_notes/Electric and hybrid vehicles/energy-prices-cz.md` (new) | Czech prices and cost per 100 km |
 
 ## Source and scope
 
@@ -96,14 +99,16 @@ Labels as in the research notes; secondary numbers are flagged and need a primar
 
 | Quantity | Value | Source label |
 |---|---|---|
-| CV voltage, NCA / LFP cell | 4.20 V / 3.6 V; cutoff ≈ C/50 (not the usual C/20) | verified, datasheets |
+| CV voltage, NCA / NMC / LFP cell | 4.20 V / 4.20 V / 3.6 V; cutoff C/50–C/96 in all three datasheets (C/20 unsupported) | verified, datasheets |
 | End of CC on the course Leaf at 50 kW | ≈ 4.05 V per cell (14 V pack I·R) | computed |
 | Leaf 40 kWh DC | 46 kW peak, 10–80 % in 43 min; throttles above 32 °C | secondary |
 | Leaf pack warming per charge | 6.5 °C DC vs 2.9 °C AC | verified, INL |
 | 10–80 %, 800 V vs 400 V | Ioniq 5 18 min, Taycan 2024 18 min / Model Y 27, ID.3 28 | OEM verified / secondary |
 | Charging loss | AC 11 kW 5.1–7.0 %, socket 12.7–24.2 %, DC 5–15 % (+2–8 % cold) | verified, ADAC 2026 |
 | Fast-charge degradation | 2.3 %/yr mean; ≤ 3.0 % heavy DC vs ≈ 1.5 % AC | verified, Geotab 2026 |
-| CZ public points, end 2025 | 7,574, 12.8 % ≥ 150 kW | secondary |
+| CZ public points | end 2025: 7,574, 33.1 % DC, 12.8 % ≥ 150 kW; Sep 2026: 7,669, 36.1 % DC | verified, EAFO |
+| EU27 public points | end 2025: 1,061,890, 18.3 % DC; Sep 2026: 1,176,554 | verified, EAFO |
+| ISO 15118-20 | mandatory on new or renovated public points from 1 Jan 2027 (Reg. 2025/656) | verified |
 | 700 bar fueling | precool −40 °C, tank gas ≤ 85 °C, dispenser ≤ 875 bar | verified, DOE |
 | Compression and precooling energy | ≈ 3 kWh/kg (1.7–6.4) + 0.15–0.2 kWh/kg | verified, DOE |
 | Mirai | 5.6 kg H₂, 0.79 kg/100 km, 128 kW, 330 cells | verified, Toyota |
@@ -112,7 +117,14 @@ Labels as in the research notes; secondary numbers are flagged and need a primar
 | FCEV sales 2025 | world 16,011; Europe 566; Germany 49 registrations | secondary / KBA verified |
 | Power to wheel | BEV 69 %, FCEV 26 %; Mirai ≈ 46 kWh electricity/100 km ≈ 2.5× BEV | Agora / computed |
 | Grey H₂ | 10–14 kg CO₂e/kg H₂ | verified, IEA |
-| PEM stack parameters | Pukrushpan P2000 set: 381 cells, 280 cm², i_max 2.2 A/cm² | verified; check b₁₁ misprint |
+| PEM slide curve | V = 0.950 − 0.178(1 − e^(−10i)) − 0.1575i − i(0.390i/2.2)²: 0.82/0.69/0.58/0.43 V at 0.1/0.5/1.0/1.5 A/cm²; b₁₁ = 0.005139 | verified, Pukrushpan thesis 2003 |
+| Mirai gen 1 measured | ≈ 0.74 V/cell at 0.95 A/cm² | read from figure, ANL 2018 |
+| Real 700 bar fills | 3.22 min, 0.9 kg/min mean over 1.85 M fills | verified, NLR |
+| Thevenin cell, Leaf cell at ~60 % SoC | R0 ≈ 1.6 mΩ, R1 ≈ 1.1–1.9 mΩ, τ ≈ 19–29 s | derived, fit to ORNL HPPC |
+| SoC drift | 50 mA offset on 33 Ah: 3.6 % per day | derived |
+| Balancing current | TI BQ79616 240 mA, NXP MC33771C 300 mA | verified, datasheets |
+| Runaway onset, 100 % SoC | NMC 85.5 / 198 °C, LFP 124 / 256 °C | verified |
+| Cost per 100 km, CZ | Leaf home 120 CZK, Leaf DC 222–289, petrol 224, Mirai 394 (H₂ price weak) | derived |
 
 ## Issues
 

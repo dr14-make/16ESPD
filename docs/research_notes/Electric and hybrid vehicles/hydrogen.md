@@ -11,7 +11,7 @@ Compiled 2026-11-12. Every number carries its own date, so check that date befor
 - `derived`: my own arithmetic on labeled inputs. The formula is shown.
 
 **Access notes**
-- nrel.gov no longer resolves. NREL has been renamed the National Laboratory of the Rockies (NLR).
+- nrel.gov no longer resolves. NREL has been renamed the National Laboratory of the Rockies (NLR); its pages are at nlr.gov and its PDFs at docs.nlr.gov, both readable.
 - energy.ca.gov, h2stations.org, ISO, SAE, S&P Global and TÜV SÜD refused automated fetches.
 - Where one of these sites was the primary source, the label says what was actually read.
 
@@ -34,13 +34,19 @@ Compiled 2026-11-12. Every number carries its own date, so check that date befor
 | 1,160 | Stations in operation worldwide at the end of 2024 (Europe 294, of which Germany 113) | [LBST-H2STATIONS-2025] | secondary |
 | 50 | Public stations in Germany, January 2026; more than 80 two years earlier | [ECOMENTO-DE-50-2026] (H2 MOBILITY data) | secondary |
 | 22 | Small 700-bar stations closed by H2 MOBILITY in the first half of 2025 | [H2M-CLOSURES-2025] | secondary |
+| 36 | Public stations in Germany taken off the network in 2025, all operators (Initiative H2-Infrastruktur Deutschland, 2026-01-05) | [SOLARSERVER-DE-36-2026] | secondary |
 | 61 total / 50 open-retail | California stations, 2025-08-29 | [CARB-AB126-2025] | verified |
 | 58 % → 74 % | California network availability, Q2 2024 → Q2 2025 (2021–2025 average 63 %) | [CARB-AB126-2025] | verified |
 | 14,138 | FCEVs registered in California in April 2025: the first-ever year-over-year decline (−291) | [CARB-AB126-2025] | verified |
-| ≈ €12.85 to ≈ €19 per kg | Retail hydrogen price in Germany (dates differ: see §2) | [H2LIVE-PRICE], [ECOMENTO-DE-50-2026] | verified (price stated but undated) / secondary |
+| ≈ €12.85 to ≈ €19 per kg | Retail hydrogen price in Germany (dates differ: see §2). €12.85 sits beside an "ADAC 2022 and BMDV 2021" cost comparison, so it is probably a 2022–23 value (my inference); €19 is Jan 2026 | [H2LIVE-PRICE], [ECOMENTO-DE-50-2026] | verified (price stated but undated) / secondary |
+| ≈ €8/kg net | H2 MOBILITY truck price for hylane customers from 2026-01-01 (Düsseldorf, Rhein-Neckar). Not a car retail price | [H2M-HYLANE-2025] | verified |
 | $34.55/kg | California average light-duty pump price, October 2024 (Platts) | [PLATTS-CA-2024] | secondary |
 | 1 t/day, 700 bar, every ≤ 200 km on the TEN-T core network plus every urban node, by 2030-12-31 | AFIR Art. 6 hydrogen station requirement | [AFIR-2023-1804] | verified |
-| 2 | Public stations in Czechia run by ORLEN (Praha-Barrandov, Litvínov). Others: CEPRO Mstětice, Vítkovice (Ostrava) | [FORBES-CZ-ORLEN], [EKONOMICKYDENIK-CEPRO-2023] | search summary / secondary |
+| 2 | Public stations in Czechia run by ORLEN (Praha-Barrandov, Litvínov), April 2026; further ORLEN construction "zatím pozastavili" (paused for now) as operation is loss-making. Others: CEPRO Mstětice, Vítkovice (Ostrava) | [SYSLOG-ORLEN-2026], [EKONOMICKYDENIK-CEPRO-2023] | secondary |
+| 278 CZK/kg | ORLEN hydrogen price at opening, March 2023. No newer price found | [CNN-PRIMA-BARRANDOV-2023] | secondary |
+| 0 of 10 | Mníšek pod Brdy hydrogen buses in passenger service on 2026-10-12 (station still being commissioned; target was Dec 2025) | [EPOCH-CZ-MNISEK-2026] | secondary |
+| 3 min, 70 MPa, T40 | J2601 design target for a light-duty fill (SOC 90–100 %), per ANL/DOE | [ANL-J2601-FILLTIME] | verified |
+| 3.22 min, 0.9 kg/min | Average real fill time and rate, 1,850,493 fills at the retail stations in the NREL dataset, 2014Q3–2022Q2 | [NLR-CDP-2023] | verified |
 | 16,011 | FCEVs sold worldwide in 2025 (+24.4 %): China 7,797, South Korea 6,802, Europe 566, Japan 430, US 365 | [ARGUS-SNE-2026] | secondary |
 | 49 | New fuel cell cars registered in Germany in 2025 (−69.0 %) | [KBA-2025] | verified |
 | ≈ 130,000 | Global FCEV stock in 2025 (+20 %). Trucks use about 60 % of road hydrogen, buses about 30 % | [IEA-GHR-2026] | verified |
@@ -126,6 +132,17 @@ Compiled 2026-11-12. Every number carries its own date, so check that date befor
 - A search snippet attributed to J2601: "a performance target of a fueling time of 3 minutes and a state of charge (SOC) of 95 to 100% (with communications), which can be achieved with a T40-rated dispenser".
 - I could not open the page that carried that snippet.
 
+**[ANL-J2601-FILLTIME]** K. Reddi, A. Elgowainy (Argonne National Laboratory), N. Rustagi, E. Gupta (DOE Fuel Cell Technologies Office), "Impact of hydrogen SAE J2601 fueling methods on fueling time of light-duty fuel cell electric vehicles", author manuscript on OSTI (ID 1389635; its references run to January 2017). https://www.osti.gov/servlets/purl/1389635. Label: `verified` (PDF text extracted). This is the citable, non-paywalled source for the 3-minute target.
+- "The desired performance attributes used to develop the SAE J2601 fueling protocol ensure consumer convenience by enabling a fueling time of 3 minutes for a 70 MPa FCEV at a T40 station (i.e., capable of precooling to -40oC) achieving a state of charge of 90% to 100% of the rated capacity of the vehicle storage (defined at nominal working pressure and 15oC)."
+- The SOC band here (90–100 %) differs from the SAE snippet above (95–100 % with communications). Quote the source you cite.
+- The paper compares the J2601 "lookup table" and "MC formula" methods: the MC formula method "provides faster vehicle fills", especially at high ambient temperature.
+
+**[NLR-CDP-2023]** G. Saur, S. Gilleon, S. Sprik, "Next Generation Hydrogen Station Composite Data Products: Retail Stations – Summer 2022: Data through Quarter 2 of 2022", NREL/PR-5400-86247, 2023-05-09. https://docs.nlr.gov/docs/fy23osti/86247.pdf (nlr.gov, formerly nrel.gov). Label: `verified` (PDF text extracted). Real fill times, CDP-INFR-02 and CDP-INFR-03 (data range 2014Q3–2022Q2):
+- "1,850,493 Events", "Average = 0.9 kg/min", "0.8% >1.51 kg/min", "0.2% >2 kg/min".
+- "Average = 3.22 min", "53% <3.3 min", "28% <2.5 min".
+- The chart legends mark the "2020 MYRDD Target for 5kg" and the "Ultimate MYRDD Target (5 kg in 2.5 min)". The 3.3-min mark matches 5 kg at the 1.5 kg/min (2020) target. Label for that pairing: `read from figure`.
+- Slide point: the average US retail fill already takes about 3 minutes, but only 28 % of fills are faster than the 2.5-minute DOE ultimate target.
+
 **Fill time.**
 - **[HYUNDAI-NEXO-2025]** (`verified`): Hyundai quotes a "five-minute hydrogen refill", defined as more than 95 % refueling.
 - `derived`: at the J2601 maximum of 60 g/s, 5 kg takes at least 83 s. Average ramp-limited fills are therefore 3–5 min.
@@ -183,11 +200,15 @@ Projection:
 - "average availability climbing to approximately 90% by year-end".
 - This availability metric differs from CARB's capacity-weighted 63 %/74 %. Do not compare the two directly.
 
-**[NREL-CDP]** NREL "Next Generation Hydrogen Station Composite Data Products" (retail and all stations). Label: `search summary`. nrel.gov is unreachable.
-- The all-stations page was "Last Updated Feb. 10, 2025".
-- Maintenance concentrates on dispensers, compressors and chillers.
-- A 2020 DOE review: "most maintenance remains on dispensers, followed by compressors". No 2025 availability values were retrieved.
+**[NREL-CDP]** NLR (ex-NREL) "Next Generation Hydrogen Station Composite Data Products: Retail Stations", https://www.nlr.gov/hydrogen/infrastructure-cdps-retail, retrieved 2026-11-12. Label: `verified` for the page facts below. The old nrel.gov URLs do not resolve; the same pages live on nlr.gov.
+- The page is "Last Updated Feb. 10, 2025". Its newest product set is the 2023 release with data through Q2 2022 ([NLR-CDP-2023], §1.1). **No 2024–2026 reliability or availability data is published there.**
+- Maintenance by known equipment type, CDP RETAIL INFR 21 (created 2022-03-28, data 2014Q3–2021Q2). Label: `read from figure` (percent labels are printed on the pie; the slice-to-component mapping is my reading of the legend colors).
+  - "Total Events = 19,040, 61% unscheduled": dispenser 48 %, compressor 22 %, chiller 14 %, storage 9 %, gas management panel 7 %.
+  - "Total Hours = 51,960, 64% unscheduled": dispenser 36 %, chiller 20 %, storage 20 %, compressor 18 %, gas management panel 6 %.
+- "2021 Station Unavailability for 51 stations", CDP RETAIL INFR 93 (created 2022-04-14). Label: `read from figure` (±3 stations): about 0–10 stations unavailable in January–February 2021, rising to about 30–40 in early September 2021.
+- A 2020 DOE review: "most maintenance remains on dispensers, followed by compressors". Label: `search summary`.
 - Related paper: Kurtz, Sprik, Peters, Bradley, "Retail Hydrogen Station Reliability Status and Advances" (analysis of more than 5,000 maintenance events). Not opened.
+- For 2024–2025 availability, use CARB (58 % → 74 %, above) or the H2FCP figure (≈ 90 % at end-2025, different metric).
 
 **Station capital cost: [DOE-REC-21002-2020]** (above). Label: `verified`.
 - "Capital equipment cost estimates for 111 new fueling stations selected for award in California varied between approximately $1,200 and $3,000 per kilogram hydrogen dispensed per day … all stations were designed with 700-bar fueling capability".
@@ -201,22 +222,36 @@ Projection:
 - **[H2LIVE-PRICE]** H2 MOBILITY Deutschland, h2.live (English site), retrieved 2026-11-12. https://h2.live/en/. Label: `verified` for the text, but the date is unknown.
   - Quote: "The price for a kilogram of hydrogen at all public H2 MOBILITY filling stations is €12.85 (gross)."
   - This is the uniform price H2 MOBILITY set in 2023. It is likely stale on that page, because prices have been dynamic since October 2023.
+  - The same FAQ answer goes on: "For 100 km, a fuel cell vehicle consumes approximately 0.8 kilograms of hydrogen (WLTP), generating fuel costs of €10.28 … (Source: ADAC 2022 and BMDV 2021)". The comparison it sits in is dated 2021–22, which supports reading €12.85 as a 2022–23 value (my inference).
 - **[ECOMENTO-DE-50-2026]** T. Langenbucher, "Nur noch 50 öffentliche Wasserstoff-Tankstellen in Deutschland", ecomento.de, 2026-01-16 (citing H2 MOBILITY data and Handelsblatt). https://ecomento.de/2026/01/16/nur-noch-50-oeffentliche-wasserstoff-tankstellen-in-deutschland/. Label: `secondary`.
   - Price: "bis zu rund 19 Euro pro Kilogramm" (up to about €19 per kg), varying by region and pressure.
 - Düsseldorf station (search summary, h2-international.com, 2025): €13.55/kg at 350/500 bar and €15/kg at 700 bar. H2 MOBILITY called these prices "close to the purchase cost". Label: `search summary`.
-- **[H2M-PRICECUT-2026]** Hydrogen Central, "H2 MOBILITY cuts hydrogen prices at high-volume German stations", 2026-06-19. Label: `secondary`.
+- **[H2M-PRICECUT-PRIMARY-2026]** H2 MOBILITY, "Preissenkung bei H2 MOBILITY: THG-Quotenhandel zeigt erste Wirkung", Berlin, 2026-05-28. https://h2.live/news/4167/. Label: `verified`.
+  - "senkt zum 01. Juni die Preise für Wasserstoff an mehreren leistungsstarken Tankstellen in einem ersten Schritt um rund 10%" (from 1 June, cuts prices at several high-throughput stations, as a first step, by about 10 %).
+  - "Die Preisanpassung betrifft die Standorte Mannheim, Heidelberg, Frankenthal, Ludwigshafen und Düsseldorf-Höherweg" and "gilt für die Druckstufen 350 bar und 700 bar".
+  - The release gives no euro price per kg.
+- **[H2M-HYLANE-2025]** H2 MOBILITY news, Köln, 2025-11-18. https://h2-mobility.de/news/4039/. Label: `verified`.
+  - "Ab dem 1. Januar 2026 tanken hylane-Kunden an ausgewählten H2 MOBILITY-Tankstellen Wasserstoff … für rund 8 Euro netto pro Kilogramm." Available "in den Regionen Düsseldorf sowie Rhein-Neckar"; "Das Angebot gilt exklusiv mit einer hylane-Tankkarte."
+  - This is a truck fleet contract price, net of VAT. It is not the car retail price.
+- Other 2026 car prices found are weak: energiemarie.de (consumer site) gives €13.20–13.50/kg at 700-bar car pumps in May 2026 (`search summary`); an ecomento reader comment dated 2026-07-10 reports €17.95/kg at 700 bar at a new Waiblingen station (`secondary`, reader comment, not reporting).
+- **[H2M-PRICECUT-2026]** Hydrogen Central, "H2 MOBILITY cuts hydrogen prices at high-volume German stations", 2026-06-19. Label: `secondary`. Reports the same cut as [H2M-PRICECUT-PRIMARY-2026].
   - About −10 % at Mannheim, Heidelberg, Frankenthal, Ludwigshafen and Düsseldorf-Höherweg, for both 350 and 700 bar.
   - Drivers named: "economies of scale and the financial benefits of greenhouse gas quota trading".
 - vision-mobility.de, 2026-09-28, source "H2 Mobility". Label: `secondary`.
   - From 2026-10-01, 15 more stations (Bayreuth … Wesseling) become "um 12 bis 16 % günstiger" (12–16 % cheaper).
   - No euro values are given.
-- Truck fleet contract: Hylane customers at about €8/kg net from 2026-01-01. Label: `search summary`.
+- Truck fleet contract: hylane customers at about €8/kg net from 2026-01-01. Now confirmed from the primary page: see [H2M-HYLANE-2025] above (`verified`).
 
 **Retail price, California.**
 - **[PLATTS-CA-2024]** S&P Global Commodity Insights, "California hydrogen pump prices for light-duty vehicles reach new highs", 2024-10-01. Label: `secondary`. The page returned 403; the quote is reproduced by Hydrogen Central and by search snippets.
   - "Platts … assessed the monthly average price of light-duty hydrogen fuel in California pump stations at $34.55/kg on Oct. 1, a 1.3% increase from the previous record-high set in January 2024."
 - True Zero (largest operator) raised the price to $36/kg across its stations (Hydrogen Insight, 2023). Label: `search summary`.
 - First Public Hydrogen Authority press release (April 2026): "Retail hydrogen prices in some markets today can range from $30 to $65 per kilogram". Label: `search summary`.
+- **[CEC-AB126-2026]** CEC/CARB, "Joint Agency Staff Report on Assembly Bill 126: 2025 Annual Assessment of the Hydrogen Refueling Network in California", CEC-600-2026-022, posted 2026-05. https://www.energy.ca.gov/sites/default/files/2026-05/CEC-600-2026-022.pdf. Label: `search summary` (energy.ca.gov refuses automated fetches; no mirror found on ww2.arb.ca.gov or h2fcp.org).
+  - Snippets: the price of hydrogen "averaged $35.47 in the second quarter of" (the year is cut off in the snippet; 2025 by context, unconfirmed); "the average price of dispensed hydrogen has largely remained the same since the sharp increase".
+  - Snippets: 50 stations open to the public as of 2025-09-02, with 11 more temporarily non-operational; average network availability over the past year "approximately 60 percent".
+  - A secondary blog summarizing it rounds the price to $36/kg, "equivalent to about $14.40 per gallon of gasoline".
+- Platts assessed California light-duty pump prices at $34.70/kg in early December 2024 (S&P Global article, via search snippet). Label: `search summary`.
 
 **Cost per 100 km (`derived`).**
 
@@ -257,7 +292,8 @@ For the BEV and petrol comparison:
 | USA | 89 (9 opened, 12 closed) | — |
 
 - Caveat from LBST: "The actual number of hydrogen refuelling stations is subject to uncertainties, partly due to a lack of public announcements in the event of closures."
-- The 18th assessment (end-2025 data) was **not found**. See Gaps.
+- The 18th assessment (end-2025 data) was **not found** as of 2026-11-12. LBST's own news page (https://en.lbst.de/, fetched 2026-11-12) lists 2026 items on other topics, and its newest H2stations.org release is still the 2025-02-11 one (`verified` for that absence). Trade-press searches in English and German found no end-2025 world/Europe/Germany figures. See Gaps.
+- Europe now has an official station-data platform: the Clean Hydrogen Partnership launched "H2-Stations" (https://h2-stations.eu, live map at map.h2-stations.eu) on 2026-05-20, offering "free and open access to both static and dynamic HRS data at a European level". The announcement gives no station counts. Label: `verified`. The map was not read.
 - The LBST count for Germany (113) covers all stations, including bus and depot stations, so it is not comparable with the H2 MOBILITY public count below.
 
 **Germany: H2 MOBILITY.**
@@ -271,6 +307,9 @@ For the BEV and petrol comparison:
   - Reasons: the stations, "some of which were built more than 10 years ago", "no longer meet today's technical and economic requirements", and a "muted market ramp-up for passenger cars".
   - New focus: "light and heavy commercial vehicles".
   - Earlier closures: 3 stations (electrive, 2024-03-26) and 6 older stations (electrive, 2024-10-02). Label: `search summary`.
+- **[SOLARSERVER-DE-36-2026]** solarserver.de, "Petition gegen Rückbau von Wasserstofftankstellen in Deutschland", 2026-01-05, citing the Initiative H2-Infrastruktur Deutschland (Frank Stuckstedte). https://www.solarserver.de/2026/01/05/petition-gegen-rueckbau-von-wasserstofftankstellen-in-deutschland/. Label: `secondary`.
+  - By the end of 2025, "insgesamt 36 öffentlich zugängliche Wasserstofftankstellen vom Netz gegangen" (a total of 36 publicly accessible hydrogen stations went off the network).
+  - The article gives no count of stations remaining. Use the H2 MOBILITY figure (50, January 2026) for that.
 - ecomento, 2025-04-11 (`secondary`): in March 2025, the 350-bar share of H2 MOBILITY fuelings was "deutlich über 50 Prozent" (well over 50 %), above 700 bar for the first time.
 
 **California:** see [CARB-AB126-2025] in §2. 61 total and 50 open-retail on 2025-08-29.
@@ -308,7 +347,19 @@ For the BEV and petrol comparison:
   - It plans stations at Praha-Horní Počernice, Brno-Slatina and Ostrava-Pustkovec "do konce roku 2026" (by the end of 2026).
   - About 20 stations around 2030, down from an earlier target of 28.
   - Public stations named: Barrandov, Litvínov, Vítkovice, Mstětice.
-- **Status on 2026-11-12 is unverified.** No report confirms that the three new ORLEN stations opened, or whether Vítkovice is still operating.
+- **[SYSLOG-ORLEN-2026]** F. Hubička, "Nástup vodíku v dopravě na českém trhu zpomaluje, rozhodují náklady i slabá poptávka", Systemylogistiky.cz, 2026-04-21. https://www.systemylogistiky.cz/2026/04/21/nastup-vodiku-v-doprave-na-ceskem-trhu-zpomaluje-rozhoduji-naklady-i-slaba-poptavka/. Label: `secondary` (trade press quoting ORLEN Unipetrol spokesperson Lada Gadas).
+  - "V Česku dnes Orlen Unipetrol provozuje dvě veřejné vodíkové plnicí stanice, a to v Praze na Barrandově a v Litvínově." (ORLEN Unipetrol today operates two public hydrogen stations in Czechia, Praha-Barrandov and Litvínov.)
+  - "Skupina Orlen Unipetrol proto přehodnotila původní plány a další výstavbu vodíkových stanic zatím pozastavila." Spokesperson: "…a další výstavbu jsme zatím pozastavili". (Further construction is paused for now.)
+  - "Orlen Unipetrol uvádí, že při současném objemu tankování je jejich provoz ztrátový." (At current fueling volumes, operating them is loss-making.)
+  - "V provozu jsou zatím jen nižší desítky vozů" (only a few dozen hydrogen vehicles are in operation).
+  - HYTEP's Martin Křemenák: about €6/kg would be needed to compete with diesel. No current CZK price is given.
+  - So the Horní Počernice, Brno-Slatina and Ostrava-Pustkovec stations planned "do konce roku 2026" were **not opened** as of April 2026, and construction is on hold. No later report found.
+- **[FDRIVE-BARRANDOV-2025]** fDrive.cz, "Konec vodíku v Čechách? Barrandovská plnička už několik týdnů nefunguje", 2025-06-13. https://fdrive.cz/clanky/konec-vodiku-v-cechach-barrandovska-plnicka-uz-nekolik-tydnu-nefunguje-14722. Label: `secondary`.
+  - The Barrandov station "je už více než měsíc mimo provoz" (has been out of service for more than a month) "kvůli blíže nespecifikované technické závadě" (an unspecified technical fault); "Oprava tak může trvat i několik týdnů."
+  - With Barrandov down, the nearest working station was Litvínov. A useful real-world availability example for the lecture.
+- **Price:** no CZK/kg price newer than 278 CZK/kg (March 2023) was found. Label: `secondary` (as above).
+- auto.cz, undated in the snippet: "V Česku je šest vodíkových čerpaček" (six hydrogen stations in Czechia) and 29 hydrogen cars (Čistá doprava data). Label: `search summary`.
+- **Vítkovice status on 2026-11-12 is unverified.** No 2025–2026 report on its operation or price was found.
 
 **EU law: [AFIR-2023-1804].** Regulation (EU) 2023/1804 of 13 September 2023 on the deployment of alternative fuels infrastructure, OJ L 234, 22.9.2023. Text from the EU Publications Office (Cellar) XHTML, http://publications.europa.eu/resource/celex/32023R1804. Label: `verified`.
 - **Art. 6(1):** "Member States shall ensure that by 31 December 2030 publicly accessible hydrogen refuelling stations designed for a minimum cumulative capacity of 1 tonne per day and equipped with at least a 700 bar dispenser are deployed with a maximum distance of 200 km between them along the TEN-T core network. Member States shall ensure that, by 31 December 2030, at least one publicly accessible hydrogen refuelling station is deployed in each urban node."
@@ -413,8 +464,15 @@ For the BEV and petrol comparison:
   - ČEZ press release (2024) on the "largest Czech hydrogen project": 10 Solaris Urbino 12 hydrogen buses near Mníšek pod Brdy (Martin Uher Bus, lines 446/517/688).
   - ČEZ is building a 540 kW electrolyzer powered by the Vrané nad Vltavou hydro plant, with a station for up to 3 buses per hour.
   - Start-up slipped from end-2025 to Q1/Q2 2026 (oenergetice.cz). Label: `search summary`.
-  - **Operating status on 2026-11-12 is unverified.**
+  - The first two buses reached the Martin Uher depot on 2025-09-17 (zdopravy.cz, busportal.cz). Label: `search summary`.
+  - zdopravy.cz, 2026-06-20 (`secondary`): councillor Petr Borecký said the fleet "se rozjede na linky PID do konce letošního léta" (will start on PID lines by the end of this summer); "Nyní už celé zařízení v Mníšku pod Brdy stojí a finišuje se jeho sestavení." The refueling unit is from Logan Energy.
+  - **[EPOCH-CZ-MNISEK-2026]** Epoch Times CZ, "Pilotní vodíkové autobusy v Mníšku ani po třičtvrtě roku stále nevyjely…", 2026-10-12. https://www.epochtimes.cz/ceska-republika/pilotni-vodikove-autobusy-v-mnisku-ani-po-trictvrte-roku-stale-nevyjely-zpozdeni-pry-zazivaji-podobne-projekty-po-cele-evrope-a301028.html. Label: `secondary`.
+    - "Vodíkové autobusy v Mníšku pod Brdy však stále nejezdí" (the hydrogen buses still do not run).
+    - ČEZ: "Celý systém je zkompletovaný, propojený a postupně probíhá oživování technologie." "Úspěšně proběhly například tlakové zkoušky a zkoušky těsnosti." (The system is complete and connected and is being commissioned; pressure and leak tests passed.)
+    - No date set; operator Martin Uher "doufá, že to bude ještě letos" (hopes it will be this year).
+  - **So on 2026-10-12, none of the 10 buses was in passenger service.** Nothing later found.
   - Ústí nad Labem DP has a framework contract for up to 20 Urbino 12 hydrogen buses. Label: `search summary`.
+  - The Ústí project is suspended: ČTK via oEnergetice.cz, 2025-01-22 (`secondary`). Mayor Petr Nedvědický: "Projekt jsme kvůli rozhodnutí o typu (podporovaného) vodíku, který vydala Evropská komise, museli pozastavit". Spolchemie hydrogen would cost €6–8/kg locally, which he called "ekonomicky nevýhodné" (economically disadvantageous). https://oenergetice.cz/vodik/vodikove-autobusy-v-mhd-v-usti-nad-labem-v-nejblizsi-dobe-nebudou
   - Ostrava (DPO): an older article mentions a tender for a station at Hranečník and 5 hydrogen buses. No delivery was confirmed; Ostrava's recent orders are battery-electric Solaris buses (electrive, 2026-08-08). Label: `search summary`.
   - Litvínov–Most: a hydrogen bus trial ran from 2023-06-29 to 07-09 (Slovak bus maker, 10.5 kg hydrogen, 350 km on hydrogen). Label: `secondary` (CzechCrunch).
 
@@ -569,12 +627,25 @@ This is a widely used automotive polarization model, parameterized on the **75 k
 
 ## Gaps
 
-1. **H2stations.org / LBST 18th assessment (end-2025 global counts)** was not found, and h2stations.org blocks automated access. The global, Europe, Asia and US figures here are end-2024.
-2. **California Energy Commission AB 126 joint report, December 2025** (CEC-600-2026-022, published 2026-05) could not be downloaded because energy.ca.gov refused the connection. It probably has 2025 price, capex and dispensed-volume data. California pump prices after October 2024 are unverified.
-3. **NREL station reliability data products** are unreachable after the NREL → NLR rename. There is no 2025 failure-mode or downtime number from NREL. CARB availability (63 % / 58 % → 74 %) is the verified substitute.
-4. **H2 MOBILITY current €/kg** has no dated official price. h2.live still shows €12.85, apparently stale. The 2026 cuts are reported only as percentages, and the ~€19/kg upper bound is via Handelsblatt/ecomento.
-5. **SAE J2601 and ISO 19880-1 texts** were not opened (paywalled or 403). The 3-minute / T40 target is a search summary. The 85 °C limit, the −40 °C precooling and the T-category bands are verified via DOE, a peer-reviewed paper and the HyTruck slides.
-6. **Czech stations on 2026-11-12**: whether ORLEN's Horní Počernice, Brno-Slatina and Ostrava-Pustkovec stations opened is unknown. Also unknown: whether Vítkovice still operates, and whether the Mníšek pod Brdy buses and the ČEZ station started service.
+Updated 2026-11-12. Items marked **Closed** or **Partly closed** were worked on in this pass; the evidence sits in the section named.
+
+**Closed**
+
+- **NLR (ex-NREL) station reliability data** (§2, §1.1): the pages moved to nlr.gov and are readable. Dispensers carry 48 % of maintenance events and 36 % of hours (2014Q3–2021Q2, `read from figure`); average real fill 3.22 min over 1,850,493 fills (2014Q3–2022Q2, `verified`). What remains: NLR has published **no reliability data newer than Q2 2022** (page last updated 2025-02-10), so 2024–2026 availability still rests on CARB.
+- **3-minute fill target** (§1.1): citable via Argonne/DOE [ANL-J2601-FILLTIME], `verified`: 3 minutes, 70 MPa, T40 station, SOC 90–100 %. The SAE and ISO texts themselves are still unread (paywalled).
+
+**Partly closed**
+
+- **Czech stations and buses** (§3, §4): ORLEN runs 2 public stations and has paused further construction (April 2026, `secondary`), so the three planned stations did not open. The Mníšek buses were still not in service on 2026-10-12 (`secondary`). Ústí's bus project is suspended (January 2025, `secondary`). Still open: a current CZK/kg price (newest is 278 CZK/kg, March 2023), whether Vítkovice and Mstětice still operate, and any Ostrava DPO hydrogen bus.
+- **German retail price** (§2): H2 MOBILITY's own release confirms a ~10 % cut from 2026-06-01 at five stations (`verified`), and the hylane truck price of ~€8/kg net from 2026-01-01 (`verified`). Still open: no dated euro-per-kg car price from H2 MOBILITY. h2.live's €12.85 sits in a 2021–22 comparison and is stale; the h2.live live map loads prices by script and was not read.
+
+**Open**
+
+- **H2stations.org / LBST 18th assessment (end-2025 counts)**: not published on LBST's site or found in trade press as of 2026-11-12. World, Europe and Germany figures here remain end-2024. The only end-2025 German figure is 36 public stations closed in 2025 (`secondary`). Check h2stations.org by hand, or the EU H2-Stations map (h2-stations.eu) for a current European count.
+- **CEC/CARB joint AB 126 report** (CEC-600-2026-022): energy.ca.gov still refuses automated fetches and no mirror was found. Its Q2 price ($35.47/kg) and ~60 % availability are `search summary` only. Open the PDF by hand to verify before using them.
+
+**Unchanged (not worked in this pass)**
+
 7. **Mirai 70 MPa / Type IV tanks** were not verified from Toyota primary text. The Toyota spec PDF also shows a stack volume of "4 L" that contradicts 5.4 kW/L.
 8. **No open-access Mirai 2 polarization curve** with active area was found. The Larminie & Dicks constant table was not verified online. The b₁₁ coefficient in Pukrushpan (2004) may be a misprint and needs checking against the thesis.
 9. **Drive-cycle average fuel cell system efficiency** (as opposed to peak) was not extracted as a number.

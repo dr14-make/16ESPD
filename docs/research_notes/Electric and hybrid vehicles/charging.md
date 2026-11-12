@@ -19,6 +19,7 @@ This note does not repeat the following, which the course note already has: the 
 | 4.20 V, 65 mA cut-off (≈ C/50), 0.5C max | CC-CV charge spec of an 18650 high-energy cell (3.25 Ah) | [PAN-NCR18650B] | verified (mirror copy) |
 | "below 10 °C, charge at a 0.25C rate" | Datasheet derating of charge current in the cold | [PAN-NCR18650B] | verified (mirror copy) |
 | 3.6 V CV, terminate < 50 mA; charge current < 250 mA below 0 °C | LFP cell (A123/Lithium Werks 26650, 2.5 Ah) | [LW-26650-2022] | verified |
+| 4.20 V CV, 50 mA end current (≈ C/96), 0.3C standard | LG INR21700M50LT (4.8 Ah), NMC 811 family (LG M50) | [LG-M50LT-2020], [CHEN-2020] | verified (mirror copy) / computed (C-rate) |
 | Anode below 0 V vs Li/Li⁺ → plating; typical at ">1C" or ~0 °C | Mechanism of lithium plating | [DAS-2024] | verified |
 | 46 kW peak, 43 min 10–80 %, 40 kW average | Nissan Leaf 40 kWh (ZE1) on CHAdeMO, Fastned data | [EVDB-LEAF40] | secondary |
 | 32 °C | Pack temperature above which the 40 kWh Leaf throttled DC charging ("rapidgate") | [CT-RAPIDGATE-2019] | secondary |
@@ -27,17 +28,23 @@ This note does not repeat the following, which the course note already has: the 
 | 18 min 10–80 % (37 min before), 320 kW peak | Porsche Taycan 2024 update, 800 V | [POR-TAYCAN-2024] | verified |
 | 27 min 10–80 %, 124 kW average, 250 kW peak | Tesla Model Y LR RWD 2025, 400 V (357 V nominal) | [EVDB-MY-2025] | secondary |
 | 28 min 10–80 %, 120 kW average, 175 kW peak | VW ID.3 Pro S 77 kWh MY24-25, 400 V (352 V nominal) | [EVDB-ID3-2024] | secondary |
+| Power vs SoC at 10 % steps (table in §2d) | Leaf 40 kWh, ID.3 Pro S, Model Y LR 2025+, Ioniq 5 84 kWh: Fastned's own numeric curve data | [FASTNED-CURVES] | verified |
 | 5.1–7.0 % | AC losses at an 11 kW wallbox, 5 current EVs | [ADAC-LADEVERLUST-2026] | verified |
 | 12.7–24.2 % | AC losses at a 2.3 kW household socket (Mode 2) | [ADAC-LADEVERLUST-2026] | verified |
 | 5–15 % total; 1–10 % in-vehicle | DC fast-charging losses; worst for a cold battery without preconditioning | [ADAC-LADEVERLUST-2026] | verified |
 | 2.3 %/yr average; up to 3.0 %/yr for heavy > 100 kW DC users vs ~1.5 %/yr for AC | Fleet battery degradation, 22,700 EVs | [GEOTAB-2026] | verified |
 | ≈ 24 % vs ≈ 27 % capacity lost at 50,000 mi | INL four-Leaf study, L2 vs 50 kW DC, Phoenix | [INL-DCFC-2015] | read from figure (±2 %) |
-| 7,574 points (+19 %), 12.8 % ≥ 150 kW | Czech public charging points, end 2025 | [CDV-FDRIVE-2026], [CT24-2026] | secondary |
-| > 1.06 million | EU public charging points, end 2025 | [CDV-FDRIVE-2026] | secondary |
+| 7,574 points, of which 2,510 DC (33.1 %) and 967 ≥ 150 kW (12.8 %) | Czech public charging points, end 2025 | [EAFO-CZ] | verified (counts) / computed (shares) |
+| 7,669 points, 2,770 DC (36.1 %), 1,153 ≥ 150 kW (15.0 %) | Czech public charging points, September 2026 | [EAFO-CZ] | verified (counts) / computed (shares) |
+| 1,061,890 points, of which 194,756 DC (18.3 %) | EU27 public charging points, end 2025 | [EAFO-EU27] | verified (counts) / computed (share) |
+| 1,176,554 points, 226,157 DC (19.2 %) | EU27 public charging points, September 2026 | [EAFO-EU27] | verified (counts) / computed (share) |
 | 500 A permanent / 700 A boost at 1000 V | Liquid-cooled CCS2 HPC cable rating | [PHX-HPC] | search summary |
 | 400 kW vs 200 kW | Power at a 500 A cable limit, 800 V vs 400 V | computed | computed |
 | 3.68 / 7.36 / 11.04 / 22.08 kW | 1×16 A, 1×32 A, 3×16 A, 3×32 A at 230 V | computed | computed |
-| 3.75 MW (3,000 A × 1,250 V) | Megawatt Charging System (MCS) ceiling | [SAE-J3271] + [WIKI-MCS] | verified (doc) / secondary (ratings) |
+| ≤ 32 A, ≤ 250 V 1-ph / ≤ 480 V 3-ph | Mode 2 in-cable box (IC-CPD) scope | [IEC-62752-2016] | verified (preview) |
+| ≤ 63 A 3-ph / ≤ 70 A 1-ph, ≤ 480 V AC | AC vehicle couplers incl. Type 2 (the Mode 3 hardware) | [IEC-62196-2-2022] | verified (preview) |
+| ISO 15118-20 at every new or renovated public AC and DC point from 1 Jan 2027 | AFIR Annex II point 2.1.2 as amended | [EU-2025-656] | verified |
+| 3.75 MW (3,000 A × 1,250 V) | Megawatt Charging System (MCS) ceiling | [CHARIN-MCS], [SAE-J3271] | verified (A, V) / computed (MW) |
 | 4,090 swap stations (17 Sep 2026) | NIO battery-swap network in China | [GASGOO-NIO-2026] | secondary |
 
 ---
@@ -52,7 +59,7 @@ This note does not repeat the following, which the course note already has: the 
 - "Charge: CC-CV 0.5C (max) 4.20V, 65mA cut-off at 25°C"
 - "Temperature: Charge*: 0 to +45°C … * At temperatures below 10°C, charge at a 0.25C rate."
 - Rated capacity: "Min. 3200mAh", typical "Min. 3250mAh".
-- `computed`: the 65 mA cut-off is 65/3250 ≈ C/50. Two more datasheets would be needed before claiming that C/20 to C/50 is the typical range (see Gaps).
+- `computed`: the 65 mA cut-off is 65/3250 ≈ C/50. With [LG-M50LT-2020] below (≈ C/96), the three datasheets read so far all terminate between C/50 and C/100, not at C/20 (see Gaps).
 
 **[LW-26650-2022]** Lithium Werks (formerly A123), *26650 Lithium Ion Power Cell, Specs for ANR26650M1B*, datasheet dated 08/2022 (from the file name "080322"). https://lithiumwerks.com/wp-content/uploads/2022/08/26650-Power-Cell-080322.pdf. Label: `verified`.
 
@@ -61,6 +68,14 @@ This note does not repeat the following, which the course note already has: the 
 - "Recommended Fast Charge Voltage 3.6 V"; "Terminate Charge @ 3.6 V < 50 mA" (`computed`: ≈ C/50); "Float Charge Voltage 3.5 V"
 - "Temperature Range (Charging) 0 ºC to 60 ºC", with "current at <250mA when under 0ºC" (`computed`: 250 mA ≈ C/10).
 - The 3.65 V LFP figure you asked about appears only on non-A123 sheets (`search summary`). This primary sheet says 3.6 V.
+
+**[LG-M50LT-2020]** LG Chem, *Product Specification, Rechargeable Lithium Ion Battery, Model: INR21700M50LT*, Document No. 2020-LSD-MBD-b00090, Rev 0, dated 2020-09-17. Copy read on EV West: https://evwest.com/support/21700_M50LT_datasheet.pdf. Label: `verified`, but from a third-party mirror, not an LG-hosted file. Not an automotive large-format cell: a 21700 cylindrical cell.
+
+- Table "2. Nominal Specification", row 2.4 Standard charge: "Constant current (1C=4800mA) 0.3C (1,440mA)", "Constant voltage 4.20V", "End condition(Cut off) 50mA", "Charging time 4h".
+- "2.5 Max. Charge Voltage … 4.20V"
+- "2.6 Max. Charge Current … 0 ~ 25ºC (Atmosphere) 0.3C (1,440mA)"; "25 ~ 45ºC (Atmosphere) 0.7C (3,360mA)". The same cold derating as the Panasonic sheet, expressed as a temperature band.
+- `computed`: 50 mA / 4,800 mA ≈ C/96.
+- The datasheet does not name the chemistry. **[CHEN-2020]** C.-H. Chen et al., "Development of Experimental Techniques for Parameterization of Multi-scale Lithium-ion Battery Models", *J. Electrochem. Soc.* 167 (2020) 080534, https://doi.org/10.1149/1945-7111/ab9050, label `verified` (abstract): "Chemical analysis of the LGM50 cell shows that it is comprised of a NMC 811 positive electrode and a bi-component Graphite-SiOx negative electrode". Chen tested the LG M50, not the M50LT variant; that the LT shares the chemistry is an assumption.
 
 **[DAS-2024]** S. Das, P. Shrotriya, "Electrochemical Mechanism Underlying Lithium Plating in Batteries: Non-Invasive Detection and Mitigation", *Energies* 17 (2024) 5930, https://doi.org/10.3390/en17235930. Open access, read via NSF PAR: https://par.nsf.gov/servlets/purl/10615623. Label: `verified`.
 
@@ -97,7 +112,7 @@ Leaf ZE1 pack (course parameters): 96s2p, R_pack ≈ 0.1 Ω, 4.2 V × 96 = 403 V
 - Usable 39.0 kWh (40.0 kWh nominal); "350 V" nominal (400 V class)
 - AC: 3.6 kW standard and 6.6 kW optional ("Optional in some countries, standard in others")
 - Manufacturer claim on the same page: 50 kW max, 20–80 % in 60 min
-- The charge curve is shown only as an image. Read it there for the slide.
+- The charge curve is shown only as an image here; Fastned's numeric data for the same car is in §2(d).
 
 **[CT-RAPIDGATE-2019]** CleanTechnica, "Nissan LEAF #Rapidgate Mostly Solved By Software Update?", 2019-01-05, https://cleantechnica.com/2019/01/05/nissan-leaf-rapidgate-mostly-solved-by-software-update/. Label: `secondary` (it reports Bjørn Nyland's test).
 
@@ -157,9 +172,32 @@ Leaf ZE1 pack (course parameters): 96s2p, R_pack ≈ 0.1 Ω, 4.2 V × 96 = 403 V
 
 - Model 3 max charge speed on Fastned: LR 190 kW, SR 170 kW.
 - "The charge curve shows the charging behaviour of this car when the battery is in optimal conditions (around. 30 °C)."
-- Curves are images only, so no numeric SoC table was available.
+- The curves render as images, but the page embeds the numbers behind them; see §2(d).
 
 **Slide reading.** The peak kW figure is not what decides charge time; the shape of the curve is. Compare the Model Y at 250 kW peak and 124 kW average with the Ioniq 5 at 263 kW peak and 196 kW average.
+
+### (d) Numeric power-vs-SoC data (for redrawing the curves)
+
+**[FASTNED-CURVES]** Fastned brand pages, accessed 2026-11-12: https://www.fastnedcharging.com/en/brands-overview/nissan?model=Leaf, …/volkswagen?model=ID.3, …/tesla?model=Model%20Y, …/hyundai?model=IONIQ%205. Label: `verified`. The charts on these pages are drawn from a `chargeGraph` JSON object embedded in the HTML, with one power value (kW) per 1 % SoC; the values below are copied from that object, not read off the image. The pages state: "The charge curve shows the charging behaviour of this car when the battery is in optimal conditions (around. 30 °C)." The measurement dates are not given. The bracket after each car is Fastned's charger-class key in the data.
+
+| SoC | Leaf 40 kWh (2018–2024), CHAdeMO [50+] | ID.3 Pro S 77 kWh [300] | Model Y Long Range (2025+) [300] | IONIQ 5 84 kWh (2024+) [300] |
+|---|---|---|---|---|
+| 10 % | no data (series starts at 17 %: 42.2) | 174.97 | 219.32 | 203.1 |
+| 20 % | 43.14 | 174.93 | 181.7 | 237.97 |
+| 30 % | 43.7 | 136.06 | 163.79 | 248.82 |
+| 40 % | 44.45 | 117.03 | 131.53 | 256.97 |
+| 50 % | 44.84 | 100.59 | 105.09 | 263.4 |
+| 60 % | 45.63 | 85.97 | 83.2 | 200.58 |
+| 70 % | 32.75 | 68.99 | 72.73 | 166.92 |
+| 80 % | 26.03 | 69.22 | 48.42 | 80.72 |
+| 90 % | 20.17 | no data (ends at 89 %: 45.92) | 34.3 | no data (ends at 82 %: 66.58) |
+| Data range | 17–92 % | 3–89 % | 8–90 % | 3–82 % |
+| Peak in data | 45.63 kW at 57 % and 60 % | 178.84 kW at 18 % | 230.75 kW at 8 % | 263.57 kW at 51 % |
+| "Max charge speed" text | 50 kW | 175 kW | 250 kW | 263 kW |
+
+- The Model Y page's stated 250 kW is higher than the highest value in its own data (230.75 kW, the first point at 8 %). The peak presumably sits below 8 % SoC, outside the data. Fastned's version label does not say whether this is the RWD or AWD car, so it may not be the same car as [EVDB-MY-2025].
+- The Leaf curve is flat at 43–46 kW up to 60 % and then steps down; this is one charge on a warm-enough pack and does not show rapidgate, which needs repeated charges [CT-RAPIDGATE-2019].
+- Fastned also publishes curves for the Leaf 24 kWh and 30 kWh and the older IONIQ 5 77.4 kWh in the same format.
 
 ---
 
@@ -168,15 +206,27 @@ Leaf ZE1 pack (course parameters): 96s2p, R_pack ≈ 0.1 Ω, 4.2 V × 96 = 403 V
 **[IEC-61851-1-2017]** IEC 61851-1:2017 ed. 3.0, *Electric vehicle conductive charging system – Part 1: General requirements*, 2017-02-07, https://webstore.iec.ch/en/publication/33644. Label: `verified` (abstract only).
 
 - Applies to supply equipment "up to 1 000 V AC or up to 1 500 V DC". In-cable control and protection devices for mode 2 are covered by IEC 62752.
-- The abstract does not give per-mode current limits.
+- The abstract does not give per-mode current limits. The IEC preview of the standard (https://vde-verlag.de/iec-normen/preview-pdf/info_iec61851-1{ed3.0}b.pdf) shows only the table of contents for 6.2.1–6.2.4 "Mode 1" to "Mode 4", not their text.
 
-**Modes.** Label: `search summary`. These are the commonly cited values; I did not have the normative text.
+**[IEC-62752-2016]** IEC 62752:2016 ed. 1.0, *In-cable control and protection device for mode 2 charging of electric road vehicles (IC-CPD)*, 2016-03. Scope read in the IEC preview hosted by VDE Verlag: https://vde-verlag.de/iec-normen/preview-pdf/info_iec62752{ed1.0}b.pdf. Label: `verified` (preview, clause 1).
+
+- "This standard is applicable to IC-CPDs for single-phase circuits not exceeding 250 V or multi-phase circuits not exceeding 480 V, their maximum rated current being 32 A."
+- "NOTE 1 In Denmark, the following additional requirement applies: for IC-CPDs supplied with a plug for household and similar use the maximum charging current is 8 A, if the charging cycle can exceed 2 h."
+- The current edition is IEC 62752:2024 ed. 2.0, published 2024-03-27 (https://webstore.iec.ch/publication/66220, `verified`). Its abstract adds "a mandatory control device that detects the temperature of the current carrying parts in the household plug" and does not restate the ratings.
+
+**[IEC-62196-2-2022]** IEC 62196-2:2022 ed. 3.0, *Plugs, socket-outlets, vehicle connectors and vehicle inlets – Conductive charging of electric vehicles – Part 2*, 2022-10. Scope read in the IEC preview: https://vde-verlag.de/iec-normen/preview-pdf/info_iec62196-2{ed3.0}b.pdf. Label: `verified` (preview, clause 1).
+
+- "These accessories have a nominal rated operating voltage not exceeding 480 V AC, 50 Hz to 60 Hz, and a rated current not exceeding 63 A three phase or 70 A single phase, for use in conductive charging of electric vehicles."
+- Preferred ratings (French text of the same preview): "30 A ou 32 A monophasé et triphasé; 60 A ou 63 A monophasé et triphasé; 70 A monophasé uniquement."
+- This bounds the coupler (Type 2 among them), not Mode 3 as such. The 63 A three-phase figure for Mode 3 in the table below is therefore the hardware ceiling, not a limit stated in IEC 61851-1.
+
+**Modes.** Label per row: Mode 2 limits `verified` [IEC-62752-2016]; Mode 3 coupler limit `verified` [IEC-62196-2-2022]; the rest `search summary` (IEC 61851-1 clause 6.2 not read).
 
 | Mode | What | Typical limits (commonly cited) |
 |---|---|---|
 | 1 | AC, household or industrial socket, no communication | ≤ 16 A; prohibited or restricted in many countries |
-| 2 | AC, socket plus IC-CPD in the cable (IEC 62752) | ≤ 32 A, ≤ 250 V 1-ph / 480 V 3-ph; in practice ~8–13 A on a household socket |
-| 3 | AC, dedicated EVSE, control pilot (PWM) communication | Up to 63 A 3-ph cited; 32 A per phase (22 kW) is the common European ceiling |
+| 2 | AC, socket plus IC-CPD in the cable (IEC 62752) | ≤ 32 A, ≤ 250 V 1-ph / ≤ 480 V 3-ph (`verified`); in practice ~8–13 A on a household socket (`search summary`) |
+| 3 | AC, dedicated EVSE, control pilot (PWM) communication | Coupler ≤ 63 A 3-ph / ≤ 70 A 1-ph at ≤ 480 V (`verified`, IEC 62196-2); 32 A per phase (22 kW) is the common European ceiling (`search summary`) |
 | 4 | DC, off-board charger, bypasses the OBC | IEC 61851-23; CCS, CHAdeMO, GB/T, NACS DC, MCS |
 
 **On-board charger ratings in Europe (230 V phase voltage).** Label: `computed`.
@@ -204,7 +254,9 @@ All four current EVs in [EVDB-*] above have 11 kW (3-phase, 16 A) OBCs. The old 
   - J3400/1 (adapters) issued April 2025 (`search summary`).
 - **MCS (trucks).** **[SAE-J3271]** SAE, *J3271_202503 SAE Megawatt Charging System for Electric Vehicles*, Technical Information Report, 2025-03-05, https://saemobilus.sae.org/standards/j3271_202503-sae-megawatt-charging-system-electric-vehicles. Label: `verified`.
   - Five sub-parts: J3271/1 coupler, /2 communication, /3 cables/cooling/automated connection, /4 use cases incl. bidirectional, /5 interoperability testing.
-  - Ratings: "3.75 megawatts (3,000 amps at 1,250 volts direct current)" (**[WIKI-MCS]**, `secondary`).
+  - Ratings: **[CHARIN-MCS]** CharIN e.V., "Megawatt Charging System (MCS)", accessed 2026-11-12, https://www.charin.global/technology/mcs/. Label: `verified` (the recommendation itself is undated on the page; the task force started in 2018). The recommendations list reads "Max 1.250 volt & 3.000 ampere (DC)" (European digit grouping: 1,250 V and 3,000 A). `computed`: 1,250 V × 3,000 A = 3.75 MW. The page's scope line asks for "the ability to accept a >1MW charge rate".
+  - **[WIKI-MCS]** gives the same as "3.75 megawatts (3,000 amps at 1,250 volts direct current)" (`secondary`).
+  - The SAE J3271 page [SAE-J3271] does not state the rating; I did not read the J3271 text.
   - First certified products run at about 1.0–1.2 MW, and a Mercedes eActros 600 was charged at 1,000 kW / 1,250 A at ABB (`search summary`).
   - IEC counterpart IEC TS 63379, reported published February 2026 (`search summary`).
 
@@ -254,11 +306,14 @@ All four current EVs in [EVDB-*] above have 11 kW (3-phase, 16 A) OBCs. The old 
 
 **Physical layer.** ISO 15118-3:2015 Annex A (normative) puts HomePlug Green PHY powerline communication on the control pilot line, in the 2–30 MHz band at up to 10 Mbit/s. Pairing of car and charger uses SLAC. DIN SPEC 70121 (2014) is the earlier DC-only CCS protocol on the same PLC layer and is what most CCS chargers in service still speak. Label: `search summary` (DIN TOC, TI app note, vendor datasheets).
 
-**Regulation.** Commission Delegated Regulation (EU) 2025/656 (OJ 2025-06-18) amends AFIR Annex II. Label: `search summary` (Bender, Pionix, German Nationale Leitstelle datasheet 2026-03-30). I could not load the EUR-Lex text.
+**Regulation.** **[EU-2025-656]** Commission Delegated Regulation (EU) 2025/656 of 2 April 2025 amending Regulation (EU) 2023/1804 (AFIR) as regards standards for wireless recharging, electric road system, vehicle-to-grid communication and hydrogen supply, OJ L series 2025/656, 2025-06-18. Read from the Publications Office Cellar (http://publications.europa.eu/resource/celex/32025R0656, the OJ XHTML). Label: `verified`.
 
-- Public points offering automatic authentication must support EN ISO 15118-2 and -20.
-- From 2027-01-01, ISO 15118-20 Plug & Charge is the only allowed automatic authentication method.
-- Sources disagree on whether all new Mode 3 points must support -20 from 2027 or only those offering automated authentication. Check Annex II.
+- Article 2: "This Regulation shall enter into force on the twentieth day following that of its publication in the Official Journal of the European Union. It shall apply from 8 January 2026."
+- Annex, new point 2.1.1 of AFIR Annex II: public AC and DC points "installed or renovated from 8 January 2026 shall comply, for interoperability purposes, at least with" EN ISO 15118-1:2019, -2:2016, -3:2016, -4:2019 and -5:2019.
+- New point 2.1.2: "Publicly accessible recharging points for alternating current (AC) and direct current (DC) for light- and heavy-duty electric vehicles installed or renovated from 1 January 2027 shall comply, for interoperability purposes, at least with standard EN ISO 15118-20:2022 … Where such recharging points offer automatic authentication and authorisation services, such as plug-and-charge, they shall comply, for interoperability and security purposes, with both standard EN ISO 15118-2:2016 and standard EN ISO 15118-20:2022."
+- New point 2.1.3: private AC and DC points installed or renovated from 1 January 2027 must meet "EN IEC 61851-1:2019 … (for Mode 2 recharging)" and "EN ISO 15118-20:2022 … (for Mode 3 or Mode 4 recharging)".
+- This settles the earlier disagreement: from 2027-01-01, **every** new or renovated public AC and DC point must support ISO 15118-20, not only those offering automatic authentication. The text does not make plug-and-charge the only allowed authentication method: recital (25) says "Existing publicly accessible recharging points providing automatic authentication and authorisation services with a solution other than plug-and-charge … should be allowed to continue to do so until a full market transition has been achieved", and operators "can voluntarily decide whether they offer plug-and charge". The earlier vendor-summary claim to the contrary is withdrawn.
+- Existing points are exempt: recital (21) says Parts 1 to 5 of EN ISO 15118 "should apply only to newly installed or renovated publicly accessible recharging points".
 
 **V2G deployment, Renault 5 / Mobilize, France**
 
@@ -329,29 +384,68 @@ The argument, `computed`:
 
 ## 8. Czech Republic and EU numbers
 
-**Czechia**
+**[EAFO-CZ]** European Alternative Fuels Observatory (European Commission), Czech Republic › Infrastructure, accessed 2026-11-12, https://alternative-fuels-observatory.ec.europa.eu/transport-mode/road/czech-republic/infrastructure. Label: `verified`. The charts load their values from CSV files linked in the page source: …/sites/default/files/csv/czech-republic/ac_public_recharging_points_afir.csv and …/dc_public_recharging_points_afir.csv. The page says: "Reference dates (updated on 15 September 2026): Recharging Infrastructure: September 2026 (next update: 15 November 2026 for October 2026)". So the 2026 row is September 2026. The CSV labels the other rows by year only; the 2025 row reproduces CDV's end-2025 total and growth exactly (below), so I take it as the year-end value.
+
+Publicly accessible points by AFIR class (counts `verified`, copied from the CSVs; totals and shares `computed`):
+
+| Class | 2024 | 2025 | Sep 2026 |
+|---|---|---|---|
+| AC slow, 1-ph, P < 7.4 kW | 8 | 6 | 5 |
+| AC medium, 3-ph, 7.4 ≤ P ≤ 22 kW | 4,369 | 4,971 | 4,801 |
+| AC fast, 3-ph, P > 22 kW | 89 | 87 | 93 |
+| DC slow, P < 50 kW | 111 | 159 | 173 |
+| DC fast, 50 ≤ P < 150 kW | 1,201 | 1,384 | 1,444 |
+| DC ultra-fast L1, 150 ≤ P < 350 kW | 517 | 833 | 967 |
+| DC ultra-fast L2, P ≥ 350 kW | 64 | 134 | 186 |
+| **Total** (`computed`) | 6,359 | **7,574** | **7,669** |
+| DC total (`computed`) | 1,893 | 2,510 (33.1 %) | 2,770 (36.1 %) |
+| ≥ 150 kW (`computed`) | 581 | 967 (12.8 %) | 1,153 (15.0 %) |
+
+- Cross-check (`computed`): 7,574 − 6,359 = 1,215 and 1,215 / 6,359 ≈ +19 %, the same as CDV/fDrive; DC 1,893 → 2,510 is +32.6 %, CDV's "+33 %". So fDrive's "2 510 DC stanic" are DC **points**, not stations, and the DC share at end 2025 is 33.1 %.
+- 50–150 kW at end 2025: 1,384 / 7,574 = 18.3 % (`computed`), the same as fDrive's 18.3 %.
+- Almost no growth in 2026 so far: the AC count fell from 5,064 to 4,899 between end 2025 and September 2026 (`computed`), while DC rose by 260.
+
+**Czechia, earlier and secondary figures**
 
 | Date | Value | Source | Label |
 |---|---|---|---|
 | End 2025 | **7,574 public charging points**, +19 % (+1,215) y/y | [CDV-FDRIVE-2026] fDrive.cz, "Kilowatty místo kusů…", 2026-01-27, https://fdrive.cz/clanky/kilowatty-misto-kusu-jak-cesko-dohani-evropu-v-dobijeni-16020, citing Centrum dopravního výzkumu (CDV) | secondary |
 | End 2025 | ≥ 150 kW: 12.8 % ("Téměř tisíc", almost a thousand); 50–150 kW: 18.3 % | same | secondary |
-| End 2025 | "stejnosměrných DC stanic, kterých je nyní 2 510" (2,510 DC stations/points, +33 %). It is unclear whether these are stations or points. If points, DC ≈ 33 % (`computed`). | same | secondary |
+| End 2025 | "stejnosměrných DC stanic, kterých je nyní 2 510" (2,510 DC stations/points, +33 %). EAFO's counts show these are DC points: DC share 33.1 % (see [EAFO-CZ] above). | same | secondary |
 | End 2025 | Czechia ranks 14th in the EU by absolute count, 21st per capita | same | secondary |
 | End 2025 | Same 7,574 and 12.8 % fast; "přes tři tisíce dobíjecích stanic" (over 3,000 stations) | [CT24-2026] ČT24, "Nabíječek elektromobilů přibývá…", 2026-04-03, https://ct24.ceskatelevize.cz/clanek/domaci/nabijecek-elektromobilu-pribyva-roste-i-zajem-o-ojetiny-371923, citing CDV on EAFO data | secondary |
 | 31 Dec 2024 | 5,192 public points (MPO) | MPO presentation, 2025-06-10, https://mzp.gov.cz/system/files/2025-06/OPZP-1_2_Muricky_MPO-20250610.pdf | search summary |
-| Sep 2026 | 7,590 points, 1,119 (14.7 %) > 150 kW (Čistá doprava portal) | ekonomickydenik.cz | search summary |
+| Sep 2026 | 7,590 points, 1,119 (14.7 %) > 150 kW (Čistá doprava portal). Close to, but not the same as, EAFO's 7,669 / 1,153 for the same month | ekonomickydenik.cz | search summary |
 | H1 2024 | 5,201 points: AC 72.6 %, DC < 150 kW 21.4 %, DC ≥ 150 kW 6.0 % | EAFO Czechia page | search summary |
 
 **EU**
+
+**[EAFO-EU27]** EAFO, European Union (EU27) › Infrastructure, accessed 2026-11-12, https://alternative-fuels-observatory.ec.europa.eu/transport-mode/road/european-union-eu27/infrastructure, same CSV mechanism (…/csv/european-union-eu27/ac_public_recharging_points_afir.csv and …/dc_public_recharging_points_afir.csv) and the same reference-date statement (September 2026). Label: `verified` (counts); totals and shares `computed`.
+
+| Class | 2024 | 2025 | Sep 2026 |
+|---|---|---|---|
+| AC slow, 1-ph, P < 7.4 kW | 70,953 | 79,094 | 77,521 |
+| AC medium, 3-ph, 7.4 ≤ P ≤ 22 kW | 661,549 | 777,076 | 861,386 |
+| AC fast, 3-ph, P > 22 kW | 11,452 | 10,964 | 11,490 |
+| DC slow, P < 50 kW | 9,455 | 11,262 | 12,206 |
+| DC fast, 50 ≤ P < 150 kW | 46,828 | 64,776 | 73,025 |
+| DC ultra-fast L1, 150 ≤ P < 350 kW | 65,246 | 96,937 | 109,892 |
+| DC ultra-fast L2, P ≥ 350 kW | 16,529 | 21,781 | 31,034 |
+| **Total** (`computed`) | 882,012 | **1,061,890** | **1,176,554** |
+| DC total (`computed`) | 138,058 (15.7 %) | 194,756 (18.3 %) | 226,157 (19.2 %) |
+| ≥ 150 kW (`computed`) | 81,775 (9.3 %) | 118,718 (11.2 %) | 140,926 (12.0 %) |
+
+- The 2025 total equals the "1,061,890 (EAFO export)" figure EV Boosters quoted, and 1,061,890 − 882,012 = 179,878 (`computed`), close to but not equal to CDV's "+178,000"; the source of the 1,878 difference is unknown. The Sep 2026 total equals the 1,176,554 in [EAFO-NEWS], which dates that figure.
+- Czechia vs EU at end 2025 (`computed`): DC share 33.1 % vs 18.3 %; ≥ 150 kW share 12.8 % vs 11.2 %. This supports fDrive's "nad průměrem EU" (above the EU average).
+
+Earlier secondary figures:
 
 | Date | Value | Source | Label |
 |---|---|---|---|
 | End 2025 | > 1.06 million public points, +178,000 y/y (≈ +20 %); > 50 % are in NL, FR, DE | [CDV-FDRIVE-2026] | secondary |
 | End 2025 | 1,061,890 (EAFO export) | EV Boosters, https://evboosters.com/ev-charging-news/ev-charging-market-monitor-europes-public-ev-charging-network-reaches-1-3-million-points-by-april-2026/ | search summary |
 | Apr 2026 | 1,139,463 total, of which 212,439 DC (`computed` ≈ 18.6 %) | same | search summary |
-| 2026 (teaser dated 2026-10-29) | "public recharging infrastructure across the whole EU27 reached 1,176,554 points" (reference month not stated) | [EAFO-NEWS] https://alternative-fuels-observatory.ec.europa.eu/general-information/news/eafo-data-update-18-december-2025 | verified (text on EAFO page) |
-
-The official end-2025 EU DC split exists on the EAFO interactive map (https://alternative-fuels-observatory.ec.europa.eu/interactive-map), but the values did not render for me.
+| 2026 (teaser dated 2026-10-29) | "public recharging infrastructure across the whole EU27 reached 1,176,554 points" (the teaser states no month; the EAFO CSV above puts it at September 2026) | [EAFO-NEWS] https://alternative-fuels-observatory.ec.europa.eu/general-information/news/eafo-data-update-18-december-2025 | verified (text on EAFO page) |
 
 ---
 
@@ -374,14 +468,16 @@ The official end-2025 EU DC split exists on the EAFO interactive map (https://al
 
 ## Gaps (could not verify)
 
+Closed on 2026-11-12: Czech and EU27 public points with DC and ≥ 150 kW split (EAFO CSVs, §8); numeric power-vs-SoC data for the Leaf 40 kWh, ID.3, Model Y and Ioniq 5 (Fastned, §2d); an NMC datasheet with CV voltage and end current (LG M50LT, §1); Mode 2 and Type 2 current limits (IEC 62752 and IEC 62196-2 scopes, §3); the Regulation 2025/656 text (§5); the MCS rating from CharIN (§3).
+
+Still open:
+
 1. **Tomaszewska et al. 2019 review**: not read (403 / download blocked). It is cited above as the standard fast-charging reference but labeled `search summary`.
-2. **NMC-specific cell datasheet**: the 4.2 V example is the Panasonic NCR18650B, which is probably NCA (chemistry unverified). No AESC LMO (Leaf) cell datasheet found, so the Leaf's per-cell CV voltage and termination current are unverified. The "C/20 typical" figure is not verified; both datasheets read give ≈ C/50.
-3. **Numeric power-vs-SoC tables**: Fastned and ev-database show curves only as images. P3 Charging Index PDF: 404. No INL measured curve for the 40 kWh Leaf. The rapidgate second-charge power (~20–25 kW) is forum-only.
-4. **IEC 61851-1 per-mode current limits** (16 / 32 / 63 A) and **IEC 62196-2/-3 ratings**: normative text not accessed.
-5. **EU Delegated Regulation 2025/656** text (EUR-Lex returned an empty page). The 2027 ISO 15118-20 scope is from vendor and national summaries only.
-6. **MCS ratings** (3.75 MW), **IEC TS 63379** publication date, **GB/T 20234.3-2023** ratings, **J3400 V/A ratings**: secondary or search summary only.
-7. **Czech official statistics**: the CDV press release itself and the MPO end-2025 figure were not opened, and fDrive's "2,510 DC" is ambiguous between stations and points. The EAFO Czechia page URL I tried returned 404.
-8. **EU end-2025 DC share**: not available from a page I could read.
-9. **Renault 5 V2G**: no customer numbers. The OBC V2G power rating and the ISO 15118-20 use are not confirmed from a primary source.
-10. **Geotab "12 % of sessions" threshold**: not in the press release or the electrive article.
-11. **Porsche 800→400 V booster** and **CCS 500 A as a standard limit** (as opposed to a product rating): not verified from a primary source.
+2. **Automotive NMC cell and the Leaf cell**: the NMC datasheet found (LG M50LT) is a 21700 cylindrical cell, not a large-format automotive cell; the Kokam SLPB 80460330H (100 Ah pouch) sheet I read gives "Voltage 4.2V ± 0.03 V" but no end current and no chemistry, and the Samsung SDI 94 Ah datasheet copies were blocked. No AESC (Leaf) cell datasheet, so the Leaf's per-cell CV voltage, termination current and chemistry are unverified (NCM 622 for the 40 kWh cell is `search summary`). "C/20 typical" remains unsupported: the three datasheets read (Panasonic NCR18650B, A123 26650, LG M50LT) give C/50 to C/96.
+3. **Power-vs-SoC, remaining**: Fastned's numbers are for one charge in "optimal conditions (around. 30 °C)" with undated measurements. No measured Leaf 40 kWh rapidgate curve (second or third charge); the ~20–25 kW figure is forum-only. P3 Charging Index PDF: 404 (not retried).
+4. **IEC 61851-1 clause 6.2 text** (per-mode definitions): not accessed; the preview stops at the table of contents. Mode 1's 16 A limit and the household-socket practice values stay `search summary`. **IEC 62196-3 (DC coupler) ratings** not checked.
+5. **MCS / other connectors**: the CharIN page does not date its 1,250 V / 3,000 A recommendation, and SAE J3271's own text was not read. **IEC TS 63379** publication date, **GB/T 20234.3-2023** ratings and **J3400 V/A ratings** remain secondary or search summary.
+6. **Czech official statistics from CDV or MPO**: not opened; EAFO now supplies the end-2025 figures. The CSVs label rows by year only, so "end 2025" for the 2025 row rests on its match with CDV's year-end figures. The MPO 5,192 (end 2024) disagrees with EAFO's 6,359 for 2024 and is unexplained.
+7. **Renault 5 V2G**: no customer numbers. The OBC V2G power rating and the ISO 15118-20 use are not confirmed from a primary source.
+8. **Geotab "12 % of sessions" threshold**: not in the press release or the electrive article.
+9. **Porsche 800→400 V booster** and **CCS 500 A as a standard limit** (as opposed to a product rating): not verified from a primary source.
