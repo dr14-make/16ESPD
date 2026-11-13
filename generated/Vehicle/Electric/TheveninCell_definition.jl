@@ -19,8 +19,8 @@ by Ns. R0 and capacity retain Battery's Nissan/INL defaults for comparison.
 R1/R0 and tau1 use pulse 5 (approximately 60 % SoC, 25 C) of the ORNL Leaf
 33.1 Ah cell 1-RC fit [ORNL-LEAF-ECM] (derived).
 
-The polarization branch uses C1 = tau1/R1; R1 must be positive.
-A near-zero positive R1 recovers the purely ohmic battery limit.
+The polarization branch uses C1 = tau1/R1 for positive R1.
+At the zero-resistance limit both parts use 1e-15 ohm to keep C1 finite.
 
 ## Parameters:
 
@@ -163,10 +163,10 @@ A near-zero positive R1 recovers the purely ohmic battery limit.
   push!(__systems, @named ohmic = ElectricalComponents.Analog.Basic.Resistor(; R=R0, __overrides = ohmic_overrides))
   # Subcomponent polarization of type ElectricalComponents.Analog.Basic.Resistor
   polarization_overrides = __pop_subcomponent_overrides!(__overrides, "polarization")
-  push!(__systems, @named polarization = ElectricalComponents.Analog.Basic.Resistor(; R=R1, __overrides = polarization_overrides))
+  push!(__systems, @named polarization = ElectricalComponents.Analog.Basic.Resistor(; R=max(R1, 1e-15), __overrides = polarization_overrides))
   # Subcomponent capacitor of type ElectricalComponents.Analog.Basic.Capacitor
   capacitor_overrides = __pop_subcomponent_overrides!(__overrides, "capacitor")
-  push!(__systems, @named capacitor = ElectricalComponents.Analog.Basic.Capacitor(; C=tau1 / R1, __overrides = capacitor_overrides))
+  push!(__systems, @named capacitor = ElectricalComponents.Analog.Basic.Capacitor(; C=tau1 / max(R1, 1e-15), __overrides = capacitor_overrides))
   # Subcomponent current of type ElectricalComponents.Analog.Sensors.CurrentSensor
   current_overrides = __pop_subcomponent_overrides!(__overrides, "current")
   push!(__systems, @named current = ElectricalComponents.Analog.Sensors.CurrentSensor(; __overrides = current_overrides))

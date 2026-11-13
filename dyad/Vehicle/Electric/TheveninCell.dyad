@@ -11,8 +11,8 @@ by Ns. R0 and capacity retain Battery's Nissan/INL defaults for comparison.
 R1/R0 and tau1 use pulse 5 (approximately 60 % SoC, 25 C) of the ORNL Leaf
 33.1 Ah cell 1-RC fit [ORNL-LEAF-ECM] (derived).
 
-The polarization branch uses C1 = tau1/R1; R1 must be positive.
-A near-zero positive R1 recovers the purely ohmic battery limit.
+The polarization branch uses C1 = tau1/R1 for positive R1.
+At the zero-resistance limit both parts use 1e-15 ohm to keep C1 finite.
 """
 component TheveninCell
   extends ElectricalComponents.Analog.Interfaces.TwoPin
@@ -38,8 +38,8 @@ component TheveninCell
   series_count = BlockComponents.Math.Gain(k = Ns) {^series_count}
   ocv = ElectricalComponents.Analog.Sources.VoltageSource() {^ocv}
   ohmic = ElectricalComponents.Analog.Basic.Resistor(R = R0) {^ohmic}
-  polarization = ElectricalComponents.Analog.Basic.Resistor(R = R1) {^polarization}
-  capacitor = ElectricalComponents.Analog.Basic.Capacitor(C = tau1 / R1) {^capacitor}
+  polarization = ElectricalComponents.Analog.Basic.Resistor(R = max(R1, 1e-15)) {^polarization}
+  capacitor = ElectricalComponents.Analog.Basic.Capacitor(C = tau1 / max(R1, 1e-15)) {^capacitor}
   current = ElectricalComponents.Analog.Sensors.CurrentSensor() {^current}
   charge = BlockComponents.Continuous.Integrator(k = -1.0 / Q_nom, x0 = SoC0) {^charge}
   "Open-circuit voltage at the present SoC (compatibility alias)"
