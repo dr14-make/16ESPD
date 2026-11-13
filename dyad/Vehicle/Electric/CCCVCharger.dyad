@@ -1,0 +1,29 @@
+"""
+Averaged, unidirectional CC-CV charger; positive current leaves p and enters the battery.
+Phase is 1 (CC), 2 (CV), or 3 (done). Cutoff is latched until reinitialization.
+The voltage regulator has a 1 ms current response and 100 kA/V droop (assumed
+[CCCV-BENCH]); its finite gain keeps the CV voltage below V_max by at most
+I_cc / 100000 V. No switching ripple, thermal derating, or input power limit is modeled.
+Defaults: [CHARGING-1] is charging.md section 1; [CCCV-BENCH] is issue #256.
+"""
+external component CCCVCharger
+  "CC current [A] (derived; [CHARGING-1], rounded 50 kW / 350 V)"
+  parameter I_cc::Current = 143.0
+  "Terminal voltage ceiling [V] (derived; [PAN-NCR18650B], 96 times 4.20 V; Leaf applicability assumed)"
+  parameter V_max::Voltage = 96.0 * 4.20
+  "Termination current [A] (derived; [PAN-NCR18650B], C/50 using Leaf 40 kWh / 350 V)"
+  parameter I_cut::Current = (40000.0 / 350.0) / 50.0
+  p = Pin() {^p}
+  n = Pin() {^n}
+  current = RealOutput() {^current}
+  phase = RealOutput() {^phase}
+relations
+metadata {
+  "_links": {
+    "p": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "n": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "current": {"Dyad": {"placement": {"icon": {"x1": 250, "y1": 950, "x2": 350, "y2": 1050}}}},
+    "phase": {"Dyad": {"placement": {"icon": {"x1": 650, "y1": 950, "x2": 750, "y2": 1050}}}}
+  }
+}
+end
