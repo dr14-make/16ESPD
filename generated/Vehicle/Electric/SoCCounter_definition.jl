@@ -114,6 +114,66 @@ Sampled counter; left-endpoint integration avoids counting a future interval at 
   __constants = Any[]
 
   ### Components
+  # Subcomponent absolute_current of type BlockComponents.Math.Abs
+  absolute_current_overrides = __pop_subcomponent_overrides!(__overrides, "absolute_current")
+  push!(__systems, @named absolute_current = BlockComponents.Math.Abs(; __overrides = absolute_current_overrides))
+  # Subcomponent rest_threshold of type BlockComponents.Logical.LessThreshold
+  rest_threshold_overrides = __pop_subcomponent_overrides!(__overrides, "rest_threshold")
+  push!(__systems, @named rest_threshold = BlockComponents.Logical.LessThreshold(; threshold=I_rest, __overrides = rest_threshold_overrides))
+  # Subcomponent quiet_value of type BlockComponents.Math.BooleanToReal
+  quiet_value_overrides = __pop_subcomponent_overrides!(__overrides, "quiet_value")
+  push!(__systems, @named quiet_value = BlockComponents.Math.BooleanToReal(; __overrides = quiet_value_overrides))
+  # Subcomponent previous_quiet of type DiscreteComponents.UnitDelay
+  previous_quiet_overrides = __pop_subcomponent_overrides!(__overrides, "previous_quiet")
+  push!(__systems, @named previous_quiet = DiscreteComponents.UnitDelay(; initial_condition=Float64(0.0), __overrides = previous_quiet_overrides))
+  # Subcomponent was_quiet of type BlockComponents.Logical.GreaterThreshold
+  was_quiet_overrides = __pop_subcomponent_overrides!(__overrides, "was_quiet")
+  push!(__systems, @named was_quiet = BlockComponents.Logical.GreaterThreshold(; threshold=0.5, __overrides = was_quiet_overrides))
+  # Subcomponent consecutive_rest of type BlockComponents.Logical.And
+  consecutive_rest_overrides = __pop_subcomponent_overrides!(__overrides, "consecutive_rest")
+  push!(__systems, @named consecutive_rest = BlockComponents.Logical.And(; __overrides = consecutive_rest_overrides))
+  # Subcomponent previous_rest of type DiscreteComponents.UnitDelay
+  previous_rest_overrides = __pop_subcomponent_overrides!(__overrides, "previous_rest")
+  push!(__systems, @named previous_rest = DiscreteComponents.UnitDelay(; initial_condition=Float64(0.0), __overrides = previous_rest_overrides))
+  # Subcomponent tick_duration of type BlockComponents.Sources.Constant
+  tick_duration_overrides = __pop_subcomponent_overrides!(__overrides, "tick_duration")
+  push!(__systems, @named tick_duration = BlockComponents.Sources.Constant(; k=dt, __overrides = tick_duration_overrides))
+  # Subcomponent rest_increment of type BlockComponents.Math.Add
+  rest_increment_overrides = __pop_subcomponent_overrides!(__overrides, "rest_increment")
+  push!(__systems, @named rest_increment = BlockComponents.Math.Add(; __overrides = rest_increment_overrides))
+  # Subcomponent zero of type BlockComponents.Sources.Constant
+  zero_overrides = __pop_subcomponent_overrides!(__overrides, "zero")
+  push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = zero_overrides))
+  # Subcomponent rest_gate of type BlockComponents.Logical.Switch
+  rest_gate_overrides = __pop_subcomponent_overrides!(__overrides, "rest_gate")
+  push!(__systems, @named rest_gate = BlockComponents.Logical.Switch(; __overrides = rest_gate_overrides))
+  # Subcomponent enough_rest of type BlockComponents.Logical.GreaterEqualThreshold
+  enough_rest_overrides = __pop_subcomponent_overrides!(__overrides, "enough_rest")
+  push!(__systems, @named enough_rest = BlockComponents.Logical.GreaterEqualThreshold(; threshold=t_rest, __overrides = enough_rest_overrides))
+  # Subcomponent correction_gate of type BlockComponents.Logical.And
+  correction_gate_overrides = __pop_subcomponent_overrides!(__overrides, "correction_gate")
+  push!(__systems, @named correction_gate = BlockComponents.Logical.And(; __overrides = correction_gate_overrides))
+  # Subcomponent previous_current of type DiscreteComponents.UnitDelay
+  previous_current_overrides = __pop_subcomponent_overrides!(__overrides, "previous_current")
+  push!(__systems, @named previous_current = DiscreteComponents.UnitDelay(; initial_condition=Float64(0.0), __overrides = previous_current_overrides))
+  # Subcomponent charge_step of type BlockComponents.Math.Gain
+  charge_step_overrides = __pop_subcomponent_overrides!(__overrides, "charge_step")
+  push!(__systems, @named charge_step = BlockComponents.Math.Gain(; k=dt, __overrides = charge_step_overrides))
+  # Subcomponent capacity of type BlockComponents.Sources.Constant
+  capacity_overrides = __pop_subcomponent_overrides!(__overrides, "capacity")
+  push!(__systems, @named capacity = BlockComponents.Sources.Constant(; k=Q_nom, __overrides = capacity_overrides))
+  # Subcomponent charge_fraction of type BlockComponents.Math.Division
+  charge_fraction_overrides = __pop_subcomponent_overrides!(__overrides, "charge_fraction")
+  push!(__systems, @named charge_fraction = BlockComponents.Math.Division(; __overrides = charge_fraction_overrides))
+  # Subcomponent previous_estimate of type DiscreteComponents.UnitDelay
+  previous_estimate_overrides = __pop_subcomponent_overrides!(__overrides, "previous_estimate")
+  push!(__systems, @named previous_estimate = DiscreteComponents.UnitDelay(; initial_condition=SoC0, __overrides = previous_estimate_overrides))
+  # Subcomponent coulomb_step of type BlockComponents.Math.Add
+  coulomb_step_overrides = __pop_subcomponent_overrides!(__overrides, "coulomb_step")
+  push!(__systems, @named coulomb_step = BlockComponents.Math.Add(; k2=-1.0, __overrides = coulomb_step_overrides))
+  # Subcomponent estimate_gate of type BlockComponents.Logical.Switch
+  estimate_gate_overrides = __pop_subcomponent_overrides!(__overrides, "estimate_gate")
+  push!(__systems, @named estimate_gate = BlockComponents.Logical.Switch(; __overrides = estimate_gate_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -124,19 +184,36 @@ Sampled counter; left-endpoint integration avoids counting a future interval at 
   isnothing(__ovr_rest_time__guess) || (__guesses[rest_time] = __ovr_rest_time__guess)
 
   ### Initialization Equations
-  push!(__initialization_eqs, I(ShiftIndex() -1) ~ 0.0)
-  push!(__initialization_eqs, estimate(ShiftIndex() -1) ~ SoC0)
-  push!(__initialization_eqs, quiet(ShiftIndex() -1) ~ 0.0)
-  push!(__initialization_eqs, rest_time(ShiftIndex() -1) ~ 0.0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
-  push!(__eqs, quiet ~ ifelse(abs(I) < I_rest, 1.0, 0.0))
-  push!(__eqs, rest_time ~ ifelse((quiet > 0.5) & (quiet(ShiftIndex() -1) > 0.5), rest_time(ShiftIndex() -1) + dt, 0.0))
-  push!(__eqs, estimate ~ ifelse((quiet > 0.5) & (rest_time >= t_rest), ocv_soc, estimate(ShiftIndex() -1) - dt * I(ShiftIndex() -1) / Q_nom))
-  push!(__eqs, SoC ~ estimate)
+  push!(__eqs, quiet ~ quiet_value.y)
+  push!(__eqs, rest_time ~ rest_gate.y)
+  push!(__eqs, estimate ~ estimate_gate.y)
+  push!(__eqs, connect(I, absolute_current.u, previous_current.u))
+  push!(__eqs, connect(absolute_current.y, rest_threshold.u))
+  push!(__eqs, connect(rest_threshold.y, quiet_value.u, consecutive_rest.u1, correction_gate.u1))
+  push!(__eqs, connect(quiet_value.y, previous_quiet.u))
+  push!(__eqs, connect(previous_quiet.y, was_quiet.u))
+  push!(__eqs, connect(was_quiet.y, consecutive_rest.u2))
+  push!(__eqs, connect(previous_rest.y, rest_increment.u1))
+  push!(__eqs, connect(tick_duration.y, rest_increment.u2))
+  push!(__eqs, connect(rest_increment.y, rest_gate.u1))
+  push!(__eqs, connect(consecutive_rest.y, rest_gate.u2))
+  push!(__eqs, connect(zero.y, rest_gate.u3))
+  push!(__eqs, connect(rest_gate.y, previous_rest.u, enough_rest.u))
+  push!(__eqs, connect(enough_rest.y, correction_gate.u2))
+  push!(__eqs, connect(previous_current.y, charge_step.u))
+  push!(__eqs, connect(charge_step.y, charge_fraction.u1))
+  push!(__eqs, connect(capacity.y, charge_fraction.u2))
+  push!(__eqs, connect(charge_fraction.y, coulomb_step.u2))
+  push!(__eqs, connect(previous_estimate.y, coulomb_step.u1))
+  push!(__eqs, connect(coulomb_step.y, estimate_gate.u3))
+  push!(__eqs, connect(ocv_soc, estimate_gate.u1))
+  push!(__eqs, connect(correction_gate.y, estimate_gate.u2))
+  push!(__eqs, connect(estimate_gate.y, SoC, previous_estimate.u))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

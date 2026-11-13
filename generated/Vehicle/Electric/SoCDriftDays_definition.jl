@@ -120,6 +120,30 @@ The estimator sees only current and terminal voltage, not the cell's true SoC.
   # Subcomponent estimator of type VehicleSystemsComponents.Vehicle.Electric.SoCEstimator
   estimator_overrides = __pop_subcomponent_overrides!(__overrides, "estimator")
   push!(__systems, @named estimator = VehicleSystemsComponents.Vehicle.Electric.SoCEstimator(; I_offset=I_offset, t_rest=t_rest, I_rest=I_rest, SoC0=SoC0_est, dt=dt, __overrides = estimator_overrides))
+  # Subcomponent elapsed of type BlockComponents.Sources.ContinuousClock
+  elapsed_overrides = __pop_subcomponent_overrides!(__overrides, "elapsed")
+  push!(__systems, @named elapsed = BlockComponents.Sources.ContinuousClock(; __overrides = elapsed_overrides))
+  # Subcomponent phase of type VehicleSystemsComponents.Vehicle.Blocks.SoCPhaseEquation
+  phase_overrides = __pop_subcomponent_overrides!(__overrides, "phase")
+  push!(__systems, @named phase = VehicleSystemsComponents.Vehicle.Blocks.SoCPhaseEquation(; period=period, __overrides = phase_overrides))
+  # Subcomponent drive_gate of type BlockComponents.Logical.LessThreshold
+  drive_gate_overrides = __pop_subcomponent_overrides!(__overrides, "drive_gate")
+  push!(__systems, @named drive_gate = BlockComponents.Logical.LessThreshold(; threshold=t_drive, __overrides = drive_gate_overrides))
+  # Subcomponent drive of type BlockComponents.Sources.Constant
+  drive_overrides = __pop_subcomponent_overrides!(__overrides, "drive")
+  push!(__systems, @named drive = BlockComponents.Sources.Constant(; k=I_drive, __overrides = drive_overrides))
+  # Subcomponent rest of type BlockComponents.Sources.Constant
+  rest_overrides = __pop_subcomponent_overrides!(__overrides, "rest")
+  push!(__systems, @named rest = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = rest_overrides))
+  # Subcomponent current_command of type BlockComponents.Logical.Switch
+  current_command_overrides = __pop_subcomponent_overrides!(__overrides, "current_command")
+  push!(__systems, @named current_command = BlockComponents.Logical.Switch(; __overrides = current_command_overrides))
+  # Subcomponent terminal of type ElectricalComponents.Analog.Sensors.VoltageSensor
+  terminal_overrides = __pop_subcomponent_overrides!(__overrides, "terminal")
+  push!(__systems, @named terminal = ElectricalComponents.Analog.Sensors.VoltageSensor(; __overrides = terminal_overrides))
+  # Subcomponent difference of type BlockComponents.Math.Feedback
+  difference_overrides = __pop_subcomponent_overrides!(__overrides, "difference")
+  push!(__systems, @named difference = BlockComponents.Math.Feedback(; __overrides = difference_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -132,14 +156,19 @@ The estimator sees only current and terminal voltage, not the cell's true SoC.
   __assertions = []
 
   ### Equations
-  push!(__eqs, load.I ~ ifelse(mod(t, period) < t_drive, I_drive, 0.0))
-  push!(__eqs, estimator.V ~ battery.v)
-  push!(__eqs, error ~ estimated_soc - soc_true)
-  push!(__eqs, connect(battery.p, load.p))
-  push!(__eqs, connect(load.n, battery.n, ground.g))
+  push!(__eqs, connect(elapsed.y, phase.u1))
+  push!(__eqs, connect(phase.y, drive_gate.u))
+  push!(__eqs, connect(drive_gate.y, current_command.u2))
+  push!(__eqs, connect(drive.y, current_command.u1))
+  push!(__eqs, connect(rest.y, current_command.u3))
+  push!(__eqs, connect(current_command.y, load.I))
+  push!(__eqs, connect(battery.p, load.p, terminal.p))
+  push!(__eqs, connect(load.n, battery.n, ground.g, terminal.n))
   push!(__eqs, connect(battery.stored_current, estimator.I))
-  push!(__eqs, connect(battery.SoC, soc_true))
-  push!(__eqs, connect(estimator.SoC, estimated_soc))
+  push!(__eqs, connect(terminal.v, estimator.V))
+  push!(__eqs, connect(battery.SoC, soc_true, difference.u2))
+  push!(__eqs, connect(estimator.SoC, estimated_soc, difference.u1))
+  push!(__eqs, connect(difference.y, error))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
