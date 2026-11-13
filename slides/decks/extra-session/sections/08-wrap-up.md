@@ -118,10 +118,6 @@ there. That is the sentence we started with.
 routeAlias: take-home
 ---
 
-<!-- TODO(lecturer): confirm the four exercises and write worked answers; none are in the plan or
-the research notes. Exercise 1 checks out against the why-CV slide: 250 A, 0.26 V per cell, CC ends
-near 3.94 V per cell. -->
-
 ## Take-home exercises
 
 1. **The end of CC.** Redo the "why CV" slide for an 800 V pack (192s2p of ZE1-class cells: twice the Leaf pack's *R* ≈ 0.1 Ω, so **0.2 Ω**) at 200 kW:
@@ -129,9 +125,13 @@ near 3.94 V per cell. -->
 2. **The drift.** For Lecture 4's 114.3 Ah pack, how many hours of driving until a current-sensor
    offset of **50 mA** gives 5 % SoC error? How often must the BMS reset?
 3. **The Mirai's hydrogen.** From 12.41 g/h per A and the polarization curve at 0.7 V: the stack
-   current and hydrogen flow at 30 kW, and the cell area that makes 0.7 V sit at 1 A/cm².
-4. **Your own bill.** Cost per 100 km of the Leaf, the Mirai and your family's car at today's
+   current and hydrogen flow at 30 kW; read the current density at 0.7 V off the curve and work
+   out the cell area it implies.
+4. **Your own bill, and when it pays back.** Cost per 100 km of the Leaf, the Mirai and your family's car at today's
    prices — home tariff, public DC, ORLEN's hydrogen, petrol — with each price's source and date.
+   Then the break-even: an electric car in place of your family's next one, with its price gap,
+   your yearly kilometers, your share of home vs DC charging, and servicing. After how many years
+   does it pay back, if ever? Which input moves the answer most?
 
 <div class="handson">Every number you need is on tonight's slides; for exercise 4 you find your
 own.</div>
@@ -139,9 +139,12 @@ own.</div>
 <!--
 Four exercises to take home, each built on a slide from tonight. One, the CV slide again for an 800
 volt pack at 200 kilowatts. Two, the coulomb-counting drift on your Lecture 4 pack. Three, the
-Mirai's hydrogen flow at 30 kilowatts. Four, your own bill: today's prices, with their sources and
-dates, for the Leaf, the Mirai and your family's car. While you are at it, check whether ORLEN has
-published a newer hydrogen price than ours.
+Mirai's hydrogen flow at 30 kilowatts, and how big its cells must be. Four, your own bill: today's
+prices, with their sources and dates, for the Leaf, the Mirai and your family's car. Then the real
+question at home: would an electric car pay for itself, and after how many years? Try it with your
+own kilometers. Someone who drives little and charges on DC may never break even. Someone who drives
+a lot and charges at home may break even in a few years. While you are at it, check whether ORLEN
+has published a newer hydrogen price than ours.
 -->
 
 ---
