@@ -1,0 +1,44 @@
+"""
+TheveninCell with resistor heat delivered to a thermal port (positive flow enters
+an element). RC stored energy is not heat; only v1^2/R1 is dissipated.
+Electrical defaults and their provenance are inherited unchanged.
+"""
+component ThermalTheveninCell
+  extends VehicleSystemsComponents.Vehicle.Electric.TheveninCell
+  heat_port = HeatPort() {^heat_port}
+  dissipated = RealOutput() {^dissipated}
+relations
+  dissipated = R0 * i^2 + ifelse(R1 > 0.0, v1^2 / max(R1, 1e-30), 0.0)
+  heat_port.Q_flow = -dissipated
+metadata {
+  "_links": {
+    "heat_port": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "dissipated": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}}
+  }
+}
+end
+
+ test component TestThermalTheveninCell
+  "Charge current [THERMAL-BENCH] (assumed), representative DC operation"
+  parameter I::Current = 143.0
+  "R1 [ORNL-LEAF-ECM] (derived), inherited pack fit"
+  parameter R1::Resistance = 0.1 * 1.34 / 1.60
+  battery = VehicleSystemsComponents.Vehicle.Electric.ThermalTheveninCell(SoC0 = 0.1, R1 = R1) {^battery}
+  "Isothermal test boundary [THERMAL-BENCH] (assumed), 25 C"
+  ambient = ThermalComponents.Sources.FixedTemperature(T = 298.15) {^ambient}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  source = ElectricalComponents.Analog.Sources.CurrentSource() {^source}
+relations
+  source.I = -I
+  connect(battery.p, source.p)
+  connect(battery.n, source.n, ground.g)
+  connect(battery.heat_port, ambient.port)
+metadata {
+  "_links": {
+    "source": {"Dyad": {"placement": {"diagram": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
+    "battery": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 250, "x2": 350, "y2": 350}}}},
+    "ambient": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 250, "x2": 650, "y2": 350}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 550, "x2": 350, "y2": 650}}}}
+  }
+}
+end

@@ -5,20 +5,22 @@
 
 
 @doc Markdown.doc"""
-   CCCVCharger(; name, I_cc, V_max, I_cut, R_reg, __overrides)
+   CCCVCharger(; name, use_power_limit, I_cc, V_max, I_cut, R_reg, __overrides)
 
 Constant current (CC) supplies I_cc until the battery nears V_max; constant voltage
 (CV) then tapers the current, keeping the voltage below V_max by at most I_cc*R_reg
 (1.43 mV at 143 A, 2.5 mV at 250 A with the assumed R_reg = 10 microohm).
 Phase is computed as 1 (CC), 2 (CV), or 3 (done below I_cut), but current keeps tapering
 rather than switching off or latching; positive current leaves p and enters the battery.
-No switching ripple, thermal derating, or input power limit is modeled.
+No switching ripple is modeled. Optional P_max input limits terminal power;
+with use_power_limit false the original CC-CV law is unchanged.
 Defaults: [CHARGING-1] is charging.md section 1; [CCCV-BENCH] is issue #256.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `use_power_limit`         | Enable terminal power limit [THERMAL-BENCH] (assumed), disabled for compatibility                         | --  |   false |
 | `I_cc`         | CC current [A] (derived; [CHARGING-1], rounded 50 kW / 350 V)                         | A  |   143.0 |
 | `V_max`         | Terminal voltage ceiling [V] (derived; [PAN-NCR18650B], 96 times 4.20 V; Leaf applicability assumed)                         | V  |   96.0 * 4.20 |
 | `I_cut`         | Termination current [A] (derived; [PAN-NCR18650B], C/50 using Leaf 40 kWh / 350 V)                         | A  |   (40000.0 / 350.0) / 50.0 |
@@ -26,6 +28,7 @@ Defaults: [CHARGING-1] is charging.md section 1; [CCCV-BENCH] is issue #256.
 
 ## Connectors
 
+ * `P_max` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `p` - This connector represents an electrical pin with voltage and current as the potential and flow variables, respectively. ([`Pin`](@ref))
  * `n` - This connector represents an electrical pin with voltage and current as the potential and flow variables, respectively. ([`Pin`](@ref))
  * `current` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
@@ -37,7 +40,7 @@ Defaults: [CHARGING-1] is charging.md section 1; [CCCV-BENCH] is issue #256.
 | ------------ | ----------------------------------- | ------ |
 | `v`         |                          | V  |
 """
-@component function CCCVCharger(; name = nothing, var"I_cc"=Float64(143.0), var"V_max"=96.0 * 4.2, var"I_cut"=(40000.0 / 350.0) / 50.0, var"R_reg"=0.00001, __overrides = Dict{String, Any}())
+@component function CCCVCharger(; name = nothing, var"use_power_limit"=false, var"I_cc"=Float64(143.0), var"V_max"=96.0 * 4.2, var"I_cut"=(40000.0 / 350.0) / 50.0, var"R_reg"=0.00001, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -56,6 +59,7 @@ Defaults: [CHARGING-1] is charging.md section 1; [CCCV-BENCH] is issue #256.
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "use_power_limit") && (use_power_limit = pop!(__overrides, "use_power_limit"))
   haskey(__overrides, "I_cc") && (I_cc = pop!(__overrides, "I_cc"))
   haskey(__overrides, "V_max") && (V_max = pop!(__overrides, "V_max"))
   haskey(__overrides, "I_cut") && (I_cut = pop!(__overrides, "I_cut"))
@@ -90,6 +94,7 @@ Defaults: [CHARGING-1] is charging.md section 1; [CCCV-BENCH] is issue #256.
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
+  append!(__vars, @variables (P_max(t)::Real), [input = true])
   append!(__vars, @variables (current(t)::Real), [output = true])
   append!(__vars, @variables (phase(t)::Real), [output = true])
 
@@ -121,10 +126,16 @@ Defaults: [CHARGING-1] is charging.md section 1; [CCCV-BENCH] is issue #256.
 
   ### Equations
   push!(__eqs, v ~ p.v - n.v)
-  push!(__eqs, current ~ min(I_cc, max(0.0, (V_max - v) / R_reg)))
   push!(__eqs, p.i ~ -current)
   push!(__eqs, n.i ~ current)
   push!(__eqs, phase ~ ifelse(current < I_cut, 3.0, ifelse((V_max - v) / R_reg >= I_cc, 1.0, 2.0)))
+
+  ### Control Structures
+  if use_power_limit
+    push!(__eqs, current ~ min(I_cc, max(0.0, P_max) / max(v, 1.0), max(0.0, (V_max - v) / R_reg)))
+  else
+    push!(__eqs, current ~ min(I_cc, max(0.0, (V_max - v) / R_reg)))
+  end
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

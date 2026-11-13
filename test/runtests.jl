@@ -21,6 +21,7 @@ const GROUPS = [
     "cccv" => ["cccv_plausibility.jl"],
     "socest" => ["socest_plausibility.jl"],
     "balancing" => ["balancing_plausibility.jl"],
+    "thermal" => ["thermal_plausibility.jl"],
     "lecture05" => ["lecture05_plausibility.jl"],
     "lecture05_positions" => ["lecture05_positions.jl"],
     "switching" => ["switching_plausibility.jl"],
