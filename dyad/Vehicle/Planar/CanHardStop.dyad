@@ -1,13 +1,3 @@
-external component CanRollingCar
-  throttle = RealInput()
-  brake = RealInput()
-  steer = RealInput()
-  structural parameter can::Boolean = true
-  structural parameter ideal::Boolean = false
-  structural parameter period::Real = 0.01
-  parameter v0::Velocity = 22.22222222222222
-end
-
 component CanHardStop
   structural parameter can::Boolean = true
   structural parameter ideal::Boolean = false
@@ -15,8 +5,8 @@ component CanHardStop
   parameter v0::Velocity = 22.22222222222222
   zero = BlockComponents.Sources.Constant(k = 0)
   pedal = BlockComponents.Sources.Ramp(height = 1, duration = 0.1, start_time = 0.5)
-  reference = CanRollingCar(can = false, v0 = v0) if !can
-  vehicle = CanRollingCar(can = true, ideal = ideal, period = period, v0 = v0) if can
+  reference = PlanarBEVDrive(v0 = v0) if !can
+  vehicle = PlanarBEVCanDrive(ideal = ideal, chassis_period = period, v0 = v0) if can
 relations
   if can
     connect(zero.y, vehicle.throttle, vehicle.steer)

@@ -54,7 +54,12 @@ end
         @test string(run.sol.retcode) == "Success"
         push!(distances, _can_stop(run, symbolic_container(run).vehicle))
     end
-    @test distances[end] >= di
+    @test all(d -> d >= di, distances)
+    @test dr ≈ 26.839 atol = 1e-3
+    @test di ≈ 26.839 atol = 1e-3
+    @test distances[1] ≈ 27.494 atol = 1e-3
+    @test distances[2] ≈ 28.415 atol = 1e-3
+    @test distances[3] ≈ 28.210 atol = 1e-3
     println("CAN stopping distance (m): ", (; reference = dr, ideal = di, ms10 = distances[1], ms20 = distances[2], ms40 = distances[3], max_speed_deviation = deviation))
 end
 
@@ -64,24 +69,16 @@ end
     connections = collect(eachmatch(r"connect\(([^)]*)\)\s*\{\^(\w+)\}", source))
     @test length(connections) == 23
     unresolved = String[]
-    definitions = Dict{String,String}()
-    roots = [("", joinpath(@__DIR__, "..", "dyad"))]
+    definitions = Dict{String,Any}()
+    connectors = Set{String}()
+    roots = [("VehicleSystemsComponents", joinpath(@__DIR__, "..", "dyad"))]
     append!(roots, [(string(nameof(lib)), joinpath(Base.pkgdir(lib), "dyad")) for lib in (BlockComponents, RotationalComponents, MultibodyComponents)])
     for (prefix, dir) in roots
-        for (folder, _, files) in walkdir(dir; follow_symlinks = true), file in files
-            endswith(file, ".dyad") || continue
-            text = read(joinpath(folder, file), String)
-            for section in eachmatch(r"(?ms)^(?:partial )?component (\w+)(?:@[^\n]*)?\s*\n.*?^end", text)
-                key = section.captures[1]
-                type_path = splitpath(relpath(joinpath(folder, file), dir))
-                parts = isempty(prefix) ? type_path[1:end-1] : [prefix; type_path[1:end-1]]
-                definitions[join([parts; key], '.')] = section.match
-                get!(definitions, key, section.match)
-            end
-        end
+        index_canvas_components!(definitions, connectors, dir, prefix; local_source = prefix == "VehicleSystemsComponents")
     end
     function port_icon(type, port)
-        text = get(definitions, replace(type, "VehicleSystemsComponents." => ""), get(definitions, last(split(type, '.')), ""))
+        key = haskey(definitions, type) ? type : "VehicleSystemsComponents.Vehicle.Planar." * type
+        text = haskey(definitions, key) ? definitions[key].text : ""
         mm = match(r"(?s)metadata (\{.*\})\nend", text)
         if !isnothing(mm)
             links = get(JSON.parse(mm.captures[1]), "_links", Dict())
@@ -105,13 +102,11 @@ end
                 icon = port_icon(type, port)
                 isnothing(icon) && continue
                 u, v = (icon["x1"] + icon["x2"]) / 2, (icon["y1"] + icon["y2"]) / 2
-                for _ in 1:(mod(Int(get(box, "rot", 0)), 360) ÷ 90)
-                    u, v = 1000 - v, u
-                end
-                points[name * "." * port] = (box["x1"] + (box["x2"] - box["x1"]) * u / 1000, box["y1"] + (box["y2"] - box["y1"]) * v / 1000)
+                points[name * "." * port] = on_canvas(box, u, v)
             end
         end
     end
+    wires = Tuple{String,Vector{Tuple{Float64,Float64}}}[]
     for c in connections
         ends = strip.(split(c.captures[1], ','))
         append!(unresolved, filter(e -> !haskey(points, e), ends))
@@ -129,8 +124,12 @@ end
             a, b = point(edge["S"]), point(edge["E"])
             (isnothing(a) || isnothing(b)) && continue
             path = [a; [(m["x"], m["y"]) for m in edge["M"]]; b]
+            push!(wires, (tag, path))
             @test all(path[i][1] == path[i-1][1] || path[i][2] == path[i-1][2] for i in 2:length(path))
         end
     end
     @test isempty(unresolved)
+    crossings = canvas_crossings(wires)
+    println("CAN canvas: ", length(connections), " connections, ", length(crossings), " crossings")
+    @test isempty(crossings)
 end

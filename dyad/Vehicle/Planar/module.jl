@@ -41,15 +41,3 @@ function fmvss126_metrics(t, swa, r, y; A, f = 0.7, t0 = 1.0, T_dwell = 0.5)
     return (; t_bos, t_cos, r_peak, yrr_1_00, yrr_1_75, y_bos_1_07,
             passes_stability, passes_responsiveness)
 end
-
-
-# The reference fixes rest with initial equations, which nested initial modifiers cannot replace.
-function CanRollingCar(; name, can = true, ideal = false, period = 0.01, v0 = 22.22222222222222)
-    model = can ? PlanarBEVCanDrive(; name, ideal, chassis_period = period) : PlanarBEVDrive(; name)
-    init = ModelingToolkit.get_initialization_eqs(model)
-    init[2] = init[2].lhs ~ [v0, 0.0]
-    for i in 5:8
-        init[i] = init[i].lhs ~ (v0 + 0.01) / 0.31
-    end
-    return model
-end

@@ -75,15 +75,15 @@
   # Subcomponent pedal of type BlockComponents.Sources.Ramp
   pedal_overrides = __pop_subcomponent_overrides!(__overrides, "pedal")
   push!(__systems, @named pedal = BlockComponents.Sources.Ramp(; height=Float64(1), duration=0.1, start_time=0.5, __overrides = pedal_overrides))
-  # Subcomponent reference of type VehicleSystemsComponents.Vehicle.Planar.CanRollingCar
+  # Subcomponent reference of type VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDrive
   reference_overrides = __pop_subcomponent_overrides!(__overrides, "reference")
   if !can
-    push!(__systems, @named reference = VehicleSystemsComponents.Vehicle.Planar.CanRollingCar(; can=false, v0=v0, __symbol_overrides(reference_overrides)...))
+    push!(__systems, @named reference = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDrive(; v0=v0, __overrides = reference_overrides))
   end
-  # Subcomponent vehicle of type VehicleSystemsComponents.Vehicle.Planar.CanRollingCar
+  # Subcomponent vehicle of type VehicleSystemsComponents.Vehicle.Planar.PlanarBEVCanDrive
   vehicle_overrides = __pop_subcomponent_overrides!(__overrides, "vehicle")
   if can
-    push!(__systems, @named vehicle = VehicleSystemsComponents.Vehicle.Planar.CanRollingCar(; can=true, ideal=ideal, period=period, v0=v0, __symbol_overrides(vehicle_overrides)...))
+    push!(__systems, @named vehicle = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVCanDrive(; ideal=ideal, chassis_period=period, v0=v0, __overrides = vehicle_overrides))
   end
 
   ### Check there are no unmatched overrides
