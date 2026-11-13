@@ -266,6 +266,9 @@ own, so the balance `E_cells = E_road + E_brake + E_tire + E_motor + E_conv + E_
   # Subcomponent split of type VehicleSystemsComponents.Vehicle.Electric.TorqueSplit
   split_overrides = __pop_subcomponent_overrides!(__overrides, "split")
   push!(__systems, @named split = VehicleSystemsComponents.Vehicle.Electric.TorqueSplit(; ratio=ratio, v_fade=v_fade, __overrides = split_overrides))
+  # Subcomponent rear_brake_zero of type BlockComponents.Sources.Constant
+  rear_brake_zero_overrides = __pop_subcomponent_overrides!(__overrides, "rear_brake_zero")
+  push!(__systems, @named rear_brake_zero = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = rear_brake_zero_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -326,8 +329,6 @@ own, so the balance `E_cells = E_road + E_brake + E_tire + E_motor + E_conv + E_
   __assertions = []
 
   ### Equations
-  push!(__eqs, car.tau_rl ~ 0.0)
-  push!(__eqs, car.tau_rr ~ 0.0)
   push!(__eqs, P_dc ~ drive.battery.v * drive.battery.i)
   push!(__eqs, P_shaft ~ drive.machine.P_mech)
   push!(__eqs, ModelingToolkit.D_nounits(E_cells) ~ drive.battery.E * drive.battery.i)
@@ -360,6 +361,7 @@ own, so the balance `E_cells = E_road + E_brake + E_tire + E_motor + E_conv + E_
   push!(__eqs, connect(driver.y, split.tau_ref))
   push!(__eqs, connect(split.tau_motor, drive.tau_ref))
   push!(__eqs, connect(split.tau_brake, car.tau_fl, car.tau_fr))
+  push!(__eqs, connect(rear_brake_zero.y, car.tau_rl, car.tau_rr))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -125,6 +125,12 @@ Defaults are the Nissan Leaf ZE1. Source tags: (Nissan) ZE1 specification sheet,
   # Subcomponent reduction of type RotationalComponents.Components.IdealGear
   reduction_overrides = __pop_subcomponent_overrides!(__overrides, "reduction")
   push!(__systems, @named reduction = RotationalComponents.Components.IdealGear(; ratio=ratio, __overrides = reduction_overrides))
+  # Subcomponent torque_per_amp of type BlockComponents.Math.Gain
+  torque_per_amp_overrides = __pop_subcomponent_overrides!(__overrides, "torque_per_amp")
+  push!(__systems, @named torque_per_amp = BlockComponents.Math.Gain(; k=machine.k, __overrides = torque_per_amp_overrides))
+  # Subcomponent current_command of type BlockComponents.Math.Division
+  current_command_overrides = __pop_subcomponent_overrides!(__overrides, "current_command")
+  push!(__systems, @named current_command = BlockComponents.Math.Division(; __overrides = current_command_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -137,15 +143,17 @@ Defaults are the Nissan Leaf ZE1. Source tags: (Nissan) ZE1 specification sheet,
   __assertions = []
 
   ### Equations
-  push!(__eqs, converter.i_ref ~ tau_ref / (converter.field * machine.k))
   push!(__eqs, connect(battery.p, converter.p_in, aux.p))
   push!(__eqs, connect(battery.n, converter.n, aux.n, machine.n, ground.g))
   push!(__eqs, connect(converter.p_out, machine.p))
-  push!(__eqs, connect(converter.field, machine.field))
+  push!(__eqs, connect(converter.field, machine.field, torque_per_amp.u))
   push!(__eqs, connect(machine.spline, reduction.spline_a))
   push!(__eqs, connect(reduction.spline_b, spline))
   push!(__eqs, connect(machine.support, reduction.support, support))
   push!(__eqs, connect(battery.SoC, SoC))
+  push!(__eqs, connect(tau_ref, current_command.u1))
+  push!(__eqs, connect(torque_per_amp.y, current_command.u2))
+  push!(__eqs, connect(current_command.y, converter.i_ref))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
