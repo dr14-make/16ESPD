@@ -11,8 +11,8 @@ by Ns. R0 and capacity retain Battery's Nissan/INL defaults for comparison.
 R1/R0 and tau1 use pulse 5 (approximately 60 % SoC, 25 C) of the ORNL Leaf
 33.1 Ah cell 1-RC fit [ORNL-LEAF-ECM] (derived).
 
-The equation tau1 * der(v1) = R1 * i - v1 is equivalent to C1 = tau1/R1.
-Using tau1 avoids division by R1 and permits R1 = 0 with v1 initially zero.
+The polarization branch uses C1 = tau1/R1 for positive R1.
+At the zero-resistance limit both parts use 1e-15 ohm to keep C1 finite.
 """
 component TheveninCell
   extends ElectricalComponents.Analog.Interfaces.TwoPin
@@ -33,33 +33,66 @@ component TheveninCell
   "Cell OCV [V], repeated on dummy axis (derived; [CHEN-2020], PyBaMM)"
   structural parameter ocv_data::Real[:, :] = [[2.500, 2.500], [3.296, 3.296], [3.485, 3.485], [3.581, 3.581], [3.667, 3.667], [3.751, 3.751], [3.841, 3.841], [3.948, 3.948], [4.042, 4.042], [4.097, 4.097], [4.200, 4.200]]
   table = BlockComponents.Tables.InterpolatedTable(axis1 = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], axis2 = [0, 1], data = ocv_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension()) {^table}
-  "Open-circuit voltage at the present SoC"
+  lookup_limit = BlockComponents.Nonlinear.Limiter(y_min = 0.0, y_max = 1.0) {^lookup_limit}
+  dummy_axis = BlockComponents.Sources.Constant(k = 0.0) {^dummy_axis}
+  series_count = BlockComponents.Math.Gain(k = Ns) {^series_count}
+  ocv = ElectricalComponents.Analog.Sources.VoltageSource() {^ocv}
+  ohmic = ElectricalComponents.Analog.Basic.Resistor(R = R0) {^ohmic}
+  polarization = ElectricalComponents.Analog.Basic.Resistor(R = max(R1, 1e-15)) {^polarization}
+  capacitor = ElectricalComponents.Analog.Basic.Capacitor(C = tau1 / max(R1, 1e-15)) {^capacitor}
+  current = ElectricalComponents.Analog.Sensors.CurrentSensor() {^current}
+  charge = BlockComponents.Continuous.Integrator(k = -1.0 / Q_nom, x0 = SoC0) {^charge}
+  "Open-circuit voltage at the present SoC (compatibility alias)"
   variable E::Voltage
-  "Discharge current, out of p and back into n"
+  "Discharge current, out of p and back into n (compatibility alias)"
   variable i::Current
-  "Polarization voltage"
+  "Polarization voltage (compatibility alias)"
   variable v1::Voltage
   stored_voltage = RealOutput() {^stored_voltage}
   stored_current = RealOutput() {^stored_current}
 relations
-  initial SoC = SoC0
-  initial v1 = 0.0
-  table.u1 = min(max(SoC, 0.0), 1.0)
-  table.u2 = 0.0
-  E = Ns * table.y
-  stored_voltage = E
-  stored_current = i
-  p.i + n.i = 0
-  i = n.i
-  v = E - R0 * i - v1
-  tau1 * der(v1) = R1 * i - v1
-  der(SoC) = -i / Q_nom
+  initial capacitor.v = 0.0
+  E = series_count.y
+  i = current.i
+  v1 = capacitor.v
+  connect(n, current.p) {^wire1}
+  connect(current.n, ocv.n) {^wire2}
+  connect(ocv.p, polarization.p, capacitor.p) {^wire3}
+  connect(polarization.n, capacitor.n, ohmic.p) {^wire4}
+  connect(ohmic.n, p) {^wire5}
+  connect(current.i, charge.u, stored_current) {^wire6}
+  connect(charge.y, lookup_limit.u, SoC) {^wire7}
+  connect(lookup_limit.y, table.u1) {^wire8}
+  connect(dummy_axis.y, table.u2) {^wire9}
+  connect(table.y, series_count.u) {^wire10}
+  connect(series_count.y, ocv.V, stored_voltage) {^wire11}
 metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/Battery.svg"}},
   "_links": {
-    "SoC": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}}}},
-    "stored_voltage": {"Dyad": {"placement": {"icon": {"x1": 250, "y1": 950, "x2": 350, "y2": 1050, "rot": 90}}}},
-    "stored_current": {"Dyad": {"placement": {"icon": {"x1": 650, "y1": 950, "x2": 750, "y2": 1050, "rot": 90}}}}
+    "capacitor": {"Dyad": {"placement": {"diagram": {"x1": 620, "y1": 560, "x2": 700, "y2": 640, "rot": 270}}}},
+    "charge": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 600, "x2": 180, "y2": 680}}}},
+    "current": {"Dyad": {"placement": {"diagram": {"x1": 840, "y1": 860, "x2": 920, "y2": 940}}}},
+    "dummy_axis": {"Dyad": {"placement": {"diagram": {"x1": 280, "y1": 760, "x2": 360, "y2": 840}}}},
+    "lookup_limit": {"Dyad": {"placement": {"diagram": {"x1": 280, "y1": 600, "x2": 360, "y2": 680}}}},
+    "ocv": {"Dyad": {"placement": {"diagram": {"x1": 620, "y1": 720, "x2": 700, "y2": 800, "rot": 270}}}},
+    "ohmic": {"Dyad": {"placement": {"diagram": {"x1": 740, "y1": 400, "x2": 820, "y2": 480, "rot": 270}}}},
+    "polarization": {"Dyad": {"placement": {"diagram": {"x1": 740, "y1": 560, "x2": 820, "y2": 640, "rot": 270}}}},
+    "series_count": {"Dyad": {"placement": {"diagram": {"x1": 460, "y1": 780, "x2": 540, "y2": 860}}}},
+    "table": {"Dyad": {"placement": {"diagram": {"x1": 460, "y1": 600, "x2": 540, "y2": 680}}}},
+    "SoC": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}, "diagram": {"x1": -50, "y1": 510, "x2": 50, "y2": 610, "rot": 180}}}},
+    "stored_voltage": {"Dyad": {"placement": {"icon": {"x1": 250, "y1": 950, "x2": 350, "y2": 1050, "rot": 90}, "diagram": {"x1": -50, "y1": 390, "x2": 50, "y2": 490, "rot": 180}}}},
+    "stored_current": {"Dyad": {"placement": {"icon": {"x1": 650, "y1": 950, "x2": 750, "y2": 1050, "rot": 90}, "diagram": {"x1": 250, "y1": 950, "x2": 350, "y2": 1050, "rot": 90}}}},
+    "wire1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 980, "y": 500}, {"x": 980, "y": 840}, {"x": 820, "y": 840}, {"x": 820, "y": 900}], "E": 2}], "path": {}}},
+    "wire2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 960, "y": 900}, {"x": 960, "y": 700}, {"x": 660, "y": 700}], "E": 2}], "path": {}}},
+    "wire3": {"Dyad": {"junctions": [{"x": 660, "y": 680}], "edges": [{"S": 1, "M": [{"x": 740, "y": 800}, {"x": 740, "y": 680}], "E": -1}, {"S": 2, "M": [{"x": 780, "y": 680}], "E": -1}, {"S": 3, "M": [], "E": -1}], "path": {}}},
+    "wire4": {"Dyad": {"junctions": [{"x": 780, "y": 520}], "edges": [{"S": 1, "M": [], "E": -1}, {"S": 2, "M": [{"x": 660, "y": 520}], "E": -1}, {"S": 3, "M": [], "E": -1}], "path": {}}},
+    "wire5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 780, "y": 340}, {"x": 100, "y": 340}, {"x": 100, "y": 500}], "E": 2}], "path": {}}},
+    "wire6": {"Dyad": {"junctions": [{"x": 300, "y": 940}], "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 60, "y": 940}, {"x": 60, "y": 640}], "E": 2}, {"S": -1, "M": [], "E": 3}], "path": {}}},
+    "wire7": {"Dyad": {"junctions": [{"x": 220, "y": 640}], "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 220, "y": 560}], "E": 3}], "path": {}}},
+    "wire8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 400, "y": 640}, {"x": 400, "y": 616}], "E": 2}], "path": {}}},
+    "wire9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 400, "y": 800}, {"x": 400, "y": 664}], "E": 2}], "path": {}}},
+    "wire10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 600, "y": 640}, {"x": 600, "y": 720}, {"x": 420, "y": 720}, {"x": 420, "y": 820}], "E": 2}], "path": {}}},
+    "wire11": {"Dyad": {"junctions": [{"x": 640, "y": 820}], "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 580, "y": 820}, {"x": 580, "y": 760}], "E": 2}, {"S": -1, "M": [{"x": 620, "y": 820}, {"x": 620, "y": 440}], "E": 3}], "path": {}}}
   }
 }
 end

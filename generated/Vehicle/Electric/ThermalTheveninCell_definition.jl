@@ -38,9 +38,9 @@ Electrical defaults and their provenance are inherited unchanged.
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
 | `v`         | Voltage across the component (between pin p and pin n).                         | V  |
-| `E`         | Open-circuit voltage at the present SoC                         | V  |
-| `i`         | Discharge current, out of p and back into n                         | A  |
-| `v1`         | Polarization voltage                         | V  |
+| `E`         | Open-circuit voltage at the present SoC (compatibility alias)                         | V  |
+| `i`         | Discharge current, out of p and back into n (compatibility alias)                         | A  |
+| `v1`         | Polarization voltage (compatibility alias)                         | V  |
 """
 @component function ThermalTheveninCell(; name = nothing, var"ocv_data"=[2.5 2.5; 3.296 3.296; 3.485 3.485; 3.581 3.581; 3.667 3.667; 3.751 3.751; 3.841 3.841; 3.948 3.948; 4.042 4.042; 4.097 4.097; 4.2 4.2], var"Ns"=Float64(96.0), var"R0"=0.1, var"R1"=0.1 * 1.34 / 1.6, var"tau1"=25.7, var"Q_nom"=40000.0 * 3600.0 / 350.0, var"SoC0"=0.9, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -111,9 +111,9 @@ Electrical defaults and their provenance are inherited unchanged.
 
   ### Variables (declarations)
   append!(__vars, @variables (v(t)::Real), [description = "Voltage across the component (between pin p and pin n)."])
-  append!(__vars, @variables (E(t)::Real), [description = "Open-circuit voltage at the present SoC"])
-  append!(__vars, @variables (i(t)::Real), [description = "Discharge current, out of p and back into n"])
-  append!(__vars, @variables (v1(t)::Real), [description = "Polarization voltage"])
+  append!(__vars, @variables (E(t)::Real), [description = "Open-circuit voltage at the present SoC (compatibility alias)"])
+  append!(__vars, @variables (i(t)::Real), [description = "Discharge current, out of p and back into n (compatibility alias)"])
+  append!(__vars, @variables (v1(t)::Real), [description = "Polarization voltage (compatibility alias)"])
 
   ### Variables (assignments)
   __ovr_v = pop!(__overrides, "v", nothing); isnothing(__ovr_v) || push!(__eqs, v ~ __ovr_v)
@@ -139,6 +139,54 @@ Electrical defaults and their provenance are inherited unchanged.
   # Subcomponent table of type BlockComponents.Tables.InterpolatedTable
   table_overrides = __pop_subcomponent_overrides!(__overrides, "table")
   push!(__systems, @named table = BlockComponents.Tables.InterpolatedTable(; axis1=[Float64(0.0), 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, Float64(1.0)], axis2=[Float64(0), Float64(1)], data=ocv_data, interpolation_dim1=BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2=BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), __overrides = table_overrides))
+  # Subcomponent lookup_limit of type BlockComponents.Nonlinear.Limiter
+  lookup_limit_overrides = __pop_subcomponent_overrides!(__overrides, "lookup_limit")
+  push!(__systems, @named lookup_limit = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0.0), y_max=Float64(1.0), __overrides = lookup_limit_overrides))
+  # Subcomponent dummy_axis of type BlockComponents.Sources.Constant
+  dummy_axis_overrides = __pop_subcomponent_overrides!(__overrides, "dummy_axis")
+  push!(__systems, @named dummy_axis = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = dummy_axis_overrides))
+  # Subcomponent series_count of type BlockComponents.Math.Gain
+  series_count_overrides = __pop_subcomponent_overrides!(__overrides, "series_count")
+  push!(__systems, @named series_count = BlockComponents.Math.Gain(; k=Ns, __overrides = series_count_overrides))
+  # Subcomponent ocv of type ElectricalComponents.Analog.Sources.VoltageSource
+  ocv_overrides = __pop_subcomponent_overrides!(__overrides, "ocv")
+  push!(__systems, @named ocv = ElectricalComponents.Analog.Sources.VoltageSource(; __overrides = ocv_overrides))
+  # Subcomponent ohmic of type ElectricalComponents.Analog.Basic.Resistor
+  ohmic_overrides = __pop_subcomponent_overrides!(__overrides, "ohmic")
+  push!(__systems, @named ohmic = ElectricalComponents.Analog.Basic.Resistor(; R=R0, __overrides = ohmic_overrides))
+  # Subcomponent polarization of type ElectricalComponents.Analog.Basic.Resistor
+  polarization_overrides = __pop_subcomponent_overrides!(__overrides, "polarization")
+  push!(__systems, @named polarization = ElectricalComponents.Analog.Basic.Resistor(; R=max(R1, 1e-15), __overrides = polarization_overrides))
+  # Subcomponent capacitor of type ElectricalComponents.Analog.Basic.Capacitor
+  capacitor_overrides = __pop_subcomponent_overrides!(__overrides, "capacitor")
+  push!(__systems, @named capacitor = ElectricalComponents.Analog.Basic.Capacitor(; C=tau1 / max(R1, 1e-15), __overrides = capacitor_overrides))
+  # Subcomponent current of type ElectricalComponents.Analog.Sensors.CurrentSensor
+  current_overrides = __pop_subcomponent_overrides!(__overrides, "current")
+  push!(__systems, @named current = ElectricalComponents.Analog.Sensors.CurrentSensor(; __overrides = current_overrides))
+  # Subcomponent charge of type BlockComponents.Continuous.Integrator
+  charge_overrides = __pop_subcomponent_overrides!(__overrides, "charge")
+  push!(__systems, @named charge = BlockComponents.Continuous.Integrator(; k=-1.0 / Q_nom, x0=SoC0, __overrides = charge_overrides))
+  # Subcomponent ohmic_square of type BlockComponents.Math.Product
+  ohmic_square_overrides = __pop_subcomponent_overrides!(__overrides, "ohmic_square")
+  push!(__systems, @named ohmic_square = BlockComponents.Math.Product(; __overrides = ohmic_square_overrides))
+  # Subcomponent ohmic_heat of type BlockComponents.Math.Gain
+  ohmic_heat_overrides = __pop_subcomponent_overrides!(__overrides, "ohmic_heat")
+  push!(__systems, @named ohmic_heat = BlockComponents.Math.Gain(; k=R0, __overrides = ohmic_heat_overrides))
+  # Subcomponent polarization_sensor of type ElectricalComponents.Analog.Sensors.VoltageSensor
+  polarization_sensor_overrides = __pop_subcomponent_overrides!(__overrides, "polarization_sensor")
+  push!(__systems, @named polarization_sensor = ElectricalComponents.Analog.Sensors.VoltageSensor(; __overrides = polarization_sensor_overrides))
+  # Subcomponent polarization_square of type BlockComponents.Math.Product
+  polarization_square_overrides = __pop_subcomponent_overrides!(__overrides, "polarization_square")
+  push!(__systems, @named polarization_square = BlockComponents.Math.Product(; __overrides = polarization_square_overrides))
+  # Subcomponent polarization_heat of type BlockComponents.Math.Gain
+  polarization_heat_overrides = __pop_subcomponent_overrides!(__overrides, "polarization_heat")
+  push!(__systems, @named polarization_heat = BlockComponents.Math.Gain(; k=ifelse(R1 > 0.0, 1.0 / max(R1, 1e-30), 0.0), __overrides = polarization_heat_overrides))
+  # Subcomponent heat_sum of type BlockComponents.Math.Add
+  heat_sum_overrides = __pop_subcomponent_overrides!(__overrides, "heat_sum")
+  push!(__systems, @named heat_sum = BlockComponents.Math.Add(; __overrides = heat_sum_overrides))
+  # Subcomponent heat_source of type ThermalComponents.Sources.PrescribedHeatFlow
+  heat_source_overrides = __pop_subcomponent_overrides!(__overrides, "heat_source")
+  push!(__systems, @named heat_source = ThermalComponents.Sources.PrescribedHeatFlow(; __overrides = heat_source_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -150,26 +198,37 @@ Electrical defaults and their provenance are inherited unchanged.
   isnothing(__ovr_v1__guess) || (__guesses[v1] = __ovr_v1__guess)
 
   ### Initialization Equations
-  push!(__initialization_eqs, SoC ~ SoC0)
-  push!(__initialization_eqs, v1 ~ 0.0)
+  push!(__initialization_eqs, capacitor.v ~ 0.0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
   push!(__eqs, v ~ p.v - n.v)
-  push!(__eqs, table.u1 ~ min(max(SoC, 0.0), 1.0))
-  push!(__eqs, table.u2 ~ 0.0)
-  push!(__eqs, E ~ Ns * table.y)
-  push!(__eqs, stored_voltage ~ E)
-  push!(__eqs, stored_current ~ i)
-  push!(__eqs, p.i + n.i ~ 0)
-  push!(__eqs, i ~ n.i)
-  push!(__eqs, v ~ E - R0 * i - v1)
-  push!(__eqs, tau1 * ModelingToolkit.D_nounits(v1) ~ R1 * i - v1)
-  push!(__eqs, ModelingToolkit.D_nounits(SoC) ~ -i / Q_nom)
-  push!(__eqs, dissipated ~ R0 * i ^ 2 + ifelse(R1 > 0.0, v1 ^ 2 / max(R1, 1e-30), 0.0))
-  push!(__eqs, heat_port.Q_flow ~ -dissipated)
+  push!(__eqs, E ~ series_count.y)
+  push!(__eqs, i ~ current.i)
+  push!(__eqs, v1 ~ capacitor.v)
+  push!(__eqs, connect(n, current.p))
+  push!(__eqs, connect(current.n, ocv.n))
+  push!(__eqs, connect(ocv.p, polarization.p, capacitor.p))
+  push!(__eqs, connect(polarization.n, capacitor.n, ohmic.p))
+  push!(__eqs, connect(ohmic.n, p))
+  push!(__eqs, connect(current.i, stored_current, charge.u))
+  push!(__eqs, connect(charge.y, SoC, lookup_limit.u))
+  push!(__eqs, connect(lookup_limit.y, table.u1))
+  push!(__eqs, connect(dummy_axis.y, table.u2))
+  push!(__eqs, connect(table.y, series_count.u))
+  push!(__eqs, connect(series_count.y, stored_voltage, ocv.V))
+  push!(__eqs, connect(stored_current, ohmic_square.u1, ohmic_square.u2))
+  push!(__eqs, connect(ohmic_square.y, ohmic_heat.u))
+  push!(__eqs, connect(capacitor.p, polarization_sensor.p))
+  push!(__eqs, connect(capacitor.n, polarization_sensor.n))
+  push!(__eqs, connect(polarization_sensor.v, polarization_square.u1, polarization_square.u2))
+  push!(__eqs, connect(polarization_square.y, polarization_heat.u))
+  push!(__eqs, connect(ohmic_heat.y, heat_sum.u1))
+  push!(__eqs, connect(polarization_heat.y, heat_sum.u2))
+  push!(__eqs, connect(heat_sum.y, dissipated, heat_source.Q_flow))
+  push!(__eqs, connect(heat_source.port, heat_port))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

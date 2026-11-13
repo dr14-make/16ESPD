@@ -65,7 +65,18 @@ end
 
 @testset "Temperature derating law" begin
     d = _PT.ThermalDerating(name = :derating)
-    rhs = only(equations(d)).rhs
+    ports = ModelingToolkit.toggle_namespacing(d, false)
+    reduced = simplify_model(d; inputs = [ports.T], outputs = [ports.P_max])
+    substitutions = Dict(eq.lhs => eq.rhs for eq in observed(reduced))
+    merge!(substitutions, Dict(k => v for (k, v) in ModelingToolkit.get_bindings(reduced)
+        if string(v) != "missing"))
+    rhs = ModelingToolkit.Symbolics.unwrap(ModelingToolkit.toggle_namespacing(reduced, false).P_max)
+    for _ in 1:length(substitutions)
+        rhs = ModelingToolkit.Symbolics.substitute(rhs, substitutions)
+    end
+    defaults = ModelingToolkit.get_initial_conditions(reduced)
+    internal = Dict(k => v for (k, v) in defaults if occursin('₊', string(k)))
+    rhs = ModelingToolkit.Symbolics.substitute(rhs, internal)
     vars = collect(ModelingToolkit.Symbolics.get_variables(rhs))
     evaluate = ModelingToolkit.Symbolics.build_function(rhs, vars; expression = Val(false))
     for (temp, expected) in ((290.0, 50000.0), (305.15, 50000.0),

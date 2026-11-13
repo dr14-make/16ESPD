@@ -94,29 +94,17 @@ continuous across all legs. The final stage rests after the second charge.
   append!(__vars, @variables (stage(t)::Real), [output = true])
 
   ### Variables (declarations)
-  if cycling
-    append!(__vars, @variables (throughput(t)::Real))
-  end
+  append!(__vars, @variables (throughput(t)::Real))
 
   ### Variables (assignments)
-  if cycling
-    __ovr_throughput = pop!(__overrides, "throughput", nothing); isnothing(__ovr_throughput) || push!(__eqs, throughput ~ __ovr_throughput)
-    __ovr_throughput__initial = pop!(__overrides, "throughput.initial", nothing); isnothing(__ovr_throughput__initial) || (__initial_conditions[throughput] = __ovr_throughput__initial)
-    __ovr_throughput__guess = pop!(__overrides, "throughput.guess", nothing)
-  end
+  __ovr_throughput = pop!(__overrides, "throughput", nothing); isnothing(__ovr_throughput) || push!(__eqs, throughput ~ __ovr_throughput)
+  __ovr_throughput__initial = pop!(__overrides, "throughput.initial", nothing); isnothing(__ovr_throughput__initial) || (__initial_conditions[throughput] = __ovr_throughput__initial)
+  __ovr_throughput__guess = pop!(__overrides, "throughput.guess", nothing)
 
   ### Constants
   __constants = Any[]
 
   ### Components
-  # Subcomponent load of type ElectricalComponents.Analog.Sources.CurrentSource
-  load_overrides = __pop_subcomponent_overrides!(__overrides, "load")
-  if cycling
-    push!(__systems, @named load = ElectricalComponents.Analog.Sources.CurrentSource(; __overrides = load_overrides))
-  end
-  # Subcomponent link of type ElectricalComponents.Analog.Basic.Capacitor
-  link_overrides = __pop_subcomponent_overrides!(__overrides, "link")
-  push!(__systems, @named link = ElectricalComponents.Analog.Basic.Capacitor(; C=0.01, __overrides = link_overrides))
   # Subcomponent battery of type VehicleSystemsComponents.Vehicle.Electric.ThermalTheveninCell
   battery_overrides = __pop_subcomponent_overrides!(__overrides, "battery")
   push!(__systems, @named battery = VehicleSystemsComponents.Vehicle.Electric.ThermalTheveninCell(; SoC0=0.1, __overrides = battery_overrides))
@@ -132,14 +120,84 @@ continuous across all legs. The final stage rests after the second charge.
   # Subcomponent ground of type ElectricalComponents.Analog.Basic.Ground
   ground_overrides = __pop_subcomponent_overrides!(__overrides, "ground")
   push!(__systems, @named ground = ElectricalComponents.Analog.Basic.Ground(; __overrides = ground_overrides))
+  # Subcomponent link of type ElectricalComponents.Analog.Basic.Capacitor
+  link_overrides = __pop_subcomponent_overrides!(__overrides, "link")
+  push!(__systems, @named link = ElectricalComponents.Analog.Basic.Capacitor(; C=0.01, __overrides = link_overrides))
+  # Subcomponent load of type ElectricalComponents.Analog.Sources.CurrentSource
+  load_overrides = __pop_subcomponent_overrides!(__overrides, "load")
+  push!(__systems, @named load = ElectricalComponents.Analog.Sources.CurrentSource(; __overrides = load_overrides))
+  # Subcomponent voltage_sensor of type ElectricalComponents.Analog.Sensors.VoltageSensor
+  voltage_sensor_overrides = __pop_subcomponent_overrides!(__overrides, "voltage_sensor")
+  push!(__systems, @named voltage_sensor = ElectricalComponents.Analog.Sensors.VoltageSensor(; __overrides = voltage_sensor_overrides))
+  # Subcomponent absolute_current of type BlockComponents.Math.Abs
+  absolute_current_overrides = __pop_subcomponent_overrides!(__overrides, "absolute_current")
+  push!(__systems, @named absolute_current = BlockComponents.Math.Abs(; __overrides = absolute_current_overrides))
+  # Subcomponent throughput_integrator of type BlockComponents.Continuous.Integrator
+  throughput_integrator_overrides = __pop_subcomponent_overrides!(__overrides, "throughput_integrator")
+  push!(__systems, @named throughput_integrator = BlockComponents.Continuous.Integrator(; k=1.0 / battery.Q_nom, x0=Float64(0.0), __overrides = throughput_integrator_overrides))
+  # Subcomponent leg1 of type BlockComponents.Logical.LessThreshold
+  leg1_overrides = __pop_subcomponent_overrides!(__overrides, "leg1")
+  push!(__systems, @named leg1 = BlockComponents.Logical.LessThreshold(; threshold=ifelse(cycling, 0.7, 1e+300), __overrides = leg1_overrides))
+  # Subcomponent leg2 of type BlockComponents.Logical.LessThreshold
+  leg2_overrides = __pop_subcomponent_overrides!(__overrides, "leg2")
+  push!(__systems, @named leg2 = BlockComponents.Logical.LessThreshold(; threshold=ifelse(cycling, 1.4, -1e+300), __overrides = leg2_overrides))
+  # Subcomponent leg3 of type BlockComponents.Logical.LessThreshold
+  leg3_overrides = __pop_subcomponent_overrides!(__overrides, "leg3")
+  push!(__systems, @named leg3 = BlockComponents.Logical.LessThreshold(; threshold=2.1, __overrides = leg3_overrides))
+  # Subcomponent one of type BlockComponents.Sources.Constant
+  one_overrides = __pop_subcomponent_overrides!(__overrides, "one")
+  push!(__systems, @named one = BlockComponents.Sources.Constant(; k=Float64(1.0), __overrides = one_overrides))
+  # Subcomponent two of type BlockComponents.Sources.Constant
+  two_overrides = __pop_subcomponent_overrides!(__overrides, "two")
+  push!(__systems, @named two = BlockComponents.Sources.Constant(; k=Float64(2.0), __overrides = two_overrides))
+  # Subcomponent three of type BlockComponents.Sources.Constant
+  three_overrides = __pop_subcomponent_overrides!(__overrides, "three")
+  push!(__systems, @named three = BlockComponents.Sources.Constant(; k=Float64(3.0), __overrides = three_overrides))
+  # Subcomponent four of type BlockComponents.Sources.Constant
+  four_overrides = __pop_subcomponent_overrides!(__overrides, "four")
+  push!(__systems, @named four = BlockComponents.Sources.Constant(; k=Float64(4.0), __overrides = four_overrides))
+  # Subcomponent last_stage of type BlockComponents.Logical.Switch
+  last_stage_overrides = __pop_subcomponent_overrides!(__overrides, "last_stage")
+  push!(__systems, @named last_stage = BlockComponents.Logical.Switch(; __overrides = last_stage_overrides))
+  # Subcomponent middle_stage of type BlockComponents.Logical.Switch
+  middle_stage_overrides = __pop_subcomponent_overrides!(__overrides, "middle_stage")
+  push!(__systems, @named middle_stage = BlockComponents.Logical.Switch(; __overrides = middle_stage_overrides))
+  # Subcomponent first_stage of type BlockComponents.Logical.Switch
+  first_stage_overrides = __pop_subcomponent_overrides!(__overrides, "first_stage")
+  push!(__systems, @named first_stage = BlockComponents.Logical.Switch(; __overrides = first_stage_overrides))
+  # Subcomponent not_leg1 of type BlockComponents.Logical.Not
+  not_leg1_overrides = __pop_subcomponent_overrides!(__overrides, "not_leg1")
+  push!(__systems, @named not_leg1 = BlockComponents.Logical.Not(; __overrides = not_leg1_overrides))
+  # Subcomponent drive_gate of type BlockComponents.Logical.And
+  drive_gate_overrides = __pop_subcomponent_overrides!(__overrides, "drive_gate")
+  push!(__systems, @named drive_gate = BlockComponents.Logical.And(; __overrides = drive_gate_overrides))
+  # Subcomponent not_leg2 of type BlockComponents.Logical.Not
+  not_leg2_overrides = __pop_subcomponent_overrides!(__overrides, "not_leg2")
+  push!(__systems, @named not_leg2 = BlockComponents.Logical.Not(; __overrides = not_leg2_overrides))
+  # Subcomponent second_charge of type BlockComponents.Logical.And
+  second_charge_overrides = __pop_subcomponent_overrides!(__overrides, "second_charge")
+  push!(__systems, @named second_charge = BlockComponents.Logical.And(; __overrides = second_charge_overrides))
+  # Subcomponent charge_gate of type BlockComponents.Logical.Or
+  charge_gate_overrides = __pop_subcomponent_overrides!(__overrides, "charge_gate")
+  push!(__systems, @named charge_gate = BlockComponents.Logical.Or(; __overrides = charge_gate_overrides))
+  # Subcomponent zero of type BlockComponents.Sources.Constant
+  zero_overrides = __pop_subcomponent_overrides!(__overrides, "zero")
+  push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = zero_overrides))
+  # Subcomponent charge_power of type BlockComponents.Logical.Switch
+  charge_power_overrides = __pop_subcomponent_overrides!(__overrides, "charge_power")
+  push!(__systems, @named charge_power = BlockComponents.Logical.Switch(; __overrides = charge_power_overrides))
+  # Subcomponent drive_current of type VehicleSystemsComponents.Vehicle.Blocks.TerminalPowerCurrentEquation
+  drive_current_overrides = __pop_subcomponent_overrides!(__overrides, "drive_current")
+  push!(__systems, @named drive_current = VehicleSystemsComponents.Vehicle.Blocks.TerminalPowerCurrentEquation(; P=P_drive, __overrides = drive_current_overrides))
+  # Subcomponent drive_command of type BlockComponents.Logical.Switch
+  drive_command_overrides = __pop_subcomponent_overrides!(__overrides, "drive_command")
+  push!(__systems, @named drive_command = BlockComponents.Logical.Switch(; __overrides = drive_command_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
-  if cycling
-    isnothing(__ovr_throughput__guess) || (__guesses[throughput] = __ovr_throughput__guess)
-  end
+  isnothing(__ovr_throughput__guess) || (__guesses[throughput] = __ovr_throughput__guess)
 
   ### Initialization Equations
   push!(__initialization_eqs, link.v ~ battery.E)
@@ -148,25 +206,35 @@ continuous across all legs. The final stage rests after the second charge.
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(battery.p, charger.p))
-  push!(__eqs, connect(battery.n, charger.n, ground.g))
+  push!(__eqs, throughput ~ throughput_integrator.y)
+  push!(__eqs, connect(battery.p, charger.p, link.p, load.p, voltage_sensor.p))
+  push!(__eqs, connect(battery.n, charger.n, ground.g, link.n, load.n, voltage_sensor.n))
   push!(__eqs, connect(battery.heat_port, thermal.heat_port))
   push!(__eqs, connect(thermal.T, derating.T))
-  push!(__eqs, connect(link.p, battery.p))
-  push!(__eqs, connect(link.n, battery.n))
-
-  ### Control Structures
-  if cycling
-    push!(__initialization_eqs, throughput ~ 0.0)
-    push!(__eqs, ModelingToolkit.D_nounits(throughput) ~ abs(battery.i) / battery.Q_nom)
-    push!(__eqs, stage ~ ifelse(throughput < 0.7, 1.0, ifelse(throughput < 1.4, 2.0, ifelse(throughput < 2.1, 3.0, 4.0))))
-    push!(__eqs, charger.P_max ~ ifelse((stage == 1.0) | (stage == 3.0), derating.P_max, 0.0))
-    push!(__eqs, load.I ~ ifelse(stage == 2.0, P_drive / max(battery.v, 1.0), 0.0))
-    push!(__eqs, connect(load.p, battery.p))
-    push!(__eqs, connect(load.n, battery.n))
-  else
-    push!(__eqs, connect(derating.P_max, charger.P_max))
-  end
+  push!(__eqs, connect(battery.stored_current, absolute_current.u))
+  push!(__eqs, connect(absolute_current.y, throughput_integrator.u))
+  push!(__eqs, connect(throughput_integrator.y, leg1.u, leg2.u, leg3.u))
+  push!(__eqs, connect(one.y, first_stage.u1))
+  push!(__eqs, connect(two.y, middle_stage.u1))
+  push!(__eqs, connect(three.y, last_stage.u1))
+  push!(__eqs, connect(four.y, last_stage.u3))
+  push!(__eqs, connect(leg3.y, last_stage.u2, second_charge.u2))
+  push!(__eqs, connect(last_stage.y, middle_stage.u3))
+  push!(__eqs, connect(leg2.y, middle_stage.u2, drive_gate.u2, not_leg2.u))
+  push!(__eqs, connect(middle_stage.y, first_stage.u3))
+  push!(__eqs, connect(leg1.y, first_stage.u2, not_leg1.u, charge_gate.u1))
+  push!(__eqs, connect(first_stage.y, stage))
+  push!(__eqs, connect(not_leg1.y, drive_gate.u1))
+  push!(__eqs, connect(not_leg2.y, second_charge.u1))
+  push!(__eqs, connect(second_charge.y, charge_gate.u2))
+  push!(__eqs, connect(derating.P_max, charge_power.u1))
+  push!(__eqs, connect(charge_gate.y, charge_power.u2))
+  push!(__eqs, connect(zero.y, charge_power.u3, drive_command.u3))
+  push!(__eqs, connect(charge_power.y, charger.P_max))
+  push!(__eqs, connect(voltage_sensor.v, drive_current.u1))
+  push!(__eqs, connect(drive_current.y, drive_command.u1))
+  push!(__eqs, connect(drive_gate.y, drive_command.u2))
+  push!(__eqs, connect(drive_command.y, load.I))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -4,7 +4,7 @@ Constant current (CC) supplies I_cc until the battery nears V_max; constant volt
 (1.43 mV at 143 A, 2.5 mV at 250 A with the assumed R_reg = 10 microohm).
 Phase is computed as 1 (CC), 2 (CV), or 3 (done below I_cut), but current keeps tapering
 rather than switching off or latching; positive current leaves p and enters the battery.
-No switching ripple is modeled. Optional P_max input limits terminal power;
+No switching ripple is modeled. The always-present P_max input limits terminal power;
 with use_power_limit false the original CC-CV law is unchanged.
 Defaults: [CHARGING-1] is charging.md section 1; [CCCV-BENCH] is issue #256.
 """
@@ -19,29 +19,50 @@ component CCCVCharger
   parameter R_reg::Resistance = 1e-5
   "Enable terminal power limit [THERMAL-BENCH] (assumed), disabled for compatibility"
   structural parameter use_power_limit::Boolean = false
-  P_max = RealInput() if use_power_limit {^P_max}
+  P_max = RealInput() {^P_max}
   variable v::Voltage
   p = Pin() {^p}
   n = Pin() {^n}
   current = RealOutput() {^current}
   phase = RealOutput() {^phase}
+  voltage = ElectricalComponents.Analog.Sensors.VoltageSensor() {^voltage}
+  source = ElectricalComponents.Analog.Sources.CurrentSource() {^source}
+  delivered = ElectricalComponents.Analog.Sensors.CurrentSensor() {^delivered}
+  voltage_limit = VehicleSystemsComponents.Vehicle.Blocks.CCCVVoltageCurrentEquation(I_cc = I_cc, V_max = V_max, R_reg = R_reg) {^voltage_limit}
+  power_limit = VehicleSystemsComponents.Vehicle.Blocks.CCCVPowerCurrentEquation(I_cc = I_cc) {^power_limit}
+  power_enabled = BlockComponents.Sources.BooleanConstant(k = use_power_limit) {^power_enabled}
+  cc_ceiling = BlockComponents.Sources.Constant(k = I_cc) {^cc_ceiling}
+  power_selector = BlockComponents.Logical.Switch() {^power_selector}
+  ceiling = BlockComponents.Math.Min() {^ceiling}
+  sign = BlockComponents.Math.Gain(k = -1.0) {^sign}
+  cc_phase = BlockComponents.Logical.LessEqualThreshold(threshold = V_max - I_cc * R_reg) {^cc_phase}
+  done_phase = BlockComponents.Logical.LessThreshold(threshold = I_cut) {^done_phase}
+  code_cc = BlockComponents.Sources.Constant(k = 1.0) {^code_cc}
+  code_cv = BlockComponents.Sources.Constant(k = 2.0) {^code_cv}
+  code_done = BlockComponents.Sources.Constant(k = 3.0) {^code_done}
+  cc_cv = BlockComponents.Logical.Switch() {^cc_cv}
+  phase_selector = BlockComponents.Logical.Switch() {^phase_selector}
 relations
-  v = p.v - n.v
-  if use_power_limit
-    current = min(I_cc, max(0.0, P_max) / max(v, 1.0), max(0.0, (V_max - v) / R_reg))
-  else
-    current = min(I_cc, max(0.0, (V_max - v) / R_reg))
-  end
-  p.i = -current
-  n.i = current
-  phase = ifelse(current < I_cut, 3.0, ifelse((V_max - v) / R_reg >= I_cc, 1.0, 2.0))
-metadata {
-  "_links": {
-    "P_max": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50}}}},
-    "p": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
-    "n": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
-    "current": {"Dyad": {"placement": {"icon": {"x1": 250, "y1": 950, "x2": 350, "y2": 1050}}}},
-    "phase": {"Dyad": {"placement": {"icon": {"x1": 650, "y1": 950, "x2": 750, "y2": 1050}}}}
-  }
-}
+  v = voltage.v
+  connect(p, voltage.p, delivered.n) {^positive}
+  connect(delivered.p, source.p) {^source_positive}
+  connect(n, voltage.n, source.n) {^negative}
+  connect(voltage.v, voltage_limit.u1, power_limit.u1, cc_phase.u) {^voltage_wire}
+  connect(P_max, power_limit.u2) {^power_wire}
+  connect(power_limit.y, power_selector.u1) {^limited_wire}
+  connect(power_enabled.y, power_selector.u2) {^enabled_wire}
+  connect(cc_ceiling.y, power_selector.u3) {^disabled_wire}
+  connect(voltage_limit.y, ceiling.u1) {^voltage_ceiling_wire}
+  connect(power_selector.y, ceiling.u2) {^power_ceiling_wire}
+  connect(ceiling.y, sign.u) {^current_wire}
+  connect(delivered.i, current, done_phase.u) {^delivered_wire}
+  connect(sign.y, source.I) {^source_wire}
+  connect(cc_phase.y, cc_cv.u2) {^cc_phase_wire}
+  connect(code_cc.y, cc_cv.u1) {^cc_code_wire}
+  connect(code_cv.y, cc_cv.u3) {^cv_code_wire}
+  connect(code_done.y, phase_selector.u1) {^done_code_wire}
+  connect(done_phase.y, phase_selector.u2) {^done_phase_wire}
+  connect(cc_cv.y, phase_selector.u3) {^cc_cv_wire}
+  connect(phase_selector.y, phase) {^phase_wire}
+metadata {"Dyad":{"labels":[{"attrs":{"font-size":"40"},"label":"$(instance)","x":500,"y":940}]},"_links":{"P_max":{"Dyad":{"placement":{"diagram":{"x1":0,"x2":40,"y1":440,"y2":480},"icon":{"x1":480,"x2":520,"y1":0,"y2":40}}}},"cc_ceiling":{"Dyad":{"placement":{"diagram":{"x1":270,"x2":350,"y1":640,"y2":700}}}},"cc_code_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":320.0,"y":650.0},{"x":320.0,"y":738.0}],"S":1}],"renderStyle":"standard"}},"cc_cv":{"Dyad":{"placement":{"diagram":{"x1":360,"x2":440,"y1":720,"y2":820}}}},"cc_cv_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":460.0,"y":770.0},{"x":460.0,"y":880.0},{"x":760.0,"y":880.0},{"x":760.0,"y":842.0}],"S":1}],"renderStyle":"standard"}},"cc_phase":{"Dyad":{"placement":{"diagram":{"x1":160,"x2":240,"y1":720,"y2":780}}}},"cc_phase_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":280.0,"y":750.0},{"x":280.0,"y":770.0}],"S":1}],"renderStyle":"standard"}},"ceiling":{"Dyad":{"placement":{"diagram":{"x1":660,"x2":740,"y1":260,"y2":360}}}},"code_cc":{"Dyad":{"placement":{"diagram":{"x1":160,"x2":240,"y1":620,"y2":680}}}},"code_cv":{"Dyad":{"placement":{"diagram":{"x1":160,"x2":240,"y1":840,"y2":900}}}},"code_done":{"Dyad":{"placement":{"diagram":{"x1":480,"x2":560,"y1":720,"y2":780}}}},"current":{"Dyad":{"placement":{"diagram":{"x1":960,"x2":1000,"y1":520,"y2":560},"icon":{"x1":280,"x2":320,"y1":960,"y2":1000}}}},"current_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":776,"y":310},{"x":776,"y":300}],"S":1}],"renderStyle":"standard"}},"cv_code_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":300.0,"y":870.0},{"x":300.0,"y":802.0}],"S":1}],"renderStyle":"standard"}},"disabled_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":440.0,"y":670},{"x":440.0,"y":462.0}],"S":1}],"renderStyle":"standard"}},"done_code_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":760.0,"y":750.0},{"x":760.0,"y":778.0}],"S":1}],"renderStyle":"standard"}},"done_phase":{"Dyad":{"placement":{"diagram":{"x1":660,"x2":740,"y1":600,"y2":660}}}},"done_phase_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":780.0,"y":630.0},{"x":780.0,"y":810.0}],"S":1}],"renderStyle":"standard"}},"enabled_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":420.0,"y":550},{"x":420.0,"y":430.0}],"S":1}],"renderStyle":"standard"}},"limited_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":437.0,"y":420.0},{"x":437.0,"y":398.0}],"S":1}],"renderStyle":"standard"}},"n":{"Dyad":{"placement":{"diagram":{"x1":960,"x2":1000,"y1":80,"y2":120},"icon":{"x1":960,"x2":1000,"y1":480,"y2":520}}}},"negative":{"Dyad":{"edges":[{"E":2,"M":[{"x":940.0,"y":100.0},{"x":940.0,"y":200.0},{"x":260.0,"y":200.0},{"x":260.0,"y":100.0}],"S":1},{"E":3,"M":[],"S":1}],"renderStyle":"standard"}},"p":{"Dyad":{"placement":{"diagram":{"x1":0,"x2":40,"y1":80,"y2":120},"icon":{"x1":0,"x2":40,"y1":480,"y2":520}}}},"phase":{"Dyad":{"placement":{"diagram":{"x1":960,"x2":1000,"y1":840,"y2":880},"icon":{"x1":680,"x2":720,"y1":960,"y2":1000}}}},"phase_selector":{"Dyad":{"placement":{"diagram":{"x1":800,"x2":880,"y1":760,"y2":860}}}},"phase_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":920.0,"y":810.0},{"x":920.0,"y":860.0}],"S":1}],"renderStyle":"standard"}},"positive":{"Dyad":{"edges":[{"E":2,"M":[],"S":1},{"E":3,"M":[{"x":100,"y":100},{"x":100,"y":20},{"x":620,"y":20},{"x":620,"y":100}],"S":1}],"renderStyle":"standard"}},"power_ceiling_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":610.0,"y":430.0},{"x":610.0,"y":340.0}],"S":1}],"renderStyle":"standard"}},"power_enabled":{"Dyad":{"placement":{"diagram":{"x1":300,"x2":380,"y1":520,"y2":580}}}},"power_limit":{"Dyad":{"placement":{"diagram":{"x1":300,"x2":400,"y1":380,"y2":460}}}},"power_selector":{"Dyad":{"placement":{"diagram":{"x1":480,"x2":560,"y1":380,"y2":480}}}},"power_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":80.0,"y":460.0},{"x":80.0,"y":440.0}],"S":1}],"renderStyle":"standard"}},"sign":{"Dyad":{"placement":{"diagram":{"x1":800,"x2":880,"y1":260,"y2":340}}}},"source":{"Dyad":{"placement":{"diagram":{"x1":800,"x2":880,"y1":60,"y2":140}}}},"source_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":920.0,"y":300.0},{"x":920.0,"y":40.0},{"x":840.0,"y":40.0}],"S":1}],"renderStyle":"standard"}},"voltage":{"Dyad":{"placement":{"diagram":{"x1":160,"x2":240,"y1":60,"y2":140}}}},"voltage_ceiling_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":527.0,"y":280.0},{"x":527.0,"y":280.0}],"S":1}],"renderStyle":"standard"}},"voltage_limit":{"Dyad":{"placement":{"diagram":{"x1":300,"x2":400,"y1":240,"y2":320}}}},"voltage_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":200.0,"y":280.0}],"S":1},{"E":3,"M":[{"x":200.0,"y":360.0},{"x":280.0,"y":360.0},{"x":280.0,"y":400.0}],"S":1},{"E":4,"M":[{"x":200.0,"y":180.0},{"x":120.0,"y":180.0},{"x":120.0,"y":750.0}],"S":1}],"renderStyle":"standard"}},"delivered":{"Dyad":{"placement":{"diagram":{"x1":500,"x2":580,"y1":60,"y2":140}}}},"source_positive":{"Dyad":{"edges":[{"E":2,"M":[{"x":480,"y":100},{"x":480,"y":200},{"x":780,"y":200},{"x":780,"y":100}],"S":1}]}},"delivered_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":540,"y":180},{"x":940,"y":180},{"x":940,"y":540}],"S":1},{"E":3,"M":[{"x":540,"y":180},{"x":620,"y":180},{"x":620,"y":630}],"S":1}]}}}}
 end

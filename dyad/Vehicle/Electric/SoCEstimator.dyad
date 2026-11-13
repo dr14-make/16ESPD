@@ -34,46 +34,90 @@ component SoCEstimator
   inverse = BlockComponents.Tables.InterpolatedTable(axis1 = ocv_axis, axis2 = [0, 1], data = soc_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension()) {^inverse}
   counter = VehicleSystemsComponents.Vehicle.Electric.SoCCounter(dt = dt, t_rest = t_rest, I_rest = I_rest, Q_nom = Q_nom, SoC0 = SoC0) {^counter}
   hold = DiscreteComponents.ZeroOrderHold() {^hold}
+  offset = BlockComponents.Sources.Constant(k = I_offset) {^offset}
+  measured = BlockComponents.Math.Add() {^measured}
+  per_cell = BlockComponents.Math.Gain(k = 1 / Ns) {^per_cell}
+  clamp_voltage = BlockComponents.Nonlinear.Limiter(y_min = ocv_axis[1], y_max = ocv_axis[size(ocv_axis, 1)]) {^clamp_voltage}
+  dummy = BlockComponents.Sources.Constant(k = 0.0) {^dummy}
   variable I_measured::Current
 relations
-  I_measured = I + I_offset
-  current.u = I_measured
-  inverse.u1 = min(max(V / Ns, ocv_axis[1]), ocv_axis[size(ocv_axis, 1)])
-  inverse.u2 = 0.0
+  I_measured = measured.y
+  connect(I, measured.u1) {^input_current}
+  connect(offset.y, measured.u2) {^bias}
+  connect(measured.y, current.u) {^sample_current}
+  connect(V, per_cell.u) {^input_voltage}
+  connect(per_cell.y, clamp_voltage.u) {^cell_voltage}
+  connect(clamp_voltage.y, inverse.u1) {^table_voltage}
+  connect(dummy.y, inverse.u2) {^table_dummy}
   connect(inverse.y, voltage_soc.u) {^w1}
   connect(current.y, counter.I, clock.y) {^w2}
   connect(voltage_soc.y, counter.ocv_soc) {^w3}
   connect(counter.SoC, hold.u) {^w4}
   connect(hold.y, SoC) {^w5}
-metadata {
-  "_links": {
-    "I": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
-    "V": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
-    "SoC": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
-  }
-}
+metadata {"_links":{"I":{"Dyad":{"placement":{"diagram":{"x1":0,"x2":40,"y1":200,"y2":240},"icon":{"x1":0,"x2":40,"y1":200,"y2":240}}}},"SoC":{"Dyad":{"placement":{"diagram":{"x1":960,"x2":1000,"y1":220,"y2":260},"icon":{"x1":960,"x2":1000,"y1":220,"y2":260}}}},"V":{"Dyad":{"placement":{"diagram":{"x1":0,"x2":40,"y1":440,"y2":480},"icon":{"x1":0,"x2":40,"y1":440,"y2":480}}}},"bias":{"Dyad":{"edges":[{"E":2,"M":[{"x":184.0,"y":244.0}],"S":1}],"renderStyle":"standard"}},"cell_voltage":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"renderStyle":"standard"}},"clamp_voltage":{"Dyad":{"placement":{"diagram":{"x1":260,"x2":340,"y1":420,"y2":500}}}},"clock":{"Dyad":{"placement":{"diagram":{"x1":400,"x2":480,"y1":60,"y2":120}}}},"counter":{"Dyad":{"placement":{"diagram":{"x1":720,"x2":820,"y1":200,"y2":300}}}},"current":{"Dyad":{"placement":{"diagram":{"x1":400,"x2":480,"y1":180,"y2":260}}}},"dummy":{"Dyad":{"placement":{"diagram":{"x1":260,"x2":340,"y1":620,"y2":700}}}},"hold":{"Dyad":{"placement":{"diagram":{"x1":860,"x2":940,"y1":200,"y2":280}}}},"input_current":{"Dyad":{"edges":[{"E":2,"M":[{"x":236.0,"y":220.0}],"S":1}],"renderStyle":"standard"}},"input_voltage":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"renderStyle":"standard"}},"inverse":{"Dyad":{"placement":{"diagram":{"x1":420,"x2":520,"y1":420,"y2":520}}}},"measured":{"Dyad":{"placement":{"diagram":{"x1":240,"x2":320,"y1":180,"y2":260}}}},"offset":{"Dyad":{"placement":{"diagram":{"x1":100,"x2":180,"y1":60,"y2":140}}}},"per_cell":{"Dyad":{"placement":{"diagram":{"x1":100,"x2":180,"y1":420,"y2":500}}}},"sample_current":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"renderStyle":"standard"}},"table_dummy":{"Dyad":{"edges":[{"E":2,"M":[{"x":360.0,"y":660.0},{"x":360.0,"y":500.0}],"S":1}],"renderStyle":"standard"}},"table_voltage":{"Dyad":{"edges":[{"E":2,"M":[{"x":360.0,"y":460.0},{"x":360.0,"y":440.0}],"S":1}],"renderStyle":"standard"}},"voltage_soc":{"Dyad":{"placement":{"diagram":{"x1":580,"x2":660,"y1":420,"y2":500}}}},"w1":{"Dyad":{"edges":[{"E":2,"M":[{"x":580.8,"y":470.0}],"S":1}],"renderStyle":"standard"}},"w2":{"Dyad":{"edges":[{"E":2,"M":[],"S":1},{"E":3,"M":[{"x":510,"y":220},{"x":510,"y":90}],"S":1}],"renderStyle":"standard"}},"w3":{"Dyad":{"edges":[{"E":2,"M":[{"x":660.8,"y":372.0},{"x":722.0,"y":372.0}],"S":1}],"renderStyle":"standard"}},"w4":{"Dyad":{"edges":[{"E":2,"M":[{"x":860.8,"y":250.0}],"S":1}],"renderStyle":"standard"}},"w5":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"renderStyle":"standard"}}}}
 end
 
 "Sampled counter; left-endpoint integration avoids counting a future interval at t = 0."
 component SoCCounter@[input clk extends Discrete]
-  I = RealInput@[clk]()
-  ocv_soc = RealInput@[clk]()
-  SoC = RealOutput@[clk]()
+  I = RealInput@[clk]() {^I}
+  ocv_soc = RealInput@[clk]() {^ocv_soc}
+  SoC = RealOutput@[clk]() {^SoC}
   parameter dt::Time
   parameter t_rest::Time
   parameter I_rest::Current
   parameter Q_nom::ElectricCharge
   parameter SoC0::Real
+  absolute_current = BlockComponents.Math.Abs() {^absolute_current}
+  rest_threshold = BlockComponents.Logical.LessThreshold(threshold = I_rest) {^rest_threshold}
+  quiet_value = BlockComponents.Math.BooleanToReal() {^quiet_value}
+  previous_quiet = DiscreteComponents.UnitDelay(initial_condition = 0.0) {^previous_quiet}
+  was_quiet = BlockComponents.Logical.GreaterThreshold(threshold = 0.5) {^was_quiet}
+  consecutive_rest = BlockComponents.Logical.And() {^consecutive_rest}
+  previous_rest = DiscreteComponents.UnitDelay(initial_condition = 0.0) {^previous_rest}
+  tick_duration = BlockComponents.Sources.Constant(k = dt) {^tick_duration}
+  rest_increment = BlockComponents.Math.Add() {^rest_increment}
+  zero = BlockComponents.Sources.Constant(k = 0.0) {^zero}
+  rest_gate = BlockComponents.Logical.Switch() {^rest_gate}
+  enough_rest = BlockComponents.Logical.GreaterEqualThreshold(threshold = t_rest) {^enough_rest}
+  correction_gate = BlockComponents.Logical.And() {^correction_gate}
+  previous_current = DiscreteComponents.UnitDelay(initial_condition = 0.0) {^previous_current}
+  charge_step = BlockComponents.Math.Gain(k = dt) {^charge_step}
+  capacity = BlockComponents.Sources.Constant(k = Q_nom) {^capacity}
+  charge_fraction = BlockComponents.Math.Division() {^charge_fraction}
+  previous_estimate = DiscreteComponents.UnitDelay(initial_condition = SoC0) {^previous_estimate}
+  coulomb_step = BlockComponents.Math.Add(k2 = -1.0) {^coulomb_step}
+  estimate_gate = BlockComponents.Logical.Switch() {^estimate_gate}
   variable estimate::Real
   variable quiet::Real
   variable rest_time::Time
 relations
-  initial I@(clk-1) = 0.0
-  initial estimate@(clk-1) = SoC0
-  initial quiet@(clk-1) = 0.0
-  initial rest_time@(clk-1) = 0.0
-  quiet@clk = ifelse(abs(I@clk) < I_rest, 1.0, 0.0)
-  rest_time@clk = ifelse(quiet@clk > 0.5 and quiet@(clk-1) > 0.5, rest_time@(clk-1) + dt, 0.0)
-  estimate@clk = ifelse(quiet@clk > 0.5 and rest_time@clk >= t_rest, ocv_soc@clk, estimate@(clk-1) - dt * I@(clk-1) / Q_nom)
-  SoC = estimate
+  # UnitDelay initializes the previous sample, not the present output. At the
+  # first tick rest_time is zero and coulomb_step is SoC0; t_rest = 0 can
+  # nevertheless select the present OCV. Both branches run on the input clock.
+  quiet = quiet_value.y
+  rest_time = rest_gate.y
+  estimate = estimate_gate.y
+  connect(I, absolute_current.u, previous_current.u) {^current_paths}
+  connect(absolute_current.y, rest_threshold.u) {^current_magnitude}
+  connect(rest_threshold.y, quiet_value.u, consecutive_rest.u1, correction_gate.u1) {^quiet_paths}
+  connect(quiet_value.y, previous_quiet.u) {^quiet_history}
+  connect(previous_quiet.y, was_quiet.u) {^previous_quiet_value}
+  connect(was_quiet.y, consecutive_rest.u2) {^previous_quiet_gate}
+  connect(previous_rest.y, rest_increment.u1) {^rest_history}
+  connect(tick_duration.y, rest_increment.u2) {^rest_tick}
+  connect(rest_increment.y, rest_gate.u1) {^incremented_rest}
+  connect(consecutive_rest.y, rest_gate.u2) {^rest_enable}
+  connect(zero.y, rest_gate.u3) {^rest_reset}
+  connect(rest_gate.y, previous_rest.u, enough_rest.u) {^rest_paths}
+  connect(enough_rest.y, correction_gate.u2) {^rest_ready}
+  connect(previous_current.y, charge_step.u) {^left_current}
+  connect(charge_step.y, charge_fraction.u1) {^interval_charge}
+  connect(capacity.y, charge_fraction.u2) {^nominal_capacity}
+  connect(charge_fraction.y, coulomb_step.u2) {^soc_decrement}
+  connect(previous_estimate.y, coulomb_step.u1) {^estimate_history}
+  connect(coulomb_step.y, estimate_gate.u3) {^integrated_soc}
+  connect(ocv_soc, estimate_gate.u1) {^ocv_correction}
+  connect(correction_gate.y, estimate_gate.u2) {^correction_enable}
+  connect(estimate_gate.y, previous_estimate.u, SoC) {^estimate_paths}
+metadata {"_links":{"I":{"Dyad":{"placement":{"diagram":{"x1":0.0,"y1":153.0,"x2":24.0,"y2":187.0},"icon":{"x1":0,"y1":180,"x2":40,"y2":220}}}},"ocv_soc":{"Dyad":{"placement":{"diagram":{"x1":696.0,"y1":493.0,"x2":720.0,"y2":527.0},"icon":{"x1":0,"y1":580,"x2":40,"y2":620}}}},"SoC":{"Dyad":{"placement":{"diagram":{"x1":888.0,"y1":578.0,"x2":912.0,"y2":612.0},"icon":{"x1":960,"y1":480,"x2":1000,"y2":520}}}},"absolute_current":{"Dyad":{"placement":{"diagram":{"x1":60.0,"y1":136.0,"x2":108.0,"y2":204.0}}}},"rest_threshold":{"Dyad":{"placement":{"diagram":{"x1":144.0,"y1":136.0,"x2":192.0,"y2":204.0}}}},"quiet_value":{"Dyad":{"placement":{"diagram":{"x1":228.0,"y1":51.0,"x2":276.0,"y2":119.0}}}},"previous_quiet":{"Dyad":{"placement":{"diagram":{"x1":312.0,"y1":51.0,"x2":360.0,"y2":119.0}}}},"was_quiet":{"Dyad":{"placement":{"diagram":{"x1":396.0,"y1":51.0,"x2":444.0,"y2":119.0}}}},"consecutive_rest":{"Dyad":{"placement":{"diagram":{"x1":480.0,"y1":136.0,"x2":528.0,"y2":204.0}}}},"previous_rest":{"Dyad":{"placement":{"diagram":{"x1":312.0,"y1":289.0,"x2":360.0,"y2":357.0}}}},"tick_duration":{"Dyad":{"placement":{"diagram":{"x1":312.0,"y1":428.0,"x2":360.0,"y2":496.0}}}},"rest_increment":{"Dyad":{"placement":{"diagram":{"x1":396.0,"y1":289.0,"x2":444.0,"y2":357.0}}}},"zero":{"Dyad":{"placement":{"diagram":{"x1":480.0,"y1":408.0,"x2":528.0,"y2":476.0}}}},"rest_gate":{"Dyad":{"placement":{"diagram":{"x1":564.0,"y1":289.0,"x2":612.0,"y2":357.0}}}},"enough_rest":{"Dyad":{"placement":{"diagram":{"x1":648.0,"y1":289.0,"x2":696.0,"y2":357.0}}}},"correction_gate":{"Dyad":{"placement":{"diagram":{"x1":732.0,"y1":136.0,"x2":780.0,"y2":204.0}}}},"previous_current":{"Dyad":{"placement":{"diagram":{"x1":60.0,"y1":646.0,"x2":108.0,"y2":714.0}}}},"charge_step":{"Dyad":{"placement":{"diagram":{"x1":144.0,"y1":646.0,"x2":192.0,"y2":714.0}}}},"capacity":{"Dyad":{"placement":{"diagram":{"x1":144.0,"y1":785.0,"x2":192.0,"y2":853.0}}}},"charge_fraction":{"Dyad":{"placement":{"diagram":{"x1":228.0,"y1":646.0,"x2":276.0,"y2":714.0}}}},"previous_estimate":{"Dyad":{"placement":{"diagram":{"x1":396.0,"y1":527.0,"x2":444.0,"y2":595.0}}}},"coulomb_step":{"Dyad":{"placement":{"diagram":{"x1":564.0,"y1":646.0,"x2":612.0,"y2":714.0}}}},"estimate_gate":{"Dyad":{"placement":{"diagram":{"x1":816.0,"y1":561.0,"x2":864.0,"y2":629.0}}}},"current_paths":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":42.0,"y":170.0},{"x":42.0,"y":170.0}]},{"S":1,"E":3,"M":[{"x":36.0,"y":170.0},{"x":36.0,"y":680.0}]}]}},"current_magnitude":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":126.0,"y":170.0},{"x":126.0,"y":170.0}]}]}},"quiet_paths":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":210.0,"y":170.0},{"x":210.0,"y":85.0}]},{"S":1,"E":3,"M":[{"x":462.0,"y":170.0},{"x":462.0,"y":149.6}]},{"S":1,"E":4,"M":[{"x":210.0,"y":170.0},{"x":210.0,"y":17.0},{"x":714.0,"y":17.0},{"x":714.0,"y":149.6}]}]}},"quiet_history":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":294.0,"y":85.0},{"x":294.0,"y":85.0}]}]}},"previous_quiet_value":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":378.0,"y":85.0},{"x":378.0,"y":85.0}]}]}},"previous_quiet_gate":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":462.0,"y":85.0},{"x":462.0,"y":187.68}]}]}},"rest_history":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":378.0,"y":323.0},{"x":378.0,"y":302.6}]}]}},"rest_tick":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":378.0,"y":462.0},{"x":378.0,"y":343.4}]}]}},"incremented_rest":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":546.0,"y":323.0},{"x":546.0,"y":301.24}]}]}},"rest_enable":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":552.0,"y":170.0},{"x":552.0,"y":323.0}]}]}},"rest_reset":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":546.0,"y":442.0},{"x":546.0,"y":344.76}]}]}},"rest_paths":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":624.0,"y":323.0},{"x":624.0,"y":255.0},{"x":294.0,"y":255.0},{"x":294.0,"y":323.0}]},{"S":1,"E":3,"M":[{"x":630.0,"y":323.0},{"x":630.0,"y":323.0}]}]}},"rest_ready":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":714.0,"y":323.0},{"x":714.0,"y":187.68}]}]}},"left_current":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":126.0,"y":680.0},{"x":126.0,"y":680.0}]}]}},"interval_charge":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":210.0,"y":680.0},{"x":210.0,"y":659.6}]}]}},"nominal_capacity":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":210.0,"y":819.0},{"x":210.0,"y":700.4}]}]}},"soc_decrement":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":540.0,"y":680.0},{"x":540.0,"y":700.4}]}]}},"estimate_history":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":540.0,"y":561.0},{"x":540.0,"y":659.6}]}]}},"integrated_soc":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":798.0,"y":680.0},{"x":798.0,"y":616.76}]}]}},"ocv_correction":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":792.0,"y":510.0},{"x":792.0,"y":573.24}]}]}},"correction_enable":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":804.0,"y":170.0},{"x":804.0,"y":595.0}]}]}},"estimate_paths":{"Dyad":{"renderStyle":"standard","edges":[{"S":1,"E":2,"M":[{"x":876.0,"y":595.0},{"x":876.0,"y":867.0},{"x":372.0,"y":867.0},{"x":372.0,"y":561.0}]},{"S":1,"E":3,"M":[{"x":876.0,"y":595.0},{"x":876.0,"y":595.0}]}]}}}}
 end

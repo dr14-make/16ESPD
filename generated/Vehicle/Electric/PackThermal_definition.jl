@@ -123,6 +123,9 @@ Coolant conductance zero disables the optional parallel path without switching.
 
   ### Components
   push!(__systems, @named heat_port = __Dyad__HeatPort())
+  # Subcomponent input_flow of type ThermalComponents.Sensors.HeatFlowSensor
+  input_flow_overrides = __pop_subcomponent_overrides!(__overrides, "input_flow")
+  push!(__systems, @named input_flow = ThermalComponents.Sensors.HeatFlowSensor(; __overrides = input_flow_overrides))
   # Subcomponent capacity of type ThermalComponents.Components.HeatCapacitor
   capacity_overrides = __pop_subcomponent_overrides!(__overrides, "capacity")
   push!(__systems, @named capacity = ThermalComponents.Components.HeatCapacitor(; C=mass * cp, T0=T0, __overrides = capacity_overrides))
@@ -138,6 +141,24 @@ Coolant conductance zero disables the optional parallel path without switching.
   # Subcomponent coolant_boundary of type ThermalComponents.Sources.FixedTemperature
   coolant_boundary_overrides = __pop_subcomponent_overrides!(__overrides, "coolant_boundary")
   push!(__systems, @named coolant_boundary = ThermalComponents.Sources.FixedTemperature(; T=T_coolant, __overrides = coolant_boundary_overrides))
+  # Subcomponent temperature_sensor of type ThermalComponents.Sensors.TemperatureSensor
+  temperature_sensor_overrides = __pop_subcomponent_overrides!(__overrides, "temperature_sensor")
+  push!(__systems, @named temperature_sensor = ThermalComponents.Sensors.TemperatureSensor(; __overrides = temperature_sensor_overrides))
+  # Subcomponent air_flow of type ThermalComponents.Sensors.HeatFlowSensor
+  air_flow_overrides = __pop_subcomponent_overrides!(__overrides, "air_flow")
+  push!(__systems, @named air_flow = ThermalComponents.Sensors.HeatFlowSensor(; __overrides = air_flow_overrides))
+  # Subcomponent coolant_flow of type ThermalComponents.Sensors.HeatFlowSensor
+  coolant_flow_overrides = __pop_subcomponent_overrides!(__overrides, "coolant_flow")
+  push!(__systems, @named coolant_flow = ThermalComponents.Sensors.HeatFlowSensor(; __overrides = coolant_flow_overrides))
+  # Subcomponent out_sum of type BlockComponents.Math.Add
+  out_sum_overrides = __pop_subcomponent_overrides!(__overrides, "out_sum")
+  push!(__systems, @named out_sum = BlockComponents.Math.Add(; __overrides = out_sum_overrides))
+  # Subcomponent in_energy of type BlockComponents.Continuous.Integrator
+  in_energy_overrides = __pop_subcomponent_overrides!(__overrides, "in_energy")
+  push!(__systems, @named in_energy = BlockComponents.Continuous.Integrator(; x0=Float64(0.0), __overrides = in_energy_overrides))
+  # Subcomponent out_energy of type BlockComponents.Continuous.Integrator
+  out_energy_overrides = __pop_subcomponent_overrides!(__overrides, "out_energy")
+  push!(__systems, @named out_energy = BlockComponents.Continuous.Integrator(; x0=Float64(0.0), __overrides = out_energy_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -147,19 +168,24 @@ Coolant conductance zero disables the optional parallel path without switching.
   isnothing(__ovr_E_out__guess) || (__guesses[E_out] = __ovr_E_out__guess)
 
   ### Initialization Equations
-  push!(__initialization_eqs, E_in ~ 0.0)
-  push!(__initialization_eqs, E_out ~ 0.0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
-  push!(__eqs, T ~ capacity.T)
-  push!(__eqs, ModelingToolkit.D_nounits(E_in) ~ heat_port.Q_flow)
-  push!(__eqs, ModelingToolkit.D_nounits(E_out) ~ air.Q_flow + coolant.Q_flow)
-  push!(__eqs, connect(heat_port, capacity.port, air.port_a, coolant.port_a))
+  push!(__eqs, E_in ~ in_energy.y)
+  push!(__eqs, E_out ~ out_energy.y)
+  push!(__eqs, connect(heat_port, input_flow.port_a))
+  push!(__eqs, connect(input_flow.port_b, capacity.port, air_flow.port_a, coolant_flow.port_a, temperature_sensor.port))
+  push!(__eqs, connect(air_flow.port_b, air.port_a))
+  push!(__eqs, connect(coolant_flow.port_b, coolant.port_a))
   push!(__eqs, connect(air.port_b, ambient.port))
   push!(__eqs, connect(coolant.port_b, coolant_boundary.port))
+  push!(__eqs, connect(temperature_sensor.T, T))
+  push!(__eqs, connect(input_flow.Q_flow, in_energy.u))
+  push!(__eqs, connect(air_flow.Q_flow, out_sum.u1))
+  push!(__eqs, connect(coolant_flow.Q_flow, out_sum.u2))
+  push!(__eqs, connect(out_sum.y, out_energy.u))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

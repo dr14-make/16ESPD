@@ -141,6 +141,39 @@ shunt's own terminal-voltage sag cannot toggle the gate.
   __constants = Any[]
 
   ### Components
+  # Subcomponent delta of type BlockComponents.Math.Feedback
+  delta_overrides = __pop_subcomponent_overrides!(__overrides, "delta")
+  push!(__systems, @named delta = BlockComponents.Math.Feedback(; __overrides = delta_overrides))
+  # Subcomponent voltage_filter of type BlockComponents.Continuous.FirstOrder
+  voltage_filter_overrides = __pop_subcomponent_overrides!(__overrides, "voltage_filter")
+  push!(__systems, @named voltage_filter = BlockComponents.Continuous.FirstOrder(; T=measurement_time, __overrides = voltage_filter_overrides))
+  # Subcomponent delta_filter of type BlockComponents.Continuous.FirstOrder
+  delta_filter_overrides = __pop_subcomponent_overrides!(__overrides, "delta_filter")
+  push!(__systems, @named delta_filter = BlockComponents.Continuous.FirstOrder(; T=measurement_time, __overrides = delta_filter_overrides))
+  # Subcomponent latch of type BlockComponents.Continuous.FirstOrder
+  latch_overrides = __pop_subcomponent_overrides!(__overrides, "latch")
+  push!(__systems, @named latch = BlockComponents.Continuous.FirstOrder(; T=latch_time, __overrides = latch_overrides))
+  # Subcomponent enabled of type BlockComponents.Nonlinear.Limiter
+  enabled_overrides = __pop_subcomponent_overrides!(__overrides, "enabled")
+  push!(__systems, @named enabled = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0.0), y_max=Float64(1.0), __overrides = enabled_overrides))
+  # Subcomponent delta_set of type BlockComponents.Sources.Constant
+  delta_set_overrides = __pop_subcomponent_overrides!(__overrides, "delta_set")
+  push!(__systems, @named delta_set = BlockComponents.Sources.Constant(; k=delta_on, __overrides = delta_set_overrides))
+  # Subcomponent top_set of type BlockComponents.Sources.Constant
+  top_set_overrides = __pop_subcomponent_overrides!(__overrides, "top_set")
+  push!(__systems, @named top_set = BlockComponents.Sources.Constant(; k=V_active, __overrides = top_set_overrides))
+  # Subcomponent delta_level of type BlockComponents.Math.Add
+  delta_level_overrides = __pop_subcomponent_overrides!(__overrides, "delta_level")
+  push!(__systems, @named delta_level = BlockComponents.Math.Add(; k2=-(delta_on - delta_off), __overrides = delta_level_overrides))
+  # Subcomponent top_level of type BlockComponents.Math.Add
+  top_level_overrides = __pop_subcomponent_overrides!(__overrides, "top_level")
+  push!(__systems, @named top_level = BlockComponents.Math.Add(; k2=-delta_on, __overrides = top_level_overrides))
+  # Subcomponent demand of type VehicleSystemsComponents.Vehicle.Blocks.BalancerRequestEquation
+  demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
+  push!(__systems, @named demand = VehicleSystemsComponents.Vehicle.Blocks.BalancerRequestEquation(; voltage_width=voltage_width, __overrides = demand_overrides))
+  # Subcomponent command of type BlockComponents.Math.Product
+  command_overrides = __pop_subcomponent_overrides!(__overrides, "command")
+  push!(__systems, @named command = BlockComponents.Math.Product(; __overrides = command_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -154,21 +187,35 @@ shunt's own terminal-voltage sag cannot toggle the gate.
   isnothing(__ovr_top_threshold__guess) || (__guesses[top_threshold] = __ovr_top_threshold__guess)
 
   ### Initialization Equations
-  push!(__initialization_eqs, measured_voltage ~ voltage)
-  push!(__initialization_eqs, measured_delta ~ voltage - minimum_voltage)
-  push!(__initialization_eqs, fraction ~ 0.0)
+  push!(__initialization_eqs, voltage_filter.y ~ voltage)
+  push!(__initialization_eqs, delta_filter.y ~ voltage - minimum_voltage)
+  push!(__initialization_eqs, latch.y ~ 0.0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
-  push!(__eqs, measurement_time * ModelingToolkit.D_nounits(measured_voltage) ~ voltage - measured_voltage)
-  push!(__eqs, measurement_time * ModelingToolkit.D_nounits(measured_delta) ~ voltage - minimum_voltage - measured_delta)
-  push!(__eqs, delta_threshold ~ delta_on - (delta_on - delta_off) * fraction)
-  push!(__eqs, top_threshold ~ V_active - delta_on * fraction)
-  push!(__eqs, request ~ min(max(active, 0.0), 1.0) * 0.25 * (1 + tanh((measured_delta - delta_threshold) / voltage_width)) * (1 + tanh((measured_voltage - top_threshold) / voltage_width)))
-  push!(__eqs, latch_time * ModelingToolkit.D_nounits(fraction) ~ request - fraction)
-  push!(__eqs, bleed ~ min(max(active, 0.0), 1.0) * fraction)
+  push!(__eqs, measured_voltage ~ voltage_filter.y)
+  push!(__eqs, measured_delta ~ delta_filter.y)
+  push!(__eqs, fraction ~ latch.y)
+  push!(__eqs, delta_threshold ~ delta_level.y)
+  push!(__eqs, top_threshold ~ top_level.y)
+  push!(__eqs, request ~ demand.y)
+  push!(__eqs, connect(voltage, delta.u1))
+  push!(__eqs, connect(minimum_voltage, delta.u2))
+  push!(__eqs, connect(voltage, voltage_filter.u))
+  push!(__eqs, connect(delta.y, delta_filter.u))
+  push!(__eqs, connect(active, enabled.u))
+  push!(__eqs, connect(delta_set.y, delta_level.u1))
+  push!(__eqs, connect(top_set.y, top_level.u1))
+  push!(__eqs, connect(latch.y, delta_level.u2, top_level.u2, command.u2))
+  push!(__eqs, connect(enabled.y, demand.u1, command.u1))
+  push!(__eqs, connect(delta_filter.y, demand.u2))
+  push!(__eqs, connect(delta_level.y, demand.u3))
+  push!(__eqs, connect(voltage_filter.y, demand.u4))
+  push!(__eqs, connect(top_level.y, demand.u5))
+  push!(__eqs, connect(demand.y, latch.u))
+  push!(__eqs, connect(command.y, bleed))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

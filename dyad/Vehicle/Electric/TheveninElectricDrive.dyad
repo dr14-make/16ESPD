@@ -37,6 +37,9 @@ component TheveninElectricDrive
   machine = VehicleSystemsComponents.Vehicle.Electric.DCMachine(field_weakening = true) {^machine}
   ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
   reduction = RotationalComponents.Components.IdealGear(ratio = ratio) {^reduction}
+  "Torque per ampere at the commanded field; machine.k remains the machine parameter"
+  torque_per_amp = BlockComponents.Math.Gain(k = machine.k) {^torque_per_amp}
+  current_command = BlockComponents.Math.Division() {^current_command}
   "Single-speed reduction, machine to differential (Nissan)"
   parameter ratio::Real = 8.193
   "Power drawn by the 12 V network (assumed)"
@@ -47,33 +50,42 @@ relations
   connect(battery.p, converter.p_in, aux.p) {^w1}
   connect(battery.n, converter.n, aux.n, machine.n, ground.g) {^w2}
   connect(converter.p_out, machine.p) {^w3}
-  connect(converter.field, machine.field) {^w4}
+  connect(converter.field, machine.field, torque_per_amp.u) {^w4}
   connect(machine.spline, reduction.spline_a) {^w5}
   connect(reduction.spline_b, spline) {^w6}
   connect(machine.support, reduction.support, support) {^w7}
   connect(battery.SoC, SoC) {^w8}
-  converter.i_ref = tau_ref / (converter.field * machine.k)
+  connect(tau_ref, current_command.u1) {^w9}
+  connect(torque_per_amp.y, current_command.u2) {^w10}
+  connect(current_command.y, converter.i_ref) {^w11}
+  # battery.stored_voltage and battery.stored_current are deliberately open telemetry outputs.
+  # Energy accounting reads the battery variables directly; neither output drives the plant.
 metadata {
-  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/ElectricDrive.svg"}},
+  "Dyad": {"icons":{"default":"dyad://VehicleSystemsComponents/Vehicle/Electric/ElectricDrive.svg"}},
   "_links": {
-    "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
-    "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 400, "x2": 1050, "y2": 500}}}},
-    "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 788, "y1": 950, "x2": 888, "y2": 1050}}}},
-    "SoC": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}, "diagram": {"x1": 135, "y1": -50, "x2": 235, "y2": 50, "rot": 270}}}},
-    "battery": {"Dyad": {"placement": {"diagram": {"x1": 30, "y1": 390, "x2": 150, "y2": 510, "rot": 90}}}},
-    "aux": {"Dyad": {"placement": {"diagram": {"x1": 230, "y1": 390, "x2": 350, "y2": 510, "rot": 90}}}},
-    "converter": {"Dyad": {"placement": {"diagram": {"x1": 380, "y1": 360, "x2": 560, "y2": 540}}}},
-    "machine": {"Dyad": {"placement": {"diagram": {"x1": 640, "y1": 360, "x2": 820, "y2": 540}}}},
-    "ground": {"Dyad": {"placement": {"diagram": {"x1": 545, "y1": 720, "x2": 625, "y2": 800}}}},
-    "reduction": {"Dyad": {"placement": {"diagram": {"x1": 855, "y1": 405, "x2": 945, "y2": 495}}}},
-    "w1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 90, "y": 260}], "E": -1}, {"S": -1, "M": [{"x": 365, "y": 260}, {"x": 365, "y": 396}], "E": 2}, {"S": 3, "M": [], "E": -1}], "junctions": [{"x": 290, "y": 260}]}},
-    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 90, "y": 680}], "E": -1}, {"S": 3, "M": [], "E": -1}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": 5}, {"S": -3, "M": [], "E": -2}, {"S": 2, "M": [], "E": -3}, {"S": 4, "M": [{"x": 585, "y": 504}], "E": -3}], "junctions": [{"x": 290, "y": 680}, {"x": 585, "y": 680}, {"x": 585, "y": 540}]}},
-    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 610, "y": 486}, {"x": 610, "y": 450}], "E": 2}]}},
-    "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": 2, "M": [{"x": 838, "y": 495}], "E": -1}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 838, "y": 540}]}},
-    "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 185, "y": 450}], "E": 2}]}}
+    "SoC": {"Dyad":{"placement":{"icon":{"x1":450,"y1":-50,"x2":550,"y2":50,"rot":270},"diagram":{"x1":110,"x2":150,"y1":10,"y2":50}}}},
+    "aux": {"Dyad":{"placement":{"diagram":{"x1":250,"x2":370,"y1":390,"y2":510}}}},
+    "battery": {"Dyad":{"placement":{"diagram":{"x1":70,"x2":190,"y1":390,"y2":510}}}},
+    "converter": {"Dyad":{"placement":{"diagram":{"x1":450,"x2":610,"y1":360,"y2":520}}}},
+    "current_command": {"Dyad":{"placement":{"diagram":{"x1":450,"x2":550,"y1":100,"y2":200}}}},
+    "ground": {"Dyad":{"placement":{"diagram":{"x1":470,"x2":550,"y1":750,"y2":830}}}},
+    "machine": {"Dyad":{"placement":{"diagram":{"x1":700,"x2":860,"y1":370,"y2":530}}}},
+    "reduction": {"Dyad":{"placement":{"diagram":{"x1":890,"x2":930,"y1":410,"y2":490}}}},
+    "spline": {"Dyad":{"placement":{"icon":{"x1":950,"y1":450,"x2":1050,"y2":550},"diagram":{"x1":950,"x2":990,"y1":430,"y2":470}}}},
+    "support": {"Dyad":{"placement":{"icon":{"iconName":"support","x1":450,"y1":950,"x2":550,"y2":1050},"diagram":{"x1":820,"x2":860,"y1":900,"y2":940}}}},
+    "tau_ref": {"Dyad":{"placement":{"icon":{"x1":-50,"y1":450,"x2":50,"y2":550},"diagram":{"x1":10,"x2":50,"y1":130,"y2":170}}}},
+    "torque_per_amp": {"Dyad":{"placement":{"diagram":{"x1":700,"x2":800,"y1":100,"y2":200}}}},
+    "w1": {"Dyad":{"edges":[{"E":-1,"M":[{"x":40,"y":450},{"x":40,"y":300}],"S":1},{"E":2,"M":[{"x":420,"y":300},{"x":420,"y":392}],"S":-1},{"E":3,"M":[{"x":240,"y":450}],"S":-1}],"junctions":[{"x":240,"y":300}]}},
+    "w10": {"Dyad":{"edges":[{"E":2,"M":[{"x":830,"y":150},{"x":830,"y":60},{"x":420,"y":60},{"x":420,"y":180}],"S":1}]}},
+    "w11": {"Dyad":{"edges":[{"E":2,"M":[{"x":580,"y":150},{"x":580,"y":260},{"x":530,"y":260}],"S":1}]}},
+    "w2": {"Dyad":{"edges":[{"E":-1,"M":[{"x":210,"y":450},{"x":210,"y":680}],"S":1},{"E":-1,"M":[{"x":390,"y":450},{"x":390,"y":680}],"S":3},{"E":-2,"M":[],"S":-1},{"E":-2,"M":[{"x":530,"y":680}],"S":2},{"E":-2,"M":[{"x":650,"y":498},{"x":650,"y":680}],"S":4},{"E":5,"M":[{"x":510,"y":680}],"S":-2}],"junctions":[{"x":310,"y":680},{"x":530,"y":680}]}},
+    "w3": {"Dyad":{"edges":[{"E":2,"M":[{"x":660,"y":392},{"x":660,"y":402}],"S":1}]}},
+    "w4": {"Dyad":{"edges":[{"E":-1,"M":[{"x":650,"y":472}],"S":1},{"E":2,"M":[{"x":650,"y":450}],"S":-1},{"E":3,"M":[{"x":670,"y":620},{"x":670,"y":150}],"S":-1}],"junctions":[{"x":650,"y":620}]}},
+    "w5": {"Dyad":{"edges":[{"E":2,"M":[],"S":1}]}},
+    "w6": {"Dyad":{"edges":[{"E":2,"M":[],"S":1}]}},
+    "w7": {"Dyad":{"edges":[{"E":-1,"M":[{"x":780,"y":850}],"S":1},{"E":-1,"M":[{"x":910,"y":850}],"S":2},{"E":3,"M":[{"x":840,"y":850}],"S":-1}],"junctions":[{"x":840,"y":850}]}},
+    "w8": {"Dyad":{"edges":[{"E":2,"M":[],"S":1}]}},
+    "w9": {"Dyad":{"edges":[{"E":2,"M":[{"x":400,"y":150},{"x":400,"y":120}],"S":1}]}}
   }
 }
 end

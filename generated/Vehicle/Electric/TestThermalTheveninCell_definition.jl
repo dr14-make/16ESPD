@@ -68,6 +68,12 @@
   __constants = Any[]
 
   ### Components
+  # Subcomponent command of type BlockComponents.Sources.Constant
+  command_overrides = __pop_subcomponent_overrides!(__overrides, "command")
+  push!(__systems, @named command = BlockComponents.Sources.Constant(; k=-I, __overrides = command_overrides))
+  # Subcomponent source of type ElectricalComponents.Analog.Sources.CurrentSource
+  source_overrides = __pop_subcomponent_overrides!(__overrides, "source")
+  push!(__systems, @named source = ElectricalComponents.Analog.Sources.CurrentSource(; __overrides = source_overrides))
   # Subcomponent battery of type VehicleSystemsComponents.Vehicle.Electric.ThermalTheveninCell
   battery_overrides = __pop_subcomponent_overrides!(__overrides, "battery")
   push!(__systems, @named battery = VehicleSystemsComponents.Vehicle.Electric.ThermalTheveninCell(; SoC0=0.1, R1=R1, __overrides = battery_overrides))
@@ -77,9 +83,6 @@
   # Subcomponent ground of type ElectricalComponents.Analog.Basic.Ground
   ground_overrides = __pop_subcomponent_overrides!(__overrides, "ground")
   push!(__systems, @named ground = ElectricalComponents.Analog.Basic.Ground(; __overrides = ground_overrides))
-  # Subcomponent source of type ElectricalComponents.Analog.Sources.CurrentSource
-  source_overrides = __pop_subcomponent_overrides!(__overrides, "source")
-  push!(__systems, @named source = ElectricalComponents.Analog.Sources.CurrentSource(; __overrides = source_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -92,7 +95,7 @@
   __assertions = []
 
   ### Equations
-  push!(__eqs, source.I ~ -I)
+  push!(__eqs, connect(command.y, source.I))
   push!(__eqs, connect(battery.p, source.p))
   push!(__eqs, connect(battery.n, source.n, ground.g))
   push!(__eqs, connect(battery.heat_port, ambient.port))

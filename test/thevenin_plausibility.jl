@@ -52,7 +52,7 @@ end
 
 @testset "Thevenin reduces to Battery with flat OCV and R1 zero" begin
     flat = fill(350.0, 11, 2)
-    s, m = _th_pulse(R1 = 0.0, Ns = 1.0, SoC0 = 0.9, ocv_data = flat)
+    s, m = _th_pulse(R1 = 1e-15, Ns = 1.0, SoC0 = 0.9, ocv_data = flat)
     base = _TH.TestBattery(name = :base, I_load = 30.0, R0 = 0.0016,
         __overrides = Dict("battery.Q_nom" => 33.1 * 3600,
             "load_profile.start_time" => 10.0))

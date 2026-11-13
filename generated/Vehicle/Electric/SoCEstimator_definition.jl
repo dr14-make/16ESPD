@@ -138,6 +138,21 @@ The inverse table requires strictly increasing per-cell voltages and clamps its 
   # Subcomponent hold of type DiscreteComponents.ZeroOrderHold
   hold_overrides = __pop_subcomponent_overrides!(__overrides, "hold")
   push!(__systems, @named hold = DiscreteComponents.ZeroOrderHold(; __overrides = hold_overrides))
+  # Subcomponent offset of type BlockComponents.Sources.Constant
+  offset_overrides = __pop_subcomponent_overrides!(__overrides, "offset")
+  push!(__systems, @named offset = BlockComponents.Sources.Constant(; k=I_offset, __overrides = offset_overrides))
+  # Subcomponent measured of type BlockComponents.Math.Add
+  measured_overrides = __pop_subcomponent_overrides!(__overrides, "measured")
+  push!(__systems, @named measured = BlockComponents.Math.Add(; __overrides = measured_overrides))
+  # Subcomponent per_cell of type BlockComponents.Math.Gain
+  per_cell_overrides = __pop_subcomponent_overrides!(__overrides, "per_cell")
+  push!(__systems, @named per_cell = BlockComponents.Math.Gain(; k=1 / Ns, __overrides = per_cell_overrides))
+  # Subcomponent clamp_voltage of type BlockComponents.Nonlinear.Limiter
+  clamp_voltage_overrides = __pop_subcomponent_overrides!(__overrides, "clamp_voltage")
+  push!(__systems, @named clamp_voltage = BlockComponents.Nonlinear.Limiter(; y_min=ocv_axis[1], y_max=ocv_axis[size(ocv_axis, 1)], __overrides = clamp_voltage_overrides))
+  # Subcomponent dummy of type BlockComponents.Sources.Constant
+  dummy_overrides = __pop_subcomponent_overrides!(__overrides, "dummy")
+  push!(__systems, @named dummy = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = dummy_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -151,10 +166,14 @@ The inverse table requires strictly increasing per-cell voltages and clamps its 
   __assertions = []
 
   ### Equations
-  push!(__eqs, I_measured ~ I + I_offset)
-  push!(__eqs, current.u ~ I_measured)
-  push!(__eqs, inverse.u1 ~ min(max(V / Ns, ocv_axis[1]), ocv_axis[size(ocv_axis, 1)]))
-  push!(__eqs, inverse.u2 ~ 0.0)
+  push!(__eqs, I_measured ~ measured.y)
+  push!(__eqs, connect(I, measured.u1))
+  push!(__eqs, connect(offset.y, measured.u2))
+  push!(__eqs, connect(measured.y, current.u))
+  push!(__eqs, connect(V, per_cell.u))
+  push!(__eqs, connect(per_cell.y, clamp_voltage.u))
+  push!(__eqs, connect(clamp_voltage.y, inverse.u1))
+  push!(__eqs, connect(dummy.y, inverse.u2))
   push!(__eqs, connect(inverse.y, voltage_soc.u))
   push!(__eqs, connect(current.y, counter.I, clock.y))
   push!(__eqs, connect(voltage_soc.y, counter.ocv_soc))

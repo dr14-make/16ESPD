@@ -22,6 +22,7 @@ const GROUPS = [
     "socest" => ["socest_plausibility.jl"],
     "balancing" => ["balancing_plausibility.jl"],
     "thermal" => ["thermal_plausibility.jl"],
+    "extra_canvas" => ["extra_canvas.jl"],
     "lecture05" => ["lecture05_plausibility.jl"],
     "lecture05_positions" => ["lecture05_positions.jl"],
     "switching" => ["switching_plausibility.jl"],
@@ -127,6 +128,8 @@ const groups = requested_groups()
 if isempty(groups)
     run_children() || exit(1)
 else
-    using VehicleSystemsComponents
+    if any(!=("extra_canvas"), groups)
+        using VehicleSystemsComponents
+    end
     all(map(run_group, groups)) || exit(1)
 end

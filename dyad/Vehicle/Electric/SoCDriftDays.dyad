@@ -27,31 +27,29 @@ test component SoCDriftDays
   soc_true = RealOutput() {^soc_true}
   estimated_soc = RealOutput() {^estimated_soc}
   error = RealOutput() {^error}
+  elapsed = BlockComponents.Sources.ContinuousClock() {^elapsed}
+  phase = VehicleSystemsComponents.Vehicle.Blocks.SoCPhaseEquation(period = period) {^phase}
+  drive_gate = BlockComponents.Logical.LessThreshold(threshold = t_drive) {^drive_gate}
+  drive = BlockComponents.Sources.Constant(k = I_drive) {^drive}
+  rest = BlockComponents.Sources.Constant(k = 0.0) {^rest}
+  current_command = BlockComponents.Logical.Switch() {^current_command}
+  terminal = ElectricalComponents.Analog.Sensors.VoltageSensor() {^terminal}
+  difference = BlockComponents.Math.Feedback() {^difference}
 relations
-  load.I = ifelse(mod(time, period) < t_drive, I_drive, 0.0)
-  connect(battery.p, load.p) {^w1}
-  connect(load.n, battery.n, ground.g) {^w2}
-  connect(battery.stored_current, estimator.I) {^w3}
-  estimator.V = battery.v
-  connect(battery.SoC, soc_true) {^w4}
-  connect(estimator.SoC, estimated_soc) {^w5}
-  error = estimated_soc - soc_true
-metadata {
-  "_links": {
-    "battery": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 200, "x2": 300, "y2": 400}}}},
-    "load": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 200, "x2": 500, "y2": 400}}}},
-    "ground": {"Dyad": {"placement": {"diagram": {"x1": 280, "y1": 480, "x2": 320, "y2": 520}}}},
-    "estimator": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 200, "x2": 850, "y2": 400}}}},
-    "soc_true": {"Dyad": {"placement": {"diagram": {"x1": 980, "y1": 80, "x2": 1020, "y2": 120}}}},
-    "estimated_soc": {"Dyad": {"placement": {"diagram": {"x1": 980, "y1": 280, "x2": 1020, "y2": 320}}}},
-    "error": {"Dyad": {"placement": {"diagram": {"x1": 980, "y1": 480, "x2": 1020, "y2": 520}}}},
-    "w1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 60, "y": 140}, {"x": 450, "y": 140}], "E": 2}]}},
-    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 450}], "E": -1}, {"S": -1, "M": [{"x": 340, "y": 450}], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 300, "y": 450}]}},
-    "w3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 600, "y": 400}], "E": 2}]}},
-    "w4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 100}], "E": 2}]}},
-    "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
-  }
-}
+  connect(elapsed.y, phase.u1) {^wire1}
+  connect(phase.y, drive_gate.u) {^wire2}
+  connect(drive_gate.y, current_command.u2) {^wire3}
+  connect(drive.y, current_command.u1) {^wire4}
+  connect(rest.y, current_command.u3) {^wire5}
+  connect(current_command.y, load.I) {^wire6}
+  connect(battery.p, load.p, terminal.p) {^wire7}
+  connect(load.n, battery.n, ground.g, terminal.n) {^wire8}
+  connect(battery.stored_current, estimator.I) {^wire9}
+  connect(terminal.v, estimator.V) {^wire10}
+  connect(battery.SoC, soc_true, difference.u2) {^wire11}
+  connect(estimator.SoC, estimated_soc, difference.u1) {^wire12}
+  connect(difference.y, error) {^wire13}
+metadata {"_links":{"battery":{"Dyad":{"placement":{"diagram":{"x1":100,"x2":220,"y1":600,"y2":720}}}},"current_command":{"Dyad":{"placement":{"diagram":{"x1":540,"x2":620,"y1":120,"y2":240}}}},"difference":{"Dyad":{"placement":{"diagram":{"x1":800,"x2":880,"y1":760,"y2":840}}}},"drive":{"Dyad":{"placement":{"diagram":{"x1":380,"x2":460,"y1":240,"y2":320}}}},"drive_gate":{"Dyad":{"placement":{"diagram":{"x1":380,"x2":460,"y1":60,"y2":140}}}},"elapsed":{"Dyad":{"placement":{"diagram":{"x1":60,"x2":140,"y1":60,"y2":140}}}},"error":{"Dyad":{"placement":{"diagram":{"x1":960,"x2":1000,"y1":780,"y2":820},"icon":{"x1":960,"x2":1000,"y1":780,"y2":820}}}},"estimated_soc":{"Dyad":{"placement":{"diagram":{"x1":960,"x2":1000,"y1":640,"y2":680},"icon":{"x1":960,"x2":1000,"y1":640,"y2":680}}}},"estimator":{"Dyad":{"placement":{"diagram":{"x1":540,"x2":660,"y1":600,"y2":720}}}},"ground":{"Dyad":{"placement":{"diagram":{"x1":120,"x2":200,"y1":840,"y2":920}}}},"load":{"Dyad":{"placement":{"diagram":{"x1":700,"x2":800,"y1":120,"y2":220}}}},"phase":{"Dyad":{"placement":{"diagram":{"x1":220,"x2":300,"y1":60,"y2":140}}}},"rest":{"Dyad":{"placement":{"diagram":{"x1":380,"x2":460,"y1":420,"y2":500}}}},"soc_true":{"Dyad":{"placement":{"diagram":{"x1":960,"x2":1000,"y1":520,"y2":560},"icon":{"x1":960,"x2":1000,"y1":520,"y2":560}}}},"terminal":{"Dyad":{"placement":{"diagram":{"x1":340,"x2":420,"y1":600,"y2":680}}}},"wire1":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"renderStyle":"standard"}},"wire10":{"Dyad":{"edges":[{"E":2,"M":[{"x":542.4,"y":680.0}],"S":1}],"renderStyle":"standard"}},"wire11":{"Dyad":{"edges":[{"E":2,"M":[{"x":480.0,"y":600.0},{"x":480.0,"y":548.0},{"x":820.0,"y":548.0},{"x":820.0,"y":540.0}],"S":1},{"E":3,"M":[{"x":200.0,"y":600.0},{"x":200.0,"y":736.0},{"x":480.0,"y":736.0},{"x":480.0,"y":820.0},{"x":840.0,"y":820.0}],"S":1}],"renderStyle":"standard"}},"wire12":{"Dyad":{"edges":[{"E":2,"M":[{"x":900.0,"y":628.8},{"x":900.0,"y":660.0}],"S":1},{"E":3,"M":[{"x":657.6,"y":772.0},{"x":795.2,"y":772.0}],"S":1}],"renderStyle":"standard"}},"wire13":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"renderStyle":"standard"}},"wire2":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"renderStyle":"standard"}},"wire3":{"Dyad":{"edges":[{"E":2,"M":[{"x":464.0,"y":180.0}],"S":1}],"renderStyle":"standard"}},"wire4":{"Dyad":{"edges":[{"E":2,"M":[{"x":536.0,"y":280.0}],"S":1}],"renderStyle":"standard"}},"wire5":{"Dyad":{"edges":[{"E":2,"M":[{"x":464.0,"y":368.0},{"x":535.2,"y":368.0}],"S":1}],"renderStyle":"standard"}},"wire6":{"Dyad":{"edges":[{"E":2,"M":[{"x":624.0,"y":120.0}],"S":1}],"renderStyle":"standard"}},"wire7":{"Dyad":{"edges":[{"E":2,"M":[{"x":200.0,"y":660.0},{"x":200.0,"y":548.0},{"x":360.0,"y":548.0},{"x":360.0,"y":368.0},{"x":480.0,"y":368.0},{"x":480.0,"y":292.0},{"x":700.0,"y":292.0}],"S":1},{"E":3,"M":[{"x":100.0,"y":640.0}],"S":1}],"renderStyle":"standard"}},"wire8":{"Dyad":{"edges":[{"E":2,"M":[{"x":640.0,"y":170.0},{"x":640.0,"y":292.0},{"x":480.0,"y":292.0},{"x":480.0,"y":368.0},{"x":360.0,"y":368.0},{"x":360.0,"y":548.0},{"x":320.0,"y":548.0},{"x":320.0,"y":660.0}],"S":1},{"E":3,"M":[{"x":640.0,"y":170.0},{"x":640.0,"y":580.0},{"x":480.0,"y":580.0},{"x":480.0,"y":772.0},{"x":200.0,"y":772.0},{"x":200.0,"y":840.0}],"S":1},{"E":4,"M":[{"x":800.0,"y":188.0},{"x":680.0,"y":188.0},{"x":680.0,"y":292.0},{"x":520.0,"y":292.0},{"x":520.0,"y":548.0},{"x":480.0,"y":548.0},{"x":480.0,"y":580.0},{"x":420.0,"y":580.0}],"S":1}],"renderStyle":"standard"}},"wire9":{"Dyad":{"edges":[{"E":2,"M":[{"x":440.0,"y":720.0},{"x":440.0,"y":626.4}],"S":1}],"renderStyle":"standard"}}}}
 end
 
 analysis SoCDriftDaysTransient

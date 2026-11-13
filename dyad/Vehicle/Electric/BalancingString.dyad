@@ -25,47 +25,46 @@ test component BalancingString
   variable v_min::Voltage
   variable v_max::Voltage
   variable Ah_out::Real
+  current = BlockComponents.Sources.Constant(k = I_string) {^current}
+  enabled = BlockComponents.Sources.Constant(k = balancing) {^enabled}
+  min12 = BlockComponents.Math.Min() {^min12}
+  min34 = BlockComponents.Math.Min() {^min34}
+  minimum = BlockComponents.Math.Min() {^minimum}
+  max12 = BlockComponents.Math.Max() {^max12}
+  max34 = BlockComponents.Math.Max() {^max34}
+  maximum = BlockComponents.Math.Max() {^maximum}
+  v1 = ElectricalComponents.Analog.Sensors.VoltageSensor() {^v1}
+  v2 = ElectricalComponents.Analog.Sensors.VoltageSensor() {^v2}
+  v3 = ElectricalComponents.Analog.Sensors.VoltageSensor() {^v3}
+  v4 = ElectricalComponents.Analog.Sensors.VoltageSensor() {^v4}
+  discharge_rate = BlockComponents.Sources.Constant(k = max(I_string, 0.0) / 3600) {^discharge_rate}
+  discharge = BlockComponents.Continuous.Integrator(x0 = 0.0) {^discharge}
 relations
-  source.I = I_string
-  v_min = min(min(c1.v, c2.v), min(c3.v, c4.v))
-  v_max = max(max(c1.v, c2.v), max(c3.v, c4.v))
-  initial Ah_out = 0.0
-  der(Ah_out) = max(I_string, 0.0) / 3600
-  connect(c1.n, ground.g, source.n) {^reference}
-  connect(c1.p, c2.n) {^series1}
-  connect(c2.p, c3.n) {^series2}
-  connect(c3.p, c4.n) {^series3}
-  connect(c4.p, source.p) {^positive}
-  b1.voltage = c1.v
-  b1.minimum_voltage = v_min
-  b1.active = balancing
-  connect(b1.bleed, c1.enable) {^command1}
-  b2.voltage = c2.v
-  b2.minimum_voltage = v_min
-  b2.active = balancing
-  connect(b2.bleed, c2.enable) {^command2}
-  b3.voltage = c3.v
-  b3.minimum_voltage = v_min
-  b3.active = balancing
-  connect(b3.bleed, c3.enable) {^command3}
-  b4.voltage = c4.v
-  b4.minimum_voltage = v_min
-  b4.active = balancing
-  connect(b4.bleed, c4.enable) {^command4}
-metadata {
-  "_links": {
-    "c1": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 350, "x2": 300, "y2": 450}}}},
-    "b1": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 100, "x2": 300, "y2": 200}}}},
-    "c2": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 350, "x2": 500, "y2": 450}}}},
-    "b2": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 100, "x2": 500, "y2": 200}}}},
-    "c3": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 350, "x2": 700, "y2": 450}}}},
-    "b3": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 100, "x2": 700, "y2": 200}}}},
-    "c4": {"Dyad": {"placement": {"diagram": {"x1": 800, "y1": 350, "x2": 900, "y2": 450}}}},
-    "b4": {"Dyad": {"placement": {"diagram": {"x1": 800, "y1": 100, "x2": 900, "y2": 200}}}},
-    "source": {"Dyad": {"placement": {"diagram": {"x1": 1100, "y1": 350, "x2": 1200, "y2": 450}}}},
-    "ground": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 600, "x2": 200, "y2": 700}}}}
-  }
-}
+  v_min = minimum.y
+  v_max = maximum.y
+  Ah_out = discharge.y
+  connect(discharge_rate.y, discharge.u) {^discharge_wire}
+  connect(current.y, source.I) {^wire1}
+  connect(enabled.y, b1.active, b2.active, b3.active, b4.active) {^wire2}
+  connect(c1.n, ground.g, source.n, v1.n) {^wire3}
+  connect(c1.p, c2.n, v1.p, v2.n) {^wire4}
+  connect(c2.p, c3.n, v2.p, v3.n) {^wire5}
+  connect(c3.p, c4.n, v3.p, v4.n) {^wire6}
+  connect(c4.p, source.p, v4.p) {^wire7}
+  connect(minimum.y, b1.minimum_voltage, b2.minimum_voltage, b3.minimum_voltage, b4.minimum_voltage) {^wire8}
+  connect(min12.y, minimum.u1) {^wire9}
+  connect(min34.y, minimum.u2) {^wire10}
+  connect(max12.y, maximum.u1) {^wire11}
+  connect(max34.y, maximum.u2) {^wire12}
+  connect(v1.v, b1.voltage, min12.u1, max12.u1) {^wire13}
+  connect(b1.bleed, c1.enable) {^wire14}
+  connect(v2.v, b2.voltage, min12.u2, max12.u2) {^wire15}
+  connect(b2.bleed, c2.enable) {^wire16}
+  connect(v3.v, b3.voltage, min34.u1, max34.u1) {^wire17}
+  connect(b3.bleed, c3.enable) {^wire18}
+  connect(v4.v, b4.voltage, min34.u2, max34.u2) {^wire19}
+  connect(b4.bleed, c4.enable) {^wire20}
+metadata {"_links":{"b1":{"Dyad":{"placement":{"diagram":{"x1":60,"x2":160,"y1":420,"y2":520}}}},"b2":{"Dyad":{"placement":{"diagram":{"x1":260,"x2":360,"y1":420,"y2":520}}}},"b3":{"Dyad":{"placement":{"diagram":{"x1":460,"x2":560,"y1":420,"y2":520}}}},"b4":{"Dyad":{"placement":{"diagram":{"x1":660,"x2":760,"y1":420,"y2":520}}}},"c1":{"Dyad":{"placement":{"diagram":{"x1":60,"x2":160,"y1":700,"y2":800}}}},"c2":{"Dyad":{"placement":{"diagram":{"x1":260,"x2":360,"y1":700,"y2":800}}}},"c3":{"Dyad":{"placement":{"diagram":{"x1":460,"x2":560,"y1":700,"y2":800}}}},"c4":{"Dyad":{"placement":{"diagram":{"x1":660,"x2":760,"y1":700,"y2":800}}}},"current":{"Dyad":{"placement":{"diagram":{"x1":60,"x2":140,"y1":60,"y2":140}}}},"discharge":{"Dyad":{"placement":{"diagram":{"x1":600,"x2":680,"y1":60,"y2":140}}}},"discharge_rate":{"Dyad":{"placement":{"diagram":{"x1":400,"x2":480,"y1":60,"y2":140}}}},"discharge_wire":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"renderStyle":"standard"}},"enabled":{"Dyad":{"placement":{"diagram":{"x1":220,"x2":300,"y1":60,"y2":140}}}},"ground":{"Dyad":{"placement":{"diagram":{"x1":60,"x2":120,"y1":880,"y2":940}}}},"max12":{"Dyad":{"placement":{"diagram":{"x1":540,"x2":620,"y1":240,"y2":320}}}},"max34":{"Dyad":{"placement":{"diagram":{"x1":700,"x2":780,"y1":240,"y2":320}}}},"maximum":{"Dyad":{"placement":{"diagram":{"x1":860,"x2":940,"y1":240,"y2":320}}}},"min12":{"Dyad":{"placement":{"diagram":{"x1":60,"x2":140,"y1":240,"y2":320}}}},"min34":{"Dyad":{"placement":{"diagram":{"x1":220,"x2":300,"y1":240,"y2":320}}}},"minimum":{"Dyad":{"placement":{"diagram":{"x1":380,"x2":460,"y1":240,"y2":320}}}},"source":{"Dyad":{"placement":{"diagram":{"x1":860,"x2":940,"y1":700,"y2":780}}}},"v1":{"Dyad":{"placement":{"diagram":{"x1":60,"x2":120,"y1":580,"y2":640}}}},"v2":{"Dyad":{"placement":{"diagram":{"x1":260,"x2":320,"y1":580,"y2":640}}}},"v3":{"Dyad":{"placement":{"diagram":{"x1":460,"x2":520,"y1":580,"y2":640}}}},"v4":{"Dyad":{"placement":{"diagram":{"x1":660,"x2":720,"y1":580,"y2":640}}}},"wire1":{"Dyad":{"edges":[{"E":2,"M":[{"x":160.0,"y":100.0},{"x":160.0,"y":188.0},{"x":240.0,"y":188.0},{"x":240.0,"y":220.0},{"x":340.0,"y":220.0},{"x":340.0,"y":400.0},{"x":360.0,"y":400.0},{"x":360.0,"y":570.0},{"x":380.0,"y":570.0},{"x":380.0,"y":692.0},{"x":800.0,"y":692.0},{"x":800.0,"y":700.0}],"S":1}],"renderStyle":"standard"}},"wire10":{"Dyad":{"edges":[{"E":2,"M":[{"x":340.0,"y":280.0},{"x":340.0,"y":304.0}],"S":1}],"renderStyle":"standard"}},"wire11":{"Dyad":{"edges":[{"E":2,"M":[{"x":700.0,"y":280.0},{"x":700.0,"y":220.0},{"x":780.0,"y":220.0},{"x":780.0,"y":256.0}],"S":1}],"renderStyle":"standard"}},"wire12":{"Dyad":{"edges":[{"E":2,"M":[{"x":856.0,"y":280.0}],"S":1}],"renderStyle":"standard"}},"wire13":{"Dyad":{"edges":[{"E":2,"M":[{"x":62.0,"y":640.0}],"S":1},{"E":3,"M":[{"x":56.0,"y":640.0}],"S":1},{"E":4,"M":[{"x":90.0,"y":570.0},{"x":160.0,"y":570.0},{"x":160.0,"y":400.0},{"x":240.0,"y":400.0},{"x":240.0,"y":368.0},{"x":480.0,"y":368.0},{"x":480.0,"y":256.0}],"S":1}],"renderStyle":"standard"}},"wire14":{"Dyad":{"edges":[{"E":2,"M":[{"x":158.0,"y":692.0},{"x":62.0,"y":692.0}],"S":1}],"renderStyle":"standard"}},"wire15":{"Dyad":{"edges":[{"E":2,"M":[{"x":262.0,"y":640.0}],"S":1},{"E":3,"M":[{"x":240.0,"y":640.0},{"x":240.0,"y":400.0},{"x":180.0,"y":400.0},{"x":180.0,"y":304.0}],"S":1},{"E":4,"M":[{"x":290.0,"y":560.0},{"x":440.0,"y":560.0},{"x":440.0,"y":400.0},{"x":480.0,"y":400.0},{"x":480.0,"y":304.0}],"S":1}],"renderStyle":"standard"}},"wire16":{"Dyad":{"edges":[{"E":2,"M":[{"x":358.0,"y":680.0},{"x":340.0,"y":680.0},{"x":340.0,"y":692.0},{"x":262.0,"y":692.0}],"S":1}],"renderStyle":"standard"}},"wire17":{"Dyad":{"edges":[{"E":2,"M":[{"x":462.0,"y":640.0}],"S":1},{"E":3,"M":[{"x":490.0,"y":560.0},{"x":440.0,"y":560.0},{"x":440.0,"y":400.0},{"x":380.0,"y":400.0},{"x":380.0,"y":256.0}],"S":1},{"E":4,"M":[{"x":500.0,"y":640.0},{"x":500.0,"y":560.0},{"x":580.0,"y":560.0},{"x":580.0,"y":400.0},{"x":640.0,"y":400.0},{"x":640.0,"y":368.0},{"x":696.0,"y":368.0}],"S":1}],"renderStyle":"standard"}},"wire18":{"Dyad":{"edges":[{"E":2,"M":[{"x":558.0,"y":560.0},{"x":540.0,"y":560.0},{"x":540.0,"y":692.0},{"x":462.0,"y":692.0}],"S":1}],"renderStyle":"standard"}},"wire19":{"Dyad":{"edges":[{"E":2,"M":[{"x":690.0,"y":570.0},{"x":680.0,"y":570.0},{"x":680.0,"y":432.0}],"S":1},{"E":3,"M":[{"x":690.0,"y":570.0},{"x":580.0,"y":570.0},{"x":580.0,"y":400.0},{"x":500.0,"y":400.0},{"x":500.0,"y":368.0},{"x":380.0,"y":368.0},{"x":380.0,"y":304.0}],"S":1},{"E":4,"M":[{"x":690.0,"y":560.0},{"x":640.0,"y":560.0},{"x":640.0,"y":368.0},{"x":690.0,"y":368.0},{"x":690.0,"y":304.0}],"S":1}],"renderStyle":"standard"}},"wire2":{"Dyad":{"edges":[{"E":2,"M":[{"x":200.0,"y":100.0},{"x":200.0,"y":188.0},{"x":180.0,"y":188.0},{"x":180.0,"y":400.0},{"x":62.0,"y":400.0}],"S":1},{"E":3,"M":[{"x":304.0,"y":368.0},{"x":262.0,"y":368.0}],"S":1},{"E":4,"M":[{"x":320.0,"y":100.0},{"x":320.0,"y":188.0},{"x":360.0,"y":188.0},{"x":360.0,"y":220.0},{"x":380.0,"y":220.0},{"x":380.0,"y":400.0},{"x":440.0,"y":400.0},{"x":440.0,"y":494.0}],"S":1},{"E":5,"M":[{"x":320.0,"y":100.0},{"x":320.0,"y":188.0},{"x":360.0,"y":188.0},{"x":360.0,"y":220.0},{"x":540.0,"y":220.0},{"x":540.0,"y":368.0},{"x":662.0,"y":368.0}],"S":1}],"renderStyle":"standard"}},"wire20":{"Dyad":{"edges":[{"E":2,"M":[{"x":740.0,"y":498.0},{"x":740.0,"y":680.0},{"x":700.0,"y":680.0},{"x":700.0,"y":692.0},{"x":662.0,"y":692.0}],"S":1}],"renderStyle":"standard"}},"wire3":{"Dyad":{"edges":[{"E":2,"M":[{"x":62.0,"y":850.0},{"x":90.0,"y":850.0}],"S":1},{"E":3,"M":[{"x":62.0,"y":740.0},{"x":240.0,"y":740.0},{"x":240.0,"y":692.0},{"x":780.0,"y":692.0},{"x":780.0,"y":740.0}],"S":1},{"E":4,"M":[{"x":62.0,"y":610.0}],"S":1}],"renderStyle":"standard"}},"wire4":{"Dyad":{"edges":[{"E":2,"M":[{"x":160.0,"y":708.0},{"x":160.0,"y":792.0}],"S":1},{"E":3,"M":[{"x":60.0,"y":708.0}],"S":1},{"E":4,"M":[{"x":62.0,"y":692.0},{"x":160.0,"y":692.0},{"x":160.0,"y":680.0},{"x":320.0,"y":680.0}],"S":1}],"renderStyle":"standard"}},"wire5":{"Dyad":{"edges":[{"E":2,"M":[{"x":462.0,"y":708.0}],"S":1},{"E":3,"M":[{"x":260.0,"y":708.0}],"S":1},{"E":4,"M":[{"x":262.0,"y":692.0},{"x":520.0,"y":692.0}],"S":1}],"renderStyle":"standard"}},"wire6":{"Dyad":{"edges":[{"E":2,"M":[{"x":540.0,"y":708.0},{"x":540.0,"y":792.0}],"S":1},{"E":3,"M":[{"x":462.0,"y":680.0},{"x":460.0,"y":680.0}],"S":1},{"E":4,"M":[{"x":520.0,"y":708.0},{"x":520.0,"y":692.0},{"x":680.0,"y":692.0},{"x":680.0,"y":610.0}],"S":1}],"renderStyle":"standard"}},"wire7":{"Dyad":{"edges":[{"E":2,"M":[{"x":860.0,"y":708.0}],"S":1},{"E":3,"M":[{"x":662.0,"y":610.0}],"S":1}],"renderStyle":"standard"}},"wire8":{"Dyad":{"edges":[{"E":2,"M":[{"x":320.0,"y":280.0},{"x":320.0,"y":368.0},{"x":240.0,"y":368.0},{"x":240.0,"y":400.0},{"x":62.0,"y":400.0}],"S":1},{"E":3,"M":[{"x":320.0,"y":280.0},{"x":320.0,"y":368.0},{"x":262.0,"y":368.0}],"S":1},{"E":4,"M":[{"x":464.0,"y":368.0},{"x":462.0,"y":368.0}],"S":1},{"E":5,"M":[{"x":464.0,"y":368.0},{"x":580.0,"y":368.0},{"x":580.0,"y":452.0}],"S":1}],"renderStyle":"standard"}},"wire9":{"Dyad":{"edges":[{"E":2,"M":[{"x":160.0,"y":280.0},{"x":160.0,"y":256.0},{"x":200.0,"y":256.0},{"x":200.0,"y":220.0},{"x":320.0,"y":220.0},{"x":320.0,"y":256.0}],"S":1}],"renderStyle":"standard"}}}}
 end
 
 analysis BalancingStringTransient

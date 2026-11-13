@@ -65,6 +65,7 @@ test component PlanarBEVTheveninWLTC
   motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
   roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
   split = VehicleSystemsComponents.Vehicle.Electric.TorqueSplit(ratio = ratio, v_fade = v_fade) {^split}
+  rear_brake_zero = BlockComponents.Sources.Constant(k = 0.0) {^rear_brake_zero}
   "Power at the battery terminals, positive discharging"
   variable P_dc::Power
   "Power at the reduction output, positive driving the wheels"
@@ -101,8 +102,12 @@ relations
   connect(driver.y, split.tau_ref) {^w21}
   connect(split.tau_motor, drive.tau_ref) {^w23}
   connect(split.tau_brake, car.tau_fl, car.tau_fr) {^w24}
-  car.tau_rl = 0.0
-  car.tau_rr = 0.0
+  connect(rear_brake_zero.y, car.tau_rl, car.tau_rr) {^w25}
+  # Deliberately open: drive.SoC and motion.{delta_sw,r,vy,beta,ax,ay,psi,x,y}
+  # are telemetry outputs, not plant inputs. car.wheel_{fl,fr,rl,rr} and
+  # car.spin_{rl,rr} are unused external attachment ports (free rear axle).
+  # The following equations are diagnostic power/energy accounting, not signal wiring.
+  # Keep their public names and original state/initialization equations for regression checks.
   P_dc = drive.battery.v * drive.battery.i
   P_shaft = drive.machine.P_mech
   der(E_cells) = drive.battery.E * drive.battery.i
@@ -153,34 +158,36 @@ relations
   initial E_tire = 0.0
 metadata {
   "_links": {
-    "wbus": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "trace": {"Dyad": {"placement": {"diagram": {"x1": 20, "y1": 57, "x2": 100, "y2": 137}}}},
-    "driver": {"Dyad": {"placement": {"diagram": {"x1": 140, "y1": 70, "x2": 240, "y2": 170}}}},
-    "no_ff": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 10, "x2": 140, "y2": 50}}}},
-    "kmh": {"Dyad": {"placement": {"diagram": {"x1": 40, "y1": 190, "x2": 110, "y2": 260}}}},
-    "drive": {"Dyad": {"placement": {"diagram": {"x1": 430, "y1": 50, "x2": 530, "y2": 150}}}},
-    "differential": {"Dyad": {"placement": {"diagram": {"x1": 560, "y1": 260, "x2": 640, "y2": 340}}}},
-    "mount": {"Dyad": {"placement": {"diagram": {"x1": 485, "y1": 190, "x2": 545, "y2": 240}}}},
-    "straight": {"Dyad": {"placement": {"diagram": {"x1": 605, "y1": 500, "x2": 655, "y2": 550, "rot": 180}}}},
-    "flat": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 880, "x2": 480, "y2": 920}}}},
-    "car": {"Dyad": {"placement": {"diagram": {"x1": 520, "y1": 600, "x2": 740, "y2": 820}}}},
-    "motion": {"Dyad": {"placement": {"diagram": {"x1": 775, "y1": 610, "x2": 975, "y2": 810}}}},
-    "roadload": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 865, "x2": 570, "y2": 935}}}},
-    "split": {"Dyad": {"placement": {"diagram": {"x1": 290, "y1": 70, "x2": 390, "y2": 170}}}},
-    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 990, "y": 662.0}, {"x": 990, "y": 980}, {"x": 20, "y": 980}, {"x": 20, "y": 225}], "E": 2}]}},
-    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 125, "y": 143}], "E": 2}, {"S": -1, "M": [{"x": 270, "y": 225}, {"x": 270, "y": 140}], "E": 3}], "junctions": [{"x": 125, "y": 225}]}},
-    "w4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 190, "y": 30}], "E": 2}]}},
-    "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 100}, {"x": 550, "y": 344}], "E": 2}]}},
-    "w6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 480, "y": 300}, {"x": 480, "y": 655}], "E": 2}]}},
-    "w7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 765, "y": 300}, {"x": 765, "y": 655}], "E": 2}]}},
-    "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 515, "y": 150}], "E": 2}]}},
-    "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 680, "y": 820}, {"x": 680, "y": 900}], "E": 2}]}},
-    "w21": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 265, "y": 120}, {"x": 265, "y": 100}], "E": 2}]}},
-    "w23": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w24": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 410, "y": 140}, {"x": 410, "y": 633}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 500, "y": 470}, {"x": 750, "y": 470}, {"x": 750, "y": 633}], "E": 3}], "junctions": [{"x": 500, "y": 633}]}}
+    "car": {"Dyad":{"placement":{"diagram":{"x1":520,"x2":740,"y1":660,"y2":840}}}},
+    "differential": {"Dyad":{"placement":{"diagram":{"x1":560,"x2":640,"y1":460,"y2":540}}}},
+    "drive": {"Dyad":{"placement":{"diagram":{"x1":530,"x2":650,"y1":140,"y2":260}}}},
+    "driver": {"Dyad":{"placement":{"diagram":{"x1":170,"x2":270,"y1":140,"y2":240}}}},
+    "flat": {"Dyad":{"placement":{"diagram":{"x1":340,"x2":380,"y1":900,"y2":940}}}},
+    "kmh": {"Dyad":{"placement":{"diagram":{"x1":50,"x2":130,"y1":330,"y2":410}}}},
+    "motion": {"Dyad":{"placement":{"diagram":{"x1":820,"x2":960,"y1":660,"y2":800}}}},
+    "mount": {"Dyad":{"placement":{"diagram":{"x1":590,"x2":650,"y1":340,"y2":400}}}},
+    "no_ff": {"Dyad":{"placement":{"diagram":{"x1":180,"x2":220,"y1":20,"y2":60}}}},
+    "rear_brake_zero": {"Dyad":{"placement":{"diagram":{"x1":280,"x2":340,"y1":720,"y2":780}}}},
+    "roadload": {"Dyad":{"placement":{"diagram":{"x1":500,"x2":580,"y1":900,"y2":960}}}},
+    "split": {"Dyad":{"placement":{"diagram":{"x1":330,"x2":430,"y1":140,"y2":240}}}},
+    "straight": {"Dyad":{"placement":{"diagram":{"rot":180,"x1":850,"x2":910,"y1":450,"y2":510}}}},
+    "trace": {"Dyad":{"placement":{"diagram":{"x1":30,"x2":110,"y1":140,"y2":220}}}},
+    "w1": {"Dyad":{"edges":[{"E":2,"M":[{"x":140,"y":180},{"x":140,"y":167}],"S":1}]}},
+    "w10": {"Dyad":{"edges":[{"E":2,"M":[{"x":460,"y":920},{"x":460,"y":930}],"S":1}]}},
+    "w11": {"Dyad":{"edges":[{"E":2,"M":[{"x":630,"y":875},{"x":660,"y":875},{"x":660,"y":930}],"S":1}]}},
+    "w2": {"Dyad":{"edges":[{"E":2,"M":[{"x":980,"y":696.4},{"x":980,"y":990},{"x":20,"y":990},{"x":20,"y":370}],"S":1}]}},
+    "w21": {"Dyad":{"edges":[{"E":2,"M":[{"x":300,"y":190},{"x":300,"y":170}],"S":1}]}},
+    "w23": {"Dyad":{"edges":[{"E":2,"M":[{"x":480,"y":170},{"x":480,"y":200}],"S":1}]}},
+    "w24": {"Dyad":{"edges":[{"E":-1,"M":[{"x":450,"y":210},{"x":450,"y":620}],"S":1},{"E":2,"M":[{"x":480,"y":620},{"x":480,"y":687}],"S":-1},{"E":3,"M":[{"x":790,"y":620},{"x":790,"y":687}],"S":-1}],"junctions":[{"x":450,"y":620}]}},
+    "w25": {"Dyad":{"edges":[{"E":-1,"M":[],"S":1},{"E":2,"M":[{"x":450,"y":750},{"x":450,"y":777}],"S":-1},{"E":3,"M":[{"x":400,"y":860},{"x":800,"y":860},{"x":800,"y":777}],"S":-1}],"junctions":[{"x":400,"y":750}]}},
+    "w3": {"Dyad":{"edges":[{"E":-1,"M":[],"S":1},{"E":2,"M":[{"x":150,"y":213}],"S":-1},{"E":3,"M":[{"x":300,"y":370},{"x":300,"y":210}],"S":-1}],"junctions":[{"x":150,"y":370}]}},
+    "w4": {"Dyad":{"edges":[{"E":2,"M":[{"x":220,"y":40}],"S":1}]}},
+    "w5": {"Dyad":{"edges":[{"E":2,"M":[{"x":680,"y":200},{"x":680,"y":580},{"x":600,"y":580}],"S":1}]}},
+    "w6": {"Dyad":{"edges":[{"E":2,"M":[{"x":480,"y":500},{"x":480,"y":705}],"S":1}]}},
+    "w7": {"Dyad":{"edges":[{"E":2,"M":[{"x":770,"y":500},{"x":770,"y":705}],"S":1}]}},
+    "w8": {"Dyad":{"edges":[{"E":2,"M":[{"x":590,"y":300},{"x":620,"y":300}],"S":1}]}},
+    "w9": {"Dyad":{"edges":[{"E":2,"M":[{"x":630,"y":600},{"x":880,"y":600}],"S":1}]}},
+    "wbus": {"Dyad":{"edges":[{"E":2,"M":[{"x":780,"y":750},{"x":780,"y":730}],"S":1}]}}
   }
 }
 end
