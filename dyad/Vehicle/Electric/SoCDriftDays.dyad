@@ -1,0 +1,60 @@
+"""
+Three-day offset-drift bench using the default Leaf TheveninCell.
+A modest discharge block each day keeps true SoC inside the OCV table without a charger.
+The estimator sees only current and terminal voltage, not the cell's true SoC.
+"""
+test component SoCDriftDays
+  "Drive current [A] (assumed; [SOC-257], multi-day teaching profile)"
+  parameter I_drive::Current = 5.0
+  "Drive duration [s] (assumed; [SOC-257], two hours per day)"
+  parameter t_drive::Time = 7200.0
+  "Pattern period [s] (assumed; [SOC-257], one day)"
+  parameter period::Time = 86400.0
+  "Sensor offset [A] (assumed; [SOC-257], exercise 2)"
+  parameter I_offset::Current = 0.05
+  "Rest duration required [s] (verified; [USABC-EV-R4], at least 1 h)"
+  parameter t_rest::Time = 3600.0
+  "Measured rest threshold [A] (assumed; [SOC-257], above sensor bias)"
+  parameter I_rest::Current = 0.1
+  "Initial estimate (assumed; [SOC-257], matches default cell)"
+  parameter SoC0_est::Real = 0.9
+  "BMS sample interval [s] (assumed; [SOC-257], resolves block edges)"
+  structural parameter dt::Time = 1.0
+  battery = VehicleSystemsComponents.Vehicle.Electric.TheveninCell() {^battery}
+  load = ElectricalComponents.Analog.Sources.CurrentSource() {^load}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  estimator = VehicleSystemsComponents.Vehicle.Electric.SoCEstimator(I_offset = I_offset, t_rest = t_rest, I_rest = I_rest, SoC0 = SoC0_est, dt = dt) {^estimator}
+  soc_true = RealOutput() {^soc_true}
+  estimated_soc = RealOutput() {^estimated_soc}
+  error = RealOutput() {^error}
+relations
+  load.I = ifelse(mod(time, period) < t_drive, I_drive, 0.0)
+  connect(battery.p, load.p) {^w1}
+  connect(load.n, battery.n, ground.g) {^w2}
+  connect(battery.stored_current, estimator.I) {^w3}
+  estimator.V = battery.v
+  connect(battery.SoC, soc_true) {^w4}
+  connect(estimator.SoC, estimated_soc) {^w5}
+  error = estimated_soc - soc_true
+metadata {
+  "_links": {
+    "battery": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 200, "x2": 300, "y2": 400}}}},
+    "load": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 200, "x2": 500, "y2": 400}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 280, "y1": 480, "x2": 320, "y2": 520}}}},
+    "estimator": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 200, "x2": 850, "y2": 400}}}},
+    "soc_true": {"Dyad": {"placement": {"diagram": {"x1": 980, "y1": 80, "x2": 1020, "y2": 120}}}},
+    "estimated_soc": {"Dyad": {"placement": {"diagram": {"x1": 980, "y1": 280, "x2": 1020, "y2": 320}}}},
+    "error": {"Dyad": {"placement": {"diagram": {"x1": 980, "y1": 480, "x2": 1020, "y2": 520}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 60, "y": 140}, {"x": 450, "y": 140}], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 450}], "E": -1}, {"S": -1, "M": [{"x": 340, "y": 450}], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 300, "y": 450}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 600, "y": 400}], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 100}], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end
+
+analysis SoCDriftDaysTransient
+  extends TransientAnalysis(stop = 259200.0, reltol = 1e-8, abstol = 1e-10)
+  model = VehicleSystemsComponents.Vehicle.Electric.SoCDriftDays()
+end
