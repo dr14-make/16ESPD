@@ -26,9 +26,14 @@ metadata {
     "pulse_on": {"Dyad": {"placement": {"diagram": {"x1": 80, "y1": 100, "x2": 160, "y2": 180}}}},
     "pulse_off": {"Dyad": {"placement": {"diagram": {"x1": 80, "y1": 300, "x2": 160, "y2": 380}}}},
     "pulse_sum": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 200, "x2": 380, "y2": 280}}}},
-    "load": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 450, "x2": 750, "y2": 550}}}},
-    "battery": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 600, "x2": 400, "y2": 700}}}},
-    "ground": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 750, "x2": 710, "y2": 810}}}}
+    "load": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 450, "x2": 750, "y2": 550, "rot": 90}}}},
+    "battery": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 600, "x2": 460, "y2": 760}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 840, "x2": 710, "y2": 900}}}},
+    "pulse_start": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 240, "y": 140}, {"x": 240, "y": 216}], "E": 2}], "path": {}}},
+    "pulse_stop": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 220, "y": 340}, {"x": 220, "y": 264}], "E": 2}], "path": {}}},
+    "load_command": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 850, "y": 240}, {"x": 850, "y": 500}], "E": 2}], "path": {}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 260, "y": 680}, {"x": 260, "y": 420}, {"x": 700, "y": 420}], "E": 2}], "path": {}}},
+    "w2": {"Dyad": {"junctions": [{"x": 680, "y": 800}], "edges": [{"S": 1, "M": [{"x": 700, "y": 800}], "E": -1}, {"S": 2, "M": [{"x": 540, "y": 680}, {"x": 540, "y": 800}], "E": -1}, {"S": -1, "M": [], "E": 3}], "path": {}}}
   }
 }
 end
