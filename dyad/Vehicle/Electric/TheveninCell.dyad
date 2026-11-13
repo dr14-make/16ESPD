@@ -1,0 +1,65 @@
+"""
+One-RC Thevenin battery with coulomb-counted SoC and a clamped, linear OCV lookup.
+The interface and discharge-positive current convention match `Battery`: i = n.i,
+v = p.v - n.v. SoC itself is not clamped; only the lookup is limited to [0, 1].
+`stored_voltage` reports OCV and `stored_current` reports discharge current.
+
+Defaults represent the Leaf ZE1 40 kWh pack. The NMC 811 / graphite-SiOx LG M50
+OCV table [CHEN-2020], derived from PyBaMM Chen2020 at 10 % SoC steps, is the
+course's stand-in (assumed): the ZE1's own chemistry differs. Voltages are scaled
+by Ns. R0 and capacity retain Battery's Nissan/INL defaults for comparison.
+R1/R0 and tau1 use pulse 5 (approximately 60 % SoC, 25 C) of the ORNL Leaf
+33.1 Ah cell 1-RC fit [ORNL-LEAF-ECM] (derived).
+
+The equation tau1 * der(v1) = R1 * i - v1 is equivalent to C1 = tau1/R1.
+Using tau1 avoids division by R1 and permits R1 = 0 with v1 initially zero.
+"""
+component TheveninCell
+  extends ElectricalComponents.Analog.Interfaces.TwoPin
+  "State of charge: 1 full, 0 empty"
+  SoC = RealOutput() {^SoC}
+  "Series count for the cell OCV table (Nissan ZE1, 96s2p)"
+  parameter Ns::Real = 96.0
+  "Series resistance, retained from Battery (derived; Nissan/INL)"
+  parameter R0::Resistance = 0.1
+  "Polarization resistance, R0 times 1.34/1.60 (derived; [ORNL-LEAF-ECM], pulse 5)"
+  parameter R1::Resistance = 0.1 * 1.34 / 1.60
+  "Polarization time constant (derived; [ORNL-LEAF-ECM], pulse 5)"
+  parameter tau1::Time = 25.7
+  "Charge capacity, 40 kWh / 350 V [C] (derived from Nissan)"
+  parameter Q_nom::ElectricCharge = 40.0e3 * 3600.0 / 350.0
+  "Initial state of charge (assumed)"
+  parameter SoC0::Real = 0.9
+  "Cell OCV [V], repeated on dummy axis (derived; [CHEN-2020], PyBaMM)"
+  structural parameter ocv_data::Real[:, :] = [[2.500, 2.500], [3.296, 3.296], [3.485, 3.485], [3.581, 3.581], [3.667, 3.667], [3.751, 3.751], [3.841, 3.841], [3.948, 3.948], [4.042, 4.042], [4.097, 4.097], [4.200, 4.200]]
+  table = BlockComponents.Tables.InterpolatedTable(axis1 = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], axis2 = [0, 1], data = ocv_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension()) {^table}
+  "Open-circuit voltage at the present SoC"
+  variable E::Voltage
+  "Discharge current, out of p and back into n"
+  variable i::Current
+  "Polarization voltage"
+  variable v1::Voltage
+  stored_voltage = RealOutput() {^stored_voltage}
+  stored_current = RealOutput() {^stored_current}
+relations
+  initial SoC = SoC0
+  initial v1 = 0.0
+  table.u1 = min(max(SoC, 0.0), 1.0)
+  table.u2 = 0.0
+  E = Ns * table.y
+  stored_voltage = E
+  stored_current = i
+  p.i + n.i = 0
+  i = n.i
+  v = E - R0 * i - v1
+  tau1 * der(v1) = R1 * i - v1
+  der(SoC) = -i / Q_nom
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/Battery.svg"}},
+  "_links": {
+    "SoC": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}}}},
+    "stored_voltage": {"Dyad": {"placement": {"icon": {"x1": 250, "y1": 950, "x2": 350, "y2": 1050, "rot": 90}}}},
+    "stored_current": {"Dyad": {"placement": {"icon": {"x1": 650, "y1": 950, "x2": 750, "y2": 1050, "rot": 90}}}}
+  }
+}
+end
