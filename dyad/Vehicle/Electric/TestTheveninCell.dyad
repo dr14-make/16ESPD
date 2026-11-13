@@ -1,0 +1,26 @@
+"""
+ORNL pulse-5 bench: rest for 10 s, discharge at 30 A for 30 s, then rest.
+R0 gives 48 mV immediately; polarization adds 27.7 mV after 30 s and relaxes
+with tau1 = 25.7 s. OCV also drifts with the coulomb-counted SoC.
+"""
+test component TestTheveninCell
+  parameter I_load::Current = 30.0
+  parameter R1::Resistance = 0.00134
+  parameter SoC0::Real = 0.6
+  parameter Ns::Real = 1.0
+  structural parameter ocv_data::Real[:, :] = [[2.500, 2.500], [3.296, 3.296], [3.485, 3.485], [3.581, 3.581], [3.667, 3.667], [3.751, 3.751], [3.841, 3.841], [3.948, 3.948], [4.042, 4.042], [4.097, 4.097], [4.200, 4.200]]
+  pulse_on = BlockComponents.Sources.Step(height = I_load, start_time = 10.0) {^pulse_on}
+  pulse_off = BlockComponents.Sources.Step(height = -I_load, start_time = 40.0) {^pulse_off}
+  load = ElectricalComponents.Analog.Sources.CurrentSource() {^load}
+  battery = VehicleSystemsComponents.Vehicle.Electric.TheveninCell(Ns = Ns, Q_nom = 33.1 * 3600, R0 = 0.00160, R1 = R1, tau1 = 25.7, SoC0 = SoC0, ocv_data = ocv_data) {^battery}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+relations
+  load.I = pulse_on.y + pulse_off.y
+  connect(battery.p, load.p) {^w1}
+  connect(load.n, battery.n, ground.g) {^w2}
+end
+
+analysis TheveninPulseTransient
+  extends TransientAnalysis(stop = 180.0, tstops = [10.0, 40.0], reltol = 1e-8, abstol = 1e-10)
+  model = VehicleSystemsComponents.Vehicle.Electric.TestTheveninCell()
+end
