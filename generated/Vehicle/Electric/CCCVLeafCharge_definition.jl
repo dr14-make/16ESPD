@@ -77,6 +77,9 @@ The capacity, OCV table, and RC time constant are inherited from TheveninCell.
   # Subcomponent ground of type ElectricalComponents.Analog.Basic.Ground
   ground_overrides = __pop_subcomponent_overrides!(__overrides, "ground")
   push!(__systems, @named ground = ElectricalComponents.Analog.Basic.Ground(; __overrides = ground_overrides))
+  # Subcomponent zero_power of type BlockComponents.Sources.Constant
+  zero_power_overrides = __pop_subcomponent_overrides!(__overrides, "zero_power")
+  push!(__systems, @named zero_power = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = zero_power_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -89,6 +92,7 @@ The capacity, OCV table, and RC time constant are inherited from TheveninCell.
   __assertions = []
 
   ### Equations
+  push!(__eqs, connect(zero_power.y, charger.P_max))
   push!(__eqs, connect(charger.p, battery.p))
   push!(__eqs, connect(charger.n, battery.n, ground.g))
 

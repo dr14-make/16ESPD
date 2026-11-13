@@ -12,7 +12,7 @@ Constant current (CC) supplies I_cc until the battery nears V_max; constant volt
 (1.43 mV at 143 A, 2.5 mV at 250 A with the assumed R_reg = 10 microohm).
 Phase is computed as 1 (CC), 2 (CV), or 3 (done below I_cut), but current keeps tapering
 rather than switching off or latching; positive current leaves p and enters the battery.
-No switching ripple is modeled. Optional P_max input limits terminal power;
+No switching ripple is modeled. The always-present P_max input limits terminal power;
 with use_power_limit false the original CC-CV law is unchanged.
 Defaults: [CHARGING-1] is charging.md section 1; [CCCV-BENCH] is issue #256.
 
@@ -112,6 +112,57 @@ Defaults: [CHARGING-1] is charging.md section 1; [CCCV-BENCH] is issue #256.
   ### Components
   push!(__systems, @named p = __Dyad__Pin())
   push!(__systems, @named n = __Dyad__Pin())
+  # Subcomponent voltage of type ElectricalComponents.Analog.Sensors.VoltageSensor
+  voltage_overrides = __pop_subcomponent_overrides!(__overrides, "voltage")
+  push!(__systems, @named voltage = ElectricalComponents.Analog.Sensors.VoltageSensor(; __overrides = voltage_overrides))
+  # Subcomponent source of type ElectricalComponents.Analog.Sources.CurrentSource
+  source_overrides = __pop_subcomponent_overrides!(__overrides, "source")
+  push!(__systems, @named source = ElectricalComponents.Analog.Sources.CurrentSource(; __overrides = source_overrides))
+  # Subcomponent delivered of type ElectricalComponents.Analog.Sensors.CurrentSensor
+  delivered_overrides = __pop_subcomponent_overrides!(__overrides, "delivered")
+  push!(__systems, @named delivered = ElectricalComponents.Analog.Sensors.CurrentSensor(; __overrides = delivered_overrides))
+  # Subcomponent voltage_limit of type VehicleSystemsComponents.Vehicle.Blocks.CCCVVoltageCurrentEquation
+  voltage_limit_overrides = __pop_subcomponent_overrides!(__overrides, "voltage_limit")
+  push!(__systems, @named voltage_limit = VehicleSystemsComponents.Vehicle.Blocks.CCCVVoltageCurrentEquation(; I_cc=I_cc, V_max=V_max, R_reg=R_reg, __overrides = voltage_limit_overrides))
+  # Subcomponent power_limit of type VehicleSystemsComponents.Vehicle.Blocks.CCCVPowerCurrentEquation
+  power_limit_overrides = __pop_subcomponent_overrides!(__overrides, "power_limit")
+  push!(__systems, @named power_limit = VehicleSystemsComponents.Vehicle.Blocks.CCCVPowerCurrentEquation(; I_cc=I_cc, __overrides = power_limit_overrides))
+  # Subcomponent power_enabled of type BlockComponents.Sources.BooleanConstant
+  power_enabled_overrides = __pop_subcomponent_overrides!(__overrides, "power_enabled")
+  push!(__systems, @named power_enabled = BlockComponents.Sources.BooleanConstant(; k=use_power_limit, __overrides = power_enabled_overrides))
+  # Subcomponent cc_ceiling of type BlockComponents.Sources.Constant
+  cc_ceiling_overrides = __pop_subcomponent_overrides!(__overrides, "cc_ceiling")
+  push!(__systems, @named cc_ceiling = BlockComponents.Sources.Constant(; k=I_cc, __overrides = cc_ceiling_overrides))
+  # Subcomponent power_selector of type BlockComponents.Logical.Switch
+  power_selector_overrides = __pop_subcomponent_overrides!(__overrides, "power_selector")
+  push!(__systems, @named power_selector = BlockComponents.Logical.Switch(; __overrides = power_selector_overrides))
+  # Subcomponent ceiling of type BlockComponents.Math.Min
+  ceiling_overrides = __pop_subcomponent_overrides!(__overrides, "ceiling")
+  push!(__systems, @named ceiling = BlockComponents.Math.Min(; __overrides = ceiling_overrides))
+  # Subcomponent sign of type BlockComponents.Math.Gain
+  sign_overrides = __pop_subcomponent_overrides!(__overrides, "sign")
+  push!(__systems, @named sign = BlockComponents.Math.Gain(; k=-1.0, __overrides = sign_overrides))
+  # Subcomponent cc_phase of type BlockComponents.Logical.LessEqualThreshold
+  cc_phase_overrides = __pop_subcomponent_overrides!(__overrides, "cc_phase")
+  push!(__systems, @named cc_phase = BlockComponents.Logical.LessEqualThreshold(; threshold=V_max - I_cc * R_reg, __overrides = cc_phase_overrides))
+  # Subcomponent done_phase of type BlockComponents.Logical.LessThreshold
+  done_phase_overrides = __pop_subcomponent_overrides!(__overrides, "done_phase")
+  push!(__systems, @named done_phase = BlockComponents.Logical.LessThreshold(; threshold=I_cut, __overrides = done_phase_overrides))
+  # Subcomponent code_cc of type BlockComponents.Sources.Constant
+  code_cc_overrides = __pop_subcomponent_overrides!(__overrides, "code_cc")
+  push!(__systems, @named code_cc = BlockComponents.Sources.Constant(; k=Float64(1.0), __overrides = code_cc_overrides))
+  # Subcomponent code_cv of type BlockComponents.Sources.Constant
+  code_cv_overrides = __pop_subcomponent_overrides!(__overrides, "code_cv")
+  push!(__systems, @named code_cv = BlockComponents.Sources.Constant(; k=Float64(2.0), __overrides = code_cv_overrides))
+  # Subcomponent code_done of type BlockComponents.Sources.Constant
+  code_done_overrides = __pop_subcomponent_overrides!(__overrides, "code_done")
+  push!(__systems, @named code_done = BlockComponents.Sources.Constant(; k=Float64(3.0), __overrides = code_done_overrides))
+  # Subcomponent cc_cv of type BlockComponents.Logical.Switch
+  cc_cv_overrides = __pop_subcomponent_overrides!(__overrides, "cc_cv")
+  push!(__systems, @named cc_cv = BlockComponents.Logical.Switch(; __overrides = cc_cv_overrides))
+  # Subcomponent phase_selector of type BlockComponents.Logical.Switch
+  phase_selector_overrides = __pop_subcomponent_overrides!(__overrides, "phase_selector")
+  push!(__systems, @named phase_selector = BlockComponents.Logical.Switch(; __overrides = phase_selector_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -125,17 +176,27 @@ Defaults: [CHARGING-1] is charging.md section 1; [CCCV-BENCH] is issue #256.
   __assertions = []
 
   ### Equations
-  push!(__eqs, v ~ p.v - n.v)
-  push!(__eqs, p.i ~ -current)
-  push!(__eqs, n.i ~ current)
-  push!(__eqs, phase ~ ifelse(current < I_cut, 3.0, ifelse((V_max - v) / R_reg >= I_cc, 1.0, 2.0)))
-
-  ### Control Structures
-  if use_power_limit
-    push!(__eqs, current ~ min(I_cc, max(0.0, P_max) / max(v, 1.0), max(0.0, (V_max - v) / R_reg)))
-  else
-    push!(__eqs, current ~ min(I_cc, max(0.0, (V_max - v) / R_reg)))
-  end
+  push!(__eqs, v ~ voltage.v)
+  push!(__eqs, connect(p, voltage.p, delivered.n))
+  push!(__eqs, connect(delivered.p, source.p))
+  push!(__eqs, connect(n, voltage.n, source.n))
+  push!(__eqs, connect(voltage.v, voltage_limit.u1, power_limit.u1, cc_phase.u))
+  push!(__eqs, connect(P_max, power_limit.u2))
+  push!(__eqs, connect(power_limit.y, power_selector.u1))
+  push!(__eqs, connect(power_enabled.y, power_selector.u2))
+  push!(__eqs, connect(cc_ceiling.y, power_selector.u3))
+  push!(__eqs, connect(voltage_limit.y, ceiling.u1))
+  push!(__eqs, connect(power_selector.y, ceiling.u2))
+  push!(__eqs, connect(ceiling.y, sign.u))
+  push!(__eqs, connect(delivered.i, current, done_phase.u))
+  push!(__eqs, connect(sign.y, source.I))
+  push!(__eqs, connect(cc_phase.y, cc_cv.u2))
+  push!(__eqs, connect(code_cc.y, cc_cv.u1))
+  push!(__eqs, connect(code_cv.y, cc_cv.u3))
+  push!(__eqs, connect(code_done.y, phase_selector.u1))
+  push!(__eqs, connect(done_phase.y, phase_selector.u2))
+  push!(__eqs, connect(cc_cv.y, phase_selector.u3))
+  push!(__eqs, connect(phase_selector.y, phase))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
