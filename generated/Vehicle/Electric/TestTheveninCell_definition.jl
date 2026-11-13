@@ -90,6 +90,9 @@ with tau1 = 25.7 s. OCV also drifts with the coulomb-counted SoC.
   # Subcomponent pulse_off of type BlockComponents.Sources.Step
   pulse_off_overrides = __pop_subcomponent_overrides!(__overrides, "pulse_off")
   push!(__systems, @named pulse_off = BlockComponents.Sources.Step(; height=-I_load, start_time=Float64(40.0), __overrides = pulse_off_overrides))
+  # Subcomponent pulse_sum of type BlockComponents.Math.Add
+  pulse_sum_overrides = __pop_subcomponent_overrides!(__overrides, "pulse_sum")
+  push!(__systems, @named pulse_sum = BlockComponents.Math.Add(; __overrides = pulse_sum_overrides))
   # Subcomponent load of type ElectricalComponents.Analog.Sources.CurrentSource
   load_overrides = __pop_subcomponent_overrides!(__overrides, "load")
   push!(__systems, @named load = ElectricalComponents.Analog.Sources.CurrentSource(; __overrides = load_overrides))
@@ -111,7 +114,9 @@ with tau1 = 25.7 s. OCV also drifts with the coulomb-counted SoC.
   __assertions = []
 
   ### Equations
-  push!(__eqs, load.I ~ pulse_on.y + pulse_off.y)
+  push!(__eqs, connect(pulse_on.y, pulse_sum.u1))
+  push!(__eqs, connect(pulse_off.y, pulse_sum.u2))
+  push!(__eqs, connect(pulse_sum.y, load.I))
   push!(__eqs, connect(battery.p, load.p))
   push!(__eqs, connect(load.n, battery.n, ground.g))
 

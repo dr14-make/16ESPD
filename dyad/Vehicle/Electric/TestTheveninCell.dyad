@@ -11,13 +11,26 @@ test component TestTheveninCell
   structural parameter ocv_data::Real[:, :] = [[2.500, 2.500], [3.296, 3.296], [3.485, 3.485], [3.581, 3.581], [3.667, 3.667], [3.751, 3.751], [3.841, 3.841], [3.948, 3.948], [4.042, 4.042], [4.097, 4.097], [4.200, 4.200]]
   pulse_on = BlockComponents.Sources.Step(height = I_load, start_time = 10.0) {^pulse_on}
   pulse_off = BlockComponents.Sources.Step(height = -I_load, start_time = 40.0) {^pulse_off}
+  pulse_sum = BlockComponents.Math.Add() {^pulse_sum}
   load = ElectricalComponents.Analog.Sources.CurrentSource() {^load}
   battery = VehicleSystemsComponents.Vehicle.Electric.TheveninCell(Ns = Ns, Q_nom = 33.1 * 3600, R0 = 0.00160, R1 = R1, tau1 = 25.7, SoC0 = SoC0, ocv_data = ocv_data) {^battery}
   ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
 relations
-  load.I = pulse_on.y + pulse_off.y
+  connect(pulse_on.y, pulse_sum.u1) {^pulse_start}
+  connect(pulse_off.y, pulse_sum.u2) {^pulse_stop}
+  connect(pulse_sum.y, load.I) {^load_command}
   connect(battery.p, load.p) {^w1}
   connect(load.n, battery.n, ground.g) {^w2}
+metadata {
+  "_links": {
+    "pulse_on": {"Dyad": {"placement": {"diagram": {"x1": 80, "y1": 100, "x2": 160, "y2": 180}}}},
+    "pulse_off": {"Dyad": {"placement": {"diagram": {"x1": 80, "y1": 300, "x2": 160, "y2": 380}}}},
+    "pulse_sum": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 200, "x2": 380, "y2": 280}}}},
+    "load": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 450, "x2": 750, "y2": 550}}}},
+    "battery": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 600, "x2": 400, "y2": 700}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 750, "x2": 710, "y2": 810}}}}
+  }
+}
 end
 
 analysis TheveninPulseTransient
