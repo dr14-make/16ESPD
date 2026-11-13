@@ -1,0 +1,66 @@
+"""
+One-temperature pack. G_air = 20 W/K assumes 4 m^2 effective exposed area at
+5 W/(m^2 K); 10–40 W/K is an assumed passive-air engineering range, not an INL
+fit. Specific heat is assumed, with no measured ZE1 value available here.
+Coolant conductance zero disables the optional parallel path without switching.
+"""
+component PackThermal
+  "Pack mass [NISSAN] (verified), ZE1 US 303 kg"
+  parameter mass::Mass = 303.0
+  "Specific heat [THERMAL-BENCH] (assumed), J/(kg K)"
+  parameter cp::Real = 1000.0
+  "Passive conductance [THERMAL-BENCH] (assumed), W/K"
+  parameter G_air::ThermalConductance = 20.0
+  "Coolant conductance [THERMAL-BENCH] (assumed), off by default"
+  parameter G_coolant::ThermalConductance = 0.0
+  "Ambient [THERMAL-BENCH] (assumed), 25 C"
+  parameter T_ambient::Temperature = 298.15
+  "Coolant boundary [THERMAL-BENCH] (assumed), 25 C"
+  parameter T_coolant::Temperature = 298.15
+  "Initial pack temperature [THERMAL-BENCH] (assumed), ambient"
+  parameter T0::Temperature = T_ambient
+  heat_port = HeatPort() {^heat_port}
+  T = RealOutput() {^T}
+  capacity = ThermalComponents.Components.HeatCapacitor(C = mass * cp, T0 = T0) {^capacity}
+  air = ThermalComponents.Components.ThermalConductor(G = G_air) {^air}
+  coolant = ThermalComponents.Components.ThermalConductor(G = G_coolant) {^coolant}
+  ambient = ThermalComponents.Sources.FixedTemperature(T = T_ambient) {^ambient}
+  coolant_boundary = ThermalComponents.Sources.FixedTemperature(T = T_coolant) {^coolant_boundary}
+  variable E_in::Energy
+  variable E_out::Energy
+relations
+  initial E_in = 0.0
+  initial E_out = 0.0
+  connect(heat_port, capacity.port, air.port_a, coolant.port_a)
+  connect(air.port_b, ambient.port)
+  connect(coolant.port_b, coolant_boundary.port)
+  T = capacity.T
+  der(E_in) = heat_port.Q_flow
+  der(E_out) = air.Q_flow + coolant.Q_flow
+metadata {
+  "_links": {
+    "heat_port": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "T": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "capacity": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 250, "x2": 350, "y2": 350}}}},
+    "air": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 250, "x2": 650, "y2": 350}}}},
+    "ambient": {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 250, "x2": 950, "y2": 350}}}},
+    "coolant": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 550, "x2": 650, "y2": 650}}}},
+    "coolant_boundary": {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 550, "x2": 950, "y2": 650}}}}
+  }
+}
+end
+
+ test component TestPackThermal
+  "Initial temperature [THERMAL-BENCH] (assumed), 10 K above ambient"
+  parameter T0::Temperature = 308.15
+  pack = VehicleSystemsComponents.Vehicle.Electric.PackThermal(T0 = T0) {^pack}
+  source = ThermalComponents.Sources.FixedHeatFlow(Q_flow = 0.0) {^source}
+relations
+  connect(source.port, pack.heat_port)
+metadata {
+  "_links": {
+    "pack": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 250, "x2": 550, "y2": 350}}}},
+    "source": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 250, "x2": 250, "y2": 350}}}}
+  }
+}
+end

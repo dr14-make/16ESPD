@@ -1,0 +1,65 @@
+"""
+Leaf electrothermal charge bench. Heat excludes reversible/entropic heat and charger
+losses; resistance and OCV remain temperature independent. INL studied a different
+24 kWh pack and did not state the charge windows for its average temperature rises.
+"""
+component ThermalCharge
+  "Passive conductance [THERMAL-BENCH] (assumed), 4 m^2 times 5 W/(m^2 K)"
+  parameter G_air::ThermalConductance = 20.0
+  "Initial temperature [THERMAL-BENCH] (assumed), 25 C"
+  parameter T0::Temperature = 298.15
+  "Charge power [INL-DCFC-2015] (verified), 50 kW rating"
+  parameter P_full::Power = 50000.0
+  "Current ceiling [CHARGING-1] (derived), rounded 50 kW / 350 V"
+  parameter I_cc::Current = 143.0
+  "Two-charge sequence [THERMAL-BENCH] (assumed), disabled for single charge"
+  structural parameter cycling::Boolean = false
+  "Steady highway terminal power [THERMAL-BENCH] (assumed), 20 kW"
+  parameter P_drive::Power = 20000.0
+  variable throughput::Real if cycling
+  stage = RealOutput() if cycling {^stage}
+  load = ElectricalComponents.Analog.Sources.CurrentSource() if cycling {^load}
+  "DC-link capacitance [THERMAL-BENCH] (assumed), 10 mF provides voltage continuity at leg changes"
+  link = ElectricalComponents.Analog.Basic.Capacitor(C = 0.01) {^link}
+  battery = VehicleSystemsComponents.Vehicle.Electric.ThermalTheveninCell(SoC0 = 0.1) {^battery}
+  charger = VehicleSystemsComponents.Vehicle.Electric.CCCVCharger(use_power_limit = true, I_cc = I_cc) {^charger}
+  thermal = VehicleSystemsComponents.Vehicle.Electric.PackThermal(G_air = G_air, T0 = T0) {^thermal}
+  derating = VehicleSystemsComponents.Vehicle.Electric.ThermalDerating(P_full = P_full) {^derating}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+relations
+  connect(battery.p, charger.p) {^positive}
+  connect(battery.n, charger.n, ground.g) {^negative}
+  connect(battery.heat_port, thermal.heat_port) {^heat}
+  connect(thermal.T, derating.T) {^temperature}
+  initial link.v = battery.E
+  connect(link.p, battery.p)
+  connect(link.n, battery.n)
+  if cycling
+    initial throughput = 0.0
+    der(throughput) = abs(battery.i) / battery.Q_nom
+    stage = ifelse(throughput < 0.7, 1.0, ifelse(throughput < 1.4, 2.0, ifelse(throughput < 2.1, 3.0, 4.0)))
+    charger.P_max = ifelse(stage == 1.0 or stage == 3.0, derating.P_max, 0.0)
+    load.I = ifelse(stage == 2.0, P_drive / max(battery.v, 1.0), 0.0)
+    connect(load.p, battery.p)
+    connect(load.n, battery.n)
+  else
+    connect(derating.P_max, charger.P_max) {^power}
+  end
+metadata {
+  "_links": {
+    "load": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 750, "x2": 250, "y2": 850}}}},
+    "link": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 750, "x2": 550, "y2": 850}}}},
+    "stage": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
+    "charger": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 450, "x2": 250, "y2": 550}}}},
+    "battery": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 450, "x2": 550, "y2": 550}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 650, "x2": 710, "y2": 710}}}},
+    "thermal": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 450, "x2": 850, "y2": 550}}}},
+    "derating": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 150, "x2": 550, "y2": 250}}}},
+    "positive": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "negative": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}, {"S": 2, "M": [], "E": 3}], "path": {}}},
+    "heat": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "temperature": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "power": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  }
+}
+end

@@ -1,0 +1,22 @@
+"""
+Temperature-only power ceiling. The linear interpolation is assumed, not a
+reconstruction of Nissan's BMS. Temperatures are in kelvin.
+"""
+component ThermalDerating
+  "DC rating [INL-DCFC-2015] (verified), 50 kW; ZE1 bench applicability assumed"
+  parameter P_full::Power = 50000.0
+  "Derating onset [CT-RAPIDGATE-2019] (secondary), 32 C"
+  parameter T_start::Temperature = 305.15
+  "Charging pause [INL-DCFC-2015] (verified, Nissan service literature), 55 C"
+  parameter T_stop::Temperature = 328.15
+  T = RealInput() {^T}
+  P_max = RealOutput() {^P_max}
+relations
+  P_max = P_full * min(1.0, max(0.0, (T_stop - T) / (T_stop - T_start)))
+metadata {
+  "_links": {
+    "T": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "P_max": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  }
+}
+end
