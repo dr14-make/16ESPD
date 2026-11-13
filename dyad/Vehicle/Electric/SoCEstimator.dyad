@@ -1,0 +1,79 @@
+"""
+Coulomb counter with a biased current sensor and equilibrium-voltage correction.
+I is discharge-positive current before the modeled sensor bias; I_measured = I + I_offset.
+Use I_offset = 0 when supplying an already biased measurement. After uninterrupted sampled
+rest, each tick anchors the estimate to OCV until current resumes. Inputs must be sampled
+fast enough to resolve the current profile; excursions between ticks are not detected.
+The inverse table requires strictly increasing per-cell voltages and clamps its endpoints.
+"""
+component SoCEstimator
+  I = RealInput(units = "A") {^I}
+  V = RealInput(units = "V") {^V}
+  SoC = RealOutput() {^SoC}
+  "Sensor offset [A] (assumed; [SOC-257] exercise 2)"
+  parameter I_offset::Current = 0.05
+  "Equilibrium rest [s] (verified; [USABC-EV-R4], default rest at least 1 h)"
+  parameter t_rest::Time(min = 0.0) = 3600.0
+  "Measured-current rest threshold [A] (assumed; [SOC-257], above 50 mA bias)"
+  parameter I_rest::Current(min = 0.0) = 0.1
+  "Capacity [C] (derived; [NISSAN-ZE1], 40 kWh / 350 V, as TheveninCell)"
+  parameter Q_nom::ElectricCharge(min = eps(Float64)) = 40.0e3 * 3600.0 / 350.0
+  "Series count (derived; [NISSAN-ZE1], 96s2p, as TheveninCell)"
+  parameter Ns::Real(min = eps(Float64)) = 96.0
+  "Initial estimate (assumed; [SOC-257], matches TheveninCell)"
+  parameter SoC0::Real = 0.9
+  "BMS sample period [s] (assumed; [SOC-257], resolves bench transitions)"
+  structural parameter dt::Time = 1.0
+  "Per-cell OCV axis [V] (derived; [CHEN-2020], PyBaMM, as TheveninCell)"
+  structural parameter ocv_axis::Real[:] = [2.500, 3.296, 3.485, 3.581, 3.667, 3.751, 3.841, 3.948, 4.042, 4.097, 4.200]
+  "Inverse SoC table on dummy axis (derived; [CHEN-2020], 10 percent steps)"
+  structural parameter soc_data::Real[:, :] = [[0.0, 0.0], [0.1, 0.1], [0.2, 0.2], [0.3, 0.3], [0.4, 0.4], [0.5, 0.5], [0.6, 0.6], [0.7, 0.7], [0.8, 0.8], [0.9, 0.9], [1.0, 1.0]]
+  clock = DiscreteComponents.PeriodicClock(dt = dt) {^clock}
+  current = DiscreteComponents.Sampler() {^current}
+  voltage_soc = DiscreteComponents.Sampler() {^voltage_soc}
+  inverse = BlockComponents.Tables.InterpolatedTable(axis1 = ocv_axis, axis2 = [0, 1], data = soc_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension()) {^inverse}
+  counter = VehicleSystemsComponents.Vehicle.Electric.SoCCounter(dt = dt, t_rest = t_rest, I_rest = I_rest, Q_nom = Q_nom, SoC0 = SoC0) {^counter}
+  hold = DiscreteComponents.ZeroOrderHold() {^hold}
+  variable I_measured::Current
+relations
+  I_measured = I + I_offset
+  current.u = I_measured
+  inverse.u1 = min(max(V / Ns, ocv_axis[1]), ocv_axis[size(ocv_axis, 1)])
+  inverse.u2 = 0.0
+  connect(inverse.y, voltage_soc.u) {^w1}
+  connect(current.y, counter.I, clock.y) {^w2}
+  connect(voltage_soc.y, counter.ocv_soc) {^w3}
+  connect(counter.SoC, hold.u) {^w4}
+  connect(hold.y, SoC) {^w5}
+metadata {
+  "_links": {
+    "I": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
+    "V": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "SoC": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  }
+}
+end
+
+"Sampled counter; left-endpoint integration avoids counting a future interval at t = 0."
+component SoCCounter@[input clk extends Discrete]
+  I = RealInput@[clk]()
+  ocv_soc = RealInput@[clk]()
+  SoC = RealOutput@[clk]()
+  parameter dt::Time
+  parameter t_rest::Time
+  parameter I_rest::Current
+  parameter Q_nom::ElectricCharge
+  parameter SoC0::Real
+  variable estimate::Real
+  variable quiet::Real
+  variable rest_time::Time
+relations
+  initial I@(clk-1) = 0.0
+  initial estimate@(clk-1) = SoC0
+  initial quiet@(clk-1) = 0.0
+  initial rest_time@(clk-1) = 0.0
+  quiet@clk = ifelse(abs(I@clk) < I_rest, 1.0, 0.0)
+  rest_time@clk = ifelse(quiet@clk > 0.5 and quiet@(clk-1) > 0.5, rest_time@(clk-1) + dt, 0.0)
+  estimate@clk = ifelse(quiet@clk > 0.5 and rest_time@clk >= t_rest, ocv_soc@clk, estimate@(clk-1) - dt * I@(clk-1) / Q_nom)
+  SoC = estimate
+end
