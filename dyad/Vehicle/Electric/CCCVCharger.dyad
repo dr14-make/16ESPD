@@ -1,23 +1,32 @@
 """
-Averaged, unidirectional CC-CV charger; positive current leaves p and enters the battery.
-Phase is 1 (CC), 2 (CV), or 3 (done). Cutoff is latched until reinitialization.
-The voltage regulator has a 1 ms current response and 100 kA/V droop (assumed
-[CCCV-BENCH]); its finite gain keeps the CV voltage below V_max by at most
-I_cc / 100000 V. No switching ripple, thermal derating, or input power limit is modeled.
+Constant current (CC) supplies I_cc until the battery nears V_max; constant voltage
+(CV) then tapers the current, keeping the voltage below V_max by at most I_cc*R_reg
+(1.43 mV at 143 A, 2.5 mV at 250 A with the assumed R_reg = 10 microohm).
+Phase is computed as 1 (CC), 2 (CV), or 3 (done below I_cut), but current keeps tapering
+rather than switching off or latching; positive current leaves p and enters the battery.
+No switching ripple, thermal derating, or input power limit is modeled.
 Defaults: [CHARGING-1] is charging.md section 1; [CCCV-BENCH] is issue #256.
 """
-external component CCCVCharger
+component CCCVCharger
   "CC current [A] (derived; [CHARGING-1], rounded 50 kW / 350 V)"
   parameter I_cc::Current = 143.0
   "Terminal voltage ceiling [V] (derived; [PAN-NCR18650B], 96 times 4.20 V; Leaf applicability assumed)"
   parameter V_max::Voltage = 96.0 * 4.20
   "Termination current [A] (derived; [PAN-NCR18650B], C/50 using Leaf 40 kWh / 350 V)"
   parameter I_cut::Current = (40000.0 / 350.0) / 50.0
+  "Regulator resistance [ohm] (assumed; [CCCV-BENCH])"
+  parameter R_reg::Resistance = 1e-5
+  variable v::Voltage
   p = Pin() {^p}
   n = Pin() {^n}
   current = RealOutput() {^current}
   phase = RealOutput() {^phase}
 relations
+  v = p.v - n.v
+  current = min(I_cc, max(0.0, (V_max - v) / R_reg))
+  p.i = -current
+  n.i = current
+  phase = ifelse(current < I_cut, 3.0, ifelse((V_max - v) / R_reg >= I_cc, 1.0, 2.0))
 metadata {
   "_links": {
     "p": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},

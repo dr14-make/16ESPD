@@ -4,6 +4,12 @@ using OrdinaryDiffEqDefault: solve, Rodas5P
 
 const _CC = VehicleSystemsComponents.Vehicle.Electric
 
+@testset "Plain Dyad components" begin
+    root = joinpath(@__DIR__, "..", "dyad")
+    @test all(!occursin(r"\bexternal\s+component\b", read(joinpath(dir, file), String))
+        for (dir, _, files) in walkdir(root) for file in files)
+end
+
 function _cc_check(model, ns, r0, r1, icc, vmax; label)
     m = simplify_model(model)
     s = solve(ODEProblem(m, [], (0.0, 8000.0)), Rodas5P();
@@ -16,7 +22,23 @@ function _cc_check(model, ns, r0, r1, icc, vmax; label)
     @test phases[1] == 1
     @test phases[end] == 3
     @test length(transitions) == 2
-    tc, td = s.t[transitions]
+    function first_crossing(predicate)
+        j = findfirst(predicate, s.t)
+        @test j !== nothing && j > 1
+        lo, hi = s.t[j - 1], s.t[j]
+        for _ in 1:50
+            mid = (lo + hi) / 2
+            if predicate(mid)
+                hi = mid
+            else
+                lo = mid
+            end
+        end
+        return hi
+    end
+    rreg, icut = 1e-5, (40000 / 350) / 50
+    tc = first_crossing(t -> at(t, b.v) > vmax - icc * rreg)
+    td = first_crossing(t -> at(t, c.current) < icut)
     @test phases[transitions] == [2, 3]
     @test at(1.0, c.current) ≈ icc atol = 1e-5
     @test at(tc / 2, c.current) ≈ icc atol = 1e-5
@@ -29,17 +51,26 @@ function _cc_check(model, ns, r0, r1, icc, vmax; label)
     soc = s(ts, idxs = b.SoC).u
     @test maximum(volts) <= vmax + 0.003
     @test minimum(currents) >= -1e-7
-    @test maximum(currents) <= icc + 1e-5
+    # Dense interpolation of the algebraic voltage need not satisfy the current constraint.
+    @test maximum(s[c.current]) <= icc + 1e-5
     cv = collect(range(tc + 0.01, td - 0.01; length = 1000))
     @test all(diff(s(cv, idxs = c.current).u) .<= 1e-5)
     @test maximum(abs.(s(cv, idxs = b.v).u .- vmax)) < 0.003
-    @test at(td - 0.001, c.current) ≈ (40000 / 350) / 50 atol = 1e-4
-    @test at(td + 0.001, c.current) == 0.0
-    @test all(iszero, s(collect(td + 1:1:8000), idxs = c.current).u)
+    @test at(td, c.current) ≈ icut atol = 1e-7
+    @test at(td - 0.001, c.current) > icut
+    @test 0.0 < at(td + 0.001, c.current) < icut
+    @test at(td - 0.001, c.phase) == 2
+    @test at(td + 0.001, c.phase) == 3
+    @test all(0.0 .< s(collect(td + 1:1:8000), idxs = c.current).u .< icut)
+    @test maximum(abs.(rreg .* s[c.current] .-
+        min.(icc * rreg, max.(0.0, vmax .- s[b.v])))) < 1e-8
+    @test s(ts, idxs = c.phase).u ==
+        ifelse.(currents .< icut, 3.0, ifelse.((vmax .- volts) ./ rreg .>= icc, 1.0, 2.0))
     @test 0.99 < soc[end] < 1.0
     @test all(diff(soc) .>= -1e-9)
-    @test at(td + 10, b.SoC) ≈ soc[end] atol = 1e-10
-    @test at(tc, b.SoC) ≈ 0.1 + icc * (tc - 0.001) / (40000 * 3600 / 350) atol = 1e-7
+    @test 0.99 < at(td, b.SoC) < soc[end]
+    @test at(td + 10, b.SoC) < soc[end]
+    @test at(tc, b.SoC) ≈ 0.1 + icc * tc / (40000 * 3600 / 350) atol = 1e-7
     @test maximum(abs.(s(ts, idxs = b.i).u .+ currents)) < 1e-8
     @test maximum(abs.(s(ts, idxs = c.p.i).u .+ s(ts, idxs = b.p.i).u)) < 1e-8
     println("$label: switch OCV=$switch_ocv V/cell, IR/cell=$(icc*r0/ns) V, " *

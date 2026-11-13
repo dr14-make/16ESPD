@@ -59,7 +59,7 @@ this is not a model of a particular production 800 V pack.
   ### Components
   # Subcomponent charger of type VehicleSystemsComponents.Vehicle.Electric.CCCVCharger
   charger_overrides = __pop_subcomponent_overrides!(__overrides, "charger")
-  push!(__systems, @named charger = VehicleSystemsComponents.Vehicle.Electric.CCCVCharger(; I_cc=Float64(250.0), V_max=192.0 * 4.2, __symbol_overrides(charger_overrides)...))
+  push!(__systems, @named charger = VehicleSystemsComponents.Vehicle.Electric.CCCVCharger(; I_cc=Float64(250.0), V_max=192.0 * 4.2, __overrides = charger_overrides))
   # Subcomponent battery of type VehicleSystemsComponents.Vehicle.Electric.TheveninCell
   battery_overrides = __pop_subcomponent_overrides!(__overrides, "battery")
   push!(__systems, @named battery = VehicleSystemsComponents.Vehicle.Electric.TheveninCell(; Ns=Float64(192.0), R0=0.2, R1=Float64(0.0), SoC0=0.1, __overrides = battery_overrides))
