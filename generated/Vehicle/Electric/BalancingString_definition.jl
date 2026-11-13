@@ -132,6 +132,48 @@ The low-current stage is a CV stand-in, not the production charger.
   # Subcomponent ground of type ElectricalComponents.Analog.Basic.Ground
   ground_overrides = __pop_subcomponent_overrides!(__overrides, "ground")
   push!(__systems, @named ground = ElectricalComponents.Analog.Basic.Ground(; __overrides = ground_overrides))
+  # Subcomponent current of type BlockComponents.Sources.Constant
+  current_overrides = __pop_subcomponent_overrides!(__overrides, "current")
+  push!(__systems, @named current = BlockComponents.Sources.Constant(; k=I_string, __overrides = current_overrides))
+  # Subcomponent enabled of type BlockComponents.Sources.Constant
+  enabled_overrides = __pop_subcomponent_overrides!(__overrides, "enabled")
+  push!(__systems, @named enabled = BlockComponents.Sources.Constant(; k=balancing, __overrides = enabled_overrides))
+  # Subcomponent min12 of type BlockComponents.Math.Min
+  min12_overrides = __pop_subcomponent_overrides!(__overrides, "min12")
+  push!(__systems, @named min12 = BlockComponents.Math.Min(; __overrides = min12_overrides))
+  # Subcomponent min34 of type BlockComponents.Math.Min
+  min34_overrides = __pop_subcomponent_overrides!(__overrides, "min34")
+  push!(__systems, @named min34 = BlockComponents.Math.Min(; __overrides = min34_overrides))
+  # Subcomponent minimum of type BlockComponents.Math.Min
+  minimum_overrides = __pop_subcomponent_overrides!(__overrides, "minimum")
+  push!(__systems, @named minimum = BlockComponents.Math.Min(; __overrides = minimum_overrides))
+  # Subcomponent max12 of type BlockComponents.Math.Max
+  max12_overrides = __pop_subcomponent_overrides!(__overrides, "max12")
+  push!(__systems, @named max12 = BlockComponents.Math.Max(; __overrides = max12_overrides))
+  # Subcomponent max34 of type BlockComponents.Math.Max
+  max34_overrides = __pop_subcomponent_overrides!(__overrides, "max34")
+  push!(__systems, @named max34 = BlockComponents.Math.Max(; __overrides = max34_overrides))
+  # Subcomponent maximum of type BlockComponents.Math.Max
+  maximum_overrides = __pop_subcomponent_overrides!(__overrides, "maximum")
+  push!(__systems, @named maximum = BlockComponents.Math.Max(; __overrides = maximum_overrides))
+  # Subcomponent v1 of type ElectricalComponents.Analog.Sensors.VoltageSensor
+  v1_overrides = __pop_subcomponent_overrides!(__overrides, "v1")
+  push!(__systems, @named v1 = ElectricalComponents.Analog.Sensors.VoltageSensor(; __overrides = v1_overrides))
+  # Subcomponent v2 of type ElectricalComponents.Analog.Sensors.VoltageSensor
+  v2_overrides = __pop_subcomponent_overrides!(__overrides, "v2")
+  push!(__systems, @named v2 = ElectricalComponents.Analog.Sensors.VoltageSensor(; __overrides = v2_overrides))
+  # Subcomponent v3 of type ElectricalComponents.Analog.Sensors.VoltageSensor
+  v3_overrides = __pop_subcomponent_overrides!(__overrides, "v3")
+  push!(__systems, @named v3 = ElectricalComponents.Analog.Sensors.VoltageSensor(; __overrides = v3_overrides))
+  # Subcomponent v4 of type ElectricalComponents.Analog.Sensors.VoltageSensor
+  v4_overrides = __pop_subcomponent_overrides!(__overrides, "v4")
+  push!(__systems, @named v4 = ElectricalComponents.Analog.Sensors.VoltageSensor(; __overrides = v4_overrides))
+  # Subcomponent discharge_rate of type BlockComponents.Sources.Constant
+  discharge_rate_overrides = __pop_subcomponent_overrides!(__overrides, "discharge_rate")
+  push!(__systems, @named discharge_rate = BlockComponents.Sources.Constant(; k=max(I_string, 0.0) / 3600, __overrides = discharge_rate_overrides))
+  # Subcomponent discharge of type BlockComponents.Continuous.Integrator
+  discharge_overrides = __pop_subcomponent_overrides!(__overrides, "discharge")
+  push!(__systems, @named discharge = BlockComponents.Continuous.Integrator(; x0=Float64(0.0), __overrides = discharge_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -142,36 +184,34 @@ The low-current stage is a CV stand-in, not the production charger.
   isnothing(__ovr_Ah_out__guess) || (__guesses[Ah_out] = __ovr_Ah_out__guess)
 
   ### Initialization Equations
-  push!(__initialization_eqs, Ah_out ~ 0.0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
-  push!(__eqs, source.I ~ I_string)
-  push!(__eqs, v_min ~ min(min(c1.v, c2.v), min(c3.v, c4.v)))
-  push!(__eqs, v_max ~ max(max(c1.v, c2.v), max(c3.v, c4.v)))
-  push!(__eqs, ModelingToolkit.D_nounits(Ah_out) ~ max(I_string, 0.0) / 3600)
-  push!(__eqs, b1.voltage ~ c1.v)
-  push!(__eqs, b1.minimum_voltage ~ v_min)
-  push!(__eqs, b1.active ~ balancing)
-  push!(__eqs, b2.voltage ~ c2.v)
-  push!(__eqs, b2.minimum_voltage ~ v_min)
-  push!(__eqs, b2.active ~ balancing)
-  push!(__eqs, b3.voltage ~ c3.v)
-  push!(__eqs, b3.minimum_voltage ~ v_min)
-  push!(__eqs, b3.active ~ balancing)
-  push!(__eqs, b4.voltage ~ c4.v)
-  push!(__eqs, b4.minimum_voltage ~ v_min)
-  push!(__eqs, b4.active ~ balancing)
-  push!(__eqs, connect(c1.n, ground.g, source.n))
-  push!(__eqs, connect(c1.p, c2.n))
-  push!(__eqs, connect(c2.p, c3.n))
-  push!(__eqs, connect(c3.p, c4.n))
-  push!(__eqs, connect(c4.p, source.p))
+  push!(__eqs, v_min ~ minimum.y)
+  push!(__eqs, v_max ~ maximum.y)
+  push!(__eqs, Ah_out ~ discharge.y)
+  push!(__eqs, connect(discharge_rate.y, discharge.u))
+  push!(__eqs, connect(current.y, source.I))
+  push!(__eqs, connect(enabled.y, b1.active, b2.active, b3.active, b4.active))
+  push!(__eqs, connect(c1.n, ground.g, source.n, v1.n))
+  push!(__eqs, connect(c1.p, c2.n, v1.p, v2.n))
+  push!(__eqs, connect(c2.p, c3.n, v2.p, v3.n))
+  push!(__eqs, connect(c3.p, c4.n, v3.p, v4.n))
+  push!(__eqs, connect(c4.p, source.p, v4.p))
+  push!(__eqs, connect(minimum.y, b1.minimum_voltage, b2.minimum_voltage, b3.minimum_voltage, b4.minimum_voltage))
+  push!(__eqs, connect(min12.y, minimum.u1))
+  push!(__eqs, connect(min34.y, minimum.u2))
+  push!(__eqs, connect(max12.y, maximum.u1))
+  push!(__eqs, connect(max34.y, maximum.u2))
+  push!(__eqs, connect(v1.v, b1.voltage, min12.u1, max12.u1))
   push!(__eqs, connect(b1.bleed, c1.enable))
+  push!(__eqs, connect(v2.v, b2.voltage, min12.u2, max12.u2))
   push!(__eqs, connect(b2.bleed, c2.enable))
+  push!(__eqs, connect(v3.v, b3.voltage, min34.u1, max34.u1))
   push!(__eqs, connect(b3.bleed, c3.enable))
+  push!(__eqs, connect(v4.v, b4.voltage, min34.u2, max34.u2))
   push!(__eqs, connect(b4.bleed, c4.enable))
 
   # Return completely constructed System

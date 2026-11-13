@@ -74,6 +74,12 @@
   # Subcomponent active of type BlockComponents.Sources.Step
   active_overrides = __pop_subcomponent_overrides!(__overrides, "active")
   push!(__systems, @named active = BlockComponents.Sources.Step(; height=-1.0, offset=Float64(1.0), start_time=Float64(100.0), __overrides = active_overrides))
+  # Subcomponent cell_voltage of type BlockComponents.Sources.Constant
+  cell_voltage_overrides = __pop_subcomponent_overrides!(__overrides, "cell_voltage")
+  push!(__systems, @named cell_voltage = BlockComponents.Sources.Constant(; k=voltage, __overrides = cell_voltage_overrides))
+  # Subcomponent min_voltage of type BlockComponents.Sources.Constant
+  min_voltage_overrides = __pop_subcomponent_overrides!(__overrides, "min_voltage")
+  push!(__systems, @named min_voltage = BlockComponents.Sources.Constant(; k=minimum_voltage, __overrides = min_voltage_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -86,8 +92,8 @@
   __assertions = []
 
   ### Equations
-  push!(__eqs, channel.voltage ~ voltage)
-  push!(__eqs, channel.minimum_voltage ~ minimum_voltage)
+  push!(__eqs, connect(cell_voltage.y, channel.voltage))
+  push!(__eqs, connect(min_voltage.y, channel.minimum_voltage))
   push!(__eqs, connect(active.y, channel.active))
 
   # Return completely constructed System

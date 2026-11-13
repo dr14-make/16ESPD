@@ -116,6 +116,12 @@ losses, junction capacitance, and temperature dependence are outside this slow B
   # Subcomponent ambient of type ThermalComponents.Sources.FixedTemperature
   ambient_overrides = __pop_subcomponent_overrides!(__overrides, "ambient")
   push!(__systems, @named ambient = ThermalComponents.Sources.FixedTemperature(; T=298.15, __overrides = ambient_overrides))
+  # Subcomponent duty of type BlockComponents.Nonlinear.Limiter
+  duty_overrides = __pop_subcomponent_overrides!(__overrides, "duty")
+  push!(__systems, @named duty = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0.0), y_max=Float64(1.0), __overrides = duty_overrides))
+  # Subcomponent conductance of type BlockComponents.Math.Gain
+  conductance_overrides = __pop_subcomponent_overrides!(__overrides, "conductance")
+  push!(__systems, @named conductance = BlockComponents.Math.Gain(; k=1 / R_bleed, __overrides = conductance_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -132,11 +138,13 @@ losses, junction capacitance, and temperature dependence are outside this slow B
 
   ### Equations
   push!(__eqs, v ~ p.v - n.v)
-  push!(__eqs, shunt.G ~ min(max(enable, 0.0), 1.0) / R_bleed)
   push!(__eqs, I_bleed ~ shunt.i)
   push!(__eqs, P_bleed ~ v * I_bleed)
   push!(__eqs, connect(p, cell.p, shunt.p))
   push!(__eqs, connect(n, cell.n, shunt.n))
+  push!(__eqs, connect(enable, duty.u))
+  push!(__eqs, connect(duty.y, conductance.u))
+  push!(__eqs, connect(conductance.y, shunt.G))
   push!(__eqs, connect(shunt.heat_port, ambient.port))
 
   # Return completely constructed System
