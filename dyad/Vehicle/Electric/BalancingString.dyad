@@ -1,0 +1,74 @@
+"""
+Four-cell series bench. I_string is discharge-positive; the test harness sequences
+CC, a timed low-current top-up, and discharge without replacing the cell states.
+The low-current stage is a CV stand-in, not the production charger.
+"""
+test component BalancingString
+  "Per-cell capacity multipliers [BALANCING-BENCH] (assumed), plus/minus 3 percent"
+  parameter capacity_scale::Real[4] = [1.03, 1.01, 0.99, 0.97]
+  "Initial SoC spread [BALANCING-BENCH] (assumed)"
+  parameter SoC0::Real[4] = [0.30, 0.32, 0.34, 0.36]
+  "Bench current, discharge-positive [BALANCING-BENCH] (assumed), C/10 charge"
+  parameter I_string::Current = -3.31
+  "Balancing gate, 0/1 [BALANCING-BENCH] (assumed); off during CC/discharge"
+  parameter balancing::Real = 0.0
+  c1 = VehicleSystemsComponents.Vehicle.Electric.BleedCell(Q_nom = 33.1 * 3600 * capacity_scale[1], SoC0 = SoC0[1]) {^c1}
+  b1 = VehicleSystemsComponents.Vehicle.Electric.PassiveBalancer() {^b1}
+  c2 = VehicleSystemsComponents.Vehicle.Electric.BleedCell(Q_nom = 33.1 * 3600 * capacity_scale[2], SoC0 = SoC0[2]) {^c2}
+  b2 = VehicleSystemsComponents.Vehicle.Electric.PassiveBalancer() {^b2}
+  c3 = VehicleSystemsComponents.Vehicle.Electric.BleedCell(Q_nom = 33.1 * 3600 * capacity_scale[3], SoC0 = SoC0[3]) {^c3}
+  b3 = VehicleSystemsComponents.Vehicle.Electric.PassiveBalancer() {^b3}
+  c4 = VehicleSystemsComponents.Vehicle.Electric.BleedCell(Q_nom = 33.1 * 3600 * capacity_scale[4], SoC0 = SoC0[4]) {^c4}
+  b4 = VehicleSystemsComponents.Vehicle.Electric.PassiveBalancer() {^b4}
+  source = ElectricalComponents.Analog.Sources.CurrentSource() {^source}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  variable v_min::Voltage
+  variable v_max::Voltage
+  variable Ah_out::Real
+relations
+  source.I = I_string
+  v_min = min(min(c1.v, c2.v), min(c3.v, c4.v))
+  v_max = max(max(c1.v, c2.v), max(c3.v, c4.v))
+  initial Ah_out = 0.0
+  der(Ah_out) = max(I_string, 0.0) / 3600
+  connect(c1.n, ground.g, source.n) {^reference}
+  connect(c1.p, c2.n) {^series1}
+  connect(c2.p, c3.n) {^series2}
+  connect(c3.p, c4.n) {^series3}
+  connect(c4.p, source.p) {^positive}
+  b1.voltage = c1.v
+  b1.minimum_voltage = v_min
+  b1.active = balancing
+  connect(b1.bleed, c1.enable) {^command1}
+  b2.voltage = c2.v
+  b2.minimum_voltage = v_min
+  b2.active = balancing
+  connect(b2.bleed, c2.enable) {^command2}
+  b3.voltage = c3.v
+  b3.minimum_voltage = v_min
+  b3.active = balancing
+  connect(b3.bleed, c3.enable) {^command3}
+  b4.voltage = c4.v
+  b4.minimum_voltage = v_min
+  b4.active = balancing
+  connect(b4.bleed, c4.enable) {^command4}
+metadata {
+  "_links": {
+    "c1": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 350, "x2": 300, "y2": 450}}}},
+    "b1": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 100, "x2": 300, "y2": 200}}}},
+    "c2": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 350, "x2": 500, "y2": 450}}}},
+    "b2": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 100, "x2": 500, "y2": 200}}}},
+    "c3": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 350, "x2": 700, "y2": 450}}}},
+    "b3": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 100, "x2": 700, "y2": 200}}}},
+    "c4": {"Dyad": {"placement": {"diagram": {"x1": 800, "y1": 350, "x2": 900, "y2": 450}}}},
+    "b4": {"Dyad": {"placement": {"diagram": {"x1": 800, "y1": 100, "x2": 900, "y2": 200}}}},
+    "source": {"Dyad": {"placement": {"diagram": {"x1": 1100, "y1": 350, "x2": 1200, "y2": 450}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 600, "x2": 200, "y2": 700}}}}
+  }
+}
+end
+
+analysis BalancingStringTransient
+  extends TransientAnalysis(stop = 100.0, reltol = 1e-8, abstol = 1e-10)
+  model = VehicleSystemsComponents.Vehicle.Electric.BalancingString()
+end

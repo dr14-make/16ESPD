@@ -18,6 +18,7 @@ const GROUPS = [
     "lecture04" => ["machine_plausibility.jl", "converter_plausibility.jl", "battery_plausibility.jl",
         "efficiency_map_plausibility.jl"],
     "thevenin" => ["thevenin_plausibility.jl"],
+    "balancing" => ["balancing_plausibility.jl"],
     "lecture05" => ["lecture05_plausibility.jl"],
     "lecture05_positions" => ["lecture05_positions.jl"],
     "switching" => ["switching_plausibility.jl"],

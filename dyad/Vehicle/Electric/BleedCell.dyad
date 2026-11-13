@@ -1,0 +1,63 @@
+"""
+Single Leaf-sized Thevenin cell with a switched resistive shunt. Enable is 0/1;
+fractional inputs represent duty-averaged conductance, not a constant-current sink.
+The cell's SoC and polarization states supply the charge-storage dynamics. Switching
+losses, junction capacitance, and temperature dependence are outside this slow BMS model.
+"""
+component BleedCell
+  extends ElectricalComponents.Analog.Interfaces.TwoPin
+  enable = RealInput() {^enable}
+  "Cell capacity [ORNL-LEAF-ECM] (verified), in coulombs"
+  parameter Q_nom::ElectricCharge = 33.1 * 3600
+  "Initial SoC [BALANCING-BENCH] (assumed)"
+  parameter SoC0::Real = 0.3
+  "3.7 V / 0.260 A; between [TI-BQ79616] 240 mA and [NXP-MC33771C] 300 mA (derived)"
+  parameter R_bleed::Resistance = 3.7 / 0.260
+  "Single-cell Ns (derived); pulse-5 R0/R1/tau [ORNL-LEAF-ECM] (derived), as in TestTheveninCell"
+  cell = VehicleSystemsComponents.Vehicle.Electric.TheveninCell(Ns = 1.0, Q_nom = Q_nom, SoC0 = SoC0, R0 = 0.00160, R1 = 0.00134, tau1 = 25.7) {^cell}
+  shunt = ElectricalComponents.Analog.Basic.VariableConductor() {^shunt}
+  "Isothermal shunt [BALANCING-BENCH] (assumed), 25 C"
+  ambient = ThermalComponents.Sources.FixedTemperature(T = 298.15) {^ambient}
+  variable I_bleed::Current
+  variable P_bleed::Power
+relations
+  connect(p, cell.p, shunt.p) {^positive}
+  connect(n, cell.n, shunt.n) {^negative}
+  shunt.G = min(max(enable, 0.0), 1.0) / R_bleed
+  connect(shunt.heat_port, ambient.port) {^heat}
+  I_bleed = shunt.i
+  P_bleed = v * I_bleed
+metadata {
+  "_links": {
+    "cell": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 250, "x2": 350, "y2": 350}}}},
+    "shunt": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 550, "x2": 350, "y2": 650}}}},
+    "ambient": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 550, "x2": 650, "y2": 650}}}},
+    "enable": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50}}}}
+  }
+}
+end
+
+test component TestBleedCell
+  "Initial SoC [BALANCING-BENCH] (assumed); approximately 3.7 V"
+  parameter SoC0::Real = 0.44
+  "Bleed resistance [TI-BQ79616] (derived), nominal 240 mA at 3.7 V"
+  parameter R_bleed::Resistance = 3.7 / 0.240
+  battery = VehicleSystemsComponents.Vehicle.Electric.BleedCell(SoC0 = SoC0, R_bleed = R_bleed) {^battery}
+  command = BlockComponents.Sources.Step(height = 1.0, start_time = 10.0) {^command}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+relations
+  connect(command.y, battery.enable) {^control}
+  connect(battery.n, ground.g) {^reference}
+metadata {
+  "_links": {
+    "battery": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 250, "x2": 550, "y2": 350}}}},
+    "command": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 50, "x2": 250, "y2": 150}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 450, "x2": 750, "y2": 550}}}}
+  }
+}
+end
+
+analysis BleedTransient
+  extends TransientAnalysis(stop = 5100.0, tstops = [10.0], reltol = 1e-8, abstol = 1e-10)
+  model = VehicleSystemsComponents.Vehicle.Electric.TestBleedCell()
+end
