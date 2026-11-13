@@ -156,16 +156,37 @@ Electrical defaults and their provenance are inherited unchanged.
   push!(__systems, @named ohmic = ElectricalComponents.Analog.Basic.Resistor(; R=R0, __overrides = ohmic_overrides))
   # Subcomponent polarization of type ElectricalComponents.Analog.Basic.Resistor
   polarization_overrides = __pop_subcomponent_overrides!(__overrides, "polarization")
-  push!(__systems, @named polarization = ElectricalComponents.Analog.Basic.Resistor(; R=R1, __overrides = polarization_overrides))
+  push!(__systems, @named polarization = ElectricalComponents.Analog.Basic.Resistor(; R=max(R1, 1e-15), __overrides = polarization_overrides))
   # Subcomponent capacitor of type ElectricalComponents.Analog.Basic.Capacitor
   capacitor_overrides = __pop_subcomponent_overrides!(__overrides, "capacitor")
-  push!(__systems, @named capacitor = ElectricalComponents.Analog.Basic.Capacitor(; C=tau1 / R1, __overrides = capacitor_overrides))
+  push!(__systems, @named capacitor = ElectricalComponents.Analog.Basic.Capacitor(; C=tau1 / max(R1, 1e-15), __overrides = capacitor_overrides))
   # Subcomponent current of type ElectricalComponents.Analog.Sensors.CurrentSensor
   current_overrides = __pop_subcomponent_overrides!(__overrides, "current")
   push!(__systems, @named current = ElectricalComponents.Analog.Sensors.CurrentSensor(; __overrides = current_overrides))
   # Subcomponent charge of type BlockComponents.Continuous.Integrator
   charge_overrides = __pop_subcomponent_overrides!(__overrides, "charge")
   push!(__systems, @named charge = BlockComponents.Continuous.Integrator(; k=-1.0 / Q_nom, x0=SoC0, __overrides = charge_overrides))
+  # Subcomponent ohmic_square of type BlockComponents.Math.Product
+  ohmic_square_overrides = __pop_subcomponent_overrides!(__overrides, "ohmic_square")
+  push!(__systems, @named ohmic_square = BlockComponents.Math.Product(; __overrides = ohmic_square_overrides))
+  # Subcomponent ohmic_heat of type BlockComponents.Math.Gain
+  ohmic_heat_overrides = __pop_subcomponent_overrides!(__overrides, "ohmic_heat")
+  push!(__systems, @named ohmic_heat = BlockComponents.Math.Gain(; k=R0, __overrides = ohmic_heat_overrides))
+  # Subcomponent polarization_sensor of type ElectricalComponents.Analog.Sensors.VoltageSensor
+  polarization_sensor_overrides = __pop_subcomponent_overrides!(__overrides, "polarization_sensor")
+  push!(__systems, @named polarization_sensor = ElectricalComponents.Analog.Sensors.VoltageSensor(; __overrides = polarization_sensor_overrides))
+  # Subcomponent polarization_square of type BlockComponents.Math.Product
+  polarization_square_overrides = __pop_subcomponent_overrides!(__overrides, "polarization_square")
+  push!(__systems, @named polarization_square = BlockComponents.Math.Product(; __overrides = polarization_square_overrides))
+  # Subcomponent polarization_heat of type BlockComponents.Math.Gain
+  polarization_heat_overrides = __pop_subcomponent_overrides!(__overrides, "polarization_heat")
+  push!(__systems, @named polarization_heat = BlockComponents.Math.Gain(; k=ifelse(R1 > 0.0, 1.0 / max(R1, 1e-30), 0.0), __overrides = polarization_heat_overrides))
+  # Subcomponent heat_sum of type BlockComponents.Math.Add
+  heat_sum_overrides = __pop_subcomponent_overrides!(__overrides, "heat_sum")
+  push!(__systems, @named heat_sum = BlockComponents.Math.Add(; __overrides = heat_sum_overrides))
+  # Subcomponent heat_source of type ThermalComponents.Sources.PrescribedHeatFlow
+  heat_source_overrides = __pop_subcomponent_overrides!(__overrides, "heat_source")
+  push!(__systems, @named heat_source = ThermalComponents.Sources.PrescribedHeatFlow(; __overrides = heat_source_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -187,8 +208,6 @@ Electrical defaults and their provenance are inherited unchanged.
   push!(__eqs, E ~ series_count.y)
   push!(__eqs, i ~ current.i)
   push!(__eqs, v1 ~ capacitor.v)
-  push!(__eqs, dissipated ~ R0 * i ^ 2 + ifelse(R1 > 0.0, v1 ^ 2 / max(R1, 1e-30), 0.0))
-  push!(__eqs, heat_port.Q_flow ~ -dissipated)
   push!(__eqs, connect(n, current.p))
   push!(__eqs, connect(current.n, ocv.n))
   push!(__eqs, connect(ocv.p, polarization.p, capacitor.p))
@@ -200,6 +219,16 @@ Electrical defaults and their provenance are inherited unchanged.
   push!(__eqs, connect(dummy_axis.y, table.u2))
   push!(__eqs, connect(table.y, series_count.u))
   push!(__eqs, connect(series_count.y, stored_voltage, ocv.V))
+  push!(__eqs, connect(stored_current, ohmic_square.u1, ohmic_square.u2))
+  push!(__eqs, connect(ohmic_square.y, ohmic_heat.u))
+  push!(__eqs, connect(capacitor.p, polarization_sensor.p))
+  push!(__eqs, connect(capacitor.n, polarization_sensor.n))
+  push!(__eqs, connect(polarization_sensor.v, polarization_square.u1, polarization_square.u2))
+  push!(__eqs, connect(polarization_square.y, polarization_heat.u))
+  push!(__eqs, connect(ohmic_heat.y, heat_sum.u1))
+  push!(__eqs, connect(polarization_heat.y, heat_sum.u2))
+  push!(__eqs, connect(heat_sum.y, dissipated, heat_source.Q_flow))
+  push!(__eqs, connect(heat_source.port, heat_port))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -7,8 +7,8 @@
 @doc Markdown.doc"""
    BalancerRequestEquation(; name, voltage_width, __overrides)
 
+y = u1 * 0.25 * (1 + tanh((u2 - u3) / voltage_width)) * (1 + tanh((u4 - u5) / voltage_width))
 Smooth regenerative shunt request: u1 is limited enable, u2 measured delta, u3 delta threshold, u4 measured voltage, and u5 top threshold.
-Expression: y = u1 * 0.25 * (1 + tanh((u2 - u3) / voltage_width)) * (1 + tanh((u4 - u5) / voltage_width)).
 
 ## Parameters:
 

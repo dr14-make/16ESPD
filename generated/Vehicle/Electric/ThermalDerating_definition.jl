@@ -83,6 +83,21 @@ reconstruction of Nissan's BMS. Temperatures are in kelvin.
   __constants = Any[]
 
   ### Components
+  # Subcomponent stop_temperature of type BlockComponents.Sources.Constant
+  stop_temperature_overrides = __pop_subcomponent_overrides!(__overrides, "stop_temperature")
+  push!(__systems, @named stop_temperature = BlockComponents.Sources.Constant(; k=T_stop, __overrides = stop_temperature_overrides))
+  # Subcomponent temperature_difference of type BlockComponents.Math.Add
+  temperature_difference_overrides = __pop_subcomponent_overrides!(__overrides, "temperature_difference")
+  push!(__systems, @named temperature_difference = BlockComponents.Math.Add(; k2=-1.0, __overrides = temperature_difference_overrides))
+  # Subcomponent fraction of type BlockComponents.Math.Gain
+  fraction_overrides = __pop_subcomponent_overrides!(__overrides, "fraction")
+  push!(__systems, @named fraction = BlockComponents.Math.Gain(; k=1.0 / (T_stop - T_start), __overrides = fraction_overrides))
+  # Subcomponent clamp_fraction of type BlockComponents.Nonlinear.Limiter
+  clamp_fraction_overrides = __pop_subcomponent_overrides!(__overrides, "clamp_fraction")
+  push!(__systems, @named clamp_fraction = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0.0), y_max=Float64(1.0), __overrides = clamp_fraction_overrides))
+  # Subcomponent power of type BlockComponents.Math.Gain
+  power_overrides = __pop_subcomponent_overrides!(__overrides, "power")
+  push!(__systems, @named power = BlockComponents.Math.Gain(; k=P_full, __overrides = power_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -95,7 +110,12 @@ reconstruction of Nissan's BMS. Temperatures are in kelvin.
   __assertions = []
 
   ### Equations
-  push!(__eqs, P_max ~ P_full * min(1.0, max(0.0, (T_stop - T) / (T_stop - T_start))))
+  push!(__eqs, connect(stop_temperature.y, temperature_difference.u1))
+  push!(__eqs, connect(T, temperature_difference.u2))
+  push!(__eqs, connect(temperature_difference.y, fraction.u))
+  push!(__eqs, connect(fraction.y, clamp_fraction.u))
+  push!(__eqs, connect(clamp_fraction.y, power.u))
+  push!(__eqs, connect(power.y, P_max))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

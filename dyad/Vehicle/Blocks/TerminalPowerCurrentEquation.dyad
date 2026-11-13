@@ -1,0 +1,18 @@
+"""
+y = P / max(u1, 1.0).
+Convert terminal power to current with the original one-volt denominator floor.
+"""
+component TerminalPowerCurrentEquation
+  parameter P::Real = 20000.0
+  u1 = RealInput() {^u1}
+  y = RealOutput() {^y}
+relations
+  y = P / max(u1, 1.0)
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Blocks/Equation.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1100}]},
+  "_links": {
+    "u1": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": 20, "y1": 480, "x2": 60, "y2": 520}}}},
+    "y": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 940, "y1": 480, "x2": 980, "y2": 520}}}}
+  }
+}
+end

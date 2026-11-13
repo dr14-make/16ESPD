@@ -17,5 +17,8 @@ end
 
 @testset "`VehicleSystemsComponents.Vehicle.Blocks`" begin
 include("BalancerRequestEquation_test.jl")
+include("CCCVPowerCurrentEquation_test.jl")
+include("CCCVVoltageCurrentEquation_test.jl")
 include("SoCPhaseEquation_test.jl")
+include("TerminalPowerCurrentEquation_test.jl")
 end

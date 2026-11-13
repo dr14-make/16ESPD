@@ -8,12 +8,11 @@ component ThermalACvsDC
   "Passive conductance [THERMAL-BENCH] (assumed), 20 W/K; zero for adiabatic check"
   parameter G_air::ThermalConductance = 20.0
   dc = VehicleSystemsComponents.Vehicle.Electric.ThermalCharge(G_air = G_air) {^dc}
-  "ACL2 power [INL-DCFC-2015] (verified), 3.3 kW"
   ac = VehicleSystemsComponents.Vehicle.Electric.ThermalCharge(G_air = G_air, P_full = 3300.0) {^ac}
 metadata {
   "_links": {
-    "dc": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 250, "x2": 450, "y2": 450}}}},
-    "ac": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 250, "x2": 850, "y2": 450}}}}
+    "ac": {"Dyad":{"placement":{"diagram":{"x1":620,"x2":820,"y1":260,"y2":460}}}},
+    "dc": {"Dyad":{"placement":{"diagram":{"x1":180,"x2":380,"y1":260,"y2":460}}}}
   }
 }
 end

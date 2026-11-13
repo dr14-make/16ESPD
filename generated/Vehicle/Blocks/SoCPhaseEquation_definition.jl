@@ -7,8 +7,8 @@
 @doc Markdown.doc"""
    SoCPhaseEquation(; name, period, __overrides)
 
+y = mod(u1, period)
 Daily phase in seconds from elapsed time u1; preserves the original modulo boundary.
-Expression: y = mod(u1, period).
 
 ## Parameters:
 

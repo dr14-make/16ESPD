@@ -21,46 +21,78 @@ component PackThermal
   parameter T0::Temperature = T_ambient
   heat_port = HeatPort() {^heat_port}
   T = RealOutput() {^T}
+  variable E_in::Energy
+  variable E_out::Energy
+  input_flow = ThermalComponents.Sensors.HeatFlowSensor() {^input_flow}
   capacity = ThermalComponents.Components.HeatCapacitor(C = mass * cp, T0 = T0) {^capacity}
   air = ThermalComponents.Components.ThermalConductor(G = G_air) {^air}
   coolant = ThermalComponents.Components.ThermalConductor(G = G_coolant) {^coolant}
   ambient = ThermalComponents.Sources.FixedTemperature(T = T_ambient) {^ambient}
   coolant_boundary = ThermalComponents.Sources.FixedTemperature(T = T_coolant) {^coolant_boundary}
-  variable E_in::Energy
-  variable E_out::Energy
+  temperature_sensor = ThermalComponents.Sensors.TemperatureSensor() {^temperature_sensor}
+  air_flow = ThermalComponents.Sensors.HeatFlowSensor() {^air_flow}
+  coolant_flow = ThermalComponents.Sensors.HeatFlowSensor() {^coolant_flow}
+  out_sum = BlockComponents.Math.Add() {^out_sum}
+  in_energy = BlockComponents.Continuous.Integrator(x0 = 0.0) {^in_energy}
+  out_energy = BlockComponents.Continuous.Integrator(x0 = 0.0) {^out_energy}
 relations
-  initial E_in = 0.0
-  initial E_out = 0.0
-  connect(heat_port, capacity.port, air.port_a, coolant.port_a)
-  connect(air.port_b, ambient.port)
-  connect(coolant.port_b, coolant_boundary.port)
-  T = capacity.T
-  der(E_in) = heat_port.Q_flow
-  der(E_out) = air.Q_flow + coolant.Q_flow
+  # Compatibility aliases retain the public energy histories; states live in integrators.
+  E_in = in_energy.y
+  E_out = out_energy.y
+  connect(heat_port, input_flow.port_a) {^thermal_wire1}
+  connect(input_flow.port_b, capacity.port, air_flow.port_a, coolant_flow.port_a, temperature_sensor.port) {^thermal_wire2}
+  connect(air_flow.port_b, air.port_a) {^thermal_wire3}
+  connect(coolant_flow.port_b, coolant.port_a) {^thermal_wire4}
+  connect(air.port_b, ambient.port) {^thermal_wire5}
+  connect(coolant.port_b, coolant_boundary.port) {^thermal_wire6}
+  connect(temperature_sensor.T, T) {^thermal_wire7}
+  connect(input_flow.Q_flow, in_energy.u) {^thermal_wire8}
+  connect(air_flow.Q_flow, out_sum.u1) {^thermal_wire9}
+  connect(coolant_flow.Q_flow, out_sum.u2) {^thermal_wire10}
+  connect(out_sum.y, out_energy.u) {^thermal_wire11}
 metadata {
   "_links": {
-    "heat_port": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
-    "T": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
-    "capacity": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 250, "x2": 350, "y2": 350}}}},
-    "air": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 250, "x2": 650, "y2": 350}}}},
-    "ambient": {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 250, "x2": 950, "y2": 350}}}},
-    "coolant": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 550, "x2": 650, "y2": 650}}}},
-    "coolant_boundary": {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 550, "x2": 950, "y2": 650}}}}
+    "T": {"Dyad":{"placement":{"diagram":{"x1":950,"x2":970,"y1":150,"y2":170},"icon":{"x1":950,"x2":1050,"y1":450,"y2":550}}}},
+    "air": {"Dyad":{"placement":{"diagram":{"x1":440,"x2":520,"y1":240,"y2":320}}}},
+    "air_flow": {"Dyad":{"placement":{"diagram":{"x1":280,"x2":360,"y1":240,"y2":320}}}},
+    "ambient": {"Dyad":{"placement":{"diagram":{"x1":620,"x2":700,"y1":240,"y2":320}}}},
+    "capacity": {"Dyad":{"placement":{"diagram":{"x1":280,"x2":360,"y1":120,"y2":200}}}},
+    "coolant": {"Dyad":{"placement":{"diagram":{"x1":440,"x2":520,"y1":520,"y2":600}}}},
+    "coolant_boundary": {"Dyad":{"placement":{"diagram":{"x1":620,"x2":700,"y1":520,"y2":600}}}},
+    "coolant_flow": {"Dyad":{"placement":{"diagram":{"x1":280,"x2":360,"y1":520,"y2":600}}}},
+    "heat_port": {"Dyad":{"placement":{"diagram":{"x1":20,"x2":40,"y1":350,"y2":370},"icon":{"x1":-50,"x2":50,"y1":450,"y2":550}}}},
+    "in_energy": {"Dyad":{"placement":{"diagram":{"x1":280,"x2":360,"y1":760,"y2":840}}}},
+    "input_flow": {"Dyad":{"placement":{"diagram":{"x1":120,"x2":200,"y1":320,"y2":400}}}},
+    "out_energy": {"Dyad":{"placement":{"diagram":{"x1":800,"x2":880,"y1":760,"y2":840}}}},
+    "out_sum": {"Dyad":{"placement":{"diagram":{"x1":600,"x2":680,"y1":760,"y2":840}}}},
+    "temperature_sensor": {"Dyad":{"placement":{"diagram":{"x1":760,"x2":840,"y1":120,"y2":200}}}},
+    "thermal_wire1": {"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"path":{}}},
+    "thermal_wire10": {"Dyad":{"edges":[{"E":2,"M":[{"x":460.0,"y":600.0},{"x":460.0,"y":824.0}],"S":1}],"path":{}}},
+    "thermal_wire11": {"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"path":{}}},
+    "thermal_wire2": {"Dyad":{"edges":[{"E":2,"M":[{"x":260.0,"y":360.0},{"x":260.0,"y":200.0}],"S":1},{"E":3,"M":[{"x":240.0,"y":360.0},{"x":240.0,"y":280.0}],"S":1},{"E":4,"M":[{"x":240.0,"y":360.0},{"x":240.0,"y":560.0}],"S":1},{"E":5,"M":[{"x":480.0,"y":360.0},{"x":480.0,"y":160.0}],"S":1}],"path":{}}},
+    "thermal_wire3": {"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"path":{}}},
+    "thermal_wire4": {"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"path":{}}},
+    "thermal_wire5": {"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"path":{}}},
+    "thermal_wire6": {"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"path":{}}},
+    "thermal_wire7": {"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"path":{}}},
+    "thermal_wire8": {"Dyad":{"edges":[{"E":2,"M":[{"x":220.0,"y":400.0},{"x":220.0,"y":800.0}],"S":1}],"path":{}}},
+    "thermal_wire9": {"Dyad":{"edges":[{"E":2,"M":[{"x":460.0,"y":320.0},{"x":460.0,"y":776.0}],"S":1}],"path":{}}}
   }
 }
 end
 
- test component TestPackThermal
+test component TestPackThermal
   "Initial temperature [THERMAL-BENCH] (assumed), 10 K above ambient"
   parameter T0::Temperature = 308.15
   pack = VehicleSystemsComponents.Vehicle.Electric.PackThermal(T0 = T0) {^pack}
   source = ThermalComponents.Sources.FixedHeatFlow(Q_flow = 0.0) {^source}
 relations
-  connect(source.port, pack.heat_port)
+  connect(source.port, pack.heat_port) {^thermal_wire1}
 metadata {
   "_links": {
-    "pack": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 250, "x2": 550, "y2": 350}}}},
-    "source": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 250, "x2": 250, "y2": 350}}}}
+    "pack": {"Dyad":{"placement":{"diagram":{"x1":520,"x2":600,"y1":300,"y2":380}}}},
+    "source": {"Dyad":{"placement":{"diagram":{"x1":240,"x2":320,"y1":300,"y2":380}}}},
+    "thermal_wire1": {"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"path":{}}}
   }
 }
 end

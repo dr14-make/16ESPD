@@ -16,50 +16,69 @@ component ThermalCharge
   structural parameter cycling::Boolean = false
   "Steady highway terminal power [THERMAL-BENCH] (assumed), 20 kW"
   parameter P_drive::Power = 20000.0
-  variable throughput::Real if cycling
-  stage = RealOutput() if cycling {^stage}
-  load = ElectricalComponents.Analog.Sources.CurrentSource() if cycling {^load}
-  "DC-link capacitance [THERMAL-BENCH] (assumed), 10 mF provides voltage continuity at leg changes"
-  link = ElectricalComponents.Analog.Basic.Capacitor(C = 0.01) {^link}
+  variable throughput::Real
+  stage = RealOutput() {^stage}
   battery = VehicleSystemsComponents.Vehicle.Electric.ThermalTheveninCell(SoC0 = 0.1) {^battery}
   charger = VehicleSystemsComponents.Vehicle.Electric.CCCVCharger(use_power_limit = true, I_cc = I_cc) {^charger}
   thermal = VehicleSystemsComponents.Vehicle.Electric.PackThermal(G_air = G_air, T0 = T0) {^thermal}
   derating = VehicleSystemsComponents.Vehicle.Electric.ThermalDerating(P_full = P_full) {^derating}
   ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  link = ElectricalComponents.Analog.Basic.Capacitor(C = 0.01) {^link}
+  load = ElectricalComponents.Analog.Sources.CurrentSource() {^load}
+  voltage_sensor = ElectricalComponents.Analog.Sensors.VoltageSensor() {^voltage_sensor}
+  absolute_current = BlockComponents.Math.Abs() {^absolute_current}
+  throughput_integrator = BlockComponents.Continuous.Integrator(k = 1.0 / battery.Q_nom, x0 = 0.0) {^throughput_integrator}
+  leg1 = BlockComponents.Logical.LessThreshold(threshold = ifelse(cycling, 0.7, 1e300)) {^leg1}
+  leg2 = BlockComponents.Logical.LessThreshold(threshold = ifelse(cycling, 1.4, -1e300)) {^leg2}
+  leg3 = BlockComponents.Logical.LessThreshold(threshold = 2.1) {^leg3}
+  one = BlockComponents.Sources.Constant(k = 1.0) {^one}
+  two = BlockComponents.Sources.Constant(k = 2.0) {^two}
+  three = BlockComponents.Sources.Constant(k = 3.0) {^three}
+  four = BlockComponents.Sources.Constant(k = 4.0) {^four}
+  last_stage = BlockComponents.Logical.Switch() {^last_stage}
+  middle_stage = BlockComponents.Logical.Switch() {^middle_stage}
+  first_stage = BlockComponents.Logical.Switch() {^first_stage}
+  not_leg1 = BlockComponents.Logical.Not() {^not_leg1}
+  drive_gate = BlockComponents.Logical.And() {^drive_gate}
+  not_leg2 = BlockComponents.Logical.Not() {^not_leg2}
+  second_charge = BlockComponents.Logical.And() {^second_charge}
+  charge_gate = BlockComponents.Logical.Or() {^charge_gate}
+  zero = BlockComponents.Sources.Constant(k = 0.0) {^zero}
+  charge_power = BlockComponents.Logical.Switch() {^charge_power}
+  drive_current = VehicleSystemsComponents.Vehicle.Blocks.TerminalPowerCurrentEquation(P = P_drive) {^drive_current}
+  drive_command = BlockComponents.Logical.Switch() {^drive_command}
 relations
-  connect(battery.p, charger.p) {^positive}
-  connect(battery.n, charger.n, ground.g) {^negative}
-  connect(battery.heat_port, thermal.heat_port) {^heat}
-  connect(thermal.T, derating.T) {^temperature}
+  # Initial voltage continuity is an initial condition, not a signal connection.
   initial link.v = battery.E
-  connect(link.p, battery.p)
-  connect(link.n, battery.n)
-  if cycling
-    initial throughput = 0.0
-    der(throughput) = abs(battery.i) / battery.Q_nom
-    stage = ifelse(throughput < 0.7, 1.0, ifelse(throughput < 1.4, 2.0, ifelse(throughput < 2.1, 3.0, 4.0)))
-    charger.P_max = ifelse(stage == 1.0 or stage == 3.0, derating.P_max, 0.0)
-    load.I = ifelse(stage == 2.0, P_drive / max(battery.v, 1.0), 0.0)
-    connect(load.p, battery.p)
-    connect(load.n, battery.n)
-  else
-    connect(derating.P_max, charger.P_max) {^power}
-  end
-metadata {
-  "_links": {
-    "load": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 750, "x2": 250, "y2": 850}}}},
-    "link": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 750, "x2": 550, "y2": 850}}}},
-    "stage": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
-    "charger": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 450, "x2": 250, "y2": 550}}}},
-    "battery": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 450, "x2": 550, "y2": 550}}}},
-    "ground": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 650, "x2": 710, "y2": 710}}}},
-    "thermal": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 450, "x2": 850, "y2": 550}}}},
-    "derating": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 150, "x2": 550, "y2": 250}}}},
-    "positive": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "negative": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}, {"S": 2, "M": [], "E": 3}], "path": {}}},
-    "heat": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "temperature": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "power": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  }
-}
+  # Compatibility alias: the standard integrator owns the throughput state.
+  throughput = throughput_integrator.y
+  connect(battery.p, charger.p, link.p, load.p, voltage_sensor.p) {^thermal_wire1}
+  connect(battery.n, charger.n, ground.g, link.n, load.n, voltage_sensor.n) {^thermal_wire2}
+  connect(battery.heat_port, thermal.heat_port) {^thermal_wire3}
+  connect(thermal.T, derating.T) {^thermal_wire4}
+  connect(battery.stored_current, absolute_current.u) {^thermal_wire5}
+  connect(absolute_current.y, throughput_integrator.u) {^thermal_wire6}
+  connect(throughput_integrator.y, leg1.u, leg2.u, leg3.u) {^thermal_wire7}
+  connect(one.y, first_stage.u1) {^thermal_wire8}
+  connect(two.y, middle_stage.u1) {^thermal_wire9}
+  connect(three.y, last_stage.u1) {^thermal_wire10}
+  connect(four.y, last_stage.u3) {^thermal_wire11}
+  connect(leg3.y, last_stage.u2, second_charge.u2) {^thermal_wire12}
+  connect(last_stage.y, middle_stage.u3) {^thermal_wire13}
+  connect(leg2.y, middle_stage.u2, drive_gate.u2, not_leg2.u) {^thermal_wire14}
+  connect(middle_stage.y, first_stage.u3) {^thermal_wire15}
+  connect(leg1.y, first_stage.u2, not_leg1.u, charge_gate.u1) {^thermal_wire16}
+  connect(first_stage.y, stage) {^thermal_wire17}
+  connect(not_leg1.y, drive_gate.u1) {^thermal_wire18}
+  connect(not_leg2.y, second_charge.u1) {^thermal_wire19}
+  connect(second_charge.y, charge_gate.u2) {^thermal_wire20}
+  connect(derating.P_max, charge_power.u1) {^thermal_wire21}
+  connect(charge_gate.y, charge_power.u2) {^thermal_wire22}
+  connect(zero.y, charge_power.u3, drive_command.u3) {^thermal_wire23}
+  connect(charge_power.y, charger.P_max) {^thermal_wire24}
+  connect(voltage_sensor.v, drive_current.u1) {^thermal_wire25}
+  connect(drive_current.y, drive_command.u1) {^thermal_wire26}
+  connect(drive_gate.y, drive_command.u2) {^thermal_wire27}
+  connect(drive_command.y, load.I) {^thermal_wire28}
+metadata {"_links":{"absolute_current":{"Dyad":{"placement":{"diagram":{"x1":100,"x2":170,"y1":70,"y2":140}}}},"battery":{"Dyad":{"placement":{"diagram":{"x1":390,"x2":460,"y1":580,"y2":650}}}},"charge_gate":{"Dyad":{"placement":{"diagram":{"x1":680,"x2":750,"y1":410,"y2":480}}}},"charge_power":{"Dyad":{"placement":{"diagram":{"x1":825,"x2":895,"y1":580,"y2":650}}}},"charger":{"Dyad":{"placement":{"diagram":{"x1":100,"x2":170,"y1":580,"y2":650}}}},"derating":{"Dyad":{"placement":{"diagram":{"x1":825,"x2":895,"y1":410,"y2":480}}}},"drive_command":{"Dyad":{"placement":{"diagram":{"x1":825,"x2":895,"y1":750,"y2":820}}}},"drive_current":{"Dyad":{"placement":{"diagram":{"x1":680,"x2":750,"y1":750,"y2":820}}}},"drive_gate":{"Dyad":{"placement":{"diagram":{"x1":245,"x2":315,"y1":410,"y2":480}}}},"first_stage":{"Dyad":{"placement":{"diagram":{"x1":825,"x2":895,"y1":240,"y2":310}}}},"four":{"Dyad":{"placement":{"diagram":{"x1":535,"x2":605,"y1":240,"y2":310}}}},"ground":{"Dyad":{"placement":{"diagram":{"x1":535,"x2":605,"y1":750,"y2":820}}}},"last_stage":{"Dyad":{"placement":{"diagram":{"x1":680,"x2":750,"y1":240,"y2":310}}}},"leg1":{"Dyad":{"placement":{"diagram":{"x1":390,"x2":460,"y1":70,"y2":140}}}},"leg2":{"Dyad":{"placement":{"diagram":{"x1":535,"x2":605,"y1":70,"y2":140}}}},"leg3":{"Dyad":{"placement":{"diagram":{"x1":680,"x2":750,"y1":70,"y2":140}}}},"link":{"Dyad":{"placement":{"diagram":{"x1":390,"x2":460,"y1":750,"y2":820}}}},"load":{"Dyad":{"placement":{"diagram":{"x1":100,"x2":170,"y1":750,"y2":820}}}},"middle_stage":{"Dyad":{"placement":{"diagram":{"x1":825,"x2":895,"y1":70,"y2":140}}}},"not_leg1":{"Dyad":{"placement":{"diagram":{"x1":100,"x2":170,"y1":410,"y2":480}}}},"not_leg2":{"Dyad":{"placement":{"diagram":{"x1":390,"x2":460,"y1":410,"y2":480}}}},"one":{"Dyad":{"placement":{"diagram":{"x1":100,"x2":170,"y1":240,"y2":310}}}},"second_charge":{"Dyad":{"placement":{"diagram":{"x1":535,"x2":605,"y1":410,"y2":480}}}},"stage":{"Dyad":{"placement":{"diagram":{"x1":950,"x2":970,"y1":265,"y2":285},"icon":{"x1":450,"x2":550,"y1":950,"y2":1050}}}},"thermal":{"Dyad":{"placement":{"diagram":{"x1":680,"x2":750,"y1":580,"y2":650}}}},"thermal_wire1":{"Dyad":{"edges":[{"E":2,"M":[],"S":1},{"E":3,"M":[],"S":1},{"E":4,"M":[{"x":245.0,"y":615.0},{"x":245.0,"y":785.0}],"S":1},{"E":5,"M":[{"x":317.5,"y":615.0},{"x":317.5,"y":785.0}],"S":1}],"path":{}}},"thermal_wire10":{"Dyad":{"edges":[{"E":2,"M":[{"x":570.0,"y":275.0},{"x":570.0,"y":252.6}],"S":1}],"path":{}}},"thermal_wire11":{"Dyad":{"edges":[{"E":2,"M":[{"x":642.5,"y":275.0},{"x":642.5,"y":297.4}],"S":1}],"path":{}}},"thermal_wire12":{"Dyad":{"edges":[{"E":2,"M":[{"x":715.0,"y":105.0},{"x":715.0,"y":275.0}],"S":1},{"E":3,"M":[{"x":642.5,"y":105.0},{"x":642.5,"y":463.2}],"S":1}],"path":{}}},"thermal_wire13":{"Dyad":{"edges":[{"E":2,"M":[{"x":787.5,"y":275.0},{"x":787.5,"y":127.4}],"S":1}],"path":{}}},"thermal_wire14":{"Dyad":{"edges":[{"E":2,"M":[],"S":1},{"E":3,"M":[{"x":425.0,"y":105.0},{"x":425.0,"y":463.2}],"S":1},{"E":4,"M":[{"x":497.5,"y":105.0},{"x":497.5,"y":445.0}],"S":1}],"path":{}}},"thermal_wire15":{"Dyad":{"edges":[{"E":2,"M":[{"x":860.0,"y":105.0},{"x":860.0,"y":297.4}],"S":1}],"path":{}}},"thermal_wire16":{"Dyad":{"edges":[{"E":2,"M":[{"x":642.5,"y":105.0},{"x":642.5,"y":275.0}],"S":1},{"E":3,"M":[{"x":280.0,"y":105.0},{"x":280.0,"y":445.0}],"S":1},{"E":4,"M":[{"x":570.0,"y":105.0},{"x":570.0,"y":424.0}],"S":1}],"path":{}}},"thermal_wire17":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"path":{}}},"thermal_wire18":{"Dyad":{"edges":[{"E":2,"M":[{"x":207.5,"y":445.0},{"x":207.5,"y":424.0}],"S":1}],"path":{}}},"thermal_wire19":{"Dyad":{"edges":[{"E":2,"M":[{"x":497.5,"y":445.0},{"x":497.5,"y":424.0}],"S":1}],"path":{}}},"thermal_wire2":{"Dyad":{"edges":[{"E":2,"M":[],"S":1},{"E":3,"M":[{"x":515.0,"y":615.0},{"x":515.0,"y":750.0}],"S":1},{"E":4,"M":[],"S":1},{"E":5,"M":[{"x":315.0,"y":615.0},{"x":315.0,"y":785.0}],"S":1},{"E":6,"M":[{"x":387.5,"y":615.0},{"x":387.5,"y":785.0}],"S":1}],"path":{}}},"thermal_wire20":{"Dyad":{"edges":[{"E":2,"M":[{"x":608.5,"y":463.2}],"S":1}],"path":{}}},"thermal_wire21":{"Dyad":{"edges":[{"E":2,"M":[{"x":895.0,"y":410.0},{"x":842.5,"y":410.0},{"x":842.5,"y":592.6}],"S":1}],"path":{}}},"thermal_wire22":{"Dyad":{"edges":[{"E":2,"M":[{"x":787.5,"y":445.0},{"x":787.5,"y":615.0}],"S":1}],"path":{}}},"thermal_wire23":{"Dyad":{"edges":[{"E":2,"M":[{"x":570.0,"y":615.0},{"x":570.0,"y":637.4}],"S":1},{"E":3,"M":[{"x":570.0,"y":615.0},{"x":570.0,"y":807.4}],"S":1}],"path":{}}},"thermal_wire24":{"Dyad":{"edges":[{"E":2,"M":[{"x":515.0,"y":615.0},{"x":515.0,"y":580.0},{"x":135,"y":580},{"x":135,"y":581.4}],"S":1}],"path":{}}},"thermal_wire25":{"Dyad":{"edges":[{"E":2,"M":[{"x":480.0,"y":820.0},{"x":480.0,"y":785.0}],"S":1}],"path":{}}},"thermal_wire26":{"Dyad":{"edges":[{"E":2,"M":[{"x":787.5,"y":785.0},{"x":787.5,"y":762.6}],"S":1}],"path":{}}},"thermal_wire27":{"Dyad":{"edges":[{"E":2,"M":[{"x":570.0,"y":445.0},{"x":570.0,"y":785.0}],"S":1}],"path":{}}},"thermal_wire28":{"Dyad":{"edges":[{"E":2,"M":[{"x":515.0,"y":785.0},{"x":515.0,"y":750.0}],"S":1}],"path":{}}},"thermal_wire3":{"Dyad":{"edges":[{"E":2,"M":[{"x":397.0,"y":615.0}],"S":1}],"path":{}}},"thermal_wire4":{"Dyad":{"edges":[{"E":2,"M":[{"x":787.5,"y":615.0},{"x":787.5,"y":445.0}],"S":1}],"path":{}}},"thermal_wire5":{"Dyad":{"edges":[{"E":2,"M":[{"x":269.5,"y":650.0},{"x":269.5,"y":105.0}],"S":1}],"path":{}}},"thermal_wire6":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"path":{}}},"thermal_wire7":{"Dyad":{"edges":[{"E":2,"M":[],"S":1},{"E":3,"M":[],"S":1},{"E":4,"M":[],"S":1}],"path":{}}},"thermal_wire8":{"Dyad":{"edges":[{"E":2,"M":[{"x":497.5,"y":275.0},{"x":497.5,"y":252.6}],"S":1}],"path":{}}},"thermal_wire9":{"Dyad":{"edges":[{"E":2,"M":[{"x":570.0,"y":275.0},{"x":570.0,"y":82.6}],"S":1}],"path":{}}},"three":{"Dyad":{"placement":{"diagram":{"x1":390,"x2":460,"y1":240,"y2":310}}}},"throughput_integrator":{"Dyad":{"placement":{"diagram":{"x1":245,"x2":315,"y1":70,"y2":140}}}},"two":{"Dyad":{"placement":{"diagram":{"x1":245,"x2":315,"y1":240,"y2":310}}}},"voltage_sensor":{"Dyad":{"placement":{"diagram":{"x1":245,"x2":315,"y1":750,"y2":820}}}},"zero":{"Dyad":{"placement":{"diagram":{"x1":245,"x2":315,"y1":580,"y2":650}}}}}}
 end

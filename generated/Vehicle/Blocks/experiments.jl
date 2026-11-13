@@ -10,4 +10,7 @@ end
 
 
 include("BalancerRequestEquation_experiment.jl")
+include("CCCVPowerCurrentEquation_experiment.jl")
+include("CCCVVoltageCurrentEquation_experiment.jl")
 include("SoCPhaseEquation_experiment.jl")
+include("TerminalPowerCurrentEquation_experiment.jl")

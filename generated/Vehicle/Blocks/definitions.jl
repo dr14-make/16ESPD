@@ -204,4 +204,7 @@ end
 
 
 include("BalancerRequestEquation_definition.jl")
+include("CCCVPowerCurrentEquation_definition.jl")
+include("CCCVVoltageCurrentEquation_definition.jl")
 include("SoCPhaseEquation_definition.jl")
+include("TerminalPowerCurrentEquation_definition.jl")
