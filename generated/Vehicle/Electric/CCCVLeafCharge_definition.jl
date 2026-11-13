@@ -70,7 +70,7 @@ The capacity, OCV table, and RC time constant are inherited from TheveninCell.
   ### Components
   # Subcomponent charger of type VehicleSystemsComponents.Vehicle.Electric.CCCVCharger
   charger_overrides = __pop_subcomponent_overrides!(__overrides, "charger")
-  push!(__systems, @named charger = VehicleSystemsComponents.Vehicle.Electric.CCCVCharger(; __symbol_overrides(charger_overrides)...))
+  push!(__systems, @named charger = VehicleSystemsComponents.Vehicle.Electric.CCCVCharger(; __overrides = charger_overrides))
   # Subcomponent battery of type VehicleSystemsComponents.Vehicle.Electric.TheveninCell
   battery_overrides = __pop_subcomponent_overrides!(__overrides, "battery")
   push!(__systems, @named battery = VehicleSystemsComponents.Vehicle.Electric.TheveninCell(; SoC0=0.1, R1=R1, __overrides = battery_overrides))
