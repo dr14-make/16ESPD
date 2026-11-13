@@ -20,6 +20,7 @@ const GROUPS = [
     "thevenin" => ["thevenin_plausibility.jl"],
     "cccv" => ["cccv_plausibility.jl"],
     "socest" => ["socest_plausibility.jl"],
+    "balancing" => ["balancing_plausibility.jl"],
     "lecture05" => ["lecture05_plausibility.jl"],
     "lecture05_positions" => ["lecture05_positions.jl"],
     "switching" => ["switching_plausibility.jl"],

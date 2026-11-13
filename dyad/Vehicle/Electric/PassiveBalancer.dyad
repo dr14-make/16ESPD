@@ -1,0 +1,75 @@
+"""
+One channel of a minimum-referenced passive balancer; instantiate once per cell.
+Only enabled near top of charge. A smooth regenerative latch retains its fraction
+inside the voltage deadband. Its output is a duty-averaged shunt command; finite
+voltage resolution and measurement dynamics avoid sliding on a hard threshold.
+The top gate resets at V_active - delta_on, below its turn-on voltage, so the
+shunt's own terminal-voltage sag cannot toggle the gate.
+"""
+component PassiveBalancer
+  voltage = RealInput() {^voltage}
+  minimum_voltage = RealInput() {^minimum_voltage}
+  active = RealInput() {^active}
+  bleed = RealOutput() {^bleed}
+  "Set threshold [BALANCING-BENCH] (assumed), 10 mV above minimum"
+  parameter delta_on::Voltage = 0.010
+  "Reset threshold [BALANCING-BENCH] (assumed), 5 mV above minimum"
+  parameter delta_off::Voltage = 0.005
+  "Top-of-charge gate [BALANCING-BENCH] (assumed), NMC stand-in"
+  parameter V_active::Voltage = 4.05
+  "Duty-command transition time [BALANCING-BENCH] (assumed)"
+  parameter latch_time::Time = 0.1
+  "Voltage measurement filter [BALANCING-BENCH] (assumed), slower than shunt actuation"
+  parameter measurement_time::Time = 1.0
+  variable measured_voltage::Voltage
+  variable measured_delta::Voltage
+  "Smooth threshold width [BALANCING-BENCH] (assumed), below hysteresis band"
+  parameter voltage_width::Voltage = 0.0002
+  variable fraction::Real
+  variable request::Real
+  variable delta_threshold::Voltage
+  variable top_threshold::Voltage
+relations
+  initial measured_voltage = voltage
+  initial measured_delta = voltage - minimum_voltage
+  measurement_time * der(measured_voltage) = voltage - measured_voltage
+  measurement_time * der(measured_delta) = voltage - minimum_voltage - measured_delta
+  initial fraction = 0.0
+  delta_threshold = delta_on - (delta_on - delta_off) * fraction
+  top_threshold = V_active - delta_on * fraction
+  request = min(max(active, 0.0), 1.0) * 0.25 * (1 + tanh((measured_delta - delta_threshold) / voltage_width)) * (1 + tanh((measured_voltage - top_threshold) / voltage_width))
+  latch_time * der(fraction) = request - fraction
+  bleed = min(max(active, 0.0), 1.0) * fraction
+metadata {
+  "_links": {
+    "voltage": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+    "minimum_voltage": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "active": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 750, "x2": 50, "y2": 850}}}},
+    "bleed": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  }
+}
+end
+
+test component TestPassiveBalancer
+  "Test voltage [BALANCING-BENCH] (assumed), above turn-on threshold"
+  parameter voltage::Voltage = 4.12
+  "String minimum [BALANCING-BENCH] (assumed)"
+  parameter minimum_voltage::Voltage = 4.10
+  channel = VehicleSystemsComponents.Vehicle.Electric.PassiveBalancer() {^channel}
+  active = BlockComponents.Sources.Step(height = -1.0, offset = 1.0, start_time = 100.0) {^active}
+relations
+  channel.voltage = voltage
+  channel.minimum_voltage = minimum_voltage
+  connect(active.y, channel.active) {^command}
+metadata {
+  "_links": {
+    "channel": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 250, "x2": 550, "y2": 350}}}},
+    "active": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 250, "x2": 250, "y2": 350}}}}
+  }
+}
+end
+
+analysis BalancerTransient
+  extends TransientAnalysis(stop = 150.0, tstops = [100.0], reltol = 1e-8, abstol = 1e-10)
+  model = VehicleSystemsComponents.Vehicle.Electric.TestPassiveBalancer()
+end
