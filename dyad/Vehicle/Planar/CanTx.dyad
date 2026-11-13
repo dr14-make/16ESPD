@@ -1,0 +1,62 @@
+connector CanBus
+  potential vehicle_speed::Real
+  potential steering_angle::Real
+  potential yaw_rate::Real
+  potential friction_demand::Real
+  potential front_abs_active::Real
+  potential motor_request::Real
+  potential dashboard_speed::Real
+end
+
+component CanPack@[input clk extends Discrete]
+  u = RealInput@[clk]()
+  y = RealOutput@[clk]()
+  parameter scale::Real = 1
+  parameter offset::Real = 0
+  parameter raw_min::Real = 0
+  parameter raw_max::Real = 65535
+relations
+  y = offset + scale * clamp(floor((u - offset) / scale + 0.5), raw_min, raw_max)
+end
+
+component CanTx
+  u = RealInput()
+  y = RealOutput()
+  structural parameter ideal::Boolean = false
+  structural parameter period::Real = 0.01
+  parameter scale::Real = 1
+  parameter offset::Real = 0
+  parameter raw_min::Real = 0
+  parameter raw_max::Real = 65535
+  clock = DiscreteComponents.PeriodicClock(dt = period) if !ideal
+  sampler = DiscreteComponents.Sampler() if !ideal
+  pack = CanPack(scale = scale, offset = offset, raw_min = raw_min, raw_max = raw_max) if !ideal
+  delay = DiscreteComponents.UnitDelay() if !ideal
+  hold = DiscreteComponents.ZeroOrderHold() if !ideal
+relations
+  if ideal
+    y = u
+  else
+    connect(u, sampler.u)
+    connect(sampler.y, pack.u, clock.y)
+    connect(pack.y, delay.u)
+    connect(delay.y, hold.u)
+    connect(hold.y, y)
+  end
+end
+
+component CanTxStep
+  structural parameter period::Real = 0.02
+  source = BlockComponents.Sources.Step(height = 3.33, start_time = 5 * period)
+  tx = CanTx(period = period, scale = 0.1)
+  response = BlockComponents.Continuous.FirstOrder(T = 0.01)
+relations
+  connect(source.y, tx.u)
+  connect(tx.y, response.u)
+  initial response.x = 0
+end
+
+analysis CanTxStepTransient
+  extends TransientAnalysis(stop = 0.2, dtmax = 0.001)
+  model = CanTxStep()
+end

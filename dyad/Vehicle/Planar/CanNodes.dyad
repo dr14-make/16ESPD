@@ -1,0 +1,350 @@
+component CanSensorNode
+  bus = CanBus() {^bus}
+  measurements = CarBusIn() {^measurements}
+  structural parameter ideal::Boolean = false
+  structural parameter speed_period::Real = 0.01
+  structural parameter steering_period::Real = 0.01
+  structural parameter yaw_period::Real = 0.01
+  structural parameter dashboard_period::Real = 0.1
+  motion = BusMotion()
+  speed_tx = CanTx(ideal = ideal, period = speed_period, scale = 0.01, raw_min = -32768, raw_max = 32767)
+  steering_tx = CanTx(ideal = ideal, period = steering_period, scale = 0.001, raw_min = -32768, raw_max = 32767)
+  yaw_tx = CanTx(ideal = ideal, period = yaw_period, scale = 0.001, raw_min = -32768, raw_max = 32767)
+  dashboard_tx = CanTx(ideal = ideal, period = dashboard_period, scale = 0.01, raw_min = -32768, raw_max = 32767)
+relations
+  connect(measurements, motion.bus)
+  connect(motion.vx, speed_tx.u, dashboard_tx.u)
+  connect(motion.delta_sw, steering_tx.u)
+  connect(motion.r, yaw_tx.u)
+  bus.vehicle_speed = speed_tx.y
+  bus.steering_angle = steering_tx.y
+  bus.yaw_rate = yaw_tx.y
+  bus.dashboard_speed = dashboard_tx.y
+metadata {
+  "_links": {
+    "bus": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": 470,
+            "x2": 530,
+            "y1": -30,
+            "y2": 30
+          }
+        }
+      }
+    },
+    "measurements": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": -30,
+            "x2": 30,
+            "y1": 470,
+            "y2": 530
+          }
+        }
+      }
+    }
+  }
+}
+end
+
+component CanBlendNode
+  bus = CanBus() {^bus}
+  tau_ref = RealInput() {^tau_ref}
+  structural parameter ideal::Boolean = false
+  structural parameter friction_period::Real = 0.02
+  structural parameter torque_period::Real = 0.02
+  parameter ratio::Real = 8.193
+  parameter radius::Length = 0.31
+  parameter tau_max::Torque = 320
+  parameter P_charge::Power = 80.5e3
+  parameter v_fade::Real = 10
+  blend = VehicleSystemsComponents.Vehicle.Electric.RegenBlend(abs_rule = true, ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade)
+  kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour()
+  friction_tx = CanTx(ideal = ideal, period = friction_period, scale = 0.1, raw_min = 0, raw_max = 65535)
+  torque_tx = CanTx(ideal = ideal, period = torque_period, scale = 0.1, raw_min = -32768, raw_max = 32767)
+relations
+  connect(tau_ref, blend.tau_ref)
+  kmh.u = bus.vehicle_speed
+  connect(kmh.y, blend.v)
+  blend.abs_active = bus.front_abs_active
+  connect(blend.tau_brake, friction_tx.u)
+  connect(blend.tau_motor, torque_tx.u)
+  bus.friction_demand = friction_tx.y
+  bus.motor_request = torque_tx.y
+metadata {
+  "_links": {
+    "bus": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": 470,
+            "x2": 530,
+            "y1": 970,
+            "y2": 1030
+          }
+        }
+      }
+    },
+    "tau_ref": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": -30,
+            "x2": 30,
+            "y1": 270,
+            "y2": 330
+          }
+        }
+      }
+    }
+  }
+}
+end
+
+component CanBrakeNode
+  bus = CanBus() {^bus}
+  kappa_fl = RealInput() {^kappa_fl}
+  kappa_fr = RealInput() {^kappa_fr}
+  kappa_rl = RealInput() {^kappa_rl}
+  kappa_rr = RealInput() {^kappa_rr}
+  tau_fl = RealOutput() {^tau_fl}
+  tau_fr = RealOutput() {^tau_fr}
+  tau_rl = RealOutput() {^tau_rl}
+  tau_rr = RealOutput() {^tau_rr}
+  structural parameter ideal::Boolean = false
+  structural parameter abs_period::Real = 0.01
+  parameter esp_on::Real = 1
+  parameter abs_on::Real = 1
+  parameter radius::Length = 0.31
+  parameter T_full::Torque = 2500
+  ecu = BrakeControlUnit(report_front = true, esp_on = esp_on, abs_on = abs_on, radius = radius, T_max = T_full)
+  abs_tx = CanTx(ideal = ideal, period = abs_period, scale = 1, raw_min = 0, raw_max = 1)
+relations
+  ecu.demand = bus.friction_demand
+  ecu.vx = bus.vehicle_speed
+  ecu.delta_sw = bus.steering_angle
+  ecu.r = bus.yaw_rate
+  connect(kappa_fl, ecu.kappa_fl)
+  connect(kappa_fr, ecu.kappa_fr)
+  connect(kappa_rl, ecu.kappa_rl)
+  connect(kappa_rr, ecu.kappa_rr)
+  connect(ecu.tau_fl, tau_fl)
+  connect(ecu.tau_fr, tau_fr)
+  connect(ecu.tau_rl, tau_rl)
+  connect(ecu.tau_rr, tau_rr)
+  connect(ecu.front_active, abs_tx.u)
+  bus.front_abs_active = abs_tx.y
+metadata {
+  "_links": {
+    "bus": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": 470,
+            "x2": 530,
+            "y1": -30,
+            "y2": 30
+          }
+        }
+      }
+    },
+    "kappa_fl": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": -30,
+            "x2": 30,
+            "y1": 670,
+            "y2": 730
+          }
+        }
+      }
+    },
+    "kappa_fr": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": -30,
+            "x2": 30,
+            "y1": 820,
+            "y2": 880
+          }
+        }
+      }
+    },
+    "kappa_rl": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": 170,
+            "x2": 230,
+            "y1": 970,
+            "y2": 1030
+          }
+        }
+      }
+    },
+    "kappa_rr": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": 770,
+            "x2": 830,
+            "y1": 970,
+            "y2": 1030
+          }
+        }
+      }
+    },
+    "tau_fl": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": 970,
+            "x2": 1030,
+            "y1": 170,
+            "y2": 230
+          }
+        }
+      }
+    },
+    "tau_fr": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": 970,
+            "x2": 1030,
+            "y1": 370,
+            "y2": 430
+          }
+        }
+      }
+    },
+    "tau_rl": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": 970,
+            "x2": 1030,
+            "y1": 570,
+            "y2": 630
+          }
+        }
+      }
+    },
+    "tau_rr": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": 970,
+            "x2": 1030,
+            "y1": 770,
+            "y2": 830
+          }
+        }
+      }
+    }
+  }
+}
+end
+
+component CanDriveNode
+  bus = CanBus() {^bus}
+  spline = Spline() {^spline}
+  support = Spline() {^support}
+  structural parameter ideal::Boolean = false
+  parameter ratio::Real = 8.193
+  parameter P_aux::Power = 300
+  "Receiver conditioning keeps the inverter request continuous above base speed"
+  parameter T_receive::Time = 0.01
+  drive = VehicleSystemsComponents.Vehicle.Electric.ElectricDrive(ratio = ratio, P_aux = P_aux)
+  response = BlockComponents.Continuous.FirstOrder(T = T_receive) if !ideal
+relations
+  if ideal
+    drive.tau_ref = bus.motor_request
+  else
+    response.u = bus.motor_request
+    connect(response.y, drive.tau_ref)
+    initial response.x = 0
+  end
+  connect(drive.spline, spline)
+  connect(drive.support, support)
+metadata {
+  "_links": {
+    "bus": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": -30,
+            "x2": 30,
+            "y1": 470,
+            "y2": 530
+          }
+        }
+      }
+    },
+    "spline": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": 970,
+            "x2": 1030,
+            "y1": 470,
+            "y2": 530
+          }
+        }
+      }
+    },
+    "support": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": 820,
+            "x2": 880,
+            "y1": 970,
+            "y2": 1030
+          }
+        }
+      }
+    }
+  }
+}
+end
+
+component CanClusterNode
+  bus = CanBus() {^bus}
+  speed = RealOutput() {^speed}
+relations
+  speed = bus.dashboard_speed {^speed}
+metadata {
+  "_links": {
+    "bus": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": -30,
+            "x2": 30,
+            "y1": 470,
+            "y2": 530
+          }
+        }
+      }
+    },
+    "speed": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": 970,
+            "x2": 1030,
+            "y1": 470,
+            "y2": 530
+          }
+        }
+      }
+    }
+  }
+}
+end

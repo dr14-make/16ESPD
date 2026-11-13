@@ -1,0 +1,74 @@
+external component CanRollingCar
+  throttle = RealInput()
+  brake = RealInput()
+  steer = RealInput()
+  structural parameter can::Boolean = true
+  structural parameter ideal::Boolean = false
+  structural parameter period::Real = 0.01
+  parameter v0::Velocity = 22.22222222222222
+end
+
+component CanHardStop
+  structural parameter can::Boolean = true
+  structural parameter ideal::Boolean = false
+  structural parameter period::Real = 0.01
+  parameter v0::Velocity = 22.22222222222222
+  zero = BlockComponents.Sources.Constant(k = 0)
+  pedal = BlockComponents.Sources.Ramp(height = 1, duration = 0.1, start_time = 0.5)
+  reference = CanRollingCar(can = false, v0 = v0) if !can
+  vehicle = CanRollingCar(can = true, ideal = ideal, period = period, v0 = v0) if can
+relations
+  if can
+    connect(zero.y, vehicle.throttle, vehicle.steer)
+    connect(pedal.y, vehicle.brake)
+  else
+    connect(zero.y, reference.throttle, reference.steer)
+    connect(pedal.y, reference.brake)
+  end
+end
+
+component CanReferenceStopBench
+  extends CanHardStop(can = false)
+end
+
+analysis CanReferenceStop
+  extends TransientAnalysis(stop = 6, alg = ODEAlg.Rodas5P(), dtmax = 0.005, tstops = [0.5, 0.6], optimize = OptimizationLevel.None(), abstol = 1e-7, reltol = 1e-7)
+  model = CanReferenceStopBench()
+end
+
+component CanIdealStopBench
+  extends CanHardStop(ideal = true)
+end
+
+analysis CanIdealStop
+  extends TransientAnalysis(stop = 6, alg = ODEAlg.Rodas5P(), dtmax = 0.005, tstops = [0.5, 0.6], optimize = OptimizationLevel.None(), abstol = 1e-7, reltol = 1e-7)
+  model = CanIdealStopBench()
+end
+
+component Can10msStopBench
+  extends CanHardStop(period = 0.01)
+end
+
+analysis Can10msStop
+  extends TransientAnalysis(stop = 6, alg = ODEAlg.Rodas5P(), dtmax = 0.005, tstops = [0.5, 0.6], optimize = OptimizationLevel.None(), abstol = 1e-7, reltol = 1e-7)
+  model = Can10msStopBench()
+end
+
+component Can20msStopBench
+  extends CanHardStop(period = 0.02)
+end
+
+analysis Can20msStop
+  extends TransientAnalysis(stop = 6, alg = ODEAlg.Rodas5P(), dtmax = 0.005, tstops = [0.5, 0.6], optimize = OptimizationLevel.None(), abstol = 1e-7, reltol = 1e-7)
+  model = Can20msStopBench()
+end
+
+component Can40msStopBench
+  extends CanHardStop(period = 0.04)
+end
+
+analysis Can40msStop
+  extends TransientAnalysis(stop = 6, alg = ODEAlg.Rodas5P(), dtmax = 0.005, tstops = [0.5, 0.6], optimize = OptimizationLevel.None(), abstol = 1e-7, reltol = 1e-7)
+  model = Can40msStopBench()
+end
+
