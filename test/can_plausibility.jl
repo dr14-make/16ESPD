@@ -2,7 +2,7 @@ using Revise
 using VehicleSystemsComponents
 using DyadInterface: symbolic_container
 using JSON
-import BlockComponents, RotationalComponents, MultibodyComponents
+import BlockComponents, RotationalComponents, MultibodyComponents, ModelingToolkit, DyadInterface
 
 const _CAN = VehicleSystemsComponents.Vehicle.Planar
 
@@ -20,13 +20,13 @@ end
     m, s = symbolic_container(run), run.sol
     period = s.prob.ps[m.source.start_time] / 5
     sent = s(7period; idxs = m.source.y)
-    received = s(7period; idxs = m.tx.y)
-    before = s(6period - period / 100; idxs = m.tx.y)
-    after = s(6period + period / 100; idxs = m.tx.y)
+    received = s(7period; idxs = m.rx.y)
+    before = s(6period - period / 100; idxs = m.rx.y)
+    after = s(6period + period / 100; idxs = m.rx.y)
     @test string(s.retcode) == "Success"
     @test before == 0.0
     @test after == received
-    changed = first(t for t in s.t if s(t; idxs = m.tx.y) > 0)
+    changed = first(t for t in s.t if s(t; idxs = m.rx.y) > 0)
     latency = changed - 5period
     @test latency ≈ period atol = 1e-10
     @test abs(received - sent) <= s.prob.ps[m.tx.scale] / 2
@@ -132,4 +132,64 @@ end
     crossings = canvas_crossings(wires)
     println("CAN canvas: ", length(connections), " connections, ", length(crossings), " crossings")
     @test isempty(crossings)
+end
+
+
+@testset "CAN typed links and cruise" begin
+    run = _CAN.CanTypedStepRun()
+    m, s = symbolic_container(run), run.sol
+    @test string(s.retcode) == "Success"
+    @test !s(0.119; idxs = m.boolean_rx.y)
+    @test s(0.121; idxs = m.boolean_rx.y)
+    @test s(0.119; idxs = m.integer_rx.y) == 0
+    @test s(0.121; idxs = m.integer_rx.y) == 8
+    ideal, realistic = _CAN.CanCruiseIdealRun(), _CAN.CanCruiseRun()
+    mi, mr = symbolic_container(ideal), symbolic_container(realistic)
+    @test string(ideal.sol.retcode) == "Success"
+    @test string(realistic.sol.retcode) == "Success"
+    @test ideal.sol(20; idxs = mi.speed) ≈ 20 atol = 0.001
+    @test realistic.sol(20; idxs = mr.speed) ≈ ideal.sol(20; idxs = mi.speed) atol = 0.001
+end
+
+@testset "CAN topology checks and schedule" begin
+    @test _CAN.check_can(_CAN.Can10msStopBench(name = :car)) isa ModelingToolkit.System
+    function scratch_bus(; slot = 2, id = 256, period = 0.02, receiver = 1, termination = true, duplicate = true)
+        tx1 = _CAN.CanTxReal(name = :tx1, n = 2, slot = 1, id = 128, ideal = true, period = 0.01, raw_max = 255)
+        tx2 = _CAN.CanTxReal(name = :tx2, n = 2, slot = slot, id = id, ideal = true, period = period, raw_max = 255)
+        rx = _CAN.CanRxReal(name = :rx, n = 2, slot = receiver)
+        term = _CAN.CanTermination(name = :term, n = 2)
+        systems = [tx1, rx]
+        duplicate && push!(systems, tx2)
+        termination && push!(systems, term)
+        eqs = [ModelingToolkit.connect([getproperty(s, :bus) for s in systems]...)]
+        ModelingToolkit.System(eqs, _CAN.t, [], []; systems, name = :scratch)
+    end
+    cases = [
+        (scratch_bus(slot = 1), "CAN: tx1 and tx2 both transmit on slot 1."),
+        (scratch_bus(receiver = 2, duplicate = false), "CAN: rx receives slot 2, but nobody transmits on it."),
+        (scratch_bus(termination = false), "CAN: the bus containing rx needs a CanTermination."),
+        (scratch_bus(slot = 3), "CAN: tx2 uses slot 3, outside 1:2."),
+        (scratch_bus(id = 128, period = 0.01), "CAN: identifier 128 is assigned to two slots in tx1 and tx2."),
+        (scratch_bus(id = 128), "CAN: identifier 128 has two periods in tx1 and tx2."),
+    ]
+    for (model, message) in cases
+        err = try
+            _CAN.check_can(model)
+            nothing
+        catch e
+            e
+        end
+        @test err isa ArgumentError
+        @test err.msg == message
+        println(message)
+    end
+    schedule = _CAN.can_schedule(scratch_bus())
+    @test schedule.load ≈ 0.0195
+    @test [f.frame_bits for f in schedule.frames] == [65, 65]
+    @test [f.response_time for f in schedule.frames] ≈ [0.00026, 0.00026]
+    @test [f.blocking for f in schedule.frames] ≈ [0.00013, 0.0]
+    @test_throws ArgumentError _CAN.can_schedule(scratch_bus(); bitrate = 0)
+    compiled = DyadInterface.simplify_model(_CAN.CanCruiseIdeal(name = :cruise))
+    @test _CAN.can_schedule(compiled).load ≈ _CAN.can_schedule(_CAN.CanCruiseIdeal(name = :cruise)).load
+    println("CAN car schedule: ", _CAN.can_schedule(_CAN.Can10msStopBench(name = :car)))
 end

@@ -1,0 +1,60 @@
+component CanCruise
+  structural parameter ideal::Boolean = false
+  speed_tx = CanTxReal(n = 4, slot = 1, id = 128, ideal = ideal, scale = 0.001)
+  speed_rx = CanRxReal(n = 4, slot = 1, id = 128)
+  torque_tx = CanTxReal(n = 4, slot = 2, id = 256, ideal = ideal, scale = 0.001, raw_min = -32768, raw_max = 32767)
+  torque_rx = CanRxReal(n = 4, slot = 2, id = 256)
+  enabled_tx = CanTxBoolean(n = 4, slot = 3, id = 768, ideal = ideal)
+  enabled_rx = CanRxBoolean(n = 4, slot = 3, id = 768)
+  gear_tx = CanTxInteger(n = 4, slot = 4, id = 784, ideal = ideal, raw_max = 3)
+  gear_rx = CanRxInteger(n = 4, slot = 4, id = 784)
+  termination = CanTermination(n = 4)
+  adapter = CanAdapter(n = 4)
+  variable speed::Real
+  variable integral::Real
+  parameter target::Real = 20
+relations
+  connect(speed_tx.bus, speed_rx.bus, torque_tx.bus, torque_rx.bus, enabled_tx.bus, enabled_rx.bus, gear_tx.bus, gear_rx.bus, termination.bus, adapter.bus)
+  speed_tx.u = speed
+  enabled_tx.u = time >= 0.1
+  gear_tx.u = 2
+  initial speed = 15
+  initial integral = 0
+  der(integral) = ifelse(enabled_rx.y, target - speed_rx.y, 0.0)
+  torque_tx.u = ifelse(enabled_rx.y, clamp(2 * (target - speed_rx.y) + integral, 0.0, 30.0), 0.0)
+  der(speed) = torque_rx.y * gear_rx.y - 0.1 * speed
+end
+
+component CanCruiseIdeal
+  extends CanCruise(ideal = true)
+end
+
+analysis CanCruiseRun
+  extends TransientAnalysis(stop = 20, dtmax = 0.01, abstol = 1e-7, reltol = 1e-7)
+  model = CanCruise()
+end
+
+analysis CanCruiseIdealRun
+  extends TransientAnalysis(stop = 20, dtmax = 0.01, abstol = 1e-7, reltol = 1e-7)
+  model = CanCruiseIdeal()
+end
+
+component CanTypedStep
+  boolean_tx = CanTxBoolean(n = 2, slot = 1, id = 128, period = 0.02)
+  boolean_rx = CanRxBoolean(n = 2, slot = 1, id = 128)
+  integer_tx = CanTxInteger(n = 2, slot = 2, id = 256, period = 0.02, scale = 2, raw_max = 10)
+  integer_rx = CanRxInteger(n = 2, slot = 2, id = 256)
+  termination = CanTermination(n = 2)
+  variable x::Real
+relations
+  boolean_tx.u = time >= 0.1
+  integer_tx.u = ifelse(time >= 0.1, 7, 0)
+  connect(boolean_tx.bus, boolean_rx.bus, integer_tx.bus, integer_rx.bus, termination.bus)
+  initial x = 0
+  der(x) = integer_rx.y - x
+end
+
+analysis CanTypedStepRun
+  extends TransientAnalysis(stop = 0.2, dtmax = 0.001)
+  model = CanTypedStep()
+end

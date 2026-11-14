@@ -1,0 +1,16 @@
+"Scripted CAN car: accelerate for 9 s, low-throttle cruise until 24 s, then hard brake."
+component PlanarBEVCanScriptedDrive
+  parameter m::Mass = 1500
+  parameter esp_on::Real = 1
+  parameter abs_on::Real = 1
+  parameter mu::Real = 1
+  structural parameter table::String = "dyad://VehicleSystemsComponents/drivers/can_realtime_drive.csv"
+  driver = VehicleSystemsComponents.ScriptedDriver(table = table)
+  vehicle = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVCanDrive(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
+  adapter = VehicleSystemsComponents.Vehicle.Planar.CanAdapter()
+relations
+  connect(driver.throttle_signal, vehicle.throttle)
+  connect(driver.brake_signal, vehicle.brake)
+  connect(driver.steer_signal, vehicle.steer)
+  connect(adapter.bus, vehicle.motion.bus)
+end

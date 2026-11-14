@@ -9,7 +9,7 @@
 
 ## Connectors
 
- * `bus` - ([`CanBus`](@ref))
+ * `bus` - ([`CanNet`](@ref))
  * `speed` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
 @component function CanClusterNode(; name = nothing, __overrides = Dict{String, Any}())
@@ -57,7 +57,13 @@
   __constants = Any[]
 
   ### Components
-  push!(__systems, @named bus = VehicleSystemsComponents.Vehicle.Planar.CanBus())
+  push!(__systems, @named bus = VehicleSystemsComponents.Vehicle.Planar.CanNet())
+  # Subcomponent termination of type VehicleSystemsComponents.Vehicle.Planar.CanTermination
+  termination_overrides = __pop_subcomponent_overrides!(__overrides, "termination")
+  push!(__systems, @named termination = VehicleSystemsComponents.Vehicle.Planar.CanTermination(; __overrides = termination_overrides))
+  # Subcomponent dashboard_speed_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
+  dashboard_speed_rx_overrides = __pop_subcomponent_overrides!(__overrides, "dashboard_speed_rx")
+  push!(__systems, @named dashboard_speed_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=7, id=768, __overrides = dashboard_speed_rx_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -70,7 +76,9 @@
   __assertions = []
 
   ### Equations
-  push!(__eqs, speed ~ bus.dashboard_speed)
+  push!(__eqs, speed ~ dashboard_speed_rx.y)
+  push!(__eqs, connect(bus, dashboard_speed_rx.bus))
+  push!(__eqs, connect(bus, termination.bus))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

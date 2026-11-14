@@ -283,7 +283,7 @@ function window_session!(integ, sys, spec, pad)
             end
             work = @elapsed if !controls.paused
                 apply!(integ, sys, ctx, controls, s.vx)
-                step!(integ, dt, true)
+                VehicleSystemsComponents.can_step!(integ, dt, sys)
                 if !VehicleSystemsComponents.stepping(integ)
                     @warn "solver stopped ($(integ.sol.retcode)); resetting the car"
                     reset!()

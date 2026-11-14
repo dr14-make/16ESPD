@@ -11,6 +11,8 @@ partial analysis RealtimeDrive
   parameter dtmax::Time = 0.005
   "Show a window and pace the simulation to wall clock"
   parameter window::Boolean = false
+  "SocketCAN interface for a listen-only CanAdapter; empty disables external CAN output"
+  parameter can_interface::String = ""
   "ESP enable for the run"
   parameter esp_on::Real = 1.0
   "ABS enable for the run"
@@ -37,4 +39,18 @@ analysis PlanarBEVByHandDrive
   model = PlanarBEVByHand(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
   "Vehicle mass"
   parameter m::Mass = 1500
+end
+
+
+"Thirty-second scripted CAN drive with a listen-only SocketCAN tap."
+analysis PlanarBEVCanRealtimeDrive
+  extends RealtimeDrive(can_interface = "vcan0", window = false, duration = 30)
+  model = PlanarBEVCanScriptedDrive(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
+  parameter m::Mass = 1500
+end
+
+"Minimal cruise example streamed through SocketCAN without a window."
+analysis CanCruiseRealtimeDrive
+  extends RealtimeDrive(can_interface = "vcan0", window = false, duration = 30)
+  model = Vehicle.Planar.CanCruise()
 end

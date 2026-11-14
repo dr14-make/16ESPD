@@ -6,7 +6,7 @@
 
 using DyadInterface
 using VehicleSystemsComponents: AbstractRealtimeDriveSpec, RealtimeDriveSpec
-@component function PlanarBEVByHandDrive__System(; name = nothing, var"duration"=0, var"frame"=0.016666667, var"dtmax"=0.005, var"window"=true, var"esp_on"=1.0, var"abs_on"=1.0, var"mu"=1.0, var"road_file"="", var"height_file"="", var"m"=1500, __overrides = Dict{String, Any}())
+@component function PlanarBEVByHandDrive__System(; name = nothing, var"duration"=0, var"frame"=0.016666667, var"dtmax"=0.005, var"window"=true, var"can_interface"="", var"esp_on"=1.0, var"abs_on"=1.0, var"mu"=1.0, var"road_file"="", var"height_file"="", var"m"=1500, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -29,6 +29,7 @@ using VehicleSystemsComponents: AbstractRealtimeDriveSpec, RealtimeDriveSpec
   haskey(__overrides, "frame") && (frame = pop!(__overrides, "frame"))
   haskey(__overrides, "dtmax") && (dtmax = pop!(__overrides, "dtmax"))
   haskey(__overrides, "window") && (window = pop!(__overrides, "window"))
+  haskey(__overrides, "can_interface") && (can_interface = pop!(__overrides, "can_interface"))
   haskey(__overrides, "esp_on") && (esp_on = pop!(__overrides, "esp_on"))
   haskey(__overrides, "abs_on") && (abs_on = pop!(__overrides, "abs_on"))
   haskey(__overrides, "mu") && (mu = pop!(__overrides, "mu"))
@@ -61,6 +62,9 @@ using VehicleSystemsComponents: AbstractRealtimeDriveSpec, RealtimeDriveSpec
   __local__window = window
   append!(__params, @parameters (window::Bool), [description = "Show a window and pace the simulation to wall clock"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, window, __local__window)
+  __local__can_interface = can_interface
+  append!(__params, @parameters (can_interface::String), [description = "SocketCAN interface for a listen-only CanAdapter; empty disables external CAN output"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, can_interface, __local__can_interface)
   __local__esp_on = esp_on
   append!(__params, @parameters (esp_on::Float64), [description = "ESP enable for the run"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, esp_on, __local__esp_on)
@@ -124,6 +128,8 @@ export PlanarBEVByHandDrive__System
   var"dtmax"::Float64 = 0.005
   # Show a window and pace the simulation to wall clock
   var"window"::Bool = true
+  # SocketCAN interface for a listen-only CanAdapter; empty disables external CAN output
+  var"can_interface"::String = ""
   # ESP enable for the run
   var"esp_on"::Float64 = 1.0
   # ABS enable for the run
@@ -138,7 +144,7 @@ export PlanarBEVByHandDrive__System
   var"m"::Float64 = 1500
   # Planar BEV assembly with a held by-hand driver and position-dependent road grip and grade.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.PlanarBEVByHand(; name=:PlanarBEVByHand)
-  __system::System = PlanarBEVByHandDrive__System(; name, var"duration"=var"duration", var"frame"=var"frame", var"dtmax"=var"dtmax", var"window"=var"window", var"esp_on"=var"esp_on", var"abs_on"=var"abs_on", var"mu"=var"mu", var"road_file"=var"road_file", var"height_file"=var"height_file", var"m"=var"m")
+  __system::System = PlanarBEVByHandDrive__System(; name, var"duration"=var"duration", var"frame"=var"frame", var"dtmax"=var"dtmax", var"window"=var"window", var"can_interface"=var"can_interface", var"esp_on"=var"esp_on", var"abs_on"=var"abs_on", var"mu"=var"mu", var"road_file"=var"road_file", var"height_file"=var"height_file", var"m"=var"m")
 end
 
 function __dyad_base_analysis_spec(spec::PlanarBEVByHandDrive__Spec)
@@ -150,7 +156,7 @@ function __dyad_base_analysis_spec(spec::PlanarBEVByHandDrive__Spec)
   push!(overrides, no_namespace_model.mu => spec.var"mu")
   merge!(overrides, spec.__overrides)
   RealtimeDriveSpec(;
-    name=spec.name, overrides, __system=spec.__system, var"duration"=spec.var"duration", var"frame"=spec.var"frame", var"dtmax"=spec.var"dtmax", var"window"=spec.var"window", var"esp_on"=spec.var"esp_on", var"abs_on"=spec.var"abs_on", var"mu"=spec.var"mu", var"road_file"=spec.var"road_file", var"height_file"=spec.var"height_file", var"model"=spec.var"model"
+    name=spec.name, overrides, __system=spec.__system, var"duration"=spec.var"duration", var"frame"=spec.var"frame", var"dtmax"=spec.var"dtmax", var"window"=spec.var"window", var"can_interface"=spec.var"can_interface", var"esp_on"=spec.var"esp_on", var"abs_on"=spec.var"abs_on", var"mu"=spec.var"mu", var"road_file"=spec.var"road_file", var"height_file"=spec.var"height_file", var"model"=spec.var"model"
   )
 end
 
