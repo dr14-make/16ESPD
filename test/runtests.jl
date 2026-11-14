@@ -26,6 +26,7 @@ const GROUPS = [
     "hills" => ["hills_plausibility.jl"],
     "bev" => ["bev_plausibility.jl"],
     "regen" => ["regen_plausibility.jl"],
+    "can" => ["can_plausibility.jl"],
     "generated" => ["../generated/tests.jl"],
 ]
 
