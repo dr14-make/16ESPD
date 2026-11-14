@@ -9,11 +9,12 @@ component CanCruise
   gear_tx = CanTxInteger(n = 4, slot = 4, id = 784, ideal = ideal, raw_max = 3)
   gear_rx = CanRxInteger(n = 4, slot = 4, id = 784)
   termination = CanTermination(n = 4)
+  adapter = CanAdapter(n = 4)
   variable speed::Real
   variable integral::Real
   parameter target::Real = 20
 relations
-  connect(speed_tx.bus, speed_rx.bus, torque_tx.bus, torque_rx.bus, enabled_tx.bus, enabled_rx.bus, gear_tx.bus, gear_rx.bus, termination.bus)
+  connect(speed_tx.bus, speed_rx.bus, torque_tx.bus, torque_rx.bus, enabled_tx.bus, enabled_rx.bus, gear_tx.bus, gear_rx.bus, termination.bus, adapter.bus)
   speed_tx.u = speed
   enabled_tx.u = time >= 0.1
   gear_tx.u = 2

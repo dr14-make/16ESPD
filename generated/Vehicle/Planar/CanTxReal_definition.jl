@@ -142,7 +142,7 @@
 
   ### Assertions
   __assertions = []
-  push!(__assertions, ((id >= 0) & (id <= 2047) => "CAN Tx: id must be in 0..2047 (at CanTx.dyad:70:3)"))
+  push!(__assertions, ((id >= 0) & (id <= 2047) => "CAN Tx: id must be in 0..2047 (at CanTx.dyad:82:3)"))
 
   ### Equations
   push!(__eqs, wire ~ link.y)

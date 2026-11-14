@@ -107,6 +107,9 @@
   # Subcomponent termination of type VehicleSystemsComponents.Vehicle.Planar.CanTermination
   termination_overrides = __pop_subcomponent_overrides!(__overrides, "termination")
   push!(__systems, @named termination = VehicleSystemsComponents.Vehicle.Planar.CanTermination(; n=4, __overrides = termination_overrides))
+  # Subcomponent adapter of type VehicleSystemsComponents.Vehicle.Planar.CanAdapter
+  adapter_overrides = __pop_subcomponent_overrides!(__overrides, "adapter")
+  push!(__systems, @named adapter = VehicleSystemsComponents.Vehicle.Planar.CanAdapter(; n=4, __overrides = adapter_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -129,7 +132,7 @@
   push!(__eqs, ModelingToolkit.D_nounits(integral) ~ ifelse(enabled_rx.y, target - speed_rx.y, 0.0))
   push!(__eqs, torque_tx.u ~ ifelse(enabled_rx.y, clamp(2 * (target - speed_rx.y) + integral, 0.0, 30.0), 0.0))
   push!(__eqs, ModelingToolkit.D_nounits(speed) ~ torque_rx.y * gear_rx.y - 0.1 * speed)
-  push!(__eqs, connect(speed_tx.bus, speed_rx.bus, torque_tx.bus, torque_rx.bus, enabled_tx.bus, enabled_rx.bus, gear_tx.bus, gear_rx.bus, termination.bus))
+  push!(__eqs, connect(speed_tx.bus, speed_rx.bus, torque_tx.bus, torque_rx.bus, enabled_tx.bus, enabled_rx.bus, gear_tx.bus, gear_rx.bus, termination.bus, adapter.bus))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

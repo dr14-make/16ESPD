@@ -6,6 +6,18 @@ connector CanNet
   flow j::Real[n]
 end
 
+"Listen-only bus tap for an external CAN interface; neither transmits nor terminates the bus."
+component CanAdapter
+  bus = CanNet(n = n)
+  structural parameter n::Integer = 16
+  parameter slot_count::Integer = n
+relations
+  for k in 1:n
+    bus.i[k] = 0
+    bus.j[k] = 0
+  end
+end
+
 "Closes every slot of one bus. Exactly one per bus."
 component CanTermination
   bus = CanNet(n = n)

@@ -229,6 +229,7 @@ component.
 end
 
 
+include("CanCruiseRealtimeDrive_definition.jl")
 include("CoastDownDriver_definition.jl")
 include("HardStopDriver_definition.jl")
 include("Hello_definition.jl")
@@ -236,6 +237,8 @@ include("HumanCommandSampler_definition.jl")
 include("HumanDriver_definition.jl")
 include("PlanarBEVByHandDrive_definition.jl")
 include("PlanarBEVByHand_definition.jl")
+include("PlanarBEVCanRealtimeDrive_definition.jl")
+include("PlanarBEVCanScriptedDrive_definition.jl")
 include("PlanarBEVOnRoad_definition.jl")
 include("PlanarBEVRealtimeDrive_definition.jl")
 include("PlanarBEVScripted_definition.jl")

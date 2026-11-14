@@ -20,6 +20,7 @@ abstract type AbstractRealtimeDriveSpec <: AbstractAnalysisSpec end
     frame::Float64 = 1 / 60
     dtmax::Float64 = 0.005
     window::Bool = false
+    can_interface::String = ""
     esp_on::Float64 = 1.0
     abs_on::Float64 = 1.0
     mu::Float64 = 1.0
@@ -90,9 +91,13 @@ function drive_road(spec)
     return (; x, y, height, grip, grip_varies = varies(grip), height_varies = varies(height))
 end
 
+include("can_stream.jl")
+
 "Integrator saving one sample per frame; drives and resets share the solver settings."
-drive_integrator(prob, spec) =
-    init(prob, Rodas5P(); dtmax = spec.dtmax, saveat = spec.frame, save_everystep = false)
+function drive_integrator(prob, spec)
+    return init(prob, Rodas5P(); dtmax = spec.dtmax, saveat = spec.frame,
+        save_everystep = false)
+end
 
 "Whether the integrator can keep stepping."
 stepping(integ) = integ.sol.retcode in (ReturnCode.Default, ReturnCode.Success)
@@ -101,7 +106,7 @@ stepping(integ) = integ.sol.retcode in (ReturnCode.Default, ReturnCode.Success)
 function unpaced_drive!(integ, sys, spec)
     spec.duration > 0 || throw(ArgumentError("RealtimeDrive without a window requires duration > 0"))
     started = time()
-    step!(integ, spec.duration - integ.t, true)
+    can_step!(integ, spec.duration - integ.t, sys)
     stepping(integ) || error("solver stopped: $(integ.sol.retcode)")
     return (; frames = ceil(Int, integ.t / spec.frame), wall = time() - started, integrator = integ)
 end
@@ -119,7 +124,8 @@ function disable_callback_saves!(callback)
 end
 
 function DyadInterface.run_analysis(spec::RealtimeDriveSpec;
-        run_drive = spec.window ? drive_window : unpaced_drive!)
+        run_drive = spec.window ? drive_window : unpaced_drive!,
+        open_can = can_open, can_paced = true)
     reset_human_commands!()
     spec.frame > 0 && spec.dtmax > 0 && spec.duration >= 0 ||
         throw(ArgumentError("RealtimeDrive requires frame > 0, dtmax > 0, and duration >= 0"))
@@ -134,14 +140,23 @@ function DyadInterface.run_analysis(spec::RealtimeDriveSpec;
     # MTK's clock and discontinuity callbacks otherwise add saves at solver frequency.
     # Their discrete parameter histories are saved independently of continuous positions.
     disable_callback_saves!(get(setup.prob.kwargs, :callback, nothing))
-    integ = drive_integrator(setup.prob, spec)
+    stream = isempty(spec.can_interface) ? nothing : CanStream(
+        Vehicle.Planar.can_layout(model), open_can(spec.can_interface); paced = can_paced)
+    integ = nothing
     stats = try
-        # Window methods loaded during this call exist only in a newer world.
-        Base.invokelatest(run_drive, integ, sys, spec)
+        task_local_storage(:vehicle_can_stream, stream) do
+            integ = drive_integrator(setup.prob, spec)
+            Base.invokelatest(run_drive, integ, sys, spec)
+        end
     catch e
-        e isa InterruptException || rethrow()
+        e isa InterruptException && integ !== nothing || rethrow()
         @info "drive interrupted at t = $(integ.t) s; returning what was driven"
         nothing
+    finally
+        if stream !== nothing
+            Base.invokelatest(can_close, stream.transport)
+            @info "CAN stream finished" stream.sent stream.late stream.max_lateness
+        end
     end
     # A drive returns the integrator it finished on; a window reset starts a new one.
     stats === nothing || (integ = stats.integrator)
