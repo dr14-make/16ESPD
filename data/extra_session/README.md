@@ -3,11 +3,13 @@
 Data behind the extra session's figures. None of it comes from a course model. The figures are
 drawn by
 
-    julia +dyad-3.5.0 --startup-file=no scripts/export_extra_session_figures.jl [figure ...]
+    julia +dyad-3.5.0 --project=. --startup-file=no scripts/export_extra_session_figures.jl [figure ...]
 
 into `slides/decks/extra-session/public/figures/`. Each value is copied from a research note in
 `docs/research_notes/Electric and hybrid vehicles/`, which names the source, the page or table
-read and its verification label; change a value only together with that note.
+read and its verification label; change a value only together with that note. Two figures also
+draw course benches: `04-leaf-chademo.svg` sets `CCCVLeafCharge` beside the Fastned curve, and
+`03-soc-drift.svg` is `SoCDriftDays` on the 33.1 A·h cell.
 
 ## Files
 
@@ -36,8 +38,7 @@ read and its verification label; change a value only together with that note.
 The formula plots take their parameters from the notes directly, as constants in the script:
 the Leaf cell's 1-RC fit (R₀ 1.60 mΩ, R₁ 1.34 mΩ, τ₁ 25.7 s, OCV 3.949 V at pulse 5, 33.1 A·h;
 `bms.md` §1, [ORNL-LEAF-ECM], derived) for `02-pulse-response.svg` and `04-cc-cv.svg`; the
-drift numbers of `bms.md` §2 (50 mA offset, 10 mA noise [MOVASSAGH-2021], 5 % [GBT-38661-2020])
-for `03-soc-drift.svg`; the recommended slide curve of `pem-polarization.md` §1
+noise band of `03-soc-drift.svg` (10 mA [MOVASSAGH-2021]; `bms.md` §2); the recommended slide curve of `pem-polarization.md` §1
 ([PUKRUSHPAN-2003], b₁₁ = 0.005139) for `05-polarization.svg`; the course Leaf pack at the end
 of CC (96 cells, 4.20 V, 143 A, R_pack ≈ 0.1 Ω, so 14 V of I·R; C/20 = 3.3 A; `charging.md` §1,
 computed) for `04-cv-budget.svg`; and P = U·I at a 500 A cable, I²R ∝ I² (`charging.md` §6,

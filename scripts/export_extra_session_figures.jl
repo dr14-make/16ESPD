@@ -1,18 +1,19 @@
 """
 Writes the extra session deck's figures into `slides/decks/extra-session/public/figures/`.
 
-    julia +dyad-3.5.0 --startup-file=no scripts/export_extra_session_figures.jl [figure ...]
+    julia +dyad-3.5.0 --project=. --startup-file=no scripts/export_extra_session_figures.jl [figure ...]
 
-Figure names as arguments (e.g. `04-cc-cv`) write only those. Two kinds of figure, neither from a
-Dyad model, so none needs a notebook:
+Figure names as arguments (e.g. `04-cc-cv`) write only those. Three kinds of figure:
 
 - published data redrawn from the tables in `data/extra_session/` (pack prices, chemistries,
   OCV, runaway temperatures, charging curves, charging losses, degradation, charging points,
   Mirai polarization points, hydrogen stations, FCEV sales and sizing, cost per 100 km, the
   power-to-wheel chain, hydrogen emissions);
-- formula plots of the closed-form cell and stack models (pulse response, SoC drift, CC-CV,
-  CV voltage budget, 400 V against 800 V, polarization curve), with their parameters as
-  constants below.
+- formula plots of the closed-form cell and stack models (pulse response, CC-CV, CV voltage
+  budget, 400 V against 800 V, polarization curve), with their parameters as constants below;
+- simulations of the course library's benches, in `MODEL_FIGURES`: the Leaf pack's CC-CV charge
+  (`CCCVLeafCharge`) over the measured Fastned curve, and the SoC estimator's drift
+  (`SoCDriftDays`). The library is loaded only when one of these is written.
 
 Every value and its source is in `data/extra_session/README.md`, which points into
 `docs/research_notes/Electric and hybrid vehicles/`.
@@ -157,29 +158,44 @@ function pulse_response_plot()
 end
 
 """
-SoC error of coulomb counting on a 33 A·h cell: a 50 mA offset, reset to zero by an OCV
-reading on the days in `resets`; and the ±1σ spread of zero-mean 10 mA noise, Movassagh's
-0.0544 % at 24 h on 1.5 A·h, scaled by capacity and growing as √t.
+`SoCDriftDays` on the 2013 Leaf cell (33.1 A·h) over four days, 50 mA sensor offset: the SoC
+error in % against time in days. The estimator resets from the OCV only after 1 h below 0.1 A.
 """
-function soc_drift_plot(; resets = [2.0, 4.0, 6.0])
-    Q, offset = 33.0, 0.050
-    rate = offset * 24 / Q * 100                # % per day
-    days = range(0, 7; length = 1401)
-    since_reset(d) = (k = findlast(<=(d), resets); k === nothing ? d : d - resets[k])
-    err = [rate * since_reset(d) for d in days]
-    sigma = 0.0544 * (1.5 / Q) .* sqrt.(days)
-    @printf("  drift: %.2f %%/day; noise σ after 7 d %.4f %%\n", rate, sigma[end])
+function soc_drift(; I_drive, t_drive, period, days = 4)
+    m = simplify_model(Vehicle.Electric.SoCDriftDays(; name = :drift, dt = 60.0,
+        I_drive, t_drive, period))
+    q = 33.1 * 3600
+    # The estimator counts against its own capacity; both must be the cell's.
+    prob = ODEProblem(m, Dict(m.battery.Q_nom => q, m.estimator.Q_nom => q),
+        (0.0, days * 86400.0 + 120.0))
+    sol = solve(prob, Tsit5(); reltol = 1e-9, abstol = 1e-11, saveat = 60.0)
+    t = collect(0.0:300.0:days * 86400.0)
+    return t ./ 86400, -100 .* sol(t, idxs = m.error).u
+end
+
+"""
+The taxi and the private car of `soc_drift`, with the ±1σ spread of zero-mean 10 mA noise,
+Movassagh's 0.0544 % at 24 h on 1.5 A·h, scaled by capacity and growing as √t.
+"""
+function soc_drift_plot()
+    # Below 0.1 A would count as rest; the offset error does not depend on the drive current.
+    taxi = soc_drift(I_drive = 0.2, t_drive = 5.5 * 3600, period = 6 * 3600.0)
+    private = soc_drift(I_drive = 2.0, t_drive = 7200.0, period = 86400.0)
+    cross = taxi[1][findfirst(>=(5), taxi[2])]
+    sigma = 0.0544 * (1.5 / 33.1) .* sqrt.(taxi[1])
+    @printf("  drift: taxi 5 %% after %.2f days; private car peaks at %.2f %%; noise σ %.4f %%\n",
+        cross, maximum(private[2]), sigma[end])
     p = plot(; xlabel = "time [days]", ylabel = "SoC error [%]", size = (960, 640),
-        legend = :topright, xlims = (0, 7), ylims = (-1.4, 14), xticks = 0:7)
-    plot!(p, days, rate .* days; color = BLUE, lw = 2, ls = :dot,
-        label = "50 mA offset, never reset")
-    plot!(p, days, sigma; fillrange = -sigma, color = GREEN, fillalpha = 0.5, lw = 1,
+        legend = :topleft, xlims = (0, 4), ylims = (-1.4, 14), xticks = 0:4)
+    plot!(p, taxi[1], sigma; fillrange = -sigma, color = GREEN, fillalpha = 0.5, lw = 1,
         label = "10 mA noise, ±1σ")
-    plot!(p, days, err; color = BLUE, lw = 3, label = "50 mA offset, OCV reset")
+    plot!(p, taxi..., color = RED, lw = 3, label = "taxi: 30 min stops only, never reset")
+    plot!(p, private..., color = BLUE, lw = 3,
+        label = "private car: parked overnight, reset after 1 h of rest")
     hline!(p, [5]; color = RED, lw = 2, ls = :dash, label = "GB/T 38661: 5 %")
-    vline!(p, resets; color = GRAY, lw = 1.5, ls = :dash, label = "OCV reset")
-    annotate!(p, [(1.0, rate + 0.4, text("3.6 %/day", 12, :right, :bottom, BLUE)),
-        (0.1, -0.35, text("noise: ±$(@sprintf("%.4f", sigma[end])) % at 7 days", 12, :left,
+    annotate!(p, [(cross + 0.08, 5, text(@sprintf("5 %% after %.1f days", cross), 12, :left,
+            :top, RED)),
+        (0.1, -0.35, text("noise: ±$(@sprintf("%.4f", sigma[end])) % at 4 days", 12, :left,
             :top, GREEN))])
     return p
 end
@@ -251,19 +267,49 @@ function charge_curves()
         column(filter(r -> r.car == car, rows), :kw)) for car in cars]
 end
 
+"""
+The Leaf pack's CC-CV charge from 10 % SoC on the course charger (143 A, 96 × 4.20 V, stop at
+C/50): pack SoC in %, charging power in kW, and the SoC where CV starts.
+"""
+function leaf_cccv(r1)
+    m = simplify_model(Vehicle.Electric.CCCVLeafCharge(name = :leaf, R1 = r1))
+    sol = solve(ODEProblem(m, [], (0.0, 8000.0)), Rodas5P();
+        reltol = 1e-8, abstol = 1e-10, dtmax = 5.0)
+    t = collect(0.0:5.0:8000.0)
+    soc = 100 .* sol(t, idxs = m.battery.SoC).u
+    kw = sol(t, idxs = m.battery.v).u .* sol(t, idxs = m.charger.current).u ./ 1000
+    cv = soc[findfirst(>=(2), sol(t, idxs = m.charger.phase).u)]
+    return (; soc, kw, cv)
+end
+
 function leaf_chademo_plot()
     car, soc, kw = only(filter(c -> startswith(c[1], "Leaf"), charge_curves()))
-    p = plot(soc, kw; color = ORANGE, lw = 3, marker = :circle, ms = 6, label = "",
-        legend = :none, xlabel = "state of charge [%]", ylabel = "charging power [kW]",
-        size = (960, 640),
-        xlims = (0, 100), ylims = (0, 55), xticks = 0:10:100)
+    r0_only = leaf_cccv(0.0)
+    thevenin = leaf_cccv(0.1 * 1.34 / 1.60)
+    @printf("  Leaf CC-CV: CV from %.1f %% (R0 only), %.1f %% (R0 + R1C1); peak %.1f kW\n",
+        r0_only.cv, thevenin.cv, maximum(thevenin.kw))
+    p = plot(; legend = :bottomleft, xlabel = "state of charge [%]",
+        ylabel = "charging power [kW]", size = (960, 640),
+        xlims = (0, 100), ylims = (0, 62), xticks = 0:10:100)
+    plot!(p, soc, kw; color = ORANGE, lw = 3, marker = :circle, ms = 6,
+        label = "Leaf 40 kWh on CHAdeMO, Fastned (measured)")
+    plot!(p, thevenin.soc, thevenin.kw; color = BLUE, lw = 2,
+        label = "model, R₀ + R₁C₁, 143 A")
+    plot!(p, r0_only.soc, r0_only.kw; color = GRAY, lw = 2, ls = :dash,
+        label = "model, R₀ only, 143 A")
+    vline!(p, [thevenin.cv]; color = BLUE, lw = 1, ls = :dot, label = "")
+    vline!(p, [r0_only.cv]; color = GRAY, lw = 1, ls = :dot, label = "")
     for (s, k, place) in [(17, 42.2, :top), (60, 45.63, :bottom), (70, 32.75, :left),
-        (80, 26.03, :left), (90, 20.17, :left)]
+        (80, 26.03, :right), (90, 20.17, :right)]
         label = text(string(k), 12, place)
+        # Right of 80 % and 90 % the model's curve runs through the labels.
         place === :left ? annotate!(p, s + 1.5, k, label) :
+        place === :right ? annotate!(p, s - 1.5, k - 1.5, label) :
         annotate!(p, s, k + (place === :top ? -1.2 : 1.2), label)
     end
-    annotate!(p, 38, 49, text("peak 45.63 kW at 57 and 60 %", 12, :center, :bottom))
+    annotate!(p, [(38, 40, text("peak 45.63 kW at 57 and 60 %", 12, :center, :top, ORANGE)),
+        (thevenin.cv - 1, 5, text(@sprintf("CV from %.0f %%", thevenin.cv), 12, :right, BLUE)),
+        (r0_only.cv - 1, 5, text(@sprintf("CV from %.0f %%", r0_only.cv), 12, :right, GRAY))])
     return p
 end
 
@@ -768,13 +814,24 @@ const FIGURES = [
     "07-fcev-hybridization" => fcev_hybridization_plot,
 ]
 
+const MODEL_FIGURES = ["03-soc-drift", "04-leaf-chademo"]
+
+function load_models()
+    @eval using VehicleSystemsComponents: Vehicle
+    @eval using ModelingToolkit: ODEProblem
+    @eval using DyadInterface: simplify_model
+    @eval using OrdinaryDiffEqDefault: solve, Rodas5P, Tsit5
+end
+
 function main(wanted = String[])
     unknown = setdiff(wanted, first.(FIGURES))
     isempty(unknown) || error("no such figure: $(join(sort!(unknown), ", "))")
     mkpath(OUT)
+    (isempty(wanted) || !isempty(intersect(wanted, MODEL_FIGURES))) && load_models()
     for (name, make) in FIGURES
         isempty(wanted) || name in wanted || continue
-        path = save_svg(make(), joinpath(OUT, "$name.svg"))
+        # The library's names exist only after `load_models` ran in this world age.
+        path = save_svg(Base.invokelatest(make), joinpath(OUT, "$name.svg"))
         println("  $name.svg  $(filesize(path) ÷ 1000) kB")
     end
     PlotlyKaleido.kill_kaleido()
