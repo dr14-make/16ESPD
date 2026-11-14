@@ -80,7 +80,7 @@ routeAlias: session-summary
 <div class="caption">02</div>
 </div>
 <div>
-<img src="/figures/03-soc-drift.svg" style="height: 7.5rem" alt="SoC error from a current-sensor offset, sawing back to zero at each OCV reset."/>
+<img src="/figures/03-soc-drift.svg" style="height: 7.5rem" alt="SoC error from a current-sensor offset: a taxi that never rests crosses 5 %, a parked car is reset from the OCV."/>
 <div class="caption">03</div>
 </div>
 <div>
@@ -135,6 +135,9 @@ routeAlias: take-home
 
 <div class="handson">Every number you need is on tonight's slides; for exercise 4 you find your
 own.</div>
+
+**Check your answer** in the course library: 1 with <code>CCCV800V</code>, 2 with
+<code>SoCDriftDays</code>, 4 with <code>notebooks/extra-session/01-ev-payback.pluto.jl</code>.
 
 <!--
 Four exercises to take home, each built on a slide from tonight. One, the CV slide again for an 800

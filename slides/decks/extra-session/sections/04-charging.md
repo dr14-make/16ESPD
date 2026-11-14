@@ -227,10 +227,11 @@ routeAlias: leaf-chademo
 <div class="grid grid-cols-[1.3fr_1fr] gap-8 items-start">
 <div>
 
-<img src="/figures/04-leaf-chademo.svg" alt="Charging power in kW against state of charge for the Nissan Leaf 40 kWh on CHAdeMO, Fastned data: 42.2 kW at 17 %, 43.1 at 20 %, 44.8 at 50 %, a peak of 45.63 at 57 and 60 %, then 32.75 at 70 %, 26.03 at 80 % and 20.17 at 90 %."/>
+<img src="/figures/04-leaf-chademo.svg" alt="Charging power in kW against state of charge. Measured, the Nissan Leaf 40 kWh on CHAdeMO, Fastned data: 42.2 kW at 17 %, 43.1 at 20 %, 44.8 at 50 %, a peak of 45.63 at 57 and 60 %, then 32.75 at 70 %, 26.03 at 80 % and 20.17 at 90 %. Above it, the course Leaf pack model charged at 143 A: from 47 kW at 10 % rising to about 58 kW; with R0 and the RC pair, constant voltage starts at 68 % and the power falls to 33 kW at 80 % and 21 at 90 %; with R0 alone, dashed, it starts at 82 %."/>
 
 <div class="caption">Fastned, one charge, pack about 30 °C: the 10 % points, first point and peak of its per-1 %
-data, joined by straight lines.</div>
+data, joined by straight lines · model: <code>CCCVLeafCharge</code>, the course Leaf pack at
+143 A to 96 × 4.20 V; its plateau sits higher because it assumes 143 A.</div>
 
 </div>
 <div class="text-[0.9rem]">
@@ -265,6 +266,10 @@ degrees. State of charge across, charging power up. Flat at 43 to 46 kilowatts u
 then it steps down: 33 kilowatts at 70, 26 at 80, 20 at 90. This is the CV phase again, on the whole
 pack, and it starts early. 10 to 80 percent: 43 minutes, 40 kilowatts on average.
 
+The blue line is our Leaf pack model at 143 amperes. With R0 alone, the dashed line, CV would start
+at 82 percent. The slow sag of the RC pair brings it to 68. The real car starts at 60, because its
+BMS also slows the charge for heat and plating. The measured curve is the one to remember.
+
 That is a good day. Now rapidgate, the nickname for the Leaf slowing its fast charge when hot. In a
 test reported by CleanTechnica, the Leaf cut DC power whenever its pack was above 32 degrees. At 41
 degrees, adding 70 percent took 54 minutes on the old software, just under 40 after an update. A hot
@@ -276,9 +281,7 @@ kilowatt DC charge warmed the pack 6.5 degrees on average, against 2.9 on AC. Th
 is still there at the next. On a long trip, the second and third fast charges start hot and are
 slowed, just when you need them.
 
-Nissan's answer is the third-generation Leaf of 2025. It has a liquid-cooled pack and uses CCS,
-Europe's standard plug, instead of CHAdeMO: 10 to 80 percent in as little as 35 minutes on a 150
-kilowatt charger. Heat is the second limit, and a liquid-cooled pack removes most of it.
+Heat is the second limit, and a liquid-cooled pack removes most of it.
 -->
 
 ---

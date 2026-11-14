@@ -97,10 +97,11 @@ routeAlias: coulomb-counting
 <div class="grid grid-cols-[1.2fr_1fr] gap-8 items-start">
 <div>
 
-<img src="/figures/03-soc-drift.svg" alt="SoC error in percent against time, 0 to 7 days, for a 33 Ah cell. A 50 mA current-sensor offset grows the error at 3.6 % per day; with OCV resets on days 2, 4 and 6, the dashed vertical lines, it saws between 0 and 7.3 %, crossing the dashed 5 % line of GB/T 38661 1.4 days after each reset. Never reset, dotted, it leaves the top of the plot on day 4 and would reach 25 % on day 7. Zero-mean 10 mA noise spreads the error by only ±0.0065 % after 7 days, a band too thin to see on the zero line."/>
+<img src="/figures/03-soc-drift.svg" alt="SoC error in percent against time, 0 to 4 days, for a 33.1 Ah cell with a 50 mA current-sensor offset. A taxi that stops only for 30 minutes is never reset: its error grows at 3.6 % per day and crosses the dashed 5 % line of GB/T 38661 after 1.4 days. A private car parked overnight is reset from the OCV after each hour of rest: its error saws between 0 and 0.44 %. Zero-mean 10 mA noise spreads the error by only ±0.0049 % after 4 days, a band too thin to see on the zero line."/>
 
-<div class="caption">Formula plot · offset: derived (<code>bms.md</code> §2) · noise: σ = 0.0544 % at 24 h on 1.5 A·h
-[MOVASSAGH-2021], scaled to 33 A·h, growing as √t · reset days: illustrative.</div>
+<div class="caption">Simulated, <code>SoCDriftDays</code> on the 33.1 A·h Leaf cell · offset: derived (<code>bms.md</code>
+§2) · the taxi's current is set low to keep the cell in range; the offset error does not depend on
+it · noise: formula, σ = 0.0544 % at 24 h on 1.5 A·h [MOVASSAGH-2021], scaled, growing as √t.</div>
 
 </div>
 <div>
@@ -130,9 +131,12 @@ An aged pack makes the count read high.
 
 *[ask]* A current sensor reads 50 milliamperes high on a 33 ampere-hour Leaf cell. The Chinese
 standard allows 5 percent error. How long until you are 5 percent off? *[pause]* 50 milliamperes for
-a day is 1.2 ampere-hours, 3.6 percent. So about 1.4 days: the straight line.
+a day is 1.2 ampere-hours, 3.6 percent. So about 1.4 days: the red line, a taxi that never stops for
+long.
 
-Noise averages out. An offset never does. The count needs a second measurement to reset it.
+The blue line is a private car. After each hour parked the BMS resets the count from the voltage,
+the rule on the next slide, so the error never passes half a percent. Noise averages out. An offset
+never does. The count needs a second measurement to reset it.
 -->
 
 ---
@@ -229,7 +233,9 @@ LFP cells varied 0.28 percent in capacity, and aging widens that.
 balancing drains the fullest cells through a resistor, near the top of the charge.
 
 *[ask]* How long to drain 1 percent of a 33 ampere-hour cell at 240 milliamperes? *[pause]* 1.4
-hours, and almost a watt of heat per cell. Balancing is slow; it happens on the charger.
+hours, and almost a watt of heat per cell. Balancing is slow; it happens on the charger. On a
+four-cell bench of ours, with an assumed spread, each charge removed about 1.7 points of spread, so a
+10 percent spread takes about six charges.
 
 *[ask]* Back to section 01's question: which chemistry for the city bus? *[pause]* LFP. It is
 cheaper per kilowatt-hour, and the bus has room for the extra mass. The cost is the flat voltage

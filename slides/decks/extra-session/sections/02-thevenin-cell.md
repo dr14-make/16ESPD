@@ -275,6 +275,9 @@ skipInCut: true
 The two models side by side: Lecture 4's faults, how the Thevenin cell fixes each, and what it still
 leaves out.
 
+On the WLTC the Thevenin battery changes the energy by only 0.2 percent: 3.133 kilowatt-hours
+against 3.126. For range, Lecture 4's battery was fine. What it got wrong is the voltage.
+
 E fixed at 350 volts becomes an OCV table against state of charge. It still ignores hysteresis: the
 charge curve sits a little above the discharge curve, worst for LFP. The instant-only sag becomes R0
 at once plus the RC pair slowly. More pairs, or a diffusion model, fit better. The state of charge
