@@ -49,7 +49,38 @@ relations
   connect(battery.SoC, soc_true, difference.u2) {^wire11}
   connect(estimator.SoC, estimated_soc, difference.u1) {^wire12}
   connect(difference.y, error) {^wire13}
-metadata {"_links":{"battery":{"Dyad":{"placement":{"diagram":{"x1":100,"x2":220,"y1":600,"y2":720}}}},"current_command":{"Dyad":{"placement":{"diagram":{"x1":540,"x2":620,"y1":120,"y2":240}}}},"difference":{"Dyad":{"placement":{"diagram":{"x1":800,"x2":880,"y1":760,"y2":840}}}},"drive":{"Dyad":{"placement":{"diagram":{"x1":380,"x2":460,"y1":240,"y2":320}}}},"drive_gate":{"Dyad":{"placement":{"diagram":{"x1":380,"x2":460,"y1":60,"y2":140}}}},"elapsed":{"Dyad":{"placement":{"diagram":{"x1":60,"x2":140,"y1":60,"y2":140}}}},"error":{"Dyad":{"placement":{"diagram":{"x1":960,"x2":1000,"y1":780,"y2":820},"icon":{"x1":960,"x2":1000,"y1":780,"y2":820}}}},"estimated_soc":{"Dyad":{"placement":{"diagram":{"x1":960,"x2":1000,"y1":640,"y2":680},"icon":{"x1":960,"x2":1000,"y1":640,"y2":680}}}},"estimator":{"Dyad":{"placement":{"diagram":{"x1":540,"x2":660,"y1":600,"y2":720}}}},"ground":{"Dyad":{"placement":{"diagram":{"x1":120,"x2":200,"y1":840,"y2":920}}}},"load":{"Dyad":{"placement":{"diagram":{"x1":700,"x2":800,"y1":120,"y2":220}}}},"phase":{"Dyad":{"placement":{"diagram":{"x1":220,"x2":300,"y1":60,"y2":140}}}},"rest":{"Dyad":{"placement":{"diagram":{"x1":380,"x2":460,"y1":420,"y2":500}}}},"soc_true":{"Dyad":{"placement":{"diagram":{"x1":960,"x2":1000,"y1":520,"y2":560},"icon":{"x1":960,"x2":1000,"y1":520,"y2":560}}}},"terminal":{"Dyad":{"placement":{"diagram":{"x1":340,"x2":420,"y1":600,"y2":680}}}},"wire1":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"renderStyle":"standard"}},"wire10":{"Dyad":{"edges":[{"E":2,"M":[{"x":542.4,"y":680.0}],"S":1}],"renderStyle":"standard"}},"wire11":{"Dyad":{"edges":[{"E":2,"M":[{"x":480.0,"y":600.0},{"x":480.0,"y":548.0},{"x":820.0,"y":548.0},{"x":820.0,"y":540.0}],"S":1},{"E":3,"M":[{"x":200.0,"y":600.0},{"x":200.0,"y":736.0},{"x":480.0,"y":736.0},{"x":480.0,"y":820.0},{"x":840.0,"y":820.0}],"S":1}],"renderStyle":"standard"}},"wire12":{"Dyad":{"edges":[{"E":2,"M":[{"x":900.0,"y":628.8},{"x":900.0,"y":660.0}],"S":1},{"E":3,"M":[{"x":657.6,"y":772.0},{"x":795.2,"y":772.0}],"S":1}],"renderStyle":"standard"}},"wire13":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"renderStyle":"standard"}},"wire2":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"renderStyle":"standard"}},"wire3":{"Dyad":{"edges":[{"E":2,"M":[{"x":464.0,"y":180.0}],"S":1}],"renderStyle":"standard"}},"wire4":{"Dyad":{"edges":[{"E":2,"M":[{"x":536.0,"y":280.0}],"S":1}],"renderStyle":"standard"}},"wire5":{"Dyad":{"edges":[{"E":2,"M":[{"x":464.0,"y":368.0},{"x":535.2,"y":368.0}],"S":1}],"renderStyle":"standard"}},"wire6":{"Dyad":{"edges":[{"E":2,"M":[{"x":624.0,"y":120.0}],"S":1}],"renderStyle":"standard"}},"wire7":{"Dyad":{"edges":[{"E":2,"M":[{"x":200.0,"y":660.0},{"x":200.0,"y":548.0},{"x":360.0,"y":548.0},{"x":360.0,"y":368.0},{"x":480.0,"y":368.0},{"x":480.0,"y":292.0},{"x":700.0,"y":292.0}],"S":1},{"E":3,"M":[{"x":100.0,"y":640.0}],"S":1}],"renderStyle":"standard"}},"wire8":{"Dyad":{"edges":[{"E":2,"M":[{"x":640.0,"y":170.0},{"x":640.0,"y":292.0},{"x":480.0,"y":292.0},{"x":480.0,"y":368.0},{"x":360.0,"y":368.0},{"x":360.0,"y":548.0},{"x":320.0,"y":548.0},{"x":320.0,"y":660.0}],"S":1},{"E":3,"M":[{"x":640.0,"y":170.0},{"x":640.0,"y":580.0},{"x":480.0,"y":580.0},{"x":480.0,"y":772.0},{"x":200.0,"y":772.0},{"x":200.0,"y":840.0}],"S":1},{"E":4,"M":[{"x":800.0,"y":188.0},{"x":680.0,"y":188.0},{"x":680.0,"y":292.0},{"x":520.0,"y":292.0},{"x":520.0,"y":548.0},{"x":480.0,"y":548.0},{"x":480.0,"y":580.0},{"x":420.0,"y":580.0}],"S":1}],"renderStyle":"standard"}},"wire9":{"Dyad":{"edges":[{"E":2,"M":[{"x":440.0,"y":720.0},{"x":440.0,"y":626.4}],"S":1}],"renderStyle":"standard"}}}}
+metadata {
+  "_links": {
+    "elapsed": {"Dyad": {"placement": {"diagram": {"x1": 60, "y1": 170, "x2": 120, "y2": 230}}}},
+    "phase": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 170, "x2": 260, "y2": 230}}}},
+    "drive_gate": {"Dyad": {"placement": {"diagram": {"x1": 360, "y1": 170, "x2": 420, "y2": 230}}}},
+    "drive": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 40, "x2": 460, "y2": 100}}}},
+    "rest": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 280, "x2": 500, "y2": 340}}}},
+    "current_command": {"Dyad": {"placement": {"diagram": {"x1": 540, "y1": 160, "x2": 600, "y2": 240}}}},
+    "battery": {"Dyad": {"placement": {"diagram": {"x1": 60, "y1": 400, "x2": 180, "y2": 520}}}},
+    "terminal": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 430, "x2": 340, "y2": 490}}}},
+    "load": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 420, "x2": 680, "y2": 500}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 230, "y1": 580, "x2": 290, "y2": 640}}}},
+    "estimator": {"Dyad": {"placement": {"diagram": {"x1": 420, "y1": 780, "x2": 540, "y2": 660}}}},
+    "difference": {"Dyad": {"placement": {"diagram": {"x1": 760, "y1": 800, "x2": 820, "y2": 860}}}},
+    "wire1": {"Dyad": {"edges": [{"S": 2, "M": [], "E": 1}]}},
+    "wire2": {"Dyad": {"edges": [{"S": 2, "M": [], "E": 1}]}},
+    "wire3": {"Dyad": {"edges": [{"S": 2, "M": [], "E": 1}]}},
+    "wire4": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 525.0, "y": 174.4}, {"x": 525.0, "y": 70}], "E": 1}]}},
+    "wire5": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 440, "y": 225.6}, {"x": 440, "y": 270}, {"x": 430, "y": 270}, {"x": 430, "y": 360}, {"x": 515.0, "y": 360}, {"x": 515.0, "y": 310}], "E": 1}]}},
+    "wire6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 640, "y": 200}], "E": 2}]}},
+    "wire7": {"Dyad": {"junctions": [{"x": 480, "y": 460}], "edges": [{"S": 1, "M": [{"x": 40, "y": 460}, {"x": 40, "y": 367}, {"x": 480, "y": 367}], "E": -1}, {"S": 2, "M": [], "E": -1}, {"S": 3, "M": [], "E": -1}]}},
+    "wire8": {"Dyad": {"junctions": [{"x": 260, "y": 460}, {"x": 260, "y": 540}], "edges": [{"S": 2, "M": [], "E": -1}, {"S": 4, "M": [], "E": -1}, {"S": 3, "M": [], "E": -2}, {"S": -2, "M": [], "E": -1}, {"S": 1, "M": [{"x": 710, "y": 460}, {"x": 710, "y": 540}], "E": -2}]}},
+    "wire9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 168, "y": 753.6}], "E": 2}]}},
+    "wire10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 330, "y": 490}, {"x": 330, "y": 724.8}], "E": 2}]}},
+    "wire11": {"Dyad": {"junctions": [{"x": 790, "y": 930}], "edges": [{"S": 1, "M": [{"x": 120, "y": 930}], "E": -1}, {"S": -1, "M": [], "E": 3}, {"S": -1, "M": [], "E": 2}]}},
+    "wire12": {"Dyad": {"junctions": [{"x": 700, "y": 751.2}], "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 700, "y": 700}], "E": 2}, {"S": -1, "M": [{"x": 700, "y": 830}], "E": 3}]}},
+    "wire13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "soc_true": {"Dyad": {"placement": {"diagram": {"x1": 930, "y1": 920, "x2": 950, "y2": 940}, "icon": {"x1": 960, "x2": 1000, "y1": 520, "y2": 560}}}},
+    "estimated_soc": {"Dyad": {"placement": {"diagram": {"x1": 930, "y1": 690, "x2": 950, "y2": 710}, "icon": {"x1": 960, "x2": 1000, "y1": 640, "y2": 680}}}},
+    "error": {"Dyad": {"placement": {"diagram": {"x1": 930, "y1": 820, "x2": 950, "y2": 840}, "icon": {"x1": 960, "x2": 1000, "y1": 780, "y2": 820}}}}
+  }
+}
 end
 
 analysis SoCDriftDaysTransient
