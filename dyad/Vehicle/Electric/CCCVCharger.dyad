@@ -1,0 +1,113 @@
+"""
+Constant current (CC) supplies I_cc until the battery nears V_max; constant voltage
+(CV) then tapers the current, keeping the voltage below V_max by at most I_cc*R_reg
+(1.43 mV at 143 A, 2.5 mV at 250 A with the assumed R_reg = 10 microohm).
+Phase is computed as 1 (CC), 2 (CV), or 3 (done below I_cut), but current keeps tapering
+rather than switching off or latching; positive current leaves p and enters the battery.
+No switching ripple is modeled. The always-present P_max input limits terminal power;
+with use_power_limit false the original CC-CV law is unchanged.
+Defaults: [CHARGING-1] is charging.md section 1; [CCCV-BENCH] is issue #256.
+"""
+component CCCVCharger
+  "CC current [A] (derived; [CHARGING-1], rounded 50 kW / 350 V)"
+  parameter I_cc::Current = 143.0
+  "Terminal voltage ceiling [V] (derived; [PAN-NCR18650B], 96 times 4.20 V; Leaf applicability assumed)"
+  parameter V_max::Voltage = 96.0 * 4.20
+  "Termination current [A] (derived; [PAN-NCR18650B], C/50 using Leaf 40 kWh / 350 V)"
+  parameter I_cut::Current = (40000.0 / 350.0) / 50.0
+  "Regulator resistance [ohm] (assumed; [CCCV-BENCH])"
+  parameter R_reg::Resistance = 1e-5
+  "Enable terminal power limit [THERMAL-BENCH] (assumed), disabled for compatibility"
+  structural parameter use_power_limit::Boolean = false
+  P_max = RealInput() {^P_max}
+  variable v::Voltage
+  p = Pin() {^p}
+  n = Pin() {^n}
+  current = RealOutput() {^current}
+  phase = RealOutput() {^phase}
+  voltage = ElectricalComponents.Analog.Sensors.VoltageSensor() {^voltage}
+  source = ElectricalComponents.Analog.Sources.CurrentSource() {^source}
+  delivered = ElectricalComponents.Analog.Sensors.CurrentSensor() {^delivered}
+  voltage_limit = VehicleSystemsComponents.Vehicle.Blocks.CCCVVoltageCurrentEquation(I_cc = I_cc, V_max = V_max, R_reg = R_reg) {^voltage_limit}
+  power_limit = VehicleSystemsComponents.Vehicle.Blocks.CCCVPowerCurrentEquation(I_cc = I_cc) {^power_limit}
+  power_enabled = BlockComponents.Sources.BooleanConstant(k = use_power_limit) {^power_enabled}
+  cc_ceiling = BlockComponents.Sources.Constant(k = I_cc) {^cc_ceiling}
+  power_selector = BlockComponents.Logical.Switch() {^power_selector}
+  ceiling = BlockComponents.Math.Min() {^ceiling}
+  sign = BlockComponents.Math.Gain(k = -1.0) {^sign}
+  cc_phase = BlockComponents.Logical.LessEqualThreshold(threshold = V_max - I_cc * R_reg) {^cc_phase}
+  done_phase = BlockComponents.Logical.LessThreshold(threshold = I_cut) {^done_phase}
+  code_cc = BlockComponents.Sources.Constant(k = 1.0) {^code_cc}
+  code_cv = BlockComponents.Sources.Constant(k = 2.0) {^code_cv}
+  code_done = BlockComponents.Sources.Constant(k = 3.0) {^code_done}
+  cc_cv = BlockComponents.Logical.Switch() {^cc_cv}
+  phase_selector = BlockComponents.Logical.Switch() {^phase_selector}
+relations
+  v = voltage.v
+  connect(p, voltage.p, delivered.n) {^positive}
+  connect(delivered.p, source.p) {^source_positive}
+  connect(n, voltage.n, source.n) {^negative}
+  connect(voltage.v, voltage_limit.u1, power_limit.u1, cc_phase.u) {^voltage_wire}
+  connect(P_max, power_limit.u2) {^power_wire}
+  connect(power_limit.y, power_selector.u1) {^limited_wire}
+  connect(power_enabled.y, power_selector.u2) {^enabled_wire}
+  connect(cc_ceiling.y, power_selector.u3) {^disabled_wire}
+  connect(voltage_limit.y, ceiling.u1) {^voltage_ceiling_wire}
+  connect(power_selector.y, ceiling.u2) {^power_ceiling_wire}
+  connect(ceiling.y, sign.u) {^current_wire}
+  connect(delivered.i, current, done_phase.u) {^delivered_wire}
+  connect(sign.y, source.I) {^source_wire}
+  connect(cc_phase.y, cc_cv.u2) {^cc_phase_wire}
+  connect(code_cc.y, cc_cv.u1) {^cc_code_wire}
+  connect(code_cv.y, cc_cv.u3) {^cv_code_wire}
+  connect(code_done.y, phase_selector.u1) {^done_code_wire}
+  connect(done_phase.y, phase_selector.u2) {^done_phase_wire}
+  connect(cc_cv.y, phase_selector.u3) {^cc_cv_wire}
+  connect(phase_selector.y, phase) {^phase_wire}
+metadata {
+  "_links": {
+    "delivered": {"Dyad": {"placement": {"diagram": {"x1": 240, "y1": 50, "x2": 180, "y2": 110}}}},
+    "source": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 110, "x2": 760, "y2": 50}}}},
+    "voltage": {"Dyad": {"placement": {"diagram": {"x1": 460, "y1": 150, "x2": 520, "y2": 210}}}},
+    "voltage_limit": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 280, "x2": 380, "y2": 360}}}},
+    "power_limit": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 420, "x2": 380, "y2": 500}}}},
+    "power_enabled": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 540, "x2": 500, "y2": 600}}}},
+    "cc_ceiling": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 660, "x2": 500, "y2": 720}}}},
+    "power_selector": {"Dyad": {"placement": {"diagram": {"x1": 580, "y1": 440, "x2": 640, "y2": 500}}}},
+    "ceiling": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 300, "x2": 760, "y2": 360}}}},
+    "sign": {"Dyad": {"placement": {"diagram": {"x1": 820, "y1": 300, "x2": 880, "y2": 360}}}},
+    "done_phase": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 560, "x2": 760, "y2": 620}}}},
+    "code_done": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 680, "x2": 760, "y2": 740}}}},
+    "cc_phase": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 780, "x2": 360, "y2": 840}}}},
+    "code_cc": {"Dyad": {"placement": {"diagram": {"x1": 160, "y1": 700, "x2": 220, "y2": 760}}}},
+    "code_cv": {"Dyad": {"placement": {"diagram": {"x1": 160, "y1": 860, "x2": 220, "y2": 920}}}},
+    "cc_cv": {"Dyad": {"placement": {"diagram": {"x1": 460, "y1": 800, "x2": 520, "y2": 860}}}},
+    "phase_selector": {"Dyad": {"placement": {"diagram": {"x1": 820, "y1": 780, "x2": 880, "y2": 840}}}},
+    "positive": {"Dyad": {"junctions": [{"x": 170, "y": 80}], "edges": [{"S": 3, "M": [], "E": -1}, {"S": -1, "M": [], "E": 1}, {"S": 2, "M": [{"x": 170, "y": 180}], "E": -1}]}},
+    "source_positive": {"Dyad": {"edges": [{"S": 2, "M": [], "E": 1}]}},
+    "negative": {"Dyad": {"junctions": [{"x": 770, "y": 80}], "edges": [{"S": 3, "M": [], "E": -1}, {"S": -1, "M": [], "E": 1}, {"S": 2, "M": [{"x": 770, "y": 180}], "E": -1}]}},
+    "voltage_wire": {"Dyad": {"junctions": [{"x": 284.4, "y": 210}, {"x": 284.4, "y": 440}], "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 284.4, "y": 320}], "E": 2}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": 3}, {"S": 4, "M": [{"x": 284.4, "y": 810.0}], "E": -2}]}},
+    "power_wire": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 42.0, "y": 480}, {"x": 42.0, "y": 460}], "E": 1}]}},
+    "limited_wire": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 392.0, "y": 450.8}, {"x": 392.0, "y": 460}], "E": 1}]}},
+    "enabled_wire": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 540, "y": 470}, {"x": 540, "y": 570}], "E": 1}]}},
+    "disabled_wire": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 400, "y": 489.2}, {"x": 400, "y": 590}, {"x": 380, "y": 590}, {"x": 380, "y": 620}, {"x": 520, "y": 620}, {"x": 520, "y": 690}], "E": 1}]}},
+    "voltage_ceiling_wire": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 392.0, "y": 312.0}, {"x": 392.0, "y": 320}], "E": 1}]}},
+    "power_ceiling_wire": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 685.0, "y": 348.0}, {"x": 685.0, "y": 380}, {"x": 697.0, "y": 380}, {"x": 697.0, "y": 470}], "E": 1}]}},
+    "current_wire": {"Dyad": {"edges": [{"S": 2, "M": [], "E": 1}]}},
+    "delivered_wire": {"Dyad": {"junctions": [{"x": 684.4, "y": 550}], "edges": [{"S": 3, "M": [{"x": 684.4, "y": 590.0}], "E": -1}, {"S": -1, "M": [{"x": 684.4, "y": 380}, {"x": 150, "y": 380}, {"x": 150, "y": 110}], "E": 1}, {"S": 2, "M": [{"x": 948.0, "y": 600.0}, {"x": 948.0, "y": 550}], "E": -1}]}},
+    "source_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 895, "y": 330}, {"x": 895, "y": 140}, {"x": 730, "y": 140}], "E": 2}]}},
+    "cc_phase_wire": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 445.0, "y": 830.0}, {"x": 445.0, "y": 810}], "E": 1}]}},
+    "cc_code_wire": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 457.0, "y": 740}, {"x": 235.0, "y": 740}, {"x": 235.0, "y": 730}], "E": 1}]}},
+    "cv_code_wire": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 444.4, "y": 849.2}, {"x": 444.4, "y": 890}], "E": 1}]}},
+    "done_code_wire": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 775.0, "y": 790.8}, {"x": 775.0, "y": 710}], "E": 1}]}},
+    "done_phase_wire": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 805.0, "y": 810.0}, {"x": 805.0, "y": 590}], "E": 1}]}},
+    "cc_cv_wire": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 535.0, "y": 829.2}, {"x": 535.0, "y": 830}], "E": 1}]}},
+    "phase_wire": {"Dyad": {"edges": [{"S": 2, "M": [], "E": 1}]}},
+    "p": {"Dyad": {"placement": {"diagram": {"x1": 10, "y1": 70, "x2": 30, "y2": 90}, "icon": {"x1": 0, "x2": 40, "y1": 480, "y2": 520}}}},
+    "n": {"Dyad": {"placement": {"diagram": {"x1": 970, "y1": 70, "x2": 990, "y2": 90}, "icon": {"x1": 960, "x2": 1000, "y1": 480, "y2": 520}}}},
+    "P_max": {"Dyad": {"placement": {"diagram": {"x1": 20, "y1": 450, "x2": 40, "y2": 470}, "icon": {"x1": 480, "x2": 520, "y1": 0, "y2": 40}}}},
+    "current": {"Dyad": {"placement": {"diagram": {"x1": 950, "y1": 590, "x2": 970, "y2": 610}, "icon": {"x1": 280, "x2": 320, "y1": 960, "y2": 1000}}}},
+    "phase": {"Dyad": {"placement": {"diagram": {"x1": 950, "y1": 800, "x2": 970, "y2": 820}, "icon": {"x1": 680, "x2": 720, "y1": 960, "y2": 1000}}}}
+  }
+}
+end

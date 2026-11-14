@@ -89,6 +89,7 @@ include("TorqueToPedal_test.jl")
 include("VehicleBody_test.jl")
 include("WheeledDriveline_test.jl")
 end
+include("Blocks/tests.jl")
 include("Brake/tests.jl")
 include("Electric/tests.jl")
 include("Engine/tests.jl")

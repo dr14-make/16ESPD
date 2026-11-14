@@ -1,0 +1,98 @@
+"""
+One-RC Thevenin battery with coulomb-counted SoC and a clamped, linear OCV lookup.
+The interface and discharge-positive current convention match `Battery`: i = n.i,
+v = p.v - n.v. SoC itself is not clamped; only the lookup is limited to [0, 1].
+`stored_voltage` reports OCV and `stored_current` reports discharge current.
+
+Defaults represent the Leaf ZE1 40 kWh pack. The NMC 811 / graphite-SiOx LG M50
+OCV table [CHEN-2020], derived from PyBaMM Chen2020 at 10 % SoC steps, is the
+course's stand-in (assumed): the ZE1's own chemistry differs. Voltages are scaled
+by Ns. R0 and capacity retain Battery's Nissan/INL defaults for comparison.
+R1/R0 and tau1 use pulse 5 (approximately 60 % SoC, 25 C) of the ORNL Leaf
+33.1 Ah cell 1-RC fit [ORNL-LEAF-ECM] (derived).
+
+The polarization branch uses C1 = tau1/R1 for positive R1.
+At the zero-resistance limit both parts use 1e-15 ohm to keep C1 finite.
+"""
+component TheveninCell
+  extends ElectricalComponents.Analog.Interfaces.TwoPin
+  "State of charge: 1 full, 0 empty"
+  SoC = RealOutput() {^SoC}
+  "Series count for the cell OCV table (Nissan ZE1, 96s2p)"
+  parameter Ns::Real = 96.0
+  "Series resistance, retained from Battery (derived; Nissan/INL)"
+  parameter R0::Resistance = 0.1
+  "Polarization resistance, R0 times 1.34/1.60 (derived; [ORNL-LEAF-ECM], pulse 5)"
+  parameter R1::Resistance = 0.1 * 1.34 / 1.60
+  "Polarization time constant (derived; [ORNL-LEAF-ECM], pulse 5)"
+  parameter tau1::Time = 25.7
+  "Charge capacity, 40 kWh / 350 V [C] (derived from Nissan)"
+  parameter Q_nom::ElectricCharge = 40.0e3 * 3600.0 / 350.0
+  "Initial state of charge (assumed)"
+  parameter SoC0::Real = 0.9
+  "Cell OCV [V], repeated on dummy axis (derived; [CHEN-2020], PyBaMM)"
+  structural parameter ocv_data::Real[:, :] = [[2.500, 2.500], [3.296, 3.296], [3.485, 3.485], [3.581, 3.581], [3.667, 3.667], [3.751, 3.751], [3.841, 3.841], [3.948, 3.948], [4.042, 4.042], [4.097, 4.097], [4.200, 4.200]]
+  table = BlockComponents.Tables.InterpolatedTable(axis1 = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], axis2 = [0, 1], data = ocv_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension()) {^table}
+  lookup_limit = BlockComponents.Nonlinear.Limiter(y_min = 0.0, y_max = 1.0) {^lookup_limit}
+  dummy_axis = BlockComponents.Sources.Constant(k = 0.0) {^dummy_axis}
+  series_count = BlockComponents.Math.Gain(k = Ns) {^series_count}
+  ocv = ElectricalComponents.Analog.Sources.VoltageSource() {^ocv}
+  ohmic = ElectricalComponents.Analog.Basic.Resistor(R = R0) {^ohmic}
+  polarization = ElectricalComponents.Analog.Basic.Resistor(R = max(R1, 1e-15)) {^polarization}
+  capacitor = ElectricalComponents.Analog.Basic.Capacitor(C = tau1 / max(R1, 1e-15)) {^capacitor}
+  current = ElectricalComponents.Analog.Sensors.CurrentSensor() {^current}
+  charge = BlockComponents.Continuous.Integrator(k = -1.0 / Q_nom, x0 = SoC0) {^charge}
+  "Open-circuit voltage at the present SoC (compatibility alias)"
+  variable E::Voltage
+  "Discharge current, out of p and back into n (compatibility alias)"
+  variable i::Current
+  "Polarization voltage (compatibility alias)"
+  variable v1::Voltage
+  stored_voltage = RealOutput() {^stored_voltage}
+  stored_current = RealOutput() {^stored_current}
+relations
+  initial capacitor.v = 0.0
+  E = series_count.y
+  i = current.i
+  v1 = capacitor.v
+  connect(n, current.p) {^wire1}
+  connect(current.n, ocv.n) {^wire2}
+  connect(ocv.p, polarization.p, capacitor.p) {^wire3}
+  connect(polarization.n, capacitor.n, ohmic.p) {^wire4}
+  connect(ohmic.n, p) {^wire5}
+  connect(current.i, charge.u, stored_current) {^wire6}
+  connect(charge.y, lookup_limit.u, SoC) {^wire7}
+  connect(lookup_limit.y, table.u1) {^wire8}
+  connect(dummy_axis.y, table.u2) {^wire9}
+  connect(table.y, series_count.u) {^wire10}
+  connect(series_count.y, ocv.V, stored_voltage) {^wire11}
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/Battery.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": -100, "rot": 0}]},
+  "_links": {
+    "ohmic": {"Dyad": {"placement": {"diagram": {"x1": 180, "y1": 460, "x2": 100, "y2": 540}}}},
+    "polarization": {"Dyad": {"placement": {"diagram": {"x1": 380, "y1": 460, "x2": 300, "y2": 540}}}},
+    "capacitor": {"Dyad": {"placement": {"diagram": {"x1": 380, "y1": 340, "x2": 300, "y2": 420}}}},
+    "ocv": {"Dyad": {"placement": {"diagram": {"x1": 660, "y1": 540, "x2": 740, "y2": 460}}}},
+    "current": {"Dyad": {"placement": {"diagram": {"x1": 900, "y1": 460, "x2": 820, "y2": 540}}}},
+    "charge": {"Dyad": {"placement": {"diagram": {"x1": 160, "y1": 740, "x2": 240, "y2": 820}}}},
+    "lookup_limit": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 740, "x2": 380, "y2": 820}}}},
+    "table": {"Dyad": {"placement": {"diagram": {"x1": 460, "y1": 740, "x2": 540, "y2": 820}}}},
+    "dummy_axis": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 880, "x2": 380, "y2": 960}}}},
+    "series_count": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 740, "x2": 680, "y2": 820}}}},
+    "SoC": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050, "rot": 90}, "diagram": {"x1": 60, "y1": 670, "x2": 80, "y2": 690, "rot": 180}}}},
+    "stored_voltage": {"Dyad": {"placement": {"icon": {"x1": 250, "y1": 950, "x2": 350, "y2": 1050, "rot": 90}, "diagram": {"x1": 60, "y1": 590, "x2": 80, "y2": 610, "rot": 180}}}},
+    "stored_current": {"Dyad": {"placement": {"icon": {"x1": 850, "y1": 950, "x2": 950, "y2": 1050, "rot": 90}, "diagram": {"x1": 920, "y1": 630, "x2": 940, "y2": 650}}}},
+    "wire1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "wire2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "wire3": {"Dyad": {"junctions": [{"x": 450, "y": 500}], "edges": [{"S": 1, "M": [], "E": -1}, {"S": 2, "M": [], "E": -1}, {"S": 3, "M": [{"x": 450, "y": 380}], "E": -1}]}},
+    "wire4": {"Dyad": {"junctions": [{"x": 230, "y": 500}], "edges": [{"S": 1, "M": [], "E": -1}, {"S": 2, "M": [{"x": 230, "y": 380}], "E": -1}, {"S": 3, "M": [], "E": -1}]}},
+    "wire5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "wire6": {"Dyad": {"junctions": [{"x": 780, "y": 640}], "edges": [{"S": 1, "M": [{"x": 860, "y": 540}, {"x": 780, "y": 540}], "E": -1}, {"S": -1, "M": [{"x": 780, "y": 988}, {"x": 140, "y": 988}, {"x": 140, "y": 780}], "E": 2}, {"S": -1, "M": [], "E": 3}]}},
+    "wire7": {"Dyad": {"junctions": [{"x": 270, "y": 780}], "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 270, "y": 680}], "E": 3}]}},
+    "wire8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 410, "y": 780}, {"x": 410, "y": 756}], "E": 2}]}},
+    "wire9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 430, "y": 920}, {"x": 430, "y": 804}], "E": 2}]}},
+    "wire10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "wire11": {"Dyad": {"junctions": [{"x": 700, "y": 600}], "edges": [{"S": 1, "M": [{"x": 700, "y": 780}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}]}}
+  }
+}
+end

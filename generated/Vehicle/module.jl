@@ -14,6 +14,7 @@ end
 include("types.jl")
 include("definitions.jl")
 include("experiments.jl")
+include("Blocks/module.jl")
 include("Brake/module.jl")
 include("Electric/module.jl")
 include("Engine/module.jl")
