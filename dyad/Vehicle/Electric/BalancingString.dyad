@@ -1,0 +1,121 @@
+"""
+Four-cell series bench. I_string is discharge-positive; the test harness sequences
+CC, a timed low-current top-up, and discharge without replacing the cell states.
+The low-current stage is a CV stand-in, not the production charger.
+"""
+test component BalancingString
+  "Per-cell capacity multipliers [BALANCING-BENCH] (assumed), plus/minus 3 percent"
+  parameter capacity_scale::Real[4] = [1.03, 1.01, 0.99, 0.97]
+  "Initial SoC spread [BALANCING-BENCH] (assumed)"
+  parameter SoC0::Real[4] = [0.30, 0.32, 0.34, 0.36]
+  "Bench current, discharge-positive [BALANCING-BENCH] (assumed), C/10 charge"
+  parameter I_string::Current = -3.31
+  "Balancing gate, 0/1 [BALANCING-BENCH] (assumed); off during CC/discharge"
+  parameter balancing::Real = 0.0
+  c1 = VehicleSystemsComponents.Vehicle.Electric.BleedCell(Q_nom = 33.1 * 3600 * capacity_scale[1], SoC0 = SoC0[1]) {^c1}
+  b1 = VehicleSystemsComponents.Vehicle.Electric.PassiveBalancer() {^b1}
+  c2 = VehicleSystemsComponents.Vehicle.Electric.BleedCell(Q_nom = 33.1 * 3600 * capacity_scale[2], SoC0 = SoC0[2]) {^c2}
+  b2 = VehicleSystemsComponents.Vehicle.Electric.PassiveBalancer() {^b2}
+  c3 = VehicleSystemsComponents.Vehicle.Electric.BleedCell(Q_nom = 33.1 * 3600 * capacity_scale[3], SoC0 = SoC0[3]) {^c3}
+  b3 = VehicleSystemsComponents.Vehicle.Electric.PassiveBalancer() {^b3}
+  c4 = VehicleSystemsComponents.Vehicle.Electric.BleedCell(Q_nom = 33.1 * 3600 * capacity_scale[4], SoC0 = SoC0[4]) {^c4}
+  b4 = VehicleSystemsComponents.Vehicle.Electric.PassiveBalancer() {^b4}
+  source = ElectricalComponents.Analog.Sources.CurrentSource() {^source}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  variable v_min::Voltage
+  variable v_max::Voltage
+  variable Ah_out::Real
+  current = BlockComponents.Sources.Constant(k = I_string) {^current}
+  enabled = BlockComponents.Sources.Constant(k = balancing) {^enabled}
+  min12 = BlockComponents.Math.Min() {^min12}
+  min34 = BlockComponents.Math.Min() {^min34}
+  minimum = BlockComponents.Math.Min() {^minimum}
+  max12 = BlockComponents.Math.Max() {^max12}
+  max34 = BlockComponents.Math.Max() {^max34}
+  maximum = BlockComponents.Math.Max() {^maximum}
+  v1 = ElectricalComponents.Analog.Sensors.VoltageSensor() {^v1}
+  v2 = ElectricalComponents.Analog.Sensors.VoltageSensor() {^v2}
+  v3 = ElectricalComponents.Analog.Sensors.VoltageSensor() {^v3}
+  v4 = ElectricalComponents.Analog.Sensors.VoltageSensor() {^v4}
+  discharge_rate = BlockComponents.Sources.Constant(k = max(I_string, 0.0) / 3600) {^discharge_rate}
+  discharge = BlockComponents.Continuous.Integrator(x0 = 0.0) {^discharge}
+relations
+  v_min = minimum.y
+  v_max = maximum.y
+  Ah_out = discharge.y
+  connect(discharge_rate.y, discharge.u) {^discharge_wire}
+  connect(current.y, source.I) {^wire1}
+  connect(enabled.y, b1.active, b2.active, b3.active, b4.active) {^wire2}
+  connect(c1.n, ground.g, source.n, v1.n) {^wire3}
+  connect(c1.p, c2.n, v1.p, v2.n) {^wire4}
+  connect(c2.p, c3.n, v2.p, v3.n) {^wire5}
+  connect(c3.p, c4.n, v3.p, v4.n) {^wire6}
+  connect(c4.p, source.p, v4.p) {^wire7}
+  connect(minimum.y, b1.minimum_voltage, b2.minimum_voltage, b3.minimum_voltage, b4.minimum_voltage) {^wire8}
+  connect(min12.y, minimum.u1) {^wire9}
+  connect(min34.y, minimum.u2) {^wire10}
+  connect(max12.y, maximum.u1) {^wire11}
+  connect(max34.y, maximum.u2) {^wire12}
+  connect(v1.v, b1.voltage, min12.u1, max12.u1) {^wire13}
+  connect(b1.bleed, c1.enable) {^wire14}
+  connect(v2.v, b2.voltage, min12.u2, max12.u2) {^wire15}
+  connect(b2.bleed, c2.enable) {^wire16}
+  connect(v3.v, b3.voltage, min34.u1, max34.u1) {^wire17}
+  connect(b3.bleed, c3.enable) {^wire18}
+  connect(v4.v, b4.voltage, min34.u2, max34.u2) {^wire19}
+  connect(b4.bleed, c4.enable) {^wire20}
+metadata {
+  "_links": {
+    "c1": {"Dyad": {"placement": {"diagram": {"x1": 190, "y1": 810, "x2": 110, "y2": 890}}}},
+    "v1": {"Dyad": {"placement": {"diagram": {"x1": 180, "y1": 760, "x2": 120, "y2": 700}}}},
+    "b1": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 500, "x2": 200, "y2": 600}}}},
+    "c2": {"Dyad": {"placement": {"diagram": {"x1": 390, "y1": 810, "x2": 310, "y2": 890}}}},
+    "v2": {"Dyad": {"placement": {"diagram": {"x1": 380, "y1": 760, "x2": 320, "y2": 700}}}},
+    "b2": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 500, "x2": 400, "y2": 600}}}},
+    "c3": {"Dyad": {"placement": {"diagram": {"x1": 590, "y1": 810, "x2": 510, "y2": 890}}}},
+    "v3": {"Dyad": {"placement": {"diagram": {"x1": 580, "y1": 760, "x2": 520, "y2": 700}}}},
+    "b3": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 500, "x2": 600, "y2": 600}}}},
+    "c4": {"Dyad": {"placement": {"diagram": {"x1": 790, "y1": 810, "x2": 710, "y2": 890}}}},
+    "v4": {"Dyad": {"placement": {"diagram": {"x1": 780, "y1": 760, "x2": 720, "y2": 700}}}},
+    "b4": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 500, "x2": 800, "y2": 600}}}},
+    "source": {"Dyad": {"placement": {"diagram": {"x1": 880, "y1": 820, "x2": 940, "y2": 880}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 470, "y1": 930, "x2": 530, "y2": 990}}}},
+    "current": {"Dyad": {"placement": {"diagram": {"x1": 880, "y1": 700, "x2": 940, "y2": 760}}}},
+    "enabled": {"Dyad": {"placement": {"diagram": {"x1": 40, "y1": 30, "x2": 100, "y2": 90}}}},
+    "discharge_rate": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 30, "x2": 360, "y2": 90}}}},
+    "discharge": {"Dyad": {"placement": {"diagram": {"x1": 480, "y1": 30, "x2": 540, "y2": 90}}}},
+    "min12": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 150, "x2": 310, "y2": 210}}}},
+    "max12": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 290, "x2": 310, "y2": 350}}}},
+    "minimum": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 150, "x2": 510, "y2": 210}}}},
+    "maximum": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 290, "x2": 510, "y2": 350}}}},
+    "min34": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 150, "x2": 710, "y2": 210}}}},
+    "max34": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 290, "x2": 710, "y2": 350}}}},
+    "discharge_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "wire1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 965, "y": 730}, {"x": 965, "y": 790}, {"x": 910, "y": 790}], "E": 2}]}},
+    "wire2": {"Dyad": {"junctions": [{"x": 135, "y": 460}], "edges": [{"S": 1, "M": [{"x": 135, "y": 60}], "E": -1}, {"S": -1, "M": [{"x": 60, "y": 460}, {"x": 60, "y": 570}], "E": 2}, {"S": -1, "M": [{"x": 260, "y": 460}, {"x": 260, "y": 570}], "E": 3}, {"S": -1, "M": [{"x": 460, "y": 460}, {"x": 460, "y": 570}], "E": 4}, {"S": -1, "M": [{"x": 660, "y": 460}, {"x": 660, "y": 570}], "E": 5}]}},
+    "wire3": {"Dyad": {"junctions": [{"x": 50, "y": 850}, {"x": 500, "y": 920}], "edges": [{"S": 1, "M": [], "E": -1}, {"S": 4, "M": [{"x": 50, "y": 730}], "E": -1}, {"S": 3, "M": [{"x": 970, "y": 850}, {"x": 970, "y": 920}], "E": -2}, {"S": 2, "M": [], "E": -2}, {"S": -2, "M": [{"x": 50, "y": 920}], "E": -1}]}},
+    "wire4": {"Dyad": {"junctions": [{"x": 250, "y": 850}, {"x": 250, "y": 730}], "edges": [{"S": 1, "M": [], "E": -1}, {"S": 2, "M": [], "E": -1}, {"S": 3, "M": [], "E": -2}, {"S": 4, "M": [], "E": -2}, {"S": -2, "M": [], "E": -1}]}},
+    "wire5": {"Dyad": {"junctions": [{"x": 450, "y": 850}, {"x": 450, "y": 730}], "edges": [{"S": 1, "M": [], "E": -1}, {"S": 2, "M": [], "E": -1}, {"S": 3, "M": [], "E": -2}, {"S": 4, "M": [], "E": -2}, {"S": -2, "M": [], "E": -1}]}},
+    "wire6": {"Dyad": {"junctions": [{"x": 650, "y": 850}, {"x": 650, "y": 730}], "edges": [{"S": 1, "M": [], "E": -1}, {"S": 2, "M": [], "E": -1}, {"S": 3, "M": [], "E": -2}, {"S": 4, "M": [], "E": -2}, {"S": -2, "M": [], "E": -1}]}},
+    "wire7": {"Dyad": {"junctions": [{"x": 850, "y": 850}], "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": 3, "M": [{"x": 850, "y": 730}], "E": -1}]}},
+    "wire8": {"Dyad": {"junctions": [{"x": 560, "y": 480}], "edges": [{"S": 1, "M": [{"x": 560, "y": 180}], "E": -1}, {"S": -1, "M": [{"x": 70, "y": 480}, {"x": 70, "y": 530}], "E": 2}, {"S": -1, "M": [{"x": 270, "y": 480}, {"x": 270, "y": 530}], "E": 3}, {"S": -1, "M": [{"x": 470, "y": 480}, {"x": 470, "y": 530}], "E": 4}, {"S": -1, "M": [{"x": 670, "y": 480}, {"x": 670, "y": 530}], "E": 5}]}},
+    "wire9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 380, "y": 180}, {"x": 380, "y": 162}], "E": 2}]}},
+    "wire10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 740, "y": 180}, {"x": 740, "y": 120}, {"x": 430, "y": 120}, {"x": 430, "y": 198}], "E": 2}]}},
+    "wire11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 380, "y": 320}, {"x": 380, "y": 302}], "E": 2}]}},
+    "wire12": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 740, "y": 320}, {"x": 740, "y": 270}, {"x": 430, "y": 270}, {"x": 430, "y": 338}], "E": 2}]}},
+    "wire13": {"Dyad": {"junctions": [{"x": 175, "y": 650}, {"x": 220, "y": 302}], "edges": [{"S": 1, "M": [{"x": 175, "y": 700}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 220, "y": 650}], "E": -2}, {"S": -2, "M": [{"x": 220, "y": 162}], "E": 3}, {"S": -2, "M": [], "E": 4}]}},
+    "wire15": {"Dyad": {"junctions": [{"x": 375, "y": 650}, {"x": 420, "y": 380}], "edges": [{"S": 1, "M": [{"x": 375, "y": 700}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 420, "y": 650}], "E": -2}, {"S": -2, "M": [{"x": 420, "y": 240}, {"x": 235, "y": 240}, {"x": 235, "y": 198}], "E": 3}, {"S": -2, "M": [{"x": 235, "y": 380}, {"x": 235, "y": 338}], "E": 4}]}},
+    "wire17": {"Dyad": {"junctions": [{"x": 575, "y": 650}, {"x": 620, "y": 302}], "edges": [{"S": 1, "M": [{"x": 575, "y": 700}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 620, "y": 650}], "E": -2}, {"S": -2, "M": [{"x": 620, "y": 162}], "E": 3}, {"S": -2, "M": [], "E": 4}]}},
+    "wire19": {"Dyad": {"junctions": [{"x": 775, "y": 650}, {"x": 820, "y": 380}], "edges": [{"S": 1, "M": [{"x": 775, "y": 700}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 820, "y": 650}], "E": -2}, {"S": -2, "M": [{"x": 820, "y": 240}, {"x": 635, "y": 240}, {"x": 635, "y": 198}], "E": 3}, {"S": -2, "M": [{"x": 635, "y": 380}, {"x": 635, "y": 338}], "E": 4}]}},
+    "wire14": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 110, "y": 790}, {"x": 150, "y": 790}], "E": 2}]}},
+    "wire16": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 310, "y": 790}, {"x": 350, "y": 790}], "E": 2}]}},
+    "wire18": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 510, "y": 790}, {"x": 550, "y": 790}], "E": 2}]}},
+    "wire20": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 710, "y": 790}, {"x": 750, "y": 790}], "E": 2}]}}
+  }
+}
+end
+
+analysis BalancingStringTransient
+  extends TransientAnalysis(stop = 100.0, reltol = 1e-8, abstol = 1e-10)
+  model = VehicleSystemsComponents.Vehicle.Electric.BalancingString()
+end
