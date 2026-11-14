@@ -35,6 +35,9 @@ const KEPT_RELATIONS = Dict{String,Set{String}}(
         "I_measured = measured.y",
     ]),
     "VehicleSystemsComponents.Vehicle.Electric.ThermalCharge" => Set{String}(["initial link.v = battery.E", "throughput = throughput_integrator.y"]),
+    "VehicleSystemsComponents.Vehicle.Electric.ThermalTheveninCell" => Set([
+        "E = series_count.y", "i = current.i", "v1 = capacitor.v",
+    ]),
     "VehicleSystemsComponents.Vehicle.Electric.TheveninCell" => Set([
         "initial capacitor.v = 0.0",
         "E = series_count.y",
