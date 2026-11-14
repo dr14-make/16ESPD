@@ -211,12 +211,15 @@ function meta_of(text)
 end
 placement(links, name, kind) = get(get(get(get(links, name, Dict()), "Dyad", Dict()), "placement", Dict()), kind, nothing)
 
-# Studio draws a component from its own metadata merged over its bases'.
+# Studio draws inherited members and connects where the base places them and ignores a
+# child's entries for them, so the base's metadata wins.
 own_meta(key) = something(meta_of(definitions[key].text), Dict{String,Any}())
 meta_cache = Dict{String,Any}()
 function merged_meta(key)
     get!(meta_cache, key) do
         links, labels = Dict{String,Any}(), nothing
+        meta = own_meta(key)
+        merge!(links, get(meta, "_links", Dict{String,Any}()))
         for base in bases(key)
             parent = resolve_type(base, key)
             isnothing(parent) && continue
@@ -224,8 +227,6 @@ function merged_meta(key)
             merge!(links, l)
             isnothing(lab) || (labels = lab)
         end
-        meta = own_meta(key)
-        merge!(links, get(meta, "_links", Dict{String,Any}()))
         lab = get(get(meta, "Dyad", Dict{String,Any}()), "labels", nothing)
         (links, isnothing(lab) ? labels : lab)
     end
@@ -359,6 +360,14 @@ function audit(key)
     issues = is_equation_block(key) ? equation_block_issues(key) : String[]
     report(s) = push!(issues, "$key: $s")
     links, _ = merged_meta(key)
+    for base in bases(key)
+        parent = resolve_type(base, key)
+        isnothing(parent) && continue
+        inherited, _ = merged_meta(parent)
+        for name in intersect(keys(get(own_meta(key), "_links", Dict())), keys(inherited))
+            report("metadata for inherited $name is ignored by Studio")
+        end
+    end
     used, expected = Set{String}(), Set{String}()
     kept = Set{String}()
     allowed = get(KEPT_RELATIONS, key, Set{String}())
