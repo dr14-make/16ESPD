@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/images.mjs && slidev --open false",
+    "dev:cut": "SLIDEV_CUT=1 npm run dev --",
     "site": "node scripts/images.mjs && vitepress dev site",
     "build": "node scripts/build.mjs",
     "check": "node scripts/check.mjs"

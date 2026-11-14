@@ -1,0 +1,44 @@
+# DC charging power against SoC, Fastned brand pages (chargeGraph JSON, one value per 1 % SoC,
+# pack around 30 °C), accessed 2026-11-12. Only the values copied into charging.md §2(d): the
+# 10 % grid, each series' first and last point and its peak; not the full per-1 % series.
+car,soc_pct,kw
+Leaf 40 kWh,17,42.2
+Leaf 40 kWh,20,43.14
+Leaf 40 kWh,30,43.7
+Leaf 40 kWh,40,44.45
+Leaf 40 kWh,50,44.84
+Leaf 40 kWh,57,45.63
+Leaf 40 kWh,60,45.63
+Leaf 40 kWh,70,32.75
+Leaf 40 kWh,80,26.03
+Leaf 40 kWh,90,20.17
+ID.3 Pro S 77 kWh,10,174.97
+ID.3 Pro S 77 kWh,18,178.84
+ID.3 Pro S 77 kWh,20,174.93
+ID.3 Pro S 77 kWh,30,136.06
+ID.3 Pro S 77 kWh,40,117.03
+ID.3 Pro S 77 kWh,50,100.59
+ID.3 Pro S 77 kWh,60,85.97
+ID.3 Pro S 77 kWh,70,68.99
+ID.3 Pro S 77 kWh,80,69.22
+ID.3 Pro S 77 kWh,89,45.92
+Model Y LR 2025+,8,230.75
+Model Y LR 2025+,10,219.32
+Model Y LR 2025+,20,181.7
+Model Y LR 2025+,30,163.79
+Model Y LR 2025+,40,131.53
+Model Y LR 2025+,50,105.09
+Model Y LR 2025+,60,83.2
+Model Y LR 2025+,70,72.73
+Model Y LR 2025+,80,48.42
+Model Y LR 2025+,90,34.3
+IONIQ 5 84 kWh,10,203.1
+IONIQ 5 84 kWh,20,237.97
+IONIQ 5 84 kWh,30,248.82
+IONIQ 5 84 kWh,40,256.97
+IONIQ 5 84 kWh,50,263.4
+IONIQ 5 84 kWh,51,263.57
+IONIQ 5 84 kWh,60,200.58
+IONIQ 5 84 kWh,70,166.92
+IONIQ 5 84 kWh,80,80.72
+IONIQ 5 84 kWh,82,66.58

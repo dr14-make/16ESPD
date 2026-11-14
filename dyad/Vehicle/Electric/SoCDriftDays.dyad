@@ -1,0 +1,89 @@
+"""
+Three-day offset-drift bench using the default Leaf TheveninCell.
+A modest discharge block each day keeps true SoC inside the OCV table without a charger.
+The estimator sees only current and terminal voltage, not the cell's true SoC.
+"""
+test component SoCDriftDays
+  "Drive current [A] (assumed; [SOC-257], multi-day teaching profile)"
+  parameter I_drive::Current = 5.0
+  "Drive duration [s] (assumed; [SOC-257], two hours per day)"
+  parameter t_drive::Time = 7200.0
+  "Pattern period [s] (assumed; [SOC-257], one day)"
+  parameter period::Time = 86400.0
+  "Sensor offset [A] (assumed; [SOC-257], exercise 2)"
+  parameter I_offset::Current = 0.05
+  "Rest duration required [s] (verified; [USABC-EV-R4], at least 1 h)"
+  parameter t_rest::Time = 3600.0
+  "Measured rest threshold [A] (assumed; [SOC-257], above sensor bias)"
+  parameter I_rest::Current = 0.1
+  "Initial estimate (assumed; [SOC-257], matches default cell)"
+  parameter SoC0_est::Real = 0.9
+  "BMS sample interval [s] (assumed; [SOC-257], resolves block edges)"
+  structural parameter dt::Time = 1.0
+  battery = VehicleSystemsComponents.Vehicle.Electric.TheveninCell() {^battery}
+  load = ElectricalComponents.Analog.Sources.CurrentSource() {^load}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  estimator = VehicleSystemsComponents.Vehicle.Electric.SoCEstimator(I_offset = I_offset, t_rest = t_rest, I_rest = I_rest, SoC0 = SoC0_est, dt = dt) {^estimator}
+  soc_true = RealOutput() {^soc_true}
+  estimated_soc = RealOutput() {^estimated_soc}
+  error = RealOutput() {^error}
+  elapsed = BlockComponents.Sources.ContinuousClock() {^elapsed}
+  phase = VehicleSystemsComponents.Vehicle.Blocks.SoCPhaseEquation(period = period) {^phase}
+  drive_gate = BlockComponents.Logical.LessThreshold(threshold = t_drive) {^drive_gate}
+  drive = BlockComponents.Sources.Constant(k = I_drive) {^drive}
+  rest = BlockComponents.Sources.Constant(k = 0.0) {^rest}
+  current_command = BlockComponents.Logical.Switch() {^current_command}
+  terminal = ElectricalComponents.Analog.Sensors.VoltageSensor() {^terminal}
+  difference = BlockComponents.Math.Feedback() {^difference}
+relations
+  connect(elapsed.y, phase.u1) {^wire1}
+  connect(phase.y, drive_gate.u) {^wire2}
+  connect(drive_gate.y, current_command.u2) {^wire3}
+  connect(drive.y, current_command.u1) {^wire4}
+  connect(rest.y, current_command.u3) {^wire5}
+  connect(current_command.y, load.I) {^wire6}
+  connect(battery.p, load.p, terminal.p) {^wire7}
+  connect(load.n, battery.n, ground.g, terminal.n) {^wire8}
+  connect(battery.stored_current, estimator.I) {^wire9}
+  connect(terminal.v, estimator.V) {^wire10}
+  connect(battery.SoC, soc_true, difference.u2) {^wire11}
+  connect(estimator.SoC, estimated_soc, difference.u1) {^wire12}
+  connect(difference.y, error) {^wire13}
+metadata {
+  "_links": {
+    "elapsed": {"Dyad": {"placement": {"diagram": {"x1": 60, "y1": 170, "x2": 120, "y2": 230}}}},
+    "phase": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 170, "x2": 260, "y2": 230}}}},
+    "drive_gate": {"Dyad": {"placement": {"diagram": {"x1": 360, "y1": 170, "x2": 420, "y2": 230}}}},
+    "drive": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 40, "x2": 460, "y2": 100}}}},
+    "rest": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 280, "x2": 500, "y2": 340}}}},
+    "current_command": {"Dyad": {"placement": {"diagram": {"x1": 540, "y1": 160, "x2": 600, "y2": 240}}}},
+    "battery": {"Dyad": {"placement": {"diagram": {"x1": 60, "y1": 400, "x2": 180, "y2": 520}}}},
+    "terminal": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 430, "x2": 340, "y2": 490}}}},
+    "load": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 420, "x2": 680, "y2": 500}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 230, "y1": 580, "x2": 290, "y2": 640}}}},
+    "estimator": {"Dyad": {"placement": {"diagram": {"x1": 420, "y1": 780, "x2": 540, "y2": 660}}}},
+    "difference": {"Dyad": {"placement": {"diagram": {"x1": 760, "y1": 800, "x2": 820, "y2": 860}}}},
+    "wire1": {"Dyad": {"edges": [{"S": 2, "M": [], "E": 1}]}},
+    "wire2": {"Dyad": {"edges": [{"S": 2, "M": [], "E": 1}]}},
+    "wire3": {"Dyad": {"edges": [{"S": 2, "M": [], "E": 1}]}},
+    "wire4": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 525.0, "y": 174.4}, {"x": 525.0, "y": 70}], "E": 1}]}},
+    "wire5": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 440, "y": 225.6}, {"x": 440, "y": 270}, {"x": 430, "y": 270}, {"x": 430, "y": 360}, {"x": 515.0, "y": 360}, {"x": 515.0, "y": 310}], "E": 1}]}},
+    "wire6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 640, "y": 200}], "E": 2}]}},
+    "wire7": {"Dyad": {"junctions": [{"x": 480, "y": 460}], "edges": [{"S": 1, "M": [{"x": 40, "y": 460}, {"x": 40, "y": 367}, {"x": 480, "y": 367}], "E": -1}, {"S": 2, "M": [], "E": -1}, {"S": 3, "M": [], "E": -1}]}},
+    "wire8": {"Dyad": {"junctions": [{"x": 260, "y": 460}, {"x": 260, "y": 540}], "edges": [{"S": 2, "M": [], "E": -1}, {"S": 4, "M": [], "E": -1}, {"S": 3, "M": [], "E": -2}, {"S": -2, "M": [], "E": -1}, {"S": 1, "M": [{"x": 710, "y": 460}, {"x": 710, "y": 540}], "E": -2}]}},
+    "wire9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 168, "y": 753.6}], "E": 2}]}},
+    "wire10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 330, "y": 490}, {"x": 330, "y": 724.8}], "E": 2}]}},
+    "wire11": {"Dyad": {"junctions": [{"x": 790, "y": 930}], "edges": [{"S": 1, "M": [{"x": 120, "y": 930}], "E": -1}, {"S": -1, "M": [], "E": 3}, {"S": -1, "M": [], "E": 2}]}},
+    "wire12": {"Dyad": {"junctions": [{"x": 700, "y": 751.2}], "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 700, "y": 700}], "E": 2}, {"S": -1, "M": [{"x": 700, "y": 830}], "E": 3}]}},
+    "wire13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "soc_true": {"Dyad": {"placement": {"diagram": {"x1": 930, "y1": 920, "x2": 950, "y2": 940}, "icon": {"x1": 960, "x2": 1000, "y1": 520, "y2": 560}}}},
+    "estimated_soc": {"Dyad": {"placement": {"diagram": {"x1": 930, "y1": 690, "x2": 950, "y2": 710}, "icon": {"x1": 960, "x2": 1000, "y1": 640, "y2": 680}}}},
+    "error": {"Dyad": {"placement": {"diagram": {"x1": 930, "y1": 820, "x2": 950, "y2": 840}, "icon": {"x1": 960, "x2": 1000, "y1": 780, "y2": 820}}}}
+  }
+}
+end
+
+analysis SoCDriftDaysTransient
+  extends TransientAnalysis(stop = 259200.0, reltol = 1e-8, abstol = 1e-10)
+  model = VehicleSystemsComponents.Vehicle.Electric.SoCDriftDays()
+end

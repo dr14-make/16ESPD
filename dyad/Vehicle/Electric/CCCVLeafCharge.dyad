@@ -1,0 +1,34 @@
+"""
+Leaf 50 kW nominal CC-CV bench from 10 % SoC [CCCV-BENCH] (assumed).
+With R1 = 0, CC ends at OCV 4.051 V/cell; the default R1 lowers this to
+3.926 V/cell because steady polarization adds I_cc*R1 to the terminal voltage.
+The capacity, OCV table, and RC time constant are inherited from TheveninCell.
+"""
+component CCCVLeafCharge
+  "Polarization resistance [ohm] (derived; [ORNL-LEAF-ECM], TheveninCell pulse-5 fit)"
+  parameter R1::Resistance = 0.1 * 1.34 / 1.60
+  charger = VehicleSystemsComponents.Vehicle.Electric.CCCVCharger() {^charger}
+  battery = VehicleSystemsComponents.Vehicle.Electric.TheveninCell(SoC0 = 0.1, R1 = R1) {^battery}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  zero_power = BlockComponents.Sources.Constant(k = 0.0) {^zero_power}
+relations
+  connect(zero_power.y, charger.P_max) {^power_wire}
+  connect(charger.p, battery.p) {^positive}
+  connect(charger.n, battery.n, ground.g) {^negative}
+metadata {
+  "_links": {
+    "charger": {"Dyad": {"placement": {"diagram": {"x1": 380, "y1": 280, "x2": 180, "y2": 480}}}},
+    "battery": {"Dyad": {"placement": {"diagram": {"x1": 560, "y1": 280, "x2": 760, "y2": 480}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 430, "y1": 640, "x2": 510, "y2": 720}}}},
+    "zero_power": {"Dyad": {"placement": {"diagram": {"x1": 240, "y1": 100, "x2": 320, "y2": 180}}}},
+    "power_wire": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 280.0, "y": 268.0}, {"x": 336.0, "y": 268.0}, {"x": 336.0, "y": 140}], "E": 1}]}},
+    "positive": {"Dyad": {"edges": [{"S": 2, "M": [], "E": 1}]}},
+    "negative": {"Dyad": {"junctions": [{"x": 470, "y": 520}], "edges": [{"S": 3, "M": [], "E": -1}, {"S": -1, "M": [{"x": 168.0, "y": 520}, {"x": 168.0, "y": 380}], "E": 1}, {"S": 2, "M": [{"x": 772.0, "y": 380.0}, {"x": 772.0, "y": 520}], "E": -1}]}}
+  }
+}
+end
+
+analysis CCCVLeafChargeTransient
+  extends TransientAnalysis(stop = 8000.0, alg = ODEAlg.Rodas5P(), reltol = 1e-8, abstol = 1e-10)
+  model = VehicleSystemsComponents.Vehicle.Electric.CCCVLeafCharge()
+end

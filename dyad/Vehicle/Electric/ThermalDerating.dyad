@@ -1,0 +1,43 @@
+"""
+Temperature-only power ceiling. The linear interpolation is assumed, not a
+reconstruction of Nissan's BMS. Temperatures are in kelvin.
+"""
+component ThermalDerating
+  "DC rating [INL-DCFC-2015] (verified), 50 kW; ZE1 bench applicability assumed"
+  parameter P_full::Power = 50000.0
+  "Derating onset [CT-RAPIDGATE-2019] (secondary), 32 C"
+  parameter T_start::Temperature = 305.15
+  "Charging pause [INL-DCFC-2015] (verified, Nissan service literature), 55 C"
+  parameter T_stop::Temperature = 328.15
+  T = RealInput() {^T}
+  P_max = RealOutput() {^P_max}
+  stop_temperature = BlockComponents.Sources.Constant(k = T_stop) {^stop_temperature}
+  temperature_difference = BlockComponents.Math.Add(k2 = -1.0) {^temperature_difference}
+  fraction = BlockComponents.Math.Gain(k = 1.0 / (T_stop - T_start)) {^fraction}
+  clamp_fraction = BlockComponents.Nonlinear.Limiter(y_min = 0.0, y_max = 1.0) {^clamp_fraction}
+  power = BlockComponents.Math.Gain(k = P_full) {^power}
+relations
+  connect(stop_temperature.y, temperature_difference.u1) {^thermal_wire1}
+  connect(T, temperature_difference.u2) {^thermal_wire2}
+  connect(temperature_difference.y, fraction.u) {^thermal_wire3}
+  connect(fraction.y, clamp_fraction.u) {^thermal_wire4}
+  connect(clamp_fraction.y, power.u) {^thermal_wire5}
+  connect(power.y, P_max) {^thermal_wire6}
+metadata {
+  "_links": {
+    "P_max": {"Dyad":{"placement":{"diagram":{"x1":960,"x2":980,"y1":390,"y2":410},"icon":{"x1":950,"x2":1050,"y1":450,"y2":550}}}},
+    "T": {"Dyad":{"placement":{"diagram":{"x1":30,"x2":50,"y1":490,"y2":510},"icon":{"x1":-50,"x2":50,"y1":450,"y2":550}}}},
+    "clamp_fraction": {"Dyad":{"placement":{"diagram":{"x1":680,"x2":760,"y1":360,"y2":440}}}},
+    "fraction": {"Dyad":{"placement":{"diagram":{"x1":520,"x2":600,"y1":360,"y2":440}}}},
+    "power": {"Dyad":{"placement":{"diagram":{"x1":840,"x2":920,"y1":360,"y2":440}}}},
+    "stop_temperature": {"Dyad":{"placement":{"diagram":{"x1":160,"x2":240,"y1":240,"y2":320}}}},
+    "temperature_difference": {"Dyad":{"placement":{"diagram":{"x1":360,"x2":440,"y1":360,"y2":440}}}},
+    "thermal_wire1": {"Dyad":{"edges":[{"E":2,"M":[{"x":300.0,"y":280.0},{"x":300.0,"y":376.0}],"S":1}],"path":{}}},
+    "thermal_wire2": {"Dyad":{"edges":[{"E":2,"M":[{"x":200.0,"y":500.0},{"x":200.0,"y":424.0}],"S":1}],"path":{}}},
+    "thermal_wire3": {"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"path":{}}},
+    "thermal_wire4": {"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"path":{}}},
+    "thermal_wire5": {"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"path":{}}},
+    "thermal_wire6": {"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"path":{}}}
+  }
+}
+end

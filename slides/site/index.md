@@ -50,6 +50,10 @@ features:
   - title: "Lecture 5 homework: a series hybrid"
     details: "After the lecture<br>Wire a series hybrid on prepared ground: the library's engine-generator and traction drive on one battery bus, the engine on its best-BSFC line, and an SoC thermostat of your own. Charge-sustaining on WLTC, against the conventional car in L/100 km."
     link: /lecture/lecture-05/homework
+  - title: "Extra session: energy on board — batteries in depth, charging and hydrogen"
+    details: "Extra material · 180 min, with a 90-min cut · theory only<br>LFP, NMC and sodium-ion, the Thevenin cell, the BMS with SoC drift and balancing, CC-CV and measured DC curves for the Leaf, a 400 V and an 800 V car, charging losses, ISO 15118 and the Czech and EU networks; the PEM polarization curve and the stack, 700 bar fueling and the station chain, hydrogen prices per 100 km, and the fuel-cell car as a series hybrid against the BEV."
+    link: /extra-session/index.html
+    target: _self
 ---
 
 ## Lecture 1, in two sessions
@@ -144,6 +148,19 @@ powertrain, the operating line, the energy manager and the charge-sustaining WLT
 [build guide](./lecture/lecture-05/); each build slide links to its step. The
 [homework](./lecture/lecture-05/homework) is a series hybrid on prepared ground, with the targets
 it has to meet.
+
+## Extra session: energy on board
+
+Extra material that closes the electric and hybrid block: a theory deck with no build. The
+90-minute version is the same deck with some slides skipped; the handout keeps them all.
+
+1. [**Cells and chemistries**](./extra-session/index.html#/cells-and-chemistries){target="_self"} — LFP, NMC, sodium-ion, and what a kWh costs
+2. [**The Thevenin cell**](./extra-session/index.html#/thevenin-cell){target="_self"} — OCV(SoC), R₀ and one RC pair
+3. [**The BMS**](./extra-session/index.html#/bms){target="_self"} — SoC drift, the OCV reset, balancing, limits
+4. [**Charging**](./extra-session/index.html#/charging){target="_self"} — CC-CV, measured curves, 400 V vs 800 V, losses, the network
+5. [**Fuel cells**](./extra-session/index.html#/fuel-cells){target="_self"} — the polarization curve, the stack, balance of plant
+6. [**Hydrogen**](./extra-session/index.html#/hydrogen){target="_self"} — 700 bar fueling, the station chain, counts, price, AFIR
+7. [**The fuel-cell car**](./extra-session/index.html#/fuel-cell-car){target="_self"} — a series hybrid; 69 % vs 26 % to the wheel
 
 ## For the lecturer
 
