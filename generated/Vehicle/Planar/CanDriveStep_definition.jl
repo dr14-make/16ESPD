@@ -54,9 +54,15 @@
   # Subcomponent source of type BlockComponents.Sources.Step
   source_overrides = __pop_subcomponent_overrides!(__overrides, "source")
   push!(__systems, @named source = BlockComponents.Sources.Step(; height=Float64(100), start_time=0.1, __overrides = source_overrides))
-  # Subcomponent tx of type VehicleSystemsComponents.Vehicle.Planar.CanTx
+  # Subcomponent tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
   tx_overrides = __pop_subcomponent_overrides!(__overrides, "tx")
-  push!(__systems, @named tx = VehicleSystemsComponents.Vehicle.Planar.CanTx(; period=0.02, scale=0.1, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = tx_overrides))
+  push!(__systems, @named tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; period=0.02, scale=0.1, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = tx_overrides))
+  # Subcomponent rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
+  rx_overrides = __pop_subcomponent_overrides!(__overrides, "rx")
+  push!(__systems, @named rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; __overrides = rx_overrides))
+  # Subcomponent term of type VehicleSystemsComponents.Vehicle.Planar.CanTermination
+  term_overrides = __pop_subcomponent_overrides!(__overrides, "term")
+  push!(__systems, @named term = VehicleSystemsComponents.Vehicle.Planar.CanTermination(; __overrides = term_overrides))
   # Subcomponent response of type BlockComponents.Continuous.FirstOrder
   response_overrides = __pop_subcomponent_overrides!(__overrides, "response")
   push!(__systems, @named response = BlockComponents.Continuous.FirstOrder(; T=0.01, __overrides = response_overrides))
@@ -86,7 +92,8 @@
 
   ### Equations
   push!(__eqs, connect(source.y, tx.u))
-  push!(__eqs, connect(tx.y, response.u))
+  push!(__eqs, connect(tx.bus, rx.bus, term.bus))
+  push!(__eqs, connect(rx.y, response.u))
   push!(__eqs, connect(response.y, drive.tau_ref))
   push!(__eqs, connect(drive.spline, load.spline_a))
   push!(__eqs, connect(drive.support, mount.spline))

@@ -1,11 +1,20 @@
-connector CanBus
-  potential vehicle_speed::Real
-  potential steering_angle::Real
-  potential yaw_rate::Real
-  potential friction_demand::Real
-  potential front_abs_active::Real
-  potential motor_request::Real
-  potential dashboard_speed::Real
+connector CanNet
+  structural parameter n::Integer = 16
+  potential v::Real[n]
+  flow i::Real[n]
+  potential c::Real[n]
+  flow j::Real[n]
+end
+
+"Closes every slot of one bus. Exactly one per bus."
+component CanTermination
+  bus = CanNet(n = n)
+  structural parameter n::Integer = 16
+relations
+  for k in 1:n
+    bus.v[k] = bus.i[k]
+    bus.c[k] = bus.j[k]
+  end
 end
 
 component CanPack@[input clk extends Discrete]
@@ -19,7 +28,7 @@ relations
   y = offset + scale * clamp(floor((u - offset) / scale + 0.5), raw_min, raw_max)
 end
 
-component CanTx
+component CanLink
   u = RealInput()
   y = RealOutput()
   structural parameter ideal::Boolean = false
@@ -45,14 +54,118 @@ relations
   end
 end
 
+partial component CanTxBase
+  bus = CanNet(n = n)
+  structural parameter n::Integer = 16
+  structural parameter slot::Integer = 1
+  "11-bit CAN identifier; lower wins arbitration"
+  parameter id::Integer = 256
+  structural parameter ideal::Boolean = false
+  structural parameter period::Real = 0.01
+  parameter frame_period::Real = period
+  parameter slot_index::Integer = slot
+  parameter slot_count::Integer = n
+  variable wire::Real
+relations
+  assert(id >= 0 and id <= 2047, "CAN Tx: id must be in 0..2047")
+  if slot >= 1 and slot <= n
+    bus.v[slot] = wire
+    bus.j[slot] = -1
+  end
+  for k in 1:n
+    if k != slot
+      bus.i[k] = 0
+      bus.j[k] = 0
+    end
+  end
+end
+
+component CanTxReal
+  extends CanTxBase
+  u = RealInput()
+  parameter scale::Real = 1
+  parameter offset::Real = 0
+  parameter raw_min::Real = 0
+  parameter raw_max::Real = 65535
+  link = CanLink(ideal = ideal, period = period, scale = scale, offset = offset, raw_min = raw_min, raw_max = raw_max)
+relations
+  connect(u, link.u)
+  wire = link.y
+end
+
+component CanTxInteger
+  extends CanTxBase
+  u = IntegerInput()
+  parameter scale::Real = 1
+  parameter offset::Real = 0
+  parameter raw_min::Real = 0
+  parameter raw_max::Real = 255
+  link = CanLink(ideal = ideal, period = period, scale = scale, offset = offset, raw_min = raw_min, raw_max = raw_max)
+relations
+  link.u = u
+  wire = link.y
+end
+
+component CanTxBoolean
+  extends CanTxBase
+  u = BooleanInput()
+  link = CanLink(ideal = ideal, period = period, scale = 1, offset = 0, raw_min = 0, raw_max = 1)
+relations
+  link.u = ifelse(u, 1.0, 0.0)
+  wire = link.y
+end
+
+"Reads one slot; draws no flow on any slot."
+partial component CanRxBase
+  bus = CanNet(n = n)
+  structural parameter n::Integer = 16
+  structural parameter slot::Integer = 1
+  parameter id::Integer = 256
+  parameter slot_index::Integer = slot
+  parameter slot_count::Integer = n
+  variable wire::Real
+relations
+  for k in 1:n
+    bus.i[k] = 0
+    bus.j[k] = 0
+  end
+  if slot >= 1 and slot <= n
+    wire = bus.v[slot]
+  end
+end
+
+component CanRxReal
+  extends CanRxBase
+  y = RealOutput()
+relations
+  y = wire
+end
+
+component CanRxInteger
+  extends CanRxBase
+  y = IntegerOutput()
+relations
+  y = floor(wire + 0.5)
+end
+
+component CanRxBoolean
+  extends CanRxBase
+  y = BooleanOutput()
+relations
+  y = wire > 0.5
+end
+
 component CanTxStep
   structural parameter period::Real = 0.02
   source = BlockComponents.Sources.Step(height = 3.33, start_time = 5 * period)
-  tx = CanTx(period = period, scale = 0.1)
+  tx = CanTxReal(period = period, scale = 0.1)
+  rx = CanRxReal()
+  term = CanTermination()
   response = BlockComponents.Continuous.FirstOrder(T = 0.01)
 relations
   connect(source.y, tx.u)
-  connect(tx.y, response.u)
+  connect(tx.bus, rx.bus, term.bus)
+  connect(rx.y, response.u)
   initial response.x = 0
 end
 

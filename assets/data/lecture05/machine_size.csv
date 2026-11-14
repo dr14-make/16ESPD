@@ -1,4 +1,4 @@
-# inputs_sha256 = f2edc3ac96a79b292cdbd67ed5d34c9e6b4ae2c7d0875f978003db73fe486456
+# inputs_sha256 = 386e21cd8713676b5b422706c6a07e94f8f1c27fa00fc8909c262a3c9a419e2c
 P_rated,T_max,fuel_raw,fuel_corr,energy_corr,saving_vs_H0_pct,SoC_end,max_speed_error,starts,flag
 8000,54.6667,4.359548,4.456341,144.0869,22.058,0.55666,2.3937,52,soc_not_sustained+speed_error
 15000,102.5000,4.265597,4.255444,137.5913,25.572,0.60455,1.5711,42,ok

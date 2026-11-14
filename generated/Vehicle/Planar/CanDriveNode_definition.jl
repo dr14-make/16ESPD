@@ -18,7 +18,7 @@
 
 ## Connectors
 
- * `bus` - ([`CanBus`](@ref))
+ * `bus` - ([`CanNet`](@ref))
  * `spline` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `support` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
 """
@@ -81,7 +81,7 @@
   __constants = Any[]
 
   ### Components
-  push!(__systems, @named bus = VehicleSystemsComponents.Vehicle.Planar.CanBus())
+  push!(__systems, @named bus = VehicleSystemsComponents.Vehicle.Planar.CanNet())
   push!(__systems, @named spline = __Dyad__Spline())
   push!(__systems, @named support = __Dyad__Spline())
   # Subcomponent drive of type VehicleSystemsComponents.Vehicle.Electric.ElectricDrive
@@ -92,6 +92,9 @@
   if !ideal
     push!(__systems, @named response = BlockComponents.Continuous.FirstOrder(; T=T_receive, __overrides = response_overrides))
   end
+  # Subcomponent motor_request_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
+  motor_request_rx_overrides = __pop_subcomponent_overrides!(__overrides, "motor_request_rx")
+  push!(__systems, @named motor_request_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=6, id=272, __overrides = motor_request_rx_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -104,14 +107,15 @@
   __assertions = []
 
   ### Equations
+  push!(__eqs, connect(bus, motor_request_rx.bus))
   push!(__eqs, connect(drive.spline, spline))
   push!(__eqs, connect(drive.support, support))
 
   ### Control Structures
   if ideal
-    push!(__eqs, drive.tau_ref ~ bus.motor_request)
+    push!(__eqs, drive.tau_ref ~ motor_request_rx.y)
   else
-    push!(__eqs, response.u ~ bus.motor_request)
+    push!(__eqs, response.u ~ motor_request_rx.y)
     push!(__eqs, connect(response.y, drive.tau_ref))
     push!(__initialization_eqs, response.x ~ 0)
   end
