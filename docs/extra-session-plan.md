@@ -88,7 +88,9 @@ recall Lecture 4. Section 01 opens with the battery's terms; 02 and 03 give up t
   component.
 - **S3 — Figures come from data, not models.** Measured charging curves, station and price data
   and the efficiency chain are redrawn from the research notes with their source tags; simple
-  formula plots (CC-CV, polarization curve, Thevenin pulse response) are drawn by a notebook.
+  formula plots (CC-CV, polarization curve, Thevenin pulse response) are drawn by a notebook. Two
+  figures come from the course models instead, each beside its measured or sourced counterpart:
+  the Leaf charge curve (CCCVLeafCharge over Fastned's data) and the SoC drift (SoCDriftDays).
 - **S4 — Leaf and Mirai are the reference cars.** The Leaf's CHAdeMO curve and rapidgate show the
   thermal limit; the Mirai anchors the FCEV numbers.
 - **S5 — Secondary numbers get a primary before they reach a slide**, or are shown labeled as
