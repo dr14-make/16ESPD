@@ -16,6 +16,7 @@ end
 
 
 @testset "`VehicleSystemsComponents.Vehicle.Blocks`" begin
+include("ArrheniusFactorEquation_test.jl")
 include("BalancerRequestEquation_test.jl")
 include("CCCVPowerCurrentEquation_test.jl")
 include("CCCVVoltageCurrentEquation_test.jl")

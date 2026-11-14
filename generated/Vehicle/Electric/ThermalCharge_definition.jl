@@ -5,18 +5,19 @@
 
 
 @doc Markdown.doc"""
-   ThermalCharge(; name, cycling, G_air, T0, P_full, I_cc, P_drive, __overrides)
+   ThermalCharge(; name, Ea, cycling, G_air, T0, P_full, I_cc, P_drive, __overrides)
 
-Leaf electrothermal charge bench. Heat excludes reversible/entropic heat and charger
-losses; resistance and OCV remain temperature independent. INL studied a different
-24 kWh pack and did not state the charge windows for its average temperature rises.
+Leaf electrothermal charge bench. Resistance follows pack temperature; OCV does not.
+Heat excludes reversible/entropic heat and charger losses. INL's 2012 24 kWh
+near-empty-to-full charges are a separate comparison from ZE1 10–80 % charges.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `Ea`         | Activation energy [ORNL-LEAF-ECM] (derived), J/mol; zero freezes resistance                         | --  |   12500.0 |
 | `cycling`         | Two-charge sequence [THERMAL-BENCH] (assumed), disabled for single charge                         | --  |   false |
-| `G_air`         | Passive conductance [THERMAL-BENCH] (assumed), 4 m^2 times 5 W/(m^2 K)                         | W/K  |   20.0 |
+| `G_air`         | Passive conductance [INL-DCFC-2015] (derived), parked cooling Figs. 5–6                         | W/K  |   10.0 |
 | `T0`         | Initial temperature [THERMAL-BENCH] (assumed), 25 C                         | K  |   298.15 |
 | `P_full`         | Charge power [INL-DCFC-2015] (verified), 50 kW rating                         | W  |   50000.0 |
 | `I_cc`         | Current ceiling [CHARGING-1] (derived), rounded 50 kW / 350 V                         | A  |   143.0 |
@@ -32,7 +33,7 @@ losses; resistance and OCV remain temperature independent. INL studied a differe
 | ------------ | ----------------------------------- | ------ |
 | `throughput`         |                          | --  |
 """
-@component function ThermalCharge(; name = nothing, var"cycling"=false, var"G_air"=Float64(20.0), var"T0"=298.15, var"P_full"=Float64(50000.0), var"I_cc"=Float64(143.0), var"P_drive"=Float64(20000.0), __overrides = Dict{String, Any}())
+@component function ThermalCharge(; name = nothing, var"Ea"=Float64(12500.0), var"cycling"=false, var"G_air"=Float64(10.0), var"T0"=298.15, var"P_full"=Float64(50000.0), var"I_cc"=Float64(143.0), var"P_drive"=Float64(20000.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -51,6 +52,7 @@ losses; resistance and OCV remain temperature independent. INL studied a differe
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "Ea") && (Ea = pop!(__overrides, "Ea"))
   haskey(__overrides, "cycling") && (cycling = pop!(__overrides, "cycling"))
   haskey(__overrides, "G_air") && (G_air = pop!(__overrides, "G_air"))
   haskey(__overrides, "T0") && (T0 = pop!(__overrides, "T0"))
@@ -72,7 +74,7 @@ losses; resistance and OCV remain temperature independent. INL studied a differe
 
   ### Symbolic Parameters
   __local__G_air = G_air
-  append!(__params, @parameters (G_air::Real), [description = "Passive conductance [THERMAL-BENCH] (assumed), 4 m^2 times 5 W/(m^2 K)"])
+  append!(__params, @parameters (G_air::Real), [description = "Passive conductance [INL-DCFC-2015] (derived), parked cooling Figs. 5–6"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, G_air, __local__G_air)
   __local__T0 = T0
   append!(__params, @parameters (T0::Real), [description = "Initial temperature [THERMAL-BENCH] (assumed), 25 C", bounds = (0, Inf)])
@@ -106,7 +108,7 @@ losses; resistance and OCV remain temperature independent. INL studied a differe
   ### Components
   # Subcomponent battery of type VehicleSystemsComponents.Vehicle.Electric.ThermalTheveninCell
   battery_overrides = __pop_subcomponent_overrides!(__overrides, "battery")
-  push!(__systems, @named battery = VehicleSystemsComponents.Vehicle.Electric.ThermalTheveninCell(; SoC0=0.1, __overrides = battery_overrides))
+  push!(__systems, @named battery = VehicleSystemsComponents.Vehicle.Electric.ThermalTheveninCell(; SoC0=0.1, Ea=Ea, __overrides = battery_overrides))
   # Subcomponent charger of type VehicleSystemsComponents.Vehicle.Electric.CCCVCharger
   charger_overrides = __pop_subcomponent_overrides!(__overrides, "charger")
   push!(__systems, @named charger = VehicleSystemsComponents.Vehicle.Electric.CCCVCharger(; use_power_limit=true, I_cc=I_cc, __overrides = charger_overrides))

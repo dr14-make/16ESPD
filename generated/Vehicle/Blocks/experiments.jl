@@ -9,6 +9,7 @@ if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname |> Base.dirname, "
 end
 
 
+include("ArrheniusFactorEquation_experiment.jl")
 include("BalancerRequestEquation_experiment.jl")
 include("CCCVPowerCurrentEquation_experiment.jl")
 include("CCCVVoltageCurrentEquation_experiment.jl")

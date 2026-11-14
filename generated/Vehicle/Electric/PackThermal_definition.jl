@@ -7,18 +7,19 @@
 @doc Markdown.doc"""
    PackThermal(; name, mass, cp, G_air, G_coolant, T_ambient, T_coolant, T0, __overrides)
 
-One-temperature pack. G_air = 20 W/K assumes 4 m^2 effective exposed area at
-5 W/(m^2 K); 10–40 W/K is an assumed passive-air engineering range, not an INL
-fit. Specific heat is assumed, with no measured ZE1 value available here.
+One-temperature ZE1 pack, 250 kJ/K (303 kg times approximately 825 J/(kg K)).
+Effective capacity uses the Steinhardt 2022 pouch-cell median and partial case
+coupling; passive air conductance follows INL cooling (about seven hours).
 Coolant conductance zero disables the optional parallel path without switching.
+Known omissions: entropic heat (net approximately +/-0.7 K), daily ambient swing, auxiliary heat.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `mass`         | Pack mass [NISSAN] (verified), ZE1 US 303 kg                         | kg  |   303.0 |
-| `cp`         | Specific heat [THERMAL-BENCH] (assumed), J/(kg K)                         | --  |   1000.0 |
-| `G_air`         | Passive conductance [THERMAL-BENCH] (assumed), W/K                         | W/K  |   20.0 |
+| `cp`         | Effective specific heat [STEINHARDT-2022] (derived), 250 kJ/K on 303 kg                         | --  |   250000.0 / 303.0 |
+| `G_air`         | Passive conductance [INL-DCFC-2015] (derived), Figs. 5–6 cooling, W/K                         | W/K  |   10.0 |
 | `G_coolant`         | Coolant conductance [THERMAL-BENCH] (assumed), off by default                         | W/K  |   0.0 |
 | `T_ambient`         | Ambient [THERMAL-BENCH] (assumed), 25 C                         | K  |   298.15 |
 | `T_coolant`         | Coolant boundary [THERMAL-BENCH] (assumed), 25 C                         | K  |   298.15 |
@@ -36,7 +37,7 @@ Coolant conductance zero disables the optional parallel path without switching.
 | `E_in`         |                          | J  |
 | `E_out`         |                          | J  |
 """
-@component function PackThermal(; name = nothing, var"mass"=Float64(303.0), var"cp"=Float64(1000.0), var"G_air"=Float64(20.0), var"G_coolant"=Float64(0.0), var"T_ambient"=298.15, var"T_coolant"=298.15, var"T0"=nothing, __overrides = Dict{String, Any}())
+@component function PackThermal(; name = nothing, var"mass"=Float64(303.0), var"cp"=250000.0 / 303.0, var"G_air"=Float64(10.0), var"G_coolant"=Float64(0.0), var"T_ambient"=298.15, var"T_coolant"=298.15, var"T0"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -83,10 +84,10 @@ Coolant conductance zero disables the optional parallel path without switching.
   append!(__params, @parameters (mass::Real), [description = "Pack mass [NISSAN] (verified), ZE1 US 303 kg", bounds = (0, Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, mass, __local__mass)
   __local__cp = cp
-  append!(__params, @parameters (cp::Real), [description = "Specific heat [THERMAL-BENCH] (assumed), J/(kg K)"])
+  append!(__params, @parameters (cp::Real), [description = "Effective specific heat [STEINHARDT-2022] (derived), 250 kJ/K on 303 kg"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, cp, __local__cp)
   __local__G_air = G_air
-  append!(__params, @parameters (G_air::Real), [description = "Passive conductance [THERMAL-BENCH] (assumed), W/K"])
+  append!(__params, @parameters (G_air::Real), [description = "Passive conductance [INL-DCFC-2015] (derived), Figs. 5–6 cooling, W/K"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, G_air, __local__G_air)
   __local__G_coolant = G_coolant
   append!(__params, @parameters (G_coolant::Real), [description = "Coolant conductance [THERMAL-BENCH] (assumed), off by default"])

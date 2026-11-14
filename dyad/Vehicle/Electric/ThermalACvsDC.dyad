@@ -5,8 +5,8 @@ power ceiling; G_air = 0 removes cooling only. AC rating is terminal power, with
 no unmodeled onboard-charger heat injected into the pack.
 """
 component ThermalACvsDC
-  "Passive conductance [THERMAL-BENCH] (assumed), 20 W/K; zero for adiabatic check"
-  parameter G_air::ThermalConductance = 20.0
+  "Passive conductance [INL-DCFC-2015] (derived), 10 W/K; zero for adiabatic check"
+  parameter G_air::ThermalConductance = 10.0
   dc = VehicleSystemsComponents.Vehicle.Electric.ThermalCharge(G_air = G_air) {^dc}
   ac = VehicleSystemsComponents.Vehicle.Electric.ThermalCharge(G_air = G_air, P_full = 3300.0) {^ac}
 metadata {
