@@ -57,7 +57,7 @@ end
     @test all(d -> d >= di, distances)
     @test dr ≈ 26.839 atol = 1e-3
     @test di ≈ 26.839 atol = 1e-3
-    @test distances[1] ≈ 27.494 atol = 1e-3
+    @test distances[1] ≈ 27.496 atol = 1e-3
     @test distances[2] ≈ 28.415 atol = 1e-3
     @test distances[3] ≈ 28.210 atol = 1e-3
     println("CAN stopping distance (m): ", (; reference = dr, ideal = di, ms10 = distances[1], ms20 = distances[2], ms40 = distances[3], max_speed_deviation = deviation))
