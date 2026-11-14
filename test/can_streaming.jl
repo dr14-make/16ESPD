@@ -44,6 +44,8 @@ CanV.can_close(r::RecordingCan) = (r.closed = true)
 end
 
 @testset "SocketCAN live loopback" begin
+    sim = joinpath(@__DIR__, "..", "sim")
+    sim in LOAD_PATH || push!(LOAD_PATH, sim)
     pkg = Base.PkgId(Base.UUID("bffc1db9-6142-4b2c-b5cf-b017e7edc3de"), "CANBus")
     if !isdir("/sys/class/net/vcan0") || Base.locate_package(pkg) === nothing
         @test_skip false

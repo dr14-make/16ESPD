@@ -10,3 +10,4 @@
 .playwright-mcp/*
 /.dyadcache
 /data/engine/figures/
+/sim/*.dbc

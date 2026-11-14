@@ -1,7 +1,7 @@
 "Open a SocketCAN sender supplied by the optional CANBus extension."
 function can_open(interface::String)
     pkg = Base.PkgId(Base.UUID("bffc1db9-6142-4b2c-b5cf-b017e7edc3de"), "CANBus")
-    Base.locate_package(pkg) === nothing && error("CAN streaming requires CANBus: using Pkg; Pkg.add(\"CANBus\")")
+    Base.locate_package(pkg) === nothing && error("CAN streaming requires CANBus from the sim/ environment: run `mise run drive:setup` and put sim/ on LOAD_PATH, or use sim/can_stream.jl")
     Base.require(pkg)
     return Base.invokelatest(can_open_loaded, interface)
 end
