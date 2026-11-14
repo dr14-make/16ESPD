@@ -130,6 +130,40 @@ Leaf ZE1 pack (course parameters): 96s2p, R_pack ≈ 0.1 Ω, 4.2 V × 96 = 403 V
 - "Nissan service literature … battery temperatures above 55°C will cause a charge event to pause until temperature falls"
 - Used for the plain explanation of why rapidgate happens: with no active cooling, heat from each charge adds to the last one.
 
+**[THERMAL-BENCH]** Lumped electrothermal teaching assumptions, not measurements. The sourced
+capacity, cooling, and resistance inputs below replace the earlier assumed 303 kJ/K and 20 W/K.
+
+**[STEINHARDT-2022]** Steinhardt et al., "Meta-analysis of experimental results for heat capacity
+and thermal conductivity in lithium-ion batteries: A critical review", *J. Power Sources* 522
+(2022) 230829, https://pure.coventry.ac.uk/ws/portalfiles/portal/60952125/POWER_S_21_06019_Manuscript.pdf.
+Label: `derived`. Pouch-cell median 1168 J/(kg K), not a measured ZE1 value. ZE1 cells contribute
+175.5 kg × 1168 ≈ 205 kJ/K; partial module/case coupling gives the selected 250 kJ/K
+(303 kg × approximately 825 J/(kg K)). The fully coupled estimate is 270–305 kJ/K.
+
+- [INL-DCFC-2015] Figs. 5–6: DC-minus-AC excess falls 11→2.3 K over 9.4 h and
+  8.5→2.5 K over 7.3 h: approximately 6 h, range 4.5–8 h given 1 K sensor steps.
+  G = 230 kJ/K / 6 h ≈ 10.6 W/K; use 10 W/K parked (derived). ZE1's 250 kJ/K gives 6.94 h.
+- INL used 120 A to approximately 395 V then CV, near empty to full, on 66.2 Ah packs.
+  The parameter-only plausibility check retains the course's proxy OCV table and reports full
+  at 395 V / C/50, not at an artificial 100 % SoC crossing; it is not a measured INL trace fit.
+  Fig. 6 individual DC rises were 8 and 10 K; the mean was 6.5 K. The 2.9 K AC mean is
+  Phoenix ambient swing, not a Joule-heat target (Fig. 5 morning rise, flat evening charge).
+  The INL-like check uses Fig. 6's 32 C evening start with constant 32 C ambient;
+  the same configuration starting at 25 C gives +10.86 K, outside the selected 6–10 K band.
+  The sub-1 K AC check uses the INL-like 66.2 Ah pack; ZE1's longer 10–80 % AC session
+  gives +1.065 K with the sourced 250 kJ/K and 10 W/K, rather than a sub-1 K rise.
+
+- [ORNL-LEAF-ECM] (see `bms.md`): 10/25/40 C HPPC fits support Ea = 12.5 kJ/mol
+  over 10–40 C (derived), applied to both resistances at fixed 25.7 s polarization time.
+  48 × 1.61/1.35 mΩ gives INL-like R0/R1 = 0.077/0.065 Ω at 25 C.
+  The fit predicts R(10 C)/R(25 C) ≈ 1.31, below the measured R0 ratio 1.65:
+  the colder pair implies higher Ea; do not fit that gap with ZE1 parameters.
+  No measured ZE1 R(T) was found; transferring this older-cell fit is an assumption.
+- **[CT-RAPIDGATE-2018]** M. Holland, CleanTechnica, 2018-07-16,
+  https://cleantechnica.com/2018/07/16/2018-leaf-vs-long-journeys-can-it-take-the-heat/.
+  Label: `secondary`. ZE1 10–80 % at approximately 46 kW can raise temperature by 20 C;
+  this is not an INL 24 kWh measurement.
+
 **New Leaf (3rd generation) moved to CCS2 in Europe. Confirmed.**
 **[NISSAN-LEAF3-2025]** Nissan Global Newsroom, "All-new 3rd generation Nissan LEAF", June 2025 (date from press coverage, e.g. electrive 2025-06-17), https://global.nissannews.com/en/releases/all-new-3rd-generation-nissan-leaf_tab. Label: `verified` (the date is secondary).
 

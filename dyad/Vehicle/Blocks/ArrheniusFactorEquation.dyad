@@ -1,0 +1,14 @@
+"""
+y = exp(Ea / Rg * (1 / u1 - 1 / Tref)).
+Resistance multiplier relative to Tref; u1 is absolute temperature [K].
+"""
+component ArrheniusFactorEquation
+  parameter Ea::Real = 12500.0
+  parameter Rg::Real = 8.314
+  parameter Tref::Real = 298.15
+  u1 = RealInput() {^u1}
+  y = RealOutput() {^y}
+relations
+  y = exp(Ea / Rg * (1.0 / u1 - 1.0 / Tref))
+metadata {"Dyad":{"icons":{"default":"dyad://VehicleSystemsComponents/Vehicle/Blocks/Equation.svg"}},"_links":{"u1":{"Dyad":{"placement":{"diagram":{"x1":0,"x2":40,"y1":480,"y2":520},"icon":{"x1":0,"x2":40,"y1":480,"y2":520}}}},"y":{"Dyad":{"placement":{"diagram":{"x1":960,"x2":1000,"y1":480,"y2":520},"icon":{"x1":960,"x2":1000,"y1":480,"y2":520}}}}}}
+end

@@ -203,6 +203,7 @@ component.
 end
 
 
+include("ArrheniusFactorEquation_definition.jl")
 include("BalancerRequestEquation_definition.jl")
 include("CCCVPowerCurrentEquation_definition.jl")
 include("CCCVVoltageCurrentEquation_definition.jl")

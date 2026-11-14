@@ -1,16 +1,17 @@
 """
-One-temperature pack. G_air = 20 W/K assumes 4 m^2 effective exposed area at
-5 W/(m^2 K); 10–40 W/K is an assumed passive-air engineering range, not an INL
-fit. Specific heat is assumed, with no measured ZE1 value available here.
+One-temperature ZE1 pack, 250 kJ/K (303 kg times approximately 825 J/(kg K)).
+Effective capacity uses the Steinhardt 2022 pouch-cell median and partial case
+coupling; passive air conductance follows INL cooling (about seven hours).
 Coolant conductance zero disables the optional parallel path without switching.
+Known omissions: entropic heat (net approximately +/-0.7 K), daily ambient swing, auxiliary heat.
 """
 component PackThermal
   "Pack mass [NISSAN] (verified), ZE1 US 303 kg"
   parameter mass::Mass = 303.0
-  "Specific heat [THERMAL-BENCH] (assumed), J/(kg K)"
-  parameter cp::Real = 1000.0
-  "Passive conductance [THERMAL-BENCH] (assumed), W/K"
-  parameter G_air::ThermalConductance = 20.0
+  "Effective specific heat [STEINHARDT-2022] (derived), 250 kJ/K on 303 kg"
+  parameter cp::Real = 250000.0 / 303.0
+  "Passive conductance [INL-DCFC-2015] (derived), Figs. 5–6 cooling, W/K"
+  parameter G_air::ThermalConductance = 10.0
   "Coolant conductance [THERMAL-BENCH] (assumed), off by default"
   parameter G_coolant::ThermalConductance = 0.0
   "Ambient [THERMAL-BENCH] (assumed), 25 C"

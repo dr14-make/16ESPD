@@ -16,9 +16,9 @@ no unmodeled onboard-charger heat injected into the pack.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `G_air`         | Passive conductance [THERMAL-BENCH] (assumed), 20 W/K; zero for adiabatic check                         | W/K  |   20.0 |
+| `G_air`         | Passive conductance [INL-DCFC-2015] (derived), 10 W/K; zero for adiabatic check                         | W/K  |   10.0 |
 """
-@component function ThermalACvsDC(; name = nothing, var"G_air"=Float64(20.0), __overrides = Dict{String, Any}())
+@component function ThermalACvsDC(; name = nothing, var"G_air"=Float64(10.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -53,7 +53,7 @@ no unmodeled onboard-charger heat injected into the pack.
 
   ### Symbolic Parameters
   __local__G_air = G_air
-  append!(__params, @parameters (G_air::Real), [description = "Passive conductance [THERMAL-BENCH] (assumed), 20 W/K; zero for adiabatic check"])
+  append!(__params, @parameters (G_air::Real), [description = "Passive conductance [INL-DCFC-2015] (derived), 10 W/K; zero for adiabatic check"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, G_air, __local__G_air)
 
   ### Final Parameters (assignments)

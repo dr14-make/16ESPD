@@ -5,23 +5,31 @@
 
 
 @doc Markdown.doc"""
-   ThermalTheveninCell(; name, ocv_data, Ns, R0, R1, tau1, Q_nom, SoC0, __overrides)
+   ThermalTheveninCell(; name, Ea, ocv_data, Ns, R0, R1, tau1, Q_nom, SoC0, Rg, Tref, R1floor, __overrides)
 
 TheveninCell with resistor heat delivered to a thermal port (positive flow enters
 an element). RC stored energy is not heat; only v1^2/R1 is dissipated.
-Electrical defaults and their provenance are inherited unchanged.
+Electrical defaults retain TheveninCell's Nissan/INL and ORNL-LEAF-ECM fit,
+with the same CHEN-2020 OCV table, SoC counting and initial polarization voltage.
+Rj(T) = Rj * exp(Ea/Rg * (1/T - 1/Tref)); T is sensed at heat_port.
+C1 = tau1/max(R1(T), R1floor). The library variable capacitor uses i = der(C1*v1),
+including the changing-capacitance charge term. Ea=0 recovers the fixed model.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `ocv_data`         | Cell OCV [V], repeated on dummy axis (derived; [CHEN-2020], PyBaMM)                         | --  |   [2.500 2.50....200 4.200] |
-| `Ns`         | Series count for the cell OCV table (Nissan ZE1, 96s2p)                         | --  |   96.0 |
-| `R0`         | Series resistance, retained from Battery (derived; Nissan/INL)                         | Ω  |   0.1 |
-| `R1`         | Polarization resistance, R0 times 1.34/1.60 (derived; [ORNL-LEAF-ECM], pulse 5)                         | Ω  |   0.1 * 1.34 / 1.60 |
-| `tau1`         | Polarization time constant (derived; [ORNL-LEAF-ECM], pulse 5)                         | s  |   25.7 |
-| `Q_nom`         | Charge capacity, 40 kWh / 350 V [C] (derived from Nissan)                         | C  |   40.0e3 * 3600.0 / 350.0 |
-| `SoC0`         | Initial state of charge (assumed)                         | --  |   0.9 |
+| `Ea`         | Activation energy [ORNL-LEAF-ECM] (derived), J/mol; ZE1 transfer assumed; zero freezes R                         | --  |   12500.0 |
+| `ocv_data`         |                          | --  |   [2.500 2.50....200 4.200] |
+| `Ns`         | Series count [NISSAN] (derived), ZE1 96s2p                         | --  |   96.0 |
+| `R0`         | Reference series resistance [THERMAL-BENCH] (assumed), retained ZE1 proxy                         | Ω  |   0.1 |
+| `R1`         | Reference polarization [ORNL-LEAF-ECM] (derived), R0 times pulse-5 ratio                         | Ω  |   0.1 * 1.34 / 1.60 |
+| `tau1`         | Polarization time [ORNL-LEAF-ECM] (derived), pulse 5 at 25 C                         | s  |   25.7 |
+| `Q_nom`         | Charge capacity [NISSAN] (derived), 40 kWh / 350 V in coulombs                         | C  |   40.0e3 * 3600.0 / 350.0 |
+| `SoC0`         | Initial charge fraction [THERMAL-BENCH] (assumed)                         | --  |   0.9 |
+| `Rg`         | Gas constant [THERMAL-BENCH] (assumed), rounded J/(mol K)                         | --  |   8.314 |
+| `Tref`         | Resistance reference [ORNL-LEAF-ECM] (derived), 25 C HPPC fit                         | K  |   298.15 |
+| `R1floor`         | Polarization floor [THERMAL-BENCH] (assumed), preserves the zero-R1 limit                         | Ω  |   1e-15 |
 
 ## Connectors
 
@@ -38,11 +46,11 @@ Electrical defaults and their provenance are inherited unchanged.
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
 | `v`         | Voltage across the component (between pin p and pin n).                         | V  |
-| `E`         | Open-circuit voltage at the present SoC (compatibility alias)                         | V  |
-| `i`         | Discharge current, out of p and back into n (compatibility alias)                         | A  |
-| `v1`         | Polarization voltage (compatibility alias)                         | V  |
+| `E`         |                          | V  |
+| `i`         |                          | A  |
+| `v1`         |                          | V  |
 """
-@component function ThermalTheveninCell(; name = nothing, var"ocv_data"=[2.5 2.5; 3.296 3.296; 3.485 3.485; 3.581 3.581; 3.667 3.667; 3.751 3.751; 3.841 3.841; 3.948 3.948; 4.042 4.042; 4.097 4.097; 4.2 4.2], var"Ns"=Float64(96.0), var"R0"=0.1, var"R1"=0.1 * 1.34 / 1.6, var"tau1"=25.7, var"Q_nom"=40000.0 * 3600.0 / 350.0, var"SoC0"=0.9, __overrides = Dict{String, Any}())
+@component function ThermalTheveninCell(; name = nothing, var"Ea"=Float64(12500.0), var"ocv_data"=[2.5 2.5; 3.296 3.296; 3.485 3.485; 3.581 3.581; 3.667 3.667; 3.751 3.751; 3.841 3.841; 3.948 3.948; 4.042 4.042; 4.097 4.097; 4.2 4.2], var"Ns"=Float64(96.0), var"R0"=0.1, var"R1"=0.1 * 1.34 / 1.6, var"tau1"=25.7, var"Q_nom"=40000.0 * 3600.0 / 350.0, var"SoC0"=0.9, var"Rg"=8.314, var"Tref"=298.15, var"R1floor"=1e-15, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -61,6 +69,7 @@ Electrical defaults and their provenance are inherited unchanged.
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "Ea") && (Ea = pop!(__overrides, "Ea"))
   haskey(__overrides, "ocv_data") && (ocv_data = pop!(__overrides, "ocv_data"))
   haskey(__overrides, "Ns") && (Ns = pop!(__overrides, "Ns"))
   haskey(__overrides, "R0") && (R0 = pop!(__overrides, "R0"))
@@ -68,6 +77,9 @@ Electrical defaults and their provenance are inherited unchanged.
   haskey(__overrides, "tau1") && (tau1 = pop!(__overrides, "tau1"))
   haskey(__overrides, "Q_nom") && (Q_nom = pop!(__overrides, "Q_nom"))
   haskey(__overrides, "SoC0") && (SoC0 = pop!(__overrides, "SoC0"))
+  haskey(__overrides, "Rg") && (Rg = pop!(__overrides, "Rg"))
+  haskey(__overrides, "Tref") && (Tref = pop!(__overrides, "Tref"))
+  haskey(__overrides, "R1floor") && (R1floor = pop!(__overrides, "R1floor"))
 
   ### Structural Parameters (functions)
 
@@ -83,23 +95,32 @@ Electrical defaults and their provenance are inherited unchanged.
 
   ### Symbolic Parameters
   __local__Ns = Ns
-  append!(__params, @parameters (Ns::Real), [description = "Series count for the cell OCV table (Nissan ZE1, 96s2p)"])
+  append!(__params, @parameters (Ns::Real), [description = "Series count [NISSAN] (derived), ZE1 96s2p"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, Ns, __local__Ns)
   __local__R0 = R0
-  append!(__params, @parameters (R0::Real), [description = "Series resistance, retained from Battery (derived; Nissan/INL)"])
+  append!(__params, @parameters (R0::Real), [description = "Reference series resistance [THERMAL-BENCH] (assumed), retained ZE1 proxy"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, R0, __local__R0)
   __local__R1 = R1
-  append!(__params, @parameters (R1::Real), [description = "Polarization resistance, R0 times 1.34/1.60 (derived; [ORNL-LEAF-ECM], pulse 5)"])
+  append!(__params, @parameters (R1::Real), [description = "Reference polarization [ORNL-LEAF-ECM] (derived), R0 times pulse-5 ratio"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, R1, __local__R1)
   __local__tau1 = tau1
-  append!(__params, @parameters (tau1::Real), [description = "Polarization time constant (derived; [ORNL-LEAF-ECM], pulse 5)"])
+  append!(__params, @parameters (tau1::Real), [description = "Polarization time [ORNL-LEAF-ECM] (derived), pulse 5 at 25 C"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, tau1, __local__tau1)
   __local__Q_nom = Q_nom
-  append!(__params, @parameters (Q_nom::Real), [description = "Charge capacity, 40 kWh / 350 V [C] (derived from Nissan)"])
+  append!(__params, @parameters (Q_nom::Real), [description = "Charge capacity [NISSAN] (derived), 40 kWh / 350 V in coulombs"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, Q_nom, __local__Q_nom)
   __local__SoC0 = SoC0
-  append!(__params, @parameters (SoC0::Real), [description = "Initial state of charge (assumed)"])
+  append!(__params, @parameters (SoC0::Real), [description = "Initial charge fraction [THERMAL-BENCH] (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, SoC0, __local__SoC0)
+  __local__Rg = Rg
+  append!(__params, @parameters (Rg::Real), [description = "Gas constant [THERMAL-BENCH] (assumed), rounded J/(mol K)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Rg, __local__Rg)
+  __local__Tref = Tref
+  append!(__params, @parameters (Tref::Real), [description = "Resistance reference [ORNL-LEAF-ECM] (derived), 25 C HPPC fit", bounds = (0, Inf)])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Tref, __local__Tref)
+  __local__R1floor = R1floor
+  append!(__params, @parameters (R1floor::Real), [description = "Polarization floor [THERMAL-BENCH] (assumed), preserves the zero-R1 limit"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R1floor, __local__R1floor)
 
   ### Final Parameters (assignments)
 
@@ -111,9 +132,9 @@ Electrical defaults and their provenance are inherited unchanged.
 
   ### Variables (declarations)
   append!(__vars, @variables (v(t)::Real), [description = "Voltage across the component (between pin p and pin n)."])
-  append!(__vars, @variables (E(t)::Real), [description = "Open-circuit voltage at the present SoC (compatibility alias)"])
-  append!(__vars, @variables (i(t)::Real), [description = "Discharge current, out of p and back into n (compatibility alias)"])
-  append!(__vars, @variables (v1(t)::Real), [description = "Polarization voltage (compatibility alias)"])
+  append!(__vars, @variables (E(t)::Real))
+  append!(__vars, @variables (i(t)::Real))
+  append!(__vars, @variables (v1(t)::Real))
 
   ### Variables (assignments)
   __ovr_v = pop!(__overrides, "v", nothing); isnothing(__ovr_v) || push!(__eqs, v ~ __ovr_v)
@@ -151,36 +172,75 @@ Electrical defaults and their provenance are inherited unchanged.
   # Subcomponent ocv of type ElectricalComponents.Analog.Sources.VoltageSource
   ocv_overrides = __pop_subcomponent_overrides!(__overrides, "ocv")
   push!(__systems, @named ocv = ElectricalComponents.Analog.Sources.VoltageSource(; __overrides = ocv_overrides))
-  # Subcomponent ohmic of type ElectricalComponents.Analog.Basic.Resistor
+  # Subcomponent ohmic of type ElectricalComponents.Analog.Basic.VariableResistor
   ohmic_overrides = __pop_subcomponent_overrides!(__overrides, "ohmic")
-  push!(__systems, @named ohmic = ElectricalComponents.Analog.Basic.Resistor(; R=R0, __overrides = ohmic_overrides))
-  # Subcomponent polarization of type ElectricalComponents.Analog.Basic.Resistor
+  push!(__systems, @named ohmic = ElectricalComponents.Analog.Basic.VariableResistor(; __overrides = ohmic_overrides))
+  # Subcomponent polarization of type ElectricalComponents.Analog.Basic.VariableResistor
   polarization_overrides = __pop_subcomponent_overrides!(__overrides, "polarization")
-  push!(__systems, @named polarization = ElectricalComponents.Analog.Basic.Resistor(; R=max(R1, 1e-15), __overrides = polarization_overrides))
-  # Subcomponent capacitor of type ElectricalComponents.Analog.Basic.Capacitor
+  push!(__systems, @named polarization = ElectricalComponents.Analog.Basic.VariableResistor(; __overrides = polarization_overrides))
+  # Subcomponent capacitor of type ElectricalComponents.Analog.Basic.VariableCapacitor
   capacitor_overrides = __pop_subcomponent_overrides!(__overrides, "capacitor")
-  push!(__systems, @named capacitor = ElectricalComponents.Analog.Basic.Capacitor(; C=tau1 / max(R1, 1e-15), __overrides = capacitor_overrides))
+  capacitor_dict = Dict{String, Any}()
+  capacitor_dict["v.initial"] = ModelingToolkit.default_to_parentscope(0.0)
+  merge!(capacitor_dict, capacitor_overrides)
+  push!(__systems, @named capacitor = ElectricalComponents.Analog.Basic.VariableCapacitor(; __overrides = capacitor_dict))
   # Subcomponent current of type ElectricalComponents.Analog.Sensors.CurrentSensor
   current_overrides = __pop_subcomponent_overrides!(__overrides, "current")
   push!(__systems, @named current = ElectricalComponents.Analog.Sensors.CurrentSensor(; __overrides = current_overrides))
   # Subcomponent charge of type BlockComponents.Continuous.Integrator
   charge_overrides = __pop_subcomponent_overrides!(__overrides, "charge")
   push!(__systems, @named charge = BlockComponents.Continuous.Integrator(; k=-1.0 / Q_nom, x0=SoC0, __overrides = charge_overrides))
+  # Subcomponent temperature of type ThermalComponents.Sensors.TemperatureSensor
+  temperature_overrides = __pop_subcomponent_overrides!(__overrides, "temperature")
+  push!(__systems, @named temperature = ThermalComponents.Sensors.TemperatureSensor(; __overrides = temperature_overrides))
+  # Subcomponent arrhenius of type VehicleSystemsComponents.Vehicle.Blocks.ArrheniusFactorEquation
+  arrhenius_overrides = __pop_subcomponent_overrides!(__overrides, "arrhenius")
+  push!(__systems, @named arrhenius = VehicleSystemsComponents.Vehicle.Blocks.ArrheniusFactorEquation(; Ea=Ea, Rg=Rg, Tref=Tref, __overrides = arrhenius_overrides))
+  # Subcomponent r0_value of type BlockComponents.Math.Gain
+  r0_value_overrides = __pop_subcomponent_overrides!(__overrides, "r0_value")
+  push!(__systems, @named r0_value = BlockComponents.Math.Gain(; k=R0, __overrides = r0_value_overrides))
+  # Subcomponent r1_value of type BlockComponents.Math.Gain
+  r1_value_overrides = __pop_subcomponent_overrides!(__overrides, "r1_value")
+  push!(__systems, @named r1_value = BlockComponents.Math.Gain(; k=R1, __overrides = r1_value_overrides))
+  # Subcomponent r1_limit of type BlockComponents.Nonlinear.Limiter
+  r1_limit_overrides = __pop_subcomponent_overrides!(__overrides, "r1_limit")
+  push!(__systems, @named r1_limit = BlockComponents.Nonlinear.Limiter(; y_min=R1floor, __overrides = r1_limit_overrides))
+  # Subcomponent time_constant of type BlockComponents.Sources.Constant
+  time_constant_overrides = __pop_subcomponent_overrides!(__overrides, "time_constant")
+  push!(__systems, @named time_constant = BlockComponents.Sources.Constant(; k=tau1, __overrides = time_constant_overrides))
+  # Subcomponent capacitance of type BlockComponents.Math.Division
+  capacitance_overrides = __pop_subcomponent_overrides!(__overrides, "capacitance")
+  push!(__systems, @named capacitance = BlockComponents.Math.Division(; __overrides = capacitance_overrides))
+  # Subcomponent resistor_sink of type ThermalComponents.Sources.FixedTemperature
+  resistor_sink_overrides = __pop_subcomponent_overrides!(__overrides, "resistor_sink")
+  push!(__systems, @named resistor_sink = ThermalComponents.Sources.FixedTemperature(; T=Tref, __overrides = resistor_sink_overrides))
+  # Subcomponent r1_enabled of type BlockComponents.Sources.BooleanConstant
+  r1_enabled_overrides = __pop_subcomponent_overrides!(__overrides, "r1_enabled")
+  push!(__systems, @named r1_enabled = BlockComponents.Sources.BooleanConstant(; k=R1 > 0.0, __overrides = r1_enabled_overrides))
+  # Subcomponent zero_heat of type BlockComponents.Sources.Constant
+  zero_heat_overrides = __pop_subcomponent_overrides!(__overrides, "zero_heat")
+  push!(__systems, @named zero_heat = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = zero_heat_overrides))
+  # Subcomponent polarization_gate of type BlockComponents.Logical.Switch
+  polarization_gate_overrides = __pop_subcomponent_overrides!(__overrides, "polarization_gate")
+  push!(__systems, @named polarization_gate = BlockComponents.Logical.Switch(; __overrides = polarization_gate_overrides))
   # Subcomponent ohmic_square of type BlockComponents.Math.Product
   ohmic_square_overrides = __pop_subcomponent_overrides!(__overrides, "ohmic_square")
   push!(__systems, @named ohmic_square = BlockComponents.Math.Product(; __overrides = ohmic_square_overrides))
-  # Subcomponent ohmic_heat of type BlockComponents.Math.Gain
+  # Subcomponent ohmic_heat of type BlockComponents.Math.Product
   ohmic_heat_overrides = __pop_subcomponent_overrides!(__overrides, "ohmic_heat")
-  push!(__systems, @named ohmic_heat = BlockComponents.Math.Gain(; k=R0, __overrides = ohmic_heat_overrides))
+  push!(__systems, @named ohmic_heat = BlockComponents.Math.Product(; __overrides = ohmic_heat_overrides))
   # Subcomponent polarization_sensor of type ElectricalComponents.Analog.Sensors.VoltageSensor
   polarization_sensor_overrides = __pop_subcomponent_overrides!(__overrides, "polarization_sensor")
   push!(__systems, @named polarization_sensor = ElectricalComponents.Analog.Sensors.VoltageSensor(; __overrides = polarization_sensor_overrides))
   # Subcomponent polarization_square of type BlockComponents.Math.Product
   polarization_square_overrides = __pop_subcomponent_overrides!(__overrides, "polarization_square")
   push!(__systems, @named polarization_square = BlockComponents.Math.Product(; __overrides = polarization_square_overrides))
-  # Subcomponent polarization_heat of type BlockComponents.Math.Gain
+  # Subcomponent polarization_heat of type BlockComponents.Math.Division
   polarization_heat_overrides = __pop_subcomponent_overrides!(__overrides, "polarization_heat")
-  push!(__systems, @named polarization_heat = BlockComponents.Math.Gain(; k=ifelse(R1 > 0.0, 1.0 / max(R1, 1e-30), 0.0), __overrides = polarization_heat_overrides))
+  push!(__systems, @named polarization_heat = BlockComponents.Math.Division(; __overrides = polarization_heat_overrides))
+  # Subcomponent heat_r1_limit of type BlockComponents.Nonlinear.Limiter
+  heat_r1_limit_overrides = __pop_subcomponent_overrides!(__overrides, "heat_r1_limit")
+  push!(__systems, @named heat_r1_limit = BlockComponents.Nonlinear.Limiter(; y_min=1e-30, __overrides = heat_r1_limit_overrides))
   # Subcomponent heat_sum of type BlockComponents.Math.Add
   heat_sum_overrides = __pop_subcomponent_overrides!(__overrides, "heat_sum")
   push!(__systems, @named heat_sum = BlockComponents.Math.Add(; __overrides = heat_sum_overrides))
@@ -198,7 +258,6 @@ Electrical defaults and their provenance are inherited unchanged.
   isnothing(__ovr_v1__guess) || (__guesses[v1] = __ovr_v1__guess)
 
   ### Initialization Equations
-  push!(__initialization_eqs, capacitor.v ~ 0.0)
 
   ### Assertions
   __assertions = []
@@ -219,16 +278,28 @@ Electrical defaults and their provenance are inherited unchanged.
   push!(__eqs, connect(dummy_axis.y, table.u2))
   push!(__eqs, connect(table.y, series_count.u))
   push!(__eqs, connect(series_count.y, stored_voltage, ocv.V))
+  push!(__eqs, connect(temperature.T, arrhenius.u1))
+  push!(__eqs, connect(arrhenius.y, r0_value.u, r1_value.u))
+  push!(__eqs, connect(r0_value.y, ohmic.R, ohmic_heat.u2))
+  push!(__eqs, connect(r1_value.y, r1_limit.u, heat_r1_limit.u))
+  push!(__eqs, connect(r1_limit.y, polarization.R, capacitance.u2))
+  push!(__eqs, connect(time_constant.y, capacitance.u1))
+  push!(__eqs, connect(capacitance.y, capacitor.C))
+  push!(__eqs, connect(ohmic.heat_port, polarization.heat_port, resistor_sink.port))
   push!(__eqs, connect(stored_current, ohmic_square.u1, ohmic_square.u2))
-  push!(__eqs, connect(ohmic_square.y, ohmic_heat.u))
+  push!(__eqs, connect(ohmic_square.y, ohmic_heat.u1))
   push!(__eqs, connect(capacitor.p, polarization_sensor.p))
   push!(__eqs, connect(capacitor.n, polarization_sensor.n))
   push!(__eqs, connect(polarization_sensor.v, polarization_square.u1, polarization_square.u2))
-  push!(__eqs, connect(polarization_square.y, polarization_heat.u))
+  push!(__eqs, connect(polarization_square.y, polarization_heat.u1))
+  push!(__eqs, connect(heat_r1_limit.y, polarization_heat.u2))
+  push!(__eqs, connect(polarization_heat.y, polarization_gate.u1))
+  push!(__eqs, connect(r1_enabled.y, polarization_gate.u2))
+  push!(__eqs, connect(zero_heat.y, polarization_gate.u3))
   push!(__eqs, connect(ohmic_heat.y, heat_sum.u1))
-  push!(__eqs, connect(polarization_heat.y, heat_sum.u2))
+  push!(__eqs, connect(polarization_gate.y, heat_sum.u2))
   push!(__eqs, connect(heat_sum.y, dissipated, heat_source.Q_flow))
-  push!(__eqs, connect(heat_source.port, heat_port))
+  push!(__eqs, connect(heat_source.port, heat_port, temperature.port))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
