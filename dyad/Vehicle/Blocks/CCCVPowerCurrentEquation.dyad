@@ -11,5 +11,5 @@ component CCCVPowerCurrentEquation
   y = RealOutput() {^y}
 relations
   y = min(I_cc, max(0.0, u2) / max(u1, 1.0))
-metadata {"Dyad":{"icons":{"default":"dyad://VehicleSystemsComponents/Vehicle/Blocks/Equation.svg"},"labels":[{"attrs":{"font-size":"40"},"label":"$(instance)","x":500,"y":940}]},"_links":{"u1":{"Dyad":{"placement":{"diagram":{"x1":0,"x2":40,"y1":230,"y2":270},"icon":{"x1":0,"x2":40,"y1":230,"y2":270}}}},"u2":{"Dyad":{"placement":{"diagram":{"x1":0,"x2":40,"y1":730,"y2":770},"icon":{"x1":0,"x2":40,"y1":730,"y2":770}}}},"y":{"Dyad":{"placement":{"diagram":{"x1":960,"x2":1000,"y1":480,"y2":520},"icon":{"x1":960,"x2":1000,"y1":480,"y2":520}}}}}}
+metadata {"Dyad":{"icons":{"default":"dyad://VehicleSystemsComponents/Vehicle/Blocks/Equation.svg"}},"_links":{"u1":{"Dyad":{"placement":{"diagram":{"x1":0,"x2":40,"y1":230,"y2":270},"icon":{"x1":0,"x2":40,"y1":230,"y2":270}}}},"u2":{"Dyad":{"placement":{"diagram":{"x1":0,"x2":40,"y1":730,"y2":770},"icon":{"x1":0,"x2":40,"y1":730,"y2":770}}}},"y":{"Dyad":{"placement":{"diagram":{"x1":960,"x2":1000,"y1":480,"y2":520},"icon":{"x1":960,"x2":1000,"y1":480,"y2":520}}}}}}
 end

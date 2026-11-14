@@ -31,7 +31,22 @@ relations
   connect(shunt.heat_port, ambient.port) {^heat}
   I_bleed = shunt.i
   P_bleed = v * I_bleed
-metadata {"_links":{"ambient":{"Dyad":{"placement":{"diagram":{"x1":800,"x2":900,"y1":400,"y2":500}}}},"cell":{"Dyad":{"placement":{"diagram":{"x1":280,"x2":400,"y1":160,"y2":280}}}},"conductance":{"Dyad":{"placement":{"diagram":{"x1":360,"x2":460,"y1":620,"y2":720}}}},"conductance_wire":{"Dyad":{"edges":[{"E":2,"M":[{"x":465.0,"y":394.0}],"S":1}],"renderStyle":"standard"}},"duty":{"Dyad":{"placement":{"diagram":{"x1":160,"x2":260,"y1":620,"y2":720}}}},"duty_wire":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"renderStyle":"standard"}},"enable":{"Dyad":{"placement":{"diagram":{"x1":0,"x2":40,"y1":650,"y2":690},"icon":{"x1":0,"x2":40,"y1":650,"y2":690}}}},"enable_wire":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"renderStyle":"standard"}},"heat":{"Dyad":{"edges":[{"E":2,"M":[{"x":900.0,"y":520.0}],"S":1}],"renderStyle":"standard"}},"n":{"Dyad":{"placement":{"diagram":{"x1":0,"x2":40,"y1":900,"y2":940},"icon":{"x1":0,"x2":40,"y1":900,"y2":940}}}},"negative":{"Dyad":{"edges":[{"E":2,"M":[{"x":280.0,"y":920.0},{"x":280.0,"y":550.0},{"x":340.0,"y":550.0},{"x":340.0,"y":220.0}],"S":1},{"E":3,"M":[{"x":20.0,"y":600.0},{"x":340.0,"y":600.0},{"x":340.0,"y":460.0}],"S":1}],"renderStyle":"standard"}},"p":{"Dyad":{"placement":{"diagram":{"x1":0,"x2":40,"y1":60,"y2":100},"icon":{"x1":0,"x2":40,"y1":60,"y2":100}}}},"positive":{"Dyad":{"edges":[{"E":2,"M":[{"x":140.0,"y":80.0},{"x":140.0,"y":220.0}],"S":1},{"E":3,"M":[{"x":20.0,"y":332.0},{"x":260.0,"y":332.0},{"x":260.0,"y":380.0},{"x":480.0,"y":380.0},{"x":480.0,"y":460.0}],"S":1}],"renderStyle":"standard"}},"shunt":{"Dyad":{"placement":{"diagram":{"x1":560,"x2":680,"y1":400,"y2":520}}}}}}
+metadata {
+  "_links": {
+    "cell": {"Dyad": {"placement": {"diagram": {"x1": 420, "y1": 420, "x2": 580, "y2": 580}}}},
+    "shunt": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 190, "x2": 560, "y2": 310}}}},
+    "ambient": {"Dyad": {"placement": {"diagram": {"x1": 720, "y1": 300, "x2": 640, "y2": 380}}}},
+    "duty": {"Dyad": {"placement": {"diagram": {"x1": 160, "y1": 60, "x2": 240, "y2": 140}}}},
+    "conductance": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 60, "x2": 380, "y2": 140}}}},
+    "enable": {"Dyad": {"placement": {"diagram": {"x1": 30, "y1": 90, "x2": 50, "y2": 110}, "icon": {"x1": 480, "y1": -20, "x2": 520, "y2": 20, "rot": 90}}}},
+    "positive": {"Dyad": {"junctions": [{"x": 200, "y": 500}], "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 200, "y": 250}], "E": 3}]}},
+    "negative": {"Dyad": {"junctions": [{"x": 800, "y": 500}], "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 800, "y": 250}], "E": 3}]}},
+    "enable_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "duty_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "conductance_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 100}], "E": 2}]}},
+    "heat": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 501.2, "y": 340}], "E": 2}]}}
+  }
+}
 end
 
 test component TestBleedCell
@@ -45,7 +60,7 @@ test component TestBleedCell
 relations
   connect(command.y, battery.enable) {^control}
   connect(battery.n, ground.g) {^reference}
-metadata {"_links":{"battery":{"Dyad":{"placement":{"diagram":{"x1":460,"x2":580,"y1":300,"y2":420}}}},"command":{"Dyad":{"placement":{"diagram":{"x1":160,"x2":260,"y1":100,"y2":200}}}},"control":{"Dyad":{"edges":[{"E":2,"M":[{"x":462.4,"y":150.0}],"S":1}],"renderStyle":"standard"}},"ground":{"Dyad":{"placement":{"diagram":{"x1":720,"x2":800,"y1":600,"y2":680}}}},"reference":{"Dyad":{"edges":[{"E":2,"M":[{"x":760.0,"y":410.4}],"S":1}],"renderStyle":"standard"}}}}
+metadata {"_links":{"battery":{"Dyad":{"placement":{"diagram":{"x1":460,"x2":580,"y1":300,"y2":420}}}},"command":{"Dyad":{"placement":{"diagram":{"x1":160,"x2":260,"y1":100,"y2":200}}}},"control":{"Dyad":{"edges":[{"E":2,"M":[{"x":520.0,"y":150.0}],"S":1}],"renderStyle":"standard"}},"ground":{"Dyad":{"placement":{"diagram":{"x1":720,"x2":800,"y1":600,"y2":680}}}},"reference":{"Dyad":{"edges":[{"E":2,"M":[{"x":760.0,"y":360.0}],"S":1}],"renderStyle":"standard"}}}}
 end
 
 analysis BleedTransient

@@ -25,7 +25,30 @@ relations
   connect(polarization_heat.y, heat_sum.u2) {^thermal_wire6}
   connect(heat_sum.y, dissipated, heat_source.Q_flow) {^thermal_wire7}
   connect(heat_source.port, heat_port) {^thermal_wire8}
-metadata {"_links":{"SoC":{"Dyad":{"placement":{"diagram":{"x1":30,"x2":50,"y1":460,"y2":480},"icon":{"x1":450,"x2":550,"y1":-50,"y2":50}}}},"capacitor":{"Dyad":{"placement":{"diagram":{"x1":500,"x2":580,"y1":260,"y2":340}}}},"charge":{"Dyad":{"placement":{"diagram":{"x1":100,"x2":180,"y1":430,"y2":510}}}},"current":{"Dyad":{"placement":{"diagram":{"x1":100,"x2":180,"y1":100,"y2":180}}}},"dissipated":{"Dyad":{"placement":{"diagram":{"x1":950,"x2":970,"y1":710,"y2":730},"icon":{"x1":450,"x2":550,"y1":950,"y2":1050}}}},"dummy_axis":{"Dyad":{"placement":{"diagram":{"x1":460,"x2":540,"y1":620,"y2":700}}}},"heat_port":{"Dyad":{"placement":{"diagram":{"x1":950,"x2":970,"y1":820,"y2":840},"icon":{"x1":50,"x2":150,"y1":950,"y2":1050}}}},"heat_source":{"Dyad":{"placement":{"diagram":{"x1":740,"x2":820,"y1":790,"y2":870}}}},"heat_sum":{"Dyad":{"placement":{"diagram":{"x1":540,"x2":620,"y1":790,"y2":870}}}},"lookup_limit":{"Dyad":{"placement":{"diagram":{"x1":280,"x2":360,"y1":430,"y2":510}}}},"n":{"Dyad":{"placement":{"diagram":{"x1":30,"x2":50,"y1":130,"y2":150},"icon":{"x1":950,"x2":1050,"y1":450,"y2":550}}}},"ocv":{"Dyad":{"placement":{"diagram":{"x1":300,"x2":380,"y1":100,"y2":180}}}},"ohmic":{"Dyad":{"placement":{"diagram":{"x1":700,"x2":780,"y1":100,"y2":180}}}},"ohmic_heat":{"Dyad":{"placement":{"diagram":{"x1":300,"x2":380,"y1":720,"y2":800}}}},"ohmic_square":{"Dyad":{"placement":{"diagram":{"x1":100,"x2":180,"y1":720,"y2":800}}}},"p":{"Dyad":{"placement":{"diagram":{"x1":950,"x2":970,"y1":130,"y2":150},"icon":{"x1":-50,"x2":50,"y1":450,"y2":550}}}},"polarization":{"Dyad":{"placement":{"diagram":{"x1":500,"x2":580,"y1":100,"y2":180}}}},"polarization_heat":{"Dyad":{"placement":{"diagram":{"x1":300,"x2":380,"y1":860,"y2":940}}}},"polarization_square":{"Dyad":{"placement":{"diagram":{"x1":100,"x2":180,"y1":860,"y2":940}}}},"series_count":{"Dyad":{"placement":{"diagram":{"x1":660,"x2":740,"y1":430,"y2":510}}}},"stored_current":{"Dyad":{"placement":{"diagram":{"x1":30,"x2":50,"y1":650,"y2":670},"icon":{"x1":650,"x2":750,"y1":950,"y2":1050}}}},"stored_voltage":{"Dyad":{"placement":{"diagram":{"x1":950,"x2":970,"y1":460,"y2":480},"icon":{"x1":250,"x2":350,"y1":950,"y2":1050}}}},"table":{"Dyad":{"placement":{"diagram":{"x1":460,"x2":540,"y1":430,"y2":510}}}},"thermal_wire1":{"Dyad":{"edges":[{"E":2,"M":[{"x":70.0,"y":660.0},{"x":70.0,"y":736.0}],"S":1},{"E":3,"M":[{"x":60.0,"y":660.0},{"x":60.0,"y":784.0}],"S":1}],"path":{}}},"thermal_wire2":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"path":{}}},"thermal_wire3":{"Dyad":{"edges":[{"E":2,"M":[{"x":740,"y":380},{"x":80,"y":380},{"x":80,"y":876}],"S":1},{"E":3,"M":[{"x":740,"y":380},{"x":80,"y":380},{"x":80,"y":924}],"S":1}],"path":{}}},"thermal_wire4":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"path":{}}},"thermal_wire5":{"Dyad":{"edges":[{"E":2,"M":[{"x":460.0,"y":760.0},{"x":460.0,"y":806.0}],"S":1}],"path":{}}},"thermal_wire6":{"Dyad":{"edges":[{"E":2,"M":[{"x":460.0,"y":900.0},{"x":460.0,"y":854.0}],"S":1}],"path":{}}},"thermal_wire7":{"Dyad":{"edges":[{"E":2,"M":[{"x":680.0,"y":830.0},{"x":680.0,"y":720.0}],"S":1},{"E":3,"M":[],"S":1}],"path":{}}},"thermal_wire8":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"path":{}}},"wire1":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"path":{}}},"wire10":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"path":{}}},"wire11":{"Dyad":{"edges":[{"E":2,"M":[{"x":800.0,"y":470.0},{"x":800.0,"y":30.0},{"x":340.0,"y":30.0}],"S":1},{"E":3,"M":[],"S":1}],"path":{}}},"wire2":{"Dyad":{"edges":[{"E":2,"M":[{"x":220.0,"y":140.0},{"x":220.0,"y":60.0},{"x":420.0,"y":60.0},{"x":420.0,"y":140.0}],"S":1}],"path":{}}},"wire3":{"Dyad":{"edges":[{"E":2,"M":[{"x":260.0,"y":140.0},{"x":260.0,"y":220.0},{"x":460.0,"y":220.0},{"x":460.0,"y":140.0}],"S":1},{"E":3,"M":[{"x":480.0,"y":140.0},{"x":480.0,"y":300.0}],"S":2}],"path":{}}},"wire4":{"Dyad":{"edges":[{"E":2,"M":[{"x":620.0,"y":140.0},{"x":620.0,"y":300.0}],"S":1},{"E":3,"M":[],"S":1}],"path":{}}},"wire5":{"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"path":{}}},"wire6":{"Dyad":{"edges":[{"E":2,"M":[{"x":60.0,"y":180.0},{"x":60.0,"y":470.0}],"S":1},{"E":3,"M":[{"x":20.0,"y":180.0},{"x":20.0,"y":660.0}],"S":1}],"path":{}}},"wire7":{"Dyad":{"edges":[{"E":2,"M":[],"S":1},{"E":3,"M":[{"x":220.0,"y":470.0},{"x":220.0,"y":390.0},{"x":40.0,"y":390.0}],"S":1}],"path":{}}},"wire8":{"Dyad":{"edges":[{"E":2,"M":[{"x":400.0,"y":470.0},{"x":400.0,"y":446.0}],"S":1}],"path":{}}},"wire9":{"Dyad":{"edges":[{"E":2,"M":[{"x":580.0,"y":660.0},{"x":580.0,"y":570.0},{"x":420.0,"y":570.0},{"x":420.0,"y":494.0}],"S":1}],"path":{}}},"polarization_sensor":{"Dyad":{"placement":{"diagram":{"x1":700,"x2":780,"y1":260,"y2":340}}}},"polarization_positive":{"Dyad":{"edges":[{"E":2,"M":[{"x":650,"y":300}],"S":1}]}},"polarization_negative":{"Dyad":{"edges":[{"E":2,"M":[{"x":620,"y":300},{"x":620,"y":380},{"x":820,"y":380},{"x":820,"y":300}],"S":1}]}}}}
+metadata {
+  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": -100, "rot": 0}]},
+  "_links": {
+    "polarization_sensor": {"Dyad": {"placement": {"diagram": {"x1": 380, "y1": 280, "x2": 300, "y2": 200}}}},
+    "polarization_square": {"Dyad": {"placement": {"diagram": {"x1": 520, "y1": 60, "x2": 600, "y2": 140}}}},
+    "polarization_heat": {"Dyad": {"placement": {"diagram": {"x1": 680, "y1": 60, "x2": 760, "y2": 140}}}},
+    "ohmic_square": {"Dyad": {"placement": {"diagram": {"x1": 520, "y1": 260, "x2": 600, "y2": 340}}}},
+    "ohmic_heat": {"Dyad": {"placement": {"diagram": {"x1": 640, "y1": 260, "x2": 720, "y2": 340}}}},
+    "heat_sum": {"Dyad": {"placement": {"diagram": {"x1": 810, "y1": 240, "x2": 890, "y2": 160}}}},
+    "heat_source": {"Dyad": {"placement": {"diagram": {"x1": 840, "y1": 300, "x2": 920, "y2": 380}}}},
+    "dissipated": {"Dyad": {"placement": {"icon": {"x1": 650, "y1": 950, "x2": 750, "y2": 1050, "rot": 90}, "diagram": {"x1": 945, "y1": 190, "x2": 965, "y2": 210}}}},
+    "heat_port": {"Dyad": {"placement": {"icon": {"x1": 50, "y1": 950, "x2": 150, "y2": 1050, "rot": 90}, "diagram": {"x1": 950, "y1": 330, "x2": 970, "y2": 350}}}},
+    "thermal_wire1": {"Dyad": {"junctions": [{"x": 500, "y": 324}], "edges": [{"S": 1, "M": [{"x": 930, "y": 420}, {"x": 500, "y": 420}], "E": -1}, {"S": -1, "M": [{"x": 500, "y": 276}], "E": 2}, {"S": -1, "M": [], "E": 3}]}},
+    "thermal_wire2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "polarization_positive": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 450, "y": 380}, {"x": 450, "y": 240}], "E": 2}]}},
+    "polarization_negative": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 230, "y": 380}, {"x": 230, "y": 240}], "E": 2}]}},
+    "thermal_wire3": {"Dyad": {"junctions": [{"x": 470, "y": 124}], "edges": [{"S": 1, "M": [{"x": 470, "y": 200}], "E": -1}, {"S": -1, "M": [{"x": 470, "y": 76}], "E": 2}, {"S": -1, "M": [], "E": 3}]}},
+    "thermal_wire4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "thermal_wire5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 760, "y": 300}, {"x": 760, "y": 224}], "E": 2}]}},
+    "thermal_wire6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 100}, {"x": 800, "y": 176}], "E": 2}]}},
+    "thermal_wire7": {"Dyad": {"junctions": [{"x": 900, "y": 200}], "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 900, "y": 270}, {"x": 820, "y": 270}, {"x": 820, "y": 340}], "E": 3}]}},
+    "thermal_wire8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
 end
 
 test component TestThermalTheveninCell
@@ -44,16 +67,17 @@ relations
   connect(battery.n, source.n, ground.g) {^thermal_wire3}
   connect(battery.heat_port, ambient.port) {^thermal_wire4}
 metadata {
+  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": -100, "rot": 0}]},
   "_links": {
-    "ambient": {"Dyad":{"placement":{"diagram":{"x1":800,"x2":880,"y1":300,"y2":380}}}},
+    "ambient": {"Dyad":{"placement":{"diagram":{"x1":460,"x2":540,"y1":500,"y2":580}}}},
     "battery": {"Dyad":{"placement":{"diagram":{"x1":560,"x2":640,"y1":300,"y2":380}}}},
     "command": {"Dyad":{"placement":{"diagram":{"x1":120,"x2":200,"y1":120,"y2":200}}}},
-    "ground": {"Dyad":{"placement":{"diagram":{"x1":560,"x2":640,"y1":620,"y2":700}}}},
-    "source": {"Dyad":{"placement":{"diagram":{"x1":320,"x2":400,"y1":300,"y2":380}}}},
-    "thermal_wire1": {"Dyad":{"edges":[{"E":2,"M":[{"x":280.0,"y":160.0},{"x":280.0,"y":300.0}],"S":1}],"path":{}}},
-    "thermal_wire2": {"Dyad":{"edges":[{"E":2,"M":[],"S":1}],"path":{}}},
-    "thermal_wire3": {"Dyad":{"edges":[{"E":2,"M":[],"S":1},{"E":3,"M":[{"x":620.0,"y":340.0},{"x":620.0,"y":620.0}],"S":1}],"path":{}}},
-    "thermal_wire4": {"Dyad":{"edges":[{"E":2,"M":[{"x":568.0,"y":340.0}],"S":1}],"path":{}}}
+    "ground": {"Dyad":{"placement":{"diagram":{"x1":680,"x2":760,"y1":640,"y2":720}}}},
+    "source": {"Dyad":{"placement":{"diagram":{"x1":400,"x2":320,"y1":300,"y2":380}}}},
+    "thermal_wire1": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 360, "y": 160}], "E": 1}]}},
+    "thermal_wire2": {"Dyad": {"edges": [{"S": 2, "M": [], "E": 1}]}},
+    "thermal_wire3": {"Dyad": {"junctions": [{"x": 720, "y": 625}], "edges": [{"S": 1, "M": [{"x": 720, "y": 340}], "E": -1}, {"S": 2, "M": [{"x": 300, "y": 340}, {"x": 300, "y": 625}], "E": -1}, {"S": 3, "M": [], "E": -1}]}},
+    "thermal_wire4": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 568.0, "y": 540}], "E": 1}]}}
   }
 }
 end
