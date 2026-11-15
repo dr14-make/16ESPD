@@ -42,6 +42,7 @@ Compiled 2026-11-12. Every number carries its own date, so check that date befor
 | ≈ €8/kg net | H2 MOBILITY truck price for hylane customers from 2026-01-01 (Düsseldorf, Rhein-Neckar). Not a car retail price | [H2M-HYLANE-2025] | verified |
 | $34.55/kg | California average light-duty pump price, October 2024 (Platts) | [PLATTS-CA-2024] | secondary |
 | 1 t/day, 700 bar, every ≤ 200 km on the TEN-T core network plus every urban node, by 2030-12-31 | AFIR Art. 6 hydrogen station requirement | [AFIR-2023-1804] | verified |
+| 10 | Czech urban nodes, each needing a public H₂ station by 2030 under AFIR Art. 6(1): Brno, České Budějovice, Hradec Králové, Liberec, Olomouc, Ostrava, Pardubice, Plzeň, Praha, Ústí nad Labem. Of the 2 public stations, only Barrandov is in a node (Praha) | [TENT-2024-1679] Annex II, [ORLEN-TZ-2026-04-13] | verified |
 | 2 | Public stations in Czechia run by ORLEN (Praha-Barrandov, Litvínov), April 2026; further ORLEN construction "zatím pozastavili" (paused for now) as operation is loss-making. Others: CEPRO Mstětice, Vítkovice (Ostrava) | [SYSLOG-ORLEN-2026], [EKONOMICKYDENIK-CEPRO-2023] | secondary |
 | 278 CZK/kg | ORLEN hydrogen price at opening, March 2023; superseded by 499 CZK/kg reported January 2024 (see `energy-prices-cz.md`), still the newest found in November 2026 | [CNN-PRIMA-BARRANDOV-2023] | secondary |
 | 0 of 10 | Mníšek pod Brdy hydrogen buses in passenger service on 2026-10-12 (station still being commissioned; target was Dec 2025) | [EPOCH-CZ-MNISEK-2026] | secondary |
@@ -368,6 +369,16 @@ For the BEV and petrol comparison:
 - **Art. 6(4) derogation:** "along roads of the TEN-T core network with a total annual average daily traffic of fewer than 2 000 heavy-duty vehicles … Member States may reduce by up to 50 % the capacity…"
 - **Review clause:** "Regarding hydrogen refuelling stations, the Commission shall further assess the requirements referred to in Article 6 … the need to specify a higher capacity for those stations, the need to specify targets for liquid hydrogen refuelling infrastructure…"
 - **Review date:** "By 31 December 2026 and every five years thereafter, the Commission shall review this Regulation."
+- **Art. 3(4)(a)** (charging, for the same core network): recharging pools "in each direction of travel with a maximum distance of 60 km between them"; by 31 Dec 2025 each pool ≥ 400 kW with at least one point ≥ 150 kW; by 31 Dec 2027 ≥ 600 kW with at least two points ≥ 150 kW. Full wording under [EU-AFIR] in `teaching_materials.md`.
+
+**[TENT-2024-1679]** Regulation (EU) 2024/1679 of 13 June 2024 on Union guidelines for the development of the trans-European transport network, OJ L series 2024/1679, 2024-07-18. Read from the EU Publications Office. Label: `verified`.
+- **Art. 10(2):** applies to AFIR, so AFIR's "core network" is the new TEN-T core network, and its "comprehensive network" is the extended core plus comprehensive networks.
+- **Annex II, urban nodes in Czechia (10):** Brno, České Budějovice, Hradec Králové, Liberec, Olomouc, Ostrava, Pardubice, Plzeň, Praha, Ústí nad Labem.
+- The Clean Hydrogen Observatory gives the same "AFIR compliant HRS (2030): 10" for Czechia, credited to the 2024 Czech hydrogen strategy, https://observatory.clean-hydrogen.europa.eu/hydrogen-landscape/policies-and-standards/national-strategies/czech-republic. Label: `secondary`.
+- **Core road network in Czechia (Annex I maps, listings 5 and 6):** the slide schematic `04-afir-czechia.svg` draws D1, D2, D5, D8, D11 (Praha–Hradec Králové) and D35 (Hradec Králové–Olomouc–Lipník) as core. The map PDF sat behind a bot check, so this set is `inference`, not read off the map.
+
+**[ORLEN-TZ-2026-04-13]** ORLEN Unipetrol press release on ORLEN Charge, 2026-04-13, https://www.orlenunipetrol.cz/cs/Media/TiskoveZpravy/Stranky/20260413-ORLEN_Charge_CZ.aspx. Label: `verified` (company boilerplate; a 2026-02-10 release says the same).
+- "vodíkové stanice provozuje na pražském Barrandově a v Litvínově-Záluží" (it runs hydrogen stations at Praha-Barrandov and Litvínov-Záluží).
 
 ---
 

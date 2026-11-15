@@ -743,3 +743,51 @@ minutes, and 17.1 kilowatt-hours per 100 kilometers, what the Leaf takes from th
 After the break, the nozzle: a car that fills in about three minutes. Break: 15 minutes. *[90 min:
 no break; go straight on to section 05.]*
 -->
+
+---
+routeAlias: afir-map
+skipInCut: true
+---
+
+## AFIR on Czech motorways
+
+<div class="grid grid-cols-[2fr_1fr] gap-6 items-start">
+<div>
+
+<img src="/diagrams/04-afir-czechia.svg" style="max-height: 29rem" alt="Schematic map of Czechia. The TEN-T core motorways in blue: D1 from Praha through Jihlava and Brno to Ostrava and the Polish border, D2 from Brno to the Slovak border, D5 from Praha through Plzeň to the German border, D8 from Praha through Ústí nad Labem to the German border, D11 from Praha to Hradec Králové and D35 from Hradec Králové to Olomouc and the D1. Orange ticks every 60 km along them. Ten hollow circles mark the urban nodes: Praha, Brno, Ostrava, Plzeň, Olomouc, Liberec, Hradec Králové, Pardubice, České Budějovice and Ústí nad Labem. Two filled green diamonds mark the public hydrogen stations: Praha-Barrandov, inside the Praha node, and Litvínov-Záluží, which is not a node."/>
+
+<div class="caption">Schematic, after the TEN-T core network (Reg. 2024/1679) · AFIR Reg. 2023/1804</div>
+
+</div>
+<div class="text-[0.9rem]">
+
+**Art. 3(4)(a):** a charging pool every **60 km** on the core network, each way: ≥ **400 kW** by end
+2025, ≥ **600 kW** by end 2027.
+
+**Art. 6(1):** H₂ stations of ≥ **1 t/day** at **700 bar**, ≤ **200 km** apart on the core network
+and in **every urban node**, by 2030.
+
+<div class="border-2 border-[#1f5fa8] rounded-md px-3 py-2 my-3"><b>7,669</b> public charging points,
+<b>1,153</b> of them ≥ 150 kW (EAFO, Sep 2026)</div>
+
+**10** urban nodes need H₂ by 2030; **2** public stations exist, and ORLEN has paused further
+builds.
+
+<div class="caption text-left">[EU-AFIR] Art. 3(4)(a), [AFIR-2023-1804] Art. 6(1),
+[TENT-2024-1679] Annex II, [ORLEN-TZ-2026-04-13] verified · [EAFO-CZ] counts verified ·
+[SYSLOG-ORLEN-2026] secondary</div>
+
+</div>
+</div>
+
+<!--
+*[3 h: show this before announcing the break.]* Where must those chargers stand? A sketch of the
+Czech core motorways: D1, D2, D5, D8, D11 and D35. Each orange tick marks 60 kilometers. AFIR wants a charging pool there in each direction: 400 kilowatts by the end of 2025,
+600 by the end of 2027.
+
+The circles are the ten urban nodes. By 2030 each needs a hydrogen station, and the core roads need
+one every 200 kilometers.
+
+*[ask]* How many of the ten have one today? *[pause]* One, Praha. Litvínov is the only other public
+station, and ORLEN has paused building more.
+-->

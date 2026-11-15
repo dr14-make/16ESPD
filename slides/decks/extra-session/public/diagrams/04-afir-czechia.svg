@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 832 538" width="832" height="538">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .land { fill: #f4f7fb; stroke: #4a5a6b; stroke-width: 1.5; stroke-linejoin: round; }
+    .road { fill: none; stroke: #1f5fa8; stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; }
+    .tick { stroke: #a75d00; stroke-width: 3; stroke-linecap: round; }
+    .node { fill: #fff; stroke: #16202c; stroke-width: 2.5; }
+    .h2 { fill: #2e8b57; stroke: #fff; stroke-width: 1.5; }
+    .city { font-size: 19px; font-weight: 600; paint-order: stroke; stroke: #f4f7fb; stroke-width: 4px; stroke-linejoin: round; }
+    .stn { font-size: 17px; font-weight: 600; fill: #2e8b57; paint-order: stroke; stroke: #f4f7fb; stroke-width: 4px; stroke-linejoin: round; }
+    .rd { font-size: 16px; font-weight: 700; fill: #1f5fa8; paint-order: stroke; stroke: #f4f7fb; stroke-width: 4px; stroke-linejoin: round; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+    .key { font-size: 16px; }
+  </style>
+  <polygon class="land" points="31.2,156.4 57.7,165.3 82.9,138.6 125.4,140.4 138.1,126.1 163.4,120.8 186.3,103.0 209.3,85.2 224.3,83.4 247.2,72.7 276.0,58.5 295.5,49.6 285.1,26.5 312.7,38.9 320.8,51.4 343.7,58.5 364.4,31.8 393.1,44.3 404.6,67.4 413.8,76.3 449.4,81.6 469.0,95.9 490.8,94.1 513.8,103.0 519.5,124.4 502.3,142.2 523.0,154.6 545.9,181.3 565.5,195.6 580.4,176.0 594.2,138.6 617.2,160.0 642.5,165.3 676.9,156.4 674.6,195.6 695.3,208.0 714.8,213.4 749.3,225.8 774.6,245.4 780.3,257.9 806.8,298.8 755.0,320.2 732.1,338.0 709.1,373.6 674.6,409.2 640.2,418.1 587.3,459.0 565.5,439.4 542.5,428.7 523.0,435.9 485.1,427.0 450.6,418.1 404.6,400.3 381.7,391.4 361.0,432.3 330.0,459.0 287.4,471.5 255.3,459.0 231.1,432.3 197.8,396.7 161.1,366.4 117.4,329.1 94.4,298.8 82.9,272.1 73.7,225.8 48.5,204.5 42.7,183.1"/>
+
+  <!-- TEN-T core network motorways, with a tick every 60 km along each -->
+  <polyline class="road" points="307.0,208.0 330.0,229.4 370.2,266.8 405.8,295.2 435.7,320.2 480.5,329.1 539.1,355.8 559.7,361.1 593.1,341.5 645.9,338.0 648.2,309.5 660.8,297.0 686.1,286.3 706.8,266.8 728.6,245.4 752.8,225.8"/>
+  <polyline class="road" points="555.1,364.7 563.2,402.0 580.4,434.1 596.5,444.8"/>
+  <polyline class="road" points="284.0,208.0 257.6,220.5 209.3,245.4 178.3,261.4 140.4,266.8 84.1,272.1"/>
+  <polyline class="road" points="301.2,186.7 284.0,156.4 255.3,122.6 249.5,103.0 247.2,72.7"/>
+  <polyline class="road" points="316.2,192.0 378.2,190.2 416.1,186.7 456.3,177.8"/>
+  <polyline class="road" points="462.1,181.3 496.5,222.3 525.3,234.7 585.0,252.5 619.5,281.0 660.8,297.0"/>
+  <line class="tick" x1="382.2" y1="267.4" x2="373.5" y2="278.4"/>
+  <line class="tick" x1="457.6" y1="317.4" x2="454.8" y2="331.1"/>
+  <line class="tick" x1="546.7" y1="350.5" x2="543.2" y2="364.1"/>
+  <line class="tick" x1="633.6" y1="331.8" x2="634.6" y2="345.7"/>
+  <line class="tick" x1="688.7" y1="274.3" x2="698.3" y2="284.4"/>
+  <line class="tick" x1="201.2" y1="257.4" x2="194.8" y2="245.0"/>
+  <line class="tick" x1="105.8" y1="277.1" x2="104.5" y2="263.1"/>
+  <line class="tick" x1="243.7" y1="108.1" x2="257.2" y2="104.1"/>
+  <line class="tick" x1="412.0" y1="180.0" x2="413.3" y2="194.0"/>
+  <line class="tick" x1="538.2" y1="231.3" x2="534.2" y2="244.7"/>
+  <line class="tick" x1="622.4" y1="274.6" x2="617.3" y2="287.7"/>
+  <text class="rd" x="421.9" y="297.7" text-anchor="middle">D1</text>
+  <text class="rd" x="577.2" y="403.8" text-anchor="middle">D2</text>
+  <text class="rd" x="207.3" y="273.0" text-anchor="middle">D5</text>
+  <text class="rd" x="285.7" y="146.2" text-anchor="middle">D8</text>
+  <text class="rd" x="375.9" y="181.2" text-anchor="middle">D11</text>
+  <text class="rd" x="542.5" y="230.1" text-anchor="middle">D35</text>
+
+  <!-- urban nodes, Reg. 2024/1679 Annex II -->
+  <circle class="node" cx="297.8" cy="199.1" r="7"/>
+  <text class="city" x="309.8" y="189.1" text-anchor="start">Praha</text>
+  <circle class="node" cx="549.4" cy="356.6" r="7"/>
+  <text class="city" x="537.4" y="378.6" text-anchor="end">Brno</text>
+  <circle class="node" cx="742.4" cy="242.7" r="7"/>
+  <text class="city" x="728.4" y="230.7" text-anchor="end">Ostrava</text>
+  <circle class="node" cx="178.1" cy="258.4" r="7"/>
+  <text class="city" x="178.1" y="288.4" text-anchor="middle">Plzeň</text>
+  <circle class="node" cx="622.9" cy="285.6" r="7"/>
+  <text class="city" x="634.9" y="305.6" text-anchor="start">Olomouc</text>
+  <circle class="node" cx="370.9" cy="76.8" r="7"/>
+  <text class="city" x="382.9" y="81.8" text-anchor="start">Liberec</text>
+  <circle class="node" cx="460.1" cy="176.2" r="7"/>
+  <text class="city" x="472.1" y="167.2" text-anchor="start">Hradec Králové</text>
+  <circle class="node" cx="454.0" cy="206.6" r="7"/>
+  <text class="city" x="442.0" y="226.6" text-anchor="end">Pardubice</text>
+  <circle class="node" cx="304.0" cy="395.8" r="7"/>
+  <text class="city" x="304.0" y="423.8" text-anchor="middle">České Budějovice</text>
+  <circle class="node" cx="253.2" cy="95.9" r="7"/>
+  <text class="city" x="241.2" y="87.9" text-anchor="end">Ústí nad Labem</text>
+
+  <!-- public hydrogen stations (ORLEN) -->
+  <path class="h2" d="M292.0 200.0 L300.0 208.0 L292.0 216.0 L284.0 208.0 Z"/>
+  <text class="stn" x="280.0" y="232.0" text-anchor="end">Praha-Barrandov</text>
+  <path class="h2" d="M203.6 105.7 L211.6 113.7 L203.6 121.7 L195.6 113.7 Z"/>
+  <text class="stn" x="191.6" y="118.7" text-anchor="end">Litvínov-Záluží</text>
+
+  <!-- key -->
+  <path class="road" d="M12 454 H42"/>
+  <line class="tick" x1="27" y1="447" x2="27" y2="461"/>
+  <text class="key" x="52" y="459">core motorway · tick 60 km</text>
+  <circle class="node" cx="27" cy="482" r="7"/>
+  <text class="key" x="52" y="487">urban node</text>
+  <path class="h2" d="M27 502 L35 510 L27 518 L19 510 Z"/>
+  <text class="key" x="52" y="515">public H₂ station</text>
+</svg>
