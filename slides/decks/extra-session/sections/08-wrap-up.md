@@ -137,7 +137,7 @@ routeAlias: take-home
 own.</div>
 
 **Check your answer** in the course library: 1 with <code>CCCV800V</code>, 2 with
-<code>SoCDriftDays</code>, 4 with <code>notebooks/extra-session/01-ev-payback.pluto.jl</code>.
+<code>SoCDriftDays</code>, 4 with <a href="https://github.com/dr14-make/16ESPD/blob/main/notebooks/extra-session/01-ev-payback.pluto.jl" target="_blank"><code>notebooks/extra-session/01-ev-payback.pluto.jl</code></a>.
 
 <!--
 Four exercises to take home, each built on a slide from tonight. One, the CV slide again for an 800
