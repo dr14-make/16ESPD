@@ -707,7 +707,7 @@ computed; Sep 2026 is the latest update.</div>
 
 **Czechia, end 2025:** **7,574** public points, **33.1 %** DC; Sep 2026: **7,669**, DC 36.1 %.
 
-**AFIR Art. 3:** per registered BEV, **1.3 kW** of public power; on the TEN-T core network a pool
+**AFIR Art. 3(1), 3(4)(a):** per registered BEV, **1.3 kW** of public power; on the TEN-T core network a pool
 every **60 km**, ≥ **400 kW** with one ≥ 150 kW point by end 2025, **600 kW** by end 2027.
 
 <div class="caption text-left">[EAFO-CZ], [EAFO-EU27] counts verified, shares computed ·

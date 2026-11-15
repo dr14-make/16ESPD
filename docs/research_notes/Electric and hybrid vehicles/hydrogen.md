@@ -43,7 +43,7 @@ Compiled 2026-11-12. Every number carries its own date, so check that date befor
 | $34.55/kg | California average light-duty pump price, October 2024 (Platts) | [PLATTS-CA-2024] | secondary |
 | 1 t/day, 700 bar, every ≤ 200 km on the TEN-T core network plus every urban node, by 2030-12-31 | AFIR Art. 6 hydrogen station requirement | [AFIR-2023-1804] | verified |
 | 2 | Public stations in Czechia run by ORLEN (Praha-Barrandov, Litvínov), April 2026; further ORLEN construction "zatím pozastavili" (paused for now) as operation is loss-making. Others: CEPRO Mstětice, Vítkovice (Ostrava) | [SYSLOG-ORLEN-2026], [EKONOMICKYDENIK-CEPRO-2023] | secondary |
-| 278 CZK/kg | ORLEN hydrogen price at opening, March 2023. No newer price found | [CNN-PRIMA-BARRANDOV-2023] | secondary |
+| 278 CZK/kg | ORLEN hydrogen price at opening, March 2023; superseded by 499 CZK/kg reported January 2024 (see `energy-prices-cz.md`), still the newest found in November 2026 | [CNN-PRIMA-BARRANDOV-2023] | secondary |
 | 0 of 10 | Mníšek pod Brdy hydrogen buses in passenger service on 2026-10-12 (station still being commissioned; target was Dec 2025) | [EPOCH-CZ-MNISEK-2026] | secondary |
 | 3 min, 70 MPa, T40 | J2601 design target for a light-duty fill (SOC 90–100 %), per ANL/DOE | [ANL-J2601-FILLTIME] | verified |
 | 3.22 min, 0.9 kg/min | Average real fill time and rate, 1,850,493 fills at the retail stations in the NREL dataset, 2014Q3–2022Q2 | [NLR-CDP-2023] | verified |
