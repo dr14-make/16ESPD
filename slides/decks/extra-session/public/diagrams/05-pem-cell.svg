@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420" width="720" height="420">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .plate { fill: #dde3ea; stroke: #4a5a6b; stroke-width: 2; }
+    .chan { fill: #fff; stroke: #4a5a6b; stroke-width: 1.5; }
+    .gdl { fill: #f3f5f7; stroke: #4a5a6b; stroke-width: 1.5; }
+    .cat { fill: #2b3440; stroke: #16202c; stroke-width: 1.5; }
+    .mem { fill: #cfe3d6; stroke: #2e8b57; stroke-width: 2; }
+    .load { fill: #fdf3e6; stroke: #a75d00; stroke-width: 2; }
+    .dc { stroke: #a75d00; stroke-width: 3; fill: none; }
+    .gas { stroke: #1f5fa8; stroke-width: 3; fill: none; }
+    .ion { stroke: #16202c; stroke-width: 2.5; fill: none; }
+    .t { font-size: 17px; font-weight: 600; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+    .in { font-size: 13px; fill: #fff; }
+    .eq { font-size: 15px; }
+    .blue { font-size: 16px; font-weight: 600; fill: #1f5fa8; }
+    .orange { font-size: 16px; font-weight: 600; fill: #a75d00; }
+    .ion-t { font-size: 15px; font-weight: 600; }
+  </style>
+  <defs>
+    <marker id="pc-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+    <marker id="pc-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+    <marker id="pc-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+  </defs>
+
+  <!-- external circuit: electrons from anode to cathode -->
+  <path class="dc" d="M230 130 V50 H320 M400 50 H490 V130"/>
+  <rect class="load" x="320" y="32" width="80" height="36" rx="5"/>
+  <text x="360" y="56" text-anchor="middle" class="t">load</text>
+  <path class="dc" d="M250 36 H300" marker-end="url(#pc-orange)"/>
+  <text x="275" y="28" text-anchor="middle" class="orange">e⁻</text>
+  <path class="dc" d="M420 36 H470" marker-end="url(#pc-orange)"/>
+  <text x="445" y="28" text-anchor="middle" class="orange">e⁻</text>
+
+  <!-- layers, left to right -->
+  <rect class="plate" x="190" y="130" width="80" height="200"/>
+  <rect class="chan" x="252" y="160" width="18" height="22"/>
+  <rect class="chan" x="252" y="219" width="18" height="22"/>
+  <rect class="chan" x="252" y="278" width="18" height="22"/>
+  <rect class="gdl" x="270" y="130" width="35" height="200"/>
+  <rect class="cat" x="305" y="130" width="15" height="200"/>
+  <rect class="mem" x="320" y="130" width="80" height="200"/>
+  <rect class="cat" x="400" y="130" width="15" height="200"/>
+  <rect class="gdl" x="415" y="130" width="35" height="200"/>
+  <rect class="plate" x="450" y="130" width="80" height="200"/>
+  <rect class="chan" x="450" y="160" width="18" height="22"/>
+  <rect class="chan" x="450" y="219" width="18" height="22"/>
+  <rect class="chan" x="450" y="278" width="18" height="22"/>
+
+  <text transform="translate(225 230) rotate(-90)" text-anchor="middle" class="lbl">flow plate</text>
+  <text transform="translate(292 230) rotate(-90)" text-anchor="middle" class="lbl">gas diffusion layer</text>
+  <text transform="translate(317 230) rotate(-90)" text-anchor="middle" class="in">catalyst layer</text>
+  <text x="360" y="155" text-anchor="middle" class="lbl">membrane</text>
+  <text transform="translate(412 230) rotate(-90)" text-anchor="middle" class="in">catalyst layer</text>
+  <text transform="translate(437 230) rotate(-90)" text-anchor="middle" class="lbl">gas diffusion layer</text>
+  <text transform="translate(500 230) rotate(-90)" text-anchor="middle" class="lbl">flow plate</text>
+
+  <!-- protons through the membrane -->
+  <path class="ion" d="M328 200 H392" marker-end="url(#pc-ink)"/>
+  <text x="360" y="192" text-anchor="middle" class="ion-t">H⁺</text>
+  <path class="ion" d="M328 250 H392" marker-end="url(#pc-ink)"/>
+  <text x="360" y="242" text-anchor="middle" class="ion-t">H⁺</text>
+  <path class="ion" d="M328 300 H392" marker-end="url(#pc-ink)"/>
+  <text x="360" y="292" text-anchor="middle" class="ion-t">H⁺</text>
+
+  <!-- gases -->
+  <path class="gas" d="M110 171 H186" marker-end="url(#pc-blue)"/>
+  <text x="148" y="160" text-anchor="middle" class="blue">H₂ in</text>
+  <path class="gas" d="M650 171 H534" marker-end="url(#pc-blue)"/>
+  <text x="594" y="160" text-anchor="middle" class="blue">air in</text>
+  <path class="gas" d="M534 289 H650" marker-end="url(#pc-blue)"/>
+  <text x="594" y="278" text-anchor="middle" class="blue">water out</text>
+  <text x="600" y="312" text-anchor="middle" class="lbl">with the spent air</text>
+
+  <text x="255" y="360" text-anchor="middle" class="t">anode</text>
+  <text x="255" y="384" text-anchor="middle" class="eq">H₂ → 2H⁺ + 2e⁻</text>
+  <text x="465" y="360" text-anchor="middle" class="t">cathode</text>
+  <text x="465" y="384" text-anchor="middle" class="eq">½O₂ + 2H⁺ + 2e⁻ → H₂O</text>
+</svg>

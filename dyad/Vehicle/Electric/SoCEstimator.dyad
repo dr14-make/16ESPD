@@ -1,0 +1,171 @@
+"""
+Coulomb counter with a biased current sensor and equilibrium-voltage correction.
+I is discharge-positive current before the modeled sensor bias; I_measured = I + I_offset.
+Use I_offset = 0 when supplying an already biased measurement. After uninterrupted sampled
+rest, each tick anchors the estimate to OCV until current resumes. Inputs must be sampled
+fast enough to resolve the current profile; excursions between ticks are not detected.
+The inverse table requires strictly increasing per-cell voltages and clamps its endpoints.
+"""
+component SoCEstimator
+  I = RealInput(units = "A") {^I}
+  V = RealInput(units = "V") {^V}
+  SoC = RealOutput() {^SoC}
+  "Sensor offset [A] (assumed; [SOC-257] exercise 2)"
+  parameter I_offset::Current = 0.05
+  "Equilibrium rest [s] (verified; [USABC-EV-R4], default rest at least 1 h)"
+  parameter t_rest::Time(min = 0.0) = 3600.0
+  "Measured-current rest threshold [A] (assumed; [SOC-257], above 50 mA bias)"
+  parameter I_rest::Current(min = 0.0) = 0.1
+  "Capacity [C] (derived; [NISSAN-ZE1], 40 kWh / 350 V, as TheveninCell)"
+  parameter Q_nom::ElectricCharge(min = eps(Float64)) = 40.0e3 * 3600.0 / 350.0
+  "Series count (derived; [NISSAN-ZE1], 96s2p, as TheveninCell)"
+  parameter Ns::Real(min = eps(Float64)) = 96.0
+  "Initial estimate (assumed; [SOC-257], matches TheveninCell)"
+  parameter SoC0::Real = 0.9
+  "BMS sample period [s] (assumed; [SOC-257], resolves bench transitions)"
+  structural parameter dt::Time = 1.0
+  "Per-cell OCV axis [V] (derived; [CHEN-2020], PyBaMM, as TheveninCell)"
+  structural parameter ocv_axis::Real[:] = [2.500, 3.296, 3.485, 3.581, 3.667, 3.751, 3.841, 3.948, 4.042, 4.097, 4.200]
+  "Inverse SoC table on dummy axis (derived; [CHEN-2020], 10 percent steps)"
+  structural parameter soc_data::Real[:, :] = [[0.0, 0.0], [0.1, 0.1], [0.2, 0.2], [0.3, 0.3], [0.4, 0.4], [0.5, 0.5], [0.6, 0.6], [0.7, 0.7], [0.8, 0.8], [0.9, 0.9], [1.0, 1.0]]
+  clock = DiscreteComponents.PeriodicClock(dt = dt) {^clock}
+  current = DiscreteComponents.Sampler() {^current}
+  voltage_soc = DiscreteComponents.Sampler() {^voltage_soc}
+  inverse = BlockComponents.Tables.InterpolatedTable(axis1 = ocv_axis, axis2 = [0, 1], data = soc_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension()) {^inverse}
+  counter = VehicleSystemsComponents.Vehicle.Electric.SoCCounter(dt = dt, t_rest = t_rest, I_rest = I_rest, Q_nom = Q_nom, SoC0 = SoC0) {^counter}
+  hold = DiscreteComponents.ZeroOrderHold() {^hold}
+  offset = BlockComponents.Sources.Constant(k = I_offset) {^offset}
+  measured = BlockComponents.Math.Add() {^measured}
+  per_cell = BlockComponents.Math.Gain(k = 1 / Ns) {^per_cell}
+  clamp_voltage = BlockComponents.Nonlinear.Limiter(y_min = ocv_axis[1], y_max = ocv_axis[size(ocv_axis, 1)]) {^clamp_voltage}
+  dummy = BlockComponents.Sources.Constant(k = 0.0) {^dummy}
+  variable I_measured::Current
+relations
+  I_measured = measured.y
+  connect(I, measured.u1) {^input_current}
+  connect(offset.y, measured.u2) {^bias}
+  connect(measured.y, current.u) {^sample_current}
+  connect(V, per_cell.u) {^input_voltage}
+  connect(per_cell.y, clamp_voltage.u) {^cell_voltage}
+  connect(clamp_voltage.y, inverse.u1) {^table_voltage}
+  connect(dummy.y, inverse.u2) {^table_dummy}
+  connect(inverse.y, voltage_soc.u) {^w1}
+  connect(current.y, counter.I, clock.y) {^w2}
+  connect(voltage_soc.y, counter.ocv_soc) {^w3}
+  connect(counter.SoC, hold.u) {^w4}
+  connect(hold.y, SoC) {^w5}
+metadata {"_links": {"I": {"Dyad": {"placement": {"diagram": {"x1": 0, "x2": 40, "y1": 200, "y2": 240}, "icon": {"x1": 0, "x2": 40, "y1": 200, "y2": 240}}}}, "SoC": {"Dyad": {"placement": {"diagram": {"x1": 970, "y1": 240, "x2": 990, "y2": 260}, "icon": {"x1": 960, "x2": 1000, "y1": 220, "y2": 260}}}}, "V": {"Dyad": {"placement": {"diagram": {"x1": 0, "x2": 40, "y1": 440, "y2": 480}, "icon": {"x1": 0, "x2": 40, "y1": 440, "y2": 480}}}}, "bias": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 215.0, "y": 244.0}, {"x": 215.0, "y": 330}], "E": 1}]}}, "cell_voltage": {"Dyad": {"edges": [{"E": 2, "M": [], "S": 1}], "renderStyle": "standard"}}, "clamp_voltage": {"Dyad": {"placement": {"diagram": {"x1": 260, "x2": 340, "y1": 420, "y2": 500}}}}, "clock": {"Dyad": {"placement": {"diagram": {"x1": 480, "y1": 60, "x2": 400, "y2": 120}}}}, "counter": {"Dyad": {"placement": {"diagram": {"x1": 720, "x2": 820, "y1": 200, "y2": 300}}}}, "current": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 480, "y1": 180, "y2": 260}}}}, "dummy": {"Dyad": {"placement": {"diagram": {"x1": 260, "x2": 340, "y1": 620, "y2": 700}}}}, "hold": {"Dyad": {"placement": {"diagram": {"x1": 860, "y1": 210, "x2": 940, "y2": 290}}}}, "input_current": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 32.0, "y": 196.0}, {"x": 32.0, "y": 220}], "E": 1}]}}, "input_voltage": {"Dyad": {"edges": [{"E": 2, "M": [], "S": 1}], "renderStyle": "standard"}}, "inverse": {"Dyad": {"placement": {"diagram": {"x1": 420, "x2": 520, "y1": 420, "y2": 520}}}}, "measured": {"Dyad": {"placement": {"diagram": {"x1": 240, "x2": 320, "y1": 180, "y2": 260}}}}, "offset": {"Dyad": {"placement": {"diagram": {"x1": 140, "y1": 300, "x2": 200, "y2": 360}}}}, "per_cell": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 180, "y1": 420, "y2": 500}}}}, "sample_current": {"Dyad": {"edges": [{"E": 2, "M": [], "S": 1}], "renderStyle": "standard"}}, "table_dummy": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 360.0, "y": 660.0}, {"x": 360.0, "y": 500.0}], "S": 1}], "renderStyle": "standard"}}, "table_voltage": {"Dyad": {"edges": [{"E": 2, "M": [{"x": 360.0, "y": 460.0}, {"x": 360.0, "y": 440.0}], "S": 1}], "renderStyle": "standard"}}, "voltage_soc": {"Dyad": {"placement": {"diagram": {"x1": 580, "y1": 430, "x2": 660, "y2": 510}}}}, "w1": {"Dyad": {"edges": [{"S": 2, "M": [], "E": 1}]}}, "w2": {"Dyad": {"junctions": [{"x": 492.8, "y": 220}], "edges": [{"S": 3, "M": [{"x": 492.8, "y": 90}], "E": -1}, {"S": -1, "M": [], "E": 1}, {"S": 2, "M": [], "E": -1}]}}, "w3": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 672.8, "y": 260}, {"x": 672.8, "y": 470}], "E": 1}]}}, "w4": {"Dyad": {"edges": [{"S": 2, "M": [], "E": 1}]}}, "w5": {"Dyad": {"edges": [{"S": 2, "M": [], "E": 1}]}}}}
+end
+
+"Sampled counter; left-endpoint integration avoids counting a future interval at t = 0."
+component SoCCounter@[input clk extends Discrete]
+  I = RealInput@[clk]() {^I}
+  ocv_soc = RealInput@[clk]() {^ocv_soc}
+  SoC = RealOutput@[clk]() {^SoC}
+  parameter dt::Time
+  parameter t_rest::Time
+  parameter I_rest::Current
+  parameter Q_nom::ElectricCharge
+  parameter SoC0::Real
+  absolute_current = BlockComponents.Math.Abs() {^absolute_current}
+  rest_threshold = BlockComponents.Logical.LessThreshold(threshold = I_rest) {^rest_threshold}
+  quiet_value = BlockComponents.Math.BooleanToReal() {^quiet_value}
+  previous_quiet = DiscreteComponents.UnitDelay(initial_condition = 0.0) {^previous_quiet}
+  was_quiet = BlockComponents.Logical.GreaterThreshold(threshold = 0.5) {^was_quiet}
+  consecutive_rest = BlockComponents.Logical.And() {^consecutive_rest}
+  previous_rest = DiscreteComponents.UnitDelay(initial_condition = 0.0) {^previous_rest}
+  tick_duration = BlockComponents.Sources.Constant(k = dt) {^tick_duration}
+  rest_increment = BlockComponents.Math.Add() {^rest_increment}
+  zero = BlockComponents.Sources.Constant(k = 0.0) {^zero}
+  rest_gate = BlockComponents.Logical.Switch() {^rest_gate}
+  enough_rest = BlockComponents.Logical.GreaterEqualThreshold(threshold = t_rest) {^enough_rest}
+  correction_gate = BlockComponents.Logical.And() {^correction_gate}
+  previous_current = DiscreteComponents.UnitDelay(initial_condition = 0.0) {^previous_current}
+  charge_step = BlockComponents.Math.Gain(k = dt) {^charge_step}
+  capacity = BlockComponents.Sources.Constant(k = Q_nom) {^capacity}
+  charge_fraction = BlockComponents.Math.Division() {^charge_fraction}
+  previous_estimate = DiscreteComponents.UnitDelay(initial_condition = SoC0) {^previous_estimate}
+  coulomb_step = BlockComponents.Math.Add(k2 = -1.0) {^coulomb_step}
+  estimate_gate = BlockComponents.Logical.Switch() {^estimate_gate}
+  variable estimate::Real
+  variable quiet::Real
+  variable rest_time::Time
+relations
+  # UnitDelay initializes the previous sample, not the present output. At the
+  # first tick rest_time is zero and coulomb_step is SoC0; t_rest = 0 can
+  # nevertheless select the present OCV. Both branches run on the input clock.
+  quiet = quiet_value.y
+  rest_time = rest_gate.y
+  estimate = estimate_gate.y
+  connect(I, absolute_current.u, previous_current.u) {^current_paths}
+  connect(absolute_current.y, rest_threshold.u) {^current_magnitude}
+  connect(rest_threshold.y, quiet_value.u, consecutive_rest.u1, correction_gate.u1) {^quiet_paths}
+  connect(quiet_value.y, previous_quiet.u) {^quiet_history}
+  connect(previous_quiet.y, was_quiet.u) {^previous_quiet_value}
+  connect(was_quiet.y, consecutive_rest.u2) {^previous_quiet_gate}
+  connect(previous_rest.y, rest_increment.u1) {^rest_history}
+  connect(tick_duration.y, rest_increment.u2) {^rest_tick}
+  connect(rest_increment.y, rest_gate.u1) {^incremented_rest}
+  connect(consecutive_rest.y, rest_gate.u2) {^rest_enable}
+  connect(zero.y, rest_gate.u3) {^rest_reset}
+  connect(rest_gate.y, previous_rest.u, enough_rest.u) {^rest_paths}
+  connect(enough_rest.y, correction_gate.u2) {^rest_ready}
+  connect(previous_current.y, charge_step.u) {^left_current}
+  connect(charge_step.y, charge_fraction.u1) {^interval_charge}
+  connect(capacity.y, charge_fraction.u2) {^nominal_capacity}
+  connect(charge_fraction.y, coulomb_step.u2) {^soc_decrement}
+  connect(previous_estimate.y, coulomb_step.u1) {^estimate_history}
+  connect(coulomb_step.y, estimate_gate.u3) {^integrated_soc}
+  connect(ocv_soc, estimate_gate.u1) {^ocv_correction}
+  connect(correction_gate.y, estimate_gate.u2) {^correction_enable}
+  connect(estimate_gate.y, previous_estimate.u, SoC) {^estimate_paths}
+metadata {
+  "_links": {
+    "absolute_current": {"Dyad": {"placement": {"diagram": {"x1": 130, "y1": 90, "x2": 190, "y2": 150}}}},
+    "rest_threshold": {"Dyad": {"placement": {"diagram": {"x1": 280, "y1": 90, "x2": 340, "y2": 150}}}},
+    "quiet_value": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 90, "x2": 500, "y2": 150}}}},
+    "previous_quiet": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 90, "x2": 660, "y2": 150}}}},
+    "was_quiet": {"Dyad": {"placement": {"diagram": {"x1": 760, "y1": 90, "x2": 820, "y2": 150}}}},
+    "consecutive_rest": {"Dyad": {"placement": {"diagram": {"x1": 760, "y1": 250, "x2": 820, "y2": 310}}}},
+    "correction_gate": {"Dyad": {"placement": {"diagram": {"x1": 900, "y1": 330, "x2": 960, "y2": 390}}}},
+    "previous_rest": {"Dyad": {"placement": {"diagram": {"x1": 120, "y1": 430, "x2": 180, "y2": 490}}}},
+    "rest_increment": {"Dyad": {"placement": {"diagram": {"x1": 280, "y1": 430, "x2": 340, "y2": 490}}}},
+    "rest_gate": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 430, "x2": 660, "y2": 490}}}},
+    "enough_rest": {"Dyad": {"placement": {"diagram": {"x1": 760, "y1": 430, "x2": 820, "y2": 490}}}},
+    "tick_duration": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 560, "x2": 260, "y2": 620}}}},
+    "zero": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 560, "x2": 500, "y2": 620}}}},
+    "previous_current": {"Dyad": {"placement": {"diagram": {"x1": 120, "y1": 760, "x2": 180, "y2": 820}}}},
+    "charge_step": {"Dyad": {"placement": {"diagram": {"x1": 280, "y1": 760, "x2": 340, "y2": 820}}}},
+    "charge_fraction": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 760, "x2": 500, "y2": 820}}}},
+    "coulomb_step": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 760, "x2": 660, "y2": 820}}}},
+    "estimate_gate": {"Dyad": {"placement": {"diagram": {"x1": 780, "y1": 760, "x2": 840, "y2": 820}}}},
+    "capacity": {"Dyad": {"placement": {"diagram": {"x1": 360, "y1": 880, "x2": 420, "y2": 940}}}},
+    "previous_estimate": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 640, "x2": 660, "y2": 700}}}},
+    "current_paths": {"Dyad": {"junctions": [{"x": 75, "y": 120}], "edges": [{"S": 2, "M": [], "E": -1}, {"S": -1, "M": [], "E": 1}, {"S": 3, "M": [{"x": 75, "y": 790}], "E": -1}]}},
+    "current_magnitude": {"Dyad": {"edges": [{"S": 2, "M": [], "E": 1}]}},
+    "quiet_paths": {"Dyad": {"junctions": [{"x": 410, "y": 120}, {"x": 710, "y": 262.0}], "edges": [{"S": 2, "M": [], "E": -1}, {"S": -1, "M": [], "E": 1}, {"S": 3, "M": [], "E": -2}, {"S": -2, "M": [{"x": 410, "y": 262.0}], "E": -1}, {"S": 4, "M": [{"x": 710, "y": 342.0}], "E": -2}]}},
+    "quiet_history": {"Dyad": {"edges": [{"S": 2, "M": [], "E": 1}]}},
+    "previous_quiet_value": {"Dyad": {"edges": [{"S": 2, "M": [], "E": 1}]}},
+    "previous_quiet_gate": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 745.0, "y": 295.6}, {"x": 745.0, "y": 240}, {"x": 835.0, "y": 240}, {"x": 835.0, "y": 120}], "E": 1}]}},
+    "rest_history": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 192.6, "y": 442.0}, {"x": 192.6, "y": 460}], "E": 1}]}},
+    "rest_tick": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 240, "y": 478.0}, {"x": 240, "y": 510}, {"x": 300, "y": 510}, {"x": 300, "y": 590}], "E": 1}]}},
+    "incremented_rest": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 355.0, "y": 440.8}, {"x": 355.0, "y": 460}], "E": 1}]}},
+    "rest_enable": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 585.0, "y": 460.0}, {"x": 585.0, "y": 510}, {"x": 850, "y": 510}, {"x": 850, "y": 380}, {"x": 870, "y": 380}, {"x": 870, "y": 280}], "E": 1}]}},
+    "rest_reset": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 515.0, "y": 479.2}, {"x": 515.0, "y": 590}], "E": 1}]}},
+    "rest_paths": {"Dyad": {"junctions": [{"x": 670, "y": 460}], "edges": [{"S": 3, "M": [], "E": -1}, {"S": -1, "M": [], "E": 1}, {"S": 2, "M": [{"x": 108.0, "y": 460.0}, {"x": 108.0, "y": 420}, {"x": 670, "y": 420}], "E": -1}]}},
+    "rest_ready": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 835.0, "y": 375.6}, {"x": 835.0, "y": 460}], "E": 1}]}},
+    "left_current": {"Dyad": {"edges": [{"S": 2, "M": [], "E": 1}]}},
+    "interval_charge": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 355.0, "y": 772.0}, {"x": 355.0, "y": 790}], "E": 1}]}},
+    "nominal_capacity": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 390, "y": 808.0}, {"x": 390, "y": 840}, {"x": 435.0, "y": 840}, {"x": 435.0, "y": 910}], "E": 1}]}},
+    "soc_decrement": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 515.0, "y": 808.0}, {"x": 515.0, "y": 790}], "E": 1}]}},
+    "estimate_history": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 530, "y": 772.0}, {"x": 530, "y": 630}, {"x": 672.6, "y": 630}, {"x": 672.6, "y": 670}], "E": 1}]}},
+    "integrated_soc": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 675.0, "y": 809.2}, {"x": 675.0, "y": 790}], "E": 1}]}},
+    "ocv_correction": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 760, "y": 735}, {"x": 760, "y": 770.8}], "E": 2}]}},
+    "correction_enable": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 765.0, "y": 790.0}, {"x": 765.0, "y": 750}, {"x": 870, "y": 750}, {"x": 870, "y": 410}, {"x": 820, "y": 410}, {"x": 820, "y": 360}, {"x": 890, "y": 360}, {"x": 890, "y": 320}, {"x": 975.0, "y": 320}, {"x": 975.0, "y": 360}], "E": 1}]}},
+    "estimate_paths": {"Dyad": {"junctions": [{"x": 850, "y": 790}], "edges": [{"S": 3, "M": [], "E": -1}, {"S": -1, "M": [], "E": 1}, {"S": 2, "M": [{"x": 550, "y": 670}, {"x": 550, "y": 720}, {"x": 850, "y": 720}], "E": -1}]}},
+    "I": {"Dyad": {"placement": {"diagram": {"x1": 10, "y1": 110, "x2": 30, "y2": 130}, "icon": {"x1": 0, "y1": 180, "x2": 40, "y2": 220}}}},
+    "ocv_soc": {"Dyad": {"placement": {"diagram": {"x1": 26, "y1": 725, "x2": 46, "y2": 745}, "icon": {"x1": 0, "y1": 580, "x2": 40, "y2": 620}}}},
+    "SoC": {"Dyad": {"placement": {"diagram": {"x1": 960, "y1": 780, "x2": 980, "y2": 800}, "icon": {"x1": 960, "y1": 480, "x2": 1000, "y2": 520}}}}
+  }
+}
+end
