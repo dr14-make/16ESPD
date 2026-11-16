@@ -62,14 +62,14 @@ routeAlias: from-lectures-4-and-5
 
 ![Two circuits side by side. Left, Lecture 4: inside a dashed box labeled battery, a fixed source E in series with a resistor R, feeding a load at the terminals; current i, terminal voltage v; v = E − R i, E and R fixed. Right, this session: the Thevenin cell, a source OCV(SoC), the resistor R0 and a parallel pair R1 and C1 with voltage v1, to the terminals; v = OCV(SoC) − R0 i − v1.](/diagrams/02-before-after.svg)
 
-<div class="caption">Left: deck 8, after Larminie and Lowry, redrawn · right: the section 02 Thevenin cell.</div>
+<div class="caption">Left: Lecture 4's battery, after Larminie and Lowry, redrawn · right: the section 02 Thevenin cell.</div>
 
 </div>
 <div>
 
 ![Block diagram of a series hybrid. The engine turns a generator, mechanical to electrical, which feeds a DC link; the battery is on the same link, and in a plug-in the grid charges it; the link feeds the motor, electrical to mechanical, which alone drives the wheels, and regen goes back to the battery. No shaft runs from the engine to the wheels.](/diagrams/00-l5-series.svg)
 
-<div class="caption">Lecture 5's series hybrid</div>
+<div class="caption"><a href="https://dr14-make.github.io/16ESPD/lecture-05/" target="_blank">Lecture 5, <i>Hybrids</i></a>: the series hybrid</div>
 
 </div>
 </div>
@@ -77,7 +77,7 @@ routeAlias: from-lectures-4-and-5
 <div class="grid grid-cols-[1.7fr_1fr] gap-8 text-[0.95rem]">
 <div>
 
-**Lecture 4:** *E* = **350 V**, *R*₀ = **0.1 Ω**, SoC counted from the current. *E* never moves,
+**<a href="https://dr14-make.github.io/16ESPD/lecture-04/" target="_blank">Lecture 4, <i>The Battery-Electric Car</i></a>:** *E* = **350 V**, *R*₀ = **0.1 Ω**, SoC (state of charge) counted from the current. *E* never moves,
 the voltage sags only at once, and nothing stops SoC at zero.
 
 </div>
@@ -89,7 +89,7 @@ engine-generator.
 </div>
 </div>
 
-<div class="handson">Today: a cell whose voltage follows its charge, the BMS that watches it, the
+<div class="handson">Today: a cell whose voltage follows its charge, the BMS (battery management system) that watches it, the
 two ways to refill a car — a plug and a nozzle — and what each costs.</div>
 
 <!--
@@ -117,19 +117,19 @@ skipInCut: true
 
 | # | Section | What it covers | 3 h | 90 min |
 |---|---|---|---:|---:|
-| <Link to="cells-and-chemistries">01</Link> | Cells and chemistries | the battery terms: C-rate, cell to pack, SoC, DoD, SoH; LFP, NMC, sodium-ion; cost | 22 | 10 |
-| <Link to="thevenin-cell">02</Link> | The Thevenin cell | OCV(SoC), R₀, one RC pair; the pulse response | 12 | 4 |
+| <Link to="cells-and-chemistries">01</Link> | Cells and chemistries | the battery terms: C-rate, cell to pack, state of charge, depth of discharge, state of health; LFP, NMC, sodium-ion; cost | 22 | 10 |
+| <Link to="thevenin-cell">02</Link> | The Thevenin cell | open-circuit voltage OCV(SoC), R₀, one RC pair; the pulse response | 12 | 4 |
 | <Link to="bms">03</Link> | The BMS | coulomb counting and its drift, the OCV reset, balancing, limits | 12 | 5 |
-| <Link to="charging">04</Link> | Charging | CC-CV, measured DC curves, 400 V vs 800 V, modes, losses, ISO 15118, the network | 40 | 25 |
+| <Link to="charging">04</Link> | Charging | constant current, constant voltage (CC-CV), measured DC curves, 400 V vs 800 V, modes, losses, ISO 15118 car-to-charger communication, the network | 40 | 25 |
 | — | Break | | 15 | — |
 | <Link to="fuel-cells">05</Link> | Fuel cells | the polarization curve, the stack, balance of plant | 19 | 9 |
-| <Link to="hydrogen">06</Link> | Hydrogen | 700 bar storage and fueling, the station chain, counts, price, AFIR Art. 6 | 35 | 20 |
-| <Link to="fuel-cell-car">07</Link> | The fuel-cell car | a series hybrid with a different source; well-to-wheel against the BEV | 15 | 9 |
+| <Link to="hydrogen">06</Link> | Hydrogen | 700 bar storage and fueling, the station chain, counts, price, the EU's Alternative Fuels Infrastructure Regulation (AFIR) Art. 6 | 35 | 20 |
+| <Link to="fuel-cell-car">07</Link> | The fuel-cell car | a series hybrid with a different source; well-to-wheel against the battery car | 15 | 9 |
 | <Link to="wrap-up">08</Link> | Wrap-up | plug or nozzle, the summary, the take-home exercises | 5 | 5 |
 
 </div>
 
-Not tonight: the stepped gearbox and the dq model of the motor, promised in Lecture 5, move to a
+Not tonight: the stepped gearbox and the dq (direct–quadrature axis) model of the motor, promised in Lecture 5, move to a
 later lecture.
 
 <!--

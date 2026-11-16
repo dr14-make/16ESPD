@@ -7,12 +7,16 @@ layout: section
 
 # Charging
 
-CC-CV at the cell, measured DC curves of the Leaf, a 400 V and an 800 V car, modes and connectors,
-AC and DC losses, and the network in Czechia and the EU.
+CC-CV (constant current, then constant voltage) at the cell, measured DC (direct current) curves of
+the Leaf, a 400 V and an 800 V car, modes and connectors, AC (alternating current) and DC losses, and
+the network in Czechia and the EU.
 
 <img class="hero" src="/photos/04-ionity.jpg" alt="A row of white IONITY high-power charging posts along a parking strip at a German motorway service area under a cloudy sky."/>
 
 <div class="caption">IONITY, A4 Germany, 2025 · Андрей Романенко, CC BY-SA 4.0</div>
+
+<div class="caption">Charging standards and battery wear: the full deck, as the
+<a href="https://dr14-make.github.io/16ESPD/extra-session/handout.pdf" target="_blank">handout PDF</a>.</div>
 
 <!--
 Now the first half of the sentence: how fast does the energy go back in? A 40 kilowatt-hour Leaf
@@ -21,7 +25,8 @@ meet a car that refills in about three minutes. What sets the charging time? Thr
 this order. The cell's voltage limit, which forces the constant-voltage phase. Heat. And the cable
 and the grid behind it. Then what is lost on the way, and how many chargers there are.
 
-In the short version we skip the standards and battery wear. Both are in the handout.
+In the short version we skip the standards and battery wear. Both are in the full deck and its
+handout PDF, linked on this slide.
 
 *[show photo]* A motorway charging site in Germany: a row of IONITY chargers at Raststätte
 Altenburger Land Nord on the A4. Photograph by Andrei Romanenko, Wikimedia Commons.
@@ -38,7 +43,7 @@ routeAlias: cc-cv
 
 <img src="/figures/04-cc-cv.svg" alt="Three panels against time in minutes. Current: constant 16.55 A, 0.5C of 33.1 Ah, until 103 minutes, then decaying to the C/50 cutoff of 0.66 A at 120 minutes. Voltage: the terminal voltage rises from 3.32 V to 4.20 V at 103 minutes and holds there; the OCV, dashed, runs below it, 4.15 V at the switch to CV and 4.198 V at the end. SoC: from 10 % rising linearly to 95.6 % at the switch and 99.8 % at the end."/>
 
-<div class="caption">Formula plot · the section 02 Leaf cell (R₀ 1.60 mΩ, R₁ 1.34 mΩ, τ₁ 25.7 s, 33.1 A·h;
+<div class="caption">Formula plot · the Leaf cell of section 02, The Thevenin cell (R₀ 1.60 mΩ, R₁ 1.34 mΩ, τ₁ 25.7 s, 33.1 A·h;
 [ORNL-LEAF-ECM] fit, derived) with the NMC 811 OCV curve · assumed: 0.5C from rest at 10 %,
 CV 4.20 V, stop at C/50.</div>
 
@@ -51,16 +56,17 @@ CV 4.20 V, stop at C/50.</div>
 |---|---|---|---|
 | Panasonic NCR18650B, 3.25 Ah | ≤ 0.5C | **4.20 V** | 65 mA ≈ **C/50** |
 | LG INR21700M50LT, 4.8 Ah, NMC 811 | 0.3C | **4.20 V** | 50 mA ≈ **C/96** |
-| A123 ANR26650M1B, 2.5 Ah, LFP | 1.2C rec., 4C max | **3.6 V** | < 50 mA ≈ **C/50** |
+| A123 ANR26650M1B, 2.5 Ah, LFP (iron phosphate) | 1.2C rec., 4C max | **3.6 V** | < 50 mA ≈ **C/50** |
 
 </div>
 
-1. **CC:** constant current until the terminal voltage reaches the limit.
-2. **CV:** hold the voltage; the current decays.
+1. **CC** (constant current): constant current until the terminal voltage reaches the limit.
+2. **CV** (constant voltage): hold the voltage; the current decays.
 3. **Stop** at the end current.
 
 <div class="caption text-left">Datasheets [PAN-NCR18650B], [LG-M50LT-2020] (mirror copies),
-[LW-26650-2022]; C-rates computed (<code>charging.md</code> §1)</div>
+[LW-26650-2022]; C-rates computed (<a href="https://github.com/dr14-make/16ESPD/blob/main/docs/research_notes/Electric%20and%20hybrid%20vehicles/charging.md" target="_blank"><code>charging.md</code></a> §1) · C/50: a fiftieth of 1C, the current
+that would fill the cell in 1 h</div>
 
 </div>
 </div>
@@ -79,7 +85,7 @@ Look at the dashed line. At the switch the OCV is still below 4.2, and the cell 
 Step three: when the current has fallen to the end value, charging stops, at 99.8.
 
 The table shows three real datasheets. Two nickel-based cells stop at 4.20 volts. One LFP cell
-stops at 3.6 volts, the last row of section 01's table. Now look at the end current. All three stop
+stops at 3.6 volts, the last row of section 01's chemistry table. Now look at the end current. All three stop
 between C over 50 and C over 100. The often-quoted C over 20 is higher. The CV phase is
 long, and its current is small.
 -->
@@ -99,10 +105,10 @@ $$
 v = \mathrm{OCV} + R\, i \;\le\; v_\text{max}
 $$
 
-At the end of CC, *R i* reaches the limit while the OCV is still below it: the cell is **not
+At the end of CC, *R i* reaches the limit while the OCV (open-circuit voltage) is still below it: the cell is **not
 full**. Holding *v* lets *i* fall, so the OCV can rise to the limit.
 
-**The anode's side:** a high current at high SoC drives the graphite below **0 V vs Li/Li⁺** —
+**The anode's side:** a high current at a high state of charge (SoC) drives the graphite below **0 V vs Li/Li⁺** —
 **lithium plating**.
 
 <div class="caption text-left">Plating: [DAS-2024]</div>
@@ -112,8 +118,10 @@ full**. Holding *v* lets *i* fall, so the OCV can rise to the limit.
 
 <img src="/figures/04-cv-budget.svg" alt="Two stacked bars of pack terminal voltage on an axis that starts at 370 V, under a dashed red ceiling of 96 × 4.20 V = 403 V. End of CC at 50 kW, 143 A: OCV 389.0 V (4.05 V per cell) plus 14 V of I·R reaches the ceiling. At C/20, 3.3 A: OCV 402.7 V (4.19 V per cell) plus only 0.33 V of I·R."/>
 
-<div class="caption">Computed for the course Leaf pack: 96s2p, R_pack ≈ 0.1 Ω, 50 kW at ≈ 350 V [<code>charging.md</code>
-§1] · 4.2 V ceiling assumed for the AESC cell (no datasheet found) · axis starts at 370 V.</div>
+<div class="caption">Computed for the course Leaf pack: 96s2p (96 cell groups in series, 2 cells in
+parallel), R_pack ≈ 0.1 Ω, 50 kW at ≈ 350 V: 50 kW / 350 V = 143 A, × 0.1 Ω = 14 V
+[<a href="https://github.com/dr14-make/16ESPD/blob/main/docs/research_notes/Electric%20and%20hybrid%20vehicles/charging.md" target="_blank"><code>charging.md</code></a> §1] · 4.2 V ceiling assumed for the AESC (Automotive Energy Supply Corporation)
+cell, no datasheet found · axis starts at 370 V.</div>
 
 </div>
 </div>
@@ -130,7 +138,7 @@ graphite anode's potential down. Below 0 volts against lithium, lithium metal co
 instead of moving into it. This is plating. Plated lithium is lost capacity. At worst it grows
 metal needles, dendrites, that can pierce the separator.
 
-*[ask]* Now your Lecture 4 pack: 0.1 ohm, charging at 50 kilowatts at about 350 volts. How many
+*[ask]* Now your pack from Lecture 4, The Battery-Electric Car: 0.1 ohm, charging at 50 kilowatts at about 350 volts. How many
 volts are lost across R? *[pause]* 50 kilowatts over 350 volts is about 143 amperes. Times 0.1 ohm,
 14 volts. Per cell, 0.15.
 
@@ -183,7 +191,7 @@ potential falls below 0 V vs Li/Li⁺.
 </div>
 
 <!--
-The datasheet limits of section 03 all slow the charge in the cold. Here is why.
+The datasheet limits of section 03, the BMS, all slow the charge in the cold. Here is why.
 
 A 2024 review by Das and Shrotriya says plating usually appears above 1C or near 0 degrees.
 Normally the anode sits 65 to 200 millivolts above lithium, and lithium moves into the graphite
@@ -207,7 +215,7 @@ pack before it arrives. This is preconditioning: the car warms its battery while
 can take full current at the charger.
 
 ADAC, the German automobile club, measured the cost. Preconditioning saves time at the charger,
-but not energy. The numbers are two slides on. On DC, a cold pack that was not
+but not energy. The numbers are on the slide "AC and DC: where the energy is lost". On DC, a cold pack that was not
 preconditioned lost up to 10 percent inside the car. Heating the pack at the charger cost 2 to 8
 percent more.
 
@@ -236,17 +244,20 @@ data, joined by straight lines · model: <code>CCCVLeafCharge</code>, the course
 </div>
 <div class="text-[0.9rem]">
 
-**One charge, warm enough:** **46 kW** peak, **10–80 % in 43 min**, 40 kW average.
+**One charge, warm enough:** **46 kW** peak, **10–80 % in 43 min**: 70 % × 40 kWh = 28 kWh in
+43 min ≈ 40 kW average.
 
 **Rapidgate:** the air-cooled pack **throttled above 32 °C**. At a 41 °C pack, 70 % took 54 min
 (old software) → just under 40 min (new).
 
-**Why:** no active cooling. Per charge, the pack warmed **6.5 °C** on 50 kW DC vs **2.9 °C** on AC;
-the next charge starts warmer.
+**Why:** no active cooling. INL's 2012 Leaf warmed **6.5 °C** per 50 kW DC charge; on AC it made
+only ~10 W of heat. The next charge starts warmer.
 
-**The fix:** the 3rd-generation Leaf has a **liquid-cooled** pack, CCS in Europe, up to 150 kW.
+**The fix:** the 3rd-generation Leaf has a **liquid-cooled** pack, CCS (Combined Charging System)
+in Europe, up to 150 kW.
 
-<div class="caption text-left">[EVDB-LEAF40] and [CT-RAPIDGATE-2019], secondary · [INL-DCFC-2015],
+<div class="caption text-left">[EVDB-LEAF40] and [CT-RAPIDGATE-2019], secondary · INL (Idaho National
+Laboratory) [INL-DCFC-2015],
 [NISSAN-LEAF3-2025], verified</div>
 
 <div class="flex items-center gap-4 mt-3">
@@ -277,8 +288,8 @@ pack still cost a quarter of an hour.
 
 *[ask]* Why does the Leaf overheat when the IONIQ does not? *[pause]* Its pack has no active
 cooling. Idaho National Laboratory measured the 2012 Leaf, the same air-cooled design: each 50
-kilowatt DC charge warmed the pack 6.5 degrees on average, against 2.9 on AC. The heat of one charge
-is still there at the next. On a long trip, the second and third fast charges start hot and are
+kilowatt DC charge warmed the pack 6.5 degrees on average. On AC the pack makes about 10 watts of
+heat; the 2.9 degrees INL logged there is Phoenix's daily swing. The heat of one charge is still there at the next. On a long trip, the second and third fast charges start hot and are
 slowed, just when you need them.
 
 Heat is the second limit, and a liquid-cooled pack removes most of it.
@@ -330,9 +341,7 @@ against 196. The 2024 Porsche Taycan, also 800 volts, matches the IONIQ's 18 min
 The peak in the brochure tells you little. The time depends on the shape of the curve and where it
 starts to fall. That comes from the CV phase and the heat, and the BMS controls both.
 
-Two warnings about the data. The 10 to 80 times for the Model Y and the ID.3 come from EV Database,
-a secondary source. The Model Y time is for the rear-drive version; Fastned does not say which one
-it measured. And Fastned's Model Y data start at 8 percent, already below its quoted peak.
+One warning: the Model Y and ID.3 times come from EV Database, a secondary source.
 -->
 
 ---
@@ -346,8 +355,8 @@ routeAlias: why-800v
 
 <img src="/figures/04-voltage-class.svg" alt="Three bar panels, 400 V in blue, 800 V in green. Current for 200 kW: 500 A against 250 A. Cable I²R for 200 kW, relative to 400 V: ×1 against ×0.25. Power at a 500 A cable: 200 kW against 400 kW."/>
 
-<div class="caption">Computed: P = U·I, I²R ∝ I² [<code>charging.md</code> §6] · 500 A: liquid-cooled CCS2 HPC cable,
-permanent rating [PHX-HPC] (search summary).</div>
+<div class="caption">Computed: P = U·I, I²R ∝ I² [<a href="https://github.com/dr14-make/16ESPD/blob/main/docs/research_notes/Electric%20and%20hybrid%20vehicles/charging.md" target="_blank"><code>charging.md</code></a> §6] · 500 A: liquid-cooled CCS2 HPC
+(high-power charging) cable, permanent rating [PHX-HPC] verified.</div>
 
 </div>
 <div class="text-[0.9rem]">
@@ -358,16 +367,20 @@ $$
 
 The current is capped by the **cable and contacts**, not the charger's electronics.
 
-**Cable limits:** liquid-cooled CCS2 cable **500 A** permanent, 700 A boost, 1000 V; uncooled about
-200–250 A.
+**Charger cables, 1,000 V:** uncooled **375 A** permanent; liquid-cooled, coolant through the
+conductors, **500 A** or **800 A**.
+
+**Why cool only the charger's cable:** it is meters long, hangs off a post and is lifted by hand. The
+car's cables are short and fixed, so they are simply made thicker.
 
 **In-vehicle DC loss at 23 °C:** IONIQ 6 (800 V) **1 %**; Model Y, ID.3 **3 %**.
 
 **But on a slow charger:** IONIQ 5 84 kWh on 50 kW DC — **76 min** for 10–80 %.
 
-**800 V car at a 400 V charger:** E-GMP boosts 400 → 800 V with the motor and inverter.
+**800 V car at a 400 V charger:** Hyundai's E-GMP platform boosts 400 → 800 V with the motor and
+inverter.
 
-<div class="caption text-left">[PHX-HPC] search summary · [ADAC-LADEVERLUST-2026], [HYU-EU-CT],
+<div class="caption text-left">[PHX-HPC] verified · ADAC (German automobile club) [ADAC-LADEVERLUST-2026], [HYU-EU-CT],
 [HMG-EGMP-2022] verified</div>
 
 </div>
@@ -382,9 +395,10 @@ power at twice the voltage needs half the current, and a quarter of the I square
 cable, the contacts and the pack. Your Lecture 4 pack drew 143 amperes at 50 kilowatts. At 200
 kilowatts it would draw over 500.
 
-The right column gives real numbers. A liquid-cooled CCS2 cable is rated about 500 amperes, 700 for
-short bursts. Without liquid cooling, about 200 to 250. These are makers' figures we could not
-check. ADAC, the German automobile club, measured the loss inside the car on DC at 23 degrees: 1
+The right column gives real numbers. Phoenix Contact's charger cables carry 375 amperes without
+cooling, 500 or 800 with coolant running through the conductors. Why cool only that cable? It is
+long, hangs off a post, and you lift it by hand. The car's cables are short and fixed, so they are
+simply made thicker. And 800 volts halves the current and quarters the heat for both. ADAC, the German automobile club, measured the loss inside the car on DC at 23 degrees: 1
 percent for the 800 volt IONIQ 6, 3 percent for the 400 volt Model Y and ID.3.
 
 *[ask]* So should everyone buy an 800 volt car? *[pause]* Only if the chargers can deliver it.
@@ -406,26 +420,35 @@ routeAlias: modes-and-connectors
 </div>
 
 <div class="caption">Mode 2 [IEC-62752-2016] and the Type 2 coupler [IEC-62196-2-2022] verified (preview) · Mode 1's 16 A
-and Mode 3's 22 kW ceiling commonly cited (search summary) · kW computed at 230 V.</div>
+and Mode 3's 22 kW ceiling commonly cited (search summary) · kW computed at 230 V · IC-CPD: in-cable
+control and protection device.</div>
 
-<div class="grid grid-cols-[auto_auto_1fr] gap-8 items-center mt-3">
+<div class="grid grid-cols-[8rem_8rem_16rem_1fr] gap-5 items-center mt-3">
 <div>
 
-<img class="light-box" src="/photos/04-type-2.png" style="height: 8rem" alt="Front face of a Type 2 plug: a rounded housing with one flat side, five large pins in a ring and two small signal pins at the top, on a transparent background."/>
+<img class="light-box" src="/photos/04-type-2.png" style="height: 7rem" alt="Front face of a Type 2 plug: a rounded housing with one flat side, five large pins in a ring and two small signal pins at the top, on a transparent background."/>
 
 <div class="caption">Type 2 · D-Kuru/Wikimedia Commons, CC BY-SA 4.0</div>
 
 </div>
 <div>
 
-<img class="light-box" src="/photos/04-ccs2.png" style="height: 8rem" alt="Front face of a CCS2 (Combo 2) plug: the Type 2 signal pins in an upper opening and two large DC pins in a separate opening below, on a transparent background."/>
+<img class="light-box" src="/photos/04-ccs2.png" style="height: 7rem" alt="Front face of a CCS2 (Combo 2) plug: the Type 2 signal pins in an upper opening and two large DC pins in a separate opening below, on a transparent background."/>
 
 <div class="caption">CCS2 · D-Kuru/Wikimedia Commons, CC BY-SA 4.0</div>
 
 </div>
 <div>
 
-**AC goes through the car's on-board charger:** 3 × 16 A = **11 kW**, 3 × 32 A = 22 kW.
+<img class="light-box" src="/diagrams/04-ccs2-inlet.svg" style="width: 16rem" alt="A CCS2 inlet on a car, BMW i3, labeled. Upper part, the Type 2 socket for AC: five pins L1, L2, L3, N and PE, and above them two small signal pins, CP the control pilot and PP the plug detection. Lower part: the two large DC pins, DC+ and DC−, that CCS2 adds."/>
+
+<div class="caption">CCS2 inlet, BMW i3 · Teknisk Kompetanse, CC BY-SA 4.0, cropped and labeled</div>
+
+</div>
+<div>
+
+**AC goes through the car's on-board charger (OBC):** 3 × 16 A × 230 V = **11 kW**, 3 × 32 A =
+22 kW.
 
 The ID.3, Model Y, IONIQ 5: **11 kW**. The old Leaf: **3.6 or 6.6 kW**, one phase — also on a 22 kW
 post.
@@ -439,7 +462,8 @@ Mode 1: a plain socket with no communication, restricted in many countries. Mode
 socket with a protection box in the cable, up to 32 amperes. Mode 3: a wallbox or public post that
 talks to the car over the control pilot, a signal wire. The Type 2 plug takes up to 63 amperes,
 three-phase. Mode 4: DC from a charger outside the car, through CCS2 in the EU. *[show photos]*
-Below, the two plug faces: Type 2 for AC, and CCS2, which adds two large DC pins under it.
+Below, the two plug faces: Type 2 for AC, and CCS2, which adds two large DC pins under it. Then
+the same CCS2 socket on a car, a BMW i3, photographed by Teknisk Kompetanse.
 
 On AC, the car's own on-board charger turns AC into DC, and its rating sets the power. One phase at
 16 amperes and 230 volts is 3.7 kilowatts. Three phases give 11, and three at 32 amperes give 22.
@@ -493,16 +517,16 @@ skipInCut: true
 |---|---|---|
 | **CHAdeMO** (2017 spec) | Japan; old Leaf in Europe | 100 kW continuous, 150–200 kW peak, 400 A × 500 V |
 | **ChaoJi / CHAdeMO 3.0** | Japan, China, with GB/T | up to 600 A, 1–1.5 kV, 500–900 kW |
-| **GB/T 20234.3-2023** | China | ≤ 1,500 V DC, ≤ 800 A (search summary) |
-| **NACS / SAE J3400** | North America | DC or 1-ph AC on the same two pins; V/A not on SAE's page |
-| **MCS / SAE J3271** | trucks | 1,250 V × 3,000 A = **3.75 MW** |
+| **GB/T 20234.3-2023** (Chinese national standard) | China | ≤ 1,500 V DC, ≤ 800 A (search summary) |
+| **NACS** (North American Charging Standard) / SAE J3400 | North America | DC or single-phase AC on the same two pins; V/A not on SAE's page |
+| **MCS** (Megawatt Charging System) / SAE J3271 | trucks | 1,250 V × 3,000 A = **3.75 MW** |
 
 </div>
 
 **In Europe CHAdeMO is fading:** the 3rd-generation Leaf takes CCS in Europe, NACS in North America.
 
 <div class="caption text-left">[CHADEMO-HP], [SAE-J3400], [SAE-J3271], [CHARIN-MCS],
-[NISSAN-LEAF3-2025] verified; MW computed (<code>charging.md</code> §3)</div>
+[NISSAN-LEAF3-2025] verified; MW computed (<a href="https://github.com/dr14-make/16ESPD/blob/main/docs/research_notes/Electric%20and%20hybrid%20vehicles/charging.md" target="_blank"><code>charging.md</code></a> §3) · SAE: SAE International</div>
 
 <!--
 The connectors other than the EU's CCS2, for reference. *[show photos]* Three plug faces: CHAdeMO,
@@ -519,7 +543,7 @@ pins.
 MCS, the Megawatt Charging System, is for trucks. 1250 volts times 3000 amperes is 3.75 megawatts,
 about eighty times the old Leaf's 46 kilowatts. *[ask]* Who needs megawatts at a plug? *[pause]* A
 battery truck. It must refill a very large pack during the driver's break, not overnight. Remember
-this in section 07, when we ask where hydrogen trucks still make sense. This is what they compete
+this in section 07, The fuel-cell car, when we ask where hydrogen trucks still make sense. This is what they compete
 with. The first certified chargers are reported at about 1 to 1.2 megawatts. SAE's MCS document
 covers the plug, the communication, cooled cables and automatic connection, so a truck need not wait
 for a driver to plug it in.
@@ -542,10 +566,26 @@ routeAlias: charging-losses
 
 ## AC and DC: where the energy is lost
 
-<img src="/figures/04-charging-losses.svg" style="max-height: 28rem" alt="Two panels of charging loss in percent. Left, AC grid to battery, one dumbbell per car from the 11 kW wallbox (green) through 4.1 kW (gray) to the 2.3 kW household socket (red): Mercedes CLA 350 EQ 6.9 / 12.8 / 24.2, VW ID.7 6.9 / 10.6 / 15.3, Volvo EX30 7.0 / 9.1 / 14.2, Renault R5 E-Tech 5.1 / 8.0 / 13.7, Tesla Model Y 6.1 / 9.4 / 12.7. Right, DC losses inside the car, three bars per car for 23 °C preconditioned, 0 °C preconditioned and 0 °C not preconditioned: VW ID.3 3 / 5 / 7, Tesla Model Y 3 / 4 / 10, Renault Mégane E-Tech 4 / 6 / 8, Hyundai Ioniq 6 (800 V) 1 / 1 / 6."/>
+<div class="grid grid-cols-2 gap-8 text-[0.85rem]">
+<div>
 
-<div class="caption">ADAC 2026 [ADAC-LADEVERLUST-2026], verified · DC: inside the car only; with the charger's own ≈ 3 %
-the DC total is 5–15 %, and heating the pack at the charger adds 2–8 %.</div>
+**AC: grid → battery.** The car's on-board charger (OBC) converts AC to DC, and the car's fixed
+loads run all the while.
+
+</div>
+<div>
+
+**DC: plug → battery, inside the car only.** The charger converts AC to DC; its own ≈ 3 % is not
+shown.
+
+</div>
+</div>
+
+<img src="/figures/04-charging-losses.svg" style="max-height: 26rem" alt="Two panels of charging loss in percent. Left, AC grid to battery, including the car's on-board charger and fixed loads, one dumbbell per car from the 11 kW wallbox (green) through 4.1 kW (gray) to the 2.3 kW household socket (red): Mercedes CLA 350 EQ 6.9 / 12.8 / 24.2, VW ID.7 6.9 / 10.6 / 15.3, Volvo EX30 7.0 / 9.1 / 14.2, Renault R5 E-Tech 5.1 / 8.0 / 13.7, Tesla Model Y 6.1 / 9.4 / 12.7. Right, DC losses inside the car only, plug to battery, the charger's own 3 % not shown, three bars per car for 23 °C preconditioned, 0 °C preconditioned and 0 °C not preconditioned: VW ID.3 3 / 5 / 7, Tesla Model Y 3 / 4 / 10, Renault Mégane E-Tech 4 / 6 / 8, Hyundai Ioniq 6 (800 V) 1 / 1 / 6."/>
+
+<div class="caption">ADAC (Allgemeiner Deutscher Automobil-Club) 2026 [ADAC-LADEVERLUST-2026], verified ·
+preconditioned: pack heated on the way to the charger · with the charger's ≈ 3 %, the DC total is
+5–15 % (ADAC); heating the pack at the charger adds 2–8 %.</div>
 
 **Slow AC loses most:** the car's fixed loads run for hours on a slow charge, so every car's loss is
 lowest at 11 or 22 kW.
@@ -556,7 +596,7 @@ Energy lost between grid and battery, as ADAC measured it in 2026.
 *[show figure]* On the left, AC, for five current cars, one line each, red for the socket, green for
 the wallbox. At a 2.3 kilowatt household socket losses range from 12.7 percent for the Model Y to
 24.2 for the Mercedes. At an 11 kilowatt wallbox they fall to 5 to 7 percent. *[ask]* Why would
-charging slowly waste more? *[pause]* The car's control units, pumps and BMS draw a fixed power for
+charging slowly waste more? *[pause]* The car's control units, pumps and battery management system draw a fixed power for
 as long as the charge lasts. On a socket, that is many hours.
 
 On the right, DC: the losses inside the car only, at 23 degrees and at 0 degrees. "Precond." means
@@ -575,17 +615,17 @@ routeAlias: iso-15118-v2g
 skipInCut: true
 ---
 
-## ISO 15118, Plug & Charge and V2G
+## ISO 15118, Plug & Charge and V2G (vehicle-to-grid)
 
 <div class="grid grid-cols-2 gap-8">
 <div>
 
 **The car talks to the charger** over the control pilot: HomePlug Green PHY powerline, 2–30 MHz
-(search summary). Most CCS chargers in service still speak DIN SPEC 70121.
+(search summary). Most CCS chargers in service still speak DIN SPEC 70121, a German pre-standard.
 
 **ISO 15118-20 (2022)** adds the messages for **bidirectional** power transfer.
 
-**AFIR, as amended by Reg. 2025/656:**
+**AFIR (Alternative Fuels Infrastructure Regulation, EU 2023/1804), as amended by Reg. 2025/656:**
 
 - new or renovated public AC and DC points from **8 Jan 2026**: ISO 15118 parts 1–5
 - from **1 Jan 2027**: **ISO 15118-20** at every one
@@ -603,7 +643,10 @@ skipInCut: true
 **The new Leaf** is V2G-compatible in Europe.
 
 <div class="caption text-left">[ISO-15118-20], [EU-2025-656], [TMH-2024], [RENAULT-V2G-2023],
-[NISSAN-LEAF3-2025] verified</div>
+[NISSAN-LEAF3-2025] verified · ISO 15118: <i>Road vehicles — Vehicle to grid communication
+interface</i> · DIN SPEC 70121: <i>Electromobility — Digital communication between a d.c. EV
+charging station and an electric vehicle for control of d.c. charging in the Combined Charging
+System</i> · OBC: on-board charger</div>
 
 </div>
 </div>
@@ -639,7 +682,7 @@ skipInCut: true
 
 ## Does fast charging wear the battery?
 
-<img src="/figures/04-degradation.svg" style="max-height: 25rem" alt="Two bar panels. Left, 22,700 EVs (Geotab 2026), capacity lost per year: about 1.5 % mostly on AC or low power, 2.3 % fleet average, up to 3.0 % for heavy DC above 100 kW. Right, four 2012 Leafs in Phoenix (INL), capacity lost at 50,000 miles: about 24 ± 2 % on Level 2 (3.3 kW) and about 27 ± 2 % on 50 kW DC."/>
+<img src="/figures/04-degradation.svg" style="max-height: 25rem" alt="Two bar panels. Left, 22,700 electric vehicles (Geotab 2026), capacity lost per year: about 1.5 % mostly on AC or low power, 2.3 % fleet average, up to 3.0 % for heavy DC above 100 kW. Right, four 2012 Leafs in Phoenix (INL), capacity lost at 50,000 miles: about 24 ± 2 % on Level 2 (3.3 kW) and about 27 ± 2 % on 50 kW DC."/>
 
 <div class="caption">[GEOTAB-2026] verified · [INL-DCFC-2015] Fig. 14, read from figure (±2 %); DC cars charged twice
 daily in a hot climate.</div>
@@ -647,12 +690,13 @@ daily in a hot climate.</div>
 <div class="grid grid-cols-2 gap-8 text-[0.9rem] mt-2">
 <div>
 
-**Fleet:** hot regions **+0.4 %/yr**; worse only above 80 % of the time at very high or very low SoC.
+**Fleet:** hot regions **+0.4 %/yr**; worse only above 80 % of the time at a very high or very low
+state of charge.
 
 </div>
 <div>
 
-**INL:** DC packs under 46 °C for 95 % of the time. "the difference is small relative to the total
+**INL (Idaho National Laboratory):** DC packs under 46 °C for 95 % of the time. "the difference is small relative to the total
 capacity loss"
 
 </div>
@@ -695,7 +739,7 @@ routeAlias: network
 
 <img src="/figures/04-network.svg" alt="Stacked bars of public charging points by AFIR power class, AC in blues and DC in oranges, for 2024, 2025 and September 2026. Czechia: 6,359, 7,574 and 7,669 points, most of them AC 7.4 to 22 kW (4,369, 4,971 and 4,801); DC share 29.8, 33.1 and 36.1 %; share of 150 kW and above 9.1, 12.8 and 15.0 %. EU27, in thousands: 882,012, 1,061,890 and 1,176,554 points; DC share 15.7, 18.3 and 19.2 %; share of 150 kW and above 9.3, 11.2 and 12.0 %."/>
 
-<div class="caption">European Alternative Fuels Observatory [EAFO-CZ], [EAFO-EU27]: counts verified, shares
+<div class="caption">European Alternative Fuels Observatory (EAFO) [EAFO-CZ], [EAFO-EU27]: counts verified, shares
 computed; Sep 2026 is the latest update.</div>
 
 </div>
@@ -707,8 +751,8 @@ computed; Sep 2026 is the latest update.</div>
 
 **Czechia, end 2025:** **7,574** public points, **33.1 %** DC; Sep 2026: **7,669**, DC 36.1 %.
 
-**AFIR Art. 3(1), 3(4)(a):** per registered BEV, **1.3 kW** of public power; on the TEN-T core network a pool
-every **60 km**, ≥ **400 kW** with one ≥ 150 kW point by end 2025, **600 kW** by end 2027.
+**AFIR Art. 3(1), 3(4)(a):** per registered battery-electric car (BEV), **1.3 kW** of public power;
+on the TEN-T (Trans-European Transport Network) core network a pool every **60 km**, ≥ **400 kW** with one ≥ 150 kW point by end 2025, **600 kW** by end 2027.
 
 <div class="caption text-left">[EAFO-CZ], [EAFO-EU27] counts verified, shares computed ·
 [EU-AFIR] verified</div>
@@ -729,10 +773,7 @@ ones. By September 2026 the total had barely grown, to 7,669 points, but the mix
 count fell by about 170, while DC rose by 260, to 36 percent of all points. Fast posts are replacing
 slow ones.
 
-Worldwide there were over 7 million public charging points at the end of 2025, about 11 electric
-cars for each one, says the International Energy Agency.
-
-The EU law on charging, AFIR, sets targets in Article 3. For every registered battery-electric car,
+The EU law on charging, AFIR, the Alternative Fuels Infrastructure Regulation, sets targets in Article 3. For every registered battery-electric car,
 1.3 kilowatts of public charging power. Along the main trans-European roads, a charging site every
 60 kilometers in each direction: at least 400 kilowatts by the end of 2025, 600 by the end of 2027.
 
@@ -754,24 +795,28 @@ skipInCut: true
 <div class="grid grid-cols-[2fr_1fr] gap-6 items-start">
 <div>
 
-<img src="/diagrams/04-afir-czechia.svg" style="max-height: 29rem" alt="Schematic map of Czechia. The TEN-T core motorways in blue: D1 from Praha through Jihlava and Brno to Ostrava and the Polish border, D2 from Brno to the Slovak border, D5 from Praha through Plzeň to the German border, D8 from Praha through Ústí nad Labem to the German border, D11 from Praha to Hradec Králové and D35 from Hradec Králové to Olomouc and the D1. Orange ticks every 60 km along them. Ten hollow circles mark the urban nodes: Praha, Brno, Ostrava, Plzeň, Olomouc, Liberec, Hradec Králové, Pardubice, České Budějovice and Ústí nad Labem. Two filled green diamonds mark the public hydrogen stations: Praha-Barrandov, inside the Praha node, and Litvínov-Záluží, which is not a node."/>
+<img src="/diagrams/04-afir-czechia.svg" style="max-height: 33rem" alt="Schematic map of Czechia. The TEN-T core motorways in blue: D1 from Praha through Jihlava and Brno to Ostrava and the Polish border, D2 from Brno to the Slovak border, D5 from Praha through Plzeň to the German border, D8 from Praha through Ústí nad Labem to the German border, D11 from Praha to Hradec Králové and D35 from Hradec Králové to Olomouc and the D1. Orange ticks every 60 km along them. Ten hollow circles mark the urban nodes, each needing a hydrogen station by 2030: Praha, Brno, Ostrava, Plzeň, Olomouc, Liberec, Hradec Králové, Pardubice, České Budějovice and Ústí nad Labem. Two filled green diamonds mark the public 700 bar hydrogen refueling stations for fuel-cell cars: Praha-Barrandov, inside the Praha node, and Litvínov-Záluží, labeled not an urban node. A key at the bottom left explains the three symbols."/>
 
 <div class="caption">Schematic, after the TEN-T core network (Reg. 2024/1679) · AFIR Reg. 2023/1804</div>
 
 </div>
 <div class="text-[0.9rem]">
 
-**Art. 3(4)(a):** a charging pool every **60 km** on the core network, each way: ≥ **400 kW** by end
-2025, ≥ **600 kW** by end 2027.
+AFIR, the EU's Alternative Fuels Infrastructure Regulation, sets targets on the TEN-T
+(Trans-European Transport Network) core roads.
 
-**Art. 6(1):** H₂ stations of ≥ **1 t/day** at **700 bar**, ≤ **200 km** apart on the core network
-and in **every urban node**, by 2030.
+**Charging, Art. 3(4)(a):** a charging pool every **60 km**, each way: ≥ **400 kW** by end 2025,
+≥ **600 kW** by end 2027.
 
-<div class="border-2 border-[#1f5fa8] rounded-md px-3 py-2 my-3"><b>7,669</b> public charging points,
-<b>1,153</b> of them ≥ 150 kW (EAFO, Sep 2026)</div>
+<div class="border-2 border-[#1f5fa8] rounded-md px-3 py-2 my-2"><b>7,669</b> public charging points,
+<b>1,153</b> of them ≥ 150 kW (European Alternative Fuels Observatory, EAFO, Sep 2026)</div>
 
-**10** urban nodes need H₂ by 2030; **2** public stations exist, and ORLEN has paused further
-builds.
+**Hydrogen (H₂), Art. 6(1):** the fuel of fuel-cell cars (section 05). Refueling stations of
+≥ **1 t/day** at **700 bar**, ≤ **200 km** apart and in **every urban node**, by 2030.
+
+<div class="border-2 border-[#2e8b57] rounded-md px-3 py-2 my-2"><b>2</b> public H₂ stations;
+<b>1</b> of the <b>10</b> urban nodes covered (Praha). Litvínov is not a node. ORLEN has paused
+further builds.</div>
 
 <div class="caption text-left">[EU-AFIR] Art. 3(4)(a), [AFIR-2023-1804] Art. 6(1),
 [TENT-2024-1679] Annex II, [ORLEN-TZ-2026-04-13] verified · [EAFO-CZ] counts verified ·
@@ -788,6 +833,7 @@ Czech core motorways: D1, D2, D5, D8, D11 and D35. Each orange tick marks 60 kil
 The circles are the ten urban nodes. By 2030 each needs a hydrogen station, and the core roads need
 one every 200 kilometers.
 
-*[ask]* How many of the ten have one today? *[pause]* One, Praha. Litvínov is the only other public
-station, and ORLEN has paused building more.
+The green diamonds are not chargers. They are hydrogen stations, 700 bar, for fuel-cell cars, the
+next section's car. *[ask]* How many of the ten nodes have one today? *[pause]* One: Praha-Barrandov.
+Litvínov is the only other public station, and it is not a node. ORLEN has paused building more.
 -->

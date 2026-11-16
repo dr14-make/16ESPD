@@ -38,7 +38,7 @@ This note does not repeat the following, which the course note already has: the 
 | 7,669 points, 2,770 DC (36.1 %), 1,153 ≥ 150 kW (15.0 %) | Czech public charging points, September 2026 | [EAFO-CZ] | verified (counts) / computed (shares) |
 | 1,061,890 points, of which 194,756 DC (18.3 %) | EU27 public charging points, end 2025 | [EAFO-EU27] | verified (counts) / computed (share) |
 | 1,176,554 points, 226,157 DC (19.2 %) | EU27 public charging points, September 2026 | [EAFO-EU27] | verified (counts) / computed (share) |
-| 500 A permanent / 700 A boost at 1000 V | Liquid-cooled CCS2 HPC cable rating | [PHX-HPC] | search summary |
+| 375 / 500 / 800 A permanent (500 / 700 / 1,000 A boost) at 1,000 V | CHARX connect professional HPC cables: uncooled / liquid-cooled 700 kW / liquid-cooled 1,000 kW classes | [PHX-HPC] | verified |
 | 400 kW vs 200 kW | Power at a 500 A cable limit, 800 V vs 400 V | computed | computed |
 | 3.68 / 7.36 / 11.04 / 22.08 kW | 1×16 A, 1×32 A, 3×16 A, 3×32 A at 230 V | computed | computed |
 | ≤ 32 A, ≤ 250 V 1-ph / ≤ 480 V 3-ph | Mode 2 in-cable box (IC-CPD) scope | [IEC-62752-2016] | verified (preview) |
@@ -379,11 +379,14 @@ The argument, `computed`:
   - In-vehicle DC loss is 1 % (Ioniq 6) vs 3 % (Model Y, ID.3) at 23 °C [ADAC-LADEVERLUST-2026].
 - Course car for scale: 350 V × 143 A ≈ 50 kW. CHAdeMO's own 2017 high-power spec stopped at 400 A × 500 V [CHADEMO-HP].
 
-**Cable and connector limits.** **[PHX-HPC]** Phoenix Contact CHARX connect CCS2 HPC cables, accessed 2026-11-12, https://www.phoenixcontact.com/en-fr/products/dc-charging-cable-ev-t2hpcc-dc500a-30m50ecbk11s-1369277. Label: `search summary` (the product page returned 403).
+**Cable and connector limits.** **[PHX-HPC]** Phoenix Contact, "High Power Charging", accessed 2026-11-16, https://www.phoenixcontact.com/en-us/technologies/high-power-charging. Label: `verified`.
+  - "Comparison of HPC performance classes": 500 kW uncooled, 700 kW cooled, 1,000 kW cooled; boost 500 / 700 / 1,000 A; permanent 375 / 500 / 800 A; rated voltage 1,000 V each.
+  - Cooled cables: "the environmentally and maintenance-friendly coolant is conducted directly through the power wires"; uncooled since 2023 "thanks to an increased conductor cross-section".
+  - The charging controller regulates cooling "via the temperature sensors in the charging connector".
 
 - Liquid-cooled: "500 A permanent", "up to 700 A in Boost mode", 1000 V DC, IEC 62196-3-1, cooled with a 50/50 water-glycol mix.
 - Uncooled class: "500 A in Boost Mode / 375 A permanently / 1,000 V".
-- Without cooling the practical limit is 200–250 A (`search summary`, Volex NACS adapter: "250A without liquid cooling").
+- Older uncooled cables and adapters stop near 200–250 A (`search summary`, Volex NACS adapter: "250A without liquid cooling"); Phoenix Contact's thicker uncooled class reaches 375 A permanent, so the slide uses that.
 
 **800 V car on a 400 V charger.** **[HMG-EGMP-2022]** Hyundai Motor Group, E-GMP story, 2022-01-17, https://www.hyundaimotorgroup.com/en/story/CONT0000000000005041. Label: `verified`.
 

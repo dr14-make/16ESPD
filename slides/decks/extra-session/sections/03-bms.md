@@ -8,7 +8,7 @@ layout: section
 # The BMS
 
 Counting the charge and why the count drifts, resetting it from the open-circuit voltage, cell
-imbalance and passive balancing, and the limits the battery management system enforces.
+imbalance and passive balancing, and the limits the battery management system (BMS) enforces.
 
 <div class="zoom-crop mt-6" style="width: 21rem; height: 15rem; --zoom: 2">
 <img src="/photos/03-bms-board.jpg" alt="A small green circuit board on white: a microcontroller, a terminal block, a ribbon header and two power transistors with heat tabs on the right edge, the cell-module measuring and balancing unit of a Czech battery management system."/>
@@ -38,20 +38,22 @@ skipInCut: true
 
 ![Block diagram of a modular BMS. Modules 1, 2 to n, each 14 to 16 cells in series with an AFE that measures cell voltage and temperature and balances. The AFEs connect over an isolated daisy chain (dashed blue) to the pack controller: SoC, limits, safety, ASIL D, safe state within 800 ms. The modules' high-voltage path (orange) runs to the contactors (BDU), which the pack controller opens on overvoltage, undervoltage, overcurrent or overtemperature; from the contactors the path splits to the inverter and the charger. A side note gives two AFEs: TI BQ79616, up to 16 cells, ±1.5 mV, balancing 240 mA; NXP MC33771C, 14 cells, 0.8 mV, balancing 300 mA.](/diagrams/03-bms-architecture.svg)
 
-<div class="caption">[TI-BQ79616], [NXP-MC33771C], [TI-SLVAE87] (daisy chain), [IFX-AN1104] (ASIL D, FTTI ≤ 800 ms,
-safe state) · verified · layout per <code>bms.md</code> §5.</div>
+<div class="caption">AFE: analog front end, the cell-monitoring chip · BDU: battery disconnect unit · ASIL:
+Automotive Safety Integrity Level, ISO 26262 · FTTI: fault-tolerant time interval · [TI-BQ79616],
+[NXP-MC33771C], [TI-SLVAE87] (daisy chain), [IFX-AN1104] (ASIL D, FTTI ≤ 800 ms, safe state) ·
+verified · layout per <code>bms.md</code> §5.</div>
 
 </div>
 <div class="text-[0.9rem]">
 
 **Measures** every series cell's voltage (96 on the Leaf), the pack current, temperatures.
 
-**Estimates** SoC; state of health, capacity and resistance against new; the power it can allow
+**Estimates** state of charge (SoC); state of health (SoH), capacity and resistance against new; the power it can allow
 now, in and out.
 
 **Acts:** current limits to the inverter and the charger; heating or cooling.
 
-**Required:** China's GB/T 38661 asks ≤ **10 mV** and ±**2 °C**.
+**Required:** China's national standard GB/T 38661 asks ≤ **10 mV** and ±**2 °C**.
 
 <div class="zoom-crop" style="width: 16rem; height: 12rem; --zoom: 2">
 <img src="/photos/03-bms-board.jpg" alt="A small green circuit board on white: a microcontroller, a terminal block, a ribbon header and two power transistors with heat tabs on the right edge, the cell-module measuring and balancing unit of a Czech battery management system."/>
@@ -82,7 +84,7 @@ degrees. We have it only as a translated excerpt, but it is the one published re
 *[ask]* Why measure a cell voltage to a millivolt or two, when a cell spans more than a volt?
 *[pause]* Two slides on, on an LFP cell, 10 millivolts is worth about 7 percent of charge.
 
-And safety: the standard ISO 26262 grades hazards from ASIL A, the mildest, to D. In Infineon's
+And safety: the standard ISO 26262, Road vehicles, functional safety, grades hazards from ASIL A, the mildest, to D. In Infineon's
 worked example, "prevent thermal runaway" is an ASIL D goal. On overvoltage, undervoltage,
 overcurrent or overtemperature, the BMS must open the high-voltage circuit within 800 milliseconds.
 It is a training example, not a real product, but it shows the scale: under a second.
@@ -156,7 +158,7 @@ loaded, not OCV.</div>
 </div>
 <div class="text-[0.9rem]">
 
-**After a rest**, *v*₁ has decayed and the terminal voltage **is** the OCV: SoC = OCV⁻¹(*v*).
+**After a rest**, *v*₁ has decayed and the terminal voltage **is** the open-circuit voltage (OCV): SoC = OCV⁻¹(*v*).
 
 **Works where the curve is steep.** NMC 811, 30 → 70 % SoC: 3.581 → 3.948 V, about
 **9 mV per % SoC**.
@@ -166,7 +168,7 @@ loaded, not OCV.</div>
 **Rest needed:** at least **1 h**, or until the voltage moves **< 5 mV/h**. The Leaf cell after
 60 s is still **9 mV** short of its 1 h value.
 
-**TI bench test:** coulomb counting alone **≈ 6 %** peak error; with OCV correction and an
+**Texas Instruments (TI) bench test:** coulomb counting alone **≈ 6 %** peak error; with OCV correction and an
 impedance model **≈ 1 %**. GB/T 38661 allows **≤ 5 %**.
 
 <div class="caption text-left">10 mV: derived from [NEJAD-2016] slopes · rest: [USABC-EV-R4],
@@ -262,7 +264,7 @@ skipInCut: true
 | LFP cell (A123 26650) | charge 0–60 °C, **< 250 mA** below 0 °C; discharge −30 to 60 °C | [LW-26650-2022] |
 | Leaf pack, charging | pauses above **55 °C** | [INL-DCFC-2015] |
 | Leaf pack power, 2013 | **103.3 kW** discharge (30 s), **80.5 kW** charge (10 s) | [INL-5045] |
-| Reaction to OV, UV, OC, OT | open the HV circuit within **800 ms** (ASIL D goal) | [IFX-AN1104] |
+| Reaction to overvoltage, undervoltage, overcurrent, overtemperature | open the high-voltage circuit within **800 ms** (ASIL D goal) | [IFX-AN1104] |
 
 </div>
 
@@ -277,10 +279,10 @@ The limits the BMS enforces. The table is for reference. Three rows matter most.
 The cold rows. The Panasonic cell may be charged only between 0 and 45 degrees, and below 10 degrees
 only at a quarter of its capacity per hour. The LG cell allows 0.3C up to 25 degrees, 0.7C above.
 The A123 LFP cell allows under 250 milliamperes below zero. Every chemistry charges slowly in the
-cold. Section 04 says why.
+cold. Section 04 says why, on "Cold and fast".
 
 The Leaf pack pauses charging above 55 degrees. That is the extreme case of rapidgate, the slowdown
-we meet in section 04.
+we meet in section 04, on the Leaf's CHAdeMO slide.
 
 And thermal runaway, a cell heating itself out of control: the reason for all the other limits.
 *[show figure]* Ohneseit and colleagues heated fully charged 21700 cells in a calorimeter, a box

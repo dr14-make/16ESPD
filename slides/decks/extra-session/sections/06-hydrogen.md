@@ -7,8 +7,8 @@ layout: section
 
 # Hydrogen on board and at the station
 
-Storage at 700 bar, fueling to SAE J2601 with precooling, the station chain, how many stations
-there are and how many closed, the price per kilogram and per 100 km, and AFIR Article 6.
+Storage at 700 bar, fueling to SAE J2601 (SAE International's fueling protocol) with precooling, the station chain, how many stations
+there are and how many closed, the price per kilogram and per 100 km, and Article 6 of AFIR, the EU's Alternative Fuels Infrastructure Regulation.
 
 <img class="hero" src="/photos/06-h2-magdeburg.jpg" alt="A hydrogen dispenser marked CGH2 standing next to ordinary petrol pumps under the canopy of a TotalEnergies filling station at dawn."/>
 
@@ -35,7 +35,8 @@ skipInCut: true
 <div class="grid grid-cols-2 gap-8">
 <div>
 
-- **LHV: 33.3 kWh/kg** (deck); 119.96 MJ/kg (ANL)
+- **LHV** (lower heating value): **33.3 kWh/kg** (course deck 8, *Batteries and Fuel Cells*);
+  119.96 MJ/kg (Argonne National Laboratory, ANL)
 - **At 700 bar, 15 °C:** about **40 kg/m³**
 - The Mirai's **5.6 kg** fill = 187 kWh of hydrogen (LHV)
 
@@ -49,7 +50,7 @@ rapidly.
 
 **Tank burst safety factor:** **2.25** (US) to **2.35** (EU).
 
-<div class="caption text-left">[GONIN-HYSAFE-2026], [LOHSE-BUSCH-IJHE-2020], [DOE-SAFE-USE],
+<div class="caption text-left">[GONIN-HYSAFE-2026], [LOHSE-BUSCH-IJHE-2020], DOE (US Department of Energy) [DOE-SAFE-USE],
 [DOE-REC-9013-2009] verified · 187 kWh: 5.6 × 33.3, derived</div>
 
 </div>
@@ -117,7 +118,7 @@ Type IV is commonly cited, not verified.</div>
 <div class="caption text-left mt-3">
 
 Mirai gen 2: **5.6 kg** in 3 tanks, **142.2 L** · Hyundai Nexo (2025): **6.69 kg** usable in
-3 × 54.2 L · Honda CR-V e:FCEV: **4.3 kg** at 10,000 psi
+3 × 54.2 L · Honda CR-V e:FCEV: **4.3 kg** at 10,000 psi (pounds per square inch; ≈ 700 bar)
 
 [TOYOTA-UK-MIRAI-2020], [TOYOTA-UK-MIRAI-SPECS-2024], [HYUNDAI-NEXO-2025], [MATTELAER-J2601-2024],
 [TIAX-PD068-2010] verified · [HONDA-CRV-EFCEV-2024] secondary
@@ -171,7 +172,7 @@ skipInCut: true
 **Metal hydrides, chemical carriers:** hydrogen bound in a solid or a liquid compound and released
 by heat.
 
-Deck 8 shows them; no current system numbers in our sources.
+Course deck 8, *Batteries and Fuel Cells*, shows them; no current system numbers in our sources.
 
 <div class="caption text-left">[DOE-REC-9013-2009], [DAIMLER-GENH2-2024] verified · 2030s:
 newmobility.news, secondary</div>
@@ -201,7 +202,7 @@ kilowatt-hours. Liquefying it costs 10 to 13. *[pause]* Three to four times as m
 buys range with energy. Only a truck that must cross a country on one fill can justify it.
 
 Metal hydrides and chemical carriers hold hydrogen in a solid or a liquid and release it with heat.
-Deck 8 shows them. Our sources have no current numbers for these systems, so tonight we only
+Course deck 8 shows them. Our sources have no current numbers for these systems, so tonight we only
 describe them. They share liquid hydrogen's problem: getting the hydrogen in and out costs energy,
 time, or both.
 
@@ -220,8 +221,8 @@ routeAlias: fueling-j2601
 ![Sketch of a 700 bar fill against time in minutes, two panels. Top, pressure: a straight ramp at a set average rate (APRR) climbing from low pressure past the 700 bar nominal line to just under the dashed red limit of 875 bar at the dispenser, ending at 3 minutes. Bottom, gas temperature: the gas into the car is precooled to −40 to −33 °C (the T40 band, drawn flat along the bottom), while the gas in the tank heats up and levels off just under the dashed red limit of 85 °C. Vertical dotted lines mark 83 s (5 kg at the 60 g/s maximum flow), the 3-minute J2601 target and the 3.22-minute field mean of 1.85 million fills. The curve shapes are illustrative; the labeled limits and times are sourced.](/diagrams/06-fill-700bar.svg)
 
 <div class="caption">Illustrative shapes; limits: T40 −40 to −33 °C, 60 g/s [MATTELAER-J2601-2024], ≤ 85 °C and
-≤ 875–880 bar [DOE-REC-9013-2009], [TIAX-PD068-2010], APRR [GONIN-HYSAFE-2026] · 3 min target
-[ANL-J2601-FILLTIME] · 3.22 min mean of 1,850,493 fills [NLR-CDP-2023] · 83 s derived.</div>
+≤ 875–880 bar [DOE-REC-9013-2009], [TIAX-PD068-2010], APRR (average pressure ramp rate) [GONIN-HYSAFE-2026] · 3 min target
+[ANL-J2601-FILLTIME] · 3.22 min mean of 1,850,493 fills [NLR-CDP-2023] · 83 s: 5,000 g ÷ 60 g/s, derived.</div>
 
 </div>
 <div class="text-[0.9rem]">
@@ -235,7 +236,7 @@ throttled (Joule–Thomson inversion ≈ 200 K). So **precool**.
 
 **Real US fills, 2014–2022:** **0.9 kg/min**; only **28 %** under 2.5 min.
 
-<div class="caption text-left">physics: derived (<code>hydrogen.md</code> §1.1) · [NLR-CDP-2023]</div>
+<div class="caption text-left">physics: derived (<a href="https://github.com/dr14-make/16ESPD/blob/main/docs/research_notes/Electric%20and%20hybrid%20vehicles/hydrogen.md" target="_blank"><code>hydrogen.md</code></a> §1.1) · [NLR-CDP-2023]</div>
 
 </div>
 </div>
@@ -300,7 +301,7 @@ routeAlias: station-chain
 </div>
 
 <div class="caption">[DOE-REC-9013-2009], [DOE-REC-21002-2020] verified · maintenance: [NREL-CDP], read
-from figure</div>
+from figure · SMR: steam methane reforming · 9 %: 3.0 ÷ 33.3 kWh/kg</div>
 
 <!--
 *[show figure]* A hydrogen station, from left to right. Hydrogen arrives by tube trailer or liquid
@@ -331,7 +332,7 @@ routeAlias: station-counts
 
 <img src="/figures/06-station-counts.svg" style="max-height: 22rem" alt="Two panels. Left, horizontal bars of hydrogen refueling stations worldwide at the end of 2024, 1,160 in all: China 384, Europe 294 (of which Germany 113, shaded darker), South Korea 198, Japan 161, USA 89. Right, public car stations: Germany over 80 in January 2024, 50 in January 2026; Czechia 2 in April 2026. A note: H2 MOBILITY closed 3 (March 2024), 6 (October 2024), 11 (March 2025) and 11 (Q2 2025) stations; 36 public stations went off the network in Germany in 2025, all operators."/>
 
-<div class="caption">World: LBST / H2stations.org 17th assessment via Motor1 [LBST-H2STATIONS-2025], all stations incl.
+<div class="caption">World: LBST (Ludwig-Bölkow-Systemtechnik) / H2stations.org 17th assessment via Motor1 [LBST-H2STATIONS-2025], all stations incl.
 depots · Germany: H2 MOBILITY via [ECOMENTO-DE-50-2026], [H2M-CLOSURES-2025], [SOLARSERVER-DE-36-2026];
 the 2024 closures (3, 6) search summary · Czechia: ORLEN via [SYSLOG-ORLEN-2026] · all secondary.</div>
 
@@ -339,7 +340,8 @@ the 2024 closures (3, 6) search summary · Czechia: ORLEN via [SYSLOG-ORLEN-2026
 <div>
 
 **California:** **61** stations, **50** open-retail (Aug 2025); availability **58 % → 74 %**
-(Q2 2024 → Q2 2025); FCEV registrations fell for the first time: **14,138**.
+(Q2 2024 → Q2 2025); registrations of fuel-cell electric vehicles (FCEVs) fell for the first time:
+**14,138**.
 
 </div>
 <div>
@@ -348,7 +350,7 @@ the 2024 closures (3, 6) search summary · Czechia: ORLEN via [SYSLOG-ORLEN-2026
 service for over a month in mid-2025. **Also closed:** Shell in California (2024); Everfuel in
 Denmark (2023).
 
-<div class="caption text-left">[CARB-AB126-2025] verified · [FDRIVE-BARRANDOV-2025], [SHELL-CA-2024],
+<div class="caption text-left">CARB (California Air Resources Board) [CARB-AB126-2025] verified · [FDRIVE-BARRANDOV-2025], [SHELL-CA-2024],
 [EVERFUEL-2023] secondary</div>
 
 </div>
@@ -401,14 +403,14 @@ skipInCut: true
 <div class="grid grid-cols-[1.4fr_1fr] gap-8 items-start">
 <div>
 
-**FCEVs sold in 2025:** **16,011** (+24.4 %)
+**Fuel-cell electric vehicles (FCEVs) sold in 2025:** **16,011** (+24.4 %)
 
 <img src="/figures/06-fcev-sales.svg" alt="Horizontal bars of fuel-cell vehicles sold in 2025: China 7,797, South Korea 6,802, Europe 566, Japan 430, US 365."/>
 
 <div class="caption">SNE Research via Argus Media, 13 Feb 2026 [ARGUS-SNE-2026], secondary · world 16,011 incl. 51
 elsewhere.</div>
 
-**Germany, new registrations 2025:** **49** (−69.0 %). <span class="caption">[KBA-2025] verified</span>
+**Germany, new registrations 2025:** **49** (−69.0 %). <span class="caption">KBA (Federal Motor Transport Authority) [KBA-2025] verified</span>
 
 </div>
 <div class="text-[0.9rem]">
@@ -423,7 +425,7 @@ elsewhere.</div>
 
 **Czechia:** 10 hydrogen buses at Mníšek pod Brdy, **none** in passenger service on 12 Oct 2026.
 
-<div class="caption text-left">[IEA-GHR-2026] verified · [EPOCH-CZ-MNISEK-2026] secondary</div>
+<div class="caption text-left">IEA (International Energy Agency) [IEA-GHR-2026] verified · [EPOCH-CZ-MNISEK-2026] secondary</div>
 
 </div>
 </div>
@@ -474,8 +476,8 @@ number" box under it. -->
 
 <img src="/figures/06-cost-per-100km.svg" style="max-height: 25rem" alt="Horizontal bars of energy cost in CZK per 100 km in Czechia, with the price used under each label. Leaf at home on the D27d low tariff, 3.514 CZK/kWh: 60. Leaf at home, average price 7.0108 CZK/kWh: 120. Leaf on public DC, 13.00 to 16.90 CZK/kWh: a range bar from 222 to 289. Petrol car, 42.98 CZK/L at 5.22 L/100 km: 224. Mirai, 0.79 kg/100 km: a range bar from 220 at ORLEN's 2023 price of 278 CZK/kg to 394 at its January 2024 price of 499 CZK/kg, the light dashed part being the uncertain span."/>
 
-<div class="caption">Derived: consumption × price [<code>energy-prices-cz.md</code>] · Leaf 17.1 kWh/100 km WLTP at the socket,
-Mirai 0.79 kg/100 km [TOYOTA-UK-MIRAI-SPECS-2024], petrol 5.22 L/100 km (Lecture 2) · prices 12 Nov
+<div class="caption">Derived: consumption × price [<a href="https://github.com/dr14-make/16ESPD/blob/main/docs/research_notes/Electric%20and%20hybrid%20vehicles/energy-prices-cz.md" target="_blank"><code>energy-prices-cz.md</code></a>], e.g. Mirai 0.79 kg × 499 CZK/kg = 394 CZK · CZK: Czech crowns · Leaf 17.1 kWh/100 km WLTP (Worldwide harmonised Light vehicles Test Procedure) at the socket,
+Mirai 0.79 kg/100 km [TOYOTA-UK-MIRAI-SPECS-2024], petrol 5.22 L/100 km (<a href="https://dr14-make.github.io/16ESPD/lecture-02/" target="_blank">Lecture 2, <i>Engine Control Systems</i></a>, drive-cycle hands-on) · prices 12 Nov
 2026: [EUROSTAT-NRG-PC-204-2026S1], [CEZ-D27D-2026], [PRE-JEDNORAZOVE], [CEZ-FUTUREGO-2026-11],
 [CSU-CENPHMT-2026-W45] · H₂: 278 CZK/kg June 2023 [ORLEN-TZ-2023-06-28], 499 CZK/kg January 2024
 [AKTUALNE-H2-2024] (secondary, newest found).</div>
@@ -499,7 +501,7 @@ secondary</div>
 </div>
 
 <!--
-*[ask]* Before we read the chart, do not look at its last bar. The petrol car of Lecture 2 costs 224
+*[ask]* Before we read the chart, do not look at its last bar. The petrol car of Lecture 2, Engine Control Systems, costs 224
 crowns of fuel per 100 kilometers. Guess the Mirai: cheaper, about the same, or more expensive?
 *[pause]*
 
@@ -535,10 +537,11 @@ routeAlias: afir-art-6
 <div class="grid grid-cols-2 gap-8">
 <div>
 
-**By 31 December 2030**, every Member State:
+AFIR, the EU's Alternative Fuels Infrastructure Regulation 2023/1804. **By 31 December 2030**,
+every Member State:
 
-- public stations of at least **1 t/day**, with a **700 bar** dispenser
-- at most **200 km** apart along the **TEN-T core network**
+- public stations of at least **1 t/day** (≈ 180 Mirai fills of 5.6 kg), with a **700 bar** dispenser
+- at most **200 km** apart along the **TEN-T core network** (Trans-European Transport Network)
 - at least **one** in each **urban node**
 - each designed for **light- and heavy-duty** vehicles
 

@@ -25,14 +25,14 @@ routeAlias: plug-or-nozzle
 | | Plug: Leaf 40 kWh / IONIQ 5 | Nozzle: Mirai |
 |---|---|---|
 | Refill | 10–80 % in **43 min** / **18 min** | full in **≈ 3.2 min** (US average) |
-| Energy cost, Czechia, per 100 km | **60–120 CZK** at home, 222–289 on DC | **394 CZK** (H₂ price Jan 2024) |
+| Energy cost, Czechia, per 100 km | **60–120 CZK** (Czech koruna) at home, 222–289 on DC (direct-current) fast chargers | **394 CZK** (hydrogen, H₂, price Jan 2024) |
 | Electricity per 100 km | **17.1 kWh** at the wall | **≈ 46 kWh** |
 | Power plant to wheel | **69 %** | **26 %** |
 | Where to refill in Czechia | **7,669** public charging points | **2** ORLEN public stations |
 
 </div>
 
-<div class="caption text-left">All from this session's slides: sections 04, 06 and 07.</div>
+<div class="caption text-left">All from this session's slides: sections 04 Charging, 06 Hydrogen and 07 The fuel-cell car.</div>
 
 <div class="handson">Energy on board decides what the car is.</div>
 
@@ -58,13 +58,13 @@ routeAlias: session-summary
 
 ## Summary of the session
 
-- **01** the terms: C-rate, series and parallel, gross vs usable, SoH; LFP is over half of EV
-  batteries: cheaper ($81 vs $128/kWh), stores less (205 vs 265 Wh/kg best cell).
+- **01** the terms: C-rate, series and parallel, gross vs usable, state of health; LFP is over
+  half of electric-car batteries: cheaper ($81 vs $128/kWh), stores less (205 vs 265 Wh/kg best cell).
 - **02** the Thevenin cell: OCV(SoC), *R*₀ at once, *R*₁*C*₁ slowly — and SoC can no longer pass
   zero unnoticed.
 - **03** the BMS counts charge, resets the count from the OCV after a rest, and bleeds the
   fullest cells so the string fills together.
-- **04** CC-CV because the limit is on the terminal voltage; heat and the curve's shape, not the
+- **04** constant current, then constant voltage (CC-CV), because the limit is on the terminal voltage; heat and the curve's shape, not the
   peak, set the charge time; 800 V halves the current.
 - **05** a fuel cell's efficiency is its voltage: best at light load.
 - **06** 700 bar in 3 minutes needs −40 °C gas and ~3 kWh/kg of compression; stations are closing.
@@ -120,7 +120,7 @@ routeAlias: take-home
 
 ## Take-home exercises
 
-1. **The end of CC.** Redo the "why CV" slide for an 800 V pack (192s2p of ZE1-class cells: twice the Leaf pack's *R* ≈ 0.1 Ω, so **0.2 Ω**) at 200 kW:
+1. **The end of CC.** Redo the "why CV" slide for an 800 V pack (192s2p, 192 groups in series of 2 cells in parallel, of the 2018 Leaf's (ZE1) cells: twice the Leaf pack's *R* ≈ 0.1 Ω, so **0.2 Ω**) at 200 kW:
    the current, the *I R* drop per cell, and the OCV where CC must end.
 2. **The drift.** For Lecture 4's 114.3 Ah pack, how many hours of driving until a current-sensor
    offset of **50 mA** gives 5 % SoC error? How often must the BMS reset?
@@ -128,7 +128,7 @@ routeAlias: take-home
    current and hydrogen flow at 30 kW; read the current density at 0.7 V off the curve and work
    out the cell area it implies.
 4. **Your own bill, and when it pays back.** Cost per 100 km of the Leaf, the Mirai and your family's car at today's
-   prices — home tariff, public DC, ORLEN's hydrogen, petrol — with each price's source and date.
+   prices — home tariff, public DC charging, ORLEN's hydrogen, petrol — with each price's source and date.
    Then the break-even: an electric car in place of your family's next one, with its price gap,
    your yearly kilometers, your share of home vs DC charging, and servicing. After how many years
    does it pay back, if ever? Which input moves the answer most?
@@ -161,19 +161,28 @@ routeAlias: sources
 
 **Course and repository**
 
-- Source deck *8. Batteries and Fuel Cells* (course materials), after Larminie and Lowry
-- `docs/extra-session-plan.md`; research notes in `docs/research_notes/Electric and hybrid
-  vehicles/`: `teaching_materials.md`, `charging.md`, `hydrogen.md`, `pem-polarization.md`,
-  `energy-prices-cz.md`, `bms.md`
+- Course deck *8. Batteries and Fuel Cells* (course materials), after Larminie and Lowry,
+  *Electric Vehicle Technology Explained* (Wiley)
+- <a href="https://dr14-make.github.io/16ESPD/lecture-04/" target="_blank">Lecture 4, <i>The
+  Battery-Electric Car</i></a> · <a href="https://dr14-make.github.io/16ESPD/lecture-05/"
+  target="_blank">Lecture 5, <i>Hybrids</i></a>
+- <a href="https://github.com/dr14-make/16ESPD/tree/main/docs/research_notes/Electric%20and%20hybrid%20vehicles" target="_blank">Research notes</a>:
+  `teaching_materials.md`, `battery-terms.md`, `charging.md`, `hydrogen.md`, `pem-polarization.md`,
+  `energy-prices-cz.md`, `bms.md`. Each bracketed tag on a slide, e.g. [INL-5045], is an entry
+  there with the full citation.
 
 **Laboratories and agencies**
 
-- INL: 2013 Leaf battery tests (2014); DC fast-charging study (2015); USABC/INL EV test manual
-  Rev. 4 (2025); ORNL Leaf cell HPPC data (equiv-circ-model)
-- ANL: 2017 Mirai assessment (2018); J2601 fill time; NLR (ex-NREL) station data (2023)
-- US DOE: compression record 9013 (2009), station cost 21002 (2020), PEM electrolysis targets
-- CARB AB 126 report (2025); IEA GEVO 2025, 2026; GHR 2026; hydrogen definitions (2023)
-- ADAC charging losses (2026); EAFO Czechia and EU27 (Sep 2026)
+- Idaho National Laboratory (INL): 2013 Leaf battery tests (2014); DC fast-charging study
+  (2015); USABC/INL EV test manual Rev. 4 (2025); Oak Ridge (ORNL) Leaf cell HPPC data
+- Argonne (ANL): 2017 Mirai assessment (2018); J2601 fill time; National Laboratory of the
+  Rockies (NLR, ex-NREL) station data (2023)
+- US Department of Energy: compression record 9013 (2009), station cost 21002 (2020), PEM
+  electrolysis targets
+- California Air Resources Board AB 126 report (2025); International Energy Agency (IEA) Global EV
+  Outlook 2025, 2026, Global Hydrogen Review 2026; hydrogen definitions (2023)
+- ADAC (German automobile club) charging losses (2026); European Alternative Fuels Observatory
+  (EAFO) Czechia and EU27 (Sep 2026)
 
 </div>
 <div>

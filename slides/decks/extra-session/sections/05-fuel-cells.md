@@ -7,7 +7,7 @@ layout: section
 
 # Fuel cells
 
-Deck 8's principles and losses as one polarization curve, the voltage as the efficiency, the stack,
+The principles and losses of course deck 8, *Batteries and Fuel Cells*, as one polarization curve, the voltage as the efficiency, the stack,
 and the balance of plant around it.
 
 <img class="hero" src="/photos/05-mirai-stack.jpg" alt="The first-generation Toyota Mirai fuel-cell stack in its grey cast housing, seen from above through the cut-away blue floor of a show car, a label Fuel Cell Stack on top."/>
@@ -28,7 +28,7 @@ Commons.
 routeAlias: pem-principle
 ---
 
-## How a PEM fuel cell works
+## How a PEM (proton exchange membrane) fuel cell works
 
 <div class="grid grid-cols-[1.1fr_1fr] gap-8 items-center">
 <div>
@@ -47,13 +47,13 @@ routeAlias: pem-principle
 **Ideal voltage:**
 
 - reversible, 25 °C: **1.229 V**
-- all of the LHV as electricity: **1.253 V**
-- all of the HHV: **1.481 V**
+- all of the LHV (lower heating value) as electricity: **1.253 V**
+- all of the HHV (higher heating value): **1.481 V**
 
 Two electrons per H₂, through every cell in series.
 
 <div class="caption text-left">[PUKRUSHPAN-JDSMC-2004] · LHV, HHV: derived, *E* = Δ*H* / 2*F*
-(<code>pem-polarization.md</code> §5)</div>
+(<a href="https://github.com/dr14-make/16ESPD/blob/main/docs/research_notes/Electric%20and%20hybrid%20vehicles/pem-polarization.md" target="_blank"><code>pem-polarization.md</code></a> §5)</div>
 
 </div>
 </div>
@@ -80,7 +80,7 @@ skipInCut: true
 
 | Type | Electrolyte | In vehicles |
 |---|---|---|
-| **PEM** (proton exchange membrane) | polymer membrane | fuel-cell cars: the Mirai's FCB130 |
+| **PEM** (proton exchange membrane) | polymer membrane | fuel-cell cars: the Mirai's FCB130 stack |
 | AFC (alkaline) | potassium hydroxide | space; needs CO₂-free air |
 | PAFC (phosphoric acid) | phosphoric acid | stationary |
 | MCFC (molten carbonate) | molten carbonate salt | stationary, high temperature |
@@ -89,7 +89,7 @@ skipInCut: true
 </div>
 
 <!--
-Deck 8 lists five types of fuel cell, each named after its electrolyte. Only the first matters for
+Course deck 8, Batteries and Fuel Cells, lists five types of fuel cell, each named after its electrolyte. Only the first matters for
 cars: the proton exchange membrane, a thin plastic film. The Mirai's spec sheet calls its stack
 polymer electrolyte, and the model we use next is a PEM stack too.
 
@@ -127,7 +127,7 @@ routeAlias: polarization-curve
 
 <div class="caption">Formula plot: [PUKRUSHPAN-2003] with b₁₁ = 0.005139, the recommended slide curve, derived ·
 dots: [ANL-MIRAI-2018], read from figure, on ANL's assumed 237 cm² · right scale: η<sub>LHV</sub> =
-<i>V</i> / 1.253 V at μ<sub>f</sub> = 1 · shape labels: deck 8, after Larminie and Lowry.</div>
+<i>V</i> / 1.253 V at μ<sub>f</sub> = 1 · shape labels: course deck 8, <i>Batteries and Fuel Cells</i>, after Larminie and Lowry · ANL: Argonne National Laboratory.</div>
 
 </div>
 <div class="text-[0.85rem]">
@@ -150,7 +150,7 @@ activation · ohmic · concentration, *i* in A/cm²
 
 </div>
 
-At ≈ 1 A/cm²: **Mirai gen 1 ≈ 0.74 V** vs **P2000 model 0.58 V** — mostly the thinner membrane.
+At ≈ 1 A/cm²: **Mirai gen 1 ≈ 0.74 V** vs **Ford P2000 stack model 0.58 V** — mostly the thinner membrane.
 
 <div class="caption text-left">Model: [PUKRUSHPAN-2003] with b₁₁ = 0.005139, derived · Mirai:
 [ANL-MIRAI-2018], read from figure</div>
@@ -195,7 +195,7 @@ $$
 
 **Low load is efficient**, high load is powerful: the opposite of an engine.
 
-**Measured, 2017 Mirai (ANL):**
+**Measured, 2017 Mirai (Argonne National Laboratory, ANL):**
 
 - stack peak efficiency **66.0 %**
 - system peak efficiency **63.7 %**
@@ -208,8 +208,8 @@ $$
 
 ![Three energy-flow (Sankey) diagrams, one per cell voltage, each starting from 100 % of the hydrogen's lower heating value and splitting into electricity (orange) and heat (red), with η = V / 1.253 V and all fuel reacting. 0.6 V: electricity 47.9 %, heat 52.1 %, 62.7 g H₂ per kWh. 0.7 V: 55.9 % and 44.1 %, 53.7 g/kWh. 0.8 V: 63.8 % and 36.2 %, 47.0 g/kWh.](/diagrams/05-cell-sankey.svg)
 
-<div class="caption">Deck 8, after Larminie and Lowry, redrawn as energy flows · η<sub>LHV</sub> = μ<sub>f</sub> V / 1.253 V
-at μ<sub>f</sub> = 1 and g H₂/kWh from Faraday's law [<code>pem-polarization.md</code> §5], derived.</div>
+<div class="caption">Course deck 8, <i>Batteries and Fuel Cells</i>, after Larminie and Lowry, redrawn as energy flows · η<sub>LHV</sub> = μ<sub>f</sub> V / 1.253 V
+at μ<sub>f</sub> = 1 and g H₂/kWh from Faraday's law [<a href="https://github.com/dr14-make/16ESPD/blob/main/docs/research_notes/Electric%20and%20hybrid%20vehicles/pem-polarization.md" target="_blank"><code>pem-polarization.md</code></a> §5], derived.</div>
 
 </div>
 </div>
@@ -222,7 +222,7 @@ multiply by the fuel utilization.
 *[show figure]* At 0.6, 0.7 and 0.8 volts, 48, 56 and 64 percent leave as electricity, the rest as
 heat. On the last slide's right-hand scale, the curve reads 66 percent at light load, 55 at half an
 ampere, 46 at 1, 34 at 1.5. A fuel cell is most efficient at light load and least at full power: the
-opposite of the engine of Lecture 2.
+opposite of the engine of Lecture 2, Engine Control Systems.
 
 Argonne measured the 2017 Mirai at 66.0 percent peak for the stack, 63.7 for the system. That is
 about 0.83 volts per cell, at low load. In grams: 63 of hydrogen per kilowatt-hour at 0.6 volts, 47
@@ -241,7 +241,7 @@ routeAlias: the-stack
 
 </div>
 
-<div class="caption">Deck 8, after Larminie and Lowry, redrawn · Mirai: [TOYOTA-UK-MIRAI-SPECS-2024].</div>
+<div class="caption">Course deck 8, <i>Batteries and Fuel Cells</i>, after Larminie and Lowry, redrawn · Mirai: [TOYOTA-UK-MIRAI-SPECS-2024].</div>
 
 <div class="grid grid-cols-[1fr_1fr_auto] gap-6 items-center mt-2 text-[0.9rem]">
 <div>
@@ -252,7 +252,8 @@ $$
 \dot m_{\mathrm{H_2}} = N\, I\, \frac{M_{\mathrm{H_2}}}{2F}
 $$
 
-Mirai gen 2: **12.41 g/h per A**; 0.79 kg/100 km = **63.7 A·h** per 100 km.
+Mirai gen 2: 330 × 2.016 g/mol / (2 × 96,485 C/mol) × 3,600 s/h = **12.41 g/h per A**; 0.79 kg/100 km
+÷ 12.41 g/(A·h) = **63.7 A·h** per 100 km.
 
 </div>
 <div>
@@ -261,7 +262,7 @@ Mirai gen 2: **12.41 g/h per A**; 0.79 kg/100 km = **63.7 A·h** per 100 km.
 excluding end plates, 52 kg; **388 W per cell**.
 
 <div class="caption text-left">[TOYOTA-UK-MIRAI-2020], [TOYOTA-UK-MIRAI-SPECS-2024] verified ·
-per-cell and Faraday: derived (<code>hydrogen.md</code> §4, §6)</div>
+per-cell (128 kW / 330) and Faraday: derived (<a href="https://github.com/dr14-make/16ESPD/blob/main/docs/research_notes/Electric%20and%20hybrid%20vehicles/hydrogen.md" target="_blank"><code>hydrogen.md</code></a> §4, §6)</div>
 
 </div>
 <div>
@@ -310,7 +311,7 @@ routeAlias: balance-of-plant
 - **Hydrogen:** regulated from the tank, unreacted gas recirculated, impurities purged.
 - **Water:** the membrane must stay humid; product water must leave.
 - **Heat:** a coolant loop holds the stack near **80 °C** (model).
-- **Power:** a DC-DC converter matches the stack to the bus.
+- **Power:** a DC-DC converter matches the stack voltage to the battery's DC bus.
 
 **The price:** stack peak 66.0 %, system peak 63.7 %.
 
@@ -360,7 +361,7 @@ difference to the air than an engine's.
 - down to about **73 kW** after about **6 minutes**: thermal derating
 
 <div class="caption text-left">[ANL-MIRAI-AMR-2018] verified · heat formula: derived from
-*E*<sub>LHV</sub> (<code>pem-polarization.md</code> §5)</div>
+*E*<sub>LHV</sub> (<a href="https://github.com/dr14-make/16ESPD/blob/main/docs/research_notes/Electric%20and%20hybrid%20vehicles/pem-polarization.md" target="_blank"><code>pem-polarization.md</code></a> §5)</div>
 
 </div>
 </div>

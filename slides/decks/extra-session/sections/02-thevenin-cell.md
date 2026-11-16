@@ -7,7 +7,8 @@ layout: section
 
 # The Thevenin cell
 
-An open-circuit voltage that follows the state of charge, R₀, and one RC pair: the instant drop,
+An open-circuit voltage (OCV) that follows the state of charge (SoC), R₀, and one RC
+(resistor–capacitor) pair: the instant drop,
 the slow sag and the recovery after a current pulse.
 
 <img class="hero" src="/photos/02-leaf-pack.jpg" alt="An opened first-generation Nissan Leaf battery pack on a stand: silver modules in stacks inside an orange-sealed tray, orange high-voltage cables and connectors at the front."/>
@@ -37,7 +38,7 @@ skipInCut: true
 
 </div>
 
-<div class="caption">Left: deck 8, after Larminie and Lowry, redrawn · right: the section 02 Thevenin cell.</div>
+<div class="caption">Left: <a href="https://dr14-make.github.io/16ESPD/lecture-04/#/v-equals-e-minus-ir" target="_blank">Lecture 4</a>'s battery, after Larminie and Lowry, redrawn · right: the section 02 Thevenin cell.</div>
 
 <div class="grid grid-cols-2 gap-8 mt-2 text-[0.95rem]">
 <div>
@@ -51,7 +52,7 @@ skipInCut: true
 </div>
 <div>
 
-**A real Leaf pack, C/3 discharge (2013 car, INL):**
+**A real Leaf pack, C/3 discharge (2013 car, Idaho National Laboratory, INL):**
 
 <div class="tight">
 
@@ -99,7 +100,7 @@ skipInCut: true
 
 <img src="/figures/02-ocv-soc.svg" alt="Voltage per cell against state of charge, 0 to 100 percent. Solid: the NMC 811 cell (LG M50) OCV, derived from PyBaMM Chen2020: 2.500 V at 0 %, 3.296 at 10 %, 3.581 at 30 %, 3.751 at 50 %, 3.948 at 70 %, 4.097 at 90 % and 4.200 at 100 %. Dashed: the 2013 Leaf's loaded voltage per series element at C/3, INL: 4.17 V at 100 %, 3.88 at 47 %, 3.61 at 12 %, 3.08 at 3 % and 2.49 at 0 %. The 10 to 90 % window is shaded."/>
 
-<div class="caption">NMC 811: [CHEN-2020] via PyBaMM, derived; a smooth curve through the 10 % points · Leaf:
+<div class="caption">NMC 811 (lithium nickel manganese cobalt oxide, 8:1:1): [CHEN-2020] via PyBaMM, derived; a smooth curve through the 10 % points · Leaf:
 [INL-5045] Fig. 1, read by eye (±0.03 V), loaded, not OCV.</div>
 
 </div>
@@ -115,7 +116,7 @@ skipInCut: true
 
 </div>
 
-**The knee below 10 %** is why the Leaf's usable window stops there: 10–90 % SoC is
+**The knee below 10 %** of state of charge (SoC) is why the Leaf's usable window stops there: 10–90 % SoC is
 **3.2–4.1 V** per cell.
 
 **LFP is flatter:** ΔOCV/ΔSoC **0.148 V** for an LFP cell against **0.583 V** for an NMC cell.
@@ -143,7 +144,7 @@ the knee, much less.
 
 The last line on the right: an LFP cell is about four times flatter, 0.148 volts against 0.583 for
 NMC on Nejad's curves. Trust the ratio, not the values. So a voltage reading tells you four times
-less. Section 03 shows what that costs the BMS.
+less. Section 03's "Resetting the count from the OCV" shows what that costs the BMS.
 -->
 
 ---
@@ -176,7 +177,7 @@ $$
   *τ*₁ = **25.7 s**, *C*₁ ≈ **19 kF**; *τ*₁ 16–29 s over 100–20 % SoC, depending on the fit.
 - **A newer 56.3 Ah Leaf cell:** *R*₀ ≈ 1 mΩ, *R*₁ ≈ 1 mΩ.
 
-<div class="caption text-left">Leaf 2013: fit to ORNL's HPPC data, derived, not a published table
+<div class="caption text-left">Leaf 2013: fit to Oak Ridge National Laboratory (ORNL) hybrid pulse power characterization (HPPC) data, derived, not a published table
 [ORNL-LEAF-ECM] (<code>bms.md</code> §1) · Gen 3: [GAO-2024] §2.3</div>
 
 </div>
@@ -208,7 +209,7 @@ routeAlias: pulse-response
 
 <img src="/figures/02-pulse-response.svg" alt="Top: current, 30 A discharge from 0 to 30 s, rest until 70 s, 22.5 A regen from 70 to 80 s. Bottom: terminal voltage minus the OCV of 3.949 V, in mV, for the Leaf cell with R0 1.60 mΩ, R1 1.34 mΩ and τ1 25.7 s: an instant drop of 48 mV, sagging to −75.7 mV by 30 s; at release a step back to −27.7 mV and an exponential recovery to −5.8 mV by 70 s; during regen +30 mV rising to +42 mV; then a recovery toward zero. Dashed: Lecture 4's E − R0 i, −48 mV during discharge and +36 mV during regen."/>
 
-<div class="caption">Formula plot of the 1-RC cell, [ORNL-LEAF-ECM] pulse-5 fit (derived), through the [USABC-EV-R4]
+<div class="caption">Formula plot of the 1-RC cell, [ORNL-LEAF-ECM] pulse-5 fit (derived), through the United States Advanced Battery Consortium [USABC-EV-R4]
 profile at 30 A; OCV held at 3.949 V.</div>
 
 </div>
@@ -246,7 +247,7 @@ seconds. 75.7 in all, against 75.9 measured. At switch-off it jumps back by 48, 
 the OCV. This is how we measure the parameters: R0 from the step, R1 and tau1 from the tail.
 
 After the current stops, the terminal voltage is not yet the OCV. A BMS that reads the charge from
-the voltage has to wait. Section 03 says how long.
+the voltage has to wait. Section 03 says how long, on "Resetting the count".
 -->
 
 ---
@@ -262,20 +263,20 @@ skipInCut: true
 |---|---|---|
 | *E* fixed at 350 V | OCV(SoC) from a table | hysteresis between charge and discharge |
 | sag only at once | *R*₀ at once, *R*₁*C*₁ slowly | more RC pairs, diffusion |
-| SoC through zero | voltage collapses below 10 %; cutoff **2.50 V** per cell | the BMS stops it first (section 03) |
+| SoC through zero | voltage collapses below 10 %; cutoff **2.50 V** per cell | the BMS (battery management system) stops it first (section 03) |
 | *R* constant | per-cell *R*₀, *R*₁ | **temperature**: R changes about 50–60 % over 15–35 °C |
-| one pack | one cell × 96s2p | cell-to-cell spread (section 03) |
+| one pack | one cell × 96s2p (96 in series, 2 in parallel) | cell-to-cell spread (section 03, "Cells drift apart") |
 
 </div>
 
-<div class="caption text-left">Leaf cell range 2.50–4.20 V: [INL-5045] · temperature: LMO/graphite
+<div class="caption text-left">Leaf cell range 2.50–4.20 V: [INL-5045] · temperature: LMO (lithium manganese oxide)/graphite
 50 Ah cell, preprint, search summary (<code>teaching_materials.md</code> §3.3)</div>
 
 <!--
 The two models side by side: Lecture 4's faults, how the Thevenin cell fixes each, and what it still
 leaves out.
 
-On the WLTC the Thevenin battery changes the energy by only 0.2 percent: 3.133 kilowatt-hours
+On the WLTC test cycle the Thevenin battery changes the energy by only 0.2 percent: 3.133 kilowatt-hours
 against 3.126. For range, Lecture 4's battery was fine. What it got wrong is the voltage.
 
 E fixed at 350 volts becomes an OCV table against state of charge. It still ignores hysteresis: the
@@ -286,7 +287,8 @@ cutoff. In a car the BMS stops the current first.
 
 The resistance is still one number per part, but it really depends on temperature. For a similar
 manganese cell it changes 50 to 60 percent over 15 to 35 degrees. It is from an unreviewed paper we
-could not check: a rough guide. Cold makes everything tonight slower. Section 04 comes back to that.
+could not check: a rough guide. Cold makes everything tonight slower. Section 04 comes back to that,
+on "Cold and fast".
 
 *[ask]* The last row: the pack is one cell times 96 in series and 2 in parallel. What does that
 assume about the 192 cells? *[pause]* That they are identical. They are not, and the BMS must deal

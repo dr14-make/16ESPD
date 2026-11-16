@@ -7,8 +7,8 @@ layout: section
 
 # The fuel-cell car
 
-A series hybrid with a different source: Lecture 5's shape with a stack in place of the
-engine-generator, and its efficiency from the power plant to the wheel against a battery car.
+A series hybrid with a different source: the shape of Lecture 5, <a href="https://dr14-make.github.io/16ESPD/lecture-05/" target="_blank"><i>Hybrids</i></a>, with a
+stack in place of the engine-generator, and its efficiency from the power plant to the wheel against a battery car.
 
 <img class="hero" src="/photos/07-mirai-gen2.jpg" alt="A blue second-generation Toyota Mirai sedan parked on paving stones, seen from the front left."/>
 
@@ -42,11 +42,11 @@ routeAlias: mirai-series-hybrid
 
 <div class="tight">
 
-| Lecture 5 | Mirai gen 2 |
+| Lecture 5, *Hybrids* | Mirai gen 2 |
 |---|---|
 | engine-generator | **stack, 128 kW** |
 | battery | **1.24 kWh**, 310.8 V |
-| motor | **134 kW**, 300 N·m, RWD |
+| motor | **134 kW**, 300 N·m, rear-wheel drive |
 | fuel | **5.6 kg H₂**, 0.79 kg/100 km |
 
 </div>
@@ -106,14 +106,14 @@ estimated).</div>
 </div>
 <div class="text-[0.9rem]">
 
-**The degree of hybridization again** (Lecture 5): from a power buffer (Mirai) to a plug-in that
+**The degree of hybridization again** (Lecture 5, *Hybrids*): from a power buffer (Mirai) to a plug-in that
 drives on its battery first (CR-V).
 
 **Motors:** Mirai **134 kW**, Nexo **150 kW**, XCIENT **350 kW**.
 
 **Nexo:** 110 kW gross, its 2.64 kWh battery gives **80 kW**; **0.81 kg/100 km** (Mirai 0.79).
 
-**CR-V:** **29 mi** on electricity (EPA). **XCIENT:** 450 mi max.
+**CR-V:** **29 mi** on electricity (US Environmental Protection Agency, EPA). **XCIENT:** 450 mi max.
 
 </div>
 </div>
@@ -151,7 +151,7 @@ is kept for the long ones.
 routeAlias: power-to-wheel
 ---
 
-## Power to wheel: BEV 69 %, FCEV 26 %
+## Power to wheel: battery car (BEV) 69 %, fuel-cell car (FCEV) 26 %
 
 <div class="grid grid-cols-[1.3fr_1fr] gap-6 items-start">
 <div>
@@ -166,17 +166,17 @@ efficiencies and totals as printed (±0.5 %); the values between multiplied out,
 
 **Per 100 km, bottom-up:**
 
-Mirai: 0.79 kg × (55 electrolysis + 3.0 compression + 0.2 precool) kWh/kg = **46.0 kWh** of
-electricity.
+Mirai: 0.79 kg × (55 electrolysis + 3.0 compression + 0.2 precool) kWh/kg = 0.79 × 58.2 =
+**46.0 kWh** of electricity.
 
 Leaf: **17.1 kWh** at the grid.
 
-→ **≈ 2.7×** the electricity for the same distance.
+→ 46.0 / 17.1 ≈ **2.7×** the electricity for the same distance.
 
-Agora's totals, 69 / 26: also **≈ 2.7×**; its text rounds to "about two and a half times".
+Agora's totals, 69 / 26 ≈ **2.7×** too; its text rounds to "about two and a half times".
 
 <div class="caption text-left">[DOE-PEM-TARGETS], [DOE-REC-9013-2009], [TOYOTA-UK-MIRAI-SPECS-2024]
-verified · Leaf: <code>energy-prices-cz.md</code> · 46.0 and 2.7: derived</div>
+verified · Leaf: <a href="https://github.com/dr14-make/16ESPD/blob/main/docs/research_notes/Electric%20and%20hybrid%20vehicles/energy-prices-cz.md" target="_blank"><code>energy-prices-cz.md</code></a> · 46.0 and 2.7: derived</div>
 
 </div>
 </div>
@@ -216,8 +216,8 @@ skipInCut: true
 
 <img src="/figures/07-h2-emissions.svg" alt="Horizontal bars of kg CO₂-eq per kg H₂: natural gas (SMR) without CCS 10–14 (range bar), coal gasification without CCS 22–26 (range bar), electrolysis on the world-average grid 24, electrolysis on the Swedish grid 0.5."/>
 
-<div class="caption">IEA 2023, "Towards hydrogen definitions" [IEA-H2-DEF-2023], verified · world grid at 460 g
-CO₂-eq/kWh.</div>
+<div class="caption">International Energy Agency (IEA) 2023, "Towards hydrogen definitions" [IEA-H2-DEF-2023], verified · world grid at 460 g
+CO₂-eq/kWh · SMR: steam methane reforming · CCS here: carbon capture and storage.</div>
 
 **Global average, 2021:** **12–13** kg CO₂-eq per kg H₂.
 
@@ -274,7 +274,7 @@ routeAlias: where-hydrogen-fits
 **For hydrogen in cars:** a 3-minute fill and about 640 km of range (Toyota: up to 400 mi); no grid
 connection at the car.
 
-**Against:** about 2.7× the electricity of a BEV per km; 50 public stations in Germany, 2 in Czechia,
+**Against:** about 2.7× the electricity of a battery car per km; 50 public stations in Germany, 2 in Czechia,
 closures; energy cost above petrol at the last reported price.
 
 **Where it is growing:** trucks and buses use about **90 %** of road hydrogen; stock growth comes
@@ -284,7 +284,7 @@ from Chinese trucks.
 battery-electric (reported). **AFIR's stations** must serve heavy-duty vehicles too.
 
 <div class="caption text-left">[IEA-GHR-2026], [AFIR-2023-1804] verified · Daimler, Ostrava:
-<code>hydrogen.md</code> §4, §7, secondary / search summary</div>
+<a href="https://github.com/dr14-make/16ESPD/blob/main/docs/research_notes/Electric%20and%20hybrid%20vehicles/hydrogen.md" target="_blank"><code>hydrogen.md</code></a> §4, §7, secondary / search summary</div>
 
 </div>
 <div>
