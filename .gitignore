@@ -11,3 +11,4 @@
 /.dyadcache
 /data/engine/figures/
 /sim/*.dbc
+/sim/fabia/results.txt
