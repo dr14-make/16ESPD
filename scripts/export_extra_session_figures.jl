@@ -510,7 +510,7 @@ function charging_losses_plot()
     ac_cars = unique(String.(getfield.(filter(r -> r.kind == "AC", rows), :car)))
     sort!(ac_cars; by = c -> loss("AC", c, "2.3 kW"))
     m = length(ac_cars)
-    ac = plot(; title = "AC, grid to battery", xlabel = "charging loss [%]",
+    ac = plot(; title = "AC: grid → battery", xlabel = "charging loss [%]",
         yticks = (1:m, ac_cars), ylims = (0.2, m + 0.9), xlims = (0, 30), legend = :none,
         xticks = 0:5:30)
     for (y, car) in enumerate(ac_cars)
@@ -529,7 +529,7 @@ function charging_losses_plot()
     colors = ["#9dbbe0", BLUE, ORANGE]
     dc_cars = unique(String.(getfield.(filter(r -> r.kind == "DC", rows), :car)))
     n = length(dc_cars)
-    dc = plot(; title = "DC, inside the car", xlabel = "charging loss [%]",
+    dc = plot(; title = "DC: inside the car only", xlabel = "charging loss [%]",
         yticks = (1:n, dc_cars), ylims = (0.4, n + 0.6), xlims = (0, 17), xticks = 0:2:12,
         legend = :none)
     for (y, car) in enumerate(dc_cars), (k, cond) in enumerate(conds)
@@ -537,7 +537,8 @@ function charging_losses_plot()
         yc = y + 0.26 * (k - 2)
         plot!(dc, box(0, x, yc - 0.12, yc + 0.12); color = colors[k], linecolor = colors[k],
             label = "")
-        label = y == n ? "$(round(Int, x))  $cond" : "$(round(Int, x))"
+        label = y == n ? "$(round(Int, x))  $(replace(cond, "precond." => "preconditioned"))" :
+            "$(round(Int, x))"
         annotate!(dc, x + 0.15, yc, text(label, 11, :left,
             y == n ? ["#5b84b8", BLUE, ORANGE][k] : :black))
     end
