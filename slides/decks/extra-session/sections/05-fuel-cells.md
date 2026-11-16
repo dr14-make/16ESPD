@@ -40,6 +40,11 @@ routeAlias: pem-principle
 </div>
 <div>
 
+<div class="flex gap-4 items-end mb-2">
+<img class="photo" src="/photos/05-pem-cell.jpg" style="height: 11rem" alt="A single PEM fuel cell in a museum: two clear acrylic end plates clamped by eight bolts around a dark membrane electrode assembly with a grid of gas holes, a hose feeding hydrogen into the front plate."/>
+<div class="caption text-left">One real cell: end plates, gas ports, the membrane between · Deutsches Museum · Tiia Monto, CC BY 4.0</div>
+</div>
+
 **Anode:** H₂ → 2H⁺ + 2e⁻
 
 **Cathode:** ½ O₂ + 2H⁺ + 2e⁻ → H₂O
@@ -63,6 +68,7 @@ Two electrons per H₂, through every cell in series.
 uses. A platinum catalyst splits hydrogen into protons and electrons. The membrane lets only the
 protons through, so the electrons take the outside circuit: our current. At the cathode, air's
 oxygen meets both, making water. A battery that never runs flat, as long as you feed it.
+*[point at photo]* And a real one: the membrane, clamped between two plates that feed the gases.
 
 On the right, the ideal voltages. 1.229 volts is the reversible voltage, the theoretical maximum.
 1.253 is hydrogen's lower heating value over two Faraday constants; 1.481 uses the higher heating
