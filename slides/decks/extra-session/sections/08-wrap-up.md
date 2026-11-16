@@ -211,9 +211,9 @@ routeAlias: sources
 
 **Photos, all from Wikimedia Commons:** Nissan Leaf cutaway · Norsk Elbilforening, CC BY 2.0 ·
 BMW i3 cells · RudolfSimon, CC BY-SA 3.0 · Leaf pack · Gereon Meyer, CC BY-SA 4.0 · BMS board ·
-Drazny, CC BY-SA 4.0 · Type 2, CCS2, CHAdeMO · D-Kuru/Wikimedia Commons, CC BY-SA 4.0 · NACS ·
+Drazny, CC BY-SA 4.0 · Type 2, CCS2, CHAdeMO · D-Kuru/Wikimedia Commons, CC BY-SA 4.0 · CCS2 inlet · Teknisk Kompetanse, CC BY-SA 4.0 · NACS ·
 RickyCourtney, CC BY-SA 4.0 · MCS · SRago91, CC BY-SA 4.0 · IONITY · Андрей Романенко, CC BY-SA 4.0
-· ČEZ charger · Yopic, CC0 · Mirai cutaway, stack, tank · Mariordo, CC BY-SA 4.0 · Magdeburg ·
+· ČEZ charger · Yopic, CC0 · Mirai cutaway, stack, tank · Mariordo, CC BY-SA 4.0 · PEM cell · Tiia Monto, CC BY 4.0 · Magdeburg ·
 Michał Beim, CC BY-SA 4.0 · Offenbach nozzles · L. Willms, CC BY-SA 3.0 · Frankfurt · Zgonnik,
 public domain · Mirai gen 2, Herten bus · Icke68746, CC0 · XCIENT · JoachimKohler-HB, CC BY-SA 4.0
 
