@@ -1,3 +1,4 @@
+# Run from repository root: julia --project=. sim/fabia/10_all.jl
 # Everything at once: 100 km/h, 3000 rpm, left indicator, ABS lamp.
 include("common.jl")
 bench() do b, echo

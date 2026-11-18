@@ -3,6 +3,31 @@
 Realtime drive is a library analysis with optional UI extensions. Read this, then
 `sim/regen-braking-observations.md`.
 
+## Fabia cluster demonstration
+
+`mise run fabia [interface]` defaults to `can0` and runs `PlanarBEVFabiaScriptedDrive`
+for 36 seconds without a window. Bring up the physical bus at 500 kbit/s first.
+The separate `fabia_drive.csv` preserves existing CAN-drive defaults: left request
+12–18 s, gentle lane-change steering 14–17 s, full brake from 24 s.
+The cluster signal path is `model.cluster.display`: `speed` (m/s), `rpm`,
+`coolant` (degrees C), `left`, `right`, `hazard`, `abs_lamp`, `asr_lamp`,
+`brake_lamp`, `mil`, `epc`, `charging`, `airbag_lamp`; `dimming` is a parameter.
+`FabiaClusterNode` receives teaching-CAN speed/ABS slots 1/5 and hardwired motor
+speed (rad/s), indicators and throttle. Tachometer scaling defaults to half motor
+rpm, clamped to 0–6000. ASR flashes at 2.5 Hz during ABS; ABS fault stays off.
+Emergency hazards use filtered deceleration above 6 m/s² while above 5 m/s, with
+50 ms charging and 3 s exponential hold decay (about 6.9 s to the off threshold).
+These are demonstration assumptions, not a validated OEM emergency-stop strategy.
+Physical Fabia encoding/scheduling belongs to the realtime transport, not Dyad;
+the stream reads the display inputs, not the teaching-CAN DBC. Dimming is a fraction
+converted to the bench protocol's 0–100 percent. The default tachometer peaks near
+3878 rpm over this drive. Encoders and the echo decoder live in `dyad/fabia_protocol.jl`.
+No by-hand Fabia assembly is provided: the current by-hand car uses direct controls,
+not the teaching CAN network. Mock and paced `vcan0` tests cover this assembly;
+physical-cluster validation is still required. Observe with `candump can0`.
+The interface may carry a CanAdapter, a FabiaCluster, or both; overlapping IDs are rejected.
+
+
 ## Extension integration contract
 
 - `VehicleSystemsComponents.drive_window(integ, sys, spec)` is implemented by

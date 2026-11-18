@@ -1,0 +1,97 @@
+"Signal-only Fabia instrument cluster; physical CAN encoding belongs to the realtime transport."
+component FabiaCluster
+  "Road speed in m/s"
+  speed = RealInput()
+  "Displayed engine-equivalent speed in rpm"
+  rpm = RealInput()
+  "Coolant indication in degrees Celsius, not kelvin"
+  coolant = RealInput()
+  left = BooleanInput()
+  right = BooleanInput()
+  hazard = BooleanInput()
+  abs_lamp = BooleanInput()
+  asr_lamp = BooleanInput()
+  brake_lamp = BooleanInput()
+  mil = BooleanInput()
+  epc = BooleanInput()
+  charging = BooleanInput()
+  airbag_lamp = BooleanInput()
+  "Cluster illumination fraction"
+  parameter dimming::Real = 1.0
+  variable speed_value::Real
+  variable rpm_value::Real
+  variable coolant_value::Real
+  variable left_value::Boolean
+  variable right_value::Boolean
+  variable hazard_value::Boolean
+  variable abs_lamp_value::Boolean
+  variable asr_lamp_value::Boolean
+  variable brake_lamp_value::Boolean
+  variable mil_value::Boolean
+  variable epc_value::Boolean
+  variable charging_value::Boolean
+  variable airbag_lamp_value::Boolean
+relations
+  speed_value = speed
+  rpm_value = rpm
+  coolant_value = coolant
+  left_value = left
+  right_value = right
+  hazard_value = hazard
+  abs_lamp_value = abs_lamp
+  asr_lamp_value = asr_lamp
+  brake_lamp_value = brake_lamp
+  mil_value = mil
+  epc_value = epc
+  charging_value = charging
+  airbag_lamp_value = airbag_lamp
+end
+
+"Listen-only teaching-CAN receiver with hardwired motor and driver signals for a Fabia display."
+component FabiaClusterNode
+  bus = CanNet()
+  "Machine shaft speed in rad/s"
+  motor_speed = RealInput()
+  left = BooleanInput()
+  right = BooleanInput()
+  throttle = RealInput()
+  "Displayed rpm divided by machine rpm"
+  parameter tachometer_scale::Real = 0.5
+  parameter dimming::Real = 1.0
+  "Speed conditioning rejects individual CAN sample steps in the deceleration estimate"
+  parameter speed_filter_time::Time = 0.15
+  parameter emergency_deceleration::Real = 6.0
+  "Require more than 5 m/s before starting emergency indication"
+  parameter emergency_min_speed::Real = 5.0
+  parameter hazard_charge_time::Time = 0.05
+  "Decay from a fully charged hold to 0.1 takes about 6.9 seconds"
+  parameter hazard_decay_time::Time = 3.0
+  speed_rx = CanRxReal(slot = 1, id = 128)
+  abs_rx = CanRxReal(slot = 5, id = 112)
+  display = FabiaCluster(dimming = dimming)
+  variable filtered_speed::Real
+  variable deceleration::Real
+  variable emergency::Boolean
+  variable hazard_hold::Real
+relations
+  connect(bus, speed_rx.bus, abs_rx.bus)
+  connect(left, display.left)
+  connect(right, display.right)
+  initial filtered_speed = 0.0
+  initial hazard_hold = 0.0
+  der(filtered_speed) = (speed_rx.y - filtered_speed) / speed_filter_time
+  deceleration = (filtered_speed - speed_rx.y) / speed_filter_time
+  emergency = (deceleration > emergency_deceleration) and (filtered_speed > emergency_min_speed)
+  der(hazard_hold) = ifelse(emergency, (1.0 - hazard_hold) / hazard_charge_time, -hazard_hold / hazard_decay_time)
+  display.speed = max(0.0, speed_rx.y)
+  display.rpm = min(6000.0, max(0.0, motor_speed * 60.0 / (2.0 * 3.141592653589793) * tachometer_scale))
+  display.coolant = 90.0
+  display.hazard = hazard_hold > 0.1
+  display.abs_lamp = false
+  display.asr_lamp = (abs_rx.y > 0.5) and (sin(2.0 * 3.141592653589793 * 2.5 * time) > 0.0)
+  display.brake_lamp = false
+  display.mil = false
+  display.epc = false
+  display.charging = false
+  display.airbag_lamp = false
+end

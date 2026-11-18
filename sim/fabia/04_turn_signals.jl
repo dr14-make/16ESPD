@@ -1,3 +1,4 @@
+# Run from repository root: julia --project=. sim/fabia/04_turn_signals.jl
 # BSG_Kombi 0x470: turn indicators, blinked by the sender at ~1.5 Hz.
 include("common.jl")
 bench(; only = [0x470, 0x570]) do b, echo

@@ -1,3 +1,4 @@
+# Run from repository root: julia --project=. sim/fabia/11_installed_list.jl
 # Tell the cluster ABS and airbag units are fitted (Verbauliste_1 0x5D8, Systeminfo_1 0x5D0),
 # then retry the ABS and airbag lamps. Watch "installed ABS/airbag" in the echo: it is the
 # cluster's own list (0x520) and shows whether it accepted the message.

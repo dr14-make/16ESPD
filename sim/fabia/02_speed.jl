@@ -1,3 +1,4 @@
+# Run from repository root: julia --project=. sim/fabia/02_speed.jl
 # Bremse_1/2/3 (0x1A0, 0x5A0, 0x4A0): speedometer. Compare the needle with the cluster echo.
 include("common.jl")
 bench(; only = [0x1A0, 0x5A0, 0x4A0]) do b, echo

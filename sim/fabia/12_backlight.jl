@@ -1,3 +1,4 @@
+# Run from repository root: julia --project=. sim/fabia/12_backlight.jl
 # BSG_Kombi 0x470 Kl.58d: instrument illumination dimming, what the cluster sees when the
 # parking/tail lights are switched on.
 include("common.jl")

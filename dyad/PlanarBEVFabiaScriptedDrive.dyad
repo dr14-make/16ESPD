@@ -1,0 +1,29 @@
+"Fabia demonstration: acceleration, indicated left lane change, cruise and emergency braking."
+component PlanarBEVFabiaScriptedDrive
+  parameter m::Mass = 1500
+  parameter esp_on::Real = 1
+  parameter abs_on::Real = 1
+  parameter mu::Real = 1
+  parameter tachometer_scale::Real = 0.5
+  parameter dimming::Real = 1.0
+  structural parameter table::String = "dyad://VehicleSystemsComponents/drivers/fabia_drive.csv"
+  driver = VehicleSystemsComponents.ScriptedDriver(table = table)
+  vehicle = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVCanDrive(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
+  adapter = VehicleSystemsComponents.Vehicle.Planar.CanAdapter()
+  cluster = VehicleSystemsComponents.Vehicle.Planar.FabiaClusterNode(tachometer_scale = tachometer_scale, dimming = dimming)
+relations
+  connect(driver.throttle_signal, vehicle.throttle, cluster.throttle)
+  connect(driver.brake_signal, vehicle.brake)
+  connect(driver.steer_signal, vehicle.steer)
+  connect(adapter.bus, vehicle.motion.bus, cluster.bus)
+  cluster.motor_speed = vehicle.drive.drive.machine.w
+  cluster.left = (time >= 12.0) and (time < 18.0)
+  cluster.right = false
+end
+
+"Thirty-six-second Fabia cluster demonstration on physical SocketCAN by default."
+analysis PlanarBEVFabiaDrive
+  extends RealtimeDrive(duration = 36, can_interface = "can0", window = false)
+  model = PlanarBEVFabiaScriptedDrive(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
+  parameter m::Mass = 1500
+end

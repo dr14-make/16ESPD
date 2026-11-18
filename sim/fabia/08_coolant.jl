@@ -1,3 +1,4 @@
+# Run from repository root: julia --project=. sim/fabia/08_coolant.jl
 # Motor_2 0x288: coolant temperature gauge.
 include("common.jl")
 bench(; only = [0x280, 0x288]) do b, echo

@@ -1,3 +1,4 @@
+# Run from repository root: julia --project=. sim/fabia/06_engine_lamps.jl
 # Motor_5 0x480: MIL, EPC, glow plug (checksum assumed XOR of bytes 0..6).
 include("common.jl")
 bench(; only = [0x280, 0x480]) do b, echo

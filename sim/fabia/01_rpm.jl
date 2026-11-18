@@ -1,3 +1,4 @@
+# Run from repository root: julia --project=. sim/fabia/01_rpm.jl
 # Motor_1 0x280 alone: tachometer.
 include("common.jl")
 bench(; only = [0x280]) do b, echo

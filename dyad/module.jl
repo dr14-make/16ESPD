@@ -91,6 +91,7 @@ function drive_road(spec)
     return (; x, y, height, grip, grip_varies = varies(grip), height_varies = varies(height))
 end
 
+include("fabia_protocol.jl")
 include("can_stream.jl")
 
 "Integrator saving one sample per frame; drives and resets share the solver settings."
@@ -141,7 +142,7 @@ function DyadInterface.run_analysis(spec::RealtimeDriveSpec;
     # Their discrete parameter histories are saved independently of continuous positions.
     disable_callback_saves!(get(setup.prob.kwargs, :callback, nothing))
     stream = isempty(spec.can_interface) ? nothing : CanStream(
-        Vehicle.Planar.can_layout(model), open_can(spec.can_interface); paced = can_paced)
+        can_stream_layout(model), open_can(spec.can_interface); paced = can_paced)
     integ = nothing
     stats = try
         task_local_storage(:vehicle_can_stream, stream) do

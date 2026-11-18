@@ -1,3 +1,4 @@
+# Run from repository root: julia --project=. sim/fabia/03_rpm_and_speed.jl
 # Engine and brake frames together: a short drive.
 include("common.jl")
 bench(; only = [0x280, 0x288, 0x1A0, 0x5A0, 0x4A0]) do b, echo
