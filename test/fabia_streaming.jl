@@ -1,3 +1,15 @@
+using SHA
+
+function fabia_frame_fingerprint(frames)
+    bytes = UInt8[]
+    for (id, payload) in frames
+        append!(bytes, UInt8[(id >> shift) & 255 for shift in (0, 8, 16, 24)])
+        append!(bytes, payload)
+    end
+    bytes2hex(sha256(bytes))
+end
+
+
 const FP = CanV.FabiaProtocol
 
 @testset "Fabia scripted cluster stream" begin
@@ -7,6 +19,8 @@ const FP = CanV.FabiaProtocol
     result = DyadInterface.run_analysis(spec; open_can = _ -> recording, can_paced = false)
     sys = DyadInterface.symbolic_container(result)
     @test recording.closed
+    @test fabia_frame_fingerprint(recording.frames) ==
+        "6ffd492aaa990f4b63434674692518b8d699a399d684cca5be32a19f69b4c3a0"
     payloads(id) = [b for (key, b) in recording.frames if key == id]
     for (id, period, _) in FP.schedule(FP.Bench())
         @test length(payloads(id)) == round(Int, spec.duration / period)
@@ -85,3 +99,26 @@ end
         println("Fabia vcan0 timing: ", m, " real_time_factor=", m.simulated / m.wall)
     end
 end
+
+
+@testset "Fabia by-hand headless mock stream" begin
+    model = CanV.PlanarBEVByHandFabia(name = :model)
+    recording = RecordingCan([], false)
+    spec = CanV.RealtimeDriveSpec(; model, duration = 10.0, frame = .01,
+        window = false, can_interface = "recording")
+    result = DyadInterface.run_analysis(spec; open_can = _ -> recording, can_paced = false)
+    sys = DyadInterface.symbolic_container(result)
+    @test recording.closed
+    @test fabia_frame_fingerprint(recording.frames) ==
+        "828fb69876a0ba9f631c3b8651c6902df8be024ebd9e921e4b827afd407a24d0"
+    for (id, period, _) in FP.schedule(FP.Bench())
+        @test count(frame -> first(frame) == id, recording.frames) == round(Int, 10 / period)
+    end
+    speed_frames = [payload for (id, payload) in recording.frames if id == 0x1a0]
+    for (k, payload) in enumerate(speed_frames)
+        expected = max(0., result.sol(k * .01; idxs = sys.vehicle.motion.vx)) * 3.6
+        @test abs(FP.getbits(payload, 17, 15) * .01 - expected) <= .010001
+    end
+end
+
+include("fabia_canvas.jl")

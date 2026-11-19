@@ -25,13 +25,6 @@ relations
   connect(indicate_end.y, indicate_left.u2) {^w7}
   connect(indicate_left.y, cluster.left) {^w8}
   connect(off.y, cluster.right) {^w9}
-end
-
-"Thirty-six-second Fabia cluster demonstration on physical SocketCAN by default."
-analysis PlanarBEVFabiaDrive
-  extends RealtimeDrive(duration = 36, can_interface = "can0", window = false)
-  model = PlanarBEVFabiaScriptedDrive(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
-  parameter m::Mass = 1500
 metadata {
   "_links": {
     "adapter": {
@@ -312,4 +305,11 @@ metadata {
     }
   }
 }
+end
+
+"Thirty-six-second Fabia cluster demonstration on physical SocketCAN by default."
+analysis PlanarBEVFabiaDrive
+  extends RealtimeDrive(duration = 36, can_interface = "can0", window = false)
+  model = PlanarBEVFabiaScriptedDrive(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
+  parameter m::Mass = 1500
 end
