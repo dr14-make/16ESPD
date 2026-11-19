@@ -1,0 +1,52 @@
+"By-hand planar BEV whose speed, motor speed and ABS activity drive a Fabia cluster over SocketCAN."
+component PlanarBEVByHandFabia
+  parameter m::Mass = 1500.0
+  parameter esp_on::Real = 1.0
+  parameter abs_on::Real = 1.0
+  parameter mu::Real = 1.0
+  "Displayed rpm divided by machine rpm"
+  parameter tachometer_scale::Real = 0.5
+  parameter dimming::Real = 1.0
+  "Speed conditioning for the deceleration estimate"
+  parameter speed_filter_time::Time = 0.15
+  parameter emergency_deceleration::Real = 6.0
+  parameter emergency_min_speed::Real = 5.0
+  parameter hazard_charge_time::Time = 0.05
+  "Decay from a fully charged hold to 0.1 takes about 6.9 seconds"
+  parameter hazard_decay_time::Time = 3.0
+  structural parameter road_file::String = "dyad://VehicleSystemsComponents/roads/uniform_mu.crg"
+  structural parameter height_file::String = "dyad://VehicleSystemsComponents/roads/flat_z.crg"
+  structural parameter default_grip::Real = 1.0
+  structural parameter default_height::Length = 0.0
+  structural parameter blend_width::Length = 2.0
+  driver = VehicleSystemsComponents.HumanDriver()
+  vehicle = VehicleSystemsComponents.Vehicle.Planar.RoadBEVDrive(road_file = road_file, height_file = height_file, default_grip = default_grip, default_height = default_height, blend_width = blend_width, m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
+  display = VehicleSystemsComponents.Vehicle.Planar.FabiaCluster(dimming = dimming)
+  variable filtered_speed::Real
+  variable deceleration::Real
+  variable emergency::Boolean
+  variable hazard_hold::Real
+relations
+  connect(driver.throttle_signal, vehicle.throttle)
+  connect(driver.brake_signal, vehicle.brake)
+  connect(driver.steer_signal, vehicle.steer)
+  initial filtered_speed = 0.0
+  initial hazard_hold = 0.0
+  der(filtered_speed) = (vehicle.motion.vx - filtered_speed) / speed_filter_time
+  deceleration = (filtered_speed - vehicle.motion.vx) / speed_filter_time
+  emergency = (deceleration > emergency_deceleration) and (filtered_speed > emergency_min_speed)
+  der(hazard_hold) = ifelse(emergency, (1.0 - hazard_hold) / hazard_charge_time, -hazard_hold / hazard_decay_time)
+  display.speed = max(0.0, vehicle.motion.vx)
+  display.rpm = min(6000.0, max(0.0, abs(vehicle.drive.machine.w) * 60.0 / (2.0 * 3.141592653589793) * tachometer_scale))
+  display.coolant = 90.0
+  display.left = false
+  display.right = false
+  display.hazard = hazard_hold > 0.1
+  display.abs_lamp = false
+  display.asr_lamp = (vehicle.ecu.front_active > 0.5) and (sin(2.0 * 3.141592653589793 * 2.5 * time) > 0.0)
+  display.brake_lamp = false
+  display.mil = false
+  display.epc = false
+  display.charging = false
+  display.airbag_lamp = false
+end

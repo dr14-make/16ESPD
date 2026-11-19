@@ -68,3 +68,10 @@ description = "Stream the scripted Fabia cluster drive to SocketCAN (default can
 usage = 'arg "[interface]" default="can0" help="SocketCAN interface, e.g. can0 or vcan0"'
 depends = ["drive:setup"]
 run = "julia +dyad-3.5.0 --project=. sim/fabia_drive.jl '{{ usage.interface }}'"
+
+
+[tasks."fabia:hand"]
+description = "Drive the Fabia cluster from the interactive window (default can0)"
+usage = 'arg "[interface]" default="can0" help="SocketCAN interface, e.g. can0 or vcan0"'
+depends = ["drive:setup"]
+run = "julia +dyad-3.5.0 --project=. sim/fabia_hand.jl '{{ usage.interface }}'"
