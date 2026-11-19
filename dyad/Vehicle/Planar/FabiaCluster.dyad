@@ -1,21 +1,21 @@
 "Signal-only Fabia instrument cluster; physical CAN encoding belongs to the realtime transport."
 component FabiaCluster
   "Road speed in m/s"
-  speed = RealInput()
+  speed = RealInput() {^speed}
   "Displayed engine-equivalent speed in rpm"
-  rpm = RealInput()
+  rpm = RealInput() {^rpm}
   "Coolant indication in degrees Celsius, not kelvin"
-  coolant = RealInput()
-  left = BooleanInput()
-  right = BooleanInput()
-  hazard = BooleanInput()
-  abs_lamp = BooleanInput()
-  asr_lamp = BooleanInput()
-  brake_lamp = BooleanInput()
-  mil = BooleanInput()
-  epc = BooleanInput()
-  charging = BooleanInput()
-  airbag_lamp = BooleanInput()
+  coolant = RealInput() {^coolant}
+  left = BooleanInput() {^left}
+  right = BooleanInput() {^right}
+  hazard = BooleanInput() {^hazard}
+  abs_lamp = BooleanInput() {^abs_lamp}
+  asr_lamp = BooleanInput() {^asr_lamp}
+  brake_lamp = BooleanInput() {^brake_lamp}
+  mil = BooleanInput() {^mil}
+  epc = BooleanInput() {^epc}
+  charging = BooleanInput() {^charging}
+  airbag_lamp = BooleanInput() {^airbag_lamp}
   "Cluster illumination fraction"
   parameter dimming::Real = 1.0
   variable speed_value::Real
@@ -45,6 +45,249 @@ relations
   epc_value = epc
   charging_value = charging
   airbag_lamp_value = airbag_lamp
+metadata {
+  "Dyad": {
+    "icons": {
+      "default": "dyad://VehicleSystemsComponents/fabia-cluster.svg"
+    }
+  },
+  "_links": {
+    "abs_lamp": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 455,
+            "y2": 485
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 455,
+            "y2": 485
+          }
+        }
+      }
+    },
+    "airbag_lamp": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 875,
+            "y2": 905
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 875,
+            "y2": 905
+          }
+        }
+      }
+    },
+    "asr_lamp": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 525,
+            "y2": 555
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 525,
+            "y2": 555
+          }
+        }
+      }
+    },
+    "brake_lamp": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 595,
+            "y2": 625
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 595,
+            "y2": 625
+          }
+        }
+      }
+    },
+    "charging": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 805,
+            "y2": 835
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 805,
+            "y2": 835
+          }
+        }
+      }
+    },
+    "coolant": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 175,
+            "y2": 205
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 175,
+            "y2": 205
+          }
+        }
+      }
+    },
+    "epc": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 735,
+            "y2": 765
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 735,
+            "y2": 765
+          }
+        }
+      }
+    },
+    "hazard": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 385,
+            "y2": 415
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 385,
+            "y2": 415
+          }
+        }
+      }
+    },
+    "left": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 245,
+            "y2": 275
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 245,
+            "y2": 275
+          }
+        }
+      }
+    },
+    "mil": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 665,
+            "y2": 695
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 665,
+            "y2": 695
+          }
+        }
+      }
+    },
+    "right": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 315,
+            "y2": 345
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 315,
+            "y2": 345
+          }
+        }
+      }
+    },
+    "rpm": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 105,
+            "y2": 135
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 105,
+            "y2": 135
+          }
+        }
+      }
+    },
+    "speed": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 35,
+            "y2": 65
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 35,
+            "y2": 65
+          }
+        }
+      }
+    }
+  }
+}
 end
 
 "Listen-only teaching-CAN receiver with hardwired motor and driver signals for a Fabia display."
