@@ -7,19 +7,19 @@
 @doc Markdown.doc"""
    FabiaClusterNode(; name, tachometer_scale, dimming, speed_filter_time, emergency_deceleration, emergency_min_speed, hazard_charge_time, hazard_decay_time, __overrides)
 
-Listen-only teaching-CAN receiver with hardwired motor and driver signals for a Fabia display.
+Listen-only CAN receiver and signal conditioning for the Fabia dashboard.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `tachometer_scale`         | Displayed rpm divided by machine rpm                         | --  |   0.5 |
+| `tachometer_scale`         |                          | --  |   0.5 |
 | `dimming`         |                          | --  |   1.0 |
-| `speed_filter_time`         | Speed conditioning rejects individual CAN sample steps in the deceleration estimate                         | s  |   0.15 |
+| `speed_filter_time`         |                          | s  |   0.15 |
 | `emergency_deceleration`         |                          | --  |   6.0 |
-| `emergency_min_speed`         | Require more than 5 m/s before starting emergency indication                         | --  |   5.0 |
+| `emergency_min_speed`         |                          | --  |   5.0 |
 | `hazard_charge_time`         |                          | s  |   0.05 |
-| `hazard_decay_time`         | Decay from a fully charged hold to 0.1 takes about 6.9 seconds                         | s  |   3.0 |
+| `hazard_decay_time`         |                          | s  |   3.0 |
 
 ## Connectors
 
@@ -28,15 +28,6 @@ Listen-only teaching-CAN receiver with hardwired motor and driver signals for a 
  * `left` - This connector represents a boolean signal as an input to a component ([`BooleanInput`](@ref))
  * `right` - This connector represents a boolean signal as an input to a component ([`BooleanInput`](@ref))
  * `throttle` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
-
-## Variables
-
-| Name         | Description                         | Units  | 
-| ------------ | ----------------------------------- | ------ |
-| `filtered_speed`         |                          | --  |
-| `deceleration`         |                          | --  |
-| `emergency`         |                          | --  |
-| `hazard_hold`         |                          | --  |
 """
 @component function FabiaClusterNode(; name = nothing, var"tachometer_scale"=0.5, var"dimming"=Float64(1.0), var"speed_filter_time"=0.15, var"emergency_deceleration"=Float64(6.0), var"emergency_min_speed"=Float64(5.0), var"hazard_charge_time"=0.05, var"hazard_decay_time"=Float64(3.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -79,25 +70,25 @@ Listen-only teaching-CAN receiver with hardwired motor and driver signals for a 
 
   ### Symbolic Parameters
   __local__tachometer_scale = tachometer_scale
-  append!(__params, @parameters (tachometer_scale::Real), [description = "Displayed rpm divided by machine rpm"])
+  append!(__params, @parameters (tachometer_scale::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, tachometer_scale, __local__tachometer_scale)
   __local__dimming = dimming
   append!(__params, @parameters (dimming::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, dimming, __local__dimming)
   __local__speed_filter_time = speed_filter_time
-  append!(__params, @parameters (speed_filter_time::Real), [description = "Speed conditioning rejects individual CAN sample steps in the deceleration estimate"])
+  append!(__params, @parameters (speed_filter_time::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, speed_filter_time, __local__speed_filter_time)
   __local__emergency_deceleration = emergency_deceleration
   append!(__params, @parameters (emergency_deceleration::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, emergency_deceleration, __local__emergency_deceleration)
   __local__emergency_min_speed = emergency_min_speed
-  append!(__params, @parameters (emergency_min_speed::Real), [description = "Require more than 5 m/s before starting emergency indication"])
+  append!(__params, @parameters (emergency_min_speed::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, emergency_min_speed, __local__emergency_min_speed)
   __local__hazard_charge_time = hazard_charge_time
   append!(__params, @parameters (hazard_charge_time::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, hazard_charge_time, __local__hazard_charge_time)
   __local__hazard_decay_time = hazard_decay_time
-  append!(__params, @parameters (hazard_decay_time::Real), [description = "Decay from a fully charged hold to 0.1 takes about 6.9 seconds"])
+  append!(__params, @parameters (hazard_decay_time::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, hazard_decay_time, __local__hazard_decay_time)
 
   ### Final Parameters (assignments)
@@ -109,36 +100,53 @@ Listen-only teaching-CAN receiver with hardwired motor and driver signals for a 
   append!(__vars, @variables (throttle(t)::Real), [input = true])
 
   ### Variables (declarations)
-  append!(__vars, @variables (filtered_speed(t)::Real))
-  append!(__vars, @variables (deceleration(t)::Real))
-  append!(__vars, @variables (emergency(t)::Bool))
-  append!(__vars, @variables (hazard_hold(t)::Real))
 
   ### Variables (assignments)
-  __ovr_filtered_speed = pop!(__overrides, "filtered_speed", nothing); isnothing(__ovr_filtered_speed) || push!(__eqs, filtered_speed ~ __ovr_filtered_speed)
-  __ovr_filtered_speed__initial = pop!(__overrides, "filtered_speed.initial", nothing); isnothing(__ovr_filtered_speed__initial) || (__initial_conditions[filtered_speed] = __ovr_filtered_speed__initial)
-  __ovr_filtered_speed__guess = pop!(__overrides, "filtered_speed.guess", nothing)
-  __ovr_deceleration = pop!(__overrides, "deceleration", nothing); isnothing(__ovr_deceleration) || push!(__eqs, deceleration ~ __ovr_deceleration)
-  __ovr_deceleration__initial = pop!(__overrides, "deceleration.initial", nothing); isnothing(__ovr_deceleration__initial) || (__initial_conditions[deceleration] = __ovr_deceleration__initial)
-  __ovr_deceleration__guess = pop!(__overrides, "deceleration.guess", nothing)
-  __ovr_emergency = pop!(__overrides, "emergency", nothing); isnothing(__ovr_emergency) || push!(__eqs, emergency ~ __ovr_emergency)
-  __ovr_emergency__initial = pop!(__overrides, "emergency.initial", nothing); isnothing(__ovr_emergency__initial) || (__initial_conditions[emergency] = __ovr_emergency__initial)
-  __ovr_emergency__guess = pop!(__overrides, "emergency.guess", nothing)
-  __ovr_hazard_hold = pop!(__overrides, "hazard_hold", nothing); isnothing(__ovr_hazard_hold) || push!(__eqs, hazard_hold ~ __ovr_hazard_hold)
-  __ovr_hazard_hold__initial = pop!(__overrides, "hazard_hold.initial", nothing); isnothing(__ovr_hazard_hold__initial) || (__initial_conditions[hazard_hold] = __ovr_hazard_hold__initial)
-  __ovr_hazard_hold__guess = pop!(__overrides, "hazard_hold.guess", nothing)
 
   ### Constants
   __constants = Any[]
 
   ### Components
   push!(__systems, @named bus = VehicleSystemsComponents.Vehicle.Planar.CanNet())
-  # Subcomponent speed_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
+  # Subcomponent speed_rx of type VehicleSystemsComponents.Vehicle.Planar.FabiaCanRx
   speed_rx_overrides = __pop_subcomponent_overrides!(__overrides, "speed_rx")
-  push!(__systems, @named speed_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=1, id=128, __overrides = speed_rx_overrides))
-  # Subcomponent abs_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
+  push!(__systems, @named speed_rx = VehicleSystemsComponents.Vehicle.Planar.FabiaCanRx(; slot=1, id=128, __overrides = speed_rx_overrides))
+  # Subcomponent abs_rx of type VehicleSystemsComponents.Vehicle.Planar.FabiaCanRx
   abs_rx_overrides = __pop_subcomponent_overrides!(__overrides, "abs_rx")
-  push!(__systems, @named abs_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=5, id=112, __overrides = abs_rx_overrides))
+  push!(__systems, @named abs_rx = VehicleSystemsComponents.Vehicle.Planar.FabiaCanRx(; slot=5, id=112, __overrides = abs_rx_overrides))
+  # Subcomponent speed_limit of type BlockComponents.Nonlinear.Limiter
+  speed_limit_overrides = __pop_subcomponent_overrides!(__overrides, "speed_limit")
+  push!(__systems, @named speed_limit = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0.0), y_max=Float64(1e+300), __overrides = speed_limit_overrides))
+  # Subcomponent rpm_gain of type BlockComponents.Math.Gain
+  rpm_gain_overrides = __pop_subcomponent_overrides!(__overrides, "rpm_gain")
+  push!(__systems, @named rpm_gain = BlockComponents.Math.Gain(; k=60.0 / (2.0 * 3.141592653589793), __overrides = rpm_gain_overrides))
+  # Subcomponent rpm_scale of type BlockComponents.Math.Gain
+  rpm_scale_overrides = __pop_subcomponent_overrides!(__overrides, "rpm_scale")
+  push!(__systems, @named rpm_scale = BlockComponents.Math.Gain(; k=tachometer_scale, __overrides = rpm_scale_overrides))
+  # Subcomponent rpm_limit of type BlockComponents.Nonlinear.Limiter
+  rpm_limit_overrides = __pop_subcomponent_overrides!(__overrides, "rpm_limit")
+  push!(__systems, @named rpm_limit = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0.0), y_max=Float64(6000.0), __overrides = rpm_limit_overrides))
+  # Subcomponent emergency_hazard of type VehicleSystemsComponents.Vehicle.Planar.EmergencyHazard
+  emergency_hazard_overrides = __pop_subcomponent_overrides!(__overrides, "emergency_hazard")
+  push!(__systems, @named emergency_hazard = VehicleSystemsComponents.Vehicle.Planar.EmergencyHazard(; speed_filter_time=speed_filter_time, emergency_deceleration=emergency_deceleration, emergency_min_speed=emergency_min_speed, hazard_charge_time=hazard_charge_time, hazard_decay_time=hazard_decay_time, __overrides = emergency_hazard_overrides))
+  # Subcomponent abs_active of type BlockComponents.Logical.GreaterThreshold
+  abs_active_overrides = __pop_subcomponent_overrides!(__overrides, "abs_active")
+  push!(__systems, @named abs_active = BlockComponents.Logical.GreaterThreshold(; threshold=0.5, __overrides = abs_active_overrides))
+  # Subcomponent flash_sine of type BlockComponents.Sources.Sine
+  flash_sine_overrides = __pop_subcomponent_overrides!(__overrides, "flash_sine")
+  push!(__systems, @named flash_sine = BlockComponents.Sources.Sine(; amplitude=Float64(1.0), frequency=2.5, __overrides = flash_sine_overrides))
+  # Subcomponent flash_positive of type BlockComponents.Logical.GreaterThreshold
+  flash_positive_overrides = __pop_subcomponent_overrides!(__overrides, "flash_positive")
+  push!(__systems, @named flash_positive = BlockComponents.Logical.GreaterThreshold(; threshold=Float64(0.0), __overrides = flash_positive_overrides))
+  # Subcomponent esp_flash of type BlockComponents.Logical.And
+  esp_flash_overrides = __pop_subcomponent_overrides!(__overrides, "esp_flash")
+  push!(__systems, @named esp_flash = BlockComponents.Logical.And(; __overrides = esp_flash_overrides))
+  # Subcomponent coolant of type BlockComponents.Sources.Constant
+  coolant_overrides = __pop_subcomponent_overrides!(__overrides, "coolant")
+  push!(__systems, @named coolant = BlockComponents.Sources.Constant(; k=Float64(90.0), __overrides = coolant_overrides))
+  # Subcomponent off of type BlockComponents.Sources.BooleanConstant
+  off_overrides = __pop_subcomponent_overrides!(__overrides, "off")
+  push!(__systems, @named off = BlockComponents.Sources.BooleanConstant(; k=false, __overrides = off_overrides))
   # Subcomponent display of type VehicleSystemsComponents.Vehicle.Planar.FabiaCluster
   display_overrides = __pop_subcomponent_overrides!(__overrides, "display")
   push!(__systems, @named display = VehicleSystemsComponents.Vehicle.Planar.FabiaCluster(; dimming=dimming, __overrides = display_overrides))
@@ -147,35 +155,28 @@ Listen-only teaching-CAN receiver with hardwired motor and driver signals for a 
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
-  isnothing(__ovr_filtered_speed__guess) || (__guesses[filtered_speed] = __ovr_filtered_speed__guess)
-  isnothing(__ovr_deceleration__guess) || (__guesses[deceleration] = __ovr_deceleration__guess)
-  isnothing(__ovr_emergency__guess) || (__guesses[emergency] = __ovr_emergency__guess)
-  isnothing(__ovr_hazard_hold__guess) || (__guesses[hazard_hold] = __ovr_hazard_hold__guess)
 
   ### Initialization Equations
-  push!(__initialization_eqs, filtered_speed ~ 0.0)
-  push!(__initialization_eqs, hazard_hold ~ 0.0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
-  push!(__eqs, ModelingToolkit.D_nounits(filtered_speed) ~ (speed_rx.y - filtered_speed) / speed_filter_time)
-  push!(__eqs, deceleration ~ (filtered_speed - speed_rx.y) / speed_filter_time)
-  push!(__eqs, emergency ~ ((deceleration > emergency_deceleration)) & ((filtered_speed > emergency_min_speed)))
-  push!(__eqs, ModelingToolkit.D_nounits(hazard_hold) ~ ifelse(emergency, (1.0 - hazard_hold) / hazard_charge_time, -hazard_hold / hazard_decay_time))
-  push!(__eqs, display.speed ~ max(0.0, speed_rx.y))
-  push!(__eqs, display.rpm ~ min(6000.0, max(0.0, motor_speed * 60.0 / (2.0 * 3.141592653589793) * tachometer_scale)))
-  push!(__eqs, display.coolant ~ 90.0)
-  push!(__eqs, display.hazard ~ hazard_hold > 0.1)
-  push!(__eqs, display.abs_lamp ~ false)
-  push!(__eqs, display.asr_lamp ~ ((abs_rx.y > 0.5)) & ((sin(2.0 * 3.141592653589793 * 2.5 * t) > 0.0)))
-  push!(__eqs, display.brake_lamp ~ false)
-  push!(__eqs, display.mil ~ false)
-  push!(__eqs, display.epc ~ false)
-  push!(__eqs, display.charging ~ false)
-  push!(__eqs, display.airbag_lamp ~ false)
   push!(__eqs, connect(bus, speed_rx.bus, abs_rx.bus))
+  push!(__eqs, connect(speed_rx.y, speed_limit.u, emergency_hazard.speed))
+  push!(__eqs, connect(speed_limit.y, display.speed))
+  push!(__eqs, connect(motor_speed, rpm_gain.u))
+  push!(__eqs, connect(rpm_gain.y, rpm_scale.u))
+  push!(__eqs, connect(rpm_scale.y, rpm_limit.u))
+  push!(__eqs, connect(rpm_limit.y, display.rpm))
+  push!(__eqs, connect(emergency_hazard.y, display.hazard))
+  push!(__eqs, connect(abs_rx.y, abs_active.u))
+  push!(__eqs, connect(abs_active.y, esp_flash.u1))
+  push!(__eqs, connect(flash_sine.y, flash_positive.u))
+  push!(__eqs, connect(flash_positive.y, esp_flash.u2))
+  push!(__eqs, connect(esp_flash.y, display.asr_lamp))
+  push!(__eqs, connect(coolant.y, display.coolant))
+  push!(__eqs, connect(off.y, display.abs_lamp, display.brake_lamp, display.mil, display.epc, display.charging, display.airbag_lamp))
   push!(__eqs, connect(left, display.left))
   push!(__eqs, connect(right, display.right))
 

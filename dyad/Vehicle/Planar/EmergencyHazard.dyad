@@ -1,0 +1,29 @@
+"Filtered emergency deceleration with a charge-and-decay indication hold."
+component EmergencyHazard
+  speed = RealInput() {^speed}
+  y = BooleanOutput() {^y}
+  parameter speed_filter_time::Time = 0.15
+  parameter emergency_deceleration::Real = 6.0
+  parameter emergency_min_speed::Real = 5.0
+  parameter hazard_charge_time::Time = 0.05
+  parameter hazard_decay_time::Time = 3.0
+  variable filtered_speed::Real
+  variable deceleration::Real
+  variable emergency::Boolean
+  variable hazard_hold::Real
+relations
+  initial filtered_speed = 0.0
+  initial hazard_hold = 0.0
+  der(filtered_speed) = (speed - filtered_speed) / speed_filter_time
+  deceleration = (filtered_speed - speed) / speed_filter_time
+  emergency = (deceleration > emergency_deceleration) and (filtered_speed > emergency_min_speed)
+  der(hazard_hold) = ifelse(emergency, (1.0 - hazard_hold) / hazard_charge_time, -hazard_hold / hazard_decay_time)
+  y = hazard_hold > 0.1
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/emergency-hazard.svg"}},
+  "_links": {
+    "speed": {"Dyad": {"placement": {"icon": {"x1": -15, "x2": 15, "y1": 485, "y2": 515}, "diagram": {"x1": 45, "x2": 75, "y1": 485, "y2": 515}}}},
+    "y": {"Dyad": {"placement": {"icon": {"x1": 985, "x2": 1015, "y1": 485, "y2": 515}, "diagram": {"x1": 925, "x2": 955, "y1": 485, "y2": 515}}}}
+  }
+}
+end

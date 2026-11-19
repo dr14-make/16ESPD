@@ -290,51 +290,667 @@ metadata {
 }
 end
 
-"Listen-only teaching-CAN receiver with hardwired motor and driver signals for a Fabia display."
+"Listen-only CAN receiver and signal conditioning for the Fabia dashboard."
 component FabiaClusterNode
-  bus = CanNet()
-  "Machine shaft speed in rad/s"
-  motor_speed = RealInput()
-  left = BooleanInput()
-  right = BooleanInput()
-  throttle = RealInput()
-  "Displayed rpm divided by machine rpm"
+  bus = CanNet() {^bus}
+  motor_speed = RealInput() {^motor_speed}
+  left = BooleanInput() {^left}
+  right = BooleanInput() {^right}
+  throttle = RealInput() {^throttle}
   parameter tachometer_scale::Real = 0.5
   parameter dimming::Real = 1.0
-  "Speed conditioning rejects individual CAN sample steps in the deceleration estimate"
   parameter speed_filter_time::Time = 0.15
   parameter emergency_deceleration::Real = 6.0
-  "Require more than 5 m/s before starting emergency indication"
   parameter emergency_min_speed::Real = 5.0
   parameter hazard_charge_time::Time = 0.05
-  "Decay from a fully charged hold to 0.1 takes about 6.9 seconds"
   parameter hazard_decay_time::Time = 3.0
-  speed_rx = CanRxReal(slot = 1, id = 128)
-  abs_rx = CanRxReal(slot = 5, id = 112)
-  display = FabiaCluster(dimming = dimming)
-  variable filtered_speed::Real
-  variable deceleration::Real
-  variable emergency::Boolean
-  variable hazard_hold::Real
+  speed_rx = FabiaCanRx(slot = 1, id = 128) {^speed_rx}
+  abs_rx = FabiaCanRx(slot = 5, id = 112) {^abs_rx}
+  speed_limit = BlockComponents.Nonlinear.Limiter(y_min = 0.0, y_max = 1e300) {^speed_limit}
+  rpm_gain = BlockComponents.Math.Gain(k = 60.0 / (2.0 * 3.141592653589793)) {^rpm_gain}
+  rpm_scale = BlockComponents.Math.Gain(k = tachometer_scale) {^rpm_scale}
+  rpm_limit = BlockComponents.Nonlinear.Limiter(y_min = 0.0, y_max = 6000.0) {^rpm_limit}
+  emergency_hazard = EmergencyHazard(speed_filter_time = speed_filter_time, emergency_deceleration = emergency_deceleration, emergency_min_speed = emergency_min_speed, hazard_charge_time = hazard_charge_time, hazard_decay_time = hazard_decay_time) {^emergency_hazard}
+  abs_active = BlockComponents.Logical.GreaterThreshold(threshold = 0.5) {^abs_active}
+  flash_sine = BlockComponents.Sources.Sine(amplitude = 1.0, frequency = 2.5) {^flash_sine}
+  flash_positive = BlockComponents.Logical.GreaterThreshold(threshold = 0.0) {^flash_positive}
+  esp_flash = BlockComponents.Logical.And() {^esp_flash}
+  coolant = BlockComponents.Sources.Constant(k = 90.0) {^coolant}
+  off = BlockComponents.Sources.BooleanConstant(k = false) {^off}
+  display = FabiaCluster(dimming = dimming) {^display}
 relations
-  connect(bus, speed_rx.bus, abs_rx.bus)
-  connect(left, display.left)
-  connect(right, display.right)
-  initial filtered_speed = 0.0
-  initial hazard_hold = 0.0
-  der(filtered_speed) = (speed_rx.y - filtered_speed) / speed_filter_time
-  deceleration = (filtered_speed - speed_rx.y) / speed_filter_time
-  emergency = (deceleration > emergency_deceleration) and (filtered_speed > emergency_min_speed)
-  der(hazard_hold) = ifelse(emergency, (1.0 - hazard_hold) / hazard_charge_time, -hazard_hold / hazard_decay_time)
-  display.speed = max(0.0, speed_rx.y)
-  display.rpm = min(6000.0, max(0.0, motor_speed * 60.0 / (2.0 * 3.141592653589793) * tachometer_scale))
-  display.coolant = 90.0
-  display.hazard = hazard_hold > 0.1
-  display.abs_lamp = false
-  display.asr_lamp = (abs_rx.y > 0.5) and (sin(2.0 * 3.141592653589793 * 2.5 * time) > 0.0)
-  display.brake_lamp = false
-  display.mil = false
-  display.epc = false
-  display.charging = false
-  display.airbag_lamp = false
+  connect(bus, speed_rx.bus, abs_rx.bus) {^w1}
+  connect(speed_rx.y, speed_limit.u, emergency_hazard.speed) {^w2}
+  connect(speed_limit.y, display.speed) {^w3}
+  connect(motor_speed, rpm_gain.u) {^w4}
+  connect(rpm_gain.y, rpm_scale.u) {^w5}
+  connect(rpm_scale.y, rpm_limit.u) {^w6}
+  connect(rpm_limit.y, display.rpm) {^w7}
+  connect(emergency_hazard.y, display.hazard) {^w8}
+  connect(abs_rx.y, abs_active.u) {^w9}
+  connect(abs_active.y, esp_flash.u1) {^w10}
+  connect(flash_sine.y, flash_positive.u) {^w11}
+  connect(flash_positive.y, esp_flash.u2) {^w12}
+  connect(esp_flash.y, display.asr_lamp) {^w13}
+  connect(coolant.y, display.coolant) {^w14}
+  connect(off.y, display.abs_lamp, display.brake_lamp, display.mil, display.epc, display.charging, display.airbag_lamp) {^w15}
+  connect(left, display.left) {^w16}
+  connect(right, display.right) {^w17}
+metadata {
+  "Dyad": {
+    "icons": {
+      "default": "dyad://VehicleSystemsComponents/fabia-node.svg"
+    }
+  },
+  "_links": {
+    "abs_active": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 340,
+            "x2": 420,
+            "y1": 480,
+            "y2": 540
+          }
+        }
+      }
+    },
+    "abs_rx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 120,
+            "x2": 205,
+            "y1": 430,
+            "y2": 500
+          }
+        }
+      }
+    },
+    "bus": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 35,
+            "x2": 65,
+            "y1": 15,
+            "y2": 45
+          },
+          "icon": {
+            "rot": 0,
+            "x1": 485,
+            "x2": 515,
+            "y1": -15,
+            "y2": 15
+          }
+        }
+      }
+    },
+    "coolant": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 550,
+            "x2": 630,
+            "y1": 800,
+            "y2": 860
+          }
+        }
+      }
+    },
+    "display": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 870,
+            "x2": 970,
+            "y1": 140,
+            "y2": 790
+          }
+        }
+      }
+    },
+    "emergency_hazard": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 550,
+            "x2": 630,
+            "y1": 400,
+            "y2": 470
+          }
+        }
+      }
+    },
+    "esp_flash": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 550,
+            "x2": 630,
+            "y1": 600,
+            "y2": 670
+          }
+        }
+      }
+    },
+    "flash_positive": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 340,
+            "x2": 420,
+            "y1": 680,
+            "y2": 740
+          }
+        }
+      }
+    },
+    "flash_sine": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 120,
+            "x2": 200,
+            "y1": 680,
+            "y2": 740
+          }
+        }
+      }
+    },
+    "left": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 35,
+            "x2": 65,
+            "y1": 915,
+            "y2": 945
+          },
+          "icon": {
+            "rot": 0,
+            "x1": -15,
+            "x2": 15,
+            "y1": 385,
+            "y2": 415
+          }
+        }
+      }
+    },
+    "motor_speed": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 35,
+            "x2": 65,
+            "y1": 265,
+            "y2": 295
+          },
+          "icon": {
+            "rot": 0,
+            "x1": -15,
+            "x2": 15,
+            "y1": 185,
+            "y2": 215
+          }
+        }
+      }
+    },
+    "off": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 750,
+            "x2": 820,
+            "y1": 870,
+            "y2": 920
+          }
+        }
+      }
+    },
+    "right": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 35,
+            "x2": 65,
+            "y1": 965,
+            "y2": 995
+          },
+          "icon": {
+            "rot": 0,
+            "x1": -15,
+            "x2": 15,
+            "y1": 585,
+            "y2": 615
+          }
+        }
+      }
+    },
+    "rpm_gain": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 120,
+            "x2": 200,
+            "y1": 250,
+            "y2": 310
+          }
+        }
+      }
+    },
+    "rpm_limit": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 550,
+            "x2": 630,
+            "y1": 250,
+            "y2": 310
+          }
+        }
+      }
+    },
+    "rpm_scale": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 340,
+            "x2": 420,
+            "y1": 250,
+            "y2": 310
+          }
+        }
+      }
+    },
+    "speed_limit": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 340,
+            "x2": 420,
+            "y1": 60,
+            "y2": 120
+          }
+        }
+      }
+    },
+    "speed_rx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 120,
+            "x2": 205,
+            "y1": 80,
+            "y2": 150
+          }
+        }
+      }
+    },
+    "throttle": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 35,
+            "x2": 65,
+            "y1": 805,
+            "y2": 835
+          },
+          "icon": {
+            "rot": 0,
+            "x1": -15,
+            "x2": 15,
+            "y1": 785,
+            "y2": 815
+          }
+        }
+      }
+    },
+    "w1": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 50.0,
+                "y": 80.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 50.0,
+                "y": 430.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w10": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 424.0,
+                "y": 614.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w11": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w12": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 546.0,
+                "y": 710.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w13": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 870.0,
+                "y": 635.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w14": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 634.0,
+                "y": 263.5
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w15": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 823.5,
+                "y": 445.5
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 823.5,
+                "y": 536.5
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 4,
+            "M": [
+              {
+                "x": 823.5,
+                "y": 582.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 5,
+            "M": [
+              {
+                "x": 823.5,
+                "y": 627.5
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 6,
+            "M": [
+              {
+                "x": 823.5,
+                "y": 673.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 7,
+            "M": [
+              {
+                "x": 823.5,
+                "y": 718.5
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w16": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 50.0,
+                "y": 358.0
+              },
+              {
+                "x": 870.0,
+                "y": 358.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w17": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 50.0,
+                "y": 354.5
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w2": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 336.0,
+                "y": 115.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 205.0,
+                "y": 435.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w3": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 870.0,
+                "y": 90.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w4": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w5": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w6": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w7": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 870.0,
+                "y": 280.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w8": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 870.0,
+                "y": 435.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w9": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 335.2,
+                "y": 465.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    }
+  }
+}
 end

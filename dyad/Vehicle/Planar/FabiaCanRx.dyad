@@ -1,0 +1,11 @@
+"Fabia receiver icon and port positions for the teaching-CAN receiver."
+component FabiaCanRx
+  extends CanRxReal
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/fabia-node.svg"}},
+  "_links": {
+    "bus": {"Dyad": {"placement": {"icon": {"x1": 485, "x2": 515, "y1": -15, "y2": 15}}}},
+    "y": {"Dyad": {"placement": {"icon": {"x1": 985, "x2": 1015, "y1": 485, "y2": 515}}}}
+  }
+}
+end
