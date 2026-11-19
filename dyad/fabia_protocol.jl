@@ -1,7 +1,7 @@
 # PQ24 drivetrain CAN encoding, independent of transport and wall-clock time.
 module FabiaProtocol
 
-export Bench, Echo, schedule, decode_echo!, setbits!, getbits, xorsum,
+export Bench, frame_schedule, frame!, setbits!, getbits, xorsum,
     motor_1, motor_2, motor_5, bremse_1, bremse_2, bremse_3,
     bsg_kombi, bsg_last, airbag_1, verbauliste_1, systeminfo_1
 
@@ -34,16 +34,15 @@ Base.@kwdef mutable struct Bench
     epc::Bool = false
     glow::Bool = false
     airbag_lamp::Bool = false
-    teeth::Int = 48
-    send_airbag::Bool = true
-    # Without Verbauliste_1 the cluster ignores ABS, ASR, brake and airbag lamp bits.
-    send_installed::Bool = true
     dimming::Int = 0
     pulses::Float64 = 0
+    # Bremse_2 integrates distance over the true interval since its previous frame.
+    last_pulse_t::Float64 = 0
     count::Dict{UInt32,Int} = Dict{UInt32,Int}()
 end
 
 const TIRE = 1.793
+const TEETH = 48
 blink_on(t) = mod(t, 0.66) < 0.33
 motor_1(b, t) = setbits!(zeros(UInt8, 8), 16, 16, round(Int, clamp(b.rpm, 0, 16256) * 4))
 
@@ -79,13 +78,14 @@ function bremse_3(b, t)
     return bytes
 end
 
-function bremse_2(b, t, dt)
+function bremse_2(b, t)
     rev_s = b.kmh / 3.6 / TIRE
-    b.pulses = mod(b.pulses + rev_s * 2 * b.teeth * dt, 2048)
+    b.pulses = mod(b.pulses + rev_s * 2 * TEETH * (t - b.last_pulse_t), 2048)
+    b.last_pulse_t = t
     bytes = zeros(UInt8, 8); bytes[1] = 0x7F
     setbits!(bytes, 9, 15, round(Int, clamp(rev_s, 0, 65.278) / 0.002))
     setbits!(bytes, 40, 11, floor(Int, b.pulses))
-    setbits!(bytes, 56, 6, b.teeth)
+    setbits!(bytes, 56, 6, TEETH)
     return bytes
 end
 
@@ -115,53 +115,19 @@ end
 verbauliste_1(b, t) = UInt8[0x55, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
 systeminfo_1(b, t) = UInt8[0x80, 0x32, 0x40, 0x00, 0x00, 0x41]
 
-"(id, period s, builder); :bremse_2 takes the period as its third argument."
-function schedule(b::Bench)
-    frames = Any[
-        (0x280, 0.010, motor_1), (0x288, 0.010, motor_2), (0x480, 0.020, motor_5),
-        (0x1A0, 0.010, bremse_1), (0x4A0, 0.010, bremse_3), (0x5A0, 0.010, :bremse_2),
-        (0x470, 0.050, bsg_kombi), (0x570, 0.100, bsg_last)]
-    b.send_airbag && push!(frames, (0x050, 0.020, airbag_1))
-    b.send_installed && append!(frames, [(0x5D8, 0.100, verbauliste_1), (0x5D0, 0.100, systeminfo_1)])
-    return frames
-end
+# Without Verbauliste_1 and Systeminfo_1 the cluster ignores the ABS, ASR, brake and airbag lamps.
+"(id, period s, builder) for every frame the cluster needs."
+const frame_schedule = (
+    (0x280, 0.010, motor_1), (0x288, 0.010, motor_2), (0x480, 0.020, motor_5),
+    (0x1A0, 0.010, bremse_1), (0x4A0, 0.010, bremse_3), (0x5A0, 0.010, bremse_2),
+    (0x470, 0.050, bsg_kombi), (0x570, 0.100, bsg_last), (0x050, 0.020, airbag_1),
+    (0x5D8, 0.100, verbauliste_1), (0x5D0, 0.100, systeminfo_1))
 
 "Build one transmitted frame and advance only its message counter."
-function frame!(b::Bench, id, builder, t, interval)
-    bytes = builder === :bremse_2 ? bremse_2(b, t, interval) : builder(b, t)
+function frame!(b::Bench, id, builder, t)
+    bytes = builder(b, t)
     b.count[UInt32(id)] = get(b.count, UInt32(id), 0) + 1
     return bytes
-end
-
-"Cluster echo from Kombi_1 0x320, Kombi_2 0x420 and Kombi_3 0x520."
-Base.@kwdef mutable struct Echo
-    kmh::Float64 = NaN
-    shown_kmh::Float64 = NaN
-    left::Bool = false
-    right::Bool = false
-    coolant::Float64 = NaN
-    fault::Bool = false
-    installed::UInt16 = 0
-    frames::Int = 0
-end
-
-"Decode one payload without transport I/O; irrelevant ids/lengths/multiplexes leave state unchanged."
-function decode_echo!(echo::Echo, id::Integer, d::AbstractVector{UInt8})
-    if id == 0x320 && length(d) == 8
-        raw, shown = getbits(d, 25, 15), getbits(d, 46, 10)
-        echo.kmh = raw == 32767 ? NaN : raw * 0.01
-        echo.shown_kmh = shown == 1023 ? NaN : shown * 0.32
-        echo.left = getbits(d, 44, 1) == 1
-        echo.right = getbits(d, 45, 1) == 1
-        echo.frames += 1
-    elseif id == 0x420 && length(d) == 8
-        raw = getbits(d, 32, 8)
-        echo.coolant = raw == 255 ? NaN : raw * 0.75 - 48
-        echo.fault = getbits(d, 7, 1) == 1
-    elseif id == 0x520 && length(d) == 8 && getbits(d, 14, 2) == 3
-        echo.installed = getbits(d, 0, 14)
-    end
-    return echo
 end
 
 end # module FabiaProtocol

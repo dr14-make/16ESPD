@@ -22,7 +22,7 @@ const FP = CanV.FabiaProtocol
     @test fabia_frame_fingerprint(recording.frames) ==
         "6ffd492aaa990f4b63434674692518b8d699a399d684cca5be32a19f69b4c3a0"
     payloads(id) = [b for (key, b) in recording.frames if key == id]
-    for (id, period, _) in FP.schedule(FP.Bench())
+    for (id, period, _) in FP.frame_schedule
         @test length(payloads(id)) == round(Int, spec.duration / period)
     end
     for (id, start, period) in ((0x1a0, 56, .01), (0x050, 20, .02))
@@ -93,7 +93,7 @@ end
         m = metrics[]
         @test m.sent == 41760
         @test .85 < m.simulated / m.wall < 1.05
-        for (id, period, _) in FP.schedule(FP.Bench())
+        for (id, period, _) in FP.frame_schedule
             @test m.counts[id] == round(Int, 36 / period)
         end
         println("Fabia vcan0 timing: ", m, " real_time_factor=", m.simulated / m.wall)
@@ -111,7 +111,7 @@ end
     @test recording.closed
     @test fabia_frame_fingerprint(recording.frames) ==
         "828fb69876a0ba9f631c3b8651c6902df8be024ebd9e921e4b827afd407a24d0"
-    for (id, period, _) in FP.schedule(FP.Bench())
+    for (id, period, _) in FP.frame_schedule
         @test count(frame -> first(frame) == id, recording.frames) == round(Int, 10 / period)
     end
     speed_frames = [payload for (id, payload) in recording.frames if id == 0x1a0]
