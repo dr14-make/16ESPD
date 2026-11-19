@@ -7,18 +7,24 @@ component PlanarBEVFabiaScriptedDrive
   parameter tachometer_scale::Real = 0.5
   parameter dimming::Real = 1.0
   structural parameter table::String = "dyad://VehicleSystemsComponents/drivers/fabia_drive.csv"
-  driver = VehicleSystemsComponents.ScriptedDriver(table = table)
-  vehicle = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVCanDrive(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
-  adapter = VehicleSystemsComponents.Vehicle.Planar.CanAdapter()
-  cluster = VehicleSystemsComponents.Vehicle.Planar.FabiaClusterNode(tachometer_scale = tachometer_scale, dimming = dimming)
+  driver = VehicleSystemsComponents.Vehicle.Planar.FabiaScriptedDriver(table = table) {^driver}
+  vehicle = VehicleSystemsComponents.Vehicle.Planar.FabiaCanVehicle(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu) {^vehicle}
+  adapter = VehicleSystemsComponents.Vehicle.Planar.FabiaAdapter() {^adapter}
+  cluster = VehicleSystemsComponents.Vehicle.Planar.FabiaClusterNode(tachometer_scale = tachometer_scale, dimming = dimming) {^cluster}
+  indicate_start = BlockComponents.Sources.BooleanStep(startTime = 12.0) {^indicate_start}
+  indicate_end = BlockComponents.Sources.BooleanStep(startTime = 18.0, startValue = true) {^indicate_end}
+  indicate_left = BlockComponents.Logical.And() {^indicate_left}
+  off = BlockComponents.Sources.BooleanConstant(k = false) {^off}
 relations
-  connect(driver.throttle_signal, vehicle.throttle, cluster.throttle)
-  connect(driver.brake_signal, vehicle.brake)
-  connect(driver.steer_signal, vehicle.steer)
-  connect(adapter.bus, vehicle.motion.bus, cluster.bus)
-  cluster.motor_speed = vehicle.drive.drive.machine.w
-  cluster.left = (time >= 12.0) and (time < 18.0)
-  cluster.right = false
+  connect(driver.throttle_signal, vehicle.throttle, cluster.throttle) {^w1}
+  connect(driver.brake_signal, vehicle.brake) {^w2}
+  connect(driver.steer_signal, vehicle.steer) {^w3}
+  connect(adapter.bus, vehicle.bus, cluster.bus) {^w4}
+  connect(vehicle.motor_speed, cluster.motor_speed) {^w5}
+  connect(indicate_start.y, indicate_left.u1) {^w6}
+  connect(indicate_end.y, indicate_left.u2) {^w7}
+  connect(indicate_left.y, cluster.left) {^w8}
+  connect(off.y, cluster.right) {^w9}
 end
 
 "Thirty-six-second Fabia cluster demonstration on physical SocketCAN by default."
@@ -26,4 +32,284 @@ analysis PlanarBEVFabiaDrive
   extends RealtimeDrive(duration = 36, can_interface = "can0", window = false)
   model = PlanarBEVFabiaScriptedDrive(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
   parameter m::Mass = 1500
+metadata {
+  "_links": {
+    "adapter": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 540,
+            "x2": 630,
+            "y1": 580,
+            "y2": 670
+          }
+        }
+      }
+    },
+    "cluster": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 810,
+            "x2": 960,
+            "y1": 150,
+            "y2": 390
+          }
+        }
+      }
+    },
+    "driver": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 60,
+            "x2": 160,
+            "y1": 150,
+            "y2": 310
+          }
+        }
+      }
+    },
+    "indicate_end": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 70,
+            "x2": 170,
+            "y1": 720,
+            "y2": 790
+          }
+        }
+      }
+    },
+    "indicate_left": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 350,
+            "x2": 450,
+            "y1": 720,
+            "y2": 790
+          }
+        }
+      }
+    },
+    "indicate_start": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 70,
+            "x2": 170,
+            "y1": 520,
+            "y2": 590
+          }
+        }
+      }
+    },
+    "off": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 650,
+            "x2": 730,
+            "y1": 820,
+            "y2": 880
+          }
+        }
+      }
+    },
+    "vehicle": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 300,
+            "x2": 450,
+            "y1": 150,
+            "y2": 390
+          }
+        }
+      }
+    },
+    "w1": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 300.0,
+                "y": 182.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 160.0,
+                "y": 122.0
+              },
+              {
+                "x": 810.0,
+                "y": 122.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w2": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 300.0,
+                "y": 230.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w3": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 300.0,
+                "y": 278.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w4": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 450.0,
+                "y": 580.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 802.0,
+                "y": 580.0
+              },
+              {
+                "x": 802.0,
+                "y": 150.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w5": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 810.0,
+                "y": 210.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w6": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 345.0,
+                "y": 555.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w7": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 345.0,
+                "y": 755.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w8": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 455.0,
+                "y": 246.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w9": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 734.0,
+                "y": 294.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    }
+  }
+}
 end

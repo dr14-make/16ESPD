@@ -1,0 +1,36 @@
+"Fabia-local placement for the passive teaching-CAN adapter."
+component FabiaAdapter
+  bus = CanNet() {^bus}
+  tap = CanAdapter()
+relations
+  connect(bus, tap.bus)
+metadata {
+  "Dyad": {
+    "icons": {
+      "default": "dyad://VehicleSystemsComponents/fabia-node.svg"
+    }
+  },
+  "_links": {
+    "bus": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 485,
+            "x2": 515,
+            "y1": 45,
+            "y2": 75
+          },
+          "icon": {
+            "rot": 0,
+            "x1": 485,
+            "x2": 515,
+            "y1": -15,
+            "y2": 15
+          }
+        }
+      }
+    }
+  }
+}
+end

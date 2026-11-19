@@ -1,0 +1,73 @@
+"Fabia-local driver port placement."
+component FabiaScriptedDriver
+  extends VehicleSystemsComponents.ScriptedDriver
+metadata {
+  "Dyad": {
+    "icons": {
+      "default": "dyad://VehicleSystemsComponents/fabia-driver.svg"
+    }
+  },
+  "_links": {
+    "brake_signal": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 925,
+            "x2": 955,
+            "y1": 485,
+            "y2": 515
+          },
+          "icon": {
+            "rot": 0,
+            "x1": 985,
+            "x2": 1015,
+            "y1": 485,
+            "y2": 515
+          }
+        }
+      }
+    },
+    "steer_signal": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 925,
+            "x2": 955,
+            "y1": 785,
+            "y2": 815
+          },
+          "icon": {
+            "rot": 0,
+            "x1": 985,
+            "x2": 1015,
+            "y1": 785,
+            "y2": 815
+          }
+        }
+      }
+    },
+    "throttle_signal": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 925,
+            "x2": 955,
+            "y1": 185,
+            "y2": 215
+          },
+          "icon": {
+            "rot": 0,
+            "x1": 985,
+            "x2": 1015,
+            "y1": 185,
+            "y2": 215
+          }
+        }
+      }
+    }
+  }
+}
+end

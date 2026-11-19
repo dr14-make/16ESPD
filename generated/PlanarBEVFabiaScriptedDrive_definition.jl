@@ -92,18 +92,30 @@ Fabia demonstration: acceleration, indicated left lane change, cruise and emerge
   __constants = Any[]
 
   ### Components
-  # Subcomponent driver of type VehicleSystemsComponents.ScriptedDriver
+  # Subcomponent driver of type VehicleSystemsComponents.Vehicle.Planar.FabiaScriptedDriver
   driver_overrides = __pop_subcomponent_overrides!(__overrides, "driver")
-  push!(__systems, @named driver = VehicleSystemsComponents.ScriptedDriver(; table=table, __overrides = driver_overrides))
-  # Subcomponent vehicle of type VehicleSystemsComponents.Vehicle.Planar.PlanarBEVCanDrive
+  push!(__systems, @named driver = VehicleSystemsComponents.Vehicle.Planar.FabiaScriptedDriver(; table=table, __overrides = driver_overrides))
+  # Subcomponent vehicle of type VehicleSystemsComponents.Vehicle.Planar.FabiaCanVehicle
   vehicle_overrides = __pop_subcomponent_overrides!(__overrides, "vehicle")
-  push!(__systems, @named vehicle = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVCanDrive(; m=m, esp_on=esp_on, abs_on=abs_on, mu=mu, __overrides = vehicle_overrides))
-  # Subcomponent adapter of type VehicleSystemsComponents.Vehicle.Planar.CanAdapter
+  push!(__systems, @named vehicle = VehicleSystemsComponents.Vehicle.Planar.FabiaCanVehicle(; m=m, esp_on=esp_on, abs_on=abs_on, mu=mu, __overrides = vehicle_overrides))
+  # Subcomponent adapter of type VehicleSystemsComponents.Vehicle.Planar.FabiaAdapter
   adapter_overrides = __pop_subcomponent_overrides!(__overrides, "adapter")
-  push!(__systems, @named adapter = VehicleSystemsComponents.Vehicle.Planar.CanAdapter(; __overrides = adapter_overrides))
+  push!(__systems, @named adapter = VehicleSystemsComponents.Vehicle.Planar.FabiaAdapter(; __overrides = adapter_overrides))
   # Subcomponent cluster of type VehicleSystemsComponents.Vehicle.Planar.FabiaClusterNode
   cluster_overrides = __pop_subcomponent_overrides!(__overrides, "cluster")
   push!(__systems, @named cluster = VehicleSystemsComponents.Vehicle.Planar.FabiaClusterNode(; tachometer_scale=tachometer_scale, dimming=dimming, __overrides = cluster_overrides))
+  # Subcomponent indicate_start of type BlockComponents.Sources.BooleanStep
+  indicate_start_overrides = __pop_subcomponent_overrides!(__overrides, "indicate_start")
+  push!(__systems, @named indicate_start = BlockComponents.Sources.BooleanStep(; startTime=Float64(12.0), __overrides = indicate_start_overrides))
+  # Subcomponent indicate_end of type BlockComponents.Sources.BooleanStep
+  indicate_end_overrides = __pop_subcomponent_overrides!(__overrides, "indicate_end")
+  push!(__systems, @named indicate_end = BlockComponents.Sources.BooleanStep(; startTime=Float64(18.0), startValue=true, __overrides = indicate_end_overrides))
+  # Subcomponent indicate_left of type BlockComponents.Logical.And
+  indicate_left_overrides = __pop_subcomponent_overrides!(__overrides, "indicate_left")
+  push!(__systems, @named indicate_left = BlockComponents.Logical.And(; __overrides = indicate_left_overrides))
+  # Subcomponent off of type BlockComponents.Sources.BooleanConstant
+  off_overrides = __pop_subcomponent_overrides!(__overrides, "off")
+  push!(__systems, @named off = BlockComponents.Sources.BooleanConstant(; k=false, __overrides = off_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -116,13 +128,15 @@ Fabia demonstration: acceleration, indicated left lane change, cruise and emerge
   __assertions = []
 
   ### Equations
-  push!(__eqs, cluster.motor_speed ~ vehicle.drive.drive.machine.w)
-  push!(__eqs, cluster.left ~ ((t >= 12.0)) & ((t < 18.0)))
-  push!(__eqs, cluster.right ~ false)
   push!(__eqs, connect(driver.throttle_signal, vehicle.throttle, cluster.throttle))
   push!(__eqs, connect(driver.brake_signal, vehicle.brake))
   push!(__eqs, connect(driver.steer_signal, vehicle.steer))
-  push!(__eqs, connect(adapter.bus, vehicle.motion.bus, cluster.bus))
+  push!(__eqs, connect(adapter.bus, vehicle.bus, cluster.bus))
+  push!(__eqs, connect(vehicle.motor_speed, cluster.motor_speed))
+  push!(__eqs, connect(indicate_start.y, indicate_left.u1))
+  push!(__eqs, connect(indicate_end.y, indicate_left.u2))
+  push!(__eqs, connect(indicate_left.y, cluster.left))
+  push!(__eqs, connect(off.y, cluster.right))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

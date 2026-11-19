@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   FabiaCanRx(; name, n, slot, id, slot_index, slot_count, __overrides)
+   FabiaCanRx(; name, slot, id, __overrides)
 
 Fabia receiver icon and port positions for the teaching-CAN receiver.
 
@@ -13,24 +13,15 @@ Fabia receiver icon and port positions for the teaching-CAN receiver.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `n`         |                          | --  |   16 |
 | `slot`         |                          | --  |   1 |
-| `id`         |                          | --  |   256 |
-| `slot_index`         |                          | --  |   slot |
-| `slot_count`         |                          | --  |   n |
+| `id`         |                          | --  |   128 |
 
 ## Connectors
 
  * `bus` - ([`CanNet`](@ref))
  * `y` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
-
-## Variables
-
-| Name         | Description                         | Units  | 
-| ------------ | ----------------------------------- | ------ |
-| `wire`         |                          | --  |
 """
-@component function FabiaCanRx(; name = nothing, var"n"=16, var"slot"=1, var"id"=256, var"slot_count"=nothing, var"slot_index"=nothing, __overrides = Dict{String, Any}())
+@component function FabiaCanRx(; name = nothing, var"slot"=1, var"id"=128, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -49,15 +40,8 @@ Fabia receiver icon and port positions for the teaching-CAN receiver.
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
-  haskey(__overrides, "n") && (n = pop!(__overrides, "n"))
   haskey(__overrides, "slot") && (slot = pop!(__overrides, "slot"))
   haskey(__overrides, "id") && (id = pop!(__overrides, "id"))
-  haskey(__overrides, "slot_count") && (slot_count = pop!(__overrides, "slot_count"))
-  haskey(__overrides, "slot_index") && (slot_index = pop!(__overrides, "slot_index"))
-
-  ### Deferred keyword defaults (defaults referencing other keyword arguments)
-  isnothing(slot_count) && (slot_count = n)
-  isnothing(slot_index) && (slot_index = slot)
 
   ### Structural Parameters (functions)
 
@@ -72,15 +56,6 @@ Fabia receiver icon and port positions for the teaching-CAN receiver.
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
-  __local__id = id
-  append!(__params, @parameters (id::Int))
-  __dyad_seed_parameter!(__initial_conditions, __bindings, id, __local__id)
-  __local__slot_index = slot_index
-  append!(__params, @parameters (slot_index::Int))
-  __dyad_seed_parameter!(__initial_conditions, __bindings, slot_index, __local__slot_index)
-  __local__slot_count = slot_count
-  append!(__params, @parameters (slot_count::Int))
-  __dyad_seed_parameter!(__initial_conditions, __bindings, slot_count, __local__slot_count)
 
   ### Final Parameters (assignments)
 
@@ -88,24 +63,22 @@ Fabia receiver icon and port positions for the teaching-CAN receiver.
   append!(__vars, @variables (y(t)::Real), [output = true])
 
   ### Variables (declarations)
-  append!(__vars, @variables (wire(t)::Real))
 
   ### Variables (assignments)
-  __ovr_wire = pop!(__overrides, "wire", nothing); isnothing(__ovr_wire) || push!(__eqs, wire ~ __ovr_wire)
-  __ovr_wire__initial = pop!(__overrides, "wire.initial", nothing); isnothing(__ovr_wire__initial) || (__initial_conditions[wire] = __ovr_wire__initial)
-  __ovr_wire__guess = pop!(__overrides, "wire.guess", nothing)
 
   ### Constants
   __constants = Any[]
 
   ### Components
-  push!(__systems, @named bus = VehicleSystemsComponents.Vehicle.Planar.CanNet(; n=n))
+  push!(__systems, @named bus = VehicleSystemsComponents.Vehicle.Planar.CanNet())
+  # Subcomponent receiver of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
+  receiver_overrides = __pop_subcomponent_overrides!(__overrides, "receiver")
+  push!(__systems, @named receiver = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=slot, id=id, __overrides = receiver_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
-  isnothing(__ovr_wire__guess) || (__guesses[wire] = __ovr_wire__guess)
 
   ### Initialization Equations
 
@@ -113,17 +86,8 @@ Fabia receiver icon and port positions for the teaching-CAN receiver.
   __assertions = []
 
   ### Equations
-  push!(__eqs, y ~ wire)
-
-  ### Control Structures
-  for k in 1:n
-    push!(__eqs, getindex(getproperty(bus, :i), k) ~ 0)
-    push!(__eqs, getindex(getproperty(bus, :j), k) ~ 0)
-  end
-  if (slot >= 1) && (slot <= n)
-    push!(__eqs, wire ~ getindex(getproperty(bus, :v), slot))
-  else
-  end
+  push!(__eqs, connect(bus, receiver.bus))
+  push!(__eqs, connect(receiver.y, y))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
