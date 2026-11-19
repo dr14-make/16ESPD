@@ -29,15 +29,6 @@ By-hand planar BEV whose speed, motor speed and ABS activity drive a Fabia clust
 | `emergency_min_speed`         |                          | --  |   5.0 |
 | `hazard_charge_time`         |                          | s  |   0.05 |
 | `hazard_decay_time`         | Decay from a fully charged hold to 0.1 takes about 6.9 seconds                         | s  |   3.0 |
-
-## Variables
-
-| Name         | Description                         | Units  | 
-| ------------ | ----------------------------------- | ------ |
-| `filtered_speed`         |                          | --  |
-| `deceleration`         |                          | --  |
-| `emergency`         |                          | --  |
-| `hazard_hold`         |                          | --  |
 """
 @component function PlanarBEVByHandFabia(; name = nothing, var"road_file"="dyad://VehicleSystemsComponents/roads/uniform_mu.crg", var"height_file"="dyad://VehicleSystemsComponents/roads/flat_z.crg", var"default_grip"=Float64(1.0), var"default_height"=Float64(0.0), var"blend_width"=Float64(2.0), var"m"=Float64(1500.0), var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"mu"=Float64(1.0), var"tachometer_scale"=0.5, var"dimming"=Float64(1.0), var"speed_filter_time"=0.15, var"emergency_deceleration"=Float64(6.0), var"emergency_min_speed"=Float64(5.0), var"hazard_charge_time"=0.05, var"hazard_decay_time"=Float64(3.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -127,76 +118,88 @@ By-hand planar BEV whose speed, motor speed and ABS activity drive a Fabia clust
   ### Final Path Parameters
 
   ### Variables (declarations)
-  append!(__vars, @variables (filtered_speed(t)::Real))
-  append!(__vars, @variables (deceleration(t)::Real))
-  append!(__vars, @variables (emergency(t)::Bool))
-  append!(__vars, @variables (hazard_hold(t)::Real))
 
   ### Variables (assignments)
-  __ovr_filtered_speed = pop!(__overrides, "filtered_speed", nothing); isnothing(__ovr_filtered_speed) || push!(__eqs, filtered_speed ~ __ovr_filtered_speed)
-  __ovr_filtered_speed__initial = pop!(__overrides, "filtered_speed.initial", nothing); isnothing(__ovr_filtered_speed__initial) || (__initial_conditions[filtered_speed] = __ovr_filtered_speed__initial)
-  __ovr_filtered_speed__guess = pop!(__overrides, "filtered_speed.guess", nothing)
-  __ovr_deceleration = pop!(__overrides, "deceleration", nothing); isnothing(__ovr_deceleration) || push!(__eqs, deceleration ~ __ovr_deceleration)
-  __ovr_deceleration__initial = pop!(__overrides, "deceleration.initial", nothing); isnothing(__ovr_deceleration__initial) || (__initial_conditions[deceleration] = __ovr_deceleration__initial)
-  __ovr_deceleration__guess = pop!(__overrides, "deceleration.guess", nothing)
-  __ovr_emergency = pop!(__overrides, "emergency", nothing); isnothing(__ovr_emergency) || push!(__eqs, emergency ~ __ovr_emergency)
-  __ovr_emergency__initial = pop!(__overrides, "emergency.initial", nothing); isnothing(__ovr_emergency__initial) || (__initial_conditions[emergency] = __ovr_emergency__initial)
-  __ovr_emergency__guess = pop!(__overrides, "emergency.guess", nothing)
-  __ovr_hazard_hold = pop!(__overrides, "hazard_hold", nothing); isnothing(__ovr_hazard_hold) || push!(__eqs, hazard_hold ~ __ovr_hazard_hold)
-  __ovr_hazard_hold__initial = pop!(__overrides, "hazard_hold.initial", nothing); isnothing(__ovr_hazard_hold__initial) || (__initial_conditions[hazard_hold] = __ovr_hazard_hold__initial)
-  __ovr_hazard_hold__guess = pop!(__overrides, "hazard_hold.guess", nothing)
 
   ### Constants
   __constants = Any[]
 
   ### Components
-  # Subcomponent driver of type VehicleSystemsComponents.HumanDriver
+  # Subcomponent driver of type VehicleSystemsComponents.Vehicle.Planar.FabiaHumanDriver
   driver_overrides = __pop_subcomponent_overrides!(__overrides, "driver")
-  push!(__systems, @named driver = VehicleSystemsComponents.HumanDriver(; __overrides = driver_overrides))
-  # Subcomponent vehicle of type VehicleSystemsComponents.Vehicle.Planar.RoadBEVDrive
+  push!(__systems, @named driver = VehicleSystemsComponents.Vehicle.Planar.FabiaHumanDriver(; __overrides = driver_overrides))
+  # Subcomponent vehicle of type VehicleSystemsComponents.Vehicle.Planar.FabiaRoadVehicle
   vehicle_overrides = __pop_subcomponent_overrides!(__overrides, "vehicle")
-  push!(__systems, @named vehicle = VehicleSystemsComponents.Vehicle.Planar.RoadBEVDrive(; road_file=road_file, height_file=height_file, default_grip=default_grip, default_height=default_height, blend_width=blend_width, m=m, esp_on=esp_on, abs_on=abs_on, mu=mu, __overrides = vehicle_overrides))
+  push!(__systems, @named vehicle = VehicleSystemsComponents.Vehicle.Planar.FabiaRoadVehicle(; road_file=road_file, height_file=height_file, default_grip=default_grip, default_height=default_height, blend_width=blend_width, m=m, esp_on=esp_on, abs_on=abs_on, mu=mu, __overrides = vehicle_overrides))
   # Subcomponent display of type VehicleSystemsComponents.Vehicle.Planar.FabiaCluster
   display_overrides = __pop_subcomponent_overrides!(__overrides, "display")
   push!(__systems, @named display = VehicleSystemsComponents.Vehicle.Planar.FabiaCluster(; dimming=dimming, __overrides = display_overrides))
+  # Subcomponent speed_limit of type BlockComponents.Nonlinear.Limiter
+  speed_limit_overrides = __pop_subcomponent_overrides!(__overrides, "speed_limit")
+  push!(__systems, @named speed_limit = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0.0), y_max=Float64(1e+300), __overrides = speed_limit_overrides))
+  # Subcomponent motor_abs of type BlockComponents.Math.Abs
+  motor_abs_overrides = __pop_subcomponent_overrides!(__overrides, "motor_abs")
+  push!(__systems, @named motor_abs = BlockComponents.Math.Abs(; __overrides = motor_abs_overrides))
+  # Subcomponent rpm_gain of type BlockComponents.Math.Gain
+  rpm_gain_overrides = __pop_subcomponent_overrides!(__overrides, "rpm_gain")
+  push!(__systems, @named rpm_gain = BlockComponents.Math.Gain(; k=60.0 / (2.0 * 3.141592653589793), __overrides = rpm_gain_overrides))
+  # Subcomponent rpm_scale of type BlockComponents.Math.Gain
+  rpm_scale_overrides = __pop_subcomponent_overrides!(__overrides, "rpm_scale")
+  push!(__systems, @named rpm_scale = BlockComponents.Math.Gain(; k=tachometer_scale, __overrides = rpm_scale_overrides))
+  # Subcomponent rpm_limit of type BlockComponents.Nonlinear.Limiter
+  rpm_limit_overrides = __pop_subcomponent_overrides!(__overrides, "rpm_limit")
+  push!(__systems, @named rpm_limit = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0.0), y_max=Float64(6000.0), __overrides = rpm_limit_overrides))
+  # Subcomponent emergency_hazard of type VehicleSystemsComponents.Vehicle.Planar.EmergencyHazard
+  emergency_hazard_overrides = __pop_subcomponent_overrides!(__overrides, "emergency_hazard")
+  push!(__systems, @named emergency_hazard = VehicleSystemsComponents.Vehicle.Planar.EmergencyHazard(; speed_filter_time=speed_filter_time, emergency_deceleration=emergency_deceleration, emergency_min_speed=emergency_min_speed, hazard_charge_time=hazard_charge_time, hazard_decay_time=hazard_decay_time, __overrides = emergency_hazard_overrides))
+  # Subcomponent abs_active of type BlockComponents.Logical.GreaterThreshold
+  abs_active_overrides = __pop_subcomponent_overrides!(__overrides, "abs_active")
+  push!(__systems, @named abs_active = BlockComponents.Logical.GreaterThreshold(; threshold=0.5, __overrides = abs_active_overrides))
+  # Subcomponent flash_sine of type BlockComponents.Sources.Sine
+  flash_sine_overrides = __pop_subcomponent_overrides!(__overrides, "flash_sine")
+  push!(__systems, @named flash_sine = BlockComponents.Sources.Sine(; amplitude=Float64(1.0), frequency=2.5, __overrides = flash_sine_overrides))
+  # Subcomponent flash_positive of type BlockComponents.Logical.GreaterThreshold
+  flash_positive_overrides = __pop_subcomponent_overrides!(__overrides, "flash_positive")
+  push!(__systems, @named flash_positive = BlockComponents.Logical.GreaterThreshold(; threshold=Float64(0.0), __overrides = flash_positive_overrides))
+  # Subcomponent esp_flash of type BlockComponents.Logical.And
+  esp_flash_overrides = __pop_subcomponent_overrides!(__overrides, "esp_flash")
+  push!(__systems, @named esp_flash = BlockComponents.Logical.And(; __overrides = esp_flash_overrides))
+  # Subcomponent coolant of type BlockComponents.Sources.Constant
+  coolant_overrides = __pop_subcomponent_overrides!(__overrides, "coolant")
+  push!(__systems, @named coolant = BlockComponents.Sources.Constant(; k=Float64(90.0), __overrides = coolant_overrides))
+  # Subcomponent off of type BlockComponents.Sources.BooleanConstant
+  off_overrides = __pop_subcomponent_overrides!(__overrides, "off")
+  push!(__systems, @named off = BlockComponents.Sources.BooleanConstant(; k=false, __overrides = off_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
-  isnothing(__ovr_filtered_speed__guess) || (__guesses[filtered_speed] = __ovr_filtered_speed__guess)
-  isnothing(__ovr_deceleration__guess) || (__guesses[deceleration] = __ovr_deceleration__guess)
-  isnothing(__ovr_emergency__guess) || (__guesses[emergency] = __ovr_emergency__guess)
-  isnothing(__ovr_hazard_hold__guess) || (__guesses[hazard_hold] = __ovr_hazard_hold__guess)
 
   ### Initialization Equations
-  push!(__initialization_eqs, filtered_speed ~ 0.0)
-  push!(__initialization_eqs, hazard_hold ~ 0.0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
-  push!(__eqs, ModelingToolkit.D_nounits(filtered_speed) ~ (vehicle.motion.vx - filtered_speed) / speed_filter_time)
-  push!(__eqs, deceleration ~ (filtered_speed - vehicle.motion.vx) / speed_filter_time)
-  push!(__eqs, emergency ~ ((deceleration > emergency_deceleration)) & ((filtered_speed > emergency_min_speed)))
-  push!(__eqs, ModelingToolkit.D_nounits(hazard_hold) ~ ifelse(emergency, (1.0 - hazard_hold) / hazard_charge_time, -hazard_hold / hazard_decay_time))
-  push!(__eqs, display.speed ~ max(0.0, vehicle.motion.vx))
-  push!(__eqs, display.rpm ~ min(6000.0, max(0.0, abs(vehicle.drive.machine.w) * 60.0 / (2.0 * 3.141592653589793) * tachometer_scale)))
-  push!(__eqs, display.coolant ~ 90.0)
-  push!(__eqs, display.left ~ false)
-  push!(__eqs, display.right ~ false)
-  push!(__eqs, display.hazard ~ hazard_hold > 0.1)
-  push!(__eqs, display.abs_lamp ~ false)
-  push!(__eqs, display.asr_lamp ~ ((vehicle.ecu.front_active > 0.5)) & ((sin(2.0 * 3.141592653589793 * 2.5 * t) > 0.0)))
-  push!(__eqs, display.brake_lamp ~ false)
-  push!(__eqs, display.mil ~ false)
-  push!(__eqs, display.epc ~ false)
-  push!(__eqs, display.charging ~ false)
-  push!(__eqs, display.airbag_lamp ~ false)
   push!(__eqs, connect(driver.throttle_signal, vehicle.throttle))
   push!(__eqs, connect(driver.brake_signal, vehicle.brake))
   push!(__eqs, connect(driver.steer_signal, vehicle.steer))
+  push!(__eqs, connect(vehicle.speed, speed_limit.u, emergency_hazard.speed))
+  push!(__eqs, connect(speed_limit.y, display.speed))
+  push!(__eqs, connect(vehicle.motor_speed, motor_abs.u))
+  push!(__eqs, connect(motor_abs.y, rpm_gain.u))
+  push!(__eqs, connect(rpm_gain.y, rpm_scale.u))
+  push!(__eqs, connect(rpm_scale.y, rpm_limit.u))
+  push!(__eqs, connect(rpm_limit.y, display.rpm))
+  push!(__eqs, connect(emergency_hazard.y, display.hazard))
+  push!(__eqs, connect(vehicle.abs_active, abs_active.u))
+  push!(__eqs, connect(abs_active.y, esp_flash.u1))
+  push!(__eqs, connect(flash_sine.y, flash_positive.u))
+  push!(__eqs, connect(flash_positive.y, esp_flash.u2))
+  push!(__eqs, connect(esp_flash.y, display.asr_lamp))
+  push!(__eqs, connect(coolant.y, display.coolant))
+  push!(__eqs, connect(off.y, display.left, display.right, display.abs_lamp, display.brake_lamp, display.mil, display.epc, display.charging, display.airbag_lamp))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
