@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 994 420" width="994" height="420">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .wave { stroke: #16202c; stroke-width: 3.5; fill: none; stroke-linejoin: round; }
+    .busw { stroke: #1f5fa8; stroke-width: 4.5; fill: none; stroke-linejoin: round; }
+    .off { stroke: #9aa7b4; stroke-width: 2.5; stroke-dasharray: 6 5; fill: none; }
+    .slot { stroke: #d0d7de; stroke-width: 1; }
+    .lost { fill: #fbe3d4; }
+    .x { stroke: #d55e00; stroke-width: 4; }
+    .t { font-size: 22px; font-weight: 600; }
+    .acc { font-size: 22px; font-weight: 700; fill: #1f5fa8; }
+    .hd { font-size: 18px; fill: #4a5a6b; }
+    .bit { font-size: 19px; }
+    .dim { font-size: 19px; fill: #9aa7b4; }
+    .note { font-size: 19px; fill: #d55e00; font-weight: 600; }
+    .lbl { font-size: 18px; fill: #4a5a6b; }
+  </style>
+  <line class="slot" x1="210" y1="36" x2="210" y2="370"/>
+  <line class="slot" x1="268" y1="36" x2="268" y2="370"/>
+  <line class="slot" x1="326" y1="36" x2="326" y2="370"/>
+  <line class="slot" x1="384" y1="36" x2="384" y2="370"/>
+  <line class="slot" x1="442" y1="36" x2="442" y2="370"/>
+  <line class="slot" x1="500" y1="36" x2="500" y2="370"/>
+  <line class="slot" x1="558" y1="36" x2="558" y2="370"/>
+  <line class="slot" x1="616" y1="36" x2="616" y2="370"/>
+  <line class="slot" x1="674" y1="36" x2="674" y2="370"/>
+  <line class="slot" x1="732" y1="36" x2="732" y2="370"/>
+  <line class="slot" x1="790" y1="36" x2="790" y2="370"/>
+  <line class="slot" x1="848" y1="36" x2="848" y2="370"/>
+  <line class="slot" x1="906" y1="36" x2="906" y2="370"/>
+  <line class="slot" x1="964" y1="36" x2="964" y2="370"/>
+  <text x="239.0" y="28" text-anchor="middle" class="hd">SOF</text>
+  <text x="297.0" y="28" text-anchor="middle" class="hd">10</text>
+  <text x="355.0" y="28" text-anchor="middle" class="hd">9</text>
+  <text x="413.0" y="28" text-anchor="middle" class="hd">8</text>
+  <text x="471.0" y="28" text-anchor="middle" class="hd">7</text>
+  <text x="529.0" y="28" text-anchor="middle" class="hd">6</text>
+  <text x="587.0" y="28" text-anchor="middle" class="hd">5</text>
+  <text x="645.0" y="28" text-anchor="middle" class="hd">4</text>
+  <text x="703.0" y="28" text-anchor="middle" class="hd">3</text>
+  <text x="761.0" y="28" text-anchor="middle" class="hd">2</text>
+  <text x="819.0" y="28" text-anchor="middle" class="hd">1</text>
+  <text x="877.0" y="28" text-anchor="middle" class="hd">0</text>
+  <text x="935.0" y="28" text-anchor="middle" class="hd">RTR</text>
+  <text x="20" y="28" class="hd">identifier bit</text>
+  <text x="20" y="77" class="t">ECU 3 · 711h</text>
+  <rect class="lost" x="268" y="44" width="58" height="72"/>
+  <path class="wave" d="M210 90 H268 V50 H326"/>
+  <path class="off" d="M326 50 H964"/>
+  <path class="x" d="M285.0 48 L309.0 72 M309.0 48 L285.0 72"/>
+  <text x="336" y="78" class="note">sent 1, read 0: stops</text>
+  <text x="239.0" y="110" text-anchor="middle" class="bit">0</text>
+  <text x="297.0" y="110" text-anchor="middle" class="bit">1</text>
+  <text x="355.0" y="110" text-anchor="middle" class="dim">1</text>
+  <text x="413.0" y="110" text-anchor="middle" class="dim">1</text>
+  <text x="471.0" y="110" text-anchor="middle" class="dim">0</text>
+  <text x="529.0" y="110" text-anchor="middle" class="dim">0</text>
+  <text x="587.0" y="110" text-anchor="middle" class="dim">0</text>
+  <text x="645.0" y="110" text-anchor="middle" class="dim">1</text>
+  <text x="703.0" y="110" text-anchor="middle" class="dim">0</text>
+  <text x="761.0" y="110" text-anchor="middle" class="dim">0</text>
+  <text x="819.0" y="110" text-anchor="middle" class="dim">0</text>
+  <text x="877.0" y="110" text-anchor="middle" class="dim">1</text>
+  <text x="935.0" y="110" text-anchor="middle" class="dim">0</text>
+  <text x="20" y="162" class="t">ECU 1 · 2A0h</text>
+  <rect class="lost" x="442" y="129" width="58" height="72"/>
+  <path class="wave" d="M210 175 H268 H326 V135 H384 V175 H442 V135 H500"/>
+  <path class="off" d="M500 135 H964"/>
+  <path class="x" d="M459.0 133 L483.0 157 M483.0 133 L459.0 157"/>
+  <text x="510" y="163" class="note">sent 1, read 0: stops</text>
+  <text x="239.0" y="195" text-anchor="middle" class="bit">0</text>
+  <text x="297.0" y="195" text-anchor="middle" class="bit">0</text>
+  <text x="355.0" y="195" text-anchor="middle" class="bit">1</text>
+  <text x="413.0" y="195" text-anchor="middle" class="bit">0</text>
+  <text x="471.0" y="195" text-anchor="middle" class="bit">1</text>
+  <text x="529.0" y="195" text-anchor="middle" class="dim">0</text>
+  <text x="587.0" y="195" text-anchor="middle" class="dim">1</text>
+  <text x="645.0" y="195" text-anchor="middle" class="dim">0</text>
+  <text x="703.0" y="195" text-anchor="middle" class="dim">0</text>
+  <text x="761.0" y="195" text-anchor="middle" class="dim">0</text>
+  <text x="819.0" y="195" text-anchor="middle" class="dim">0</text>
+  <text x="877.0" y="195" text-anchor="middle" class="dim">0</text>
+  <text x="935.0" y="195" text-anchor="middle" class="dim">0</text>
+  <text x="20" y="247" class="t">ECU 2 · 265h</text>
+  <path class="wave" d="M210 260 H268 H326 V220 H384 V260 H442 H500 V220 H558 H616 V260 H674 H732 V220 H790 V260 H848 V220 H906 V260 H964"/>
+  <text x="239.0" y="280" text-anchor="middle" class="bit">0</text>
+  <text x="297.0" y="280" text-anchor="middle" class="bit">0</text>
+  <text x="355.0" y="280" text-anchor="middle" class="bit">1</text>
+  <text x="413.0" y="280" text-anchor="middle" class="bit">0</text>
+  <text x="471.0" y="280" text-anchor="middle" class="bit">0</text>
+  <text x="529.0" y="280" text-anchor="middle" class="bit">1</text>
+  <text x="587.0" y="280" text-anchor="middle" class="bit">1</text>
+  <text x="645.0" y="280" text-anchor="middle" class="bit">0</text>
+  <text x="703.0" y="280" text-anchor="middle" class="bit">0</text>
+  <text x="761.0" y="280" text-anchor="middle" class="bit">1</text>
+  <text x="819.0" y="280" text-anchor="middle" class="bit">0</text>
+  <text x="877.0" y="280" text-anchor="middle" class="bit">1</text>
+  <text x="935.0" y="280" text-anchor="middle" class="bit">0</text>
+  <text x="20" y="342" class="acc">bus</text>
+  <path class="busw" d="M210 355 H268 H326 V315 H384 V355 H442 H500 V315 H558 H616 V355 H674 H732 V315 H790 V355 H848 V315 H906 V355 H964"/>
+  <text x="239.0" y="375" text-anchor="middle" class="bit" font-weight="700">0</text>
+  <text x="297.0" y="375" text-anchor="middle" class="bit" font-weight="700">0</text>
+  <text x="355.0" y="375" text-anchor="middle" class="bit" font-weight="700">1</text>
+  <text x="413.0" y="375" text-anchor="middle" class="bit" font-weight="700">0</text>
+  <text x="471.0" y="375" text-anchor="middle" class="bit" font-weight="700">0</text>
+  <text x="529.0" y="375" text-anchor="middle" class="bit" font-weight="700">1</text>
+  <text x="587.0" y="375" text-anchor="middle" class="bit" font-weight="700">1</text>
+  <text x="645.0" y="375" text-anchor="middle" class="bit" font-weight="700">0</text>
+  <text x="703.0" y="375" text-anchor="middle" class="bit" font-weight="700">0</text>
+  <text x="761.0" y="375" text-anchor="middle" class="bit" font-weight="700">1</text>
+  <text x="819.0" y="375" text-anchor="middle" class="bit" font-weight="700">0</text>
+  <text x="877.0" y="375" text-anchor="middle" class="bit" font-weight="700">1</text>
+  <text x="935.0" y="375" text-anchor="middle" class="bit" font-weight="700">0</text>
+  <text x="20" y="412" class="lbl">0 dominant, low · 1 recessive, high · the bus is 0 when any node sends 0</text>
+</svg>

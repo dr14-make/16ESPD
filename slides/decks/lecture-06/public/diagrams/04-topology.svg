@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" width="1200" height="300">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .ecu { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .end { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .bus { stroke: #16202c; stroke-width: 4; fill: none; stroke-linejoin: round; }
+    .branch { stroke: #d55e00; stroke-width: 4; fill: none; }
+    .dot { fill: #16202c; }
+    .t { font-size: 20px; font-weight: 600; }
+    .e { font-size: 15px; }
+    .r { font-size: 15px; font-weight: 700; fill: #1f5fa8; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+  </style>
+
+  <!-- linear -->
+  <text x="195" y="28" text-anchor="middle" class="t">linear</text>
+  <path class="bus" d="M80 150 H310"/>
+  <path class="bus" d="M130 150 V110 M195 150 V190 M260 150 V110"/>
+  <circle class="dot" cx="130" cy="150" r="5"/><circle class="dot" cx="195" cy="150" r="5"/><circle class="dot" cx="260" cy="150" r="5"/>
+  <rect class="end" x="20" y="128" width="60" height="44" rx="4"/><text x="50" y="155" text-anchor="middle" class="e">ECU</text>
+  <text x="50" y="122" text-anchor="middle" class="r">R</text>
+  <rect class="end" x="310" y="128" width="60" height="44" rx="4"/><text x="340" y="155" text-anchor="middle" class="e">ECU</text>
+  <text x="340" y="122" text-anchor="middle" class="r">R</text>
+  <rect class="ecu" x="100" y="66" width="60" height="44" rx="4"/><text x="130" y="93" text-anchor="middle" class="e">ECU</text>
+  <rect class="ecu" x="165" y="190" width="60" height="44" rx="4"/><text x="195" y="217" text-anchor="middle" class="e">ECU</text>
+  <rect class="ecu" x="230" y="66" width="60" height="44" rx="4"/><text x="260" y="93" text-anchor="middle" class="e">ECU</text>
+  <text x="195" y="275" text-anchor="middle" class="lbl">ends terminated, stubs short</text>
+
+  <!-- mixed: the bus loops through some ECUs -->
+  <line x1="405" y1="20" x2="405" y2="285" stroke="#d0d7de" stroke-width="1.5"/>
+  <text x="600" y="28" text-anchor="middle" class="t">mixed</text>
+  <path class="bus" d="M490 150 H515 V100 M535 100 V150 H610 V190 M630 190 V150 H705"/>
+  <path class="bus" d="M670 150 V110"/>
+  <circle class="dot" cx="670" cy="150" r="5"/>
+  <rect class="end" x="430" y="128" width="60" height="44" rx="4"/><text x="460" y="155" text-anchor="middle" class="e">ECU</text>
+  <text x="460" y="122" text-anchor="middle" class="r">R</text>
+  <rect class="ecu" x="495" y="56" width="60" height="44" rx="4"/><text x="525" y="83" text-anchor="middle" class="e">ECU</text>
+  <rect class="ecu" x="590" y="190" width="60" height="44" rx="4"/><text x="620" y="217" text-anchor="middle" class="e">ECU</text>
+  <rect class="ecu" x="640" y="66" width="60" height="44" rx="4"/><text x="670" y="93" text-anchor="middle" class="e">ECU</text>
+  <rect class="end" x="705" y="128" width="60" height="44" rx="4"/><text x="735" y="155" text-anchor="middle" class="e">ECU</text>
+  <text x="735" y="122" text-anchor="middle" class="r">R</text>
+  <text x="600" y="275" text-anchor="middle" class="lbl">in and out of the ECU: no stub at all</text>
+
+  <!-- star -->
+  <line x1="800" y1="20" x2="800" y2="285" stroke="#d0d7de" stroke-width="1.5"/>
+  <text x="1000" y="28" text-anchor="middle" class="t">star</text>
+  <path class="branch" d="M1000 150 L880 80 M1000 150 L1120 80 M1000 150 L870 160 M1000 150 L1130 160 M1000 150 V210"/>
+  <circle class="dot" cx="1000" cy="150" r="7"/>
+  <rect class="end" x="845" y="56" width="60" height="44" rx="4"/><text x="875" y="83" text-anchor="middle" class="e">ECU</text>
+  <text x="875" y="50" text-anchor="middle" class="r">R</text>
+  <rect class="ecu" x="1095" y="56" width="60" height="44" rx="4"/><text x="1125" y="83" text-anchor="middle" class="e">ECU</text>
+  <rect class="ecu" x="815" y="140" width="60" height="44" rx="4"/><text x="845" y="167" text-anchor="middle" class="e">ECU</text>
+  <rect class="ecu" x="1125" y="140" width="60" height="44" rx="4"/><text x="1155" y="167" text-anchor="middle" class="e">ECU</text>
+  <rect class="end" x="970" y="210" width="60" height="44" rx="4"/><text x="1000" y="237" text-anchor="middle" class="e">ECU</text>
+  <text x="1048" y="236" class="r">R</text>
+  <text x="1000" y="282" text-anchor="middle" class="lbl">every branch reflects</text>
+</svg>

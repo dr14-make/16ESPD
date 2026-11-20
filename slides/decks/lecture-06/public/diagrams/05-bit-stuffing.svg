@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 950 270" width="950" height="270">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .wave { stroke: #16202c; stroke-width: 3.5; fill: none; stroke-linejoin: round; }
+    .gap { stroke: #9aa7b4; stroke-width: 2; stroke-dasharray: 4 4; fill: none; }
+    .slot { stroke: #d0d7de; stroke-width: 1; }
+    .stuffbg { fill: #fbe3d4; }
+    .run { stroke: #1f5fa8; stroke-width: 2; fill: none; }
+    .t { font-size: 19px; font-weight: 600; }
+    .bit { font-size: 17px; }
+    .sb { font-size: 17px; font-weight: 700; fill: #d55e00; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+    .acc { font-size: 15px; fill: #1f5fa8; font-weight: 600; }
+  </style>
+  <line class="slot" x1="150" y1="30" x2="150" y2="230"/>
+  <line class="slot" x1="202" y1="30" x2="202" y2="230"/>
+  <line class="slot" x1="254" y1="30" x2="254" y2="230"/>
+  <line class="slot" x1="306" y1="30" x2="306" y2="230"/>
+  <line class="slot" x1="358" y1="30" x2="358" y2="230"/>
+  <line class="slot" x1="410" y1="30" x2="410" y2="230"/>
+  <line class="slot" x1="462" y1="30" x2="462" y2="230"/>
+  <line class="slot" x1="514" y1="30" x2="514" y2="230"/>
+  <line class="slot" x1="566" y1="30" x2="566" y2="230"/>
+  <line class="slot" x1="618" y1="30" x2="618" y2="230"/>
+  <line class="slot" x1="670" y1="30" x2="670" y2="230"/>
+  <line class="slot" x1="722" y1="30" x2="722" y2="230"/>
+  <line class="slot" x1="774" y1="30" x2="774" y2="230"/>
+  <line class="slot" x1="826" y1="30" x2="826" y2="230"/>
+  <line class="slot" x1="878" y1="30" x2="878" y2="230"/>
+  <line class="slot" x1="930" y1="30" x2="930" y2="230"/>
+  <rect class="stuffbg" x="826" y="128" width="52" height="102"/>
+  <rect class="stuffbg" x="410" y="128" width="52" height="102"/>
+  <text x="20" y="72" class="t">data</text>
+  <path class="wave" d="M150 90 H202 H254 H306 H358 H410 M462 90 H514 H566 V40 H618 H670 H722 H774 H826 M878 40 H930"/>
+  <path class="gap" d="M826 40 H878"/>
+  <path class="gap" d="M410 90 H462"/>
+  <text x="176.0" y="118" text-anchor="middle" class="bit">0</text>
+  <text x="228.0" y="118" text-anchor="middle" class="bit">0</text>
+  <text x="280.0" y="118" text-anchor="middle" class="bit">0</text>
+  <text x="332.0" y="118" text-anchor="middle" class="bit">0</text>
+  <text x="384.0" y="118" text-anchor="middle" class="bit">0</text>
+  <text x="488.0" y="118" text-anchor="middle" class="bit">0</text>
+  <text x="540.0" y="118" text-anchor="middle" class="bit">0</text>
+  <text x="592.0" y="118" text-anchor="middle" class="bit">1</text>
+  <text x="644.0" y="118" text-anchor="middle" class="bit">1</text>
+  <text x="696.0" y="118" text-anchor="middle" class="bit">1</text>
+  <text x="748.0" y="118" text-anchor="middle" class="bit">1</text>
+  <text x="800.0" y="118" text-anchor="middle" class="bit">1</text>
+  <text x="904.0" y="118" text-anchor="middle" class="bit">1</text>
+  <text x="20" y="182" class="t">on the wire</text>
+  <path class="wave" d="M150 200 H202 H254 H306 H358 H410 V150 H462 V200 H514 H566 V150 H618 H670 H722 H774 H826 V200 H878 V150 H930"/>
+  <text x="176.0" y="224" text-anchor="middle" class="bit">0</text>
+  <text x="228.0" y="224" text-anchor="middle" class="bit">0</text>
+  <text x="280.0" y="224" text-anchor="middle" class="bit">0</text>
+  <text x="332.0" y="224" text-anchor="middle" class="bit">0</text>
+  <text x="384.0" y="224" text-anchor="middle" class="bit">0</text>
+  <text x="436.0" y="224" text-anchor="middle" class="sb">1</text>
+  <text x="488.0" y="224" text-anchor="middle" class="bit">0</text>
+  <text x="540.0" y="224" text-anchor="middle" class="bit">0</text>
+  <text x="592.0" y="224" text-anchor="middle" class="bit">1</text>
+  <text x="644.0" y="224" text-anchor="middle" class="bit">1</text>
+  <text x="696.0" y="224" text-anchor="middle" class="bit">1</text>
+  <text x="748.0" y="224" text-anchor="middle" class="bit">1</text>
+  <text x="800.0" y="224" text-anchor="middle" class="bit">1</text>
+  <text x="852.0" y="224" text-anchor="middle" class="sb">0</text>
+  <text x="904.0" y="224" text-anchor="middle" class="bit">1</text>
+  <path class="run" d="M154 140 V134 H406 V140"/>
+  <path class="run" d="M570 140 V134 H822 V140"/>
+  <text x="852.0" y="148" text-anchor="middle" class="sb" font-size="13">stuff</text>
+  <text x="436.0" y="148" text-anchor="middle" class="sb" font-size="13">stuff</text>
+  <text x="280.0" y="252" text-anchor="middle" class="acc">five equal bits</text>
+  <text x="696.0" y="252" text-anchor="middle" class="acc">five equal bits</text>
+  <text x="20" y="252" class="lbl">0 dominant, low</text>
+</svg>
