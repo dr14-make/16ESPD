@@ -279,6 +279,7 @@ component FabiaClusterNode
   speed_rx = FabiaCanRx(slot = 1, id = 128) {^speed_rx}
   abs_rx = FabiaCanRx(slot = 5, id = 112) {^abs_rx}
   speed_limit = BlockComponents.Nonlinear.Limiter(y_min = 0.0, y_max = 1e300) {^speed_limit}
+  motor_abs = BlockComponents.Math.Abs() {^motor_abs}
   rpm_gain = BlockComponents.Math.Gain(k = 60.0 / (2.0 * 3.141592653589793)) {^rpm_gain}
   rpm_scale = BlockComponents.Math.Gain(k = tachometer_scale) {^rpm_scale}
   rpm_limit = BlockComponents.Nonlinear.Limiter(y_min = 0.0, y_max = 6000.0) {^rpm_limit}
@@ -294,7 +295,8 @@ relations
   connect(bus, speed_rx.bus, abs_rx.bus) {^w1}
   connect(speed_rx.y, speed_limit.u, emergency_hazard.speed) {^w2}
   connect(speed_limit.y, display.speed) {^w3}
-  connect(motor_speed, rpm_gain.u) {^w4}
+  connect(motor_speed, motor_abs.u) {^w4}
+  connect(motor_abs.y, rpm_gain.u) {^motor_rpm_wire}
   connect(rpm_gain.y, rpm_scale.u) {^w5}
   connect(rpm_scale.y, rpm_limit.u) {^w6}
   connect(rpm_limit.y, display.rpm) {^w7}
@@ -898,6 +900,29 @@ metadata {
                 "y": 465.0
               }
             ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "motor_abs": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 65,
+            "x2": 100,
+            "y1": 250,
+            "y2": 310
+          }
+        }
+      }
+    },
+    "motor_rpm_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
             "S": 1
           }
         ]

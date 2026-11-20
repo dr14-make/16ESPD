@@ -115,6 +115,9 @@ Listen-only CAN receiver and signal conditioning for the Fabia dashboard.
   # Subcomponent speed_limit of type BlockComponents.Nonlinear.Limiter
   speed_limit_overrides = __pop_subcomponent_overrides!(__overrides, "speed_limit")
   push!(__systems, @named speed_limit = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0.0), y_max=Float64(1e+300), __overrides = speed_limit_overrides))
+  # Subcomponent motor_abs of type BlockComponents.Math.Abs
+  motor_abs_overrides = __pop_subcomponent_overrides!(__overrides, "motor_abs")
+  push!(__systems, @named motor_abs = BlockComponents.Math.Abs(; __overrides = motor_abs_overrides))
   # Subcomponent rpm_gain of type BlockComponents.Math.Gain
   rpm_gain_overrides = __pop_subcomponent_overrides!(__overrides, "rpm_gain")
   push!(__systems, @named rpm_gain = BlockComponents.Math.Gain(; k=60.0 / (2.0 * 3.141592653589793), __overrides = rpm_gain_overrides))
@@ -163,7 +166,8 @@ Listen-only CAN receiver and signal conditioning for the Fabia dashboard.
   push!(__eqs, connect(bus, speed_rx.bus, abs_rx.bus))
   push!(__eqs, connect(speed_rx.y, speed_limit.u, emergency_hazard.speed))
   push!(__eqs, connect(speed_limit.y, display.speed))
-  push!(__eqs, connect(motor_speed, rpm_gain.u))
+  push!(__eqs, connect(motor_speed, motor_abs.u))
+  push!(__eqs, connect(motor_abs.y, rpm_gain.u))
   push!(__eqs, connect(rpm_gain.y, rpm_scale.u))
   push!(__eqs, connect(rpm_scale.y, rpm_limit.u))
   push!(__eqs, connect(rpm_limit.y, display.rpm))
