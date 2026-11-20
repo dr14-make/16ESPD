@@ -30,14 +30,13 @@ function can_stream_layout(model)
     adapters = filter(b -> b.kind == :adapter, blocks)
     frames = Any[]
     if !isempty(adapters)
-        append!(frames, Vehicle.Planar.can_layout(model).frames)
+        append!(frames, filter(f -> !hasproperty(f, :cluster_path), Vehicle.Planar._can_wire_frames(blocks)))
     end
     isempty(clusters) && isempty(adapters) && throw(ArgumentError("CAN: model has no CanAdapter or FabiaCluster"))
+    Vehicle.Planar._can_wire_frames(blocks)
     for c in clusters, (id, period, builder) in FabiaProtocol.frame_schedule
         push!(frames, (; id, period, builder, cluster = c, signals = []))
     end
-    ids = [f.id for f in frames]
-    length(unique(ids)) == length(ids) || throw(ArgumentError("CAN: overlapping frame ids on one interface"))
     return (; frames, clusters)
 end
 

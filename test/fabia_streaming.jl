@@ -129,4 +129,29 @@ end
         [:dashboard, :display]
 end
 
+@testset "Fabia physical bus schedule" begin
+    P = CanV.Vehicle.Planar
+    model = CanV.PlanarBEVFabiaScriptedDrive(name = :model)
+    layout = P.can_layout(model)
+    schedule = P.can_schedule(model)
+    @test length(layout.frames) == 18
+    @test schedule.load ≈ .2436
+    @test P.check_can(model) === model
+    for (id, period, builder) in FP.frame_schedule
+        frame = only(filter(f -> f.id == id, layout.frames))
+        @test frame.period == period
+        @test frame.bytes == length(builder(FP.Bench(), 0.))
+    end
+    standalone = P.can_schedule(P.FabiaCluster(name = :display))
+    @test length(standalone.frames) == 11
+    @test standalone.load ≈ .1691
+    duplicate = ModelingToolkit.System(ModelingToolkit.Equation[], ModelingToolkit.t_nounits, [], [];
+        systems = [P.FabiaCluster(name = :a), P.FabiaCluster(name = :b)], name = :duplicate)
+    @test_throws ArgumentError P.can_layout(duplicate)
+    @test_throws ArgumentError P.can_schedule(duplicate)
+    @test_throws ArgumentError P.check_can(duplicate)
+    @test_throws ArgumentError CanV.can_stream_layout(duplicate)
+    println("Fabia physical schedule: ", schedule)
+end
+
 include("fabia_canvas.jl")

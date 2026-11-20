@@ -166,7 +166,9 @@ For example: `check_can(Can10msStopBench(name = :model))` before `Can10msStop()`
 Checks apply separately to each connected bus, including buses inside ECU assemblies.
 """
 function check_can(model)
-    blocks = filter(b -> b.kind ∉ (:adapter, :fabia), _can_tree(model))
+    tree = _can_tree(model)
+    any(b -> b.kind == :fabia, tree) && _can_wire_frames(tree)
+    blocks = filter(b -> b.kind ∉ (:adapter, :fabia), tree)
     for b in blocks
         b.kind == :termination && continue
         1 <= b.slot <= b.n || throw(ArgumentError("CAN: $(b.name) uses slot $(b.slot), outside 1:$(b.n)."))
@@ -234,10 +236,39 @@ Unlike `check_can`, a layout may group multiple distinct slots under one identif
 function can_layout(model)
     blocks = _can_tree(model)
     adapters = filter(b -> b.kind == :adapter, blocks)
-    length(adapters) == 1 || throw(ArgumentError("CAN: can_layout requires exactly one CanAdapter; found $(length(adapters))."))
-    adapter = only(adapters)
-    frames = _can_frames(filter(b -> b.kind == :tx && b.net == adapter.net, blocks))
-    (; bus = replace(adapter.net, "₊" => "."), adapter = adapter.name, frames)
+    clusters = filter(b -> b.kind == :fabia, blocks)
+    if isempty(clusters)
+        length(adapters) == 1 || throw(ArgumentError("CAN: can_layout requires exactly one CanAdapter; found $(length(adapters))."))
+    else
+        length(adapters) <= 1 || throw(ArgumentError("CAN: can_layout requires at most one CanAdapter with a FabiaCluster."))
+    end
+    adapter = isempty(adapters) ? nothing : only(adapters)
+    frames = _can_wire_frames(blocks)
+    (; bus = isnothing(adapter) ? "fabia" : replace(adapter.net, "₊" => "."),
+       adapter = isnothing(adapter) ? nothing : adapter.name, frames)
+
+end
+
+# All physical sources share the one interface selected by the realtime transport.
+function _can_wire_frames(blocks)
+    adapters = filter(b -> b.kind == :adapter, blocks)
+    clusters = filter(b -> b.kind == :fabia, blocks)
+    if isempty(clusters)
+        txs = filter(b -> b.kind == :tx && (isempty(adapters) || any(a -> a.net == b.net, adapters)), blocks)
+        return _can_frames(txs)
+    end
+    length(adapters) <= 1 || throw(ArgumentError("CAN: multiple adapters on one interface"))
+    bus = isempty(adapters) ? "fabia" : replace(only(adapters).net, "₊" => ".")
+    frames = _can_frames(filter(b -> b.kind == :tx && !isempty(adapters) && b.net == only(adapters).net, blocks))
+    protocol = parentmodule(parentmodule(@__MODULE__)).FabiaProtocol
+    for cluster in clusters, (id, period, builder) in protocol.frame_schedule
+        bytes = length(builder(protocol.Bench(), 0.0))
+        push!(frames, (; bus, id = Int(id), period, bits = 8bytes, bytes, signals = NamedTuple[],
+            cluster_path = cluster.path, builder))
+    end
+    ids = [f.id for f in frames]
+    length(unique(ids)) == length(ids) || throw(ArgumentError("CAN: overlapping frame ids on one interface"))
+    sort!(frames; by = f -> f.id)
 end
 
 """
@@ -288,9 +319,10 @@ metadata used by `can_encode` and `can_schedule`. Units are unspecified.
 """
 function can_dbc(model, path)
     layout = can_layout(model)
+    teaching = filter(f -> !hasproperty(f, :cluster_path), layout.frames)
     open(path, "w") do io
         println(io, "VERSION \"\"\n\nNS_ :\n\nBS_:\n\nBU_: Dyad\n")
-        for f in layout.frames
+        for f in teaching
             println(io, "BO_ $(f.id) Frame_$(f.id): $(f.bytes) Dyad")
             for (i, s) in enumerate(f.signals)
                 # Index suffix also guarantees uniqueness after identifier sanitization.
@@ -302,7 +334,7 @@ function can_dbc(model, path)
             println(io)
         end
         println(io, "BA_DEF_ BO_ \"GenMsgCycleTime\" INT 0 2147483647;")
-        for f in layout.frames
+        for f in teaching
             println(io, "BA_ \"GenMsgCycleTime\" BO_ $(f.id) $(round(BigInt, 1000 * f.period));")
         end
     end
@@ -321,7 +353,9 @@ Frames missing their period return `Inf`; this is a report, not a scheduling con
 """
 function can_schedule(model; bitrate = 500_000)
     bitrate > 0 || throw(ArgumentError("CAN bitrate must be positive."))
-    layouts = _can_frames(filter(b -> b.kind == :tx, _can_tree(model)))
+    tree = _can_tree(model)
+    layouts = any(b -> b.kind == :fabia, tree) ? _can_wire_frames(tree) :
+        _can_frames(filter(b -> b.kind == :tx, tree))
     reports = NamedTuple[]
     for bus in unique(f.bus for f in layouts)
         frames = NamedTuple[]
