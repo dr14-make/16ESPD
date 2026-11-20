@@ -44,8 +44,9 @@ because everyone is in one room speaking one language, with ISO-TP (4) and UDS s
 the diagnostic exceptions. A second slide says which layers the Dyad blocks model: `CanTx`/`CanRx`
 model 6–7 and the message period, `can_schedule` summarizes 2, nothing models 1.
 
-**S3 — Hands-on: add a signal, then read off its cost.** Students wire a `CanTx`/`CanRx` pair,
-fix a `check_can` error, sweep the message period against the ABS stop and read the bus load.
+**S3 — Hands-on: put the car on the bus, then read off its cost.** Students rewire the
+point-to-point car onto one bus and add one message by hand, fix a `check_can` error, sweep the
+message period against the ABS stop and read the bus load (§ Live build).
 
 **S4 — Streaming is a lecturer demo.** The CAN blocks are plain discrete-time models and run in
 Dyad Studio on any OS with no adapter. SocketCAN streaming (`candump`, the Fabia cluster) needs
@@ -113,21 +114,25 @@ shows it as a warning against reading period sweeps as monotone.
 
 | Step | Students do | Checkpoint |
 |---|---|---|
-| 1 | move the car's ECU-to-ECU wires onto the bus: `CanTxReal` at each sender, `CanRxReal` at each receiver, choose slot, ID and scaling; count the wires before and after | ideal bus reproduces the point-to-point stop |
-| 2 | run `check_can` on a starter with a planted mistake, read the sentence, fix it | model compiles; `check_can` silent |
+| 1a | open the point-to-point car, delete the ECU-to-ECU wires, connect every ECU node to one bus; count the wires before and after | ideal bus reproduces the point-to-point stop; the wire count |
+| 1b | inside one node, add the pedal-request message by hand: `CanTxReal` at the sender, `CanRxReal` at the receiver, choosing slot, ID, period and scale | the car drives as before on the ideal bus |
+| 2 | run `check_can` on a starter where two ECUs transmit on the same slot; read the sentence, fix it | model compiles; `check_can` silent |
 | 3 | switch to the realistic bus and sweep the chassis period 10 / 20 / 40 ms | stopping distance per period, remeasured after S7 |
-| 4 | run `can_schedule`; then halve the bit rate or add a fast message | bus load at 500 kbit/s; how the load and response times move |
+| 4 | in the Julia REPL, run `can_schedule` on the car; then halve the bit rate or add a fast message and run it again | bus load at 500 kbit/s; how the load and response times move |
 
 Lecturer demo at the end: the scripted drive streamed to `candump`, then the real Škoda Fabia
 cluster over PCAN-USB, with its counters and checksums.
 
-Open for the build:
-- how many of the bus links step 1 leaves for students to wire, and whether they sit at the car's
-  top level or inside a node (the nodes in `CanNodes.dyad` own their `CanTx`/`CanRx` today);
-- which mistake step 2 plants: a missing `CanTermination`, two transmitters on one slot, or a
-  receiver on a slot nobody sends;
-- whether step 4 runs from a notebook or the Julia REPL, since `can_schedule` is not a Studio
-  analysis.
+Settled for the build:
+- **Step 1** works at two levels: the whole architecture first (ECU nodes with both wired ports
+  and a bus port, so the rewiring is visible on the car's canvas), then one message by hand, so
+  the scaling from section 06 is practiced. Wiring every message by hand would take most of the
+  session.
+- **Step 2** plants one mistake, two ECUs on one slot: a real design error (two ECUs claiming one
+  identifier), unlike a missing `CanTermination`, which students would confuse with the 120 Ω
+  resistor.
+- **Step 4** runs in the REPL, as Lecture 5's build plots there; no notebook, no custom Studio
+  analysis for a report-only function.
 
 ## Car change (Dyad agent)
 
@@ -143,6 +148,9 @@ the agent picks it up.
 4. The `ideal` bus still reproduces a point-to-point car running the same estimator.
 5. Remeasure the reality-anchor table and the 10 / 20 / 40 ms sweep; regenerate the DBC and the
    `can_schedule` report; keep the Fabia cluster's speed source pointed at the new message.
+6. The hands-on in `dyad/HandsOn06/`: ECU nodes with both wired ports and a bus port; a step 1a
+   starter (point-to-point wiring), a step 1b starter (bus, pedal request missing), a step 2
+   starter (two transmitters on one slot); reference solutions; tests pinning every checkpoint.
 
 ## Theory deck
 
