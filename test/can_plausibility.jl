@@ -55,11 +55,11 @@ end
         push!(distances, _can_stop(run, symbolic_container(run).vehicle))
     end
     @test all(d -> d >= di, distances)
-    @test dr ≈ 26.839 atol = 1e-3
-    @test di ≈ 26.839 atol = 1e-3
-    @test distances[1] ≈ 27.496 atol = 1e-3
-    @test distances[2] ≈ 28.415 atol = 1e-3
-    @test distances[3] ≈ 28.210 atol = 1e-3
+    @test dr ≈ 28.243516518 atol = 1e-3
+    @test di ≈ 28.243516518 atol = 1e-3
+    @test distances[1] ≈ 29.472357181 atol = 1e-3
+    @test distances[2] ≈ 34.019602734 atol = 1e-3
+    @test distances[3] ≈ 36.686223409 atol = 1e-3
     println("CAN stopping distance (m): ", (; reference = dr, ideal = di, ms10 = distances[1], ms20 = distances[2], ms40 = distances[3], max_speed_deviation = deviation))
 end
 
@@ -68,6 +68,8 @@ end
     meta = JSON.parse(match(r"(?s)metadata (\{.*\})\nend", source).captures[1])["_links"]
     connections = collect(eachmatch(r"connect\(([^)]*)\)\s*\{\^(\w+)\}", source))
     @test length(connections) == 23
+    # Six of these are mechanical; the shared CAN net counts as one signal connection.
+    @test count(c -> !(c.captures[2] in ("w7", "w12", "w13", "w14", "w15", "w27")), connections) == 17
     unresolved = String[]
     definitions = Dict{String,Any}()
     connectors = Set{String}()

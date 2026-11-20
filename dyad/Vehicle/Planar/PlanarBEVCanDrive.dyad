@@ -44,17 +44,18 @@ component PlanarBEVCanDrive
   "Steering actuator response"
   steering_response = BlockComponents.Continuous.FirstOrder(T = T_actuator) {^steering_response}
   robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot() {^robot}
+  pedal = CanPedalNode(ideal = ideal) {^pedal}
   blend = CanBlendNode(ideal = ideal, friction_period = friction_period, torque_period = torque_period, ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade) {^blend}
   drive = CanDriveNode(ideal = ideal, ratio = ratio, P_aux = P_aux) {^drive}
   differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
   mount = RotationalComponents.Components.Fixed() {^mount}
-  ecu = CanBrakeNode(ideal = ideal, abs_period = abs_period, esp_on = esp_on, abs_on = abs_on, radius = radius, T_full = T_full) {^ecu}
+  ecu = CanBrakeNode(ideal = ideal, speed_period = speed_period, abs_period = abs_period, esp_on = esp_on, abs_on = abs_on, radius = radius, T_full = T_full) {^ecu}
   car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(mu_scale_fl = mu, mu_scale_fr = mu, mu_scale_rl = mu, mu_scale_rr = mu, m = m, radius = radius, tau_max = T_full) {^car}
   roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
   flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
-  motion = CanSensorNode(ideal = ideal, speed_period = speed_period, steering_period = steering_period, yaw_period = yaw_period, dashboard_period = dashboard_period) {^motion}
+  motion = CanSensorNode(ideal = ideal, steering_period = steering_period, yaw_period = yaw_period, dashboard_period = dashboard_period) {^motion}
   cluster = CanClusterNode() {^cluster}
-  slips = VehicleSystemsComponents.Vehicle.Planar.BusSlip() {^slips}
+  wheel_speeds = VehicleSystemsComponents.Vehicle.Planar.BusWheelSpeed() {^wheel_speeds}
   structural parameter ideal::Boolean = false
   structural parameter chassis_period::Real = 0.01
   structural parameter speed_period::Real = chassis_period
@@ -65,12 +66,12 @@ component PlanarBEVCanDrive
   structural parameter torque_period::Real = 0.02
   structural parameter dashboard_period::Real = 0.1
 relations
-  connect(motion.bus, blend.bus, ecu.bus, drive.bus, cluster.bus) {^network}
-  connect(car.bus, motion.measurements, slips.bus) {^wbus}
+  connect(motion.bus, blend.bus, ecu.bus, drive.bus, cluster.bus, pedal.bus) {^network}
+  connect(car.bus, motion.measurements, wheel_speeds.bus) {^wbus}
   connect(throttle, pedals.u1) {^w1}
   connect(brake, pedals.u2) {^w2}
   connect(pedals.y, torque_response.u) {^w3}
-  connect(torque_response.y, blend.tau_ref) {^w4}
+  connect(torque_response.y, pedal.tau_ref) {^w4}
   connect(steer, steering_response.u) {^w5}
   connect(steering_response.y, robot.delta_sw_ref) {^w6}
   connect(robot.steering, car.steering) {^w7}
@@ -78,10 +79,10 @@ relations
   connect(differential.flange_left, car.spin_fl) {^w13}
   connect(differential.flange_right, car.spin_fr) {^w14}
   connect(drive.support, mount.spline) {^w15}
-  connect(slips.kappa_fl, ecu.kappa_fl) {^w18}
-  connect(slips.kappa_fr, ecu.kappa_fr) {^w19}
-  connect(slips.kappa_rl, ecu.kappa_rl) {^w20}
-  connect(slips.kappa_rr, ecu.kappa_rr) {^w21}
+  connect(wheel_speeds.omega_fl, ecu.omega_fl) {^w18}
+  connect(wheel_speeds.omega_fr, ecu.omega_fr) {^w19}
+  connect(wheel_speeds.omega_rl, ecu.omega_rl) {^w20}
+  connect(wheel_speeds.omega_rr, ecu.omega_rr) {^w21}
   connect(ecu.tau_fl, car.tau_fl) {^w22}
   connect(ecu.tau_fr, car.tau_fr) {^w23}
   connect(ecu.tau_rl, car.tau_rl) {^w24}
@@ -108,42 +109,90 @@ relations
   initial torque_response.x = 0.0
   initial steering_response.x = 0.0
 metadata {
+  "Dyad": {
+    "icons": {
+      "default": "dyad://VehicleSystemsComponents/Vehicle/Planar/PlanarCar.svg"
+    },
+    "labels": [
+      {
+        "attrs": {
+          "font-size": "24"
+        },
+        "label": "$(instance)",
+        "layer": "diagram",
+        "x": 500,
+        "y": 20
+      }
+    ]
+  },
   "_links": {
-    "pedals": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 100,
-            "x2": 180,
-            "y1": 200,
-            "y2": 280
-          }
-        }
-      }
-    },
-    "torque_response": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 200,
-            "x2": 280,
-            "y1": 200,
-            "y2": 280
-          }
-        }
-      }
-    },
     "blend": {
       "Dyad": {
         "placement": {
           "diagram": {
             "rot": 0,
-            "x1": 300,
-            "x2": 400,
+            "x1": 180.0,
+            "x2": 240.0,
             "y1": 200,
             "y2": 100
+          }
+        }
+      }
+    },
+    "brake": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": -9.0,
+            "x2": 9.0,
+            "y1": 249,
+            "y2": 279
+          },
+          "icon": {
+            "x1": -50,
+            "x2": 50,
+            "y1": 450,
+            "y2": 550
+          }
+        }
+      }
+    },
+    "car": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 450.0,
+            "x2": 570.0,
+            "y1": 500,
+            "y2": 700
+          }
+        }
+      }
+    },
+    "cluster": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 90,
+            "x1": 870.0,
+            "x2": 930.0,
+            "y1": 100,
+            "y2": 200
+          }
+        }
+      }
+    },
+    "differential": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 486.0,
+            "x2": 534.0,
+            "y1": 430,
+            "y2": 350
           }
         }
       }
@@ -153,8 +202,47 @@ metadata {
         "placement": {
           "diagram": {
             "rot": 90,
-            "x1": 850,
-            "x2": 950,
+            "x1": 510.0,
+            "x2": 570.0,
+            "y1": 100,
+            "y2": 200
+          }
+        }
+      }
+    },
+    "ecu": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 300.0,
+            "x2": 420.0,
+            "y1": 100,
+            "y2": 700
+          }
+        }
+      }
+    },
+    "flat": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 510.0,
+            "x2": 534.0,
+            "y1": 760,
+            "y2": 800
+          }
+        }
+      }
+    },
+    "motion": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 750.0,
+            "x2": 810.0,
             "y1": 100,
             "y2": 200
           }
@@ -166,101 +254,111 @@ metadata {
         "placement": {
           "diagram": {
             "rot": 0,
-            "x1": 1000,
-            "x2": 1060,
+            "x1": 600.0,
+            "x2": 636.0,
             "y1": 120,
             "y2": 180
           }
         }
       }
     },
-    "differential": {
+    "network": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 780,
+                "y": 60
+              },
+              {
+                "x": 210,
+                "y": 60
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 780,
+                "y": 60
+              },
+              {
+                "x": 360,
+                "y": 60
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 4,
+            "M": [
+              {
+                "x": 780,
+                "y": 60
+              },
+              {
+                "x": 540,
+                "y": 60
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 5,
+            "M": [
+              {
+                "x": 780,
+                "y": 60
+              },
+              {
+                "x": 900,
+                "y": 60
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 6,
+            "M": [
+              {
+                "x": 780,
+                "y": 60
+              },
+              {
+                "x": 90,
+                "y": 60
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "pedal": {
       "Dyad": {
         "placement": {
           "diagram": {
-            "rot": 0,
-            "x1": 810,
-            "x2": 890,
-            "y1": 430,
-            "y2": 350
+            "x1": 60,
+            "x2": 120,
+            "y1": 310,
+            "y2": 370
           }
         }
       }
     },
-    "steering_response": {
+    "pedals": {
       "Dyad": {
         "placement": {
           "diagram": {
             "rot": 0,
-            "x1": 100,
-            "x2": 180,
-            "y1": 100,
-            "y2": 180
-          }
-        }
-      }
-    },
-    "robot": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 770,
-            "x2": 830,
-            "y1": 350,
-            "y2": 410
-          }
-        }
-      }
-    },
-    "ecu": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 500,
-            "x2": 700,
-            "y1": 100,
-            "y2": 700
-          }
-        }
-      }
-    },
-    "car": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 750,
-            "x2": 950,
-            "y1": 500,
-            "y2": 700
-          }
-        }
-      }
-    },
-    "motion": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 1250,
-            "x2": 1350,
-            "y1": 100,
-            "y2": 200
-          }
-        }
-      }
-    },
-    "slips": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 250,
-            "x2": 350,
-            "y1": 100,
-            "y2": 700
+            "x1": 60.0,
+            "x2": 108.0,
+            "y1": 200,
+            "y2": 280
           }
         }
       }
@@ -270,70 +368,89 @@ metadata {
         "placement": {
           "diagram": {
             "rot": 0,
-            "x1": 1000,
-            "x2": 1040,
+            "x1": 600.0,
+            "x2": 624.0,
             "y1": 760,
             "y2": 800
           }
         }
       }
     },
-    "flat": {
+    "robot": {
       "Dyad": {
         "placement": {
           "diagram": {
             "rot": 0,
-            "x1": 850,
-            "x2": 890,
-            "y1": 760,
+            "x1": 462.0,
+            "x2": 498.0,
+            "y1": 350,
+            "y2": 410
+          }
+        }
+      }
+    },
+    "steer": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": -9.0,
+            "x2": 9.0,
+            "y1": 125,
+            "y2": 155
+          },
+          "icon": {
+            "x1": -50,
+            "x2": 50,
+            "y1": 700,
             "y2": 800
           }
         }
       }
     },
-    "wbus": {
+    "steering_response": {
       "Dyad": {
-        "edges": [
-          {
-            "E": -1,
-            "M": [],
-            "S": 1
-          },
-          {
-            "E": 2,
-            "M": [
-              {
-                "x": 1230,
-                "y": 150
-              }
-            ],
-            "S": -1
-          },
-          {
-            "E": 3,
-            "M": [
-              {
-                "x": 1230,
-                "y": 900
-              },
-              {
-                "x": 220,
-                "y": 900
-              },
-              {
-                "x": 220,
-                "y": 400
-              }
-            ],
-            "S": -1
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 60.0,
+            "x2": 108.0,
+            "y1": 100,
+            "y2": 180
           }
-        ],
-        "junctions": [
-          {
-            "x": 1230,
-            "y": 600
+        }
+      }
+    },
+    "throttle": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": -9.0,
+            "x2": 9.0,
+            "y1": 201,
+            "y2": 231
+          },
+          "icon": {
+            "x1": -50,
+            "x2": 50,
+            "y1": 200,
+            "y2": 300
           }
-        ]
+        }
+      }
+    },
+    "torque_response": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 120.0,
+            "x2": 168.0,
+            "y1": 200,
+            "y2": 280
+          }
+        }
       }
     },
     "w1": {
@@ -347,95 +464,6 @@ metadata {
         ]
       }
     },
-    "w2": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "w3": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "w4": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [
-              {
-                "x": 290,
-                "y": 240
-              },
-              {
-                "x": 290,
-                "y": 170
-              }
-            ],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "w5": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "w6": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [
-              {
-                "x": 770,
-                "y": 140
-              },
-              {
-                "x": 770,
-                "y": 380
-              }
-            ],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "w7": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [
-              {
-                "x": 850,
-                "y": 380
-              }
-            ],
-            "S": 1
-          }
-        ]
-      }
-    },
     "w12": {
       "Dyad": {
         "edges": [
@@ -443,11 +471,11 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 900,
+                "x": 540.0,
                 "y": 300
               },
               {
-                "x": 850,
+                "x": 510.0,
                 "y": 300
               }
             ],
@@ -463,11 +491,11 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 755,
+                "x": 453.0,
                 "y": 390
               },
               {
-                "x": 755,
+                "x": 453.0,
                 "y": 550
               }
             ],
@@ -483,11 +511,11 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 945,
+                "x": 567.0,
                 "y": 390
               },
               {
-                "x": 945,
+                "x": 567.0,
                 "y": 550
               }
             ],
@@ -503,7 +531,7 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 1030,
+                "x": 618.0,
                 "y": 185
               }
             ],
@@ -524,6 +552,17 @@ metadata {
       }
     },
     "w19": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w2": {
       "Dyad": {
         "edges": [
           {
@@ -563,11 +602,11 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 735,
+                "x": 441.0,
                 "y": 310
               },
               {
-                "x": 735,
+                "x": 441.0,
                 "y": 530
               }
             ],
@@ -583,11 +622,11 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 1210,
+                "x": 726.0,
                 "y": 112
               },
               {
-                "x": 1210,
+                "x": 726.0,
                 "y": 530
               }
             ],
@@ -603,11 +642,11 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 720,
+                "x": 432.0,
                 "y": 430
               },
               {
-                "x": 720,
+                "x": 432.0,
                 "y": 630
               }
             ],
@@ -623,19 +662,19 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 1190,
+                "x": 714.0,
                 "y": 670
               },
               {
-                "x": 1190,
+                "x": 714.0,
                 "y": 710
               },
               {
-                "x": 960,
+                "x": 576.0,
                 "y": 710
               },
               {
-                "x": 960,
+                "x": 576.0,
                 "y": 630
               }
             ],
@@ -662,15 +701,15 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 850,
+                "x": 510.0,
                 "y": 750
               },
               {
-                "x": 1070,
+                "x": 642.0,
                 "y": 750
               },
               {
-                "x": 1070,
+                "x": 642.0,
                 "y": 780
               }
             ],
@@ -679,98 +718,146 @@ metadata {
         ]
       }
     },
-    "cluster": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 90,
-            "x1": 1450,
-            "x2": 1550,
-            "y1": 100,
-            "y2": 200
-          }
-        }
-      }
-    },
-    "network": {
+    "w3": {
       "Dyad": {
         "edges": [
           {
-            "E": 3,
-            "M": [],
-            "S": 2
-          },
-          {
-            "E": 4,
-            "M": [],
-            "S": 3
-          },
-          {
-            "E": 1,
-            "M": [],
-            "S": 4
-          },
-          {
-            "E": 5,
+            "E": 2,
             "M": [],
             "S": 1
           }
         ]
       }
     },
-    "throttle": {
+    "w4": {
       "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": -15,
-            "x2": 15,
-            "y1": 201,
-            "y2": 231
-          },
-          "icon": {
-            "x1": -50,
-            "x2": 50,
-            "y1": 20,
-            "y2": 120
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 177,
+                "y": 240
+              },
+              {
+                "x": 177,
+                "y": 290
+              },
+              {
+                "x": 40,
+                "y": 290
+              },
+              {
+                "x": 40,
+                "y": 340
+              }
+            ],
+            "S": 1
           }
-        }
+        ]
       }
     },
-    "brake": {
+    "w5": {
       "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": -15,
-            "x2": 15,
-            "y1": 249,
-            "y2": 279
-          },
-          "icon": {
-            "x1": -50,
-            "x2": 50,
-            "y1": 150,
-            "y2": 250
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
           }
-        }
+        ]
       }
     },
-    "steer": {
+    "w6": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 462.0,
+                "y": 140
+              },
+              {
+                "x": 462.0,
+                "y": 380
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w7": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 510.0,
+                "y": 380
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "wbus": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": -1,
+            "M": [],
+            "S": 1
+          },
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 738.0,
+                "y": 150
+              }
+            ],
+            "S": -1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 738.0,
+                "y": 900
+              },
+              {
+                "x": 132.0,
+                "y": 900
+              },
+              {
+                "x": 132.0,
+                "y": 400
+              }
+            ],
+            "S": -1
+          }
+        ],
+        "junctions": [
+          {
+            "x": 738.0,
+            "y": 600
+          }
+        ]
+      }
+    },
+    "wheel_speeds": {
       "Dyad": {
         "placement": {
           "diagram": {
             "rot": 0,
-            "x1": -15,
-            "x2": 15,
-            "y1": 125,
-            "y2": 155
-          },
-          "icon": {
-            "x1": -50,
-            "x2": 50,
-            "y1": 330,
-            "y2": 430
+            "x1": 150.0,
+            "x2": 210.0,
+            "y1": 100,
+            "y2": 700
           }
         }
       }

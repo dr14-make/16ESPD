@@ -5,18 +5,15 @@
 
 
 @doc Markdown.doc"""
-   CanReferenceStopBench(; name, can, ideal, period, v0, __overrides)
+   CanReferenceStopBench(; name, v0, __overrides)
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `can`         |                          | --  |   false |
-| `ideal`         |                          | --  |   false |
-| `period`         |                          | --  |   0.01 |
 | `v0`         |                          | m/s  |   22.22222222222222 |
 """
-@component function CanReferenceStopBench(; name = nothing, var"can"=false, var"ideal"=false, var"period"=0.01, var"v0"=22.22222222222222, __overrides = Dict{String, Any}())
+@component function CanReferenceStopBench(; name = nothing, var"v0"=22.22222222222222, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -35,9 +32,6 @@
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
-  haskey(__overrides, "can") && (can = pop!(__overrides, "can"))
-  haskey(__overrides, "ideal") && (ideal = pop!(__overrides, "ideal"))
-  haskey(__overrides, "period") && (period = pop!(__overrides, "period"))
   haskey(__overrides, "v0") && (v0 = pop!(__overrides, "v0"))
 
   ### Structural Parameters (functions)
@@ -69,22 +63,15 @@
   __constants = Any[]
 
   ### Components
+  # Subcomponent reference of type VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDriveEstimated
+  reference_overrides = __pop_subcomponent_overrides!(__overrides, "reference")
+  push!(__systems, @named reference = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDriveEstimated(; v0=v0, __overrides = reference_overrides))
   # Subcomponent zero of type BlockComponents.Sources.Constant
   zero_overrides = __pop_subcomponent_overrides!(__overrides, "zero")
   push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0), __overrides = zero_overrides))
   # Subcomponent pedal of type BlockComponents.Sources.Ramp
   pedal_overrides = __pop_subcomponent_overrides!(__overrides, "pedal")
   push!(__systems, @named pedal = BlockComponents.Sources.Ramp(; height=Float64(1), duration=0.1, start_time=0.5, __overrides = pedal_overrides))
-  # Subcomponent reference of type VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDrive
-  reference_overrides = __pop_subcomponent_overrides!(__overrides, "reference")
-  if !can
-    push!(__systems, @named reference = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDrive(; v0=v0, __overrides = reference_overrides))
-  end
-  # Subcomponent vehicle of type VehicleSystemsComponents.Vehicle.Planar.PlanarBEVCanDrive
-  vehicle_overrides = __pop_subcomponent_overrides!(__overrides, "vehicle")
-  if can
-    push!(__systems, @named vehicle = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVCanDrive(; ideal=ideal, chassis_period=period, v0=v0, __overrides = vehicle_overrides))
-  end
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -97,15 +84,8 @@
   __assertions = []
 
   ### Equations
-
-  ### Control Structures
-  if can
-    push!(__eqs, connect(zero.y, vehicle.throttle, vehicle.steer))
-    push!(__eqs, connect(pedal.y, vehicle.brake))
-  else
-    push!(__eqs, connect(zero.y, reference.throttle, reference.steer))
-    push!(__eqs, connect(pedal.y, reference.brake))
-  end
+  push!(__eqs, connect(zero.y, reference.throttle, reference.steer))
+  push!(__eqs, connect(pedal.y, reference.brake))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

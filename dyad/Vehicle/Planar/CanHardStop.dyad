@@ -1,24 +1,221 @@
 component CanHardStop
-  structural parameter can::Boolean = true
   structural parameter ideal::Boolean = false
   structural parameter period::Real = 0.01
   parameter v0::Velocity = 22.22222222222222
-  zero = BlockComponents.Sources.Constant(k = 0)
-  pedal = BlockComponents.Sources.Ramp(height = 1, duration = 0.1, start_time = 0.5)
-  reference = PlanarBEVDrive(v0 = v0) if !can
-  vehicle = PlanarBEVCanDrive(ideal = ideal, chassis_period = period, v0 = v0) if can
+  vehicle = PlanarBEVCanDrive(v0 = v0, ideal = ideal, chassis_period = period) {^vehicle}
+  zero = BlockComponents.Sources.Constant(k = 0) {^zero}
+  pedal = BlockComponents.Sources.Ramp(height = 1, duration = 0.1, start_time = 0.5) {^pedal}
 relations
-  if can
-    connect(zero.y, vehicle.throttle, vehicle.steer)
-    connect(pedal.y, vehicle.brake)
-  else
-    connect(zero.y, reference.throttle, reference.steer)
-    connect(pedal.y, reference.brake)
-  end
+  connect(zero.y, vehicle.throttle, vehicle.steer) {^zero_wire}
+  connect(pedal.y, vehicle.brake) {^pedal_wire}
+metadata {
+  "Dyad": {
+    "icons": {
+      "default": "dyad://VehicleSystemsComponents/Vehicle/Planar/PlanarCar.svg"
+    }
+  },
+  "_links": {
+    "pedal": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 100,
+            "x2": 200,
+            "y1": 450,
+            "y2": 550
+          }
+        }
+      }
+    },
+    "pedal_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 450,
+                "y": 500
+              },
+              {
+                "x": 450,
+                "y": 450
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "vehicle": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 600,
+            "x2": 850,
+            "y1": 300,
+            "y2": 600
+          }
+        }
+      }
+    },
+    "zero": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 100,
+            "x2": 200,
+            "y1": 200,
+            "y2": 300
+          }
+        }
+      }
+    },
+    "zero_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 400,
+                "y": 250
+              },
+              {
+                "x": 400,
+                "y": 375
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 350,
+                "y": 250
+              },
+              {
+                "x": 350,
+                "y": 525
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    }
+  }
+}
 end
 
 component CanReferenceStopBench
-  extends CanHardStop(can = false)
+  parameter v0::Velocity = 22.22222222222222
+  reference = PlanarBEVDriveEstimated(v0 = v0) {^reference}
+  zero = BlockComponents.Sources.Constant(k = 0) {^zero}
+  pedal = BlockComponents.Sources.Ramp(height = 1, duration = 0.1, start_time = 0.5) {^pedal}
+relations
+  connect(zero.y, reference.throttle, reference.steer) {^zero_wire}
+  connect(pedal.y, reference.brake) {^pedal_wire}
+metadata {
+  "Dyad": {
+    "icons": {
+      "default": "dyad://VehicleSystemsComponents/Vehicle/Planar/PlanarCar.svg"
+    }
+  },
+  "_links": {
+    "pedal": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 100,
+            "x2": 200,
+            "y1": 450,
+            "y2": 550
+          }
+        }
+      }
+    },
+    "pedal_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 450,
+                "y": 500
+              },
+              {
+                "x": 450,
+                "y": 450
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "reference": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 600,
+            "x2": 850,
+            "y1": 300,
+            "y2": 600
+          }
+        }
+      }
+    },
+    "zero": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 100,
+            "x2": 200,
+            "y1": 200,
+            "y2": 300
+          }
+        }
+      }
+    },
+    "zero_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 400,
+                "y": 250
+              },
+              {
+                "x": 400,
+                "y": 375
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 350,
+                "y": 250
+              },
+              {
+                "x": 350,
+                "y": 525
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    }
+  }
+}
 end
 
 analysis CanReferenceStop

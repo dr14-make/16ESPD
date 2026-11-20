@@ -177,6 +177,9 @@ under ABS control.
   # Subcomponent robot of type VehicleSystemsComponents.Vehicle.Planar.SteeringRobot
   robot_overrides = __pop_subcomponent_overrides!(__overrides, "robot")
   push!(__systems, @named robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot(; __overrides = robot_overrides))
+  # Subcomponent pedal of type VehicleSystemsComponents.Vehicle.Planar.CanPedalNode
+  pedal_overrides = __pop_subcomponent_overrides!(__overrides, "pedal")
+  push!(__systems, @named pedal = VehicleSystemsComponents.Vehicle.Planar.CanPedalNode(; ideal=ideal, __overrides = pedal_overrides))
   # Subcomponent blend of type VehicleSystemsComponents.Vehicle.Planar.CanBlendNode
   blend_overrides = __pop_subcomponent_overrides!(__overrides, "blend")
   push!(__systems, @named blend = VehicleSystemsComponents.Vehicle.Planar.CanBlendNode(; ideal=ideal, friction_period=friction_period, torque_period=torque_period, ratio=ratio, radius=radius, tau_max=tau_max, P_charge=P_charge, v_fade=v_fade, __overrides = blend_overrides))
@@ -191,7 +194,7 @@ under ABS control.
   push!(__systems, @named mount = RotationalComponents.Components.Fixed(; __overrides = mount_overrides))
   # Subcomponent ecu of type VehicleSystemsComponents.Vehicle.Planar.CanBrakeNode
   ecu_overrides = __pop_subcomponent_overrides!(__overrides, "ecu")
-  push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.CanBrakeNode(; ideal=ideal, abs_period=abs_period, esp_on=esp_on, abs_on=abs_on, radius=radius, T_full=T_full, __overrides = ecu_overrides))
+  push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.CanBrakeNode(; ideal=ideal, speed_period=speed_period, abs_period=abs_period, esp_on=esp_on, abs_on=abs_on, radius=radius, T_full=T_full, __overrides = ecu_overrides))
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
   push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; mu_scale_fl=mu, mu_scale_fr=mu, mu_scale_rl=mu, mu_scale_rr=mu, m=m, radius=radius, tau_max=T_full, __overrides = car_overrides))
@@ -203,13 +206,13 @@ under ABS control.
   push!(__systems, @named flat = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = flat_overrides))
   # Subcomponent motion of type VehicleSystemsComponents.Vehicle.Planar.CanSensorNode
   motion_overrides = __pop_subcomponent_overrides!(__overrides, "motion")
-  push!(__systems, @named motion = VehicleSystemsComponents.Vehicle.Planar.CanSensorNode(; ideal=ideal, speed_period=speed_period, steering_period=steering_period, yaw_period=yaw_period, dashboard_period=dashboard_period, __overrides = motion_overrides))
+  push!(__systems, @named motion = VehicleSystemsComponents.Vehicle.Planar.CanSensorNode(; ideal=ideal, steering_period=steering_period, yaw_period=yaw_period, dashboard_period=dashboard_period, __overrides = motion_overrides))
   # Subcomponent cluster of type VehicleSystemsComponents.Vehicle.Planar.CanClusterNode
   cluster_overrides = __pop_subcomponent_overrides!(__overrides, "cluster")
   push!(__systems, @named cluster = VehicleSystemsComponents.Vehicle.Planar.CanClusterNode(; __overrides = cluster_overrides))
-  # Subcomponent slips of type VehicleSystemsComponents.Vehicle.Planar.BusSlip
-  slips_overrides = __pop_subcomponent_overrides!(__overrides, "slips")
-  push!(__systems, @named slips = VehicleSystemsComponents.Vehicle.Planar.BusSlip(; __overrides = slips_overrides))
+  # Subcomponent wheel_speeds of type VehicleSystemsComponents.Vehicle.Planar.BusWheelSpeed
+  wheel_speeds_overrides = __pop_subcomponent_overrides!(__overrides, "wheel_speeds")
+  push!(__systems, @named wheel_speeds = VehicleSystemsComponents.Vehicle.Planar.BusWheelSpeed(; __overrides = wheel_speeds_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -241,12 +244,12 @@ under ABS control.
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(motion.bus, blend.bus, ecu.bus, drive.bus, cluster.bus))
-  push!(__eqs, connect(car.bus, motion.measurements, slips.bus))
+  push!(__eqs, connect(motion.bus, blend.bus, ecu.bus, drive.bus, cluster.bus, pedal.bus))
+  push!(__eqs, connect(car.bus, motion.measurements, wheel_speeds.bus))
   push!(__eqs, connect(throttle, pedals.u1))
   push!(__eqs, connect(brake, pedals.u2))
   push!(__eqs, connect(pedals.y, torque_response.u))
-  push!(__eqs, connect(torque_response.y, blend.tau_ref))
+  push!(__eqs, connect(torque_response.y, pedal.tau_ref))
   push!(__eqs, connect(steer, steering_response.u))
   push!(__eqs, connect(steering_response.y, robot.delta_sw_ref))
   push!(__eqs, connect(robot.steering, car.steering))
@@ -254,10 +257,10 @@ under ABS control.
   push!(__eqs, connect(differential.flange_left, car.spin_fl))
   push!(__eqs, connect(differential.flange_right, car.spin_fr))
   push!(__eqs, connect(drive.support, mount.spline))
-  push!(__eqs, connect(slips.kappa_fl, ecu.kappa_fl))
-  push!(__eqs, connect(slips.kappa_fr, ecu.kappa_fr))
-  push!(__eqs, connect(slips.kappa_rl, ecu.kappa_rl))
-  push!(__eqs, connect(slips.kappa_rr, ecu.kappa_rr))
+  push!(__eqs, connect(wheel_speeds.omega_fl, ecu.omega_fl))
+  push!(__eqs, connect(wheel_speeds.omega_fr, ecu.omega_fr))
+  push!(__eqs, connect(wheel_speeds.omega_rl, ecu.omega_rl))
+  push!(__eqs, connect(wheel_speeds.omega_rr, ecu.omega_rr))
   push!(__eqs, connect(ecu.tau_fl, car.tau_fl))
   push!(__eqs, connect(ecu.tau_fr, car.tau_fr))
   push!(__eqs, connect(ecu.tau_rl, car.tau_rl))

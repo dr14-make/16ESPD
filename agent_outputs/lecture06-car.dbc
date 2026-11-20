@@ -1,0 +1,57 @@
+VERSION ""
+
+NS_ :
+
+BS_:
+
+BU_: Dyad
+
+BO_ 112 Frame_112: 1 Dyad
+ SG_ S_car_vehicle_ecu_abs_tx_1 : 0|1@1+ (1.0,0.0) [0.0|1.0] "" Vector__XXX
+
+BO_ 128 Frame_128: 2 Dyad
+ SG_ S_car_vehicle_ecu_speed_tx_1 : 0|16@1- (0.01,0.0) [-327.68|327.67] "" Vector__XXX
+
+BO_ 144 Frame_144: 2 Dyad
+ SG_ S_car_vehicle_motion_steering_tx_1 : 0|16@1- (0.001,0.0) [-32.768|32.767] "" Vector__XXX
+
+BO_ 160 Frame_160: 2 Dyad
+ SG_ S_car_vehicle_motion_yaw_tx_1 : 0|16@1- (0.001,0.0) [-32.768|32.767] "" Vector__XXX
+
+BO_ 176 Frame_176: 2 Dyad
+ SG_ S_car_vehicle_ecu_wheel_fl_tx_1 : 0|16@1- (0.01,0.0) [-327.68|327.67] "" Vector__XXX
+
+BO_ 177 Frame_177: 2 Dyad
+ SG_ S_car_vehicle_ecu_wheel_fr_tx_1 : 0|16@1- (0.01,0.0) [-327.68|327.67] "" Vector__XXX
+
+BO_ 178 Frame_178: 2 Dyad
+ SG_ S_car_vehicle_ecu_wheel_rl_tx_1 : 0|16@1- (0.01,0.0) [-327.68|327.67] "" Vector__XXX
+
+BO_ 179 Frame_179: 2 Dyad
+ SG_ S_car_vehicle_ecu_wheel_rr_tx_1 : 0|16@1- (0.01,0.0) [-327.68|327.67] "" Vector__XXX
+
+BO_ 192 Frame_192: 2 Dyad
+ SG_ S_car_vehicle_pedal_request_tx_1 : 0|16@1- (0.1,0.0) [-3276.8|3276.7000000000003] "" Vector__XXX
+
+BO_ 256 Frame_256: 2 Dyad
+ SG_ S_car_vehicle_blend_friction_tx_1 : 0|16@1+ (0.1,0.0) [0.0|6553.5] "" Vector__XXX
+
+BO_ 272 Frame_272: 2 Dyad
+ SG_ S_car_vehicle_blend_torque_tx_1 : 0|16@1- (0.1,0.0) [-3276.8|3276.7000000000003] "" Vector__XXX
+
+BO_ 768 Frame_768: 2 Dyad
+ SG_ S_car_vehicle_motion_dashboard_tx_1 : 0|16@1- (0.01,0.0) [-327.68|327.67] "" Vector__XXX
+
+BA_DEF_ BO_ "GenMsgCycleTime" INT 0 2147483647;
+BA_ "GenMsgCycleTime" BO_ 112 10;
+BA_ "GenMsgCycleTime" BO_ 128 10;
+BA_ "GenMsgCycleTime" BO_ 144 10;
+BA_ "GenMsgCycleTime" BO_ 160 10;
+BA_ "GenMsgCycleTime" BO_ 176 10;
+BA_ "GenMsgCycleTime" BO_ 177 10;
+BA_ "GenMsgCycleTime" BO_ 178 10;
+BA_ "GenMsgCycleTime" BO_ 179 10;
+BA_ "GenMsgCycleTime" BO_ 192 10;
+BA_ "GenMsgCycleTime" BO_ 256 20;
+BA_ "GenMsgCycleTime" BO_ 272 20;
+BA_ "GenMsgCycleTime" BO_ 768 100;
