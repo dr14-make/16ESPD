@@ -1,0 +1,45 @@
+"""
+Code-division multiplexing: two bit streams share one wire at the same time and in the same band.
+
+Each sender multiplies its bits (+1 or -1, one per `bit_time`) by its own spreading code of four
+chips per bit, and the two spread signals add onto the wire. The codes are rows of the 4 x 4
+Walsh matrix, which are orthogonal: code A is + - + - (a square wave at 2 / `bit_time`), code B
+is + + - - (a square wave at 1 / `bit_time`). The wire takes the values -2, 0 and +2 and looks
+like noise. Each receiver multiplies the wire by its own code and averages over the bit: its own
+bits come back as +1 or -1, and the other sender's product averages to zero. A third receiver
+uses code C = A x B = + - - +, which nobody sent, and receives zero.
+"""
+component CodeDivisionBench
+  "Duration of one bit; a code has four chips per bit"
+  parameter bit_time::Time = 1.0
+  bits_a = BitStream(bits = [1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, -1.0], bit_time = bit_time) {^bits_a}
+  bits_b = BitStream(bits = [-1.0, -1.0, 1.0, -1.0, 1.0, 1.0, 1.0, -1.0], bit_time = bit_time) {^bits_b}
+  "Walsh code + - + -"
+  code_a = BlockComponents.Sources.Square(amplitude = 1.0, frequency = 2 / bit_time) {^code_a}
+  "Walsh code + + - -"
+  code_b = BlockComponents.Sources.Square(amplitude = 1.0, frequency = 1 / bit_time) {^code_b}
+  spread_a = BlockComponents.Math.Product() {^spread_a}
+  spread_b = BlockComponents.Math.Product() {^spread_b}
+  "The shared medium: sum of both spread signals"
+  wire = BlockComponents.Math.Add() {^wire}
+  "Walsh code + - - +, orthogonal to both codes on the wire"
+  code_c = BlockComponents.Math.Product() {^code_c}
+  receiver_a = Correlator(bit_time = bit_time) {^receiver_a}
+  receiver_b = Correlator(bit_time = bit_time) {^receiver_b}
+  receiver_c = Correlator(bit_time = bit_time) {^receiver_c}
+relations
+  connect(bits_a.y, spread_a.u1) {^bits_a_wire}
+  connect(code_a.y, spread_a.u2, code_c.u1, receiver_a.code) {^code_a_wire}
+  connect(bits_b.y, spread_b.u1) {^bits_b_wire}
+  connect(code_b.y, spread_b.u2, code_c.u2, receiver_b.code) {^code_b_wire}
+  connect(spread_a.y, wire.u1) {^a_onto_wire}
+  connect(spread_b.y, wire.u2) {^b_onto_wire}
+  connect(code_c.y, receiver_c.code) {^code_c_wire}
+  connect(wire.y, receiver_a.wire, receiver_b.wire, receiver_c.wire) {^wire_to_receivers}
+end
+
+"Chip edges fall on multiples of a quarter bit; the stops keep the integrators from striding across them."
+analysis CodeDivisionBenchTransient
+  extends TransientAnalysis(stop = 8.0, dtmax = 1.0e-3, alg = ODEAlg.Tsit5(), tstops = 0:0.25:8)
+  model = CodeDivisionBench()
+end

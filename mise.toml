@@ -26,6 +26,10 @@ run = "julia +dyad-3.5.0 --project=. scripts/export_lecture04_figures.jl"
 description = "Run the Lecture 3 build's reference models and write their figures into slides/images/lecture-03/"
 run = "julia +dyad-3.5.0 --project=. scripts/export_lecture03_build_figures.jl"
 
+[tasks."figures:lecture-06"]
+description = "Run the Lecture 6 multiplexing benches and write their figures into the theory deck's public/figures/"
+run = "julia +dyad-3.5.0 --project=. scripts/export_lecture06_figures.jl"
+
 # The suite resolves snapshots against test/, so both tasks run from there.
 [tasks.test]
 description = "Run the Julia test suite, each group in its own process, and summarize the groups"

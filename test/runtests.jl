@@ -19,6 +19,7 @@ const GROUPS = [
         "efficiency_map_plausibility.jl"],
     "lecture05" => ["lecture05_plausibility.jl"],
     "lecture05_positions" => ["lecture05_positions.jl"],
+    "lecture06" => ["lecture06_plausibility.jl"],
     "switching" => ["switching_plausibility.jl"],
     "planar_wltc" => ["planar_wltc_plausibility.jl"],
     "realtime" => ["realtime.jl"],
