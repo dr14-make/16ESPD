@@ -22,16 +22,12 @@ end
 
 function can_stream_layout(model)
     clusters = FabiaSource[]
-    function visit(s, path)
-        if endswith(Vehicle.Planar._can_type(s), ".FabiaCluster")
-            push!(clusters, FabiaSource(path, FabiaProtocol.Bench(), nothing, NaN))
-        end
-        for child in ModelingToolkit.get_systems(s)
-            visit(child, [path; nameof(child)])
-        end
+    blocks = Vehicle.Planar._can_tree(model)
+    for b in blocks
+        b.kind == :fabia || continue
+        push!(clusters, FabiaSource(b.path, FabiaProtocol.Bench(), nothing, NaN))
     end
-    visit(model, Symbol[])
-    adapters = filter(b -> b.kind == :adapter, Vehicle.Planar._can_tree(model))
+    adapters = filter(b -> b.kind == :adapter, blocks)
     frames = Any[]
     if !isempty(adapters)
         append!(frames, Vehicle.Planar.can_layout(model).frames)

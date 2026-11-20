@@ -122,6 +122,14 @@ function _can_tree(model)
         rx = occursin(r"\.CanRx(Real|Integer|Boolean)$", type)
         term = endswith(type, ".CanTermination")
         adapter = endswith(type, ".CanAdapter")
+        # Dyad flattens inheritance, so derived clusters retain the signal interface, not the type name.
+        fabia = all(p -> hasproperty(s, p), (:speed, :rpm, :coolant, :left, :right, :hazard,
+            :abs_lamp, :asr_lamp, :brake_lamp, :mil, :epc, :charging, :airbag_lamp, :dimming))
+        if fabia
+            name = replace(path, "₊" => ".")
+            push!(blocks, (; name, kind = :fabia, path = Symbol.(filter(!isempty, split(path, '₊')))))
+            continue
+        end
         (tx || rx || term || adapter) || continue
         bus = isempty(path) ? "bus" : path * "₊bus"
         name = replace(path, "₊" => ".")
@@ -158,7 +166,7 @@ For example: `check_can(Can10msStopBench(name = :model))` before `Can10msStop()`
 Checks apply separately to each connected bus, including buses inside ECU assemblies.
 """
 function check_can(model)
-    blocks = filter(b -> b.kind != :adapter, _can_tree(model))
+    blocks = filter(b -> b.kind ∉ (:adapter, :fabia), _can_tree(model))
     for b in blocks
         b.kind == :termination && continue
         1 <= b.slot <= b.n || throw(ArgumentError("CAN: $(b.name) uses slot $(b.slot), outside 1:$(b.n)."))

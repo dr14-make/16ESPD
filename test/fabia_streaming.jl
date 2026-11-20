@@ -121,4 +121,12 @@ end
     end
 end
 
+@testset "Fabia shared tree detection" begin
+    cluster = CanV.Vehicle.Planar.FabiaCluster(name = :display)
+    @test only(CanV.Vehicle.Planar._can_tree(cluster)).kind == :fabia
+    @test length(CanV.can_stream_layout(cluster).frames) == 11
+    @test only(CanV.can_stream_layout(CanV.PlanarBEVByHandFabia(name = :model)).clusters).path ==
+        [:dashboard, :display]
+end
+
 include("fabia_canvas.jl")
