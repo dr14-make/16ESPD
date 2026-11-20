@@ -128,7 +128,7 @@ Fabia demonstration: acceleration, indicated left lane change, cruise and emerge
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(driver.throttle_signal, vehicle.throttle, cluster.throttle))
+  push!(__eqs, connect(driver.throttle_signal, vehicle.throttle))
   push!(__eqs, connect(driver.brake_signal, vehicle.brake))
   push!(__eqs, connect(driver.steer_signal, vehicle.steer))
   push!(__eqs, connect(adapter.bus, vehicle.bus, cluster.bus))

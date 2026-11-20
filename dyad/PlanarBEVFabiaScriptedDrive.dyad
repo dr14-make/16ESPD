@@ -16,7 +16,7 @@ component PlanarBEVFabiaScriptedDrive
   indicate_left = BlockComponents.Logical.And() {^indicate_left}
   off = BlockComponents.Sources.BooleanConstant(k = false) {^off}
 relations
-  connect(driver.throttle_signal, vehicle.throttle, cluster.throttle) {^w1}
+  connect(driver.throttle_signal, vehicle.throttle) {^w1}
   connect(driver.brake_signal, vehicle.brake) {^w2}
   connect(driver.steer_signal, vehicle.steer) {^w3}
   connect(adapter.bus, vehicle.bus, cluster.bus) {^w4}
@@ -140,20 +140,6 @@ metadata {
               {
                 "x": 300.0,
                 "y": 182.0
-              }
-            ],
-            "S": 1
-          },
-          {
-            "E": 3,
-            "M": [
-              {
-                "x": 160.0,
-                "y": 122.0
-              },
-              {
-                "x": 810.0,
-                "y": 122.0
               }
             ],
             "S": 1
@@ -306,6 +292,7 @@ metadata {
   }
 }
 end
+
 
 "Thirty-six-second Fabia cluster demonstration on physical SocketCAN by default."
 analysis PlanarBEVFabiaDrive

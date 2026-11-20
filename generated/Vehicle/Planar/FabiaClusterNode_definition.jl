@@ -27,7 +27,6 @@ Listen-only CAN receiver and signal conditioning for the Fabia dashboard.
  * `motor_speed` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `left` - This connector represents a boolean signal as an input to a component ([`BooleanInput`](@ref))
  * `right` - This connector represents a boolean signal as an input to a component ([`BooleanInput`](@ref))
- * `throttle` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
 @component function FabiaClusterNode(; name = nothing, var"tachometer_scale"=0.5, var"dimming"=Float64(1.0), var"speed_filter_time"=0.15, var"emergency_deceleration"=Float64(6.0), var"emergency_min_speed"=Float64(5.0), var"hazard_charge_time"=0.05, var"hazard_decay_time"=Float64(3.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -97,7 +96,6 @@ Listen-only CAN receiver and signal conditioning for the Fabia dashboard.
   append!(__vars, @variables (motor_speed(t)::Real), [input = true])
   append!(__vars, @variables (left(t)::Bool), [input = true])
   append!(__vars, @variables (right(t)::Bool), [input = true])
-  append!(__vars, @variables (throttle(t)::Real), [input = true])
 
   ### Variables (declarations)
 

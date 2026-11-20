@@ -269,7 +269,6 @@ component FabiaClusterNode
   motor_speed = RealInput() {^motor_speed}
   left = BooleanInput() {^left}
   right = BooleanInput() {^right}
-  throttle = RealInput() {^throttle}
   parameter tachometer_scale::Real = 0.5
   parameter dimming::Real = 1.0
   parameter speed_filter_time::Time = 0.15
@@ -574,26 +573,6 @@ metadata {
             "x2": 205,
             "y1": 80,
             "y2": 150
-          }
-        }
-      }
-    },
-    "throttle": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 35,
-            "x2": 65,
-            "y1": 805,
-            "y2": 835
-          },
-          "icon": {
-            "rot": 0,
-            "x1": -15,
-            "x2": 15,
-            "y1": 785,
-            "y2": 815
           }
         }
       }
