@@ -220,7 +220,7 @@ function canvas_audit(definitions, connectors)
             end
         end
         collect_connects(key)
-        (; blocks, wires, junctions, unresolved)
+        (; blocks, wires, junctions, unresolved, ports)
     end
     (; canvas, resolve_type, bases, declarations, members)
 end

@@ -131,42 +131,9 @@ By-hand planar BEV whose speed, motor speed and ABS activity drive a Fabia clust
   # Subcomponent vehicle of type VehicleSystemsComponents.Vehicle.Planar.FabiaRoadVehicle
   vehicle_overrides = __pop_subcomponent_overrides!(__overrides, "vehicle")
   push!(__systems, @named vehicle = VehicleSystemsComponents.Vehicle.Planar.FabiaRoadVehicle(; road_file=road_file, height_file=height_file, default_grip=default_grip, default_height=default_height, blend_width=blend_width, m=m, esp_on=esp_on, abs_on=abs_on, mu=mu, __overrides = vehicle_overrides))
-  # Subcomponent display of type VehicleSystemsComponents.Vehicle.Planar.FabiaCluster
-  display_overrides = __pop_subcomponent_overrides!(__overrides, "display")
-  push!(__systems, @named display = VehicleSystemsComponents.Vehicle.Planar.FabiaCluster(; dimming=dimming, __overrides = display_overrides))
-  # Subcomponent speed_limit of type BlockComponents.Nonlinear.Limiter
-  speed_limit_overrides = __pop_subcomponent_overrides!(__overrides, "speed_limit")
-  push!(__systems, @named speed_limit = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0.0), y_max=Float64(1e+300), __overrides = speed_limit_overrides))
-  # Subcomponent motor_abs of type BlockComponents.Math.Abs
-  motor_abs_overrides = __pop_subcomponent_overrides!(__overrides, "motor_abs")
-  push!(__systems, @named motor_abs = BlockComponents.Math.Abs(; __overrides = motor_abs_overrides))
-  # Subcomponent rpm_gain of type BlockComponents.Math.Gain
-  rpm_gain_overrides = __pop_subcomponent_overrides!(__overrides, "rpm_gain")
-  push!(__systems, @named rpm_gain = BlockComponents.Math.Gain(; k=60.0 / (2.0 * 3.141592653589793), __overrides = rpm_gain_overrides))
-  # Subcomponent rpm_scale of type BlockComponents.Math.Gain
-  rpm_scale_overrides = __pop_subcomponent_overrides!(__overrides, "rpm_scale")
-  push!(__systems, @named rpm_scale = BlockComponents.Math.Gain(; k=tachometer_scale, __overrides = rpm_scale_overrides))
-  # Subcomponent rpm_limit of type BlockComponents.Nonlinear.Limiter
-  rpm_limit_overrides = __pop_subcomponent_overrides!(__overrides, "rpm_limit")
-  push!(__systems, @named rpm_limit = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0.0), y_max=Float64(6000.0), __overrides = rpm_limit_overrides))
-  # Subcomponent emergency_hazard of type VehicleSystemsComponents.Vehicle.Planar.EmergencyHazard
-  emergency_hazard_overrides = __pop_subcomponent_overrides!(__overrides, "emergency_hazard")
-  push!(__systems, @named emergency_hazard = VehicleSystemsComponents.Vehicle.Planar.EmergencyHazard(; speed_filter_time=speed_filter_time, emergency_deceleration=emergency_deceleration, emergency_min_speed=emergency_min_speed, hazard_charge_time=hazard_charge_time, hazard_decay_time=hazard_decay_time, __overrides = emergency_hazard_overrides))
-  # Subcomponent abs_active of type BlockComponents.Logical.GreaterThreshold
-  abs_active_overrides = __pop_subcomponent_overrides!(__overrides, "abs_active")
-  push!(__systems, @named abs_active = BlockComponents.Logical.GreaterThreshold(; threshold=0.5, __overrides = abs_active_overrides))
-  # Subcomponent flash_sine of type BlockComponents.Sources.Sine
-  flash_sine_overrides = __pop_subcomponent_overrides!(__overrides, "flash_sine")
-  push!(__systems, @named flash_sine = BlockComponents.Sources.Sine(; amplitude=Float64(1.0), frequency=2.5, __overrides = flash_sine_overrides))
-  # Subcomponent flash_positive of type BlockComponents.Logical.GreaterThreshold
-  flash_positive_overrides = __pop_subcomponent_overrides!(__overrides, "flash_positive")
-  push!(__systems, @named flash_positive = BlockComponents.Logical.GreaterThreshold(; threshold=Float64(0.0), __overrides = flash_positive_overrides))
-  # Subcomponent esp_flash of type BlockComponents.Logical.And
-  esp_flash_overrides = __pop_subcomponent_overrides!(__overrides, "esp_flash")
-  push!(__systems, @named esp_flash = BlockComponents.Logical.And(; __overrides = esp_flash_overrides))
-  # Subcomponent coolant of type BlockComponents.Sources.Constant
-  coolant_overrides = __pop_subcomponent_overrides!(__overrides, "coolant")
-  push!(__systems, @named coolant = BlockComponents.Sources.Constant(; k=Float64(90.0), __overrides = coolant_overrides))
+  # Subcomponent dashboard of type VehicleSystemsComponents.Vehicle.Planar.FabiaDisplayChain
+  dashboard_overrides = __pop_subcomponent_overrides!(__overrides, "dashboard")
+  push!(__systems, @named dashboard = VehicleSystemsComponents.Vehicle.Planar.FabiaDisplayChain(; tachometer_scale=tachometer_scale, dimming=dimming, speed_filter_time=speed_filter_time, emergency_deceleration=emergency_deceleration, emergency_min_speed=emergency_min_speed, hazard_charge_time=hazard_charge_time, hazard_decay_time=hazard_decay_time, __overrides = dashboard_overrides))
   # Subcomponent off of type BlockComponents.Sources.BooleanConstant
   off_overrides = __pop_subcomponent_overrides!(__overrides, "off")
   push!(__systems, @named off = BlockComponents.Sources.BooleanConstant(; k=false, __overrides = off_overrides))
@@ -185,21 +152,10 @@ By-hand planar BEV whose speed, motor speed and ABS activity drive a Fabia clust
   push!(__eqs, connect(driver.throttle_signal, vehicle.throttle))
   push!(__eqs, connect(driver.brake_signal, vehicle.brake))
   push!(__eqs, connect(driver.steer_signal, vehicle.steer))
-  push!(__eqs, connect(vehicle.speed, speed_limit.u, emergency_hazard.speed))
-  push!(__eqs, connect(speed_limit.y, display.speed))
-  push!(__eqs, connect(vehicle.motor_speed, motor_abs.u))
-  push!(__eqs, connect(motor_abs.y, rpm_gain.u))
-  push!(__eqs, connect(rpm_gain.y, rpm_scale.u))
-  push!(__eqs, connect(rpm_scale.y, rpm_limit.u))
-  push!(__eqs, connect(rpm_limit.y, display.rpm))
-  push!(__eqs, connect(emergency_hazard.y, display.hazard))
-  push!(__eqs, connect(vehicle.abs_active, abs_active.u))
-  push!(__eqs, connect(abs_active.y, esp_flash.u1))
-  push!(__eqs, connect(flash_sine.y, flash_positive.u))
-  push!(__eqs, connect(flash_positive.y, esp_flash.u2))
-  push!(__eqs, connect(esp_flash.y, display.asr_lamp))
-  push!(__eqs, connect(coolant.y, display.coolant))
-  push!(__eqs, connect(off.y, display.left, display.right, display.abs_lamp, display.brake_lamp, display.mil, display.epc, display.charging, display.airbag_lamp))
+  push!(__eqs, connect(vehicle.speed, dashboard.speed))
+  push!(__eqs, connect(vehicle.motor_speed, dashboard.motor_speed))
+  push!(__eqs, connect(vehicle.abs_active, dashboard.abs_signal))
+  push!(__eqs, connect(off.y, dashboard.left, dashboard.right))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

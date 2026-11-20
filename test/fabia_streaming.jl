@@ -30,17 +30,17 @@ const FP = CanV.FabiaProtocol
             [mod(k - 1, 16) for k in 1:round(Int, 36 / period)]
     end
     for (k, b) in enumerate(payloads(0x1a0))
-        expected = result.sol(k * .01; idxs = sys.cluster.display.speed) * 3.6
+        expected = result.sol(k * .01; idxs = sys.cluster.dashboard.display.speed) * 3.6
         @test abs(FP.getbits(b, 17, 15) * .01 - expected) <= .010001
         @test FP.getbits(b, 8, 1) == 0
     end
     for (k, b) in enumerate(payloads(0x280))
-        expected = result.sol(k * .01; idxs = sys.cluster.display.rpm)
+        expected = result.sol(k * .01; idxs = sys.cluster.dashboard.display.rpm)
         @test abs(FP.getbits(b, 16, 16) / 4 - expected) <= .250001
     end
     pulses = 0.0
     for (k, b) in enumerate(payloads(0x5a0))
-        speed = result.sol(k * .01; idxs = sys.cluster.display.speed)
+        speed = result.sol(k * .01; idxs = sys.cluster.dashboard.display.speed)
         pulses = mod(pulses + speed / FP.TIRE * 96 * .01, 2048)
         @test abs(FP.getbits(b, 40, 11) - floor(Int, pulses)) <= 1
     end
@@ -66,9 +66,9 @@ const FP = CanV.FabiaProtocol
     @test any(==(1), asr)
     @test count(!=(0), diff(asr)) >= 10
     @test all(b == FP.verbauliste_1(FP.Bench(), 0) for b in payloads(0x5d8))
-    @test maximum(result.sol[sys.cluster.display.rpm]) < 6000
-    @test abs(result.sol(36; idxs = sys.cluster.display.speed)) < .1
-    println("Fabia tachometer range: ", extrema(result.sol[sys.cluster.display.rpm]))
+    @test maximum(result.sol[sys.cluster.dashboard.display.rpm]) < 6000
+    @test abs(result.sol(36; idxs = sys.cluster.dashboard.display.speed)) < .1
+    println("Fabia tachometer range: ", extrema(result.sol[sys.cluster.dashboard.display.rpm]))
 end
 
 @testset "Fabia paced SocketCAN stream" begin

@@ -11,7 +11,7 @@ using JSON
             joinpath(dirname(dirname(entry)), "dyad"), library; local_source = false)
     end
     (; canvas) = canvas_audit(definitions, connectors)
-    models = ["VehicleSystemsComponents.Vehicle.Planar.FabiaCluster",
+    models = ["VehicleSystemsComponents.Vehicle.Planar.FabiaDisplayChain", "VehicleSystemsComponents.Vehicle.Planar.FabiaCluster",
         "VehicleSystemsComponents.Vehicle.Planar.FabiaClusterNode",
         "VehicleSystemsComponents.PlanarBEVFabiaScriptedDrive",
         "VehicleSystemsComponents.PlanarBEVByHandFabia"]

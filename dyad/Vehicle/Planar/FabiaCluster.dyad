@@ -278,38 +278,14 @@ component FabiaClusterNode
   parameter hazard_decay_time::Time = 3.0
   speed_rx = FabiaCanRx(slot = 1, id = 128) {^speed_rx}
   abs_rx = FabiaCanRx(slot = 5, id = 112) {^abs_rx}
-  speed_limit = BlockComponents.Nonlinear.Limiter(y_min = 0.0, y_max = 1e300) {^speed_limit}
-  motor_abs = BlockComponents.Math.Abs() {^motor_abs}
-  rpm_gain = BlockComponents.Math.Gain(k = 60.0 / (2.0 * 3.141592653589793)) {^rpm_gain}
-  rpm_scale = BlockComponents.Math.Gain(k = tachometer_scale) {^rpm_scale}
-  rpm_limit = BlockComponents.Nonlinear.Limiter(y_min = 0.0, y_max = 6000.0) {^rpm_limit}
-  emergency_hazard = EmergencyHazard(speed_filter_time = speed_filter_time, emergency_deceleration = emergency_deceleration, emergency_min_speed = emergency_min_speed, hazard_charge_time = hazard_charge_time, hazard_decay_time = hazard_decay_time) {^emergency_hazard}
-  abs_active = BlockComponents.Logical.GreaterThreshold(threshold = 0.5) {^abs_active}
-  flash_sine = BlockComponents.Sources.Sine(amplitude = 1.0, frequency = 2.5) {^flash_sine}
-  flash_positive = BlockComponents.Logical.GreaterThreshold(threshold = 0.0) {^flash_positive}
-  esp_flash = BlockComponents.Logical.And() {^esp_flash}
-  coolant = BlockComponents.Sources.Constant(k = 90.0) {^coolant}
-  off = BlockComponents.Sources.BooleanConstant(k = false) {^off}
-  display = FabiaCluster(dimming = dimming) {^display}
+  dashboard = FabiaDisplayChain(tachometer_scale = tachometer_scale, dimming = dimming, speed_filter_time = speed_filter_time, emergency_deceleration = emergency_deceleration, emergency_min_speed = emergency_min_speed, hazard_charge_time = hazard_charge_time, hazard_decay_time = hazard_decay_time) {^dashboard}
 relations
   connect(bus, speed_rx.bus, abs_rx.bus) {^w1}
-  connect(speed_rx.y, speed_limit.u, emergency_hazard.speed) {^w2}
-  connect(speed_limit.y, display.speed) {^w3}
-  connect(motor_speed, motor_abs.u) {^w4}
-  connect(motor_abs.y, rpm_gain.u) {^motor_rpm_wire}
-  connect(rpm_gain.y, rpm_scale.u) {^w5}
-  connect(rpm_scale.y, rpm_limit.u) {^w6}
-  connect(rpm_limit.y, display.rpm) {^w7}
-  connect(emergency_hazard.y, display.hazard) {^w8}
-  connect(abs_rx.y, abs_active.u) {^w9}
-  connect(abs_active.y, esp_flash.u1) {^w10}
-  connect(flash_sine.y, flash_positive.u) {^w11}
-  connect(flash_positive.y, esp_flash.u2) {^w12}
-  connect(esp_flash.y, display.asr_lamp) {^w13}
-  connect(coolant.y, display.coolant) {^w14}
-  connect(off.y, display.abs_lamp, display.brake_lamp, display.mil, display.epc, display.charging, display.airbag_lamp) {^w15}
-  connect(left, display.left) {^w16}
-  connect(right, display.right) {^w17}
+  connect(speed_rx.y, dashboard.speed) {^speed_wire}
+  connect(abs_rx.y, dashboard.abs_signal) {^abs_wire}
+  connect(motor_speed, dashboard.motor_speed) {^motor_wire}
+  connect(left, dashboard.left) {^left_wire}
+  connect(right, dashboard.right) {^right_wire}
 metadata {
   "Dyad": {
     "icons": {
@@ -317,19 +293,6 @@ metadata {
     }
   },
   "_links": {
-    "abs_active": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 340,
-            "x2": 420,
-            "y1": 480,
-            "y2": 540
-          }
-        }
-      }
-    },
     "abs_rx": {
       "Dyad": {
         "placement": {
@@ -341,6 +304,22 @@ metadata {
             "y2": 500
           }
         }
+      }
+    },
+    "abs_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 650.0,
+                "y": 465.0
+              }
+            ],
+            "S": 1
+          }
+        ]
       }
     },
     "bus": {
@@ -363,80 +342,14 @@ metadata {
         }
       }
     },
-    "coolant": {
+    "dashboard": {
       "Dyad": {
         "placement": {
           "diagram": {
-            "rot": 0,
-            "x1": 550,
-            "x2": 630,
-            "y1": 800,
-            "y2": 860
-          }
-        }
-      }
-    },
-    "display": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 870,
-            "x2": 970,
-            "y1": 140,
-            "y2": 790
-          }
-        }
-      }
-    },
-    "emergency_hazard": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 550,
-            "x2": 630,
-            "y1": 400,
-            "y2": 470
-          }
-        }
-      }
-    },
-    "esp_flash": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 550,
-            "x2": 630,
-            "y1": 600,
-            "y2": 670
-          }
-        }
-      }
-    },
-    "flash_positive": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 340,
-            "x2": 420,
-            "y1": 680,
-            "y2": 740
-          }
-        }
-      }
-    },
-    "flash_sine": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 120,
-            "x2": 200,
-            "y1": 680,
-            "y2": 740
+            "x1": 650,
+            "x2": 900,
+            "y1": 130,
+            "y2": 780
           }
         }
       }
@@ -461,6 +374,22 @@ metadata {
         }
       }
     },
+    "left_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 650.0,
+                "y": 930.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
     "motor_speed": {
       "Dyad": {
         "placement": {
@@ -481,17 +410,20 @@ metadata {
         }
       }
     },
-    "off": {
+    "motor_wire": {
       "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 750,
-            "x2": 820,
-            "y1": 870,
-            "y2": 920
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 650.0,
+                "y": 280.0
+              }
+            ],
+            "S": 1
           }
-        }
+        ]
       }
     },
     "right": {
@@ -514,56 +446,20 @@ metadata {
         }
       }
     },
-    "rpm_gain": {
+    "right_wire": {
       "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 120,
-            "x2": 200,
-            "y1": 250,
-            "y2": 310
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 650.0,
+                "y": 980.0
+              }
+            ],
+            "S": 1
           }
-        }
-      }
-    },
-    "rpm_limit": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 550,
-            "x2": 630,
-            "y1": 250,
-            "y2": 310
-          }
-        }
-      }
-    },
-    "rpm_scale": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 340,
-            "x2": 420,
-            "y1": 250,
-            "y2": 310
-          }
-        }
-      }
-    },
-    "speed_limit": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 340,
-            "x2": 420,
-            "y1": 60,
-            "y2": 120
-          }
-        }
+        ]
       }
     },
     "speed_rx": {
@@ -579,6 +475,22 @@ metadata {
         }
       }
     },
+    "speed_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 650.0,
+                "y": 115.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
     "w1": {
       "Dyad": {
         "edges": [
@@ -586,8 +498,8 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 50.0,
-                "y": 80.0
+                "x": 162.5,
+                "y": 30.0
               }
             ],
             "S": 1
@@ -596,333 +508,18 @@ metadata {
             "E": 3,
             "M": [
               {
-                "x": 50.0,
-                "y": 430.0
-              }
-            ],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "w10": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [
-              {
-                "x": 424.0,
-                "y": 614.0
-              }
-            ],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "w11": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "w12": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [
-              {
-                "x": 546.0,
-                "y": 710.0
-              }
-            ],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "w13": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [
-              {
-                "x": 870.0,
-                "y": 635.0
-              }
-            ],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "w14": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [
-              {
-                "x": 634.0,
-                "y": 263.5
-              }
-            ],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "w15": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [
-              {
-                "x": 823.5,
-                "y": 445.5
-              }
-            ],
-            "S": 1
-          },
-          {
-            "E": 3,
-            "M": [
-              {
-                "x": 823.5,
-                "y": 536.5
-              }
-            ],
-            "S": 1
-          },
-          {
-            "E": 4,
-            "M": [
-              {
-                "x": 823.5,
-                "y": 582.0
-              }
-            ],
-            "S": 1
-          },
-          {
-            "E": 5,
-            "M": [
-              {
-                "x": 823.5,
-                "y": 627.5
-              }
-            ],
-            "S": 1
-          },
-          {
-            "E": 6,
-            "M": [
-              {
-                "x": 823.5,
-                "y": 673.0
-              }
-            ],
-            "S": 1
-          },
-          {
-            "E": 7,
-            "M": [
-              {
-                "x": 823.5,
-                "y": 718.5
-              }
-            ],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "w16": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [
-              {
-                "x": 50.0,
-                "y": 358.0
+                "x": 112.0,
+                "y": 30.0
               },
               {
-                "x": 870.0,
-                "y": 358.0
-              }
-            ],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "w17": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [
+                "x": 112.0,
+                "y": 173.0
+              },
               {
-                "x": 50.0,
-                "y": 354.5
+                "x": 162.5,
+                "y": 173.0
               }
             ],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "w2": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [
-              {
-                "x": 336.0,
-                "y": 115.0
-              }
-            ],
-            "S": 1
-          },
-          {
-            "E": 3,
-            "M": [
-              {
-                "x": 205.0,
-                "y": 435.0
-              }
-            ],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "w3": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [
-              {
-                "x": 870.0,
-                "y": 90.0
-              }
-            ],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "w4": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "w5": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "w6": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "w7": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [
-              {
-                "x": 870.0,
-                "y": 280.0
-              }
-            ],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "w8": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [
-              {
-                "x": 870.0,
-                "y": 435.0
-              }
-            ],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "w9": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [
-              {
-                "x": 335.2,
-                "y": 465.0
-              }
-            ],
-            "S": 1
-          }
-        ]
-      }
-    },
-    "motor_abs": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "x1": 65,
-            "x2": 100,
-            "y1": 250,
-            "y2": 310
-          }
-        }
-      }
-    },
-    "motor_rpm_wire": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [],
             "S": 1
           }
         ]
