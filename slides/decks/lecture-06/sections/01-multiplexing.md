@@ -54,6 +54,90 @@ strict speaking rules.
 -->
 
 ---
+routeAlias: frequency-division
+layout: default
+class: big-figure
+---
+
+## Frequency: each sender its own band
+
+<img src="/figures/01-fdm.svg" alt="Frequency-division bench. Top: the shared wire over 100 ms, the sum of a 100 Hz and a 300 Hz carrier whose amplitudes follow two slow signals. Middle: the wire's spectrum, two narrow lines at 100 Hz and 300 Hz. Bottom: vehicle speed and engine speed as sent, dashed, and as recovered by multiplying with each carrier and low-pass filtering, solid, about 22 ms late."/>
+
+<div class="caption"><code>dyad/Lecture6/FrequencyDivisionBench</code> · carriers 100 and 300 Hz · receiver: multiply by its
+own carrier, 10 Hz low-pass filter</div>
+
+<!--
+Here is frequency sharing, run as a Dyad model. Two slow signals, standing for vehicle speed and
+engine speed, each ride on their own carrier: one at 100 hertz, one at 300. The two modulated
+carriers simply add on one wire.
+
+The top plot is that wire over a tenth of a second: it looks like a mess. The middle plot is its
+spectrum, and there the mess sorts itself out: two narrow lines, one at 100 hertz and one at 300.
+Each sender owns its band.
+
+To get a signal back, the receiver multiplies the wire by its own carrier and filters out
+everything fast. The bottom plot shows both signals as sent, dashed, and as recovered, solid. They
+match, about 22 milliseconds late, which is the filter. This is how radio stations share the air.
+No car network works this way: it needs an oscillator and a filter per channel.
+-->
+
+---
+routeAlias: time-division
+layout: default
+class: big-figure
+---
+
+## Time: each sender its own slot
+
+<img src="/figures/01-tdm.svg" alt="Time-division bench. Top: the shared wire over one second, alternating 50 ms slots colored by sender. Middle: each receiver samples in the middle of its own slot and rebuilds its signal as a staircase that follows the original. Bottom: the same receiver with its clock 2.5 percent fast: its samples drift into the other sender's slot, and the two signals come out mixed and then swapped."/>
+
+<div class="caption"><code>dyad/Lecture6/TimeDivisionBench</code> · two 50 ms slots per 100 ms frame · bottom: receiver
+clock 2.5 % fast</div>
+
+<!--
+Time sharing. A switch gives the wire to each sender in turn: 50 milliseconds for vehicle speed,
+50 for engine speed, again and again. The top plot is the wire, colored by whose slot it is.
+
+The receiver has a switch on the same clock. It samples the wire in the middle of its own slot and
+holds the value until the next one. The middle plot: each signal comes back as a staircase that
+follows the original. Each value is late and refreshed only once per frame: late, rounded in time,
+periodic, the price from the previous slide.
+
+The bottom plot is the warning. The same receiver with its clock 2.5 percent fast. Its sampling
+instants slide, and after a second it reads the other sender's slot: the two signals come out mixed,
+then swapped. Time sharing works only if everyone agrees on the time. That is exactly why every CAN
+node resynchronizes on every edge, in section 04.
+-->
+
+---
+routeAlias: code-division
+layout: default
+class: big-figure
+---
+
+## Code: each sender its own key
+
+<img src="/figures/01-cdm.svg" alt="Code-division bench over eight bit periods. Two senders each multiply their bits by their own four-chip code; the codes are orthogonal. The summed wire takes only the values minus 2, 0 and plus 2 and looks like noise. Each receiver multiplies the wire by its own code and averages over one bit: A and B recover their bits at plus or minus one; a receiver using a third code that nobody sent reads almost zero."/>
+
+<div class="caption"><code>dyad/Lecture6/CodeDivisionBench</code> · orthogonal 4-chip codes A = + − + −, B = + + − −; a
+receiver on C = + − − + reads ≈ 0</div>
+
+<!--
+Code sharing. Both senders talk at the same time, on the same wire. Each multiplies its bits by its
+own code, a fast pattern of plus and minus ones, four chips per bit. The codes are chosen to be
+orthogonal: multiply two different codes chip by chip and average, and you get zero.
+
+The wire carries the sum, which takes only the values minus two, zero and plus two and looks like
+noise. The receiver multiplies the wire by its own code and averages over one bit. Its own bits come
+back at plus or minus one; the other sender's contribution averages to zero. The last trace is a
+receiver using a third code that nobody sent: it reads almost nothing.
+
+That is how GPS satellites all send on the same frequency. And it shows the contrast with CAN: here
+everyone talks at once and the math separates them; on CAN only one talks at a time, and the rules
+decide who.
+-->
+
+---
 routeAlias: rules-of-the-room
 ---
 
