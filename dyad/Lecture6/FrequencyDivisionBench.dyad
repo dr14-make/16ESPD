@@ -1,0 +1,60 @@
+"""
+Frequency-division multiplexing: two slow sensor signals share one wire, each on its own carrier.
+
+The vehicle-speed message multiplies a `f_speed` carrier and the engine-speed message a
+`f_engine` carrier; the two products add onto the wire, whose spectrum then holds one narrow
+band around each carrier. Each receiver multiplies the wire by its own carrier and passes the
+product through a second-order low-pass filter with gain 2 and cutoff `f_cut` (coherent
+demodulation). The product holds the receiver's message plus terms at twice its carrier and at
+the carriers' sum and difference; the filter keeps the message and removes the rest, so its
+output is the message, a few tens of milliseconds late. Both messages are scaled to order 1.
+"""
+component FrequencyDivisionBench
+  "Vehicle-speed carrier frequency"
+  parameter f_speed::Frequency = 100.0
+  "Engine-speed carrier frequency"
+  parameter f_engine::Frequency = 300.0
+  "Receiver low-pass cutoff, well below the carrier spacing and above the messages"
+  parameter f_cut::Frequency = 10.0
+  "Vehicle-speed message, scaled"
+  speed = BlockComponents.Sources.Sine(amplitude = 0.3, frequency = 0.25, offset = 0.6) {^speed}
+  "Engine-speed message, scaled"
+  engine = BlockComponents.Sources.Sine(amplitude = 0.3, frequency = 1.0, offset = 0.4) {^engine}
+  carrier_speed = BlockComponents.Sources.Sine(amplitude = 1.0, frequency = f_speed) {^carrier_speed}
+  carrier_engine = BlockComponents.Sources.Sine(amplitude = 1.0, frequency = f_engine) {^carrier_engine}
+  modulator_speed = BlockComponents.Math.Product() {^modulator_speed}
+  modulator_engine = BlockComponents.Math.Product() {^modulator_engine}
+  "The shared medium: sum of both modulated carriers"
+  wire = BlockComponents.Math.Add() {^wire}
+  "Receiver's own copy of the vehicle-speed carrier"
+  oscillator_speed = BlockComponents.Sources.Sine(amplitude = 1.0, frequency = f_speed) {^oscillator_speed}
+  "Receiver's own copy of the engine-speed carrier"
+  oscillator_engine = BlockComponents.Sources.Sine(amplitude = 1.0, frequency = f_engine) {^oscillator_engine}
+  mixer_speed = BlockComponents.Math.Product() {^mixer_speed}
+  mixer_engine = BlockComponents.Math.Product() {^mixer_engine}
+  "Butterworth low-pass; gain 2 restores the amplitude the mixer halves"
+  filter_speed = BlockComponents.Continuous.SecondOrder(k = 2.0, w = 2 * π * f_cut, d = 0.7071) {^filter_speed}
+  "Butterworth low-pass; gain 2 restores the amplitude the mixer halves"
+  filter_engine = BlockComponents.Continuous.SecondOrder(k = 2.0, w = 2 * π * f_cut, d = 0.7071) {^filter_engine}
+relations
+  connect(speed.y, modulator_speed.u1) {^speed_message}
+  connect(carrier_speed.y, modulator_speed.u2) {^speed_carrier}
+  connect(engine.y, modulator_engine.u1) {^engine_message}
+  connect(carrier_engine.y, modulator_engine.u2) {^engine_carrier}
+  connect(modulator_speed.y, wire.u1) {^speed_onto_wire}
+  connect(modulator_engine.y, wire.u2) {^engine_onto_wire}
+  connect(wire.y, mixer_speed.u1, mixer_engine.u1) {^wire_to_receivers}
+  connect(oscillator_speed.y, mixer_speed.u2) {^speed_oscillator}
+  connect(oscillator_engine.y, mixer_engine.u2) {^engine_oscillator}
+  connect(mixer_speed.y, filter_speed.u) {^speed_mixed}
+  connect(mixer_engine.y, filter_engine.u) {^engine_mixed}
+  initial filter_speed.x = 0.6
+  initial filter_speed.xd = 0.0
+  initial filter_engine.x = 0.4
+  initial filter_engine.xd = 0.0
+end
+
+analysis FrequencyDivisionBenchTransient
+  extends TransientAnalysis(stop = 4.0, dtmax = 1.0e-4, alg = ODEAlg.Tsit5())
+  model = FrequencyDivisionBench()
+end
