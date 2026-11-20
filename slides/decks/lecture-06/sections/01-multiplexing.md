@@ -1,17 +1,56 @@
 ---
-routeAlias: meeting-room
+routeAlias: multiplexing
 layout: section
 ---
 
-###### Section 02
+###### Section 01
 
-# The meeting room
+# Multiplexing
 
-CAN's rules, told as a meeting where everyone hears everything and the rules decide who speaks.
+One wire per signal, or one shared medium for all of them: three ways to share it, the meeting room that explains CAN's way, and what it saves.
 
 <!--
-Section 02: the meeting room. Before any bits and volts, here is one picture that carries every
-rule of CAN. We use it for the rest of the lecture, and I say clearly where it stops working.
+Section 01: multiplexing. Multiplexing means sending many signals over one shared medium. We see
+the three ways to share a medium, then the picture we use all lecture long to explain CAN's way, a
+meeting room with strict speaking rules, and finally what it saves in a car.
+-->
+
+---
+routeAlias: three-ways-to-share
+---
+
+## Three ways to share one medium
+
+| Sharing by | Each sender gets | Example | In a car |
+|---|---|---|---|
+| **Frequency** | its own frequency band | FM radio | the radio, not the ECU network |
+| **Code** | its own spreading code | GPS, 3G phones | navigation |
+| **Time** | the whole medium, one at a time | CAN, LIN, FlexRay, Ethernet | **every ECU network** |
+
+CAN shares by time **with no master**: whoever wants to talk waits for the bus to be quiet and
+starts; if two start together, a rule settles who goes on without losing the message
+(section 05).
+
+<div class="caption text-left">The network name: carrier sense, multiple access, collision
+resolution (CSMA/CR) — listen first, anyone may talk, clashes are resolved, not destroyed</div>
+
+<!--
+There are three ways to share one medium. By frequency: every sender gets its own band, as FM radio
+stations do. By code: everyone sends at once on the same band, each with its own code, as GPS
+satellites do. And by time: one sender at a time gets the whole medium.
+
+Every network between the ECUs of a car shares by time. The question is who decides whose turn it
+is. In some networks a master hands out turns. CAN has no master. An ECU that wants to talk waits
+until the bus is quiet and starts. If two start at the same moment, a rule decides who carries on,
+and the winner's message is not damaged at all. We see that rule in section 05.
+
+Network people call this carrier sense, multiple access, collision resolution: listen before
+talking, anyone may talk, and a clash is resolved instead of destroying both messages. Ethernet,
+the office network, detects a collision and both senders start again. CAN resolves it.
+
+The source deck explained this with a railway and a television. Both break down on CAN's most
+important rules, so we use one picture instead, for the rest of the lecture: a meeting room with
+strict speaking rules.
 -->
 
 ---
@@ -104,7 +143,7 @@ the room heard exactly the winner's number, so no time is lost. And the topic nu
 priority, so a car maker gives the brake messages low numbers and the comfort messages high ones.
 
 On the wire, a zero is called dominant and a one recessive. You will see those words again in
-section 05.
+section 04.
 -->
 
 ---
@@ -150,7 +189,7 @@ The right column is what stops one broken ECU from ruining the meeting. Whoever 
 stops collects strikes, and a good sentence wipes some of them off. With few strikes you speak and
 object normally: error active. With many, you may only whisper your objections, so you cannot
 destroy other people's sentences any more: error passive. With too many, you leave the room: bus
-off. A broken ECU takes itself off the bus instead of jamming it for everyone. Section 08 gives the
+off. A broken ECU takes itself off the bus instead of jamming it for everyone. Section 07 gives the
 real counters and thresholds.
 -->
 
@@ -168,7 +207,7 @@ routeAlias: where-the-room-stops
 CAN nodes do: every node samples the same bit at the same instant, because they all resynchronize
 on every edge. Arbitration is exact and decided within one bit time, every time.
 
-→ section 05, bit timing
+→ section 04, bit timing
 
 </div>
 <div>
@@ -178,7 +217,7 @@ on every edge. Arbitration is exact and decided within one bit time, every time.
 Nothing in the room matches CAN_H and CAN_L, the voltage levels or the 120 Ω terminations at the
 ends of the bus.
 
-→ section 05, physical layer
+→ section 04, physical layer
 
 </div>
 </div>
@@ -192,13 +231,112 @@ Every analogy breaks somewhere, and it is better to say where. Two places.
 First, people do not clap in sync. CAN nodes do. Every node samples each bit at the same instant,
 because every node readjusts its clock on every change of level on the wire. So arbitration is
 not a matter of who claps louder; it is decided exactly, bit by bit, within one bit time. We see
-how in section 05.
+how in section 04.
 
 Second, a room has no wires. Nothing in the room corresponds to the two signal lines, CAN high and
 CAN low, to their voltage levels, or to the 120-ohm resistors at the two ends of the bus. For that
-we leave the room and look at the electrical picture, also in section 05.
+we leave the room and look at the electrical picture, also in section 04.
 
 And one trap. Some explanations say the topic number is like introducing yourself. It is not. The
 identifier names the content, not the sender. That is also why two ECUs must never send the same
 identifier: if they did, both would win arbitration together and then clash in the data.
+-->
+
+---
+routeAlias: wires-grow
+---
+
+## Wiring every ECU to every other
+
+<div class="grid grid-cols-2 gap-8">
+<div>
+
+### Point to point
+
+Every signal has its own wire. If each of *n* ECUs talks to every other, that takes
+
+$$\frac{n(n-1)}{2}\ \text{links}$$
+
+| ECUs | 5 | 10 | 30 | 70 |
+|---|---:|---:|---:|---:|
+| links | 10 | 45 | 435 | 2415 |
+
+and each link is often several wires, each with two connector pins.
+
+</div>
+<div>
+
+### One bus
+
+Every ECU hangs off **one twisted pair**. Adding an ECU adds one stub, and adding a signal adds no
+wire at all: it is one more message.
+
+The price: the ECUs **take turns**. A signal waits for its message, is rounded to the message's
+resolution and is refreshed only as often as the message is sent.
+
+</div>
+</div>
+
+<div class="caption text-left">ECU: electronic control unit, a small computer running one car
+function · twisted pair: two wires twisted together, so interference hits both alike</div>
+
+<!--
+Imagine a car where every ECU that needs a signal gets its own wire from the ECU that has it. With
+five ECUs that all talk to each other, that is ten links. With ten it is forty-five. The number
+grows with the square: n times n minus one, over two. A current car has somewhere around seventy
+ECUs. Not all of them talk to all others, but the table shows where point-to-point wiring goes.
+And a link is rarely one wire: a signal often needs a pair, and every wire ends in two connector
+pins, which are the parts that corrode and fail.
+
+The bus turns this around. Every ECU hangs off one twisted pair, two wires twisted together so
+that electrical noise hits both the same way. A new ECU adds one short stub. A new signal adds no
+wire at all; it is one more message on the same pair.
+
+The right column also says the price, and it is the theme of today. On a bus the ECUs take turns.
+A signal has to wait for its message. It is rounded to the resolution the message gives it. And
+the receiver sees a new value only as often as the sender sends the message. Keep those three
+things in mind: late, rounded, periodic.
+-->
+
+---
+routeAlias: our-car-wired
+---
+
+## Our car, wired and bused
+
+<div class="grid grid-cols-2 gap-8">
+<div>
+
+### Point to point: `PlanarBEVDrive`
+
+The car from Lectures 3 and 4. Speed, steering angle, yaw rate, brake demand, the ABS flag and the
+motor request each run on their own wire between the ECUs.
+
+</div>
+<div>
+
+### On the bus: `PlanarBEVCanDrive`
+
+The same car. Every ECU publishes its messages on one bus connection, and every ECU reads what it
+needs from it. One switch, `ideal`, makes the bus perfect, so the two cars can be compared run for
+run.
+
+</div>
+</div>
+
+<div class="handson">In build 01 you move the car's signals onto the bus yourself and count the
+wires before and after.</div>
+
+<!--
+Here is the same idea on our own car. On the left, the point-to-point car you know from Lectures 3
+and 4. The vehicle speed, the steering angle, the yaw rate, the brake demand, the flag that says
+the ABS is acting and the torque request to the motor each run on their own wire between the ECUs.
+
+On the right, the same car on a bus. Every ECU publishes its messages on one bus connection, and
+every ECU reads from it what it needs. The model has one switch, called ideal. With ideal on, the
+bus delivers every value at once and exactly, so the bused car must drive exactly like the wired
+one. With ideal off, the bus behaves like a real one: late, rounded, periodic.
+
+In the first build you move the signals onto the bus yourself and count the wires before and
+after.
 -->

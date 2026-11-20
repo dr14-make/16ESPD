@@ -3,7 +3,7 @@ routeAlias: errors
 layout: section
 ---
 
-###### Section 08
+###### Section 07
 
 # Errors
 
@@ -11,7 +11,7 @@ The five error checks, the error frame, the error counters and bus-off; and what
 instead.
 
 <!--
-Section 08: errors. The real mechanism behind the "STOP!" shout and the strikes from section 02.
+Section 07: errors. The real mechanism behind the "STOP!" shout and the strikes from section 01.
 Then a warning: the model checks something different, and you should not confuse the two.
 -->
 
@@ -40,7 +40,7 @@ the acknowledgement slot, where a difference is normal, that is a bit error. The
 that someone acknowledged: if the ACK slot stays recessive, that is an acknowledgement error.
 
 Every receiver counts equal bits. Six in a row inside the stuffed part cannot happen in a correct
-frame, from section 06: stuff error. Every receiver computes the CRC over what it received and
+frame, from section 05: stuff error. Every receiver computes the CRC over what it received and
 compares: CRC error. And every receiver checks the bits that always have the same value, the
 delimiters and the end of frame: form error.
 
@@ -85,7 +85,7 @@ arbitrating like any other frame.
 
 The right column: one node's doubt destroys the frame for all, so all nodes always hold the same
 data. The price of one error is short, about twenty to thirty bit times plus the repeated frame,
-which is why section 09 keeps a margin on the bus load.
+which is why section 08 keeps a margin on the bus load.
 
 And the last line leads to the next slide. A node with too many errors may only send a passive error
 flag, six recessive bits. Recessive bits change nothing on the bus, so that node can no longer
@@ -154,8 +154,8 @@ routeAlias: what-can-does-not-catch
 
 | Fault | Why CAN cannot see it | What the car does |
 |---|---|---|
-| A sender goes **silent** | no frame, no error | **timeouts** in every receiver (section 06) |
-| A sender repeats a **stale** value | the frames are valid | **counters** (section 07) |
+| A sender goes **silent** | no frame, no error | **timeouts** in every receiver (section 05) |
+| A sender repeats a **stale** value | the frames are valid | **counters** (section 06) |
 | A sensor sends a **wrong** value | the frame is valid | **plausibility** checks against other signals |
 | A broken ECU floods the bus at high priority | it wins every arbitration | rare; transceivers limit how long a node can hold the bus dominant |
 | Someone **forges** a frame | anyone may send any identifier | gateways filter; **SecOC** authenticates |
@@ -165,8 +165,8 @@ CAN's error handling is strong, but it only protects frames on the wire. This ta
 cannot see, and what the car does instead.
 
 A sender that goes silent produces no frame and therefore no error. Every receiver needs a timeout,
-section 06. A sender that keeps repeating a stale value sends valid frames; counters reveal it,
-section 07. A sensor that measures nonsense sends a perfectly valid frame; the receiving ECU checks
+section 05. A sender that keeps repeating a stale value sends valid frames; counters reveal it,
+section 06. A sensor that measures nonsense sends a perfectly valid frame; the receiving ECU checks
 it against other signals. The ESP from Lecture 3 compares the yaw rate with what the steering angle
 and speed predict, for example.
 

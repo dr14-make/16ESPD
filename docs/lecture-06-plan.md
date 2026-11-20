@@ -146,22 +146,23 @@ the agent picks it up.
 
 ## Theory deck
 
-A Slidev deck in `slides/decks/lecture-06/`, build slides interleaved.
+A Slidev deck in `slides/decks/lecture-06/`, in the source deck's order, corrected and enriched,
+build slides interleaved.
 
-1. Why multiplexing: wires, connectors, mass; the planar car 29 → 23 (3, 6).
-2. The meeting room, and "CAN is not a post office" (replaces 4–5).
-3. OSI mapped to CAN, and which layers the Dyad blocks model (7–15, condensed).
-4. Networks in a car: HS and LS CAN, LIN, gateways; CAN FD, CAN XL, FlexRay, automotive Ethernet,
-   zonal architectures (16–21, updated).
-5. Physical layer: CAN_H/CAN_L, levels, termination, topology, bit timing and sample point
-   (22–25).
-6. Frame and arbitration: fields, stuffing, arbitration worked example, ACK (26–30).
-7. Signals: DBC, factor and offset, Intel and Motorola byte order, counters and checksums.
-   → step 1
-8. Errors and fault confinement (31–33); what `check_can` catches instead. → step 2
-9. Timing: periods, latency, bus load, response-time analysis. → steps 3, 4
-10. Diagnostics: OBD-II, UDS, ISO-TP; finding a broken wire (34).
-11. Demo and wrap-up: the Fabia cluster.
+1. Multiplexing: frequency, time and code sharing with a bench each; the meeting room (replaces
+   4–5); wired against bused, the planar car (3–6).
+2. The OSI model, one slide per layer as in the source (7–15), each mapped onto CAN and the
+   meeting room; all seven at a glance; CAN is not a post office; which layers the Dyad blocks
+   model.
+3. Networks in a car: HS and LS CAN, LIN, the 407 and E87 networks, gateways; CAN FD, CAN XL,
+   FlexRay, automotive Ethernet, zonal architectures (16–21, MOST marked obsolete).
+4. Physical layer: levels, termination, topology, bit timing and sample point (22–25).
+5. Frame and arbitration: fields, frame types, stuffing, arbitration, ACK (26–30).
+6. Signals: DBC, factor and offset, byte order, counters and checksums (added). → step 1
+7. Errors and fault confinement (31–33); what `check_can` catches instead. → step 2
+8. Timing: periods, latency, bus load, response-time analysis (added). → steps 3, 4
+9. Diagnostics: finding a broken wire (34); OBD-II, UDS, ISO-TP (added).
+10. Demo and wrap-up: the Fabia cluster.
 
 ## Known limits
 

@@ -3,14 +3,14 @@ routeAlias: diagnostics
 layout: section
 ---
 
-###### Section 10
+###### Section 09
 
 # Diagnostics
 
 How a workshop talks to the car over CAN: finding a broken wire, OBD-II, UDS and ISO-TP.
 
 <!--
-Section 10: diagnostics. Two questions a workshop asks. Is the network itself healthy? And what do
+Section 09: diagnostics. Two questions a workshop asks. Is the network itself healthy? And what do
 the ECUs report about the car? The second one uses the only parts of CAN traffic that fill layers 4
 and 5 of the OSI table.
 -->
@@ -46,7 +46,7 @@ routeAlias: broken-wire
 The source deck's last slide is a real workshop method. The network at the top has a cut wire: the
 branch to the electric power steering, EPS, and the dashboard behind it is disconnected.
 
-Every ECU watches the messages it expects, as we said in section 06. If a message stops arriving for
+Every ECU watches the messages it expects, as we said in section 05. If a message stops arriving for
 longer than its timeout, the ECU stores a fault: "no message from the dashboard". So the tester at
 the diagnostic socket asks every ECU it can reach: whose messages do you still receive?
 
@@ -57,7 +57,7 @@ bottom puts it together: the dashboard and the EPS are not OK, everything else i
 is on the wire to those two.
 
 The box gives the first checks with a meter. With the ignition off, CAN high to CAN low should read
-60 ohms, the two terminations in parallel, from section 05. With the bus idle, both lines should sit
+60 ohms, the two terminations in parallel, from section 04. With the bus idle, both lines should sit
 near 2.5 volts. A line stuck at zero or at battery voltage is a short.
 -->
 
@@ -109,7 +109,7 @@ On the right, a real exchange. The tester sends on identifier 7DF, which every e
 ECU listens to. The data bytes: 02, two bytes follow; 01, show live data; 0D, the item number for
 vehicle speed. The engine ECU answers on 7E8: 03, three bytes follow; 41, which is the request 01
 plus hexadecimal 40, the sign of a positive answer; 0D, the item it answers; and 57. Hexadecimal 57
-is 87. The car is driving at 87 kilometers per hour, our topic from section 02.
+is 87. The car is driving at 87 kilometers per hour, our topic from section 01.
 
 The line at the bottom matters for the meeting room. Normal CAN traffic is topics broadcast to
 everyone. Diagnostics is a conversation: a request and an answer. It still uses ordinary

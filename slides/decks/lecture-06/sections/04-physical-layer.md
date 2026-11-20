@@ -3,7 +3,7 @@ routeAlias: physical-layer
 layout: section
 ---
 
-###### Section 05
+###### Section 04
 
 # Physical layer
 
@@ -11,7 +11,7 @@ CAN_H and CAN_L, dominant and recessive, the 120 Ω terminations, topology, and 
 samples the same bit.
 
 <!--
-Section 05: the physical layer. Here we leave the meeting room, because a room has no wires. We look
+Section 04: the physical layer. Here we leave the meeting room, because a room has no wires. We look
 at the two signal lines, their voltage levels, the resistors at the two ends, how the bus may be
 laid out, and the timing inside one bit.
 -->
@@ -58,7 +58,7 @@ hits both wires almost equally, and in the difference it cancels.
 
 The box at the bottom is the most important fact on this slide. Recessive means nobody drives.
 Dominant means someone drives. So if one node drives dominant while all the others leave the bus
-recessive, the bus is dominant. That is the clap drowning out silence from section 02, done by the
+recessive, the bus is dominant. That is the clap drowning out silence from section 01, done by the
 electronics. Engineers call it a wired-AND: the bus is a one only if every node sends a one.
 -->
 
@@ -227,7 +227,7 @@ of the bit.
   clock together.
 - **Resynchronization** on every recessive-to-dominant edge after that: a node whose edge comes early
   or late stretches Phase 1 or shrinks Phase 2.
-- **Bit stuffing** (section 06) guarantees such an edge at least every 10 bits.
+- **Bit stuffing** (section 05) guarantees such an edge at least every 10 bits.
 
 </div>
 </div>

@@ -3,14 +3,14 @@ routeAlias: timing
 layout: section
 ---
 
-###### Section 09
+###### Section 08
 
 # Timing
 
 Message periods, latency, bus load and worst-case response time; what they cost a control loop.
 
 <!--
-Section 09: timing. This is the price of the bus from section 01, in numbers. Where the delay comes
+Section 08: timing. This is the price of the bus from section 01, in numbers. Where the delay comes
 from, how full the bus is, how long a frame can wait in the worst case, and what a delay does to a
 control loop. Then you measure it on the ABS.
 -->
@@ -38,7 +38,7 @@ First, the value waits for the sender's next frame. If the message is sent every
 a new value can wait up to 10 milliseconds before it is sent at all. Second, the frame waits for the
 bus: for frames of higher priority, and for one lower-priority frame that may already be on the
 wire, because a frame is never interrupted. Third, the frame travels: at 500 kilobits per second, an
-eight-byte frame takes at most 270 microseconds, from section 06. Fourth, the receiving ECU's
+eight-byte frame takes at most 270 microseconds, from section 05. Fourth, the receiving ECU's
 software reads the new value at its next control cycle.
 
 The box is the key fact. Stages 1 and 4 are milliseconds. Stages 2 and 3, the part that is actually
@@ -57,7 +57,7 @@ routeAlias: bus-load
 
 $$U = \sum_i \frac{C_i}{T_i}$$
 
-- *C*<sub>i</sub>: worst-case transmission time of frame *i* (section 06)
+- *C*<sub>i</sub>: worst-case transmission time of frame *i* (section 05)
 - *T*<sub>i</sub>: its period
 - *U*: the share of time the bus is busy
 
@@ -84,7 +84,7 @@ Bus load is the share of time the bus is busy. For each frame, divide its worst-
 time C by its period T, and add them up.
 
 On the right, a small example with three eight-byte frames at 500 kilobits per second. Each takes
-at most 0.27 milliseconds, from the stuffing formula in section 06. The ABS-active frame and the
+at most 0.27 milliseconds, from the stuffing formula in section 05. The ABS-active frame and the
 vehicle-speed frame are sent every 10 milliseconds: 2.7 percent each. The dashboard frame every 100
 milliseconds: 0.27 percent. Together, 5.67 percent.
 

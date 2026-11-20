@@ -3,14 +3,14 @@ routeAlias: frame-and-arbitration
 layout: section
 ---
 
-###### Section 06
+###### Section 05
 
 # Frame and arbitration
 
 The fields of a frame, bit stuffing, the arbitration example on the wire, and the acknowledgement.
 
 <!--
-Section 06: the frame and arbitration. We take one data frame apart field by field, see the bit
+Section 05: the frame and arbitration. We take one data frame apart field by field, see the bit
 stuffing rule that keeps the clocks together, replay the clapping example as voltages on the bus,
 and finish with the acknowledgement.
 -->
@@ -78,7 +78,7 @@ routeAlias: frame-variants
 |---|---|---|
 | **Data** | the owner of the signal | periodically or on change |
 | **Remote** | a node that wants data | rarely used in cars |
-| **Error** | any node | it detected an error (section 08) |
+| **Error** | any node | it detected an error (section 07) |
 | **Overload** | a receiver | asks for a delay before the next frame; modern controllers almost never send it |
 
 </div>
@@ -95,7 +95,7 @@ extended frame that starts with the same eleven bits.
 
 On the right, the four kinds of frame. Data frames carry the signals; almost all traffic is data
 frames. A remote frame asks another node to send its data; cars rarely use it, because the data is
-sent periodically anyway. An error frame is the "STOP!" shout; section 08 covers it. An overload
+sent periodically anyway. An error frame is the "STOP!" shout; section 07 covers it. An overload
 frame lets a receiver ask for a short delay before the next frame. Modern controllers are fast
 enough that they practically never send one.
 -->
@@ -121,7 +121,7 @@ stuffed.
 </div>
 <div>
 
-- It guarantees **edges**, so every node keeps resynchronizing (section 05).
+- It guarantees **edges**, so every node keeps resynchronizing (section 04).
 - **Six equal bits** inside a frame therefore cannot be data: they are an error. That is why an error
   flag is six dominant bits.
 - It makes frames **longer**, by up to about 25 bits for an 8-byte frame, and the length depends on
@@ -149,7 +149,7 @@ which is what resynchronization needs. Six equal bits inside the stuffed part ca
 they signal an error; that is exactly what an error flag is, six dominant bits in a row. And frames
 get longer by a number of bits that depends on the data.
 
-The formula at the bottom gives the worst case, which we need in section 09 for timing. For eight
+The formula at the bottom gives the worst case, which we need in section 08 for timing. For eight
 data bytes, a frame can take up to 135 bits on the wire. At 500 kilobits per second, that is 270
 microseconds.
 -->
@@ -165,7 +165,7 @@ routeAlias: arbitration-on-the-wire
 
 <img src="/pptx/slide29-arbitration.png" alt="Three ECUs, each with a CAN controller and transceiver on one bus, start frames together with identifiers 2A0h, 265h and 711h. ECU3 sends a recessive 1 at the first identifier bit, reads back a dominant 0 and stops. ECU1 with 2A0h sends a recessive 1 at the fourth bit where ECU2 sends 0, reads back 0 and stops. ECU2 with 265h sends its whole frame; the CAN High and CAN Low traces on the right follow ECU2's bits."/>
 
-<div class="caption">From the source deck, slide 29: the clapping example from section 02</div>
+<div class="caption">From the source deck, slide 29: the clapping example from section 01</div>
 
 </div>
 <div>
@@ -180,10 +180,10 @@ routeAlias: arbitration-on-the-wire
 </div>
 
 > Arbitration costs the winner **no time**, but a loser can wait for every higher-priority frame
-> queued ahead of it. Section 09 calculates how long.
+> queued ahead of it. Section 08 calculates how long.
 
 <!--
-Here is the clapping example from section 02, as the source deck draws it on the wire. Three ECUs
+Here is the clapping example from section 01, as the source deck draws it on the wire. Three ECUs
 start at the same moment, with identifiers 2A0, 265 and 711.
 
 Each CAN controller reads back, through its transceiver, every bit it sends. At the first identifier
@@ -196,7 +196,7 @@ been alone. The traces on the right are CAN high and CAN low following ECU 2's b
 The losers do not wait a fixed time. They try again as soon as the bus is idle, after the end of
 frame and the three bits of intermission. Then they arbitrate again, perhaps against new frames.
 
-The box is the bridge to section 09. Arbitration costs the winner nothing. But a low-priority frame
+The box is the bridge to section 08. Arbitration costs the winner nothing. But a low-priority frame
 can lose again and again while higher-priority frames queue ahead of it. How long it can wait, in
 the worst case, can be calculated, and you do that in build 04.
 -->
@@ -238,7 +238,7 @@ may drive it together; that is fine, dominant is dominant. If the sender reads b
 nobody received the frame correctly. That is an ACK error, and the sender sends the frame again.
 
 What does it mean? The sender learns that at least one node got the frame, but never which one.
-That is the post office contrast from section 03 again: no signed receipt from an addressee.
+That is the post office contrast from section 02 again: no signed receipt from an addressee.
 And a frame is valid only if it is valid everywhere: a single node that saw it corrupted destroys
 it for everybody with an error frame, so all nodes keep the same data.
 

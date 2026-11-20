@@ -3,7 +3,7 @@ routeAlias: networks-in-a-car
 layout: section
 ---
 
-###### Section 04
+###### Section 03
 
 # Networks in a car
 
@@ -11,7 +11,7 @@ High-speed and low-speed CAN, LIN and gateways; and what came after: CAN FD, CAN
 automotive Ethernet.
 
 <!--
-Section 04: networks in a car. A car does not have one bus, it has several, at different speeds,
+Section 03: networks in a car. A car does not have one bus, it has several, at different speeds,
 joined by gateways. We look at two real networks from around 2004, and then at the buses that took
 over where CAN runs out of speed.
 -->
@@ -66,11 +66,11 @@ On the right are the properties you need. One twisted pair, CAN high and CAN low
 when the bus is idle; there is no master. Clashes are settled by priority without losing the
 winning frame. Classic CAN runs at up to one megabit per second and carries zero to eight bytes per
 frame. Errors are detected and the frame is sent again automatically, and a node that keeps
-failing switches itself off. That is the strike system from section 02.
+failing switches itself off. That is the strike system from section 01.
 
 The last line corrects a word you may find in older material: CAN is sometimes called asynchronous
 because there is no separate clock wire. But the receivers do not run freely. Every node readjusts
-its timing on the edges of the signal, bit by bit. Section 05 shows how.
+its timing on the edges of the signal, bit by bit. Section 04 shows how.
 
 At the bottom: real cars run 500 kilobits per second for powertrain and chassis, and 125 to 250 for
 body and comfort. Limits like "16 ECUs per bus" that you sometimes read are a car maker's own

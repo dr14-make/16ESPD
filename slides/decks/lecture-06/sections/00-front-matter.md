@@ -45,34 +45,34 @@ bar move, O opens the overview, and G jumps to a slide.
 
 | # | Section | What it covers | Build |
 |---|---|---|---|
-| <Link to="why-multiplexing">01</Link> | Why multiplexing | one wire per signal against one shared pair | |
-| <Link to="meeting-room">02</Link> | The meeting room | CAN's rules, told as a meeting with strict speaking rules | |
-| <Link to="osi-layers">03</Link> | Layers | the OSI model mapped onto CAN; CAN is not a post office | |
-| <Link to="networks-in-a-car">04</Link> | Networks in a car | CAN, LIN, gateways; CAN FD, FlexRay, Ethernet | |
-| <Link to="physical-layer">05</Link> | Physical layer | CAN_H and CAN_L, termination, topology, bit timing | |
-| <Link to="frame-and-arbitration">06</Link> | Frame and arbitration | the fields, bit stuffing, who wins, acknowledgement | |
-| <Link to="signals">07</Link> | Signals | DBC files, scaling, byte order, counters and checksums | 01 put the car's signals on the bus |
-| <Link to="errors">08</Link> | Errors | error frames, error counters, bus-off | 02 a broken bus, and `check_can` |
-| <Link to="timing">09</Link> | Timing | message periods, latency, bus load, response time | 03 period against stopping distance · 04 bus load |
-| <Link to="diagnostics">10</Link> | Diagnostics | OBD-II, UDS, ISO-TP; finding a broken wire | |
-| <Link to="wrap-up">11</Link> | Wrap-up | a real Škoda Fabia cluster on the simulated bus | |
+| <Link to="multiplexing">01</Link> | Multiplexing | frequency, time and code sharing; the meeting room; wired against bused | |
+| <Link to="osi-layers">02</Link> | The OSI model | the seven layers one by one, mapped onto CAN; CAN is not a post office | |
+| <Link to="networks-in-a-car">03</Link> | Networks in a car | high- and low-speed CAN, LIN, gateways; CAN FD, FlexRay, Ethernet | |
+| <Link to="physical-layer">04</Link> | Physical layer | CAN_H and CAN_L, termination, topology, bit timing | |
+| <Link to="frame-and-arbitration">05</Link> | Frame and arbitration | the fields, bit stuffing, who wins, acknowledgement | |
+| <Link to="signals">06</Link> | Signals | DBC files, scaling, byte order, counters and checksums | 01 put the car's signals on the bus |
+| <Link to="errors">07</Link> | Errors | error frames, error counters, bus-off | 02 a broken bus, and `check_can` |
+| <Link to="timing">08</Link> | Timing | message periods, latency, bus load, response time | 03 period against stopping distance · 04 bus load |
+| <Link to="diagnostics">09</Link> | Diagnostics | finding a broken wire; OBD-II, UDS, ISO-TP | |
+| <Link to="wrap-up">10</Link> | Wrap-up | a real Škoda Fabia cluster on the simulated bus | |
 
 <!--
-Here is the plan for today: ten sections and a wrap-up. The first column links to each section,
+Here is the plan for today: nine sections and a wrap-up. The first column links to each section,
 and the last column names the build at its end.
 
-Sections 01 to 03 are the ideas. Why a car shares one pair of wires at all; a meeting room with
-strict speaking rules, which is the picture we use all lecture long; and the layer model that
-network people use, mapped onto CAN. Section 04 shows the networks of a real car, and what has
-come after CAN.
+Section 01 is multiplexing: the three ways to share one medium, the meeting room with strict
+speaking rules, which is the picture we use all lecture long, and what a bus saves in a car.
+Section 02 is the layer model network engineers use, one layer at a time, mapped onto CAN.
+Section 03 shows the networks of real cars: high- and low-speed CAN, LIN, gateways, and what came
+after.
 
-Sections 05 and 06 are how CAN works on the wire: the two signal lines, the frame, and the rule
+Sections 04 and 05 are how CAN works on the wire: the two signal lines, the frame, and the rule
 that decides who may talk.
 
-Sections 07 to 09 are where you build. In section 07 you put the car's signals onto the bus, with
-the scaling a real message uses. In section 08 you meet a broken bus. In section 09 you measure
-the price: how the message period moves the ABS stopping distance, and how full the bus is.
+Sections 06 to 08 are where you build. In section 06 you put the car's signals onto the bus, with
+the scaling a real message uses. In section 07 you meet a broken bus. In section 08 you measure the
+price: how the message period moves the ABS stopping distance, and how full the bus is.
 
-Section 10 is diagnostics, how a workshop talks to the car. In the wrap-up, the simulated car
+Section 09 is diagnostics, how a workshop talks to the car. In the wrap-up, the simulated car
 drives a real instrument cluster from a Škoda Fabia.
 -->

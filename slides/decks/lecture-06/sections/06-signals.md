@@ -3,7 +3,7 @@ routeAlias: signals
 layout: section
 ---
 
-###### Section 07
+###### Section 06
 
 # Signals
 
@@ -11,7 +11,7 @@ From a physical value to bits in a frame: the DBC file, factor and offset, byte 
 checksums.
 
 <!--
-Section 07: signals. A speed in kilometers per hour has to become a few bits in a frame at the
+Section 06: signals. A speed in kilometers per hour has to become a few bits in a frame at the
 sender, and a speed again at every receiver. The signal database says how. Our examples are real:
 the frames a 2000s Volkswagen-group car sends to its instrument cluster, which we use in the
 wrap-up to drive a real Škoda Fabia cluster.
@@ -123,7 +123,7 @@ receive the signal: here only the cluster, Kombi.
 
 The second frame, Bremse_1 from the brake ECU, carries the vehicle speed and a four-bit counter,
 which we meet two slides on. Notice that vehicle speed is received by the cluster and the engine
-ECU: one sender, several receivers, the broadcast from section 02.
+ECU: one sender, several receivers, the broadcast from section 01.
 
 Tools read this file to decode traffic. Our model writes one too: the function can_dbc produces the
 DBC of the model's bus, and you can decode the simulated car's frames with it.
