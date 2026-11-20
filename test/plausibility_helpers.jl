@@ -93,3 +93,134 @@ function canvas_crossings(wires)
     end
     crossings
 end
+
+function canvas_audit(definitions, connectors)
+    meta_of(text) = (m = match(r"(?s)metadata (\{.*?\})\nend", text); isnothing(m) ? nothing : JSON.parse(m.captures[1]))
+    placement(links, name, kind) = get(get(get(get(links, name, Dict()), "Dyad", Dict()), "placement", Dict()), kind, nothing)
+    function resolve_type(type, owner)
+        haskey(definitions, type) && return type
+        namespace = split(definitions[owner].namespace, '.')
+        while !isempty(namespace)
+            candidate = join([namespace; type], ".")
+            haskey(definitions, candidate) && return candidate
+            pop!(namespace)
+        end
+        nothing
+    end
+    function bases(key)
+        [m.captures[1] for m in eachmatch(r"(?m)^\s*extends\s+([\w.]+)", code_only(definitions[key].text))]
+    end
+    function declarations(key)
+        text = first(split(code_only(definitions[key].text), r"(?m)^relations\s*$"; limit = 2))
+        Dict(m.captures[1] => m.captures[2] for m in
+            eachmatch(r"(?m)^\s*(\w+)\s*=\s*([\w.]+)\s*\(", text))
+    end
+    member_cache = Dict{String,Dict{String,Tuple{String,String}}}()
+    function members(key, seen = Set{String}())
+        haskey(member_cache, key) && return member_cache[key]
+        key in seen && error("Cyclic component inheritance: $key")
+        result = Dict{String,Tuple{String,String}}()
+        for base in bases(key)
+            parent = resolve_type(base, key)
+            isnothing(parent) && error("Unresolved base $base in $key")
+            merge!(result, members(parent, union(seen, [key])))
+        end
+        for (name, type) in declarations(key)
+            result[name] = (type, key)
+        end
+        member_cache[key] = result
+    end
+    # Studio draws a component from its own metadata merged over its bases'.
+    own_meta(key) = something(meta_of(definitions[key].text), Dict{String,Any}())
+    meta_cache = Dict{String,Any}()
+    function merged_meta(key)
+        get!(meta_cache, key) do
+            links, labels = Dict{String,Any}(), nothing
+            for base in bases(key)
+                parent = resolve_type(base, key)
+                isnothing(parent) && continue
+                l, lab = merged_meta(parent)
+                merge!(links, l)
+                isnothing(lab) || (labels = lab)
+            end
+            meta = own_meta(key)
+            merge!(links, get(meta, "_links", Dict{String,Any}()))
+            lab = get(get(meta, "Dyad", Dict{String,Any}()), "labels", nothing)
+            (links, isnothing(lab) ? labels : lab)
+        end
+    end
+    # Maps a point of a child's 0-1000 icon frame onto the parent canvas; a box with x1 > x2
+    # or y1 > y2 is mirrored and "rot" turns it clockwise.
+    is_component(type, owner) = !isnothing(resolve_type(type, owner))
+    # Connectors the Dyad language defines; library connectors are indexed from source.
+    builtin_connectors = Set(("RealInput", "RealOutput", "BooleanInput", "BooleanOutput",
+        "IntegerInput", "IntegerOutput", "Spline", "Pin", "Frame", "Flange", "HeatPort"))
+    function is_connector(type, owner)
+        type in builtin_connectors && return true
+        namespace = split(definitions[owner].namespace, '.')
+        while true
+            join([namespace; type], ".") in connectors && return true
+            isempty(namespace) && return false
+            pop!(namespace)
+        end
+    end
+    function canvas(key)
+        links, _ = merged_meta(key)
+        ports, blocks = Dict{String,Tuple{Float64,Float64}}(), Dict{String,Any}()
+        unresolved = String[]
+        for (name, (type, owner)) in members(key)
+            box = placement(links, name, "diagram")
+            isnothing(box) && continue
+            if is_component(type, owner)
+                child = resolve_type(type, owner)
+                child_links, child_labels = merged_meta(child)
+                for (port, (ptype, powner)) in members(child)
+                    is_component(ptype, powner) && continue
+                    icon = something(placement(child_links, port, "icon"), placement(child_links, port, "diagram"), Some(nothing))
+                    isnothing(icon) && continue
+                    is_connector(ptype, powner) || (push!(unresolved, "$name.$port::$ptype"); continue)
+                    ports[name * "." * port] = on_canvas(box, (icon["x1"] + icon["x2"]) / 2, (icon["y1"] + icon["y2"]) / 2)
+                end
+                anchors = something(child_labels, [Dict("x" => 500, "y" => 1100)])
+                label_ys = [on_canvas(box, l["x"], l["y"])[2] for l in anchors]
+                x1, x2 = minmax(box["x1"], box["x2"])
+                y1, y2 = minmax(box["y1"], box["y2"])
+                # A label is about 16 units tall, centered on its anchor; no labels, no band.
+                blocks[name] = isempty(label_ys) ? (x1, y1, x2, y2) :
+                    (x1, min(y1, minimum(label_ys) - 8), x2, max(y2, maximum(label_ys) + 8))
+            elseif is_connector(type, owner)
+                ports[name] = ((box["x1"] + box["x2"]) / 2, (box["y1"] + box["y2"]) / 2)
+            else
+                push!(unresolved, "$name::$type")
+            end
+        end
+        wires = Tuple{String,Vector{Tuple{Float64,Float64}}}[]
+        junctions = Tuple{String,Float64,Float64}[]
+        function collect_connects(k)
+            for base in bases(k)
+                parent = resolve_type(base, k)
+                isnothing(parent) || collect_connects(parent)
+            end
+            # An untagged connect has no metadata and is drawn as one straight edge per target.
+            for c in eachmatch(r"connect\(([^)]*)\)(?:\s*\{\^(\w+)\})?", code_only(definitions[k].text))
+                ends = strip.(split(c.captures[1], ','))
+                tag = something(c.captures[2], "untagged connect(" * c.captures[1] * ")")
+                dyad = get(get(links, tag, Dict()), "Dyad", Dict())
+                js = [(j["x"], j["y"]) for j in get(dyad, "junctions", [])]
+                append!(junctions, [(tag, x, y) for (x, y) in js])
+                point(i) = i < 0 ? js[-i] : get(ports, ends[i], nothing)
+                for edge in get(dyad, "edges", [Dict("S" => 1, "E" => i, "M" => []) for i in 2:length(ends)])
+                    a, b = point(edge["S"]), point(edge["E"])
+                    if isnothing(a) || isnothing(b)
+                        push!(unresolved, "wire $tag: " * join(ends[[i for i in (edge["S"], edge["E"]) if i > 0]], " -> "))
+                        continue
+                    end
+                    push!(wires, (tag, [a; [(m["x"], m["y"]) for m in edge["M"]]; b]))
+                end
+            end
+        end
+        collect_connects(key)
+        (; blocks, wires, junctions, unresolved)
+    end
+    (; canvas, resolve_type, bases, declarations, members)
+end

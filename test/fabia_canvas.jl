@@ -5,32 +5,12 @@ using JSON
     root = joinpath(@__DIR__, "..")
     index_canvas_components!(definitions, connectors, joinpath(root, "dyad"),
         "VehicleSystemsComponents"; local_source = true)
-    index_canvas_components!(definitions, connectors,
-        joinpath(root, "agent_resources", "stdlib_reference", "BlockComponents"),
-        "BlockComponents"; local_source = false)
-    function resolve(type, owner)
-        haskey(definitions, type) && return type
-        namespace = split(owner, '.')[1:end-1]
-        while !isempty(namespace)
-            key = join([namespace; type], '.')
-            haskey(definitions, key) && return key
-            pop!(namespace)
-        end
-        error("Unknown canvas component $type in $owner")
+    for library in ("BlockComponents", "MultibodyComponents", "RotationalComponents")
+        entry = Base.find_package(library)
+        index_canvas_components!(definitions, connectors,
+            joinpath(dirname(dirname(entry)), "dyad"), library; local_source = false)
     end
-    function links_for(key)
-        text = definitions[key].text
-        links = Dict{String,Any}()
-        for base in eachmatch(r"(?m)^  extends ([\w.]+)", code_only(text))
-            merge!(links, links_for(resolve(base[1], key)))
-        end
-        meta = match(r"metadata\s*(\{[\s\S]*\})\s*end", text)
-        isnothing(meta) || merge!(links, get(JSON.parse(meta[1]), "_links", Dict()))
-        links
-    end
-    function placement(links, tag, layer)
-        get(get(get(links, tag, Dict()), "Dyad", Dict()), "placement", Dict())[layer]
-    end
+    (; canvas) = canvas_audit(definitions, connectors)
     models = ["VehicleSystemsComponents.Vehicle.Planar.FabiaCluster",
         "VehicleSystemsComponents.Vehicle.Planar.FabiaClusterNode",
         "VehicleSystemsComponents.PlanarBEVFabiaScriptedDrive",
@@ -39,26 +19,10 @@ using JSON
     for key in models
         text = definitions[key].text
         code = first(split(code_only(text), "metadata"))
-        links = links_for(key)
-        points = Dict{String,Tuple{Float64,Float64}}()
-        blocks = Dict{String,NTuple{4,Float64}}()
-        for member in eachmatch(r"(?m)^  (\w+) = ([\w.]+)\([^\n]*\)\s*\{\^(\w+)\}", code)
-            name, type, tag = member.captures
-            box = placement(links, tag, "diagram")
-            if type in ("RealInput", "BooleanInput", "CanNet")
-                points[name] = ((box["x1"] + box["x2"]) / 2, (box["y1"] + box["y2"]) / 2)
-                continue
-            end
-            blocks[name] = (box["x1"], box["y1"], box["x2"], box["y2"] + 40)
-            child_links = links_for(resolve(type, key))
-            for (port, item) in child_links
-                p = get(get(item, "Dyad", Dict()), "placement", Dict())
-                icon = get(p, "icon", get(p, "diagram", nothing))
-                isnothing(icon) && continue
-                points[name * "." * port] = on_canvas(box,
-                    (icon["x1"] + icon["x2"]) / 2, (icon["y1"] + icon["y2"]) / 2)
-            end
-        end
+        links = get(JSON.parse(match(r"metadata\s*(\{[\s\S]*\})\s*end", text)[1]), "_links", Dict())
+        view = canvas(key)
+        append!(violations, view.unresolved)
+        blocks = view.blocks
         for member in eachmatch(r"(?m)^  (\w+) = [\w.]+\(", code)
             haskey(links, member[1]) || push!(violations, "$key missing placement for $(member[1])")
         end
@@ -70,22 +34,18 @@ using JSON
             occursin(r"\b\w+\.\w+", stripped) && push!(violations, "$key equation references a child: $stripped")
             startswith(stripped, "if ") && push!(violations, "$key conditional wiring")
         end
-        for connection in eachmatch(r"connect\(([^)]*)\)(?:\s*\{\^(\w+)\})?", code)
-            ends = strip.(split(connection[1], ','))
-            tag = connection[2]
+        for c in eachmatch(r"connect\(([^)]*)\)(?:\s*\{\^(\w+)\})?", code)
+            tag = c[2]
             if isnothing(tag) || !haskey(links, tag)
-                push!(violations, "$key unplaced connection"); continue
+                push!(violations, "$key unplaced connection")
+                continue
             end
-            for endpoint in ends
+            @test !isempty(links[tag]["Dyad"]["edges"])
+            for endpoint in strip.(split(c[1], ','))
                 length(split(endpoint, '.')) <= 2 || push!(violations, "$key non-child endpoint $endpoint")
-                haskey(points, endpoint) || push!(violations, "$key unresolved endpoint $endpoint")
             end
-            all(e -> haskey(points, e), ends) || continue
-            edges = links[tag]["Dyad"]["edges"]
-            @test !isempty(edges)
-            for edge in edges
-                path = [points[ends[edge["S"]]];
-                    [(m["x"], m["y"]) for m in edge["M"]]; points[ends[edge["E"]]]]
+        end
+        for (tag, path) in view.wires
                 for (x, y) in path
                     0 <= x <= 1000 && 0 <= y <= 1000 || push!(violations, "$key $tag outside frame")
                 end
@@ -103,7 +63,6 @@ using JSON
                         hit && push!(violations, "$key $tag crosses $name or its label")
                     end
                 end
-            end
         end
         names = sort!(collect(keys(blocks)))
         for (i, a) in enumerate(names), b in names[i+1:end]
