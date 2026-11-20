@@ -21,9 +21,11 @@ routeAlias: data-frame
 
 ## The data frame
 
-<img src="/pptx/slide26-frame-fields.png" class="w-full" alt="Classic CAN base data frame, left to right: bus idle; start of frame, one dominant bit; arbitration field with 11-bit identifier and RTR bit; control field with IDE, reserved bit and 4-bit DLC; data field of 0 to 8 bytes; CRC field with 15-bit CRC and a recessive delimiter; acknowledgement field with ACK slot and delimiter; end of frame of 7 recessive bits; intermission of 3 recessive bits; bus idle."/>
+<img src="/diagrams/05-data-frame.svg" class="w-full" alt="Classic CAN base data frame as a row of fields, left to right, with each field's bits and level: bus idle; start of frame, 1 bit, dominant; identifier, 11 bits, and RTR, 1 bit, dominant, together the arbitration field; IDE and r0, 1 bit each, dominant, and DLC, 4 bits, the control field; data, 0 to 64 bits, 0 to 8 bytes; CRC, 15 bits, and its delimiter, 1 recessive bit; ACK slot, sent recessive and driven dominant by the receivers, and ACK delimiter, recessive; end of frame, 7 recessive bits; intermission, 3 recessive bits; bus idle. A bracket marks start of frame to the end of the CRC, 34 plus 8n bits, as stuffed; the rest is fixed form, never stuffed. In all, 47 plus 8n bits for n data bytes before stuffing."/>
 
-<div class="caption">From the source deck, slide 26 · "0.8 bytes" there means 0 to 8 bytes</div>
+<div class="caption">Redrawn from the source deck, slide 26, with the 3-bit intermission</div>
+
+<div>
 
 | Field | Bits | Job |
 |---|---:|---|
@@ -34,6 +36,8 @@ routeAlias: data-frame
 | CRC + delimiter | 15 + 1 | checksum over everything before it |
 | ACK slot + delimiter | 1 + 1 | the sender leaves it recessive; **any** correct receiver drives it dominant |
 | End of frame, intermission | 7 + 3 | recessive; the 3-bit gap before the next frame may start |
+
+</div>
 
 <!--
 Here is a classic CAN data frame in the base format, with an 11-bit identifier.
@@ -106,26 +110,23 @@ routeAlias: bit-stuffing
 
 ## Bit stuffing
 
-<div class="grid grid-cols-[1.2fr_1fr] gap-8 items-start">
+After **five equal bits** in a row, the sender inserts **one opposite bit**; the receivers remove it.
+From the start of frame to the end of the CRC only.
+
+<img class="w-full" style="max-height: 14rem" src="/diagrams/05-bit-stuffing.svg" alt="Two bit waveforms. Data: seven zeros, then six ones. On the wire: after the first five zeros a stuff bit 1 is inserted, then the remaining two zeros and five ones, then a stuff bit 0, then the last one. The two stuff bits are highlighted, and brackets mark each run of five equal bits that triggers one."/>
+
+<div class="grid grid-cols-[1fr_1.2fr] gap-8 items-center">
 <div>
 
-After **five equal bits** in a row, the sender inserts **one opposite bit**; the receivers remove it.
-
-| Data | 0 0 0 0 0 0 0 1 1 1 1 1 1 |
-|---|---|
-| on the wire | 0 0 0 0 0 **1** 0 0 1 1 1 1 1 **0** 1 |
-
-It applies from the start of frame to the end of the CRC. The fixed-form bits after that are not
-stuffed.
+- It guarantees **edges**, so every node keeps resynchronizing (section 04).
+- **Six equal bits** inside a frame cannot be data: they are an error, which is why an error flag
+  is six dominant bits.
+- It adds up to **24 bits** to an 8-byte frame, and how many depends on the data.
 
 </div>
 <div>
 
-- It guarantees **edges**, so every node keeps resynchronizing (section 04).
-- **Six equal bits** inside a frame therefore cannot be data: they are an error. That is why an error
-  flag is six dominant bits.
-- It makes frames **longer**, by up to about 25 bits for an 8-byte frame, and the length depends on
-  the data.
+<img style="max-height: 22rem" src="/figures/05-frame-time.svg" alt="Worst-case frame time in microseconds against 0 to 8 data bytes, one line per bit rate. Each rises linearly; at 8 bytes the worst case is 1080 microseconds at 125 kbit/s, 540 at 250 kbit/s, 270 at 500 kbit/s and 135 at 1 Mbit/s."/>
 
 </div>
 </div>
@@ -139,19 +140,21 @@ no edges, and without edges the receivers cannot resynchronize. So the rule is: 
 in a row, the sender inserts one bit of the opposite value. The receivers know the rule and remove
 it.
 
-Follow the example. Seven zeros, then six ones. After the fifth zero, the sender inserts a one. Then
-the remaining two zeros and the ones; after the fifth one, it inserts a zero. The rule runs from the
+Follow the waveform. Seven zeros, then six ones. After the fifth zero, the sender inserts a one. Then
+the remaining two zeros and the ones; after the fifth one, it inserts a zero. The stuff bits are
+the highlighted ones. The rule runs from the
 start of frame to the end of the CRC. The fixed bits after that, the delimiters, the acknowledgement
 and the end of frame, are never stuffed.
 
-Three consequences, on the right. Edges are guaranteed, at least one falling edge every ten bits,
+Three consequences. Edges are guaranteed, at least one falling edge every ten bits,
 which is what resynchronization needs. Six equal bits inside the stuffed part can never be data, so
 they signal an error; that is exactly what an error flag is, six dominant bits in a row. And frames
 get longer by a number of bits that depends on the data.
 
-The formula at the bottom gives the worst case, which we need in section 08 for timing. For eight
-data bytes, a frame can take up to 135 bits on the wire. At 500 kilobits per second, that is 270
-microseconds.
+The formula at the bottom gives the worst case, which we need in section 08 for timing, and the
+plot turns it into time. For eight data bytes, a frame can take up to 135 bits on the
+wire, 24 of them stuff bits. At 500 kilobits per second, that is 270 microseconds; at 125 kilobits,
+more than a millisecond.
 -->
 
 ---
@@ -160,19 +163,19 @@ routeAlias: arbitration-on-the-wire
 
 ## Arbitration on the wire
 
-<div class="grid grid-cols-[1.4fr_1fr] gap-8 items-center">
+<img class="w-full" style="max-height: 24rem" src="/diagrams/05-arbitration.svg" alt="Bit waveforms of three ECUs starting together, start of frame, identifier bits 10 to 0 and RTR, and the bus below them. ECU 3 sends 711h: at bit 10 it sends a recessive 1, reads a dominant 0 and stops; its remaining bits are grayed. ECU 1 sends 2A0h: at bit 7 it sends 1, reads 0 and stops. ECU 2 sends 265h, 0 1 0 0 1 1 0 0 1 0 1, through to the end. The bus row is identical to ECU 2's bits."/>
+
+<div class="caption">Redrawn from the source deck, slide 29: the clapping example from section 01</div>
+
+<div class="grid grid-cols-2 gap-8">
 <div>
 
-<img src="/pptx/slide29-arbitration.png" alt="Three ECUs, each with a CAN controller and transceiver on one bus, start frames together with identifiers 2A0h, 265h and 711h. ECU3 sends a recessive 1 at the first identifier bit, reads back a dominant 0 and stops. ECU1 with 2A0h sends a recessive 1 at the fourth bit where ECU2 sends 0, reads back 0 and stops. ECU2 with 265h sends its whole frame; the CAN High and CAN Low traces on the right follow ECU2's bits."/>
-
-<div class="caption">From the source deck, slide 29: the clapping example from section 01</div>
+- Each controller **reads back** every bit it sends.
+- Sent recessive, read dominant: **lost**. It becomes a receiver for the rest of the frame.
 
 </div>
 <div>
 
-- Each controller **reads back** every bit it sends.
-- Sent recessive, read dominant: **lost**. It stops sending and becomes a receiver for the rest of
-  the frame, and may use its data.
 - The winner never notices the clash: the bus carried **exactly its bits**.
 - The losers try again when the bus is idle, after the end of frame and the intermission.
 
@@ -186,12 +189,13 @@ routeAlias: arbitration-on-the-wire
 Here is the clapping example from section 01, as the source deck draws it on the wire. Three ECUs
 start at the same moment, with identifiers 2A0, 265 and 711.
 
-Each CAN controller reads back, through its transceiver, every bit it sends. At the first identifier
-bit, ECU 3, with 711, sends a recessive one and reads back a dominant zero. It has lost. It stops
+Each CAN controller reads back, through its transceiver, every bit it sends. The bottom row is the
+bus: it is zero whenever any node sends a zero. At the first identifier bit, bit 10, ECU 3, with 711,
+sends a recessive one and reads back a dominant zero. It has lost. It stops
 sending and simply listens to the rest of the frame; if the frame carries data it needs, it uses
-it. At the fourth bit, ECU 1, with 2A0, sends a one, reads a zero, and stops too. ECU 2, with 265,
+it. At the fourth bit, bit 7, ECU 1, with 2A0, sends a one, reads a zero, and stops too. ECU 2, with 265,
 never sees a difference. The bus carried exactly its bits, so it sends its whole frame as if it had
-been alone. The traces on the right are CAN high and CAN low following ECU 2's bits.
+been alone. Compare the bus row with ECU 2's row: they are the same, bit for bit.
 
 The losers do not wait a fixed time. They try again as soon as the bus is idle, after the end of
 frame and the three bits of intermission. Then they arbitrate again, perhaps against new frames.

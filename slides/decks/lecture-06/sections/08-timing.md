@@ -21,12 +21,22 @@ routeAlias: where-delay-comes-from
 
 ## Where the delay comes from
 
+<div class="diagram-wide">
+
+<img src="/diagrams/08-latency-chain.svg" alt="Timeline in three lanes, sender ECU, bus and receiver ECU, not to scale. The value changes at the left; stage 1, in the sender lane, a long bar: it waits for the next frame, up to one period. Stages 2 and 3, short bars in the bus lane: the frame waits in the queue, then is on the wire, together under a millisecond. Stage 4, a long bar in the receiver lane: it waits for the receiving task, up to its period, and then the control law uses it."/>
+
+</div>
+
+<div>
+
 | Stage | Up to | Set by |
 |---|---|---|
 | 1. The value waits for the sender's next frame | one **period** | the message's cycle time: 10 ms, 20 ms, 100 ms |
 | 2. The frame waits for the bus | the **queuing** time | higher-priority frames, and one lower frame already on the wire |
 | 3. The frame is on the wire | the **transmission** time | its length and the bit rate: ≤ 270 µs for 8 bytes at 500 kbit/s |
 | 4. The receiver's software picks it up | one **task period** | the receiving ECU's control cycle |
+
+</div>
 
 > Stages 1 and 4 are milliseconds; stages 2 and 3 are fractions of a millisecond. **The period
 > dominates.**
@@ -158,22 +168,16 @@ routeAlias: delay-in-a-loop
 
 ## What a delay does to a control loop
 
-<div class="grid grid-cols-2 gap-8">
+<div class="grid grid-cols-2 gap-8 items-center">
 <div>
 
-A pure delay *τ* does not change a signal's size, only **when** it arrives. At frequency *f* it costs
-
-$$\varphi = 360° \cdot f \cdot \tau$$
-
-of phase.
-
-| *τ* | at 2 Hz | at 5 Hz | at 10 Hz |
-|---|---:|---:|---:|
-| 10 ms | 7° | 18° | 36° |
-| 20 ms | 14° | 36° | 72° |
+<img src="/figures/08-phase-lag.svg" alt="Phase lag in degrees against frequency from 0 to 10 Hz, one straight line through the origin for each delay. At 10 Hz the lag is 18 degrees for 5 ms, 36 for 10 ms, 72 for 20 ms and 144 for 40 ms."/>
 
 </div>
 <div>
+
+A pure delay *τ* does not change a signal's size, only **when** it arrives. At frequency *f* it costs
+$\varphi = 360° \cdot f \cdot \tau$ of phase.
 
 - A feedback loop has a **phase margin**; every degree of delay is taken from it.
 - Fast loops suffer most: a **wheel locks in tens of milliseconds**, so the ABS reacts at several
@@ -189,8 +193,9 @@ of phase.
 <!--
 Why does a few milliseconds of delay matter? A pure delay leaves a signal's size unchanged; it only
 shifts it in time. For an oscillation at frequency f, a delay tau costs a phase of 360 degrees times
-f times tau. The table works it out: 10 milliseconds at 5 hertz is 18 degrees; 20 milliseconds at 10
-hertz is 72 degrees.
+f times tau: a straight line through zero, steeper for a longer delay. The plot works it out: 10
+milliseconds at 5 hertz is 18 degrees; 20 milliseconds at 10 hertz is 72 degrees; a 40 millisecond
+period at 10 hertz costs 144 degrees, more than any loop can spare.
 
 Every feedback loop has a phase margin, the phase it can lose before it oscillates. Every degree of
 delay is taken from that margin. Fast loops suffer most. A wheel goes from rolling to locked in

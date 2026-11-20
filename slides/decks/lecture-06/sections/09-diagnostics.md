@@ -21,20 +21,19 @@ routeAlias: broken-wire
 
 ## Finding a broken wire
 
-<div class="grid grid-cols-[1.4fr_1fr] gap-8 items-center">
+<img src="/diagrams/09-broken-wire.svg" class="w-full" style="max-height: 28rem" alt="Left: a CAN network. AT, engine, USM and ABS on one line; from the USM the bus runs through the BCM to the tester socket, the climate unit and the airbag. A branch from the tester's junction to the EPS, with the dashboard behind it, is cut. Right: a table, one row per ECU the tester asks, one column per sender, saying whose messages it still receives. Every row that answers marks the dashboard and the EPS NOK and the others OK; blank cells are senders that ECU does not listen to. The dashboard and EPS rows are hatched: they cannot answer. The result row: OK for all but the dashboard and the EPS."/>
+
+<div class="caption">Redrawn from the source deck, slide 34</div>
+
+<div class="grid grid-cols-2 gap-8">
 <div>
 
-<img src="/pptx/slide34-broken-wire.png" alt="A CAN network with automatic transmission, engine control, ABS, a smart service module, body control, diagnostic socket, climate, airbag, and the electric power steering with the dashboard behind it on one branch, which is cut. Below, a table: each row is an ECU reporting whether it receives each other ECU's messages. Every ECU that reports marks the dashboard and the power steering not OK; the dashboard and power steering rows are hatched because they cannot report. The result row: dashboard and power steering not OK, everything else OK."/>
-
-<div class="caption">From the source deck, slide 34</div>
+- Every ECU **watches** the messages it expects; one that stops arriving is a **timeout** fault.
+- The tester asks each ECU it can reach: **whose messages do you still receive?**
+- The missing senders sit behind one cut: the **EPS and the dashboard**.
 
 </div>
 <div>
-
-- Every ECU **watches** the messages it expects; a message that stops arriving is a **timeout**,
-  stored as a fault.
-- The tester asks each ECU it can reach: **whose messages do you still receive?**
-- The missing senders are all behind the same cut: here the **power steering and the dashboard**.
 
 > First checks with a meter: **60 Ω** across CAN_H and CAN_L with the ignition off, and both lines
 > near **2.5 V** at idle.
@@ -43,14 +42,15 @@ routeAlias: broken-wire
 </div>
 
 <!--
-The source deck's last slide is a real workshop method. The network at the top has a cut wire: the
+The source deck's last slide is a real workshop method. The network on the left has a cut wire: the
 branch to the electric power steering, EPS, and the dashboard behind it is disconnected.
 
 Every ECU watches the messages it expects, as we said in section 05. If a message stops arriving for
 longer than its timeout, the ECU stores a fault: "no message from the dashboard". So the tester at
 the diagnostic socket asks every ECU it can reach: whose messages do you still receive?
 
-Read the table. Each row is one ECU's answer. The engine control, the ABS, the body controller, the
+Read the table on the right. Each row is one ECU's answer; a blank cell is a sender that ECU never
+listens to. The engine control, the ABS, the body controller, the
 airbag: all of them say OK for everyone except the dashboard and the EPS. Those two rows are
 hatched, because they cannot answer at all; the tester cannot reach them. The result row at the
 bottom puts it together: the dashboard and the EPS are not OK, everything else is fine. The fault
@@ -178,12 +178,7 @@ routeAlias: iso-tp
 
 Reading the VIN: request `22 F1 90`, answer `62 F1 90` + 17 characters = **20 bytes**.
 
-| From | First byte | Frame | Carries |
-|---|---|---|---|
-| ECU | `10 14` | **first frame** | "20 bytes coming", `62 F1 90` and 3 characters |
-| tester | `30 00 00` | **flow control** | "go on: all of it, no pause needed" |
-| ECU | `21` | **consecutive frame 1** | 7 characters |
-| ECU | `22` | **consecutive frame 2** | the last 7 characters |
+<img src="/diagrams/09-iso-tp.svg" alt="Sequence diagram between the tester, sending on 7E0h, and the engine ECU, answering on 7E8h. Tester to ECU: 03 22 F1 90, a single frame, the request. ECU to tester: 10 14 62 F1 90 c1 c2 c3, the first frame, 20 bytes coming. Tester to ECU, highlighted: 30 00 00, flow control, send all with no pause. ECU to tester: 21 c4 to c10, consecutive frame 1. ECU to tester: 22 c11 to c17, consecutive frame 2, the last 7."/>
 
 </div>
 <div>
@@ -196,8 +191,8 @@ Reading the VIN: request `22 F1 90`, answer `62 F1 90` + 17 characters = **20 by
 </div>
 </div>
 
-<div class="caption text-left">ISO 15765-2 · VIN: vehicle identification number, 17 characters ·
-F190h: the UDS identifier for the VIN</div>
+<div class="caption text-left">ISO 15765-2 · VIN: vehicle identification number, 17 characters,
+c1 to c17 · F190h: the UDS identifier for the VIN · 7E0h/7E8h: the engine ECU's diagnostic pair</div>
 
 <!--
 ISO-TP, ISO 15765-2, is CAN's transport layer, layer 4, used for diagnostics. It splits a long
@@ -205,7 +200,8 @@ message into numbered installments, like the long report in the meeting room.
 
 The example reads the vehicle identification number. The tester sends service 22, read data, with
 identifier F1 90, which means the VIN. The answer is 62, the positive answer to 22, then F1 90, then
-the 17 characters of the VIN: 20 bytes, too long for one frame.
+the 17 characters of the VIN: 20 bytes, too long for one frame. The request itself is short, so it
+goes as a single frame: 03, three bytes follow, then 22 F1 90.
 
 So the ECU sends a first frame. Its first byte, 1, says "first frame", and together with the next
 byte, 0 14 hexadecimal, it announces 20 bytes. The rest of the frame carries 62 F1 90 and the first

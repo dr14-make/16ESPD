@@ -98,7 +98,7 @@ routeAlias: fault-confinement
 
 ## Error counters and bus-off
 
-<div class="grid grid-cols-[1fr_1.2fr] gap-8 items-start">
+<div class="grid grid-cols-[1fr_1.6fr] gap-8 items-center">
 <div>
 
 Each node keeps two counters:
@@ -115,14 +115,7 @@ Each node keeps two counters:
 </div>
 <div>
 
-| State | When | Behavior |
-|---|---|---|
-| **Error active** | TEC and REC ≤ 127 | normal; active error flags (six dominant) |
-| **Error passive** | TEC or REC > 127 | passive error flags (six recessive); waits 8 extra bits before sending again |
-| **Bus off** | TEC > 255 | takes no part in the bus at all |
-
-From bus off, a node may come back after it has seen **128 × 11 recessive bits**: the bus has been
-quiet and healthy long enough. Counters restart at zero.
+<img src="/diagrams/07-error-states.svg" alt="State diagram of a CAN node. Error active: normal, error flag of 6 dominant bits. When TEC or REC exceeds 127 it moves to error passive: error flag of 6 recessive bits, waits 8 extra bits before sending. When both are back at 127 or below it returns to error active. When TEC exceeds 255 it moves to bus off: sends nothing, acknowledges nothing. From bus off it returns to error active after 128 times 11 recessive bits, with both counters back at 0."/>
 
 </div>
 </div>
@@ -134,7 +127,7 @@ mostly adds one to REC. Every correct frame takes one off again. So a sender pay
 for its errors than a receiver, which makes sense: if the fault is in one node, it is most likely
 the one sending when errors happen.
 
-On the right, the three states. While both counters stay at 127 or below, the node is error active:
+On the right, the three states and the way between them. While both counters stay at 127 or below, the node is error active:
 it works normally and sends active error flags. When either counter passes 127, it becomes error
 passive: its error flags are recessive, so it cannot destroy other frames, and after sending it
 waits eight extra bits, so healthy nodes get the bus first. When TEC passes 255, the node goes bus

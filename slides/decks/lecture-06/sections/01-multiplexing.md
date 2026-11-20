@@ -59,16 +59,27 @@ routeAlias: rules-of-the-room
 
 ## A meeting with strict speaking rules
 
+<div class="grid grid-cols-[1fr_1fr] gap-6 items-center">
+<div>
+
+<img src="/diagrams/01-meeting-room.svg" alt="A meeting table seen from above. A speaker at one end says &quot;Vehicle speed: 87&quot;, a topic and not a name. Around the table the ABS, the dashboard and the motor each keep the topic, marked with a check; the radio and the seats ignore it. The dashboard nods: heard it."/>
+
+</div>
+<div>
+
 | In the room | On CAN |
 |---|---|
-| Everyone sits in **one room** and hears every word | every ECU is on one bus and receives every frame |
-| A speaker announces a **topic**, never a name: "Vehicle speed: 87" | a frame carries an **identifier** naming its content, not a receiver |
-| Each listener keeps what concerns them and ignores the rest | each ECU **filters** by identifier |
-| You speak only when the room is quiet | an ECU sends only when the bus is idle |
-| Two start together: the **lower topic number** goes on, the other stops and waits | **arbitration**: the lower identifier wins |
-| Any one listener **nods** when the sentence is done | any receiver sends the **acknowledgement** |
-| Anyone who heard a garbled sentence shouts **"STOP!"**; the speaker repeats it | **error frame**, then retransmission |
-| Some people report on a fixed beat | **periodic** messages |
+| everyone hears every word | every ECU receives every frame |
+| a speaker announces a **topic**, never a name | the **identifier** names the content, not a receiver |
+| each listener keeps what concerns them | each ECU **filters** by identifier |
+| speak only when the room is quiet | send only when the bus is idle |
+| two start together: the **lower topic number** goes on | **arbitration**: the lower identifier wins |
+| any one listener **nods** | any receiver sends the **acknowledgement** |
+| garbled: anyone shouts **"STOP!"**, the speaker repeats | **error frame**, then retransmission |
+| some report on a fixed beat | **periodic** messages |
+
+</div>
+</div>
 
 <!--
 Here is the room. Everyone sits in one room and hears every word, as every ECU on a CAN bus
@@ -100,16 +111,10 @@ routeAlias: clapping-the-topic
 <div class="grid grid-cols-[1.2fr_1fr] gap-8 items-start">
 <div>
 
-Speakers clap out their topic number in binary, one beat per bit, highest bit first:
-**clap = 0**, **silence = 1**. A clap drowns out silence. Whoever stayed silent and heard a clap
-stops talking.
+Speakers clap their topic number in binary, highest bit first: **clap = 0**, **silence = 1**.
+Whoever stayed silent and heard a clap stops.
 
-| Bit | 10 | 9 | 8 | 7 | 6 | … |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|
-| 711h | 1 ✗ | | | | | |
-| 2A0h | 0 | 1 | 0 | 1 ✗ | | |
-| 265h | 0 | 1 | 0 | 0 | 1 | … wins |
-| room hears | 0 | 1 | 0 | 0 | 1 | … |
+<img src="/diagrams/01-clapping.svg" alt="Three speakers clap identifiers 711h, 2A0h and 265h beat by beat, bits 10 to 6. A clap, drawn as a star, is 0; silence, an empty circle, is 1. At bit 10, 711h is silent while the others clap: it stops. At bit 7, 2A0h is silent while 265h claps: it stops. 265h goes on and wins. The bottom row, what the room hears, is exactly 265h's beats: 0, 1, 0, 0, 1."/>
 
 </div>
 <div>
@@ -133,7 +138,7 @@ silence, so if anyone claps, the whole room hears a clap.
 Each speaker listens while clapping. If you stayed silent for a one, and you hear a clap, someone
 else has a zero where you have a one. Their number is lower. You stop at once.
 
-Follow the table. Three speakers start with topics 711, 2A0 and 265, in hexadecimal. At bit 10,
+Follow the picture. Three speakers start with topics 711, 2A0 and 265, in hexadecimal. At bit 10,
 711 has a one and stays silent, but the others clap. 711 hears the clap and drops out. Bits 9 and 8
 are the same for the remaining two. At bit 7, 2A0 has a one, stays silent, hears 265 clap, and
 drops out. 265 carries on alone and finishes its sentence.
@@ -248,14 +253,18 @@ routeAlias: wires-grow
 
 ## Wiring every ECU to every other
 
+<div class="diagram-wide">
+
+<img src="/diagrams/01-mesh-vs-bus.svg" alt="Left: six ECUs wired point to point, every one to every other, fifteen links crossing each other. Right: the same six ECUs on one twisted pair, each on its own short stub."/>
+
+</div>
+
 <div class="grid grid-cols-2 gap-8">
 <div>
 
 ### Point to point
 
-Every signal has its own wire. If each of *n* ECUs talks to every other, that takes
-
-$$\frac{n(n-1)}{2}\ \text{links}$$
+*n* ECUs that all talk to each other need *n*(*n*−1)/2 links:
 
 | ECUs | 5 | 10 | 30 | 70 |
 |---|---:|---:|---:|---:|
@@ -268,8 +277,7 @@ and each link is often several wires, each with two connector pins.
 
 ### One bus
 
-Every ECU hangs off **one twisted pair**. Adding an ECU adds one stub, and adding a signal adds no
-wire at all: it is one more message.
+Adding an ECU adds one stub; adding a signal adds no wire at all, only one more message.
 
 The price: the ECUs **take turns**. A signal waits for its message, is rounded to the message's
 resolution and is refreshed only as often as the message is sent.

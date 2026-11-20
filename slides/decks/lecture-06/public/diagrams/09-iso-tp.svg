@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 420" width="760" height="420">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .who { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .life { stroke: #9aa7b4; stroke-width: 2; stroke-dasharray: 6 5; }
+    .m { stroke: #16202c; stroke-width: 2.5; fill: none; }
+    .fc { stroke: #d55e00; stroke-width: 2.5; fill: none; }
+    .t { font-size: 19px; font-weight: 700; }
+    .b { font-size: 17px; font-family: monospace; font-weight: 700; }
+    .bf { font-size: 17px; font-family: monospace; font-weight: 700; fill: #d55e00; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+  </style>
+  <defs>
+    <marker id="it-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+    <marker id="it-fc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#d55e00"/></marker>
+  </defs>
+  <rect class="who" x="40" y="10" width="160" height="40" rx="5"/><text x="120" y="37" text-anchor="middle" class="t">tester</text>
+  <line class="life" x1="120" y1="50" x2="120" y2="390"/>
+  <text x="120" y="412" text-anchor="middle" class="lbl">sends on 7E0h</text>
+  <rect class="who" x="560" y="10" width="160" height="40" rx="5"/><text x="640" y="37" text-anchor="middle" class="t">engine ECU</text>
+  <line class="life" x1="640" y1="50" x2="640" y2="390"/>
+  <text x="640" y="412" text-anchor="middle" class="lbl">answers on 7E8h</text>
+  <path class="m" d="M120 95 H636" marker-end="url(#it-ink)"/>
+  <text x="380.0" y="85" text-anchor="middle" class="b">03 22 F1 90</text>
+  <text x="380.0" y="117" text-anchor="middle" class="lbl">single frame: the request</text>
+  <path class="m" d="M640 161 H124" marker-end="url(#it-ink)"/>
+  <text x="380.0" y="151" text-anchor="middle" class="b">10 14 62 F1 90 c1 c2 c3</text>
+  <text x="380.0" y="183" text-anchor="middle" class="lbl">first frame: 20 bytes coming</text>
+  <path class="fc" d="M120 227 H636" marker-end="url(#it-fc)"/>
+  <text x="380.0" y="217" text-anchor="middle" class="bf">30 00 00</text>
+  <text x="380.0" y="249" text-anchor="middle" class="lbl">flow control: send all, no pause</text>
+  <path class="m" d="M640 293 H124" marker-end="url(#it-ink)"/>
+  <text x="380.0" y="283" text-anchor="middle" class="b">21 c4 c5 c6 c7 c8 c9 c10</text>
+  <text x="380.0" y="315" text-anchor="middle" class="lbl">consecutive frame 1</text>
+  <path class="m" d="M640 359 H124" marker-end="url(#it-ink)"/>
+  <text x="380.0" y="349" text-anchor="middle" class="b">22 c11 … c17</text>
+  <text x="380.0" y="381" text-anchor="middle" class="lbl">consecutive frame 2: the last 7</text>
+</svg>

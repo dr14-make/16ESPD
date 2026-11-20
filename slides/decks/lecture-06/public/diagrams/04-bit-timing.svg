@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300" width="1000" height="300">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .seg { stroke: #16202c; stroke-width: 2; }
+    .sync { fill: #fbe3d4; }
+    .prop { fill: #ffffff; }
+    .ph1 { fill: #eaf1fa; }
+    .ph2 { fill: #d6e4f5; }
+    .wave { stroke: #16202c; stroke-width: 3.5; fill: none; }
+    .tick { stroke: #4a5a6b; stroke-width: 1.2; }
+    .sp { stroke: #1f5fa8; stroke-width: 3; }
+    .arrow { stroke: #4a5a6b; stroke-width: 2; fill: none; }
+    .t { font-size: 19px; font-weight: 600; }
+    .lbl { font-size: 16px; fill: #4a5a6b; }
+    .acc { font-size: 17px; font-weight: 600; fill: #1f5fa8; }
+  </style>
+  <defs>
+    <marker id="bt-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a5a6b"/></marker>
+  </defs>
+
+  <path class="wave" d="M20 30 H62 L66 70 H940"/>
+  <text x="78" y="26" class="lbl">a recessive-to-dominant edge is expected inside Sync</text>
+
+  <rect class="seg sync" x="60" y="90" width="55" height="60"/>
+  <rect class="seg prop" x="115" y="90" width="385" height="60"/>
+  <rect class="seg ph1" x="500" y="90" width="275" height="60"/>
+  <rect class="seg ph2" x="775" y="90" width="165" height="60"/>
+  <text x="87" y="126" text-anchor="middle" class="t">S</text>
+  <text x="307" y="118" text-anchor="middle" class="t">Propagation</text>
+  <text x="307" y="140" text-anchor="middle" class="lbl">covers the round trip on the bus</text>
+  <text x="637" y="126" text-anchor="middle" class="t">Phase 1</text>
+  <text x="857" y="126" text-anchor="middle" class="t">Phase 2</text>
+
+  <g class="tick">
+    <line x1="60" y1="150" x2="60" y2="162"/><line x1="115" y1="150" x2="115" y2="162"/>
+    <line x1="170" y1="150" x2="170" y2="158"/><line x1="225" y1="150" x2="225" y2="158"/>
+    <line x1="280" y1="150" x2="280" y2="158"/><line x1="335" y1="150" x2="335" y2="158"/>
+    <line x1="390" y1="150" x2="390" y2="158"/><line x1="445" y1="150" x2="445" y2="158"/>
+    <line x1="500" y1="150" x2="500" y2="162"/><line x1="555" y1="150" x2="555" y2="158"/>
+    <line x1="610" y1="150" x2="610" y2="158"/><line x1="665" y1="150" x2="665" y2="158"/>
+    <line x1="720" y1="150" x2="720" y2="158"/><line x1="775" y1="150" x2="775" y2="162"/>
+    <line x1="830" y1="150" x2="830" y2="158"/><line x1="885" y1="150" x2="885" y2="158"/>
+    <line x1="940" y1="150" x2="940" y2="162"/>
+  </g>
+  <text x="87" y="180" text-anchor="middle" class="lbl">1 tq</text>
+
+  <path class="arrow" d="M560 180 H714" marker-start="url(#bt-arr)" marker-end="url(#bt-arr)"/>
+  <text x="637" y="202" text-anchor="middle" class="lbl">lengthened for a late edge</text>
+  <path class="arrow" d="M800 180 H915" marker-start="url(#bt-arr)" marker-end="url(#bt-arr)"/>
+  <text x="785" y="202" class="lbl">shortened for an early one</text>
+
+  <line class="sp" x1="775" y1="78" x2="775" y2="240"/>
+  <circle cx="775" cy="70" r="7" fill="#1f5fa8"/>
+  <text x="765" y="262" text-anchor="end" class="acc">sample point: 75–87.5 % of the bit</text>
+
+  <text x="60" y="292" class="lbl">0 %</text>
+  <text x="940" y="292" text-anchor="end" class="lbl">100 % · one bit = 8 to 25 tq · 2 µs at 500 kbit/s</text>
+</svg>

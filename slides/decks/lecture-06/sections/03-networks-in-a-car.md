@@ -205,23 +205,23 @@ routeAlias: zonal
 
 ## From domains to zones
 
+<div class="diagram-wide">
+
+<img src="/diagrams/03-domain-zonal.svg" style="max-height: 25rem" alt="Two cars seen from above. Left, domains: a central gateway with four buses, powertrain, chassis, body and multimedia, each a different color and line style, each running across the whole car to reach its ECUs. Right, zones: a central computer joined by a thick Ethernet backbone to four zone controllers, one per corner of the car, each wired over short CAN FD or LIN links to the sensors and actuators near it."/>
+
+</div>
+
 <div class="grid grid-cols-2 gap-8">
 <div>
 
-### Domain architecture (the 2004 cars)
-
-- One bus per **function**: powertrain, chassis, body, multimedia
-- ECUs sit where their function needs them; wires run across the car to their bus
-- Gateways between the buses
+**Domains** (the 2004 cars): one bus per **function**, wherever its ECUs sit; gateways between the
+buses.
 
 </div>
 <div>
 
-### Zonal architecture (cars from ≈ 2020)
-
-- A few **central computers** run the functions
-- **Zone controllers**, one per area of the car, connect the nearby sensors and actuators
-- **Ethernet** backbone between zones and center; **CAN FD and LIN** inside each zone
+**Zones** (cars from ≈ 2020): a few **central computers**; a **zone controller** per area wires the
+sensors near it over **CAN FD and LIN**; **Ethernet** between zones and center.
 
 </div>
 </div>

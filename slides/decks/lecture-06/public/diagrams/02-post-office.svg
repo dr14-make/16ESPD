@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300" width="1000" height="300">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .dimbox { fill: #fff; stroke: #b6c0ca; stroke-width: 2; }
+    .keep { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .env { fill: #fff8ec; stroke: #8a7a62; stroke-width: 2; }
+    .tag { fill: #1f5fa8; }
+    .bus { stroke: #1f5fa8; stroke-width: 5; fill: none; }
+    .stub { stroke: #1f5fa8; stroke-width: 3; }
+    .arrow { stroke: #16202c; stroke-width: 2.5; fill: none; }
+    .ret { stroke: #4a5a6b; stroke-width: 2; fill: none; stroke-dasharray: 6 4; }
+    .ok { stroke: #1f5fa8; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .no { stroke: #9aa7b4; stroke-width: 3; stroke-linecap: round; }
+    .t { font-size: 21px; font-weight: 700; }
+    .n { font-size: 16px; font-weight: 600; }
+    .dim { font-size: 16px; fill: #9aa7b4; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+    .w { font-size: 15px; font-weight: 700; fill: #fff; }
+  </style>
+  <defs>
+    <marker id="po-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+    <marker id="po-grey" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a5a6b"/></marker>
+  </defs>
+
+  <!-- post office -->
+  <text x="235" y="28" text-anchor="middle" class="t">post office</text>
+  <rect class="box" x="20" y="120" width="90" height="50" rx="4"/>
+  <text x="65" y="151" text-anchor="middle" class="n">sender</text>
+  <rect class="env" x="130" y="118" width="96" height="56" rx="3"/>
+  <path d="M130 118 L178 150 L226 118" fill="none" stroke="#8a7a62" stroke-width="2"/>
+  <text x="178" y="194" text-anchor="middle" class="n">To: ABS</text>
+  <path class="arrow" d="M232 145 H300 L352 82" marker-end="url(#po-ink)"/>
+  <rect class="keep" x="360" y="56" width="90" height="46" rx="4"/>
+  <text x="405" y="85" text-anchor="middle" class="n">ABS</text>
+  <rect class="dimbox" x="360" y="122" width="90" height="46" rx="4"/>
+  <text x="405" y="151" text-anchor="middle" class="dim">dashboard</text>
+  <rect class="dimbox" x="360" y="188" width="90" height="46" rx="4"/>
+  <text x="405" y="217" text-anchor="middle" class="dim">radio</text>
+  <path class="ret" d="M405 52 V44 H65 V114" marker-end="url(#po-grey)"/>
+  <text x="250" y="270" text-anchor="middle" class="lbl">an address, one door, a signed receipt</text>
+  <text x="235" y="62" text-anchor="middle" class="lbl">signed by ABS</text>
+
+  <line x1="500" y1="20" x2="500" y2="285" stroke="#d0d7de" stroke-width="1.5"/>
+
+  <!-- CAN -->
+  <text x="755" y="28" text-anchor="middle" class="t">CAN</text>
+  <path class="bus" d="M530 150 H980"/>
+  <rect class="box" x="530" y="60" width="90" height="46" rx="4"/>
+  <text x="575" y="89" text-anchor="middle" class="n">sender</text>
+  <line class="stub" x1="575" y1="106" x2="575" y2="150"/>
+  <rect class="tag" x="640" y="120" width="150" height="26" rx="13"/>
+  <text x="715" y="138" text-anchor="middle" class="w">1A0h vehicle speed</text>
+
+  <line class="stub" x1="850" y1="106" x2="850" y2="150"/>
+  <rect class="keep" x="805" y="60" width="90" height="46" rx="4"/>
+  <text x="850" y="89" text-anchor="middle" class="n">ABS</text>
+  <path class="ok" d="M902 80 l6 6 l12 -14"/>
+
+  <line class="stub" x1="620" y1="150" x2="620" y2="194"/>
+  <rect class="keep" x="575" y="194" width="90" height="46" rx="4"/>
+  <text x="620" y="223" text-anchor="middle" class="n">dashboard</text>
+  <path class="ok" d="M672 214 l6 6 l12 -14"/>
+
+  <line class="stub" x1="780" y1="150" x2="780" y2="194"/>
+  <rect class="box" x="735" y="194" width="90" height="46" rx="4"/>
+  <text x="780" y="223" text-anchor="middle" class="n">radio</text>
+
+  <line class="stub" x1="930" y1="150" x2="930" y2="194"/>
+  <rect class="box" x="885" y="194" width="90" height="46" rx="4"/>
+  <text x="930" y="223" text-anchor="middle" class="n">seats</text>
+
+  <text x="755" y="270" text-anchor="middle" class="lbl">a topic, everyone hears it, any receiver acknowledges</text>
+</svg>

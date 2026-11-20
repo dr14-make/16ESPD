@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 390" width="1000" height="390">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .car { fill: #f6f8fa; stroke: #9aa7b4; stroke-width: 2.5; }
+    .ecu { stroke: #16202c; stroke-width: 1.5; }
+    .gw { fill: #16202c; }
+    .eth { stroke: #16202c; stroke-width: 6; fill: none; }
+    .zone { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2.5; }
+    .edge { stroke: #1f5fa8; stroke-width: 2.5; }
+    .dev { fill: #fff; stroke: #1f5fa8; stroke-width: 2; }
+    .t { font-size: 21px; font-weight: 700; }
+    .n { font-size: 14px; font-weight: 600; }
+    .w { font-size: 14px; font-weight: 700; fill: #fff; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+  </style>
+  <text x="245" y="30" text-anchor="middle" class="t">domains</text>
+  <rect class="car" x="30" y="50" width="430" height="240" rx="70"/>
+  <text x="455" y="42" text-anchor="end" class="lbl">front →</text>
+  <path d="M245 170 L400 105 L410 170 L360 240" stroke="#0072B2" stroke-width="3.5" fill="none" stroke-linejoin="round"/>
+  <rect class="ecu" x="387" y="94" width="26" height="22" rx="3" fill="#0072B2"/>
+  <rect class="ecu" x="397" y="159" width="26" height="22" rx="3" fill="#0072B2"/>
+  <rect class="ecu" x="347" y="229" width="26" height="22" rx="3" fill="#0072B2"/>
+  <path d="M245 170 L95 95 L415 250 L110 245" stroke="#E69F00" stroke-width="3.5" fill="none" stroke-linejoin="round" stroke-dasharray="8 4"/>
+  <rect class="ecu" x="82" y="84" width="26" height="22" rx="3" fill="#E69F00"/>
+  <rect class="ecu" x="402" y="239" width="26" height="22" rx="3" fill="#E69F00"/>
+  <rect class="ecu" x="97" y="234" width="26" height="22" rx="3" fill="#E69F00"/>
+  <path d="M245 170 L160 75 L330 80 L170 265" stroke="#009E73" stroke-width="3.5" fill="none" stroke-linejoin="round" stroke-dasharray="2 4"/>
+  <rect class="ecu" x="147" y="64" width="26" height="22" rx="3" fill="#009E73"/>
+  <rect class="ecu" x="317" y="69" width="26" height="22" rx="3" fill="#009E73"/>
+  <rect class="ecu" x="157" y="254" width="26" height="22" rx="3" fill="#009E73"/>
+  <path d="M245 170 L300 130 L75 170 L280 260" stroke="#CC79A7" stroke-width="3.5" fill="none" stroke-linejoin="round" stroke-dasharray="10 4 2 4"/>
+  <rect class="ecu" x="287" y="119" width="26" height="22" rx="3" fill="#CC79A7"/>
+  <rect class="ecu" x="62" y="159" width="26" height="22" rx="3" fill="#CC79A7"/>
+  <rect class="ecu" x="267" y="249" width="26" height="22" rx="3" fill="#CC79A7"/>
+  <rect class="gw" x="207" y="153" width="76" height="34" rx="5"/><text x="245" y="175" text-anchor="middle" class="w">gateway</text>
+  <line x1="30" y1="318" x2="64" y2="318" stroke="#0072B2" stroke-width="3.5"/><text x="70" y="323" class="lbl">powertrain</text>
+  <line x1="165" y1="318" x2="199" y2="318" stroke="#E69F00" stroke-width="3.5" stroke-dasharray="8 4"/><text x="205" y="323" class="lbl">chassis</text>
+  <line x1="275" y1="318" x2="309" y2="318" stroke="#009E73" stroke-width="3.5" stroke-dasharray="2 4"/><text x="315" y="323" class="lbl">body</text>
+  <line x1="365" y1="318" x2="399" y2="318" stroke="#CC79A7" stroke-width="3.5" stroke-dasharray="10 4 2 4"/><text x="405" y="323" class="lbl">multimedia</text>
+  <text x="245" y="360" text-anchor="middle" class="lbl">one bus per function; wires cross the car to reach it</text>
+  <line x1="500" y1="20" x2="500" y2="375" stroke="#d0d7de" stroke-width="1.5"/>
+  <text x="755" y="30" text-anchor="middle" class="t">zones</text>
+  <rect class="car" x="540" y="50" width="430" height="240" rx="70"/>
+  <text x="965" y="42" text-anchor="end" class="lbl">front →</text>
+  <path class="eth" d="M755 170 L630 105"/>
+  <path class="eth" d="M755 170 L880 105"/>
+  <path class="eth" d="M755 170 L630 235"/>
+  <path class="eth" d="M755 170 L880 235"/>
+  <line class="edge" x1="630" y1="105" x2="575" y2="105"/>
+  <circle class="dev" cx="575" cy="105" r="8"/>
+  <line class="edge" x1="630" y1="105" x2="590" y2="70"/>
+  <circle class="dev" cx="590" cy="70" r="8"/>
+  <line class="edge" x1="630" y1="105" x2="630" y2="63"/>
+  <circle class="dev" cx="630" cy="63" r="8"/>
+  <rect class="zone" x="598" y="89" width="64" height="32" rx="5"/><text x="630" y="110" text-anchor="middle" class="n">zone</text>
+  <line class="edge" x1="880" y1="105" x2="935" y2="105"/>
+  <circle class="dev" cx="935" cy="105" r="8"/>
+  <line class="edge" x1="880" y1="105" x2="920" y2="70"/>
+  <circle class="dev" cx="920" cy="70" r="8"/>
+  <line class="edge" x1="880" y1="105" x2="880" y2="63"/>
+  <circle class="dev" cx="880" cy="63" r="8"/>
+  <rect class="zone" x="848" y="89" width="64" height="32" rx="5"/><text x="880" y="110" text-anchor="middle" class="n">zone</text>
+  <line class="edge" x1="630" y1="235" x2="575" y2="235"/>
+  <circle class="dev" cx="575" cy="235" r="8"/>
+  <line class="edge" x1="630" y1="235" x2="590" y2="270"/>
+  <circle class="dev" cx="590" cy="270" r="8"/>
+  <line class="edge" x1="630" y1="235" x2="630" y2="277"/>
+  <circle class="dev" cx="630" cy="277" r="8"/>
+  <rect class="zone" x="598" y="219" width="64" height="32" rx="5"/><text x="630" y="240" text-anchor="middle" class="n">zone</text>
+  <line class="edge" x1="880" y1="235" x2="935" y2="235"/>
+  <circle class="dev" cx="935" cy="235" r="8"/>
+  <line class="edge" x1="880" y1="235" x2="920" y2="270"/>
+  <circle class="dev" cx="920" cy="270" r="8"/>
+  <line class="edge" x1="880" y1="235" x2="880" y2="277"/>
+  <circle class="dev" cx="880" cy="277" r="8"/>
+  <rect class="zone" x="848" y="219" width="64" height="32" rx="5"/><text x="880" y="240" text-anchor="middle" class="n">zone</text>
+  <rect class="gw" x="705" y="150" width="100" height="40" rx="6"/><text x="755" y="175" text-anchor="middle" class="w">central</text>
+  <line x1="560" y1="318" x2="594" y2="318" class="eth"/><text x="600" y="323" class="lbl">Ethernet backbone</text>
+  <line x1="765" y1="318" x2="799" y2="318" class="edge"/><circle class="dev" cx="805" cy="318" r="7"/><text x="818" y="323" class="lbl">CAN FD / LIN</text>
+  <text x="755" y="360" text-anchor="middle" class="lbl">computers in the middle; short local wires in each zone</text>
+</svg>

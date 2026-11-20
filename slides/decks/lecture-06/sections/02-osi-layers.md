@@ -21,12 +21,10 @@ routeAlias: osi-model
 
 ## The OSI model
 
-<div class="grid grid-cols-[1fr_1.2fr] gap-8 items-center">
+<div class="grid grid-cols-[1.5fr_1fr] gap-8 items-center">
 <div>
 
-<img src="/pptx/slide07-osi-model.jpg" alt="The seven OSI layers as colored boxes, from 1 Physical at the bottom, access to media, through 2 Data Link, local delivery, 3 Network, routing to destination, 4 Transport, delivery and sequencing, 5 Session, establish connection, 6 Presentation, encryption and formatting, to 7 Application at the top, data generation." style="max-height: 22rem"/>
-
-<div class="caption">From the source deck, slide 7</div>
+<img src="/diagrams/02-osi-stack.svg" alt="The seven OSI layers as a stack, each with its job: 7 Application, what the data means; 6 Presentation, how values are written; 5 Session, open and close a dialogue; 4 Transport, split, order, confirm; 3 Network, addresses and routes; 2 Data link, frames, access, errors; 1 Physical, bits on a medium. Layers 1, 2 and 7 are shaded as the ones classic CAN fills. Beside the stack, the data on its way down: layer 4 adds header H4, layer 3 adds H3, layer 2 adds H2 and a trailer T2, and layer 1 sends the result as bits."/>
 
 </div>
 <div>
@@ -38,9 +36,7 @@ program on another, cut into seven layers.
 - A layer can be **changed** without touching the others: a new cable, the same programs.
 - A layer can be hardware or software.
 - The model **does nothing** itself; it is a way to sort the jobs every network must do.
-
-Going down, each layer **wraps** the data in its own control information; going up, each layer
-unwraps it again.
+- Going down, each layer **wraps** the data in its own header; going up, it is unwrapped.
 
 > For each layer we ask three questions: what is its job, what does CAN put there, and what is it
 > in the meeting room?
@@ -51,8 +47,8 @@ unwraps it again.
 <!--
 Network engineers describe every network with the same model: OSI, Open Systems Interconnection.
 It describes how data gets from a program running on one machine to a program running on another,
-and it cuts that journey into seven layers. The picture from the source deck lists them, from the
-physical layer at the bottom to the application at the top.
+and it cuts that journey into seven layers. The picture lists them, from the physical layer at
+the bottom to the application at the top. The three shaded ones are the layers classic CAN fills.
 
 The rules on the right are what make the model useful. Each layer does one job, and it talks only
 to its neighbors: the one above and the one below. So you can change one layer without touching
@@ -61,8 +57,9 @@ can be hardware, like a cable, or software. And the model itself does nothing; i
 the jobs that every network has to do.
 
 On the way down, at the sender, each layer wraps the data in its own control information: an
-address, a length, a checksum. On the way up, at the receiver, each layer unwraps what its partner
-layer added.
+address, a length, a checksum. The right side of the picture shows the data growing a header at
+each layer, and a trailer at layer 2. On the way up, at the receiver, each layer unwraps what its
+partner layer added.
 
 From now on, for each layer we ask the same three questions. What is its job? What does CAN put
 there? And what is it in the meeting room from section 01? We go from the bottom up.
@@ -497,25 +494,27 @@ routeAlias: not-a-post-office
 
 ## CAN is not a post office
 
+<div class="diagram-wide">
+
+<img src="/diagrams/02-post-office.svg" alt="Left, the post office: a sender posts an envelope addressed To: ABS; it is delivered to the ABS only, the dashboard and the radio never see it, and the ABS signs a receipt back to the sender. Right, CAN: a sender puts a frame tagged 1A0h vehicle speed on one bus; the ABS, the dashboard, the radio and the seats all receive it; the ABS and the dashboard keep it, the others ignore it."/>
+
+</div>
+
 <div class="grid grid-cols-2 gap-8">
 <div>
 
 ### The post office
 
-- Every letter carries the **recipient's address** (layer 3).
-- The post **routes** it to that one door.
+- The letter carries the **recipient's address** (layer 3) and is **routed** to that one door.
 - The recipient **signs for it** (layer 4): the sender knows *who* got it.
-- Nobody else sees the letter.
 
 </div>
 <div>
 
 ### CAN
 
-- A frame carries a **topic**, no address.
-- It goes to **everyone**; each ECU decides whether to keep it.
+- A frame carries a **topic**, no address; it goes to **everyone**, each ECU decides.
 - **Any** receiver acknowledges: the sender knows *someone* got it, not who.
-- Every ECU sees every frame.
 
 </div>
 </div>
