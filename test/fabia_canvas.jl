@@ -62,7 +62,7 @@ using JSON
         for member in eachmatch(r"(?m)^  (\w+) = [\w.]+\(", code)
             haskey(links, member[1]) || push!(violations, "$key missing placement for $(member[1])")
         end
-        relations = last(split(code, "relations"; limit = 2))
+        relations = occursin("relations", code) ? last(split(code, "relations"; limit = 2)) : ""
         for line in split(relations, '\n')
             stripped = strip(line)
             isempty(stripped) && continue

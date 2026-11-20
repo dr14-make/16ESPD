@@ -30,24 +30,6 @@ Signal-only Fabia instrument cluster; physical CAN encoding belongs to the realt
  * `epc` - This connector represents a boolean signal as an input to a component ([`BooleanInput`](@ref))
  * `charging` - This connector represents a boolean signal as an input to a component ([`BooleanInput`](@ref))
  * `airbag_lamp` - This connector represents a boolean signal as an input to a component ([`BooleanInput`](@ref))
-
-## Variables
-
-| Name         | Description                         | Units  | 
-| ------------ | ----------------------------------- | ------ |
-| `speed_value`         |                          | --  |
-| `rpm_value`         |                          | --  |
-| `coolant_value`         |                          | --  |
-| `left_value`         |                          | --  |
-| `right_value`         |                          | --  |
-| `hazard_value`         |                          | --  |
-| `abs_lamp_value`         |                          | --  |
-| `asr_lamp_value`         |                          | --  |
-| `brake_lamp_value`         |                          | --  |
-| `mil_value`         |                          | --  |
-| `epc_value`         |                          | --  |
-| `charging_value`         |                          | --  |
-| `airbag_lamp_value`         |                          | --  |
 """
 @component function FabiaCluster(; name = nothing, var"dimming"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -105,60 +87,8 @@ Signal-only Fabia instrument cluster; physical CAN encoding belongs to the realt
   append!(__vars, @variables (airbag_lamp(t)::Bool), [input = true])
 
   ### Variables (declarations)
-  append!(__vars, @variables (speed_value(t)::Real))
-  append!(__vars, @variables (rpm_value(t)::Real))
-  append!(__vars, @variables (coolant_value(t)::Real))
-  append!(__vars, @variables (left_value(t)::Bool))
-  append!(__vars, @variables (right_value(t)::Bool))
-  append!(__vars, @variables (hazard_value(t)::Bool))
-  append!(__vars, @variables (abs_lamp_value(t)::Bool))
-  append!(__vars, @variables (asr_lamp_value(t)::Bool))
-  append!(__vars, @variables (brake_lamp_value(t)::Bool))
-  append!(__vars, @variables (mil_value(t)::Bool))
-  append!(__vars, @variables (epc_value(t)::Bool))
-  append!(__vars, @variables (charging_value(t)::Bool))
-  append!(__vars, @variables (airbag_lamp_value(t)::Bool))
 
   ### Variables (assignments)
-  __ovr_speed_value = pop!(__overrides, "speed_value", nothing); isnothing(__ovr_speed_value) || push!(__eqs, speed_value ~ __ovr_speed_value)
-  __ovr_speed_value__initial = pop!(__overrides, "speed_value.initial", nothing); isnothing(__ovr_speed_value__initial) || (__initial_conditions[speed_value] = __ovr_speed_value__initial)
-  __ovr_speed_value__guess = pop!(__overrides, "speed_value.guess", nothing)
-  __ovr_rpm_value = pop!(__overrides, "rpm_value", nothing); isnothing(__ovr_rpm_value) || push!(__eqs, rpm_value ~ __ovr_rpm_value)
-  __ovr_rpm_value__initial = pop!(__overrides, "rpm_value.initial", nothing); isnothing(__ovr_rpm_value__initial) || (__initial_conditions[rpm_value] = __ovr_rpm_value__initial)
-  __ovr_rpm_value__guess = pop!(__overrides, "rpm_value.guess", nothing)
-  __ovr_coolant_value = pop!(__overrides, "coolant_value", nothing); isnothing(__ovr_coolant_value) || push!(__eqs, coolant_value ~ __ovr_coolant_value)
-  __ovr_coolant_value__initial = pop!(__overrides, "coolant_value.initial", nothing); isnothing(__ovr_coolant_value__initial) || (__initial_conditions[coolant_value] = __ovr_coolant_value__initial)
-  __ovr_coolant_value__guess = pop!(__overrides, "coolant_value.guess", nothing)
-  __ovr_left_value = pop!(__overrides, "left_value", nothing); isnothing(__ovr_left_value) || push!(__eqs, left_value ~ __ovr_left_value)
-  __ovr_left_value__initial = pop!(__overrides, "left_value.initial", nothing); isnothing(__ovr_left_value__initial) || (__initial_conditions[left_value] = __ovr_left_value__initial)
-  __ovr_left_value__guess = pop!(__overrides, "left_value.guess", nothing)
-  __ovr_right_value = pop!(__overrides, "right_value", nothing); isnothing(__ovr_right_value) || push!(__eqs, right_value ~ __ovr_right_value)
-  __ovr_right_value__initial = pop!(__overrides, "right_value.initial", nothing); isnothing(__ovr_right_value__initial) || (__initial_conditions[right_value] = __ovr_right_value__initial)
-  __ovr_right_value__guess = pop!(__overrides, "right_value.guess", nothing)
-  __ovr_hazard_value = pop!(__overrides, "hazard_value", nothing); isnothing(__ovr_hazard_value) || push!(__eqs, hazard_value ~ __ovr_hazard_value)
-  __ovr_hazard_value__initial = pop!(__overrides, "hazard_value.initial", nothing); isnothing(__ovr_hazard_value__initial) || (__initial_conditions[hazard_value] = __ovr_hazard_value__initial)
-  __ovr_hazard_value__guess = pop!(__overrides, "hazard_value.guess", nothing)
-  __ovr_abs_lamp_value = pop!(__overrides, "abs_lamp_value", nothing); isnothing(__ovr_abs_lamp_value) || push!(__eqs, abs_lamp_value ~ __ovr_abs_lamp_value)
-  __ovr_abs_lamp_value__initial = pop!(__overrides, "abs_lamp_value.initial", nothing); isnothing(__ovr_abs_lamp_value__initial) || (__initial_conditions[abs_lamp_value] = __ovr_abs_lamp_value__initial)
-  __ovr_abs_lamp_value__guess = pop!(__overrides, "abs_lamp_value.guess", nothing)
-  __ovr_asr_lamp_value = pop!(__overrides, "asr_lamp_value", nothing); isnothing(__ovr_asr_lamp_value) || push!(__eqs, asr_lamp_value ~ __ovr_asr_lamp_value)
-  __ovr_asr_lamp_value__initial = pop!(__overrides, "asr_lamp_value.initial", nothing); isnothing(__ovr_asr_lamp_value__initial) || (__initial_conditions[asr_lamp_value] = __ovr_asr_lamp_value__initial)
-  __ovr_asr_lamp_value__guess = pop!(__overrides, "asr_lamp_value.guess", nothing)
-  __ovr_brake_lamp_value = pop!(__overrides, "brake_lamp_value", nothing); isnothing(__ovr_brake_lamp_value) || push!(__eqs, brake_lamp_value ~ __ovr_brake_lamp_value)
-  __ovr_brake_lamp_value__initial = pop!(__overrides, "brake_lamp_value.initial", nothing); isnothing(__ovr_brake_lamp_value__initial) || (__initial_conditions[brake_lamp_value] = __ovr_brake_lamp_value__initial)
-  __ovr_brake_lamp_value__guess = pop!(__overrides, "brake_lamp_value.guess", nothing)
-  __ovr_mil_value = pop!(__overrides, "mil_value", nothing); isnothing(__ovr_mil_value) || push!(__eqs, mil_value ~ __ovr_mil_value)
-  __ovr_mil_value__initial = pop!(__overrides, "mil_value.initial", nothing); isnothing(__ovr_mil_value__initial) || (__initial_conditions[mil_value] = __ovr_mil_value__initial)
-  __ovr_mil_value__guess = pop!(__overrides, "mil_value.guess", nothing)
-  __ovr_epc_value = pop!(__overrides, "epc_value", nothing); isnothing(__ovr_epc_value) || push!(__eqs, epc_value ~ __ovr_epc_value)
-  __ovr_epc_value__initial = pop!(__overrides, "epc_value.initial", nothing); isnothing(__ovr_epc_value__initial) || (__initial_conditions[epc_value] = __ovr_epc_value__initial)
-  __ovr_epc_value__guess = pop!(__overrides, "epc_value.guess", nothing)
-  __ovr_charging_value = pop!(__overrides, "charging_value", nothing); isnothing(__ovr_charging_value) || push!(__eqs, charging_value ~ __ovr_charging_value)
-  __ovr_charging_value__initial = pop!(__overrides, "charging_value.initial", nothing); isnothing(__ovr_charging_value__initial) || (__initial_conditions[charging_value] = __ovr_charging_value__initial)
-  __ovr_charging_value__guess = pop!(__overrides, "charging_value.guess", nothing)
-  __ovr_airbag_lamp_value = pop!(__overrides, "airbag_lamp_value", nothing); isnothing(__ovr_airbag_lamp_value) || push!(__eqs, airbag_lamp_value ~ __ovr_airbag_lamp_value)
-  __ovr_airbag_lamp_value__initial = pop!(__overrides, "airbag_lamp_value.initial", nothing); isnothing(__ovr_airbag_lamp_value__initial) || (__initial_conditions[airbag_lamp_value] = __ovr_airbag_lamp_value__initial)
-  __ovr_airbag_lamp_value__guess = pop!(__overrides, "airbag_lamp_value.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -169,19 +99,6 @@ Signal-only Fabia instrument cluster; physical CAN encoding belongs to the realt
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
-  isnothing(__ovr_speed_value__guess) || (__guesses[speed_value] = __ovr_speed_value__guess)
-  isnothing(__ovr_rpm_value__guess) || (__guesses[rpm_value] = __ovr_rpm_value__guess)
-  isnothing(__ovr_coolant_value__guess) || (__guesses[coolant_value] = __ovr_coolant_value__guess)
-  isnothing(__ovr_left_value__guess) || (__guesses[left_value] = __ovr_left_value__guess)
-  isnothing(__ovr_right_value__guess) || (__guesses[right_value] = __ovr_right_value__guess)
-  isnothing(__ovr_hazard_value__guess) || (__guesses[hazard_value] = __ovr_hazard_value__guess)
-  isnothing(__ovr_abs_lamp_value__guess) || (__guesses[abs_lamp_value] = __ovr_abs_lamp_value__guess)
-  isnothing(__ovr_asr_lamp_value__guess) || (__guesses[asr_lamp_value] = __ovr_asr_lamp_value__guess)
-  isnothing(__ovr_brake_lamp_value__guess) || (__guesses[brake_lamp_value] = __ovr_brake_lamp_value__guess)
-  isnothing(__ovr_mil_value__guess) || (__guesses[mil_value] = __ovr_mil_value__guess)
-  isnothing(__ovr_epc_value__guess) || (__guesses[epc_value] = __ovr_epc_value__guess)
-  isnothing(__ovr_charging_value__guess) || (__guesses[charging_value] = __ovr_charging_value__guess)
-  isnothing(__ovr_airbag_lamp_value__guess) || (__guesses[airbag_lamp_value] = __ovr_airbag_lamp_value__guess)
 
   ### Initialization Equations
 
@@ -189,19 +106,6 @@ Signal-only Fabia instrument cluster; physical CAN encoding belongs to the realt
   __assertions = []
 
   ### Equations
-  push!(__eqs, speed_value ~ speed)
-  push!(__eqs, rpm_value ~ rpm)
-  push!(__eqs, coolant_value ~ coolant)
-  push!(__eqs, left_value ~ left)
-  push!(__eqs, right_value ~ right)
-  push!(__eqs, hazard_value ~ hazard)
-  push!(__eqs, abs_lamp_value ~ abs_lamp)
-  push!(__eqs, asr_lamp_value ~ asr_lamp)
-  push!(__eqs, brake_lamp_value ~ brake_lamp)
-  push!(__eqs, mil_value ~ mil)
-  push!(__eqs, epc_value ~ epc)
-  push!(__eqs, charging_value ~ charging)
-  push!(__eqs, airbag_lamp_value ~ airbag_lamp)
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
