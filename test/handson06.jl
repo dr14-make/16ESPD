@@ -48,10 +48,10 @@ end
     @test fast.load > 0
     @test slow.load ≈ 2 * fast.load
     @test [f.response_time for f in slow.frames] ≈ 2 .* [f.response_time for f in fast.frames]
-    @test fast.load ≈ 0.1215
-    @test slow.load ≈ 0.243
+    @test fast.load ≈ 0.1345
+    @test slow.load ≈ 0.269
     @test [f.response_time for f in fast.frames] ≈
-        [0.30, 0.45, 0.60, 0.75, 0.90, 1.05, 1.20, 1.35, 1.35] ./ 1000
+        [0.28, 0.43, 0.58, 0.73, 0.88, 1.03, 1.18, 1.33, 1.48, 1.48] ./ 1000
 end
 
 const H06_STOP_DISTANCE_PINS = (

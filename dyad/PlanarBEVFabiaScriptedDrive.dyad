@@ -21,29 +21,12 @@ relations
   connect(driver.steer_signal, vehicle.steer) {^w3}
   connect(adapter.bus, vehicle.bus, cluster.bus) {^w4}
   connect(vehicle.motor_speed, cluster.motor_speed) {^w5}
-  connect(vehicle.abs_signal, cluster.abs_signal) {^abs_wire}
   connect(indicate_start.y, indicate_left.u1) {^w6}
   connect(indicate_end.y, indicate_left.u2) {^w7}
   connect(indicate_left.y, cluster.left) {^w8}
   connect(off.y, cluster.right) {^w9}
 metadata {
   "_links": {
-    "abs_wire": {
-      "Dyad": {
-        "edges": [
-          {
-            "E": 2,
-            "M": [
-              {
-                "x": 810.0,
-                "y": 258.0
-              }
-            ],
-            "S": 1
-          }
-        ]
-      }
-    },
     "adapter": {
       "Dyad": {
         "placement": {

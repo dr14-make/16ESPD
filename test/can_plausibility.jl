@@ -125,8 +125,8 @@ end
             @test only(r.distance for r in rows if r.architecture == "bus_brake" &&
                 r.period == period && r.offset == 0.0) ≈ pin atol = 1e-3
         end
-        # Preserved counterexample briefly locks its rear wheels near the ABS low-speed cutoff.
-        @test_broken all(r -> !r.wheel_lock, rows)
+        # Brake demand over the bus can briefly lock a rear wheel; the local layout never does.
+        @test !any(r -> r.wheel_lock, (r for r in rows if r.architecture != "bus_brake"))
         @test [(r.architecture, r.period, r.offset) for r in rows if r.wheel_lock] ==
             [("bus_brake", 0.010, 0.030)]
         for offset in sweep.OFFSETS
@@ -284,10 +284,10 @@ end
     compiled = DyadInterface.simplify_model(_CAN.CanCruiseIdeal(name = :cruise))
     @test _CAN.can_schedule(compiled).load ≈ _CAN.can_schedule(_CAN.CanCruiseIdeal(name = :cruise)).load
     car_schedule = _CAN.can_schedule(_CAN.Can10msStopBench(name = :car))
-    @test car_schedule.load ≈ 0.1215
-    @test [f.id for f in car_schedule.frames] == [128, 144, 160, 176, 177, 178, 179, 272, 768]
+    @test car_schedule.load ≈ 0.1345
+    @test [f.id for f in car_schedule.frames] == [112, 128, 144, 160, 176, 177, 178, 179, 272, 768]
     @test [f.response_time for f in car_schedule.frames] ≈
-        [0.30, 0.45, 0.60, 0.75, 0.90, 1.05, 1.20, 1.35, 1.35] ./ 1000
+        [0.28, 0.43, 0.58, 0.73, 0.88, 1.03, 1.18, 1.33, 1.48, 1.48] ./ 1000
     counter = _CAN.CanBusBrake10msStopBench(name = :counter)
     @test _CAN.check_can(counter) === counter
     counter_schedule = _CAN.can_schedule(counter)

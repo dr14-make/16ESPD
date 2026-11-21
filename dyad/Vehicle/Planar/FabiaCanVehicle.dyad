@@ -2,12 +2,9 @@
 component FabiaCanVehicle
   extends PlanarBEVCanDrive
   motor_speed = RealOutput() {^motor_speed}
-  "Wired held ABS status, independent of CAN messages"
-  abs_signal = RealOutput() {^abs_signal}
   bus = CanNet() {^bus}
 relations
   motor_speed = drive.drive.machine.w
-  abs_signal = ecu.abs_hold.y
   connect(bus, motion.bus)
 metadata {
   "Dyad": {
@@ -16,26 +13,6 @@ metadata {
     }
   },
   "_links": {
-    "abs_signal": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 925,
-            "x2": 955,
-            "y1": 435,
-            "y2": 465
-          },
-          "icon": {
-            "rot": 0,
-            "x1": 985,
-            "x2": 1015,
-            "y1": 435,
-            "y2": 465
-          }
-        }
-      }
-    },
     "brake": {
       "Dyad": {
         "placement": {

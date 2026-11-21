@@ -47,7 +47,7 @@ component PlanarBEVCanDrive
   drive = CanVcuNode(ideal = ideal, ratio = ratio, P_aux = P_aux) {^drive}
   differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
   mount = RotationalComponents.Components.Fixed() {^mount}
-  ecu = CanBrakeNode(ratio = ratio, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade, regen_period = chassis_period, ideal = ideal, speed_period = speed_period, wheel_period = wheel_period, esp_on = esp_on, abs_on = abs_on, radius = radius, T_full = T_full) {^ecu}
+  ecu = CanBrakeNode(ratio = ratio, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade, regen_period = chassis_period, ideal = ideal, speed_period = speed_period, wheel_period = wheel_period, abs_period = abs_period, esp_on = esp_on, abs_on = abs_on, radius = radius, T_full = T_full) {^ecu}
   car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(mu_scale_fl = mu, mu_scale_fr = mu, mu_scale_rl = mu, mu_scale_rr = mu, m = m, radius = radius, tau_max = T_full) {^car}
   roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
   flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
@@ -60,6 +60,7 @@ component PlanarBEVCanDrive
   structural parameter steering_period::Real = chassis_period
   structural parameter yaw_period::Real = chassis_period
   structural parameter wheel_period::Real = chassis_period
+  structural parameter abs_period::Real = chassis_period
   structural parameter dashboard_period::Real = 0.1
 relations
   connect(motion.bus, ecu.bus, drive.bus, cluster.bus) {^network}

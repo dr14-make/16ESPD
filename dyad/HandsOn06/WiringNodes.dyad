@@ -321,6 +321,7 @@ component WiringBrakeNode
   structural parameter wheel_period::Real = 0.01
   structural parameter speed_period::Real = 0.01
   structural parameter regen_period::Real = 0.01
+  structural parameter abs_period::Real = 0.01
   parameter esp_on::Real = 1
   parameter abs_on::Real = 1
   parameter radius::Length = 0.31
@@ -341,9 +342,11 @@ component WiringBrakeNode
   wheel_fr_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(slot = 9, id = 177, ideal = ideal, period = wheel_period, scale = 0.01, raw_min = -32768, raw_max = 32767) {^wheel_fr_tx}
   wheel_rl_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(slot = 10, id = 178, ideal = ideal, period = wheel_period, scale = 0.01, raw_min = -32768, raw_max = 32767) {^wheel_rl_tx}
   wheel_rr_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(slot = 11, id = 179, ideal = ideal, period = wheel_period, scale = 0.01, raw_min = -32768, raw_max = 32767) {^wheel_rr_tx}
+  "Held ABS status for the cluster lamp and other listeners"
+  abs_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(slot = 5, id = 112, ideal = ideal, period = abs_period, scale = 1, raw_min = 0, raw_max = 1) {^abs_tx}
   regen_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(slot = 6, id = 272, ideal = ideal, period = regen_period, scale = 0.1, raw_min = -32768, raw_max = 32767) if transmit_regen {^regen_tx}
 relations
-  connect(bus, steering_angle_rx.bus, yaw_rate_rx.bus, speed_tx.bus, wheel_fl_tx.bus, wheel_fr_tx.bus, wheel_rl_tx.bus, wheel_rr_tx.bus) {^network}
+  connect(bus, steering_angle_rx.bus, yaw_rate_rx.bus, speed_tx.bus, wheel_fl_tx.bus, wheel_fr_tx.bus, wheel_rl_tx.bus, wheel_rr_tx.bus, abs_tx.bus) {^network}
   if networked
     ecu.delta_sw = steering_angle_rx.y
     ecu.r = yaw_rate_rx.y
@@ -358,7 +361,7 @@ relations
   connect(kmh.y, blend.v) {^blend_speed}
   connect(blend.tau_brake, ecu.demand, abs_hold.demand) {^friction}
   connect(ecu.front_active, abs_hold.active) {^active}
-  connect(abs_hold.y, blend.abs_active) {^held}
+  connect(abs_hold.y, blend.abs_active, abs_tx.u) {^held}
   connect(blend.tau_motor, regen) {^regen_wire}
   if transmit_regen
     connect(regen_tx.u, blend.tau_motor) {^regen_send}
@@ -378,6 +381,19 @@ relations
   connect(ecu.tau_rr, tau_rr) {^torque_rr}
 metadata {
   "_links": {
+    "abs_tx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 897.0,
+            "x2": 966.0,
+            "y1": 828.0,
+            "y2": 897.0
+          }
+        }
+      }
+    },
     "bus": {
       "Dyad": {
         "placement": {
@@ -809,7 +825,7 @@ metadata {
               },
               {
                 "x": 931.4999999999999,
-                "y": 103.49999999999999
+                "y": 206.99999999999997
               }
             ]
           },
@@ -823,7 +839,7 @@ metadata {
               },
               {
                 "x": 931.4999999999999,
-                "y": 206.99999999999997
+                "y": 310.5
               }
             ]
           },
@@ -837,7 +853,7 @@ metadata {
               },
               {
                 "x": 931.4999999999999,
-                "y": 310.5
+                "y": 413.99999999999994
               }
             ]
           },
@@ -851,7 +867,7 @@ metadata {
               },
               {
                 "x": 931.4999999999999,
-                "y": 413.99999999999994
+                "y": 517.5
               }
             ]
           },
@@ -865,7 +881,7 @@ metadata {
               },
               {
                 "x": 931.4999999999999,
-                "y": 517.5
+                "y": 621.0
               }
             ]
           },
@@ -874,12 +890,16 @@ metadata {
             "E": 9,
             "M": [
               {
-                "x": 931.4999999999999,
+                "x": 985.0,
                 "y": 13.799999999999999
               },
               {
+                "x": 985.0,
+                "y": 810.0
+              },
+              {
                 "x": 931.4999999999999,
-                "y": 621.0
+                "y": 810.0
               }
             ]
           }
@@ -1080,12 +1100,20 @@ metadata {
             "E": 3,
             "M": [
               {
-                "x": 841.8,
+                "x": 540.0,
                 "y": 276.0
               },
               {
-                "x": 841.8,
-                "y": 138.0
+                "x": 540.0,
+                "y": 300.0
+              },
+              {
+                "x": 870.0,
+                "y": 300.0
+              },
+              {
+                "x": 870.0,
+                "y": 862.0
               }
             ]
           }
@@ -1745,7 +1773,7 @@ partial component WiringStop
   brake_response = BlockComponents.Continuous.FirstOrder(T = T_actuator) {^brake_response}
   steering_response = BlockComponents.Continuous.FirstOrder(T = T_actuator) {^steering_response}
   robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot() {^robot}
-  ecu = WiringBrakeNode(networked = networked, transmit_regen = transmit_regen, ideal = ideal, wheel_period = chassis_period, speed_period = chassis_period, regen_period = regen_period, esp_on = esp_on, abs_on = abs_on, radius = radius, T_full = T_full, ratio = ratio, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade) {^ecu}
+  ecu = WiringBrakeNode(networked = networked, transmit_regen = transmit_regen, ideal = ideal, abs_period = chassis_period, wheel_period = chassis_period, speed_period = chassis_period, regen_period = regen_period, esp_on = esp_on, abs_on = abs_on, radius = radius, T_full = T_full, ratio = ratio, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade) {^ecu}
   drive = WiringDriveNode(networked = drive_networked, receive_regen = receive_regen, ideal = ideal, ratio = ratio, P_aux = P_aux) {^drive}
   differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
   mount = RotationalComponents.Components.Fixed() {^mount}

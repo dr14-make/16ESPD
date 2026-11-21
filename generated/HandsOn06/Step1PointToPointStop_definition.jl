@@ -177,7 +177,7 @@
   push!(__systems, @named robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot(; __overrides = robot_overrides))
   # Subcomponent ecu of type VehicleSystemsComponents.HandsOn06.WiringBrakeNode
   ecu_overrides = __pop_subcomponent_overrides!(__overrides, "ecu")
-  push!(__systems, @named ecu = VehicleSystemsComponents.HandsOn06.WiringBrakeNode(; networked=networked, transmit_regen=transmit_regen, ideal=ideal, wheel_period=chassis_period, speed_period=chassis_period, regen_period=regen_period, esp_on=esp_on, abs_on=abs_on, radius=radius, T_full=T_full, ratio=ratio, tau_max=tau_max, P_charge=P_charge, v_fade=v_fade, __overrides = ecu_overrides))
+  push!(__systems, @named ecu = VehicleSystemsComponents.HandsOn06.WiringBrakeNode(; networked=networked, transmit_regen=transmit_regen, ideal=ideal, abs_period=chassis_period, wheel_period=chassis_period, speed_period=chassis_period, regen_period=regen_period, esp_on=esp_on, abs_on=abs_on, radius=radius, T_full=T_full, ratio=ratio, tau_max=tau_max, P_charge=P_charge, v_fade=v_fade, __overrides = ecu_overrides))
   # Subcomponent drive of type VehicleSystemsComponents.HandsOn06.WiringDriveNode
   drive_overrides = __pop_subcomponent_overrides!(__overrides, "drive")
   push!(__systems, @named drive = VehicleSystemsComponents.HandsOn06.WiringDriveNode(; networked=drive_networked, receive_regen=receive_regen, ideal=ideal, ratio=ratio, P_aux=P_aux, __overrides = drive_overrides))

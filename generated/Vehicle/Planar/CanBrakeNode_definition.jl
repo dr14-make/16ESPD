@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   CanBrakeNode(; name, ideal, speed_period, wheel_period, regen_period, esp_on, abs_on, radius, T_full, ratio, tau_max, P_charge, v_fade, __overrides)
+   CanBrakeNode(; name, ideal, speed_period, wheel_period, abs_period, regen_period, esp_on, abs_on, radius, T_full, ratio, tau_max, P_charge, v_fade, __overrides)
 
 ## Parameters:
 
@@ -14,6 +14,7 @@
 | `ideal`         |                          | --  |   false |
 | `speed_period`         |                          | --  |   0.01 |
 | `wheel_period`         |                          | --  |   0.01 |
+| `abs_period`         |                          | --  |   0.01 |
 | `regen_period`         |                          | --  |   0.01 |
 | `esp_on`         |                          | --  |   1 |
 | `abs_on`         |                          | --  |   1 |
@@ -37,7 +38,7 @@
  * `tau_rr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `brake_request` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function CanBrakeNode(; name = nothing, var"ideal"=false, var"speed_period"=0.01, var"wheel_period"=0.01, var"regen_period"=0.01, var"esp_on"=Float64(1), var"abs_on"=Float64(1), var"radius"=0.31, var"T_full"=Float64(2500), var"ratio"=8.193, var"tau_max"=Float64(320), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10), __overrides = Dict{String, Any}())
+@component function CanBrakeNode(; name = nothing, var"ideal"=false, var"speed_period"=0.01, var"wheel_period"=0.01, var"abs_period"=0.01, var"regen_period"=0.01, var"esp_on"=Float64(1), var"abs_on"=Float64(1), var"radius"=0.31, var"T_full"=Float64(2500), var"ratio"=8.193, var"tau_max"=Float64(320), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -59,6 +60,7 @@
   haskey(__overrides, "ideal") && (ideal = pop!(__overrides, "ideal"))
   haskey(__overrides, "speed_period") && (speed_period = pop!(__overrides, "speed_period"))
   haskey(__overrides, "wheel_period") && (wheel_period = pop!(__overrides, "wheel_period"))
+  haskey(__overrides, "abs_period") && (abs_period = pop!(__overrides, "abs_period"))
   haskey(__overrides, "regen_period") && (regen_period = pop!(__overrides, "regen_period"))
   haskey(__overrides, "esp_on") && (esp_on = pop!(__overrides, "esp_on"))
   haskey(__overrides, "abs_on") && (abs_on = pop!(__overrides, "abs_on"))
@@ -165,6 +167,9 @@
   # Subcomponent blend of type VehicleSystemsComponents.Vehicle.Electric.RegenBlend
   blend_overrides = __pop_subcomponent_overrides!(__overrides, "blend")
   push!(__systems, @named blend = VehicleSystemsComponents.Vehicle.Electric.RegenBlend(; abs_rule=true, ratio=ratio, radius=radius, tau_max=tau_max, P_charge=P_charge, v_fade=v_fade, __overrides = blend_overrides))
+  # Subcomponent abs_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
+  abs_tx_overrides = __pop_subcomponent_overrides!(__overrides, "abs_tx")
+  push!(__systems, @named abs_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=5, id=112, ideal=ideal, period=abs_period, scale=Float64(1), raw_min=Float64(0), raw_max=Float64(1), __overrides = abs_tx_overrides))
   # Subcomponent regen_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
   regen_tx_overrides = __pop_subcomponent_overrides!(__overrides, "regen_tx")
   push!(__systems, @named regen_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=6, id=272, ideal=ideal, period=regen_period, scale=0.1, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = regen_tx_overrides))
@@ -180,7 +185,7 @@
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(bus, steering_angle_rx.bus, yaw_rate_rx.bus, regen_tx.bus, speed_tx.bus, wheel_fl_tx.bus, wheel_fr_tx.bus, wheel_rl_tx.bus, wheel_rr_tx.bus))
+  push!(__eqs, connect(bus, steering_angle_rx.bus, yaw_rate_rx.bus, regen_tx.bus, speed_tx.bus, wheel_fl_tx.bus, wheel_fr_tx.bus, wheel_rl_tx.bus, wheel_rr_tx.bus, abs_tx.bus))
   push!(__eqs, connect(blend.tau_brake, ecu.demand, abs_hold.demand))
   push!(__eqs, connect(estimator.vx, ecu.vx, speed_tx.u, abs_hold.vx))
   push!(__eqs, connect(steering_angle_rx.y, ecu.delta_sw))
@@ -198,7 +203,7 @@
   push!(__eqs, connect(ecu.tau_rl, tau_rl))
   push!(__eqs, connect(ecu.tau_rr, tau_rr))
   push!(__eqs, connect(ecu.front_active, abs_hold.active))
-  push!(__eqs, connect(abs_hold.y, blend.abs_active))
+  push!(__eqs, connect(abs_hold.y, blend.abs_active, abs_tx.u))
   push!(__eqs, connect(brake_request, blend.tau_ref))
   push!(__eqs, connect(estimator.vx, kmh.u))
   push!(__eqs, connect(kmh.y, blend.v))

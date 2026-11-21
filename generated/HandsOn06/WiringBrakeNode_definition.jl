@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   WiringBrakeNode(; name, networked, transmit_regen, ideal, wheel_period, speed_period, regen_period, esp_on, abs_on, radius, T_full, ratio, tau_max, P_charge, v_fade, __overrides)
+   WiringBrakeNode(; name, networked, transmit_regen, ideal, wheel_period, speed_period, regen_period, abs_period, esp_on, abs_on, radius, T_full, ratio, tau_max, P_charge, v_fade, __overrides)
 
 Brake ECU: wheel-only estimator, local ABS/regen blend, hardwired calipers.
 
@@ -19,6 +19,7 @@ Brake ECU: wheel-only estimator, local ABS/regen blend, hardwired calipers.
 | `wheel_period`         |                          | --  |   0.01 |
 | `speed_period`         |                          | --  |   0.01 |
 | `regen_period`         |                          | --  |   0.01 |
+| `abs_period`         |                          | --  |   0.01 |
 | `esp_on`         |                          | --  |   1 |
 | `abs_on`         |                          | --  |   1 |
 | `radius`         |                          | m  |   0.31 |
@@ -44,7 +45,7 @@ Brake ECU: wheel-only estimator, local ABS/regen blend, hardwired calipers.
  * `yaw` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `regen` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function WiringBrakeNode(; name = nothing, var"networked"=false, var"transmit_regen"=true, var"ideal"=true, var"wheel_period"=0.01, var"speed_period"=0.01, var"regen_period"=0.01, var"esp_on"=Float64(1), var"abs_on"=Float64(1), var"radius"=0.31, var"T_full"=Float64(2500), var"ratio"=8.193, var"tau_max"=Float64(320), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10), __overrides = Dict{String, Any}())
+@component function WiringBrakeNode(; name = nothing, var"networked"=false, var"transmit_regen"=true, var"ideal"=true, var"wheel_period"=0.01, var"speed_period"=0.01, var"regen_period"=0.01, var"abs_period"=0.01, var"esp_on"=Float64(1), var"abs_on"=Float64(1), var"radius"=0.31, var"T_full"=Float64(2500), var"ratio"=8.193, var"tau_max"=Float64(320), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -69,6 +70,7 @@ Brake ECU: wheel-only estimator, local ABS/regen blend, hardwired calipers.
   haskey(__overrides, "wheel_period") && (wheel_period = pop!(__overrides, "wheel_period"))
   haskey(__overrides, "speed_period") && (speed_period = pop!(__overrides, "speed_period"))
   haskey(__overrides, "regen_period") && (regen_period = pop!(__overrides, "regen_period"))
+  haskey(__overrides, "abs_period") && (abs_period = pop!(__overrides, "abs_period"))
   haskey(__overrides, "esp_on") && (esp_on = pop!(__overrides, "esp_on"))
   haskey(__overrides, "abs_on") && (abs_on = pop!(__overrides, "abs_on"))
   haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
@@ -177,6 +179,9 @@ Brake ECU: wheel-only estimator, local ABS/regen blend, hardwired calipers.
   # Subcomponent wheel_rr_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
   wheel_rr_tx_overrides = __pop_subcomponent_overrides!(__overrides, "wheel_rr_tx")
   push!(__systems, @named wheel_rr_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=11, id=179, ideal=ideal, period=wheel_period, scale=0.01, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = wheel_rr_tx_overrides))
+  # Subcomponent abs_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
+  abs_tx_overrides = __pop_subcomponent_overrides!(__overrides, "abs_tx")
+  push!(__systems, @named abs_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=5, id=112, ideal=ideal, period=abs_period, scale=Float64(1), raw_min=Float64(0), raw_max=Float64(1), __overrides = abs_tx_overrides))
   # Subcomponent regen_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
   regen_tx_overrides = __pop_subcomponent_overrides!(__overrides, "regen_tx")
   if transmit_regen
@@ -194,13 +199,13 @@ Brake ECU: wheel-only estimator, local ABS/regen blend, hardwired calipers.
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(bus, steering_angle_rx.bus, yaw_rate_rx.bus, speed_tx.bus, wheel_fl_tx.bus, wheel_fr_tx.bus, wheel_rl_tx.bus, wheel_rr_tx.bus))
+  push!(__eqs, connect(bus, steering_angle_rx.bus, yaw_rate_rx.bus, speed_tx.bus, wheel_fl_tx.bus, wheel_fr_tx.bus, wheel_rl_tx.bus, wheel_rr_tx.bus, abs_tx.bus))
   push!(__eqs, connect(brake_request, blend.tau_ref))
   push!(__eqs, connect(estimator.vx, ecu.vx, abs_hold.vx, kmh.u, speed_tx.u))
   push!(__eqs, connect(kmh.y, blend.v))
   push!(__eqs, connect(blend.tau_brake, ecu.demand, abs_hold.demand))
   push!(__eqs, connect(ecu.front_active, abs_hold.active))
-  push!(__eqs, connect(abs_hold.y, blend.abs_active))
+  push!(__eqs, connect(abs_hold.y, blend.abs_active, abs_tx.u))
   push!(__eqs, connect(blend.tau_motor, regen))
   push!(__eqs, connect(omega_fl, estimator.omega_fl, wheel_fl_tx.u))
   push!(__eqs, connect(omega_fr, estimator.omega_fr, wheel_fr_tx.u))

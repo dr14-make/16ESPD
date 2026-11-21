@@ -1686,6 +1686,7 @@ component CanBrakeNode
   structural parameter ideal::Boolean = false
   structural parameter speed_period::Real = 0.01
   structural parameter wheel_period::Real = 0.01
+  structural parameter abs_period::Real = 0.01
   parameter esp_on::Real = 1
   parameter abs_on::Real = 1
   parameter radius::Length = 0.31
@@ -1709,9 +1710,11 @@ component CanBrakeNode
   parameter v_fade::Real = 10
   kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
   blend = VehicleSystemsComponents.Vehicle.Electric.RegenBlend(abs_rule = true, ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade) {^blend}
+  "Held ABS status for the cluster lamp and other listeners"
+  abs_tx = CanTxReal(slot = 5, id = 112, ideal = ideal, period = abs_period, scale = 1, raw_min = 0, raw_max = 1) {^abs_tx}
   regen_tx = CanTxReal(slot = 6, id = 272, ideal = ideal, period = regen_period, scale = 0.1, raw_min = -32768, raw_max = 32767) {^regen_tx}
 relations
-  connect(bus, steering_angle_rx.bus, yaw_rate_rx.bus, regen_tx.bus, speed_tx.bus, wheel_fl_tx.bus, wheel_fr_tx.bus, wheel_rl_tx.bus, wheel_rr_tx.bus) {^network}
+  connect(bus, steering_angle_rx.bus, yaw_rate_rx.bus, regen_tx.bus, speed_tx.bus, wheel_fl_tx.bus, wheel_fr_tx.bus, wheel_rl_tx.bus, wheel_rr_tx.bus, abs_tx.bus) {^network}
   connect(blend.tau_brake, ecu.demand, abs_hold.demand) {^demand}
   connect(estimator.vx, ecu.vx, speed_tx.u, abs_hold.vx) {^speed}
   connect(steering_angle_rx.y, ecu.delta_sw) {^steering}
@@ -1729,13 +1732,26 @@ relations
   connect(ecu.tau_rl, tau_rl) {^torque_rl}
   connect(ecu.tau_rr, tau_rr) {^torque_rr}
   connect(ecu.front_active, abs_hold.active) {^abs_state}
-  connect(abs_hold.y, blend.abs_active) {^abs_held}
+  connect(abs_hold.y, blend.abs_active, abs_tx.u) {^abs_held}
   connect(brake_request, blend.tau_ref) {^request}
   connect(estimator.vx, kmh.u) {^blend_speed}
   connect(kmh.y, blend.v) {^blend_kmh}
   connect(blend.tau_motor, regen_tx.u) {^regen}
 metadata {
   "_links": {
+    "abs_tx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 640,
+            "x2": 740,
+            "y1": 830,
+            "y2": 890
+          }
+        }
+      }
+    },
     "abs_hold": {
       "Dyad": {
         "placement": {
@@ -1787,6 +1803,11 @@ metadata {
                 "y": 290.0
               }
             ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [],
             "S": 1
           }
         ]
@@ -2762,6 +2783,16 @@ metadata {
                 "x": 190.0,
                 "y": 670.0
               }
+            ],
+            "S": 1
+          },
+          {
+            "E": 10,
+            "M": [
+              {"x": 500.0, "y": 30.0},
+              {"x": 790.0, "y": 30.0},
+              {"x": 790.0, "y": 810.0},
+              {"x": 690.0, "y": 810.0}
             ],
             "S": 1
           }

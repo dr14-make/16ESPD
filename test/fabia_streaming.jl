@@ -20,7 +20,7 @@ const FP = CanV.FabiaProtocol
     sys = DyadInterface.symbolic_container(result)
     @test recording.closed
     @test fabia_frame_fingerprint(recording.frames) ==
-        "c831e387ca745d91e566a1f9b9e8d02354d0ec2149104a78715f67922fe925d2"
+        "12108dc591e2071c3988b6db71a618bb454f3aa2623f2f4aaf61cfade867906d"
     println("Fabia scripted stream bytes: ", Dict(id => sum(length(b) for (key, b) in recording.frames if key == id) for id in unique(first.(recording.frames))))
     payloads(id) = [b for (key, b) in recording.frames if key == id]
     for (id, period, _) in FP.frame_schedule
@@ -92,7 +92,7 @@ end
         spec = CanV.RealtimeDriveSpec(; model, duration = 36., can_interface = "vcan0")
         DyadInterface.run_analysis(spec; run_drive = measure_drive)
         m = metrics[]
-        @test m.sent == 52560
+        @test m.sent == 56160
         @test .85 < m.simulated / m.wall < 1.05
         for (id, period, _) in FP.frame_schedule
             @test m.counts[id] == round(Int, 36 / period)
@@ -135,14 +135,14 @@ end
     model = CanV.PlanarBEVFabiaScriptedDrive(name = :model)
     layout = P.can_layout(model)
     schedule = P.can_schedule(model)
-    @test length(layout.frames) == 20
-    @test schedule.load ≈ .2906
+    @test length(layout.frames) == 21
+    @test schedule.load ≈ .3036
     @test P.check_can(model) === model
     mktempdir() do directory
         dbc = P.can_dbc(model, joinpath(directory, "lecture06-car.dbc"))
         text = read(dbc, String)
         teaching = filter(f -> !hasproperty(f, :cluster_path), layout.frames)
-        @test [frame.id for frame in teaching] == [128, 144, 160, 176, 177, 178, 179, 272, 768]
+        @test [frame.id for frame in teaching] == [112, 128, 144, 160, 176, 177, 178, 179, 272, 768]
         regen = only(filter(frame -> frame.id == 272, teaching))
         @test regen.period == .01
         @test only(regen.signals).slot == 6

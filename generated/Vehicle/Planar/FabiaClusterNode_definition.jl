@@ -25,7 +25,6 @@ Listen-only CAN receiver and signal conditioning for the Fabia dashboard.
 
  * `bus` - ([`CanNet`](@ref))
  * `motor_speed` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `abs_signal` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `left` - This connector represents a boolean signal as an input to a component ([`BooleanInput`](@ref))
  * `right` - This connector represents a boolean signal as an input to a component ([`BooleanInput`](@ref))
 """
@@ -95,7 +94,6 @@ Listen-only CAN receiver and signal conditioning for the Fabia dashboard.
 
   ### Final Path Parameters
   append!(__vars, @variables (motor_speed(t)::Real), [input = true])
-  append!(__vars, @variables (abs_signal(t)::Real), [input = true])
   append!(__vars, @variables (left(t)::Bool), [input = true])
   append!(__vars, @variables (right(t)::Bool), [input = true])
 
@@ -111,6 +109,9 @@ Listen-only CAN receiver and signal conditioning for the Fabia dashboard.
   # Subcomponent speed_rx of type VehicleSystemsComponents.Vehicle.Planar.FabiaCanRx
   speed_rx_overrides = __pop_subcomponent_overrides!(__overrides, "speed_rx")
   push!(__systems, @named speed_rx = VehicleSystemsComponents.Vehicle.Planar.FabiaCanRx(; slot=1, id=128, __overrides = speed_rx_overrides))
+  # Subcomponent abs_rx of type VehicleSystemsComponents.Vehicle.Planar.FabiaCanRx
+  abs_rx_overrides = __pop_subcomponent_overrides!(__overrides, "abs_rx")
+  push!(__systems, @named abs_rx = VehicleSystemsComponents.Vehicle.Planar.FabiaCanRx(; slot=5, id=112, __overrides = abs_rx_overrides))
   # Subcomponent dashboard of type VehicleSystemsComponents.Vehicle.Planar.FabiaDisplayChain
   dashboard_overrides = __pop_subcomponent_overrides!(__overrides, "dashboard")
   push!(__systems, @named dashboard = VehicleSystemsComponents.Vehicle.Planar.FabiaDisplayChain(; tachometer_scale=tachometer_scale, dimming=dimming, speed_filter_time=speed_filter_time, emergency_deceleration=emergency_deceleration, emergency_min_speed=emergency_min_speed, hazard_charge_time=hazard_charge_time, hazard_decay_time=hazard_decay_time, __overrides = dashboard_overrides))
@@ -126,9 +127,9 @@ Listen-only CAN receiver and signal conditioning for the Fabia dashboard.
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(bus, speed_rx.bus))
+  push!(__eqs, connect(bus, speed_rx.bus, abs_rx.bus))
   push!(__eqs, connect(speed_rx.y, dashboard.speed))
-  push!(__eqs, connect(abs_signal, dashboard.abs_signal))
+  push!(__eqs, connect(abs_rx.y, dashboard.abs_signal))
   push!(__eqs, connect(motor_speed, dashboard.motor_speed))
   push!(__eqs, connect(left, dashboard.left))
   push!(__eqs, connect(right, dashboard.right))

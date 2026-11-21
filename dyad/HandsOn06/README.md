@@ -60,15 +60,15 @@ internal wires. Compare library `Vehicle.Planar.CanBusBrake10msStop`,
 The counterexample loses metres by transporting brake demand and friction over CAN; the real layout avoids that delay, though delayed regen still costs distance.
 Six onset offsets span 0–40 ms in `assets/data/lecture06/can_stop.csv`, generated
 by `scripts/lecture06_can_sweep.jl`; tests assert its input hash and these numbers.
-No real-layout lock was sampled; the counterexample briefly meets the rear-lock
-criterion at 10 ms / 30 ms offset, recorded rather than retuned.
+The real layout never locks a wheel. The counterexample briefly locks a rear wheel at 10 ms
+with a 30 ms onset offset: another cost of sending the brake demand over the bus.
 
 ## 4 — bitrate schedule
 
 Starter/reference: `CanStop(name=:exercise)`. In Julia call
 `Vehicle.Planar.can_schedule(car; bitrate=500_000)`, then `bitrate=250_000`.
-Loads are **0.1215 / 0.243**. Ordered response bounds at 500 kbit/s are
-`[0.30,0.45,0.60,0.75,0.90,1.05,1.20,1.35,1.35]` ms; at 250 they double.
+Loads are **0.1345 / 0.269**. Ordered response bounds at 500 kbit/s are
+`[0.28,0.43,0.58,0.73,0.88,1.03,1.18,1.33,1.48,1.48]` ms; at 250 they double.
 This analytical schedule does not alter the model's sampled transport delay.
 
 Run `handson06` after compilation. Default stops use onset 0.5 s to first speed

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   FabiaCanVehicle(; name, ideal, chassis_period, speed_period, steering_period, yaw_period, wheel_period, dashboard_period, esp_on, abs_on, mu, T_actuator, m, radius, T_full, tau_max, P_charge, v_fade, P_aux, ratio, dv_wheel, v0, __overrides)
+   FabiaCanVehicle(; name, ideal, chassis_period, speed_period, steering_period, yaw_period, wheel_period, abs_period, dashboard_period, esp_on, abs_on, mu, T_actuator, m, radius, T_full, tau_max, P_charge, v_fade, P_aux, ratio, dv_wheel, v0, __overrides)
 
 Fabia-only signal exports; the shared vehicle equations remain unchanged.
 
@@ -19,6 +19,7 @@ Fabia-only signal exports; the shared vehicle equations remain unchanged.
 | `steering_period`         |                          | --  |   chassis_period |
 | `yaw_period`         |                          | --  |   chassis_period |
 | `wheel_period`         |                          | --  |   chassis_period |
+| `abs_period`         |                          | --  |   chassis_period |
 | `dashboard_period`         |                          | --  |   0.1 |
 | `esp_on`         | ESP enable, fixed for the run                         | --  |   1.0 |
 | `abs_on`         | ABS enable, fixed for the run                         | --  |   1.0 |
@@ -41,10 +42,9 @@ Fabia-only signal exports; the shared vehicle equations remain unchanged.
  * `brake` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `steer` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `motor_speed` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
- * `abs_signal` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `bus` - ([`CanNet`](@ref))
 """
-@component function FabiaCanVehicle(; name = nothing, var"ideal"=false, var"chassis_period"=0.01, var"dashboard_period"=0.1, var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"mu"=Float64(1.0), var"T_actuator"=0.05, var"m"=Float64(1500.0), var"radius"=0.31, var"T_full"=Float64(2500.0), var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"dv_wheel"=0.01, var"v0"=Float64(0), var"speed_period"=nothing, var"steering_period"=nothing, var"yaw_period"=nothing, var"wheel_period"=nothing, __overrides = Dict{String, Any}())
+@component function FabiaCanVehicle(; name = nothing, var"ideal"=false, var"chassis_period"=0.01, var"dashboard_period"=0.1, var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"mu"=Float64(1.0), var"T_actuator"=0.05, var"m"=Float64(1500.0), var"radius"=0.31, var"T_full"=Float64(2500.0), var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"dv_wheel"=0.01, var"v0"=Float64(0), var"speed_period"=nothing, var"steering_period"=nothing, var"yaw_period"=nothing, var"wheel_period"=nothing, var"abs_period"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -84,12 +84,14 @@ Fabia-only signal exports; the shared vehicle equations remain unchanged.
   haskey(__overrides, "steering_period") && (steering_period = pop!(__overrides, "steering_period"))
   haskey(__overrides, "yaw_period") && (yaw_period = pop!(__overrides, "yaw_period"))
   haskey(__overrides, "wheel_period") && (wheel_period = pop!(__overrides, "wheel_period"))
+  haskey(__overrides, "abs_period") && (abs_period = pop!(__overrides, "abs_period"))
 
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
   isnothing(speed_period) && (speed_period = chassis_period)
   isnothing(steering_period) && (steering_period = chassis_period)
   isnothing(yaw_period) && (yaw_period = chassis_period)
   isnothing(wheel_period) && (wheel_period = chassis_period)
+  isnothing(abs_period) && (abs_period = chassis_period)
 
   ### Structural Parameters (functions)
 
@@ -154,7 +156,6 @@ Fabia-only signal exports; the shared vehicle equations remain unchanged.
   append!(__vars, @variables (brake(t)::Real), [input = true])
   append!(__vars, @variables (steer(t)::Real), [input = true])
   append!(__vars, @variables (motor_speed(t)::Real), [output = true])
-  append!(__vars, @variables (abs_signal(t)::Real), [output = true])
 
   ### Variables (declarations)
 
@@ -194,7 +195,7 @@ Fabia-only signal exports; the shared vehicle equations remain unchanged.
   push!(__systems, @named mount = RotationalComponents.Components.Fixed(; __overrides = mount_overrides))
   # Subcomponent ecu of type VehicleSystemsComponents.Vehicle.Planar.CanBrakeNode
   ecu_overrides = __pop_subcomponent_overrides!(__overrides, "ecu")
-  push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.CanBrakeNode(; ratio=ratio, tau_max=tau_max, P_charge=P_charge, v_fade=v_fade, regen_period=chassis_period, ideal=ideal, speed_period=speed_period, wheel_period=wheel_period, esp_on=esp_on, abs_on=abs_on, radius=radius, T_full=T_full, __overrides = ecu_overrides))
+  push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.CanBrakeNode(; ratio=ratio, tau_max=tau_max, P_charge=P_charge, v_fade=v_fade, regen_period=chassis_period, ideal=ideal, speed_period=speed_period, wheel_period=wheel_period, abs_period=abs_period, esp_on=esp_on, abs_on=abs_on, radius=radius, T_full=T_full, __overrides = ecu_overrides))
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
   push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; mu_scale_fl=mu, mu_scale_fr=mu, mu_scale_rl=mu, mu_scale_rr=mu, m=m, radius=radius, tau_max=T_full, __overrides = car_overrides))
@@ -246,7 +247,6 @@ Fabia-only signal exports; the shared vehicle equations remain unchanged.
 
   ### Equations
   push!(__eqs, motor_speed ~ drive.drive.machine.w)
-  push!(__eqs, abs_signal ~ ecu.abs_hold.y)
   push!(__eqs, connect(motion.bus, ecu.bus, drive.bus, cluster.bus))
   push!(__eqs, connect(car.bus, motion.measurements, wheel_speeds.bus))
   push!(__eqs, connect(throttle, accelerator.u))
