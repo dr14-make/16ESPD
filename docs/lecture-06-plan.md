@@ -55,15 +55,17 @@ Linux and CANBus.jl from `sim/`, so it runs on the lecturer's laptop only.
 **S5 — The deck says what `check_can` is not.** It catches wiring mistakes in the model, not CAN
 protocol errors; error frames and TEC/REC stay theory.
 
-**S7 — The CAN car carries the real architecture, with as much on the bus as a car carries.**
-The ABS ECU reads the four wheel-speed sensors on its own wires and estimates reference speed and
-slip itself (`HandsOn03/RefSpeedEstimator`), instead of reading the true slip from the car's
-measurement bus. It then publishes vehicle speed and the wheel speeds on the bus, as a real brake
-unit does (the Fabia cluster's speedometer reads the `Bremse` frames). Steering angle, yaw rate
-and the pedal request go on the bus as smart-sensor messages. Only the caliper torques stay wired:
-they are hydraulic lines. The `ideal` switch is the "without CAN" comparison on the same canvas;
-the point-to-point `PlanarBEVDrive` is the wiring picture. The change is made to the CAN car in
-the #262–#265 stack, not as a second car, and it is work for the Dyad agent (§ Car change).
+**S7 — The CAN car carries the real EV architecture (#269).** The brake ECU reads the four
+wheel-speed sensors on its own wires and estimates reference speed and slip itself (the library's
+wheel-only estimator). The brake pedal is wired to it (hydraulics plus travel sensor), and it does
+the regen/friction blending and drives the calipers, as iBooster + ESP hev or VW MEB do. On the bus
+it publishes vehicle speed, the four wheel speeds, the held ABS status (the cluster lamp reads it)
+and the regen torque request to the VCU; the accelerator is wired to the VCU. Steering angle and
+yaw rate come from the sensor node over the bus. The ABS loop never crosses the bus. The `ideal`
+switch reproduces the point-to-point twin `PlanarBEVDriveEstimated` run for run.
+`PlanarBEVCanBusBrake` keeps the earlier layout, with the brake request crossing the bus twice, as
+the counterexample for step 3. The ABS-active flag is held from the first genuine release to
+brake release or standstill, as real units report it.
 
 **S6 — The source deck's errors are corrected, not repeated.**
 
@@ -96,28 +98,29 @@ the #262–#265 stack, not as a second car, and it is work for the Dyad agent (�
 
 | Quantity | Value | Source |
 |---|---|---|
-| ABS stop from 80 km/h, ideal bus | 26.839 m (= point-to-point); remeasure after S7 | #262 |
-| same, 10 / 20 / 40 ms chassis messages | 27.496 / 28.415 / 28.210 m; remeasure after S7 | #262 |
-| car's bus load at 500 kbit/s | 7.45 %; remeasure after S7 | `can_schedule`, #263 |
-| worst-case response times | 0.28 ms (ABS active) – 1.03 ms (dashboard); remeasure after S7 | `can_schedule`, #263 |
-| top-level connections, point-to-point → bus | 29 → 23; recount after S7 | #262 |
+| ABS stop from 80 km/h, ideal bus = point-to-point | 28.11 m mean (28.02–28.25) | sweep, #269 |
+| real layout, 10 / 20 / 40 ms, mean (range) | 28.90 (28.62–29.06) / 29.50 (28.98–30.02) / 30.22 (30.02–30.44) m | sweep, #269 |
+| brake request on the bus, 10 / 20 / 40 ms | 30.10 (28.79–30.74) / 29.62 (29.32–29.95) / 33.64 (31.79–35.78) m | sweep, #269 |
+| car's bus load at 500 / 250 kbit/s | 13.45 % / 26.9 % | `can_schedule`, #269 |
+| worst-case response times at 500 kbit/s | 0.28 ms (ABS status) – 1.48 ms (regen request, dashboard) | `can_schedule`, #269 |
+| top-level signal nets, point-to-point → bus | 31 → 19 (library car); 22 → 19 (hands-on starter) | #269 |
 | harness mass and wire length, current car | to verify | Bosch Automotive Handbook; Navet & Simonot-Lion |
 
-The #262 numbers are on true slip. After S7 the ABS runs on estimated slip, so every number in
-this table except the harness row moves.
-
-The 40 ms stop is shorter than the 20 ms one; the distances agree from 1e-5 to 1e-10 tolerance,
-so it is the message period beating against the ABS's 5 ms cycle, not solver noise. The deck
-shows it as a warning against reading period sweeps as monotone.
+Each sweep cell is six stops with the pedal press shifted over 0–40 ms
+(`assets/data/lecture06/can_stop.csv`). With the brake request on the bus a single stop is phase
+luck: where the press falls between frames decides whether the first ABS cycle overshoots, so one
+car spreads up to 4 m and 20 ms can beat 10 ms. The real layout spreads at most 0.5 m and costs
+about 2 m at 40 ms, the late regen request; we accept that as the price of the bus. The
+counterexample briefly locks a rear wheel at one 10 ms timing; the real layout never does.
 
 ## Live build (students, about 90 minutes, starters in `dyad/HandsOn06/`)
 
 | Step | Students do | Checkpoint |
 |---|---|---|
-| 1a | open the point-to-point car, delete the ECU-to-ECU wires, connect every ECU node to one bus; count the wires before and after | ideal bus reproduces the point-to-point stop; the wire count |
-| 1b | inside one node, add the pedal-request message by hand: `CanTxReal` at the sender, `CanRxReal` at the receiver, choosing slot, ID, period and scale | the car drives as before on the ideal bus |
+| 1a | open the point-to-point car, delete the ECU-to-ECU wires and switch the nodes to the bus (the backbone is pre-connected); count the wires before and after | ideal bus reproduces the point-to-point stop, 28.185 m; 22 → 19 nets |
+| 1b | inside the brake ECU, add the regen-request message by hand (`CanTxReal`; the VCU's `CanRxReal` is in place), choosing slot, ID, period and scale | the car stops as before on the ideal bus, 28.185 m |
 | 2 | run `check_can` on a starter where two ECUs transmit on the same slot; read the sentence, fix it | model compiles; `check_can` silent |
-| 3 | switch to the realistic bus and sweep the chassis period 10 / 20 / 40 ms | stopping distance per period, remeasured after S7 |
+| 3 | switch to the realistic bus and sweep the chassis period 10 / 20 / 40 ms, real layout against the brake-request-on-the-bus car | stopping distance per period; the sweep's means and ranges |
 | 4 | in the Julia REPL, run `can_schedule` on the car; then halve the bit rate or add a fast message and run it again | bus load at 500 kbit/s; how the load and response times move |
 
 Lecturer demo at the end: the scripted drive streamed to `candump`, then the real Škoda Fabia
@@ -136,21 +139,9 @@ Settled for the build:
 
 ## Car change (Dyad agent)
 
-The S7 change, on top of #265. A full brief with checks goes in `lecture-06-dyad-tasks.md` when
-the agent picks it up.
-
-1. `CanBrakeNode` takes the four wheel speeds (`omega_*` from the car's measurement bus) instead
-   of the four slips, and estimates reference speed and slip with `RefSpeedEstimator`; `BusSlip`
-   leaves the CAN car.
-2. The brake node transmits vehicle speed and the four wheel speeds; `CanSensorNode` stops sending
-   vehicle speed and keeps steering angle, yaw rate and the dashboard message.
-3. The pedal torque request goes on the bus to the blend node.
-4. The `ideal` bus still reproduces a point-to-point car running the same estimator.
-5. Remeasure the reality-anchor table and the 10 / 20 / 40 ms sweep; regenerate the DBC and the
-   `can_schedule` report; keep the Fabia cluster's speed source pointed at the new message.
-6. The hands-on in `dyad/HandsOn06/`: ECU nodes with both wired ports and a bus port; a step 1a
-   starter (point-to-point wiring), a step 1b starter (bus, pedal request missing), a step 2
-   starter (two transmitters on one slot); reference solutions; tests pinning every checkpoint.
+Done in #269 over three agent runs: the wheel-only estimator, the held ABS flag, then the real EV
+layout with the counterexample kept, the phase sweep and the HandsOn06 starters, references and
+`handson06` tests.
 
 ## Theory deck
 

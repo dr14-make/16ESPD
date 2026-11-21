@@ -443,10 +443,10 @@ routeAlias: our-car-wired
 <div class="grid grid-cols-2 gap-8">
 <div>
 
-### Point to point: `PlanarBEVDrive`
+### Point to point: `PlanarBEVDriveEstimated`
 
-The car from Lectures 3 and 4. Speed, steering angle, yaw rate, brake demand, the ABS flag and the
-motor request each run on their own wire between the ECUs.
+The car from Lectures 3 and 4, split into ECUs as in a real EV. Steering angle, yaw rate, the regen
+request to the motor, vehicle speed, wheel speeds and the ABS status each run on their own wire.
 
 </div>
 <div>
@@ -454,8 +454,8 @@ motor request each run on their own wire between the ECUs.
 ### On the bus: `PlanarBEVCanDrive`
 
 The same car. Every ECU publishes its messages on one bus connection, and every ECU reads what it
-needs from it. One switch, `ideal`, makes the bus perfect, so the two cars can be compared run for
-run.
+needs from it. The brake pedal, the wheel sensors and the calipers stay wired to the brake ECU. One
+switch, `ideal`, makes the bus perfect, so the two cars can be compared run for run.
 
 </div>
 </div>
@@ -465,12 +465,16 @@ wires before and after.</div>
 
 <!--
 Now the same idea on our own car. On the left is the car you know from Lectures 3 and 4, wired point
-to point. Six signals each run on their own wire between the ECUs: the vehicle speed, the steering
-angle, the yaw rate, the brake demand, the flag that says the ABS is active, and the torque request
-to the motor.
+to point and split into ECUs the way a real electric car is. The brake ECU reads the four wheel
+speeds and works out the car's speed itself. It also decides how much of the braking the motor does,
+by recovering energy, and how much the brake discs do. The signals between the ECUs each run on
+their own wire: the steering angle, the yaw rate, the regen request that tells the motor how hard
+to brake, the vehicle speed, the four wheel speeds, and the flag that says the ABS is active.
 
 On the right is the same car on a bus. Every ECU puts its messages on one bus connection, and every
-ECU reads what it needs from that connection.
+ECU reads what it needs from that connection. Some things stay wired, as in a real car: the brake
+pedal, the wheel-speed sensors and the brake calipers are connected straight to the brake ECU. We
+will see in section 08 why that matters.
 
 The bused model has one switch, called ideal. With ideal switched on, the bus is perfect: every
 value arrives at once and exactly. Then the bused car must drive exactly like the wired car. With

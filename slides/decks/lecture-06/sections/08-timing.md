@@ -371,7 +371,7 @@ routeAlias: timing-in-the-model
 | a value waits up to one period for its frame | sampled every `period` |
 | queuing + transmission + receiver task | **one fixed period** of delay |
 | arbitration, queuing | calculated by `can_schedule`, not simulated |
-| clock jitter, unsynchronized ECUs | not modeled: every period starts on the same grid |
+| unsynchronized ECUs | one grid per run; shifting the pedal press over a period stands in for it |
 
 So the model's delay is between one and two periods, never the sub-millisecond bus time: it shows
 the cost of the **period**, the part that dominates.
@@ -391,8 +391,10 @@ replaces all three with one fixed delay of one period.
 
 Row three. Arbitration and queuing are not simulated. The function can_schedule calculates them.
 
-Row four. In a real car, the clocks of the ECUs are not synchronized, and their timing varies a
-little, which is called jitter. The model leaves that out. All periods start on the same time grid.
+Row four. In a real car, the clocks of the ECUs are not synchronized. Where an event falls between
+two frames changes from one stop to the next. In one model run, all periods start on the same time
+grid. So we repeat the stop several times and shift the moment the driver presses the pedal across
+one period. That gives a spread of results instead of one lucky or unlucky number.
 
 The sentence below the table sums it up. In the model, a change reaches the receiver between one and
 two periods later. The model does not show the short bus time under a millisecond. It shows the cost
@@ -401,4 +403,92 @@ of the period, which is the part that dominates.
 The green box names the two builds. In build 03 you change the period of the chassis messages and
 measure the ABS stopping distance. In build 04 you run can_schedule on your car and read its bus
 load and response times.
+-->
+
+---
+routeAlias: where-the-brake-request-lives
+---
+
+## Where the brake request lives
+
+<img src="/diagrams/08-brake-layouts.svg" style="max-height: 24rem" alt="Two versions of the same car on one CAN bus. Left, brake request on the bus: the pedal node sends the pedal request onto the bus (1); a blend ECU reads it, decides how much the motor and the discs brake, sends the regen request to the VCU and the friction request to the brake ECU over the bus (2); the brake ECU sends the ABS-active flag back over the bus (3) and drives the calipers. Right, a real EV: the brake pedal is wired to the brake ECU, which blends and runs the ABS and drives the calipers on its own wires; it sends only the regen request, the speed and the ABS status onto the bus, read by the VCU and the cluster; the accelerator is wired to the VCU."/>
+
+<div class="caption">Same estimator, same ABS controller, same bus periods; only where the brake demand
+is split differs. <code>PlanarBEVCanBusBrake</code> left, <code>PlanarBEVCanDrive</code> right.</div>
+
+<!--
+Before we measure, look at two ways to put the same car on a bus.
+
+On the left, the brake request rides the bus. Follow the numbers. One: the driver's pedal goes onto
+the bus. A separate ECU, the blend ECU, reads it and decides how much the motor brakes and how much
+the discs brake. Two: it sends the request for the discs over the bus again, to the brake ECU, which
+drives the calipers. So the request crosses the bus twice. Each crossing makes it one to two periods late, and it arrives in
+steps, one new value per frame. Three: the flag that says the ABS is active has to travel back over
+the bus before the motor stops braking.
+
+On the right is how a real electric car does it. The brake pedal pushes brake fluid, and a sensor
+on the pedal is wired to the brake ECU. The brake ECU decides the split itself and drives the
+calipers directly. Over the bus it sends only one braking message: the regen request, which tells
+the motor how hard to brake. The vehicle speed, the wheel speeds and the ABS status also go on the
+bus, for the dashboard and anyone else who needs them.
+
+The caption is the important part. Both cars use the same speed estimator, the same ABS controller
+and the same bus periods. The only difference is where the brake demand is split. On the next slide
+we measure what that difference costs.
+-->
+
+---
+routeAlias: what-the-bus-costs-the-abs
+---
+
+## What the bus costs the ABS
+
+Hard ABS stop from 80 km/h. Mean over six pedal timings, range in brackets.
+
+| Chassis period | 10 ms | 20 ms | 40 ms |
+|---|---:|---:|---:|
+| ideal bus = point to point | 28.1 m | 28.1 m | 28.1 m |
+| real EV layout | 28.9 m (28.6–29.1) | 29.5 m (29.0–30.0) | 30.2 m (30.0–30.4) |
+| brake request on the bus | 30.1 m (28.8–30.7) | 29.6 m (29.3–29.9) | 33.6 m (31.8–35.8) |
+
+- Latency costs meters: about 2 m at 40 ms even in the real layout.
+- With the brake request on the bus, **where the press falls between frames** decides the stop: up to
+  4 m apart on the same car.
+- A higher priority would not help: every frame is on the wire within 1.5 ms at 13 % load. The
+  **period** is the delay.
+
+**A closed loop stays where its sensors and actuators are. The bus carries coordination.**
+
+<!--
+Here are the numbers. Every run is the same hard stop from 80 kilometers per hour with ABS. For each
+bus period we repeated the stop six times and moved the moment the driver presses the pedal by up to
+40 milliseconds. The table shows the mean distance and, in brackets, the shortest and the longest.
+
+Row one is the reference. With an ideal bus, the car stops in 28.1 meters, exactly like the wired car.
+
+Row two is the real layout. It gets a little longer as the bus gets slower: 28.9, 29.5, 30.2 meters.
+About 2 meters at 40 milliseconds. That is the honest price of the bus here: the motor keeps
+regenerating a little longer because its regen request arrives late. And the spread is small, half
+a metre at most.
+
+Row three puts the brake request on the bus. At 40 milliseconds it needs 33.6 meters on average,
+five and a half meters more than the ideal bus. And look at the brackets: the same car stops anywhere
+between 31.8 and 35.8 meters, depending only on where the pedal press fell between two frames. If
+the first brake squeeze comes in a bad step, the ABS sees the wheel slip too much, lets go of far
+more pressure than it needs to, and takes about half a second to build it up again. Notice also that
+20 milliseconds came out better than 10 here. That is luck, not physics: inside the spread, one
+stop can beat another.
+
+The first bullet: latency costs meters, about 2 at 40 milliseconds even in the good layout.
+
+The second bullet: when a control loop runs over the bus, timing luck shows up in the result.
+
+The third bullet answers a natural question: why not give the brake message the highest priority?
+Because priority only decides who waits in the queue, and on this bus every frame is on the wire
+within one and a half milliseconds at 13 percent load. The delay comes from the period, ten to forty
+milliseconds, and priority does not change the period.
+
+The caption is the rule to take home. A closed loop stays where its sensors and actuators are. The
+ABS reads the wheel sensors and drives the valves on its own wires. The bus carries coordination:
+speeds, requests, status.
 -->
