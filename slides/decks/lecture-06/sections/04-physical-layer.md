@@ -11,9 +11,9 @@ CAN_H and CAN_L, dominant and recessive, the 120 Ω terminations, topology, and 
 samples the same bit.
 
 <!--
-Section 04: the physical layer. Here we leave the meeting room, because a room has no wires. We look
-at the two signal lines, their voltage levels, the resistors at the two ends, how the bus may be
-laid out, and the timing inside one bit.
+Section 04, the physical layer. Here we leave the meeting room, because a room has no wires. We look
+at the two wires of the bus and the voltages on them, at the resistors at the two ends, at how the
+bus is laid out and how long it may be, and at the timing inside one bit.
 -->
 
 ---
@@ -44,22 +44,26 @@ routeAlias: dominant-and-recessive
 </div>
 
 <!--
-Here are the voltages on high-speed CAN. The idle state, and a logical one, is called recessive. In
-a recessive bit nobody drives the bus at all; the termination resistors pull both lines to the same
-voltage, about 2.5 volts. The difference between them is zero.
+The picture shows three bits on high-speed CAN: recessive, dominant, recessive. The top plot shows
+the voltage on each wire. Remember, voltage is the electrical level of a wire, measured in volts.
 
-A logical zero is called dominant. A transceiver, the chip between the CAN controller and the
-wires, actively pushes CAN high up to about 3.5 volts and CAN low down to about 1.5. The difference
-is 2 volts.
+In a recessive bit, a one, nobody drives the bus. Both wires rest at the same level, 2.5 volts. The
+bottom plot shows the difference between the two wires: 0 volts.
 
-A receiver looks only at the difference. Above 0.9 volts it reads dominant, below 0.5 it reads
-recessive. That is why the two wires are twisted: electrical noise from an ignition coil or a motor
-hits both wires almost equally, and in the difference it cancels.
+In a dominant bit, a zero, the transceiver of the sending ECU pushes CAN high up to 3.5 volts and
+CAN low down to 1.5 volts. The transceiver is the chip between the ECU and the wires. The difference
+is now 2 volts.
 
-The box at the bottom is the most important fact on this slide. Recessive means nobody drives.
-Dominant means someone drives. So if one node drives dominant while all the others leave the bus
-recessive, the bus is dominant. That is the clap drowning out silence from section 01, done by the
-electronics. Engineers call it a wired-AND: the bus is a one only if every node sends a one.
+A receiver looks only at the difference. Above 0.9 volts it reads dominant. Below 0.5 volts it reads
+recessive. The band in between is undefined.
+
+This is the reason for twisting the wires. A disturbance from outside, for example from an electric
+motor, hits both wires almost equally. Both voltages move together, so their difference does not
+change. The disturbance cancels.
+
+The box is the key fact of this slide. Recessive means nobody drives. Dominant means somebody
+drives. So one node that drives dominant beats any number of nodes that leave the bus recessive.
+That is the clap that drowns out silence, built in hardware.
 -->
 
 ---
@@ -88,15 +92,20 @@ routeAlias: low-speed-levels
 </div>
 
 <!--
-For comparison, low-speed fault-tolerant CAN. In a recessive bit, CAN high sits near zero volts and
-CAN low near five: the difference is minus five volts. In a dominant bit they swap sides: CAN high
-rises to between 3.6 and 4 volts, CAN low falls to between 1 and 1.4. The difference is plus 2.2 to
-plus 3 volts.
+For comparison, this is low-speed fault-tolerant CAN, the kind used in doors and seats.
 
-The large swing has a purpose. If one wire breaks or shorts to ground or to the battery, the
-transceiver notices and carries on using the remaining wire alone, measured against ground. The
-car keeps working, with less protection against noise. The price is speed: at most 125 kilobits per
-second.
+In a recessive bit, CAN high is near 0 volts and CAN low is near 5 volts. The bottom plot shows the
+difference: minus 5 volts. In a dominant bit the two wires swap sides. CAN high rises to between 3.6
+and 4 volts, and CAN low falls to between 1 and 1.4 volts. The difference is plus 2.2 to plus 3
+volts.
+
+This large swing has a purpose. A wire can break. It can also touch the car body or the battery
+voltage by mistake, which is called a short. The transceiver detects both cases. It then carries on
+with the remaining wire alone and measures that wire against ground, the car body. The functions on
+that bus keep working.
+
+The price is speed: at most 125 kilobits per second. For the rest of the lecture we stay with
+high-speed CAN.
 -->
 
 ---
@@ -126,23 +135,25 @@ routeAlias: termination
 </div>
 
 <!--
-The bus needs a resistor at each end: 120 ohms between CAN high and CAN low. In the picture they sit
-inside the engine ECU and the gearbox ECU, at the two ends. The ABS in the middle
-hangs off the bus on a short stub and has none.
+A high-speed CAN bus needs a resistor at each end. A resistor is a component that lets a limited
+current flow between two points. Its size is given in ohms. Here it is 120 ohms, connected between
+CAN high and CAN low. This resistor is called the termination. In the picture the two terminations
+sit in the engine ECU and the gearbox ECU, at the two ends of the bus. The ABS ECU in the middle
+hangs on a short stub and has no resistor.
 
-Why are they needed? A twisted pair has a characteristic impedance of about 120 ohms. A signal edge
-travelling down the cable, reaching an open end, reflects back, and the reflection mixes with the
-following bits. A resistor equal to the cable's impedance absorbs the edge instead. The two
-resistors also do the job from the previous slide: they pull the two lines together when nobody
-drives, which makes the recessive level.
+The first bullet says why. An edge travels along the cable. At an open cable end it would bounce
+back, like a wave off a wall, and disturb the following bits. That is a reflection. A 120-ohm
+resistor matches the cable and absorbs the edge. The second bullet is the other job: the resistors
+pull the two wires to the same level when nobody drives. That gives the recessive level.
 
-The inset shows split termination: the 120 ohms split into two 60 ohm halves, with a small
-capacitor from the midpoint to ground. It drains common-mode noise, noise that lifts both wires
+The box on the right is a check that every workshop uses. An ohmmeter measures resistance. Two
+120-ohm resistors side by side measure as 60 ohms. So with the ignition off, the meter between CAN
+high and CAN low reads 60 ohms. If it reads 120, one termination is missing or one end of the bus is
+disconnected.
+
+The small inset shows a variant, split termination. The 120 ohms are divided into two halves of 60,
+with a small capacitor from the middle to ground. It removes disturbances that lift both wires
 together.
-
-And the workshop check, drawn between the lines and repeated in the box. Two 120 ohm resistors in parallel make 60 ohms. With the ignition
-off, an ohmmeter between CAN high and CAN low at the diagnostic socket should read 60 ohms. If it
-reads 120, one termination is missing or one end of the bus is disconnected.
 -->
 
 ---
@@ -168,13 +179,20 @@ branches and a low bit rate</div>
 <div class="caption text-left">R: a 120 Ω termination · redrawn from the source deck, slide 24</div>
 
 <!--
-How may the bus be laid out? The source deck shows three choices.
+How may the bus be laid out? The layout of a network is called its topology. The picture shows
+three. The letter R marks a termination.
 
-On the left, linear: one line with a termination at each end, and the other ECUs on short stubs.
-That is the layout the high-speed standard is designed for. In the middle, mixed: the bus loops
-into some ECUs and out again, which keeps the stubs short. On the right, a star: all ECUs joined at
-one point. Every branch of a star is an unterminated end that reflects, so a star works only with
-short branches, a low bit rate and careful design. It is not an equal choice for high-speed CAN.
+On the left, linear. One line, a termination at each end, and the other ECUs on short stubs. This is
+the standard layout for high-speed CAN.
+
+In the middle, mixed. The bus runs into some ECUs and out again, so those ECUs need no stub. The two
+ends are still terminated.
+
+On the right, a star. Five ECUs sit on branches from one central point. Only two branches carry a
+termination, so every other branch is an open end, and open ends cause reflections. A star works
+only with short branches, a low bit rate and careful design.
+
+So for high-speed CAN, remember the title: a line with short stubs.
 -->
 
 ---
@@ -210,25 +228,27 @@ A longer bus needs a longer bit.
 87.5 % · the rule of thumb keeps a margin for clock tolerance, stubs and synchronization</div>
 
 <!--
-Why does the bus length depend on the bit rate? Because of arbitration. While two nodes compare
-bits, a dominant bit sent at one end must reach the far end, and that node's own bit must travel
-back, before the sample point of the same bit. Otherwise the sender would sample its own recessive
-bit before the other node's dominant one arrives, and two nodes would both believe they won.
+How long may the bus be? The answer depends on the bit rate, and the reason is arbitration.
 
-So the round trip along the whole bus must fit before the sample point. The signal travels about
-5 nanoseconds per meter of cable, there and back. On top come the electronics: two transceivers,
-each about 150 nanoseconds from its transmit pin through the bus and back to its receive pin, and
-the two controllers. About 350 nanoseconds in all.
+During arbitration, two nodes at opposite ends of the bus compare their bits. A node reads each bit
+at one fixed moment inside the bit, called the sample point. A dominant bit from one end must reach
+the far end, and the far node's own bit must travel back, before that moment. Otherwise both nodes
+could believe they won.
 
-The plot solves that inequality for the length. The band is the range of usual sample points, 75 to
-87.5 percent of the bit. At one megabit per second a bit lasts one microsecond, and the bus can be
-40 to 50 meters. At 500 kilobits, a bit of 2 microseconds, over 100 meters. At 125 kilobits, more
-than 500. The orange dots are the rule of thumb from the source deck and the standards' application
-notes; they sit at or below the band, because a real design also keeps a margin for the clock
-tolerance of each node, for stubs, and for synchronization.
+The formula on the right says this. On the left of the inequality is the round trip: twice the
+length L, at 5 nanoseconds per meter, plus 350 nanoseconds for the electronics of the two nodes. On
+the right is the sample point times the duration of one bit.
 
-That is also why CAN FD switches to its faster rate only after arbitration is over: the data phase
-has only one sender, so no round trip has to fit in its bits.
+The plot shows the result: the longest bus, in meters, against the bit rate. The shaded band is the
+range for sample points between 75 and 87.5 percent of the bit. At 1000 kilobits per second the bus
+may be 40 to 52 meters long. At 100 kilobits per second, about 700 to 850 meters. The orange dots
+are the rule of thumb from the table: 40 meters at 1000 kilobits per second, 100 meters at 500, 250
+at 250, and 500 at 125. The dots lie on or below the band, because a real design keeps a safety
+margin.
+
+The line under the table sums it up: a longer bus needs a longer bit. This also explains CAN FD from
+the last section. It speeds up only after arbitration, when only one node is sending and no round
+trip has to fit into a bit.
 -->
 
 ---
@@ -263,21 +283,24 @@ routeAlias: bit-timing
 <div class="caption text-left">tq: time quantum · at 500 kbit/s a bit lasts 2 µs</div>
 
 <!--
-Here is the answer to the first place where the meeting room failed: how do all nodes clap in sync?
+In section 01 we said that people cannot clap in time, but CAN nodes can. This slide shows how.
 
-Every node divides one bit into time quanta, small ticks of its own clock, typically 8 to 25 per
-bit. The bit has four segments. The sync segment, one quantum long, is where an edge is expected.
-The propagation segment covers the time a signal needs to cross the bus and come back. Then two
-phase segments. The node reads the bit at the sample point, between phase 1 and phase 2, typically
-three quarters to seven eighths of the way through the bit, when the level has settled.
+Each node has its own clock. It divides one bit into small equal steps called time quanta. In the
+picture, one bit has 16 of them, in four segments. The first is the sync segment, one quantum long.
+This is where the node expects an edge. The second, seven quanta long, is the propagation segment.
+It covers the round trip on the bus from the last slide. Then come phase 1, five quanta, and phase
+2, three quanta. The node reads the bit at the sample point, between phase 1 and phase 2. That is at
+75 to 87.5 percent of the bit, when the voltage has settled.
 
-The bullets are how the clocks stay together. At the start of every frame, all nodes see the
-falling edge of the start-of-frame bit and restart their bit clocks together: hard synchronization.
-After that, on every edge from recessive to dominant, a node checks where the edge fell. If it
-came early or late, the node stretches phase 1 or shrinks phase 2 by a few quanta, and so follows
-the sender. For that to work there must be edges often enough, and bit stuffing, in the next
-section, makes sure there is one at least every ten bits.
+The bullets on the left say how the clocks stay together. Every frame starts with one dominant bit,
+the start of frame. On its edge, all nodes restart their bit clocks together. That is hard
+synchronization. After that, each node checks every edge from recessive to dominant. If the edge
+comes late, the node lengthens phase 1. If it comes early, the node shortens phase 2. That is
+resynchronization. It needs edges often enough, and a rule called bit stuffing guarantees one at
+least every 10 bits. The next section explains that rule.
 
-So the oscillators of the nodes can drift by fractions of a percent, and still every node samples
-the same bit at the same instant. That is what makes bitwise arbitration possible.
+The box gives the result. The clocks of the nodes differ by fractions of a percent, and still all
+nodes read the same bit at the same moment. That is why the clapping works.
+
+We now know how one bit crosses the bus. Next: how the bits form a frame.
 -->

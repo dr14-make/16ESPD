@@ -21,22 +21,24 @@ presenter mode from the nav bar, bottom left
 </div>
 
 <!--
-Welcome to Lecture 6, on the CAN bus. CAN stands for Controller Area Network. It is the network
-that lets the electronic control units of a car, the ECUs, talk to each other over one pair of
-wires instead of a wire per signal.
+Welcome to Lecture 6. Today's topic is the CAN bus.
 
-The sentence on the slide is the whole lecture in one line. A bus saves wires, but it is not free.
-A signal that used to arrive on its own wire, instantly and exactly, now arrives in a message: a
-little late, rounded to a fixed resolution, and only as often as the sender sends it. The car has
-to be designed so that none of that matters. Today you see both halves: the wires that disappear,
-and the price in time.
+Three words first. An ECU, an electronic control unit, is a small computer that runs one function of
+the car, such as the brakes or the motor. A signal is one value that an ECU measures or commands,
+such as the vehicle speed. A bus is one shared pair of wires that many ECUs connect to. CAN, short
+for Controller Area Network, is the bus that almost every car uses.
 
-You do that on the car you already know: the planar battery-electric car from Lecture 4, with the
-ABS and ESP from Lecture 3. Its ECUs talk over a CAN bus, and you measure what the bus costs the
-ABS when the car brakes hard.
+The sentence on the slide is the whole lecture in one line: a bus trades wires for time. Without a
+bus, every signal has its own wire and arrives at once and exactly. On a bus, the signal travels in
+a message. It arrives a little late. It is rounded to a fixed step, which the slide calls quantized.
+And it is refreshed only as often as the message is sent. The car has to be designed so that none of
+this matters.
 
-The small line at the bottom is for browsing the slides on your own: the arrow keys and the space
-bar move, O opens the overview, and G jumps to a slide.
+You see both halves today on a car you know: the battery-electric car from Lecture 4, with the ABS
+and ESP from Lecture 3. You put its ECUs on a CAN bus, and you measure what the bus costs the ABS in
+a hard stop.
+
+The small line at the bottom is for browsing the slides on your own.
 -->
 
 ---
@@ -57,22 +59,20 @@ bar move, O opens the overview, and G jumps to a slide.
 | <Link to="wrap-up">10</Link> | Wrap-up | a real Škoda Fabia cluster on the simulated bus | |
 
 <!--
-Here is the plan for today: nine sections and a wrap-up. The first column links to each section,
-and the last column names the build at its end.
+This is the plan for today: nine sections and a wrap-up. The last column shows where you build.
 
-Section 01 is multiplexing: the three ways to share one medium, the meeting room with strict
-speaking rules, which is the picture we use all lecture long, and what a bus saves in a car.
-Section 02 is the layer model network engineers use, one layer at a time, mapped onto CAN.
-Section 03 shows the networks of real cars: high- and low-speed CAN, LIN, gateways, and what came
-after.
+Sections 01 to 03 set the scene. Section 01 explains how many signals can share one wire. It also
+introduces a picture that we use all lecture long: a meeting room with strict speaking rules.
+Section 02 is the layer model that engineers use to describe any network. Section 03 shows the
+networks inside real cars.
 
-Sections 04 and 05 are how CAN works on the wire: the two signal lines, the frame, and the rule
-that decides who may talk.
+Sections 04 and 05 show how CAN works on the wire: the electrical signal, the message, and the rule
+that decides who may send.
 
-Sections 06 to 08 are where you build. In section 06 you put the car's signals onto the bus, with
-the scaling a real message uses. In section 07 you meet a broken bus. In section 08 you measure the
-price: how the message period moves the ABS stopping distance, and how full the bus is.
+In sections 06 to 08 you build. In section 06 you put the car's signals on the bus. In section 07
+you find a mistake in a bus that is wired wrongly. In section 08 you measure the price: how the bus
+changes the ABS stopping distance, and how full the bus is.
 
-Section 09 is diagnostics, how a workshop talks to the car. In the wrap-up, the simulated car
-drives a real instrument cluster from a Škoda Fabia.
+Section 09 shows how a workshop talks to the car. In the wrap-up, the simulated car drives a real
+instrument cluster from a Škoda Fabia.
 -->

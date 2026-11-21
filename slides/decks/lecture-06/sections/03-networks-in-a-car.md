@@ -11,9 +11,9 @@ High-speed and low-speed CAN, LIN and gateways; and what came after: CAN FD, CAN
 automotive Ethernet.
 
 <!--
-Section 03: networks in a car. A car does not have one bus, it has several, at different speeds,
-joined by gateways. We look at two real networks from around 2004, and then at the buses that took
-over where CAN runs out of speed.
+Section 03. A real car has not one bus but several. They run at different speeds, and gateways join
+them. We look at where CAN comes from, at the networks of two real cars, and at the faster networks
+that came after CAN.
 -->
 
 ---
@@ -56,25 +56,25 @@ routeAlias: can-in-brief
 high-speed standard requires at least 30</div>
 
 <!--
-CAN in brief. Bosch started developing it in 1983 and presented it in 1986. The first controller
-chips came the year after. The first production car with CAN was the Mercedes-Benz S-Class in 1991.
-And since 1993 CAN has been an international standard, ISO 11898, which anyone may implement. It is
-not a Bosch-only protocol. In 2012 Bosch presented CAN FD, the faster version, which joined the
-standard in 2015.
+First, CAN in brief. On the left is its history. Bosch started developing CAN in 1983 and presented
+it in 1986. The first chips came in 1987. The first production car with CAN was the Mercedes-Benz
+S-Class of 1991. Since 1993 CAN has been an open international standard, ISO 11898, so any company
+may build it. In 2012 a faster version followed, CAN FD. We meet it at the end of this section.
 
-On the right are the properties you need. One twisted pair, CAN high and CAN low. Any node may send
-when the bus is idle; there is no master. Clashes are settled by priority without losing the
-winning frame. Classic CAN runs at up to one megabit per second and carries zero to eight bytes per
-frame. Errors are detected and the frame is sent again automatically, and a node that keeps
-failing switches itself off. That is the strike system from section 01.
+On the right are the properties. One new word: a node is any ECU connected to a bus.
 
-The last line corrects a word you may find in older material: CAN is sometimes called asynchronous
-because there is no separate clock wire. But the receivers do not run freely. Every node readjusts
-its timing on the edges of the signal, bit by bit. Section 04 shows how.
+CAN is serial: the bits travel one after another on one twisted pair. It is multi-master, which
+means it needs no master: any node may send when the bus is idle. Arbitration is non-destructive:
+the frame with the highest priority gets through undamaged. The original version, called classic
+CAN, sends at most 1 megabit per second, a million bits each second, and one frame carries 0 to 8
+bytes of data. Errors are detected, the frame is sent again automatically, and a faulty node
+switches itself off. That is the strike rule from the room. The last bullet uses the word edge. An
+edge is a change of level on the wire, and every node uses the edges to keep its timing in step.
+Section 04 shows how.
 
-At the bottom: real cars run 500 kilobits per second for powertrain and chassis, and 125 to 250 for
-body and comfort. Limits like "16 ECUs per bus" that you sometimes read are a car maker's own
-design rules. The high-speed standard requires transceivers that can drive at least 30 nodes.
+The caption gives typical bit rates. Powertrain and chassis, which means drive, brakes and steering,
+run at 500 kilobits per second. Body and comfort functions run at 125 to 250. How many nodes go on
+one bus is the car maker's own rule. The standard requires that at least 30 are possible.
 -->
 
 ---
@@ -96,21 +96,23 @@ routeAlias: two-kinds-of-can
 wire, a cheap controller, and no arbitration because only the master starts a message</div>
 
 <!--
-Cars use two kinds of CAN and, beside them, LIN.
+Cars use two kinds of CAN, and next to them a simpler bus called LIN. The table compares the three,
+one per column.
 
-High-speed CAN is the one we model today. It runs up to one megabit per second, usually 500
-kilobits, on a twisted pair. It carries the engine, the gearbox, the ABS and ESP, and the steering.
-Its weakness: if one of the two wires breaks or shorts, the bus stops.
+High-speed CAN is the one we model today. It runs at up to 1 megabit per second, typically 500
+kilobits per second, on a twisted pair. It serves the engine, the gearbox, ABS and ESP, and the
+steering. Look at the row "one wire broken or shorted": the bus stops.
 
-Low-speed fault-tolerant CAN runs up to 125 kilobits per second. Its advantage is in the name: if
-one wire breaks or shorts, it carries on with the other one. That is why it was used for the body,
-in doors and seats, where cables flex and wear. It is being replaced by high-speed CAN and CAN FD in
-newer cars.
+Low-speed fault-tolerant CAN runs at up to 125 kilobits per second. Its strength is in the same row:
+with one wire broken or shorted, it keeps working on the other wire. It is used in doors, seats,
+lights and climate control, where cables bend and wear.
 
-LIN, the Local Interconnect Network, is the cheap end. One wire, up to 20 kilobits per second, and
-one master that asks its slaves in turn, so there is no arbitration at all. It exists because a
-full CAN node costs too much for a window motor or a mirror. A door ECU typically sits on CAN and
-runs a small LIN bus to the motors and switches in that door.
+LIN stands for Local Interconnect Network. It uses only one wire and runs at up to 20 kilobits per
+second. Its access rule is different. One node is the master, and it asks the other nodes, called
+slaves, one after the other. Only the master starts a message, so LIN needs no arbitration.
+
+The caption says why LIN exists. A CAN node costs too much for a mirror motor or a window motor. LIN
+is the cheap solution for those.
 -->
 
 ---
@@ -141,23 +143,25 @@ messages between them: vehicle speed goes from the powertrain bus to the dashboa
 bus.</div>
 
 <!--
-Here are two real networks from the source deck, both from around 2004.
+Here are the networks of two real cars from around 2004.
 
-On the left, the Peugeot 407. At the top, in red, the high-speed powertrain CAN at 500 kilobits per
-second: engine ECU, gearbox, ESP, steering and suspension. In the middle, the orange box called BSI,
-Peugeot's body-control unit. It is the gateway. Below it, the low-speed body network in blue and
-the comfort network in green, both at 125 kilobits: the instrument cluster, the radio, the climate
-control, the seats. A separate CAN goes to the diagnostic socket, and a LIN bus to the wipers.
+On the left is the Peugeot 407. The red boxes at the top are on the high-speed powertrain CAN at 500
+kilobits per second: the engine ECU, the gearbox, the ESP and others. The orange box in the middle,
+labeled BSI, is Peugeot's body control unit. It is the gateway. Two low-speed networks at 125
+kilobits per second hang on it. The blue boxes are the body network, with the airbag, the alarm and
+the rain sensor. The green boxes are the comfort network, with the instrument cluster, the radio,
+the climate controls and the seats. The gray box, DIAG, is the diagnostic socket. And at the bottom
+left, the front wipers hang on a LIN bus.
 
-On the right, the BMW 1 Series of the same years. A powertrain CAN for chassis and engine, a body
-CAN for comfort and safety, LIN sub-buses hanging off body units, and a MOST ring in blue for the
-multimedia. MOST was a fiber-optic bus for audio and video; it is obsolete now, replaced by
-automotive Ethernet.
+On the right is the BMW 1 Series. The red block is the powertrain CAN for chassis and engine, at 500
+kilobits per second. The green block is the body CAN at 100 kilobits per second, for body, safety
+and comfort. The small box between them, BC1, is the gateway. The blue block is a ring called MOST,
+a fiber-optic network for audio and video. MOST is no longer used. A network called automotive
+Ethernet replaced it.
 
-The green box is the point. Every bus runs at the speed its functions need, and a gateway passes
-chosen messages between them. The vehicle speed is measured on the powertrain bus, by the ABS, and
-the gateway repeats it onto the body bus for the dashboard. In the meeting room, that is the
-interpreter in the doorway.
+The green line under the pictures gives the lesson. Every bus runs at the speed its functions need,
+and a gateway passes chosen messages between them. The vehicle speed goes from the powertrain bus to
+the dashboard on the body bus. In the meeting room, that is the interpreter in the doorway.
 -->
 
 ---
@@ -179,24 +183,26 @@ rate for the data · FlexRay's slots make timing exact, at the price of a schedu
 Ethernet standards: IEEE 802.3bw (100BASE-T1), 802.3bp (1000BASE-T1), 802.3cg (10BASE-T1S)</div>
 
 <!--
-Classic CAN has two limits: one megabit per second, and eight bytes per frame. Here is what came
-after.
+Classic CAN has two limits: 1 megabit per second, and 8 bytes per frame. The table shows what came
+after it, one network per column. One word in the row labels is new: the payload is the useful data
+that one frame carries.
 
-CAN FD, flexible data rate, keeps arbitration at the classic speed, because every node must still
-hear every bit within one bit time. Once a single sender has won, it switches to a faster rate for
-the data, usually two to five, up to eight megabits per second, and it carries up to 64 bytes.
-Most new ECUs use it. CAN XL goes further: up to 20 megabits for the data and up to 2048 bytes.
+CAN FD means flexible data rate. A CAN FD frame starts at the classic speed, because during
+arbitration every node must hear every bit in time. Once one sender has won, it switches to a faster
+rate for the data: 2 to 8 megabits per second. And the payload grows from 8 to 64 bytes. CAN XL goes
+further: up to 20 megabits per second and 2048 bytes.
 
-FlexRay is different in kind. Instead of arbitration, every message has a fixed time slot in a
-repeating cycle, so its timing is exact. It ran at 10 megabits on two channels and appeared first in
-the BMW X5 in 2006, for the adaptive dampers. It is fading out; few new designs use it.
+FlexRay works differently. It has no arbitration. Every message has its own fixed time slot in a
+repeating schedule, like the time-sharing model in section 01. So the timing is exact, but the
+schedule must be fixed in advance. FlexRay runs at 10 megabits per second on two channels. It was
+used for chassis functions and is fading out.
 
-Automotive Ethernet carries the big data: cameras, infotainment and, more and more, the backbone
-between central computers. It runs over a single twisted pair at 100 megabits or a gigabit, point
-to point through switches. There is also a 10 megabit version, 10BASE-T1S, where several nodes
-share one pair, much like CAN.
+Automotive Ethernet is the car version of the office network. It runs at 10, 100 or 1000 megabits
+per second, with a payload of about 1500 bytes. In most versions, each cable joins only two devices,
+and boxes called switches pass the frames on. It carries the large data: cameras, infotainment, and
+the main links of the car's network, called the backbone.
 
-Notice what does not change: inside a door, a seat or a brake unit, CAN and LIN stay.
+Look at the bottom row. Classic CAN is still used for most ECUs.
 -->
 
 ---
@@ -230,15 +236,21 @@ sensors near it over **CAN FD and LIN**; **Ethernet** between zones and center.
 > the edge of the network.
 
 <!--
-One last trend. The 2004 cars have a domain architecture: one bus per function, powertrain,
-chassis, body, multimedia. An ECU sits wherever its function needs it, and its wires run across the
-car to its bus.
+One last trend, which shows where CAN is going. The picture shows two cars from above.
 
-Newer cars move toward a zonal architecture. A few central computers run the functions. Each area
-of the car, front left, rear right and so on, gets a zone controller, which connects the sensors
-and actuators near it, whatever function they belong to. Between the zones and the center runs an
-Ethernet backbone; inside each zone, CAN FD and LIN.
+On the left is the layout of the 2004 cars, called domains. A domain is a group of functions:
+powertrain, chassis, body or multimedia. Each domain has its own bus, drawn in its own color. Each
+bus runs across the whole car to reach its ECUs, and a central gateway joins the buses.
 
-The motivation is the one from section 01: fewer and shorter wires. And CAN does not disappear; it
-moves to the edge, where the sensors and motors are.
+On the right is the layout of cars from about 2020, called zones. A few central computers run the
+functions. Each area of the car has a zone controller, one per corner in the picture. The zone
+controller connects the sensors and the actuators near it, whatever function they belong to. A
+sensor measures something. An actuator moves something, like a motor or a valve. Those short links
+use CAN FD and LIN. The thick line between the zone controllers and the central computer is an
+Ethernet backbone.
+
+The box at the bottom gives the reason, and it is the one from section 01: fewer and shorter wires.
+CAN does not disappear. It moves to the edge of the network, close to the sensors and motors.
+
+So CAN stays. Now we open it up, starting with the wires.
 -->

@@ -10,9 +10,9 @@ layout: section
 One wire per signal, or one shared medium for all of them: three ways to share it, the meeting room that explains CAN's way, and what it saves.
 
 <!--
-Section 01: multiplexing. Multiplexing means sending many signals over one shared medium. We see
-the three ways to share a medium, then the picture we use all lecture long to explain CAN's way, a
-meeting room with strict speaking rules, and finally what it saves in a car.
+We start with the basic idea. Multiplexing means sending many signals over one shared medium. The
+medium is whatever carries the signals: a wire, or the air. This section shows three ways to share a
+medium, then the meeting room that explains CAN's way, and finally what sharing saves in a car.
 -->
 
 ---
@@ -35,22 +35,22 @@ starts; if two start together, a rule settles who goes on without losing the mes
 resolution (CSMA/CR) — listen first, anyone may talk, clashes are resolved, not destroyed</div>
 
 <!--
-There are three ways to share one medium. By frequency: every sender gets its own band, as FM radio
-stations do. By code: everyone sends at once on the same band, each with its own code, as GPS
-satellites do. And by time: one sender at a time gets the whole medium.
+The table shows three ways to share one medium.
 
-Every network between the ECUs of a car shares by time. The question is who decides whose turn it
-is. In some networks a master hands out turns. CAN has no master. An ECU that wants to talk waits
-until the bus is quiet and starts. If two start at the same moment, a rule decides who carries on,
-and the winner's message is not damaged at all. We see that rule in section 05.
+First row, by frequency. Every sender gets its own frequency band, the way each FM radio station has
+its own place on the dial. Second row, by code. All senders send at once, and each marks its signal
+with its own code. GPS satellites do this. Third row, by time. One sender at a time gets the whole
+medium. Look at the last column: every network between the ECUs of a car shares by time.
 
-Network people call this carrier sense, multiple access, collision resolution: listen before
-talking, anyone may talk, and a clash is resolved instead of destroying both messages. Ethernet,
-the office network, detects a collision and both senders start again. CAN resolves it.
+Sharing by time raises one question: who decides whose turn it is? In some networks one device, the
+master, hands out the turns. CAN has no master. An ECU that wants to send waits until the bus is
+quiet, and then starts. If two start at the same moment, a rule decides which one goes on, and its
+message is not damaged. Section 05 shows that rule on the wire.
 
-The source deck explained this with a railway and a television. Both break down on CAN's most
-important rules, so we use one picture instead, for the rest of the lecture: a meeting room with
-strict speaking rules.
+The caption gives the engineering name: carrier sense, multiple access, collision resolution. In
+plain words: listen first, anyone may send, and a clash is resolved without losing the message.
+
+On the next three slides, each kind of sharing runs as a small model.
 -->
 
 ---
@@ -67,18 +67,22 @@ class: big-figure
 own carrier, 10 Hz low-pass filter</div>
 
 <!--
-Here is frequency sharing, run as a Dyad model. Two slow signals, standing for vehicle speed and
-engine speed, each ride on their own carrier: one at 100 hertz, one at 300. The two modulated
-carriers simply add on one wire.
+This is sharing by frequency. Two slow signals stand for vehicle speed and engine speed. Each one
+rides on its own carrier. A carrier is a steady, fast wave, and the signal sets how strong that wave
+is. One carrier swings 100 times per second, which is 100 hertz. The other is at 300 hertz. Both
+waves are simply added on one wire.
 
-The top plot is that wire over a tenth of a second: it looks like a mess. The middle plot is its
-spectrum, and there the mess sorts itself out: two narrow lines, one at 100 hertz and one at 300.
-Each sender owns its band.
+The top plot shows that wire for a tenth of a second. It looks like a mess. The middle plot sorts
+the same wire by frequency. Now you see two narrow lines, one at 100 hertz and one at 300. Each
+sender owns its own line.
 
-To get a signal back, the receiver multiplies the wire by its own carrier and filters out
-everything fast. The bottom plot shows both signals as sent, dashed, and as recovered, solid. They
-match, about 22 milliseconds late, which is the filter. This is how radio stations share the air.
-No car network works this way: it needs an oscillator and a filter per channel.
+To get one signal back, the receiver multiplies the wire by its own carrier and smooths away
+everything fast. That smoothing is called a low-pass filter. The bottom plot shows both signals as
+sent, dashed, and as recovered, solid. They match, but the recovered ones are about 22 milliseconds
+late. The filter causes that delay.
+
+Radio stations share the air this way. Car networks do not, because every signal would need its own
+wave generator and its own filter.
 -->
 
 ---
@@ -95,18 +99,21 @@ class: big-figure
 clock 2.5 % fast</div>
 
 <!--
-Time sharing. A switch gives the wire to each sender in turn: 50 milliseconds for vehicle speed,
-50 for engine speed, again and again. The top plot is the wire, colored by whose slot it is.
+This is sharing by time. A switch gives the wire to each sender in turn: 50 milliseconds for vehicle
+speed, then 50 for engine speed, again and again. Each turn is called a slot. The top plot shows the
+wire, colored by whose slot it is.
 
-The receiver has a switch on the same clock. It samples the wire in the middle of its own slot and
-holds the value until the next one. The middle plot: each signal comes back as a staircase that
-follows the original. Each value is late and refreshed only once per frame: late, rounded in time,
-periodic, the price from the previous slide.
+The receiver has a switch that runs on the same clock. It reads the wire in the middle of its own
+slot and holds that value until its next slot. The middle plot shows the result. Each signal comes
+back as a staircase that follows the dashed original. So each value arrives late, and it is
+refreshed only once per round. That is the price from the title slide.
 
-The bottom plot is the warning. The same receiver with its clock 2.5 percent fast. Its sampling
-instants slide, and after a second it reads the other sender's slot: the two signals come out mixed,
-then swapped. Time sharing works only if everyone agrees on the time. That is exactly why every CAN
-node resynchronizes on every edge, in section 04.
+The bottom plot is a warning. It is the same receiver, but its clock runs 2.5 percent fast. Its
+reading moments slide out of its own slot and into the other sender's slot. The two signals come out
+mixed, and then swapped.
+
+So sharing by time works only if everyone agrees on the time. CAN solves this: every ECU keeps
+correcting its clock while it listens. Section 04 shows how.
 -->
 
 ---
@@ -123,18 +130,23 @@ class: big-figure
 receiver on C = + − − + reads ≈ 0</div>
 
 <!--
-Code sharing. Both senders talk at the same time, on the same wire. Each multiplies its bits by its
-own code, a fast pattern of plus and minus ones, four chips per bit. The codes are chosen to be
-orthogonal: multiply two different codes chip by chip and average, and you get zero.
+This is sharing by code. First one word. A bit is the smallest piece of data: a one or a zero. Here
+a one is sent as plus one and a zero as minus one.
 
-The wire carries the sum, which takes only the values minus two, zero and plus two and looks like
-noise. The receiver multiplies the wire by its own code and averages over one bit. Its own bits come
-back at plus or minus one; the other sender's contribution averages to zero. The last trace is a
-receiver using a third code that nobody sent: it reads almost nothing.
+Both senders send at the same time on the same wire. Each sender multiplies every bit by its own
+code. A code is a fast pattern of four plus and minus ones. Each step of the pattern is called a
+chip. The caption shows the codes: A is plus, minus, plus, minus. B is plus, plus, minus, minus.
+They are chosen so that they cancel each other: multiply A by B step by step, add up the results,
+and you get zero. Codes like that are called orthogonal.
 
-That is how GPS satellites all send on the same frequency. And it shows the contrast with CAN: here
-everyone talks at once and the math separates them; on CAN only one talks at a time, and the rules
-decide who.
+The wire carries the sum of both senders. It takes only the values minus two, zero and plus two, and
+it looks like noise. Each receiver multiplies the wire by its own code and averages over one bit.
+Its own bits come back as plus one or minus one. The other sender's part averages to zero. The last
+trace is a receiver that uses a third code, C, which nobody sent. It reads almost zero.
+
+GPS satellites share one frequency this way. CAN is the opposite. Here everyone sends at once, and
+arithmetic separates them. On CAN only one ECU sends at a time, and rules decide which one. The next
+slide gives those rules as a picture.
 -->
 
 ---
@@ -166,24 +178,31 @@ routeAlias: rules-of-the-room
 </div>
 
 <!--
-Here is the room. Everyone sits in one room and hears every word, as every ECU on a CAN bus
-receives every frame. A frame is CAN's word for one message on the wire.
+This is the picture for the rest of the lecture: a meeting with strict speaking rules. The people at
+the table are the ECUs. The table on the right pairs each rule in the room with its name on CAN.
 
-The second line is the most important one. A speaker never says "to the brakes: the speed is 87".
-They announce a topic: "Vehicle speed: 87". On CAN, the number at the front of a frame, its
-identifier, names what the frame contains, not who it is for. Each listener decides for themselves
-whether the topic concerns them. The ABS keeps vehicle speed; the radio ignores it.
+Everyone hears every word. On CAN, every ECU receives every frame. A frame is one complete message
+on the bus.
 
-You only start talking when the room is quiet. If two people start at the same moment, the one
-with the lower topic number goes on, and the other stops and waits for the next quiet moment.
-Nobody's sentence is lost. Next slide shows how.
+The second row is the most important one. Look at the speech bubble: "Vehicle speed: 87". The
+speaker names a topic, never a person. On CAN, every frame starts with a number, the identifier, ID
+for short. The identifier says what the frame contains. It does not say who the frame is for.
 
-When a sentence ends, any one listener nods, to say "somebody heard you". Not the one it was meant
-for; there is no such person. If anyone heard the sentence garbled, they shout "STOP!", everyone
-throws the sentence away, and the speaker says it again.
+Third row. Each listener keeps only what concerns them. In the picture, the ABS, the dashboard and
+the motor keep the speed. The radio and the seats ignore it. On CAN this is called filtering.
 
-And some people report on a fixed beat: the speed every 10 milliseconds, the dashboard every 100.
-That beat is where the price of the bus comes from.
+You speak only when the room is quiet. If two people start together, the one with the lower topic
+number goes on, and the other waits. On CAN this contest is called arbitration. The next slide shows
+how it works.
+
+When a sentence ends, any one listener nods. The nod says "somebody heard you". On CAN it is the
+acknowledgement, ACK for short.
+
+If a listener hears a garbled sentence, they shout "STOP!", and the speaker repeats it. On CAN the
+shout is called an error frame.
+
+Last row. Some people report on a fixed beat, for example the speed every 10 milliseconds. Those are
+periodic messages, and that beat is where the price of the bus comes from.
 -->
 
 ---
@@ -215,24 +234,27 @@ Whoever stayed silent and heard a clap stops.
 h: hexadecimal · 0 is called dominant, 1 recessive</div>
 
 <!--
-Here is the rule for two speakers who start together. Everyone claps their topic number in
-binary, one beat per bit, highest bit first. A zero is a clap, a one is silence. A clap drowns out
-silence, so if anyone claps, the whole room hears a clap.
+What happens when two speakers start together? The room has a rule. Each speaker claps out their
+topic number in binary. Binary means the number is written with only ones and zeros, the bits. There
+is one beat per bit, and the highest bit comes first. For a zero you clap. For a one you stay
+silent. A clap drowns out silence, so if anyone claps, the whole room hears a clap.
 
-Each speaker listens while clapping. If you stayed silent for a one, and you hear a clap, someone
-else has a zero where you have a one. Their number is lower. You stop at once.
+Every speaker listens while clapping. If you stay silent and still hear a clap, somebody else has a
+zero where you have a one. Their number is lower. You stop at once.
 
-Follow the picture. Three speakers start with topics 711, 2A0 and 265, in hexadecimal. At bit 10,
-711 has a one and stays silent, but the others clap. 711 hears the clap and drops out. Bits 9 and 8
-are the same for the remaining two. At bit 7, 2A0 has a one, stays silent, hears 265 clap, and
-drops out. 265 carries on alone and finishes its sentence.
+Follow the picture. Three speakers start with the topics 711, 2A0 and 265. These numbers are written
+in hexadecimal, a short way to write binary numbers. The small h marks it. A star is a clap, and an
+empty circle is silence. At bit 10, the first beat, 711 is silent, but the other two clap. 711
+stops. At bits 9 and 8 the two remaining speakers do the same thing. At bit 7, 2A0 is silent and 265
+claps. 2A0 stops. 265 goes on alone. The bottom row is what the room hears: exactly the beats of
+265.
 
-Three things follow. The lowest number always wins. The winner's sentence is not damaged at all:
-the room heard exactly the winner's number, so no time is lost. And the topic number is a
-priority, so a car maker gives the brake messages low numbers and the comfort messages high ones.
+The bullets say what follows. The lowest number wins. The winner's sentence is not damaged, so no
+time is lost. The losers try again when the room is quiet. And the topic number is also a priority:
+brake messages get low numbers.
 
-On the wire, a zero is called dominant and a one recessive. You will see those words again in
-section 04.
+The caption gives two words you will hear all day. On CAN a zero is called dominant, because it
+wins. A one is called recessive, because it gives way.
 -->
 
 ---
@@ -268,18 +290,21 @@ A broken ECU silences itself instead of jamming the bus.
 </div>
 
 <!--
-Errors. In the room, anyone who hears a garbled sentence shouts "STOP!". That is CAN's error flag.
-Now the surprising part: everyone throws the sentence away, even the people who heard it fine. In a
-real meeting they would keep it. On CAN they do not, and for a good reason: every ECU must hold the
-same data. If the ABS kept a speed value that the motor controller threw away, the two would
-disagree. So a frame is all or nothing, and the sender simply sends it again.
+Now the errors. On the left: anyone who hears a garbled sentence shouts "STOP!". Then everyone
+throws the sentence away, even the people who heard it correctly, and the speaker repeats it.
 
-The right column is what stops one broken ECU from ruining the meeting. Whoever keeps causing
-stops collects strikes, and a good sentence wipes some of them off. With few strikes you speak and
-object normally: error active. With many, you may only whisper your objections, so you cannot
-destroy other people's sentences any more: error passive. With too many, you leave the room: bus
-off. A broken ECU takes itself off the bus instead of jamming it for everyone. Section 07 gives the
-real counters and thresholds.
+In a real meeting, those who heard it correctly would keep it. CAN does not allow that, for a good
+reason. All ECUs must work with the same data. If the ABS kept a speed value and the motor
+controller threw it away, the two would disagree. So a frame is accepted by everyone or by no one.
+
+On the right is the rule that protects the meeting from one broken member. Whoever keeps causing
+stops collects strikes. A good sentence removes some strikes again. There are three stages, and the
+slide gives their CAN names. With few strikes you speak and shout as normal: error active. With many
+strikes you may only whisper your objections, so you can no longer interrupt others: error passive.
+With too many strikes you leave the room: bus off.
+
+So a broken ECU silences itself and does not block the bus for the others. Section 07 gives the
+exact counting rules.
 -->
 
 ---
@@ -315,20 +340,22 @@ ends of the bus.
 > send the same identifier.
 
 <!--
-Every analogy breaks somewhere, and it is better to say where. Two places.
+Every comparison stops working somewhere. The meeting room stops in two places.
 
-First, people do not clap in sync. CAN nodes do. Every node samples each bit at the same instant,
-because every node readjusts its clock on every change of level on the wire. So arbitration is
-not a matter of who claps louder; it is decided exactly, bit by bit, within one bit time. We see
-how in section 04.
+On the left: people cannot clap exactly in time with each other. ECUs can. Every ECU reads each bit
+at the same moment, because each one keeps correcting its clock while it listens. So the contest
+between two senders is decided exactly, bit by bit. Section 04 shows how the clocks stay together.
 
-Second, a room has no wires. Nothing in the room corresponds to the two signal lines, CAN high and
-CAN low, to their voltage levels, or to the 120-ohm resistors at the two ends of the bus. For that
-we leave the room and look at the electrical picture, also in section 04.
+On the right: a room has no wires. Nothing in the room matches the two wires of the bus, which are
+called CAN high and CAN low. Nothing matches the voltages on them. A voltage is the electrical level
+of a wire, measured in volts. And nothing matches the two 120-ohm resistors at the ends of the bus,
+which are called terminations. Section 04 explains all three.
 
-And one trap. Some explanations say the topic number is like introducing yourself. It is not. The
-identifier names the content, not the sender. That is also why two ECUs must never send the same
-identifier: if they did, both would win arbitration together and then clash in the data.
+The box at the bottom warns about one trap. The topic number says what is said, not who says it.
+Each identifier belongs to one kind of content, and only one ECU sends it. If two ECUs sent the same
+identifier, both would win the clapping contest together, and their sentences would then collide.
+
+Those are the rules. Now back to the car: what does a bus save?
 -->
 
 ---
@@ -373,21 +400,20 @@ resolution and is refreshed only as often as the message is sent.
 function · twisted pair: two wires twisted together, so interference hits both alike</div>
 
 <!--
-Imagine a car where every ECU that needs a signal gets its own wire from the ECU that has it. With
-five ECUs that all talk to each other, that is ten links. With ten it is forty-five. The number
-grows with the square: n times n minus one, over two. A current car has somewhere around seventy
-ECUs. Not all of them talk to all others, but the table shows where point-to-point wiring goes.
-And a link is rarely one wire: a signal often needs a pair, and every wire ends in two connector
-pins, which are the parts that corrode and fail.
+The picture on the left shows six ECUs wired point to point: every ECU has a link to every other
+one. That takes fifteen links. The table below shows how fast this grows. Five ECUs need 10 links.
+Ten need 45. Thirty need 435, and seventy need 2415. A current car has around seventy ECUs. Not
+every ECU talks to every other one, but the table shows where this kind of wiring leads. And one
+link is often several wires, each with two connector pins.
 
-The bus turns this around. Every ECU hangs off one twisted pair, two wires twisted together so
-that electrical noise hits both the same way. A new ECU adds one short stub. A new signal adds no
-wire at all; it is one more message on the same pair.
+The picture on the right shows the same six ECUs on one bus. The bus is a twisted pair: two wires
+twisted around each other. An electrical disturbance from outside then hits both wires in the same
+way. Section 04 shows why that helps. Each ECU connects through a stub, a short side branch. A new
+ECU adds one stub. A new signal adds no wire at all, only one more message.
 
-The right column also says the price, and it is the theme of today. On a bus the ECUs take turns.
-A signal has to wait for its message. It is rounded to the resolution the message gives it. And
-the receiver sees a new value only as often as the sender sends the message. Keep those three
-things in mind: late, rounded, periodic.
+The right column names the price, and it is the theme of today. On a bus the ECUs take turns. So a
+signal waits for its message. It is rounded to the step size of the message. And the receiver gets a
+new value only as often as the message is sent. Remember these three words: late, rounded, periodic.
 -->
 
 ---
@@ -420,15 +446,21 @@ run.
 wires before and after.</div>
 
 <!--
-Here is the same idea on our own car. On the left, the point-to-point car you know from Lectures 3
-and 4. The vehicle speed, the steering angle, the yaw rate, the brake demand, the flag that says
-the ABS is acting and the torque request to the motor each run on their own wire between the ECUs.
+Now the same idea on our own car. On the left is the car you know from Lectures 3 and 4, wired point
+to point. Six signals each run on their own wire between the ECUs: the vehicle speed, the steering
+angle, the yaw rate, the brake demand, the flag that says the ABS is active, and the torque request
+to the motor.
 
-On the right, the same car on a bus. Every ECU publishes its messages on one bus connection, and
-every ECU reads from it what it needs. The model has one switch, called ideal. With ideal on, the
-bus delivers every value at once and exactly, so the bused car must drive exactly like the wired
-one. With ideal off, the bus behaves like a real one: late, rounded, periodic.
+On the right is the same car on a bus. Every ECU puts its messages on one bus connection, and every
+ECU reads what it needs from that connection.
 
-In the first build you move the signals onto the bus yourself and count the wires before and
-after.
+The bused model has one switch, called ideal. With ideal switched on, the bus is perfect: every
+value arrives at once and exactly. Then the bused car must drive exactly like the wired car. With
+ideal switched off, the bus behaves like a real one: late, rounded, periodic. So you can compare the
+two cars run for run.
+
+The green box announces the first build. You move the car's signals onto the bus yourself, and you
+count the wires before and after.
+
+Before we build, we need a map of the jobs a network has to do. That is the next section.
 -->

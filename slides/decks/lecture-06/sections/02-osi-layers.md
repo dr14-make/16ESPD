@@ -10,9 +10,10 @@ layout: section
 The seven layers one by one, each mapped onto CAN and onto the meeting room. CAN fills three of them.
 
 <!--
-Section 02: the OSI model. Network engineers describe every network with the same seven-layer model, the
-OSI model. We go through it layer by layer: what each layer does, what CAN puts there, and what it
-is in the meeting room. Then one table for all seven, and one picture you should drop.
+Section 02. A network has many jobs: moving bits, taking turns, checking for errors, giving the data
+a meaning. Engineers sort these jobs into seven layers. This sorting is called the OSI model. We
+take the layers one at a time and ask what CAN does there, and what the meeting room does there. You
+will see that CAN fills only three of the seven.
 -->
 
 ---
@@ -45,24 +46,22 @@ program on another, cut into seven layers.
 </div>
 
 <!--
-Network engineers describe every network with the same model: OSI, Open Systems Interconnection.
-It describes how data gets from a program running on one machine to a program running on another,
-and it cuts that journey into seven layers. The picture lists them, from the physical layer at
-the bottom to the application at the top. The three shaded ones are the layers classic CAN fills.
+OSI stands for Open Systems Interconnection. The model describes how data gets from a program on one
+machine to a program on another, and it cuts that journey into seven layers. The picture on the left
+stacks them, from layer 1, the physical layer, at the bottom, to layer 7, the application layer, at
+the top. The shaded layers, 1, 2 and 7, are the ones CAN fills.
 
-The rules on the right are what make the model useful. Each layer does one job, and it talks only
-to its neighbors: the one above and the one below. So you can change one layer without touching
-the others. Your laptop can move from a cable to Wi-Fi, and your browser does not notice. A layer
-can be hardware, like a cable, or software. And the model itself does nothing; it is a way to sort
-the jobs that every network has to do.
+The bullets on the right explain why the model is useful. Each layer does one job and talks only to
+the layer above and the layer below. So one layer can change without the others noticing. Your
+laptop can switch from a cable to Wi-Fi, and your browser works as before. A layer can be hardware
+or software. And the model itself does nothing. It is only a way to sort the jobs.
 
-On the way down, at the sender, each layer wraps the data in its own control information: an
-address, a length, a checksum. The right side of the picture shows the data growing a header at
-each layer, and a trailer at layer 2. On the way up, at the receiver, each layer unwraps what its
-partner layer added.
+The right side of the picture shows the data on its way down at the sender. Each layer wraps the
+data in its own control information, called a header. Layer 2 also adds a trailer at the end. Layer
+1 then sends everything as bits. At the receiver, each layer unwraps what its partner added.
 
-From now on, for each layer we ask the same three questions. What is its job? What does CAN put
-there? And what is it in the meeting room from section 01? We go from the bottom up.
+For each layer we now ask the three questions in the box. What is its job? What does CAN put there?
+What is it in the meeting room? We start at the bottom.
 -->
 
 ---
@@ -109,21 +108,20 @@ The room stops here: it has no wires, no volts, no terminations.
 </div>
 
 <!--
-Layer 1, physical. Its job is to put bits onto a medium. It defines the connectors, the cable, the
-voltage or light levels that mean one and zero, the timing, and the bit rate. Its unit of data is
-the single bit. Outside cars: an Ethernet cable with its RJ45 plug, the radio in a Wi-Fi card, an
-optical fiber.
+Layer 1, the physical layer. Its job, in the left column, is to put bits on a medium. It defines the
+cable, the connectors, the voltage or light level that means one or zero, and the bit rate. The bit
+rate is the number of bits sent per second. Examples outside the car are an Ethernet cable, a Wi-Fi
+radio and an optical fiber.
 
-In CAN, layer 1 is the twisted pair of CAN high and CAN low. A zero is dominant: a transceiver
-actively drives the two lines apart. A one is recessive: nobody drives, and the lines rest
-together. The bit rate in a car is usually 500 kilobits per second, and the bus has a 120-ohm
-resistor at each end. Every ECU has a transceiver chip that does this, defined in ISO 11898-2.
-Section 04 shows it in detail.
+The middle column is CAN. The medium is the twisted pair, CAN high and CAN low. A zero is dominant:
+an ECU actively drives the two wires. A one is recessive: nobody drives them. A typical bit rate in
+a car is 500 kilobits per second, which is 500 thousand bits each second. Each end of the bus has a
+120-ohm resistor. And every ECU has a small chip, the transceiver, that connects it to the two
+wires. Section 04 covers all of this.
 
-In the meeting room, layer 1 is the air that carries the sound. A clap is a zero and silence is a
-one, and a clap drowns out silence, just as one dominant transmitter overrides everyone else.
-Everyone keeps the same pace, which is the bit rate. But here the room stops being useful: it has no
-wires, no voltages, no terminations. For those we need the electrical picture.
+The right column is the room. The air carries the sound. A clap is a zero and silence is a one, and
+a clap drowns out silence. Everyone keeps the same pace, which is the bit rate. And the room stops
+here: it has no wires, no volts and no terminations.
 -->
 
 ---
@@ -174,23 +172,29 @@ The **speaking rules**:
 </div>
 
 <!--
-Layer 2, data link. Its job is to group bits into frames, to decide who may use the medium when
-several want it, to detect transmission errors, and to deliver frames to the right node on the
-local link. Its unit is the frame. In office Ethernet, a frame carries the hardware address of the
-receiving network card, its MAC address.
+Layer 2, the data link layer. Its job is to group bits into frames, to decide who may use the
+medium, and to detect errors. Office Ethernet has this layer too. There, each frame carries the
+hardware address of the receiver, called a MAC address.
 
-For CAN this layer is the heart of the protocol. The frame with its identifier, length, data, CRC
-and acknowledgement slot. Arbitration, where the lowest identifier wins. Bit stuffing, error
-frames and the error counters. And filtering: a receiver keeps a frame because of its identifier,
-not because of an address, and here CAN differs from the source deck's general description, which
-mentions a destination address. CAN frames have none. All of this runs in the CAN controller, a
-piece of silicon in every ECU, without any software involved. Sections 05 and 07 cover it.
+The middle column says that this layer is the heart of CAN. It holds five things, and each has a
+partner in the room on the right.
 
-In the room, layer 2 is the speaking rules from section 01. One clap to start, and clapping the
-topic number to decide who speaks. Never five equal beats in a row, so everyone keeps the beat. A
-check number at the end of each sentence, and any one listener nods. Anyone who heard it garbled
-shouts "STOP!", and troublemakers collect strikes. And each listener ignores the topics they do not
-need.
+First, the frame: the identifier, the length, the data, a check number called the CRC, and the ACK.
+In the room: one clap to start, a check number at the end, and the nod.
+
+Second, arbitration, where the lowest identifier wins. In the room: clapping the topic number.
+
+Third, bit stuffing. It keeps long runs of equal bits off the wire. In the room: after five equal
+beats in a row, the speaker adds one opposite beat, so that everyone keeps the beat. Section 05
+explains it.
+
+Fourth, error frames and error counters. In the room: "STOP!" and the strikes.
+
+Fifth, filtering by identifier. In the room: ignore the topics you do not need. CAN filters by
+identifier, not by address. A CAN frame carries no address at all.
+
+All of this runs inside a chip in every ECU, the CAN controller. Sections 05 and 07 give the
+details.
 -->
 
 ---
@@ -232,18 +236,21 @@ Elsewhere: the IP address, and the routers that forward packets toward it.
 </div>
 
 <!--
-Layer 3, network. Its job is addressing across many networks, and routing: finding a path from one
-network to another. Its unit is the packet. On the internet, that is the IP address, and the
-routers that forward each packet toward it, network by network.
+Layer 3, the network layer. Its job is to give every machine an address that works across many
+networks, and to find a route from one network to another. On the internet this is the IP address,
+and the routers that pass each packet of data on toward it.
 
-In classic CAN this layer is empty. A bus is one network, there are no addresses, and there is
-nothing to route. A car has several buses, joined by a gateway, which copies chosen messages from
-one bus to another: the vehicle speed from the powertrain bus onto the body bus for the dashboard,
-for example. But the gateway decides by what a message means, not by an address, so strictly it
-works at layer 7.
+In CAN this layer is empty. One bus is one network. There are no addresses, and there is nothing to
+route.
 
-In the room: one room, so nobody needs directions. Between two rooms, there is an interpreter in
-the doorway who listens to one room and repeats chosen topics into the other.
+A car does have several buses, and they are joined by a gateway. A gateway is an ECU that is
+connected to two buses and copies chosen messages from one to the other. The slide gives an example:
+the vehicle speed is copied from the powertrain bus, the bus of the drive system, to the body bus,
+the bus of lights, doors and dashboard. The gateway chooses by what a message means, not by an
+address. So it really works at layer 7.
+
+In the room: there is one room, so nobody needs directions. Between two rooms, an interpreter stands
+in the doorway. The interpreter listens in one room and repeats chosen topics into the other.
 -->
 
 ---
@@ -287,21 +294,22 @@ Elsewhere: TCP, which confirms delivery; UDP, which does not. For a letter: the 
 </div>
 
 <!--
-Layer 4, transport. Its job is to split long data into pieces, to put the pieces back together in
-the right order, to control the flow so a slow receiver is not flooded, and, if asked, to confirm
-delivery. Its unit is the segment. On the internet, TCP confirms every piece, and UDP sends without
-confirmation. The source deck's notes give the post office version: the signed receipt for a
-letter is a transport-layer service.
+Layer 4, the transport layer. Its job is to split long data into pieces, to put the pieces back in
+the right order, to slow the sender down when the receiver is not ready, and to confirm delivery if
+asked. On the internet a protocol called TCP does this. A protocol is an agreed set of rules. In the
+post, the signed receipt for a letter is the same service.
 
-In CAN this layer is mostly empty. A signal fits into the eight bytes of a frame, so there is
-nothing to split. And delivery is not confirmed to any particular receiver: the acknowledgement
-only says that someone received the frame correctly. The exception is diagnostics. A workshop
-tester reads long blocks, such as the vehicle identification number or a whole fault memory, and
-the ISO-TP protocol splits up to 4095 bytes into numbered frames, with flow control from the
-receiver. Section 09 shows it.
+In CAN this layer is mostly empty. A frame carries up to 8 bytes of data. A byte is a group of eight
+bits, enough for a number from 0 to 255. A signal fits into those 8 bytes, so there is nothing to
+split. And delivery is not confirmed to a particular receiver. The ACK only says that someone
+received the frame.
 
-In the room: a normal topic is one sentence, so there is nothing to split. A long report is told
-in numbered installments, and the listener says "go on, five more" when ready.
+There is one exception: diagnostics, when a workshop reads data out of the car. Those messages can
+be long. A protocol called ISO-TP splits up to 4095 bytes into numbered frames, and the receiver
+controls the pace. Section 09 shows it.
+
+In the room: a normal topic is one sentence, so there is nothing to split. A long report is told in
+numbered installments, and the listener says "go on, five more".
 -->
 
 ---
@@ -344,21 +352,24 @@ search, call back; the session closes only when the problem is solved.
 </div>
 
 <!--
-Layer 5, session. Its job is to open, keep and close a dialogue, and a dialogue can outlive a
-single connection. The source deck explains it with a telephone. You and a colleague have to work
-on subject X: that opens a session. Your colleague calls: a connection opens. You need to look
-something up, so you hang up: the connection closes, but the session "work on subject X" is still
-open. You call back: a new connection. You find the solution and hang up: now the connection and the
-session both close.
+Layer 5, the session layer. Its job is to open, keep and close a dialogue. A dialogue can last
+longer than one connection.
 
-In CAN this layer is empty for normal traffic. There is no dialogue: topics are announced, not
-discussed. The exception is again diagnostics. A workshop tester opens a session with an ECU, the
-default, an extended one for workshop functions, or a programming session for new software, and
-keeps it open by sending "tester present" regularly. Section 09.
+The left column explains this with a phone. You and a colleague agree to work on subject X. That
+opens a session. Your colleague calls: that is a connection. You hang up to look something up. The
+connection is gone, but the session is still open. You call back. Only when the problem is solved
+does the session close.
 
-In the room: normal topics are announcements, not conversations. A private consultation with the
-chair, "we now discuss calibration", is a session: it stays open as long as you keep saying "still
-here".
+In CAN this layer is empty for normal traffic. Topics are announced, not discussed, so there is no
+dialogue.
+
+The exception is again diagnostics. The workshop's diagnostic device is called the tester. It speaks
+a protocol called UDS, Unified Diagnostic Services. With UDS the tester opens a session with one
+ECU. There are three kinds: default, extended and programming. The tester keeps the session open by
+regularly sending a message called "tester present". Section 09 comes back to it.
+
+In the room: normal topics are announcements. A session is a private consultation with the chair of
+the meeting. It stays open as long as you keep saying "still here".
 -->
 
 ---
@@ -398,17 +409,20 @@ Elsewhere: JPEG for pictures, UTF-8 for text, TLS encryption.
 </div>
 
 <!--
-Layer 6, presentation. Its job is how values are written down: the encoding, the number format,
-the units, compression, encryption. Outside cars: JPEG for pictures, UTF-8 for text, the TLS
-encryption behind the padlock in your browser.
+Layer 6, the presentation layer. Its job is how values are written down: the number format, the
+units, compression, encryption. Outside the car, think of JPEG for pictures, or the encryption
+behind the padlock in your browser.
 
-The CAN standard does not define this layer at all. In practice the signal database, the DBC file,
-does its job: for each signal, its length in bits, its factor and offset, and its byte order. And
-in newer cars, SecOC adds a short cryptographic code to the frames that matter, which is the
-encryption side of this layer. Section 06 covers it.
+The CAN standard does not define this layer. In practice a file does the job: the DBC file, the
+signal database of a bus. For each signal it lists the length in bits and three more things. The
+factor and the offset turn the number in the frame into a physical value. The byte order says in
+which order the bytes are sent. Section 06 explains each of them.
 
-In the room: the agreed units. When someone says "vehicle speed: 87", everyone knows it means
-kilometers per hour, with no decimals. And everyone counts in the same language.
+The second bullet is SecOC, Secure Onboard Communication. It adds a short code, made with a secret
+key, to important frames. A receiver can then tell that the frame is genuine.
+
+In the room, this layer is the agreed units. When someone says "vehicle speed: 87", everyone knows
+that it means kilometers per hour, with no decimals. And everyone counts in the same language.
 -->
 
 ---
@@ -447,15 +461,18 @@ The **agenda**: the list of topics with their numbers, who reports which topic, 
 </div>
 
 <!--
-Layer 7, application, at the top. Its job is what the data means to the program that uses it. On
-your computer: the web browser, the e-mail program.
+Layer 7, the application layer, at the top. Its job is what the data means to the program that uses
+it. On your computer, that is the web browser or the e-mail program.
 
-In CAN, this is the car maker's communication matrix: which identifier carries vehicle speed, which
-ECU sends it, which ECUs receive it, and how often. Each car maker writes its own. There are also
-standard application layers on top of CAN: J1939 for trucks and buses, CANopen for industrial
-machines, and OBD-II and UDS for diagnostics, which we meet in section 09.
+In CAN this is the car maker's communication matrix. It is the list that says which identifier
+carries vehicle speed, which ECU sends it, which ECUs receive it, and how often. Every car maker
+writes its own.
 
-In the room, layer 7 is the agenda: the list of topics with their numbers, who reports which topic,
+The second bullet lists ready-made standards for this layer. J1939 is used in trucks. CANopen is
+used in industrial machines. OBD-II and UDS are used for diagnostics, and we meet them in section
+09.
+
+In the room, layer 7 is the agenda: the list of topics with their numbers, who reports each topic,
 and how often.
 -->
 
@@ -479,13 +496,20 @@ routeAlias: seven-layers
 language · a gateway between two buses works at layer 7: an interpreter in the doorway</div>
 
 <!--
-Here are all seven layers again in one table, to keep as a summary.
+This table puts all seven layers on one slide. Keep it as your summary.
 
-Read the bold entries. CAN fills layer 1, the wires, layer 2, the frame and its rules, and layer 7,
-the meaning of each identifier. Layers 3 to 6 are empty in normal traffic, because everyone is in
-one room speaking one language. Layer 6's job is done by the DBC file, and layers 4 and 5 appear
-only in diagnostics. A gateway between buses works on meaning, at layer 7: the interpreter in the
-doorway.
+Read the fourth column, classic CAN, from the bottom. Layer 1 is filled: the two wires, dominant and
+recessive, the bit rate, the termination. Layer 2 is filled: the frame and all its rules. Then look
+at layers 3, 4 and 5. Each starts with a dash: they are empty in normal traffic. Layer 6 is not
+defined by CAN; the DBC file does its job. Layer 7 is filled: the meaning of each identifier.
+
+The caption says why the middle is empty: everyone is in one room and speaks one language. Layers 4
+and 5 appear only in diagnostics, with ISO-TP and UDS. And a gateway between two buses works at
+layer 7, like the interpreter in the doorway.
+
+The last column is the meeting room again. At layer 1 it reminds you that the room stops there.
+
+One more slide on this model, about a picture you may already have in your head.
 -->
 
 ---
@@ -523,20 +547,21 @@ routeAlias: not-a-post-office
 > exist.
 
 <!--
-One contrast, because most of you already carry this picture in your head. The post office is the
-classic way to explain networks: a letter in an envelope, the envelope in a mail sack, the sack on
-a truck.
+Networks are often explained with a post office: letters, addresses, receipts. For CAN that picture
+is wrong, and this slide shows why.
 
-On the left, what the post office does. Every letter carries the recipient's address, which is
-layer 3. The post routes it to that one door. The recipient signs for it, which is layer 4's
-confirmed delivery, so the sender knows exactly who got it. And nobody else sees the letter.
+On the left is the post office. The sender writes the recipient's address on the envelope: "To:
+ABS". The post delivers it to that one door. The dashboard and the radio never see it. And the ABS
+signs a receipt, so the sender knows exactly who got the letter. The address is a layer 3 job, and
+the receipt is a layer 4 job.
 
-On the right, CAN does none of that. A frame carries a topic and no address. It goes to everyone,
-and each ECU decides whether to keep it. Any receiver acknowledges it, so the sender learns that
-someone got it, but not who. And every ECU sees every frame.
+On the right is CAN. The sender puts one frame on the bus, marked 1A0, vehicle speed. That is a
+topic, not an address. The ABS, the dashboard, the radio and the seats all receive it. The ABS and
+the dashboard keep it; the others ignore it. And any receiver acknowledges it. So the sender knows
+that someone got the frame, but not who.
 
-So if you picture CAN as letters between ECUs, you will look for a receiver address that does not
-exist. Picture the meeting room instead.
+The box gives the consequence. If you picture CAN as letters between ECUs, you will look for a
+receiver address, and there is none. Picture the meeting room.
 -->
 
 ---
@@ -558,22 +583,26 @@ routeAlias: what-the-model-covers
 ever compete; that is why arbitration is calculated, not simulated</div>
 
 <!--
-Now the same layers for the model you build today. It is important to know what a model leaves
-out before you trust its numbers.
+The last slide of this section applies the layers to the Dyad model you build today. A model always
+leaves things out, and you should know which before you trust its numbers. Read the table from the
+top.
 
-At layer 7, you choose the signal: you wire it into a CanTx block at the sender and read it from a
-CanRx block at the receiver. At layer 6, the block applies the message's scaling: a scale and an
-offset, and a raw range. The value is rounded to the scale and clamped to the range, exactly as a
-real message rounds it.
+Layer 7: you choose the signal. You wire it into a block called CanTx at the sender, and you read it
+from a block called CanRx at the receiver.
 
-At layer 2, the model does the timing. Every message is sampled once per period and delivered one
-period later. That is the late and the periodic from section 01. Arbitration, who goes first when
-two frames want the bus, is not simulated. The function can_schedule calculates it instead: how
-full the bus is, and how long each frame waits in the worst case. Errors are not modeled at all.
-The function check_can catches mistakes in how you wired the model, not CAN protocol errors.
+Layer 6: the block has a scale, an offset and a raw range. It rounds the value to the scale and
+limits it to the range. Limiting is called clamping. A real message does the same.
+
+Layer 2 has three rows. Timing: the block reads its input once per period and delivers the value one
+period later. That gives you late and periodic. Load: on a real bus, arbitration decides the order
+of the frames. The model does not simulate that. A function called can_schedule calculates the
+result. Errors: not modeled. The function check_can checks how you wired the model. It does not
+check the CAN rules.
 
 Layer 1, the electrical side, is not modeled.
 
-The line at the bottom says why arbitration is calculated: in the model each signal has its own
-slot on the bus, so two frames never actually compete.
+The caption explains why arbitration is only calculated. In the model, every signal has its own
+place on the bus, called a slot. So two frames never compete.
+
+That is the map. Next we look at the networks in real cars.
 -->

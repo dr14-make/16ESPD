@@ -11,10 +11,10 @@ From a physical value to bits in a frame: the DBC file, factor and offset, byte 
 checksums.
 
 <!--
-Section 06: signals. A speed in kilometers per hour has to become a few bits in a frame at the
-sender, and a speed again at every receiver. The signal database says how. Our examples are real:
-the frames a 2000s Volkswagen-group car sends to its instrument cluster, which we use in the
-wrap-up to drive a real Škoda Fabia cluster.
+Section 06, signals. At the sender, a speed in kilometers per hour must become a few bits in a
+frame. At every receiver, those bits must become a speed again. A file called the DBC file says how.
+The examples are real: they come from the Volkswagen-group platform of the Škoda Fabia, whose
+instrument cluster we drive in the wrap-up.
 -->
 
 ---
@@ -56,22 +56,26 @@ $$\text{value} = \text{raw} \times \text{factor} + \text{offset}$$
 · values from the PQ24 drivetrain CAN matrix used on the bench in this course</div>
 
 <!--
-A frame carries integers. A signal becomes an integer by one linear rule: the value equals the raw
-integer times a factor, plus an offset. The factor is the resolution: one step of the raw integer.
-The offset shifts the range, so that a temperature can go below zero without a sign bit. And the
-number of bits sets how far the range reaches: the factor times two to the power of the length.
+A frame carries only whole numbers. The formula at the top left turns such a number into a physical
+value: value equals raw times factor plus offset.
 
-The box is the point to remember for the build. Every signal on the bus is rounded to its factor
-and clamped to its range. If the database gives vehicle speed a resolution of one kilometer per
-hour, no receiver will ever see 87.4.
+The bullets explain the parts. Raw is the whole number that is in the frame. The factor is the step
+size: what one step of the raw number is worth. The offset shifts the range, for example so that a
+temperature can go below zero. And the length in bits sets how far the range reaches.
 
-On the right, three real signals from the frames a Volkswagen-group car of the Škoda Fabia's
-generation sends to its dashboard. Engine speed: 16 bits at a quarter of an rpm, up to about 16
-thousand rpm. Vehicle speed: 15 bits at one hundredth of a kilometer per hour, up to 327. Coolant
-temperature: only 8 bits, at three quarters of a degree, with an offset of minus 48, so it covers
-minus 48 to 143 degrees. At 90 degrees the raw value is 90 plus 48, divided by 0.75: 184,
-hexadecimal B8. Each car maker chooses these numbers for each signal: enough resolution, enough
-range, as few bits as possible.
+The box is what you need for the build. Every signal is rounded to its factor and clamped, that is
+limited, to its range. The bus cannot carry anything finer or larger than the database planned.
+
+On the right are three real signals from the Fabia's platform. Engine speed uses 16 bits with a
+factor of 0.25 revolutions per minute. It reaches 16,383. Vehicle speed uses 15 bits with a factor
+of 0.01 kilometers per hour. It reaches 327. Coolant temperature uses only 8 bits, with a factor of
+0.75 degrees and an offset of minus 48 degrees. It covers minus 48 to 143 degrees.
+
+The last line works one example backward. For 90 degrees, add 48 and divide by 0.75. The raw number
+is 184. In hexadecimal that is B8.
+
+The car maker picks these numbers for each signal: fine enough, wide enough, and as few bits as
+possible. The next slide shows where they are written down.
 -->
 
 ---
@@ -108,25 +112,27 @@ the matrix: Motor = engine, Bremse = brakes, Kombi
 = instrument cluster, Zähler = counter</div>
 
 <!--
-The car maker writes all of these definitions into one file per bus, the communication matrix. The
-format nearly everyone uses is the DBC file, from the tool maker Vector. Here are three lines of it,
-written for two of our frames.
+All these definitions go into one file per bus, the DBC file. DBC is a file format from the tool
+maker Vector, and nearly everyone uses it. The code at the top shows two frames in that format. The
+names are German, as the car maker wrote them. The table below explains the first frame part by
+part.
 
-A line starting with BO_ declares a frame: identifier 640 decimal, which is 280 hexadecimal, named
-Motor_1, eight data bytes, sent by the engine ECU. Under it, each line starting with SG_ declares a
-signal. Motordrehzahl is German for engine speed; the names are the car maker's own.
+A line that starts with BO declares a frame. Its identifier is 640 in decimal, which is 280 in
+hexadecimal. Its name is Motor_1, it has 8 data bytes, and the engine ECU sends it.
 
-Then the layout. 16 bar 16 means the signal starts at bit 16 of the frame and is 16 bits long. At-1
-means Intel byte order, the next slide. Plus means unsigned. In parentheses the factor and offset,
-0.25 and zero. In brackets the allowed physical range. Then the unit, and the list of ECUs that
-receive the signal: here only the cluster, Kombi.
+A line that starts with SG declares a signal in that frame. Motordrehzahl is the engine speed.
 
-The second frame, Bremse_1 from the brake ECU, carries the vehicle speed and a four-bit counter,
-which we meet two slides on. Notice that vehicle speed is received by the cluster and the engine
-ECU: one sender, several receivers, the broadcast from section 01.
+Then the layout. 16, bar, 16 means the signal starts at bit 16 and is 16 bits long. The "at 1" is
+the byte order, called Intel; the next slide explains it. The plus means the number has no sign.
 
-Tools read this file to decode traffic. Our model writes one too: the function can_dbc produces the
-DBC of the model's bus, and you can decode the simulated car's frames with it.
+In parentheses are the factor and the offset: 0.25 and 0. In square brackets is the allowed range.
+Last come the unit and the receivers. Here the only receiver is Kombi, the instrument cluster.
+
+The second frame, Bremse_1, comes from the brake ECU. It carries the vehicle speed, received by the
+cluster and by the engine ECU. One sender, several receivers: that is the meeting room. It also
+carries a 4-bit counter, Zaehler. We come back to it in two slides.
+
+Software tools read this file to translate the raw frames on a bus into values with units.
 -->
 
 ---
@@ -159,19 +165,23 @@ Engine speed **2000 rpm** → raw 2000 / 0.25 = 8000 = **1F40h**, starting at by
 </div>
 
 <!--
-A 16-bit signal takes two bytes, and there are two ways to put them in the frame.
+A signal of 16 bits needs two bytes. There are two ways to order them in the frame, and this slide
+shows both.
 
-Take engine speed at 2000 rpm. The raw value is 2000 divided by 0.25: 8000, hexadecimal 1F40. In
-Intel byte order, named after the Intel processors that store numbers this way, the low byte comes
-first: byte 2 holds 40, byte 3 holds 1F. That is how the Fabia's engine ECU sends it, and how our
-model packs every signal. In Motorola byte order, the high byte comes first: 1F, then 40.
+Take an engine speed of 2000 revolutions per minute. Divide by the factor 0.25: the raw number is
+8000. In hexadecimal that is 1F40. So the two bytes are 1F, the high byte, and 40, the low byte. The
+signal starts at byte 2.
 
-Both are in use, chosen by the car maker, sometimes differently on two buses of the same car. The
-DBC marks each signal: at-1 for Intel, at-0 for Motorola.
+Look at the table. In the Intel row, the low byte comes first: byte 2 holds 40 and byte 3 holds 1F.
+This order is also called little-endian. The Fabia's platform uses it, and so does our model. In the
+Motorola row, the high byte comes first: 1F, then 40. This order is called big-endian. Other car
+makers use it, sometimes on another bus of the same car.
 
-The box shows why it matters. Read the Intel bytes 40 1F as if they were Motorola, and you get
-401F hexadecimal, 16 415 decimal, times 0.25: 4104 rpm instead of 2000. Nothing on the bus warns
-you; the number is simply wrong.
+The DBC file marks each signal, as you saw: at 1 for Intel, at 0 for Motorola.
+
+The box shows what happens if you mix them up. Read the Intel bytes as if they were Motorola, and
+you get 401F in hexadecimal. Times 0.25, that is 4104 revolutions per minute instead of 2000.
+Nothing on the bus warns you. The number is simply wrong.
 -->
 
 ---
@@ -209,25 +219,24 @@ The receiver checks both, and on a failure uses the last good value or a safe de
 </div>
 
 <!--
-Some signals matter so much that the frame protects them a second time.
+Some signals are so important that the frame protects them a second time.
 
-On the left, three frames of the Fabia's network. Bremse_1, from the brake ECU, carries a four-bit
-counter that goes up by one with every frame and wraps from 15 to 0. Airbag_1 carries a counter and
-a checksum: the XOR of the other bytes. Motor_5, from the engine ECU, carries an XOR checksum in its
-last byte. The receiver checks them; if the check fails, it keeps the last good value or falls back
-to a safe default, and after a while sets a fault.
+The table on the left shows three frames from the Fabia's network. Bremse_1, from the brake ECU,
+carries a 4-bit counter. The sender adds one with every frame. Airbag_1 carries a counter and a
+checksum. A checksum is a check number that the sender calculates from the other bytes of the frame.
+Here it uses a simple bit operation called XOR. Motor_5, from the engine ECU, carries such a
+checksum in byte 7. The receiver checks both. If a check fails, it uses the last good value or a
+safe default.
 
-On the right, the obvious question: CAN already has a 15-bit CRC, why more? Because the CRC protects
-the frame on the wire, from the sender's controller to the receiver's controller. It cannot see a
-sender whose software has hung and keeps sending the same old bytes: the frames are perfectly
-valid. A counter that stops counting reveals that. And it cannot see data corrupted inside an ECU
-or a gateway before it reached the controller. A checksum computed by the application itself shows
-that the data is what the sending software meant.
+The right column answers the obvious question: CAN already has a CRC, so why add more? The CRC
+protects the frame only on the wire. Two faults pass it. One: the software in the sender has
+stopped, and the ECU keeps repeating an old value. The frames are valid. But the counter no longer
+counts, and the receiver notices. Two: the value was damaged inside an ECU or a gateway, before the
+CRC was calculated. A checksum calculated by the application itself reveals that.
 
-Modern cars standardize this as AUTOSAR end-to-end protection: a CRC, a counter and a data
-identifier in every safety-relevant frame. And because a bus where anyone may talk is also a bus
-where an attacker may talk, many new frames also carry SecOC, a short cryptographic code that only
-ECUs with the key can produce.
+The last bullet names today's standards. AUTOSAR E2E, end-to-end protection, puts a CRC, a counter
+and a data identifier into the data of safety-related frames. And SecOC, from section 02, adds a
+code that only ECUs with the secret key can produce. It protects against forged frames.
 -->
 
 ---
@@ -252,19 +261,24 @@ DBC of the model's bus.
 fields for each.</div>
 
 <!--
-Here is the same list of fields on the block you use in the build, CanTxReal.
+Now the same fields on the block you use in the build. The block is called CanTxReal, and it sends
+one signal. The table pairs each DBC field with a parameter of the block.
 
-The identifier is the parameter id, from zero to 2047; the model uses it as the priority when it
-calculates the bus timing. The slot has no DBC counterpart: it is the place on the model's bus that
-carries this signal, and each slot may have only one transmitter. The cycle time is the period: the
-block samples its input once per period and delivers it one period later. Factor and offset are
-scale and offset: the value is rounded to the scale. The raw range is raw_min and raw_max: the value
-is clamped. The byte order is always Intel.
+The identifier is the parameter id, from 0 to 2047. The function can_schedule uses it as the
+priority.
 
-Signals with the same identifier share one frame, packed in slot order, up to eight bytes, as on a
-real bus. And can_dbc writes the DBC file of the model's bus, so a real CAN tool can decode the
-simulated traffic.
+The second row has no DBC partner. The slot is the place on the model's bus that carries this
+signal. Each slot may have only one transmitter.
 
-That is where build 01 starts: you put the car's signals onto the bus and choose these fields for
-each one.
+The cycle time is the parameter period. The block reads its input once per period and delivers the
+value one period later.
+
+Factor and offset are called scale and offset. The value is rounded to the scale. The raw range is
+raw_min and raw_max, and the value is clamped to it. The byte order is always Intel.
+
+The line under the table adds two things. Signals with the same id share one frame, with at most 8
+bytes, as on a real bus. And the function can_dbc writes the DBC file of the model's bus.
+
+The green box: build 01 starts here. You put the car's signals on the bus, and you choose these
+fields for each one.
 -->

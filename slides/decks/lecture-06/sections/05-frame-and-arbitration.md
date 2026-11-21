@@ -10,9 +10,8 @@ layout: section
 The fields of a frame, bit stuffing, the arbitration example on the wire, and the acknowledgement.
 
 <!--
-Section 05: the frame and arbitration. We take one data frame apart field by field, see the bit
-stuffing rule that keeps the clocks together, replay the clapping example as voltages on the bus,
-and finish with the acknowledgement.
+Section 05, the frame and arbitration. We take one frame apart, field by field. Then we look at bit
+stuffing, replay the clapping example on the wire, and finish with the acknowledgement.
 -->
 
 ---
@@ -40,22 +39,31 @@ routeAlias: data-frame
 </div>
 
 <!--
-Here is a classic CAN data frame in the base format, with an 11-bit identifier.
+This is a data frame of classic CAN, drawn from left to right in the order the bits are sent. The
+table below gives the job of each field.
 
-It starts with one dominant bit, the start of frame. Its edge is where every node hard-synchronizes.
-Then the arbitration field: the 11-bit identifier, our topic number, and the RTR bit, which is
-dominant for a data frame. Then the control field: the IDE bit, dominant for the base format, a
-reserved bit, and four bits of data length code, which say how many data bytes follow, from zero to
-eight.
+It starts with the start of frame: one dominant bit. On its edge every node synchronizes.
 
-Then the data, up to 64 bits. Then a 15-bit CRC, a checksum computed over everything before it,
-with a recessive delimiter. Then the acknowledgement slot, which we look at at the end of this
-section. Seven recessive bits end the frame, and three more recessive bits, the intermission, must
-pass before anyone may start the next frame.
+Next is the identifier, 11 bits. It is the topic number, and it is the priority during arbitration.
+Behind it is one bit called RTR. It is dominant in a data frame.
 
-Count it up for eight data bytes: 108 bits from start of frame to end of frame, plus three of
-intermission, plus the stuff bits from the next slide. Only 64 of those bits are your data, a bit
-more than half.
+Then six control bits. The first two are IDE and a reserved bit, both dominant here. The other four
+are the DLC, the data length code. It says how many data bytes follow: 0 to 8.
+
+Then the data: up to 8 bytes, which is 64 bits. These carry the signals.
+
+Then the CRC, 15 bits. CRC stands for cyclic redundancy check. The sender calculates this check
+number from all the bits before it. Each receiver calculates it again and compares. If the two
+differ, a bit was damaged on the way. One recessive bit, a delimiter, closes the field.
+
+Then the ACK slot and its delimiter. The sender leaves the slot recessive, and any receiver that got
+the frame correctly makes it dominant. That is the nod.
+
+The frame ends with 7 recessive bits, the end of frame. Then 3 more recessive bits, the
+intermission, must pass before the next frame may start.
+
+In total that is 47 bits plus the data. With 8 data bytes it is 111 bits, and only 64 of them are
+your data.
 -->
 
 ---
@@ -89,19 +97,20 @@ routeAlias: frame-variants
 </div>
 
 <!--
-Two more things about frames.
+Two additions before we go on.
 
-On the left, the extended format. When eleven bits are not enough identifiers, a frame can carry 29.
-After the first eleven bits come two recessive bits, SRR and IDE, then eighteen more identifier bits.
-Trucks use it, in the SAE J1939 standard; passenger-car buses mostly use eleven bits. Because SRR
-and IDE are recessive where a base frame has dominant bits, a base frame wins arbitration against an
-extended frame that starts with the same eleven bits.
+On the left, the extended format. If 11 bits do not give enough identifiers, a frame can carry a
+29-bit identifier. It sends the first 11 bits, then two recessive bits called SRR and IDE, then 18
+more identifier bits. Trucks use this format, in a standard called SAE J1939. Passenger cars rarely
+use it on powertrain buses. The last bullet follows from the clapping rule: an 11-bit frame beats a
+29-bit frame that starts with the same 11 bits, because it is dominant where the long frame is
+recessive.
 
-On the right, the four kinds of frame. Data frames carry the signals; almost all traffic is data
-frames. A remote frame asks another node to send its data; cars rarely use it, because the data is
-sent periodically anyway. An error frame is the "STOP!" shout; section 07 covers it. An overload
-frame lets a receiver ask for a short delay before the next frame. Modern controllers are fast
-enough that they practically never send one.
+On the right, the four kinds of frame. A data frame carries signals. Its sender is the ECU that owns
+the signal, and it sends periodically or when the value changes. Almost all traffic consists of data
+frames. A remote frame asks another node to send its data. Cars rarely use it. An error frame is the
+"STOP!" shout; section 07 covers it. An overload frame lets a receiver ask for a short delay before
+the next frame. Modern controllers almost never send one.
 -->
 
 ---
@@ -135,26 +144,28 @@ From the start of frame to the end of the CRC only.
 8n + 47 + ⌊(34 + 8n − 1)/4⌋ bits — 135 bits for 8 bytes, 270 µs at 500 kbit/s</div>
 
 <!--
-Bit stuffing. CAN sends bits as plain levels, without a clock wire. A long run of zeros or ones has
-no edges, and without edges the receivers cannot resynchronize. So the rule is: after five equal bits
-in a row, the sender inserts one bit of the opposite value. The receivers know the rule and remove
-it.
+Now the rule we promised: bit stuffing. CAN has no separate clock wire. The receivers keep time from
+the edges in the signal, and a long run of equal bits has no edges. So the rule at the top of the
+slide is: after five equal bits in a row, the sender inserts one opposite bit. That extra bit is the
+stuff bit. The receivers know the rule and remove it again.
 
-Follow the waveform. Seven zeros, then six ones. After the fifth zero, the sender inserts a one. Then
-the remaining two zeros and the ones; after the fifth one, it inserts a zero. The stuff bits are
-the highlighted ones. The rule runs from the
-start of frame to the end of the CRC. The fixed bits after that, the delimiters, the acknowledgement
-and the end of frame, are never stuffed.
+Follow the two waveforms. The data is seven zeros, then six ones. On the wire, the sender inserts a
+one after the first five zeros. Then come the other two zeros and five ones, and now it inserts a
+zero. Then the last one. The two stuff bits are highlighted.
 
-Three consequences. Edges are guaranteed, at least one falling edge every ten bits,
-which is what resynchronization needs. Six equal bits inside the stuffed part can never be data, so
-they signal an error; that is exactly what an error flag is, six dominant bits in a row. And frames
-get longer by a number of bits that depends on the data.
+Stuffing applies from the start of frame to the end of the CRC. The fixed bits after that are never
+stuffed.
 
-The formula at the bottom gives the worst case, which we need in section 08 for timing, and the
-plot turns it into time. For eight data bytes, a frame can take up to 135 bits on the
-wire, 24 of them stuff bits. At 500 kilobits per second, that is 270 microseconds; at 125 kilobits,
-more than a millisecond.
+The bullets on the left give three consequences. First, edges are guaranteed, so every node can keep
+resynchronizing. Second, six equal bits in a row can never be data inside a frame. Six equal bits
+mean an error. That is why the "STOP!" shout on CAN begins with six dominant bits, called the error
+flag. Third, the frame gets longer. An 8-byte frame can gain up to 24 stuff bits. How many depends
+on the data.
+
+The plot on the right shows the longest possible frame time against the number of data bytes, one
+line per bit rate. Read the right end. With 8 bytes, a frame takes at most 135 bits. At 500 kilobits
+per second that is 270 microseconds. At 125 kilobits per second it is 1080 microseconds, just over a
+millisecond. Remember the 270 microseconds; we use them in section 08.
 -->
 
 ---
@@ -186,23 +197,24 @@ routeAlias: arbitration-on-the-wire
 > queued ahead of it. Section 08 calculates how long.
 
 <!--
-Here is the clapping example from section 01, as the source deck draws it on the wire. Three ECUs
-start at the same moment, with identifiers 2A0, 265 and 711.
+This is the clapping example from section 01, now as bits on the wire. Three ECUs start at the same
+moment. ECU 1 sends identifier 2A0, ECU 2 sends 265, and ECU 3 sends 711. The bottom row is the bus.
+The bus is dominant, a zero, whenever at least one ECU sends a zero.
 
-Each CAN controller reads back, through its transceiver, every bit it sends. The bottom row is the
-bus: it is zero whenever any node sends a zero. At the first identifier bit, bit 10, ECU 3, with 711,
-sends a recessive one and reads back a dominant zero. It has lost. It stops
-sending and simply listens to the rest of the frame; if the frame carries data it needs, it uses
-it. At the fourth bit, bit 7, ECU 1, with 2A0, sends a one, reads a zero, and stops too. ECU 2, with 265,
-never sees a difference. The bus carried exactly its bits, so it sends its whole frame as if it had
-been alone. Compare the bus row with ECU 2's row: they are the same, bit for bit.
+The first bullet is the key: each controller reads back every bit it sends. All three send the
+dominant start of frame. Then comes the identifier, highest bit first. At bit 10, ECU 3 sends a
+recessive one, but it reads a dominant zero from the bus. It has lost. It stops sending and becomes
+a receiver for the rest of the frame. Its remaining bits are drawn in gray. At bit 7, the same
+happens to ECU 1: it sends a one, reads a zero, and stops.
 
-The losers do not wait a fixed time. They try again as soon as the bus is idle, after the end of
-frame and the three bits of intermission. Then they arbitrate again, perhaps against new frames.
+ECU 2 never sees a difference. Compare its row with the bus row: they are identical. So the winner
+does not notice the contest, and its frame is not delayed.
 
-The box is the bridge to section 08. Arbitration costs the winner nothing. But a low-priority frame
-can lose again and again while higher-priority frames queue ahead of it. How long it can wait, in
-the worst case, can be calculated, and you do that in build 04.
+The losers try again as soon as the bus is idle, after the end of frame and the intermission.
+
+The box at the bottom leads to section 08. Arbitration costs the winner no time. But a frame with
+low priority can lose several times in a row, while frames with higher priority go first. Section 08
+calculates how long it can wait.
 -->
 
 ---
@@ -236,17 +248,24 @@ routeAlias: acknowledgement
 </div>
 
 <!--
-The acknowledgement. The sender transmits the ACK slot as a recessive bit. Every node that received
-the frame correctly overwrites it with a dominant bit, whether or not it uses the data. Many nodes
-may drive it together; that is fine, dominant is dominant. If the sender reads back recessive,
-nobody received the frame correctly. That is an ACK error, and the sender sends the frame again.
+The last field to explain is the acknowledgement, the nod.
 
-What does it mean? The sender learns that at least one node got the frame, but never which one.
-That is the post office contrast from section 02 again: no signed receipt from an addressee.
-And a frame is valid only if it is valid everywhere: a single node that saw it corrupted destroys
-it for everybody with an error frame, so all nodes keep the same data.
+On the left, how it works. The sender transmits the ACK slot as a recessive bit. Every node that
+received the frame correctly drives the slot dominant. It does so whether it needs the data or not.
+Several nodes may do this at once; the bus is simply dominant. If the sender reads the slot back as
+recessive, no node received the frame correctly. That is an ACK error, and the sender sends the
+frame again.
 
-So how does the brake ECU know that the motor controller is still alive? Not from CAN. The
-application watches the messages it expects, and if one stops arriving for longer than a set time,
-it raises a fault. That is a timeout, and every safety-relevant message in a car has one.
+On the right, what it means. The sender learns that at least one node got the frame. It never learns
+which one. That is the difference from the post office: there is no signed receipt.
+
+The second bullet repeats the rule from the room: a frame counts only if it is correct everywhere.
+One node that received it damaged destroys it for all with an error frame.
+
+So how does the brake ECU know that the motor controller is still alive? CAN does not tell it. The
+last bullet gives the answer. The software in each ECU, the application, watches the messages it
+expects. If one stops arriving for longer than a set time, the ECU reports a fault. That is called a
+timeout.
+
+We can now send a frame. Next: how a physical value, such as a speed, gets into its data bytes.
 -->

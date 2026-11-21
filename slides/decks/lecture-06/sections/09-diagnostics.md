@@ -10,9 +10,9 @@ layout: section
 How a workshop talks to the car over CAN: finding a broken wire, OBD-II, UDS and ISO-TP.
 
 <!--
-Section 09: diagnostics. Two questions a workshop asks. Is the network itself healthy? And what do
-the ECUs report about the car? The second one uses the only parts of CAN traffic that fill layers 4
-and 5 of the OSI table.
+Section 09, diagnostics: how a workshop talks to the car over CAN. A workshop asks two questions. Is
+the network itself healthy? And what do the ECUs report about the car? The second question uses
+layers 4 and 5 of the OSI model, the two layers that normal CAN traffic leaves empty.
 -->
 
 ---
@@ -42,23 +42,26 @@ routeAlias: broken-wire
 </div>
 
 <!--
-The source deck's last slide is a real workshop method. The network on the left has a cut wire: the
-branch to the electric power steering, EPS, and the dashboard behind it is disconnected.
+The first question: is the network healthy? The picture on the left shows a CAN network with a
+fault. One branch is cut. Behind the cut are the electric power steering, EPS, and the dashboard.
 
-Every ECU watches the messages it expects, as we said in section 05. If a message stops arriving for
-longer than its timeout, the ECU stores a fault: "no message from the dashboard". So the tester at
-the diagnostic socket asks every ECU it can reach: whose messages do you still receive?
+The bullets say how the workshop finds it. Every ECU watches the messages it expects. When one stops
+arriving, the ECU stores a timeout fault. The tester, the workshop's diagnostic device, is plugged
+into the car's diagnostic socket. It asks each ECU it can reach: whose messages do you still
+receive?
 
-Read the table on the right. Each row is one ECU's answer; a blank cell is a sender that ECU never
-listens to. The engine control, the ABS, the body controller, the
-airbag: all of them say OK for everyone except the dashboard and the EPS. Those two rows are
-hatched, because they cannot answer at all; the tester cannot reach them. The result row at the
-bottom puts it together: the dashboard and the EPS are not OK, everything else is fine. The fault
-is on the wire to those two.
+The table on the right shows the answers. Each row is one ECU that is asked. Each column is one
+sender. OK means "I still receive its messages". NOK means "not OK". A blank cell means that this
+ECU never listens to that sender. Look down the columns for the dashboard and the EPS: every ECU
+that answers says NOK. All other columns say OK. The rows of the dashboard and the EPS are hatched,
+because these two cannot answer at all.
 
-The box gives the first checks with a meter. With the ignition off, CAN high to CAN low should read
-60 ohms, the two terminations in parallel, from section 04. With the bus idle, both lines should sit
-near 2.5 volts. A line stuck at zero or at battery voltage is a short.
+The result row at the bottom sums it up: everything is OK except the dashboard and the EPS. Both sit
+behind the same piece of wire. So that is where the cut is.
+
+The box gives the first checks with a meter. With the ignition off, the resistance between CAN high
+and CAN low should be 60 ohms, the two terminations from section 04. And with the bus idle, both
+wires should be near 2.5 volts.
 -->
 
 ---
@@ -98,23 +101,27 @@ routeAlias: obd-ii
 answers: the identifiers 7DFh and 7E0–7EFh are reserved for these conversations</div>
 
 <!--
-Every car sold since the late nineties has an OBD-II socket under the dashboard: 16 pins, with CAN
-high on pin 6 and CAN low on pin 14. OBD means on-board diagnostics. It was made law for emissions:
-in the USA from 1996, in the EU from 2001 for petrol and 2004 for diesel cars, and in the USA every
-car must speak it over CAN since 2008. So every car offers the same few services: live data such as
-speed and engine speed, the stored fault codes, clearing them, and the vehicle identification
-number.
+The second question: what do the ECUs report? Every car has a socket for this, the OBD-II socket.
+OBD stands for on-board diagnostics.
 
-On the right, a real exchange. The tester sends on identifier 7DF, which every emissions-related
-ECU listens to. The data bytes: 02, two bytes follow; 01, show live data; 0D, the item number for
-vehicle speed. The engine ECU answers on 7E8: 03, three bytes follow; 41, which is the request 01
-plus hexadecimal 40, the sign of a positive answer; 0D, the item it answers; and 57. Hexadecimal 57
-is 87. The car is driving at 87 kilometers per hour, our topic from section 01.
+The bullets on the left give the facts. The socket has 16 pins and sits under the dashboard. CAN
+high is on pin 6 and CAN low on pin 14. The law requires it, so that emissions can be checked: in
+the USA since 1996, in the EU since 2001 for petrol cars and 2004 for diesel cars. Every car offers
+the same few services: live data, stored fault codes, clearing the codes, and the VIN, the vehicle
+identification number.
 
-The line at the bottom matters for the meeting room. Normal CAN traffic is topics broadcast to
-everyone. Diagnostics is a conversation: a request and an answer. It still uses ordinary
-identifiers, but a block of them is reserved for these conversations, so the pairs work like
-addresses. In the room, it is a private exchange with topic numbers kept free for it.
+The table on the right shows one exchange: the tester asks for the vehicle speed. All numbers are
+hexadecimal. The tester sends a frame with identifier 7DF. All ECUs that deal with emissions listen
+to it. The data bytes are 02, 01, 0D. 02 means two bytes follow. 01 means "show live data". 0D is
+the number for vehicle speed.
+
+The engine ECU answers with identifier 7E8. The data bytes are 03, 41, 0D, 57. 03 means three bytes
+follow. 41 is the request 01 plus 40, which marks a positive answer. 0D repeats the question. And 57
+is the value. Hexadecimal 57 is 87 in decimal. The car drives at 87 kilometers per hour.
+
+The caption points out what is different here. Normal CAN traffic is announcements to the whole
+room. Diagnostics is a question and an answer. A block of identifiers is reserved for these
+conversations.
 -->
 
 ---
@@ -147,24 +154,35 @@ routeAlias: uds
 </div>
 
 <!--
-OBD-II is the small, legally required part. What a dealer's workshop tester really speaks is UDS,
-Unified Diagnostic Services, ISO 14229. Every car maker uses it for every ECU.
+OBD-II is the small part that the law requires. A workshop tester mostly uses a larger protocol,
+UDS, Unified Diagnostic Services. The first bullet on the right says that every car maker uses it,
+for every ECU. Its standard is ISO 14229.
 
-The table lists the services you meet most. Service 10 switches the ECU into a session: the default
-session, an extended one for the workshop, or a programming session for new software. That is the
-OSI session layer, layer 5, which normal CAN traffic never uses. Services 22 and 2E read and write
-data by an identifier number: read a sensor value, or write a setting, which workshops call coding.
-19 and 14 read and clear fault codes, with the freeze-frame data stored at the moment of the fault.
-27 unlocks protected services: the ECU sends a random number, the seed, and the tester must answer
-with the right key. 31 runs routines, such as bleeding the ABS hydraulics or calibrating the steering
-angle sensor. 34, 36 and 37 download new software into the ECU's flash memory. And 3E simply says
-"I am still here", so the ECU does not drop back to the default session.
+The table on the left lists the main services. Each service has a number, written in hexadecimal.
 
-The answers follow the OBD rule: a positive answer is the service number plus 40. A negative answer
-is 7F, the service, and a code that says why: wrong session, security locked, and so on.
+Service 10 switches the ECU to another session, extended or programming. This is layer 5 of the OSI
+model, the private consultation from section 02.
 
-Many answers, and certainly a software image, are much longer than the eight bytes of a CAN frame.
-That needs layer 4: ISO-TP.
+Services 22 and 2E read and write a value by its number. Writing a setting is called coding.
+
+Services 19 and 14 read and clear the stored faults. Each fault comes with the conditions at the
+moment it occurred, called freeze-frame data.
+
+Service 27 unlocks protected functions. The ECU sends a random number, the seed. The tester must
+reply with the matching key.
+
+Service 31 starts a routine, for example bleeding the ABS or calibrating the steering angle sensor.
+
+Services 34, 36 and 37 load new software into the ECU. This is called flashing.
+
+Service 3E is "tester present". It means "I am still here" and keeps the session open.
+
+The second bullet on the right gives the rule for answers. A positive answer is the service number
+plus 40, as in OBD-II. A negative answer starts with 7F, then the service number and a code for the
+reason.
+
+The last bullet leads on. Many answers, and all software, are longer than the 8 bytes of one frame.
+They need help from layer 4: ISO-TP.
 -->
 
 ---
@@ -195,23 +213,32 @@ Reading the VIN: request `22 F1 90`, answer `62 F1 90` + 17 characters = **20 by
 c1 to c17 · F190h: the UDS identifier for the VIN · 7E0h/7E8h: the engine ECU's diagnostic pair</div>
 
 <!--
-ISO-TP, ISO 15765-2, is CAN's transport layer, layer 4, used for diagnostics. It splits a long
-message into numbered installments, like the long report in the meeting room.
+ISO-TP is the transport protocol on top of CAN. It splits a long message into numbered frames. In
+the room, that was the long report in installments.
 
-The example reads the vehicle identification number. The tester sends service 22, read data, with
-identifier F1 90, which means the VIN. The answer is 62, the positive answer to 22, then F1 90, then
-the 17 characters of the VIN: 20 bytes, too long for one frame. The request itself is short, so it
-goes as a single frame: 03, three bytes follow, then 22 F1 90.
+The example reads the VIN. The line above the diagram gives the sizes. The request is three bytes:
+22, F1, 90. 22 is the UDS service "read data", and F190 is the number of the VIN. The answer is 62,
+F1, 90 and then the 17 characters of the VIN: 20 bytes. That is too long for one frame.
 
-So the ECU sends a first frame. Its first byte, 1, says "first frame", and together with the next
-byte, 0 14 hexadecimal, it announces 20 bytes. The rest of the frame carries 62 F1 90 and the first
-three characters. Then the ECU waits. The tester answers with a flow control frame: 30 means "go
-on", the next 00 means "send everything without waiting for me again", and the last 00 means no
-minimum pause between frames. Then the ECU sends consecutive frames, numbered 21 and 22, each
-carrying seven characters. Three plus seven plus seven makes seventeen.
+Follow the diagram from top to bottom. The tester sends on identifier 7E0, and the engine ECU
+answers on 7E8.
 
-The right column has the rules. Up to seven bytes fit in a single frame, with no flow control. The
-first frame announces up to 4095 bytes. Flow control lets a slow receiver set the pace. And the
-sequence number in each consecutive frame counts 1 to F and wraps to 0, so a missing frame is
-noticed.
+First arrow. The request fits in one frame, called a single frame. Its first byte, 03, says that
+three bytes follow.
+
+Second arrow. The ECU sends a first frame. It begins with 10 14. The 1 marks a first frame, and
+hexadecimal 14 is 20: twenty bytes are coming. The frame also carries 62, F1, 90 and the first three
+characters.
+
+Third arrow, highlighted. The tester answers with a flow control frame: 30, 00, 00. It means: go on,
+send all the rest, with no pause between frames.
+
+Last two arrows. The ECU sends two consecutive frames. They start with 21 and 22, which are the
+sequence numbers 1 and 2. Each carries seven characters. Three plus seven plus seven is seventeen.
+
+The bullets on the right give the general rules. Up to 7 bytes fit in a single frame. The first
+frame can announce up to 4095 bytes. With flow control, the receiver sets the pace. And the sequence
+number lets the receiver notice a lost frame.
+
+That is the theory. In the wrap-up we connect the simulated car to real hardware.
 -->
