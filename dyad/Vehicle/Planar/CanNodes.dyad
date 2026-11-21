@@ -647,6 +647,7 @@ component CanBrakeNode
   structural parameter ideal::Boolean = false
   structural parameter speed_period::Real = 0.01
   structural parameter abs_period::Real = 0.01
+  structural parameter wheel_period::Real = 0.01
   parameter esp_on::Real = 1
   parameter abs_on::Real = 1
   parameter radius::Length = 0.31
@@ -654,18 +655,19 @@ component CanBrakeNode
   ecu = BrakeControlUnit(report_front = true, esp_on = esp_on, abs_on = abs_on, radius = radius, T_max = T_full) {^ecu}
   abs_tx = CanTxReal(slot = 5, id = 112, ideal = ideal, period = abs_period, scale = 1, raw_min = 0, raw_max = 1) {^abs_tx}
   estimator = BrakeWheelEstimator(radius = radius) {^estimator}
+  abs_hold = AbsControlHold() {^abs_hold}
   speed_tx = CanTxReal(slot = 1, id = 128, ideal = ideal, period = speed_period, scale = 0.01, raw_min = -32768, raw_max = 32767) {^speed_tx}
-  wheel_fl_tx = CanTxReal(slot = 8, id = 176, ideal = ideal, period = 0.01, scale = 0.01, raw_min = -32768, raw_max = 32767) {^wheel_fl_tx}
-  wheel_fr_tx = CanTxReal(slot = 9, id = 177, ideal = ideal, period = 0.01, scale = 0.01, raw_min = -32768, raw_max = 32767) {^wheel_fr_tx}
-  wheel_rl_tx = CanTxReal(slot = 10, id = 178, ideal = ideal, period = 0.01, scale = 0.01, raw_min = -32768, raw_max = 32767) {^wheel_rl_tx}
-  wheel_rr_tx = CanTxReal(slot = 11, id = 179, ideal = ideal, period = 0.01, scale = 0.01, raw_min = -32768, raw_max = 32767) {^wheel_rr_tx}
+  wheel_fl_tx = CanTxReal(slot = 8, id = 176, ideal = ideal, period = wheel_period, scale = 0.01, raw_min = -32768, raw_max = 32767) {^wheel_fl_tx}
+  wheel_fr_tx = CanTxReal(slot = 9, id = 177, ideal = ideal, period = wheel_period, scale = 0.01, raw_min = -32768, raw_max = 32767) {^wheel_fr_tx}
+  wheel_rl_tx = CanTxReal(slot = 10, id = 178, ideal = ideal, period = wheel_period, scale = 0.01, raw_min = -32768, raw_max = 32767) {^wheel_rl_tx}
+  wheel_rr_tx = CanTxReal(slot = 11, id = 179, ideal = ideal, period = wheel_period, scale = 0.01, raw_min = -32768, raw_max = 32767) {^wheel_rr_tx}
   steering_angle_rx = CanRxReal(slot = 2, id = 144) {^steering_angle_rx}
   yaw_rate_rx = CanRxReal(slot = 3, id = 160) {^yaw_rate_rx}
   friction_demand_rx = CanRxReal(slot = 4, id = 256) {^friction_demand_rx}
 relations
   connect(bus, steering_angle_rx.bus, yaw_rate_rx.bus, friction_demand_rx.bus, speed_tx.bus, wheel_fl_tx.bus, wheel_fr_tx.bus, wheel_rl_tx.bus, wheel_rr_tx.bus) {^network}
-  connect(friction_demand_rx.y, ecu.demand) {^demand}
-  connect(estimator.vx, ecu.vx, speed_tx.u) {^speed}
+  connect(friction_demand_rx.y, ecu.demand, abs_hold.demand) {^demand}
+  connect(estimator.vx, ecu.vx, speed_tx.u, abs_hold.vx) {^speed}
   connect(steering_angle_rx.y, ecu.delta_sw) {^steering}
   connect(yaw_rate_rx.y, ecu.r) {^yaw}
   connect(estimator.kappa_fl, ecu.kappa_fl) {^slip_fl}
@@ -680,10 +682,39 @@ relations
   connect(ecu.tau_fr, tau_fr) {^torque_fr}
   connect(ecu.tau_rl, tau_rl) {^torque_rl}
   connect(ecu.tau_rr, tau_rr) {^torque_rr}
-  connect(ecu.front_active, abs_tx.u) {^abs_state}
+  connect(ecu.front_active, abs_hold.active) {^abs_state}
+  connect(abs_hold.y, abs_tx.u) {^abs_held}
   connect(bus, abs_tx.bus) {^abs_bus}
 metadata {
   "_links": {
+    "abs_hold": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 470,
+            "x2": 570,
+            "y1": 820,
+            "y2": 900
+          }
+        }
+      }
+    },
+    "abs_held": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 570.0,
+                "y": 930.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
     "bus": {
       "Dyad": {
         "placement": {
@@ -1083,16 +1114,16 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 330,
-                "y": 260
+                "x": 588.0,
+                "y": 300.0
               },
               {
-                "x": 550,
-                "y": 260
+                "x": 588.0,
+                "y": 438.0
               },
               {
-                "x": 550,
-                "y": 520
+                "x": 600.0,
+                "y": 438.0
               }
             ],
             "S": 1
@@ -1101,16 +1132,38 @@ metadata {
             "E": 3,
             "M": [
               {
-                "x": 330,
-                "y": 260
+                "x": 418.0,
+                "y": 300.0
               },
               {
-                "x": 450,
-                "y": 260
+                "x": 418.0,
+                "y": 760.0
               },
               {
-                "x": 450,
-                "y": 820
+                "x": 828.0,
+                "y": 760.0
+              },
+              {
+                "x": 828.0,
+                "y": 820.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 4,
+            "M": [
+              {
+                "x": 418.0,
+                "y": 300.0
+              },
+              {
+                "x": 418.0,
+                "y": 760.0
+              },
+              {
+                "x": 470.0,
+                "y": 760.0
               }
             ],
             "S": 1
@@ -1245,16 +1298,24 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 680,
-                "y": 280
+                "x": 588.0,
+                "y": 300.0
               },
               {
-                "x": 800,
-                "y": 280
+                "x": 588.0,
+                "y": 760.0
               },
               {
-                "x": 800,
-                "y": 930
+                "x": 542.0,
+                "y": 760.0
+              },
+              {
+                "x": 542.0,
+                "y": 808.0
+              },
+              {
+                "x": 470.0,
+                "y": 808.0
               }
             ],
             "S": 1
@@ -1497,20 +1558,34 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 820,
-                "y": 120
+                "x": 810.0,
+                "y": 176.0
               },
               {
-                "x": 820,
-                "y": 200
+                "x": 600.0,
+                "y": 176.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 810.0,
+                "y": 760.0
               },
               {
-                "x": 580,
-                "y": 200
+                "x": 542.0,
+                "y": 760.0
               },
               {
-                "x": 580,
-                "y": 340
+                "x": 542.0,
+                "y": 808.0
+              },
+              {
+                "x": 470.0,
+                "y": 808.0
               }
             ],
             "S": 1
@@ -1599,10 +1674,11 @@ metadata {
 end
 
 component CanPedalNode
+  structural parameter pedal_period::Real = 0.01
   bus = CanNet() {^bus}
   tau_ref = RealInput() {^tau_ref}
   structural parameter ideal::Boolean = false
-  request_tx = CanTxReal(slot = 12, id = 192, ideal = ideal, period = 0.01, scale = 0.1, raw_min = -32768, raw_max = 32767) {^request_tx}
+  request_tx = CanTxReal(slot = 12, id = 192, ideal = ideal, period = pedal_period, scale = 0.1, raw_min = -32768, raw_max = 32767) {^request_tx}
 relations
   connect(tau_ref, request_tx.u) {^request}
   connect(bus, request_tx.bus) {^network}

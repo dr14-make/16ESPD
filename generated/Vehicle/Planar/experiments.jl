@@ -10,6 +10,8 @@ end
 
 
 include("ABSUnit_experiment.jl")
+include("AbsControlHoldBench_experiment.jl")
+include("AbsControlHold_experiment.jl")
 include("AckermannSteering_experiment.jl")
 include("BEVBrakeAndSteer_experiment.jl")
 include("BrakeAllocator_experiment.jl")

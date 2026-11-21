@@ -1,0 +1,60 @@
+"""
+Lecture 6 ABS control state, held across pressure cycles until brake release or standstill.
+Event-free continuous set/reset latch following Vehicle.Engine.HysteresisLatch.
+"""
+component AbsControlHold
+  active = RealInput() {^active}
+  vx = RealInput() {^vx}
+  demand = RealInput() {^demand}
+  y = RealOutput() {^y}
+  "Latch response, shorter than the ECU's 5 ms pressure-control clock"
+  parameter latch_time::Time = 0.001
+  variable held::Real
+  variable request::Real
+relations
+  request = ifelse((vx < 0.5) or (demand < 0.01), 0.0, ifelse((active > 0.5) or (held > 0.5), 1.0, 0.0))
+  initial held = 0.0
+  der(held) = (request - held) / latch_time
+  y = ifelse(held > 0.5, 1.0, 0.0)
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/HysteresisLatch.svg"}},
+  "_links": {
+    "active": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 200, "y2": 300}}}},
+    "vx": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "demand": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 700, "y2": 800}}}},
+    "y": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}}
+  }
+}
+end
+
+component AbsControlHoldBench
+  parameter release_time::Time = 0.2
+  parameter stop_time::Time = 0.4
+  pulse = BlockComponents.Sources.Pulse(amplitude = 1.0, duty_cycle = 0.2, period = 0.1, start_time = 0.05) {^pulse}
+  demand = BlockComponents.Sources.Step(height = -100.0, offset = 100.0, start_time = release_time) {^demand}
+  speed = BlockComponents.Sources.Step(height = -10.0, offset = 10.0, start_time = stop_time) {^speed}
+  hold = AbsControlHold() {^hold}
+relations
+  connect(pulse.y, hold.active) {^active_wire}
+  connect(demand.y, hold.demand) {^demand_wire}
+  connect(speed.y, hold.vx) {^speed_wire}
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/HysteresisLatch.svg"}},
+  "_links": {
+    "pulse": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 200, "y2": 280}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 460, "y2": 540}}}},
+    "demand": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 720, "y2": 800}}}},
+    "hold": {"Dyad": {"placement": {"diagram": {"x1": 600, "x2": 800, "y1": 400, "y2": 600}}}},
+    "active_wire": {"Dyad": {"edges": [{"S": 1, "E": 2, "M": [{"x": 400, "y": 240}, {"x": 400, "y": 450}]}]}},
+    "speed_wire": {"Dyad": {"edges": [{"S": 1, "E": 2, "M": []}]}},
+    "demand_wire": {"Dyad": {"edges": [{"S": 1, "E": 2, "M": [{"x": 400, "y": 760}, {"x": 400, "y": 550}]}]}}
+  }
+}
+end
+
+analysis AbsControlHoldRun
+  extends TransientAnalysis(stop = 0.5, reltol = 1e-7, abstol = 1e-8)
+  parameter release_time::Time = 0.2
+  parameter stop_time::Time = 0.4
+  model = AbsControlHoldBench(release_time = release_time, stop_time = stop_time)
+end

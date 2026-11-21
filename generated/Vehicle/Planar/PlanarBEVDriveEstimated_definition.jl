@@ -189,6 +189,9 @@ under ABS control. Brake slip and longitudinal speed are estimated from wheel sp
   # Subcomponent estimator of type VehicleSystemsComponents.Vehicle.Planar.BrakeWheelEstimator
   estimator_overrides = __pop_subcomponent_overrides!(__overrides, "estimator")
   push!(__systems, @named estimator = VehicleSystemsComponents.Vehicle.Planar.BrakeWheelEstimator(; radius=radius, __overrides = estimator_overrides))
+  # Subcomponent abs_hold of type VehicleSystemsComponents.Vehicle.Planar.AbsControlHold
+  abs_hold_overrides = __pop_subcomponent_overrides!(__overrides, "abs_hold")
+  push!(__systems, @named abs_hold = VehicleSystemsComponents.Vehicle.Planar.AbsControlHold(; __overrides = abs_hold_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -232,11 +235,12 @@ under ABS control. Brake slip and longitudinal speed are estimated from wheel sp
   push!(__eqs, connect(steer, steering_response.u))
   push!(__eqs, connect(steering_response.y, robot.delta_sw_ref))
   push!(__eqs, connect(robot.steering, car.steering))
-  push!(__eqs, connect(estimator.vx, kmh.u, ecu.vx))
+  push!(__eqs, connect(estimator.vx, kmh.u, ecu.vx, abs_hold.vx))
   push!(__eqs, connect(kmh.y, blend.v))
   push!(__eqs, connect(blend.tau_motor, drive.tau_ref))
-  push!(__eqs, connect(blend.tau_brake, ecu.demand))
-  push!(__eqs, connect(ecu.front_active, blend.abs_active))
+  push!(__eqs, connect(blend.tau_brake, ecu.demand, abs_hold.demand))
+  push!(__eqs, connect(ecu.front_active, abs_hold.active))
+  push!(__eqs, connect(abs_hold.y, blend.abs_active))
   push!(__eqs, connect(drive.spline, differential.flange_b))
   push!(__eqs, connect(differential.flange_left, car.spin_fl))
   push!(__eqs, connect(differential.flange_right, car.spin_fr))

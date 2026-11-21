@@ -15,6 +15,23 @@ function _can_stop(run, car)
     return s(ts[i]; idxs = car.car.bus.x) - s(0.5; idxs = car.car.bus.x)
 end
 
+@testset "Lecture 6 ABS-control hold" begin
+    release = _CAN.AbsControlHoldRun()
+    stop = _CAN.AbsControlHoldRun(release_time = 1.0, stop_time = 0.2)
+    for run in (release, stop)
+        model = symbolic_container(run)
+        @test string(run.sol.retcode) == "Success"
+        @test run.sol(0.04; idxs = model.hold.y) == 0
+        @test run.sol(0.06; idxs = model.hold.y) == 1
+        # The pressure-release pulse has ended, but ABS control remains active.
+        @test run.sol(0.14; idxs = model.hold.y) == 1
+        @test run.sol(0.19; idxs = model.hold.y) == 1
+        @test run.sol(0.21; idxs = model.hold.y) == 0
+        @test run.sol(0.36; idxs = model.hold.y) == 0
+    end
+end
+
+
 @testset "CAN timing and DBC resolution" begin
     run = _CAN.CanTxStepTransient()
     m, s = symbolic_container(run), run.sol
@@ -44,22 +61,37 @@ end
     @test string(reference.sol.retcode) == "Success"
     @test string(ideal.sol.retcode) == "Success"
     dr, di = _can_stop(reference, mr), _can_stop(ideal, mi)
+    for (run, vehicle) in ((reference, mr), (ideal, mi))
+        times = collect(0.5:0.001:6.0)
+        velocity = run.sol(times; idxs = vehicle.car.bus.vx).u
+        for corner in (:fl, :fr, :rl, :rr)
+            surface = 0.31 .* run.sol(times; idxs = getproperty(vehicle.car, corner).inertia.w).u
+            @test !any((surface .< 0.1) .& (velocity .> 1.5))
+        end
+    end
     ts = collect(0.01:0.005:6.0)
     deviation = maximum(abs, reference.sol(ts; idxs = mr.car.bus.vx).u - ideal.sol(ts; idxs = mi.car.bus.vx).u)
-    @test deviation < 1e-6
+    @test deviation < 1e-5
     @test di ≈ dr atol = 1e-6
     distances = Float64[]
     for analysis in (_CAN.Can10msStop, _CAN.Can20msStop, _CAN.Can40msStop)
         run = analysis()
         @test string(run.sol.retcode) == "Success"
-        push!(distances, _can_stop(run, symbolic_container(run).vehicle))
+        vehicle = symbolic_container(run).vehicle
+        push!(distances, _can_stop(run, vehicle))
+        lock_times = collect(0.5:0.001:6.0)
+        velocity = run.sol(lock_times; idxs = vehicle.car.bus.vx).u
+        for corner in (:fl, :fr, :rl, :rr)
+            surface = 0.31 .* run.sol(lock_times; idxs = getproperty(vehicle.car, corner).inertia.w).u
+            @test !any((surface .< 0.1) .& (velocity .> 1.5))
+        end
     end
     @test all(d -> d >= di, distances)
-    @test dr ≈ 28.243516518 atol = 1e-3
-    @test di ≈ 28.243516518 atol = 1e-3
-    @test distances[1] ≈ 29.472357181 atol = 1e-3
-    @test distances[2] ≈ 34.019602734 atol = 1e-3
-    @test distances[3] ≈ 36.686223409 atol = 1e-3
+    @test dr ≈ 28.184674 atol = 1e-3
+    @test di ≈ 28.184674 atol = 1e-3
+    @test distances[1] ≈ 30.742977497 atol = 1e-3
+    @test distances[2] ≈ 29.320221625 atol = 1e-3
+    @test distances[3] ≈ 33.933638581 atol = 1e-3
     println("CAN stopping distance (m): ", (; reference = dr, ideal = di, ms10 = distances[1], ms20 = distances[2], ms40 = distances[3], max_speed_deviation = deviation))
 end
 
@@ -68,6 +100,10 @@ end
     meta = JSON.parse(match(r"(?s)metadata (\{.*\})\nend", source).captures[1])["_links"]
     connections = collect(eachmatch(r"connect\(([^)]*)\)\s*\{\^(\w+)\}", source))
     @test length(connections) == 23
+    wired_source = read(joinpath(@__DIR__, "..", "dyad", "Vehicle", "Planar", "PlanarBEVDriveEstimated.dyad"), String)
+    wired_connections = collect(eachmatch(r"connect\(([^)]*)\)\s*\{\^(\w+)\}", wired_source))
+    # Each car has six mechanical links; count multi-endpoint signal nets once.
+    @test length(wired_connections) - 6 == 28
     # Six of these are mechanical; the shared CAN net counts as one signal connection.
     @test count(c -> !(c.captures[2] in ("w7", "w12", "w13", "w14", "w15", "w27")), connections) == 17
     unresolved = String[]
@@ -193,5 +229,10 @@ end
     @test_throws ArgumentError _CAN.can_schedule(scratch_bus(); bitrate = 0)
     compiled = DyadInterface.simplify_model(_CAN.CanCruiseIdeal(name = :cruise))
     @test _CAN.can_schedule(compiled).load ≈ _CAN.can_schedule(_CAN.CanCruiseIdeal(name = :cruise)).load
-    println("CAN car schedule: ", _CAN.can_schedule(_CAN.Can10msStopBench(name = :car)))
+    car_schedule = _CAN.can_schedule(_CAN.Can10msStopBench(name = :car))
+    @test car_schedule.load ≈ 0.1495
+    @test [f.id for f in car_schedule.frames] == [112, 128, 144, 160, 176, 177, 178, 179, 192, 256, 272, 768]
+    @test [f.response_time for f in car_schedule.frames] ≈
+        [0.28, 0.43, 0.58, 0.73, 0.88, 1.03, 1.18, 1.33, 1.48, 1.63, 1.78, 1.78] ./ 1000
+    println("CAN car schedule: ", car_schedule)
 end

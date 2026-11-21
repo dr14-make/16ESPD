@@ -44,12 +44,12 @@ component PlanarBEVCanDrive
   "Steering actuator response"
   steering_response = BlockComponents.Continuous.FirstOrder(T = T_actuator) {^steering_response}
   robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot() {^robot}
-  pedal = CanPedalNode(ideal = ideal) {^pedal}
+  pedal = CanPedalNode(ideal = ideal, pedal_period = pedal_period) {^pedal}
   blend = CanBlendNode(ideal = ideal, friction_period = friction_period, torque_period = torque_period, ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade) {^blend}
   drive = CanDriveNode(ideal = ideal, ratio = ratio, P_aux = P_aux) {^drive}
   differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
   mount = RotationalComponents.Components.Fixed() {^mount}
-  ecu = CanBrakeNode(ideal = ideal, speed_period = speed_period, abs_period = abs_period, esp_on = esp_on, abs_on = abs_on, radius = radius, T_full = T_full) {^ecu}
+  ecu = CanBrakeNode(ideal = ideal, speed_period = speed_period, abs_period = abs_period, wheel_period = wheel_period, esp_on = esp_on, abs_on = abs_on, radius = radius, T_full = T_full) {^ecu}
   car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(mu_scale_fl = mu, mu_scale_fr = mu, mu_scale_rl = mu, mu_scale_rr = mu, m = m, radius = radius, tau_max = T_full) {^car}
   roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
   flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
@@ -62,6 +62,8 @@ component PlanarBEVCanDrive
   structural parameter steering_period::Real = chassis_period
   structural parameter yaw_period::Real = chassis_period
   structural parameter abs_period::Real = chassis_period
+  structural parameter wheel_period::Real = chassis_period
+  structural parameter pedal_period::Real = chassis_period
   structural parameter friction_period::Real = 0.02
   structural parameter torque_period::Real = 0.02
   structural parameter dashboard_period::Real = 0.1
@@ -741,11 +743,11 @@ metadata {
               },
               {
                 "x": 177,
-                "y": 290
+                "y": 360
               },
               {
                 "x": 40,
-                "y": 290
+                "y": 360
               },
               {
                 "x": 40,

@@ -206,6 +206,9 @@ end
 
 
 include("ABSUnit_definition.jl")
+include("AbsControlHoldBench_definition.jl")
+include("AbsControlHoldRun_definition.jl")
+include("AbsControlHold_definition.jl")
 include("AckermannSteering_definition.jl")
 include("BEVBrakeAndSteerTransient_definition.jl")
 include("BEVBrakeAndSteer_definition.jl")

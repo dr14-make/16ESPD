@@ -5,12 +5,13 @@
 
 
 @doc Markdown.doc"""
-   CanPedalNode(; name, ideal, __overrides)
+   CanPedalNode(; name, pedal_period, ideal, __overrides)
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `pedal_period`         |                          | --  |   0.01 |
 | `ideal`         |                          | --  |   false |
 
 ## Connectors
@@ -18,7 +19,7 @@
  * `bus` - ([`CanNet`](@ref))
  * `tau_ref` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function CanPedalNode(; name = nothing, var"ideal"=false, __overrides = Dict{String, Any}())
+@component function CanPedalNode(; name = nothing, var"pedal_period"=0.01, var"ideal"=false, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -37,6 +38,7 @@
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "pedal_period") && (pedal_period = pop!(__overrides, "pedal_period"))
   haskey(__overrides, "ideal") && (ideal = pop!(__overrides, "ideal"))
 
   ### Structural Parameters (functions)
@@ -69,7 +71,7 @@
   push!(__systems, @named bus = VehicleSystemsComponents.Vehicle.Planar.CanNet())
   # Subcomponent request_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
   request_tx_overrides = __pop_subcomponent_overrides!(__overrides, "request_tx")
-  push!(__systems, @named request_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=12, id=192, ideal=ideal, period=0.01, scale=0.1, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = request_tx_overrides))
+  push!(__systems, @named request_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=12, id=192, ideal=ideal, period=pedal_period, scale=0.1, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = request_tx_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
