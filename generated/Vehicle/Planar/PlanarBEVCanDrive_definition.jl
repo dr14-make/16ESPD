@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   PlanarBEVCanDrive(; name, ideal, chassis_period, speed_period, steering_period, yaw_period, abs_period, wheel_period, pedal_period, friction_period, torque_period, dashboard_period, esp_on, abs_on, mu, T_actuator, m, radius, T_full, tau_max, P_charge, v_fade, P_aux, ratio, dv_wheel, v0, __overrides)
+   PlanarBEVCanDrive(; name, ideal, chassis_period, speed_period, steering_period, yaw_period, wheel_period, dashboard_period, esp_on, abs_on, mu, T_actuator, m, radius, T_full, tau_max, P_charge, v_fade, P_aux, ratio, dv_wheel, v0, __overrides)
 
 Planar battery-electric car with causal driver inputs and first-order actuator response.
 Regen withdraws while the ECU acts on either front brake, returning the demand to friction
@@ -20,11 +20,7 @@ under ABS control.
 | `speed_period`         |                          | --  |   chassis_period |
 | `steering_period`         |                          | --  |   chassis_period |
 | `yaw_period`         |                          | --  |   chassis_period |
-| `abs_period`         |                          | --  |   chassis_period |
 | `wheel_period`         |                          | --  |   chassis_period |
-| `pedal_period`         |                          | --  |   chassis_period |
-| `friction_period`         |                          | --  |   0.02 |
-| `torque_period`         |                          | --  |   0.02 |
 | `dashboard_period`         |                          | --  |   0.1 |
 | `esp_on`         | ESP enable, fixed for the run                         | --  |   1.0 |
 | `abs_on`         | ABS enable, fixed for the run                         | --  |   1.0 |
@@ -47,7 +43,7 @@ under ABS control.
  * `brake` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `steer` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function PlanarBEVCanDrive(; name = nothing, var"ideal"=false, var"chassis_period"=0.01, var"friction_period"=0.02, var"torque_period"=0.02, var"dashboard_period"=0.1, var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"mu"=Float64(1.0), var"T_actuator"=0.05, var"m"=Float64(1500.0), var"radius"=0.31, var"T_full"=Float64(2500.0), var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"dv_wheel"=0.01, var"v0"=Float64(0), var"speed_period"=nothing, var"steering_period"=nothing, var"yaw_period"=nothing, var"abs_period"=nothing, var"wheel_period"=nothing, var"pedal_period"=nothing, __overrides = Dict{String, Any}())
+@component function PlanarBEVCanDrive(; name = nothing, var"ideal"=false, var"chassis_period"=0.01, var"dashboard_period"=0.1, var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"mu"=Float64(1.0), var"T_actuator"=0.05, var"m"=Float64(1500.0), var"radius"=0.31, var"T_full"=Float64(2500.0), var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"dv_wheel"=0.01, var"v0"=Float64(0), var"speed_period"=nothing, var"steering_period"=nothing, var"yaw_period"=nothing, var"wheel_period"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -68,8 +64,6 @@ under ABS control.
   ### Keyword argument overrides
   haskey(__overrides, "ideal") && (ideal = pop!(__overrides, "ideal"))
   haskey(__overrides, "chassis_period") && (chassis_period = pop!(__overrides, "chassis_period"))
-  haskey(__overrides, "friction_period") && (friction_period = pop!(__overrides, "friction_period"))
-  haskey(__overrides, "torque_period") && (torque_period = pop!(__overrides, "torque_period"))
   haskey(__overrides, "dashboard_period") && (dashboard_period = pop!(__overrides, "dashboard_period"))
   haskey(__overrides, "esp_on") && (esp_on = pop!(__overrides, "esp_on"))
   haskey(__overrides, "abs_on") && (abs_on = pop!(__overrides, "abs_on"))
@@ -88,17 +82,13 @@ under ABS control.
   haskey(__overrides, "speed_period") && (speed_period = pop!(__overrides, "speed_period"))
   haskey(__overrides, "steering_period") && (steering_period = pop!(__overrides, "steering_period"))
   haskey(__overrides, "yaw_period") && (yaw_period = pop!(__overrides, "yaw_period"))
-  haskey(__overrides, "abs_period") && (abs_period = pop!(__overrides, "abs_period"))
   haskey(__overrides, "wheel_period") && (wheel_period = pop!(__overrides, "wheel_period"))
-  haskey(__overrides, "pedal_period") && (pedal_period = pop!(__overrides, "pedal_period"))
 
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
   isnothing(speed_period) && (speed_period = chassis_period)
   isnothing(steering_period) && (steering_period = chassis_period)
   isnothing(yaw_period) && (yaw_period = chassis_period)
-  isnothing(abs_period) && (abs_period = chassis_period)
   isnothing(wheel_period) && (wheel_period = chassis_period)
-  isnothing(pedal_period) && (pedal_period = chassis_period)
 
   ### Structural Parameters (functions)
 
@@ -171,9 +161,15 @@ under ABS control.
   __constants = Any[]
 
   ### Components
-  # Subcomponent pedals of type BlockComponents.Math.Add
-  pedals_overrides = __pop_subcomponent_overrides!(__overrides, "pedals")
-  push!(__systems, @named pedals = BlockComponents.Math.Add(; k1=tau_max, k2=-4.0 * T_full / ratio, __overrides = pedals_overrides))
+  # Subcomponent accelerator of type BlockComponents.Math.Gain
+  accelerator_overrides = __pop_subcomponent_overrides!(__overrides, "accelerator")
+  push!(__systems, @named accelerator = BlockComponents.Math.Gain(; k=tau_max, __overrides = accelerator_overrides))
+  # Subcomponent brake_scale of type BlockComponents.Math.Gain
+  brake_scale_overrides = __pop_subcomponent_overrides!(__overrides, "brake_scale")
+  push!(__systems, @named brake_scale = BlockComponents.Math.Gain(; k=-4.0 * T_full / ratio, __overrides = brake_scale_overrides))
+  # Subcomponent accelerator_response of type BlockComponents.Continuous.FirstOrder
+  accelerator_response_overrides = __pop_subcomponent_overrides!(__overrides, "accelerator_response")
+  push!(__systems, @named accelerator_response = BlockComponents.Continuous.FirstOrder(; T=T_actuator, __overrides = accelerator_response_overrides))
   # Subcomponent torque_response of type BlockComponents.Continuous.FirstOrder
   torque_response_overrides = __pop_subcomponent_overrides!(__overrides, "torque_response")
   push!(__systems, @named torque_response = BlockComponents.Continuous.FirstOrder(; T=T_actuator, __overrides = torque_response_overrides))
@@ -183,15 +179,9 @@ under ABS control.
   # Subcomponent robot of type VehicleSystemsComponents.Vehicle.Planar.SteeringRobot
   robot_overrides = __pop_subcomponent_overrides!(__overrides, "robot")
   push!(__systems, @named robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot(; __overrides = robot_overrides))
-  # Subcomponent pedal of type VehicleSystemsComponents.Vehicle.Planar.CanPedalNode
-  pedal_overrides = __pop_subcomponent_overrides!(__overrides, "pedal")
-  push!(__systems, @named pedal = VehicleSystemsComponents.Vehicle.Planar.CanPedalNode(; ideal=ideal, pedal_period=pedal_period, __overrides = pedal_overrides))
-  # Subcomponent blend of type VehicleSystemsComponents.Vehicle.Planar.CanBlendNode
-  blend_overrides = __pop_subcomponent_overrides!(__overrides, "blend")
-  push!(__systems, @named blend = VehicleSystemsComponents.Vehicle.Planar.CanBlendNode(; ideal=ideal, friction_period=friction_period, torque_period=torque_period, ratio=ratio, radius=radius, tau_max=tau_max, P_charge=P_charge, v_fade=v_fade, __overrides = blend_overrides))
-  # Subcomponent drive of type VehicleSystemsComponents.Vehicle.Planar.CanDriveNode
+  # Subcomponent drive of type VehicleSystemsComponents.Vehicle.Planar.CanVcuNode
   drive_overrides = __pop_subcomponent_overrides!(__overrides, "drive")
-  push!(__systems, @named drive = VehicleSystemsComponents.Vehicle.Planar.CanDriveNode(; ideal=ideal, ratio=ratio, P_aux=P_aux, __overrides = drive_overrides))
+  push!(__systems, @named drive = VehicleSystemsComponents.Vehicle.Planar.CanVcuNode(; ideal=ideal, ratio=ratio, P_aux=P_aux, __overrides = drive_overrides))
   # Subcomponent differential of type MultibodyComponents.PlanarMechanics.DifferentialGear
   differential_overrides = __pop_subcomponent_overrides!(__overrides, "differential")
   push!(__systems, @named differential = MultibodyComponents.PlanarMechanics.DifferentialGear(; __overrides = differential_overrides))
@@ -200,7 +190,7 @@ under ABS control.
   push!(__systems, @named mount = RotationalComponents.Components.Fixed(; __overrides = mount_overrides))
   # Subcomponent ecu of type VehicleSystemsComponents.Vehicle.Planar.CanBrakeNode
   ecu_overrides = __pop_subcomponent_overrides!(__overrides, "ecu")
-  push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.CanBrakeNode(; ideal=ideal, speed_period=speed_period, abs_period=abs_period, wheel_period=wheel_period, esp_on=esp_on, abs_on=abs_on, radius=radius, T_full=T_full, __overrides = ecu_overrides))
+  push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.CanBrakeNode(; ratio=ratio, tau_max=tau_max, P_charge=P_charge, v_fade=v_fade, regen_period=chassis_period, ideal=ideal, speed_period=speed_period, wheel_period=wheel_period, esp_on=esp_on, abs_on=abs_on, radius=radius, T_full=T_full, __overrides = ecu_overrides))
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
   push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; mu_scale_fl=mu, mu_scale_fr=mu, mu_scale_rl=mu, mu_scale_rr=mu, m=m, radius=radius, tau_max=T_full, __overrides = car_overrides))
@@ -243,6 +233,7 @@ under ABS control.
   push!(__initialization_eqs, car.rl.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, car.rr.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, drive.drive.converter.i_out ~ 0.0)
+  push!(__initialization_eqs, accelerator_response.x ~ 0.0)
   push!(__initialization_eqs, torque_response.x ~ 0.0)
   push!(__initialization_eqs, steering_response.x ~ 0.0)
 
@@ -250,12 +241,12 @@ under ABS control.
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(motion.bus, blend.bus, ecu.bus, drive.bus, cluster.bus, pedal.bus))
+  push!(__eqs, connect(motion.bus, ecu.bus, drive.bus, cluster.bus))
   push!(__eqs, connect(car.bus, motion.measurements, wheel_speeds.bus))
-  push!(__eqs, connect(throttle, pedals.u1))
-  push!(__eqs, connect(brake, pedals.u2))
-  push!(__eqs, connect(pedals.y, torque_response.u))
-  push!(__eqs, connect(torque_response.y, pedal.tau_ref))
+  push!(__eqs, connect(throttle, accelerator.u))
+  push!(__eqs, connect(brake, brake_scale.u))
+  push!(__eqs, connect(brake_scale.y, torque_response.u))
+  push!(__eqs, connect(torque_response.y, ecu.brake_request))
   push!(__eqs, connect(steer, steering_response.u))
   push!(__eqs, connect(steering_response.y, robot.delta_sw_ref))
   push!(__eqs, connect(robot.steering, car.steering))
@@ -273,6 +264,8 @@ under ABS control.
   push!(__eqs, connect(ecu.tau_rr, car.tau_rr))
   push!(__eqs, connect(flat.y, roadload.grade))
   push!(__eqs, connect(car.chassis, roadload.chassis))
+  push!(__eqs, connect(accelerator.y, accelerator_response.u))
+  push!(__eqs, connect(accelerator_response.y, drive.accelerator_request))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

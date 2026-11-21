@@ -151,6 +151,7 @@ export Step1bMissingPedalStopTransient__System
   var"specialization"::SpecializationLevel.Type = SpecializationLevel.Despecialize()
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
+  # Historical exercise name retained: the missing message is now ECU-to-VCU regen, not a pedal.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn06.Step1bMissingPedalStop(; name=:Step1bMissingPedalStop)
   __system::System = Step1bMissingPedalStopTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file")
 end

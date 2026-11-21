@@ -6,7 +6,7 @@
 
 using DyadInterface
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@component function CanReferenceStop__System(; name = nothing, var"alg"=ODEAlg.Rodas5P(), var"start"=0, var"stop"=6, var"abstol"=1e-9, var"reltol"=1e-9, var"saveat"=0, var"dtmax"=0.005, var"tstops"=[0.5, 0.6], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.None(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", __overrides = Dict{String, Any}())
+@component function CanReferenceStop__System(; name = nothing, var"alg"=ODEAlg.Rodas5P(), var"start"=0, var"stop"=6, var"abstol"=1e-11, var"reltol"=1e-11, var"saveat"=0, var"dtmax"=0.005, var"tstops"=[0.5, 0.6], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.None(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -139,8 +139,8 @@ export CanReferenceStop__System
   var"alg"::ODEAlg.Type = ODEAlg.Rodas5P()
   var"start"::Float64 = 0
   var"stop"::Float64 = 6
-  var"abstol"::Float64 = 1e-9
-  var"reltol"::Float64 = 1e-9
+  var"abstol"::Float64 = 1e-11
+  var"reltol"::Float64 = 1e-11
   var"saveat"::Float64 = 0
   var"dtmax"::Float64 = 0.005
   var"tstops"::Array{Float64, 1} = [0.5, 0.6]

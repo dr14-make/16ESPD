@@ -5,27 +5,28 @@
 
 
 @doc Markdown.doc"""
-   WiringSensorNode(; name, ideal, steering_period, yaw_period, dashboard_period, networked, __overrides)
+   WiringSensorNode(; name, ideal, steering_period, yaw_period, dashboard_period, __overrides)
+
+Dual-mode motion sender: local steering/yaw wires can be replaced by messages.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `ideal`         |                          | --  |   false |
+| `ideal`         |                          | --  |   true |
 | `steering_period`         |                          | --  |   0.01 |
 | `yaw_period`         |                          | --  |   0.01 |
 | `dashboard_period`         |                          | --  |   0.1 |
-| `networked`         |                          | --  |   false |
 
 ## Connectors
 
- * `bus` - ([`CanNet`](@ref))
  * `measurements` - The receiving end of `CarBus`: the same signals, as inputs. A control unit or an unpack block
 (`BusMotion`, `BusSlip`, `BusSlipAngle`, `BusWheelSpeed`) listens on one of these. ([`CarBusIn`](@ref))
+ * `bus` - ([`CanNet`](@ref))
  * `steering` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `yaw` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function WiringSensorNode(; name = nothing, var"ideal"=false, var"steering_period"=0.01, var"yaw_period"=0.01, var"dashboard_period"=0.1, var"networked"=false, __overrides = Dict{String, Any}())
+@component function WiringSensorNode(; name = nothing, var"ideal"=true, var"steering_period"=0.01, var"yaw_period"=0.01, var"dashboard_period"=0.1, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -48,7 +49,6 @@
   haskey(__overrides, "steering_period") && (steering_period = pop!(__overrides, "steering_period"))
   haskey(__overrides, "yaw_period") && (yaw_period = pop!(__overrides, "yaw_period"))
   haskey(__overrides, "dashboard_period") && (dashboard_period = pop!(__overrides, "dashboard_period"))
-  haskey(__overrides, "networked") && (networked = pop!(__overrides, "networked"))
 
   ### Structural Parameters (functions)
 
@@ -78,8 +78,8 @@
   __constants = Any[]
 
   ### Components
-  push!(__systems, @named bus = VehicleSystemsComponents.Vehicle.Planar.CanNet())
   push!(__systems, @named measurements = VehicleSystemsComponents.Vehicle.Planar.CarBusIn())
+  push!(__systems, @named bus = VehicleSystemsComponents.Vehicle.Planar.CanNet())
   # Subcomponent motion of type VehicleSystemsComponents.Vehicle.Planar.BusMotion
   motion_overrides = __pop_subcomponent_overrides!(__overrides, "motion")
   push!(__systems, @named motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion(; __overrides = motion_overrides))
@@ -105,12 +105,10 @@
 
   ### Equations
   push!(__eqs, connect(measurements, motion.bus))
+  push!(__eqs, connect(motion.delta_sw, steering, steering_tx.u))
+  push!(__eqs, connect(motion.r, yaw, yaw_tx.u))
   push!(__eqs, connect(motion.vx, dashboard_tx.u))
-  push!(__eqs, connect(motion.delta_sw, steering_tx.u))
-  push!(__eqs, connect(motion.r, yaw_tx.u))
   push!(__eqs, connect(bus, steering_tx.bus, yaw_tx.bus, dashboard_tx.bus))
-  push!(__eqs, connect(motion.delta_sw, steering))
-  push!(__eqs, connect(motion.r, yaw))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -6,6 +6,10 @@ import BlockComponents, RotationalComponents, MultibodyComponents, ModelingToolk
 
 const _CAN = VehicleSystemsComponents.Vehicle.Planar
 
+include("../scripts/lecture06_can_sweep.jl")
+const _CAN_DEFAULT_DISTANCE_PINS = (; reference = 28.185, ideal = 28.185, ms10 = 29.056, ms20 = 30.018, ms40 = 30.442)
+const _CAN_40MS_EXCESS_MARGIN = 5.525
+
 function _can_stop(run, car)
     s = run.sol
     ts = collect(0.5:0.005:6.0)
@@ -61,6 +65,11 @@ end
     @test string(reference.sol.retcode) == "Success"
     @test string(ideal.sol.retcode) == "Success"
     dr, di = _can_stop(reference, mr), _can_stop(ideal, mi)
+    # With local continuous demand, first front activity is a genuine release, not build lag.
+    arm_times = collect(0.5:0.001:1.0)
+    activity = ideal.sol(arm_times; idxs = mi.ecu.ecu.front_active).u
+    phases = ideal.sol(arm_times; idxs = mi.ecu.ecu.abs.abs.fl.modulator.phase_out).u
+    @test findfirst(>(0.5), activity) == findfirst(<(-0.5), phases)
     for (run, vehicle) in ((reference, mr), (ideal, mi))
         times = collect(0.5:0.001:6.0)
         velocity = run.sol(times; idxs = vehicle.car.bus.vx).u
@@ -87,25 +96,70 @@ end
         end
     end
     @test all(d -> d >= di, distances)
-    @test dr ≈ 28.184674 atol = 1e-3
-    @test di ≈ 28.184674 atol = 1e-3
-    @test distances[1] ≈ 30.742977497 atol = 1e-3
-    @test distances[2] ≈ 29.320221625 atol = 1e-3
-    @test distances[3] ≈ 33.933638581 atol = 1e-3
+    @test _CAN_DEFAULT_DISTANCE_PINS !== nothing
+    if _CAN_DEFAULT_DISTANCE_PINS !== nothing
+        pins = _CAN_DEFAULT_DISTANCE_PINS
+        @test dr ≈ pins.reference atol = 1e-3
+        @test di ≈ pins.ideal atol = 1e-3
+        @test distances[1] ≈ pins.ms10 atol = 1e-3
+        @test distances[2] ≈ pins.ms20 atol = 1e-3
+        @test distances[3] ≈ pins.ms40 atol = 1e-3
+    end
     println("CAN stopping distance (m): ", (; reference = dr, ideal = di, ms10 = distances[1], ms20 = distances[2], ms40 = distances[3], max_speed_deviation = deviation))
 end
+
+@testset "Lecture 6 CAN phase-sweep CSV" begin
+    sweep = Lecture06CanSweep
+    @test isfile(sweep.OUT)
+    if isfile(sweep.OUT)
+        rows, hash = sweep.read_sweep()
+        @test hash == sweep.inputs_hash()
+        expected = Set((a, p, o) for a in sweep.ARCHITECTURES
+            for p in (a in ("point", "ideal") ? [0.0] : sweep.PERIODS)
+            for o in sweep.OFFSETS)
+        @test length(sweep.OFFSETS) >= 6
+        @test length(rows) == length(expected)
+        @test Set((r.architecture, r.period, r.offset) for r in rows) == expected
+        @test all(r -> isfinite(r.distance) && r.distance > 0, rows)
+        for (period, pin) in zip(sweep.PERIODS, (30.743, 29.320, 33.934))
+            @test only(r.distance for r in rows if r.architecture == "bus_brake" &&
+                r.period == period && r.offset == 0.0) ≈ pin atol = 1e-3
+        end
+        # Preserved counterexample briefly locks its rear wheels near the ABS low-speed cutoff.
+        @test_broken all(r -> !r.wheel_lock, rows)
+        @test [(r.architecture, r.period, r.offset) for r in rows if r.wheel_lock] ==
+            [("bus_brake", 0.010, 0.030)]
+        for offset in sweep.OFFSETS
+            point = only(r.distance for r in rows if r.architecture == "point" && r.offset == offset)
+            ideal = only(r.distance for r in rows if r.architecture == "ideal" && r.offset == offset)
+            @test ideal ≈ point atol = 1e-5 rtol = 0
+        end
+        mean_distance(a, p) = sum(r.distance for r in rows
+            if r.architecture == a && r.period == p) / length(sweep.OFFSETS)
+        for period in sweep.PERIODS
+            @test mean_distance("real", period) < mean_distance("bus_brake", period)
+        end
+        @test _CAN_40MS_EXCESS_MARGIN !== nothing
+        if _CAN_40MS_EXCESS_MARGIN !== nothing
+            @test _CAN_40MS_EXCESS_MARGIN > 0
+            @test mean_distance("bus_brake", 0.040) - mean_distance("ideal", 0.0) ≈
+                _CAN_40MS_EXCESS_MARGIN atol = 1e-3
+        end
+    end
+end
+
 
 @testset "CAN top-level canvas" begin
     source = read(joinpath(@__DIR__, "..", "dyad", "Vehicle", "Planar", "PlanarBEVCanDrive.dyad"), String)
     meta = JSON.parse(match(r"(?s)metadata (\{.*\})\nend", source).captures[1])["_links"]
     connections = collect(eachmatch(r"connect\(([^)]*)\)\s*\{\^(\w+)\}", source))
-    @test length(connections) == 23
+    @test length(connections) == 25
     wired_source = read(joinpath(@__DIR__, "..", "dyad", "Vehicle", "Planar", "PlanarBEVDriveEstimated.dyad"), String)
     wired_connections = collect(eachmatch(r"connect\(([^)]*)\)\s*\{\^(\w+)\}", wired_source))
     # Each car has six mechanical links; count multi-endpoint signal nets once.
-    @test length(wired_connections) - 6 == 28
+    @test length(wired_connections) - 6 == 31
     # Six of these are mechanical; the shared CAN net counts as one signal connection.
-    @test count(c -> !(c.captures[2] in ("w7", "w12", "w13", "w14", "w15", "w27")), connections) == 17
+    @test count(c -> !(c.captures[2] in ("w7", "w12", "w13", "w14", "w15", "w27")), connections) == 19
     unresolved = String[]
     definitions = Dict{String,Any}()
     connectors = Set{String}()
@@ -230,9 +284,17 @@ end
     compiled = DyadInterface.simplify_model(_CAN.CanCruiseIdeal(name = :cruise))
     @test _CAN.can_schedule(compiled).load ≈ _CAN.can_schedule(_CAN.CanCruiseIdeal(name = :cruise)).load
     car_schedule = _CAN.can_schedule(_CAN.Can10msStopBench(name = :car))
-    @test car_schedule.load ≈ 0.1495
-    @test [f.id for f in car_schedule.frames] == [112, 128, 144, 160, 176, 177, 178, 179, 192, 256, 272, 768]
+    @test car_schedule.load ≈ 0.1215
+    @test [f.id for f in car_schedule.frames] == [128, 144, 160, 176, 177, 178, 179, 272, 768]
     @test [f.response_time for f in car_schedule.frames] ≈
+        [0.30, 0.45, 0.60, 0.75, 0.90, 1.05, 1.20, 1.35, 1.35] ./ 1000
+    counter = _CAN.CanBusBrake10msStopBench(name = :counter)
+    @test _CAN.check_can(counter) === counter
+    counter_schedule = _CAN.can_schedule(counter)
+    @test counter_schedule.load ≈ 0.1495
+    @test [f.id for f in counter_schedule.frames] == [112, 128, 144, 160, 176, 177, 178, 179, 192, 256, 272, 768]
+    @test [f.response_time for f in counter_schedule.frames] ≈
         [0.28, 0.43, 0.58, 0.73, 0.88, 1.03, 1.18, 1.33, 1.48, 1.63, 1.78, 1.78] ./ 1000
     println("CAN car schedule: ", car_schedule)
+    println("Bus-brake counterexample schedule: ", counter_schedule)
 end

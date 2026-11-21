@@ -141,12 +141,21 @@ under ABS control. Brake slip and longitudinal speed are estimated from wheel sp
   __constants = Any[]
 
   ### Components
-  # Subcomponent pedals of type BlockComponents.Math.Add
-  pedals_overrides = __pop_subcomponent_overrides!(__overrides, "pedals")
-  push!(__systems, @named pedals = BlockComponents.Math.Add(; k1=tau_max, k2=-4.0 * T_full / ratio, __overrides = pedals_overrides))
+  # Subcomponent accelerator of type BlockComponents.Math.Gain
+  accelerator_overrides = __pop_subcomponent_overrides!(__overrides, "accelerator")
+  push!(__systems, @named accelerator = BlockComponents.Math.Gain(; k=tau_max, __overrides = accelerator_overrides))
+  # Subcomponent brake_scale of type BlockComponents.Math.Gain
+  brake_scale_overrides = __pop_subcomponent_overrides!(__overrides, "brake_scale")
+  push!(__systems, @named brake_scale = BlockComponents.Math.Gain(; k=-4.0 * T_full / ratio, __overrides = brake_scale_overrides))
+  # Subcomponent accelerator_response of type BlockComponents.Continuous.FirstOrder
+  accelerator_response_overrides = __pop_subcomponent_overrides!(__overrides, "accelerator_response")
+  push!(__systems, @named accelerator_response = BlockComponents.Continuous.FirstOrder(; T=T_actuator, __overrides = accelerator_response_overrides))
   # Subcomponent torque_response of type BlockComponents.Continuous.FirstOrder
   torque_response_overrides = __pop_subcomponent_overrides!(__overrides, "torque_response")
   push!(__systems, @named torque_response = BlockComponents.Continuous.FirstOrder(; T=T_actuator, __overrides = torque_response_overrides))
+  # Subcomponent request_sum of type BlockComponents.Math.Add
+  request_sum_overrides = __pop_subcomponent_overrides!(__overrides, "request_sum")
+  push!(__systems, @named request_sum = BlockComponents.Math.Add(; __overrides = request_sum_overrides))
   # Subcomponent steering_response of type BlockComponents.Continuous.FirstOrder
   steering_response_overrides = __pop_subcomponent_overrides!(__overrides, "steering_response")
   push!(__systems, @named steering_response = BlockComponents.Continuous.FirstOrder(; T=T_actuator, __overrides = steering_response_overrides))
@@ -216,6 +225,7 @@ under ABS control. Brake slip and longitudinal speed are estimated from wheel sp
   push!(__initialization_eqs, car.rl.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, car.rr.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, drive.converter.i_out ~ 0.0)
+  push!(__initialization_eqs, accelerator_response.x ~ 0.0)
   push!(__initialization_eqs, torque_response.x ~ 0.0)
   push!(__initialization_eqs, steering_response.x ~ 0.0)
 
@@ -228,16 +238,16 @@ under ABS control. Brake slip and longitudinal speed are estimated from wheel sp
   push!(__eqs, connect(wheel_speeds.omega_rl, estimator.omega_rl))
   push!(__eqs, connect(wheel_speeds.omega_rr, estimator.omega_rr))
   push!(__eqs, connect(car.bus, motion.bus, wheel_speeds.bus))
-  push!(__eqs, connect(throttle, pedals.u1))
-  push!(__eqs, connect(brake, pedals.u2))
-  push!(__eqs, connect(pedals.y, torque_response.u))
+  push!(__eqs, connect(throttle, accelerator.u))
+  push!(__eqs, connect(brake, brake_scale.u))
+  push!(__eqs, connect(brake_scale.y, torque_response.u))
   push!(__eqs, connect(torque_response.y, blend.tau_ref))
   push!(__eqs, connect(steer, steering_response.u))
   push!(__eqs, connect(steering_response.y, robot.delta_sw_ref))
   push!(__eqs, connect(robot.steering, car.steering))
   push!(__eqs, connect(estimator.vx, kmh.u, ecu.vx, abs_hold.vx))
   push!(__eqs, connect(kmh.y, blend.v))
-  push!(__eqs, connect(blend.tau_motor, drive.tau_ref))
+  push!(__eqs, connect(blend.tau_motor, request_sum.u2))
   push!(__eqs, connect(blend.tau_brake, ecu.demand, abs_hold.demand))
   push!(__eqs, connect(ecu.front_active, abs_hold.active))
   push!(__eqs, connect(abs_hold.y, blend.abs_active))
@@ -257,6 +267,9 @@ under ABS control. Brake slip and longitudinal speed are estimated from wheel sp
   push!(__eqs, connect(ecu.tau_rr, car.tau_rr))
   push!(__eqs, connect(flat.y, roadload.grade))
   push!(__eqs, connect(car.chassis, roadload.chassis))
+  push!(__eqs, connect(accelerator.y, accelerator_response.u))
+  push!(__eqs, connect(accelerator_response.y, request_sum.u1))
+  push!(__eqs, connect(request_sum.y, drive.tau_ref))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

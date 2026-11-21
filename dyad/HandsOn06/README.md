@@ -1,117 +1,79 @@
-# Hands-on 06 — replace the harness with messages
+# Hands-on 06 — messages coordinate; local loops brake
 
-Open `VehicleSystemsComponents.HandsOn06` in Studio. The car, ECU nodes,
-actuator and wheel wires are expanded on the canvas. Save a copy before each
-exercise. Connections are tagged and outside structural `if` statements.
+Open `VehicleSystemsComponents.HandsOn06`; save an exercise copy. The inherited
+`WiringStop` canvas exposes the brake ECU, VCU, local pedals, wheels and calipers.
+Both pedal gains retain the 50 ms response. The brake ECU owns the wheel-only
+estimator, `RegenBlend(abs_rule=true)` and held ABS control; friction is local.
+The VCU adds its wired accelerator to the received nonpositive regen request.
+No actual-motor-torque feedback is modeled.
 
-## 1 — point-to-point to shared bus
+## 1a — wires to ideal bus
 
-Run `HandsOn06.Step1PointToPointStopTransient` first (80 km/h, brake ramp at
-0.5 s). Its model starts with `networked=false`, `ideal=true`. Follow the six
-direct signal wires from motion/brake/blend to their consumers. The connected
-bus backbone initially monitors rather than controls the direct-input nodes.
+Starter: `Step1PointToPointStop` / `Step1PointToPointStopTransient`.
+Delete `direct_regen`, `direct_steering`, `direct_yaw`; set `networked=true`.
+Keep the pedal, wheel-speed and caliper wires. Reference: `Step1IdealBusStop`,
+alias `IdealBusStop`, analysis `IdealBusStopTransient`. Both stop at **28.185 m**;
+the distance match is 1e-5 m and speed match 5e-5 m/s at 1e-9 solve tolerances.
+The preconnected monitoring backbone keeps acausal CAN ports balanced; this is
+not an initially disconnected-bus starter. Unused direct inputs are zero-bound.
 
-Delete `direct_speed`, `direct_abs`, `direct_steering`, `direct_yaw`,
-`direct_friction`, and `direct_torque`. Replace `w4` with
-`connect(torque_response.y, pedal.tau_ref)` and set `networked=true`.
-Unused direct inputs are zero-bound inside the nodes. The finished reference
-is `HandsOn06.IdealBusStop`, analysis `HandsOn06.IdealBusStopTransient`
-(alias of the expanded `HandsOn06.Step1IdealBusStop`). Set `ideal=false`
-to introduce sample/quantize/delay/hold. The estimator uses four wheel speeds,
-not the body's true velocity.
+## 1b — hand-built regen message, inside the nodes
 
-## 1b — manually repair a missing pedal message
+Starter: `Step1bMissingPedalStop` (historical name; no pedal message exists),
+with its same-named `Transient` analysis. `ecu.regen_tx` is absent;
+`drive.regen_rx` is present inside the VCU but bypassed by the top-level `bypass`.
+`Vehicle.Planar.check_can` reports the missing sender. Open `WiringBrakeNode`:
+add the supplied conditional `CanTxReal` and its two connections by enabling
+`transmit_regen=true` in the exercise copy. Its fields are **slot 6, ID 272,
+period `regen_period=chassis_period`, scale 0.1 N.m, raw -32768..32767**.
+Wire `blend.tau_motor` to `regen_tx.u`, and `regen_tx.bus` to `bus`.
+Inside `WiringDriveNode`, `CanRxReal(slot=6,id=272)` already joins the bus.
+Delete `bypass` and set `drive_networked=true` to select its output.
+Reference: `PedalMessageStop` / `PedalMessageStopTransient`, **28.185 m**.
 
-`HandsOn06.Step1bMissingPedalStop` has no pedal sender. Its visible `pedal_rx`
-subscribes to slot **12**, ID **192**, but its output is unconnected. `w4`
-is a runnable bypass into `ManualBlendNode.tau_ref`; that node has no hidden
-pedal receiver. The starter defaults to `ideal=true`, and its supplied
-`HandsOn06.Step1bMissingPedalStopTransient` demonstrates the bypass.
-`VehicleSystemsComponents.Vehicle.Planar.check_can` diagnoses the missing sender.
+## 2 — ownership is not arbitration
 
-Add `CanTxReal(slot=12, id=192, ideal=ideal, period=chassis_period, scale=0.1,
-raw_min=-32768, raw_max=32767)`. Drive its `u` with `torque_response.y` and
-join its bus to the backbone. Delete the bypass and connect `pedal_rx.y` to
-`blend.tau_ref`. Check the bus before solving. Finished expanded reference:
-`HandsOn06.PedalMessageStop`, analysis `HandsOn06.PedalMessageStopTransient`.
-It also defaults to ideal transport; set `ideal=false` to compare sampling.
+Starter: `Step2DuplicateSlotStop` / `Step2DuplicateSlotStopTransient`.
+Run `check_can` before solving: IDs **272/273** both own slot **6**.
+Changing only the ID does not repair ownership. Delete `duplicate`,
+`duplicate_input`, `duplicate_bus`. Reference: `CanStop`, **29.056 m**.
+The supplied starter analysis is intentionally invalid until repaired.
 
-## 2 — duplicate ownership is not arbitration
+## 3 — architecture and period
 
-Call `VehicleSystemsComponents.Vehicle.Planar.check_can` on
-`HandsOn06.Step2DuplicateSlotStop(name=:exercise)`. Two senders own slot
-**12**, IDs **192** and **193**. Changing only the ID does not fix ownership.
-Delete `duplicate` and its two wires, then check again.
-`HandsOn06.Step2DuplicateSlotStopTransient` is intentionally invalid until
-that repair; do not solve the starter. The repaired topology can be compared
-with `HandsOn06.CanStop` (`HandsOn06.Step3CanStop`), or with the explicit
-sender/receiver reference `HandsOn06.PedalMessageStop`.
+Starter/reference: `Step3CanStop` / `CanStopTransient`; change `chassis_period`
+to 10/20/40 ms (`Can20msStopTransient`, `Can40msStopTransient`).
+`Step4SlowCanStop` is also the 40 ms example. Speed, wheels, steering, yaw and
+regen follow this period; dashboard is 100 ms. ABS-active and friction are
+internal wires. Compare library `Vehicle.Planar.CanBusBrake10msStop`,
+`CanBusBrake20msStop`, `CanBusBrake40msStop`.
 
-## 3 — sample-period experiment
+| Layout / period | Default [m] | Sweep mean [m] | Min–max [m] |
+|---|---:|---:|---:|
+| Real / 10 ms | 29.056 | 28.902 | 28.617–29.056 |
+| Real / 20 ms | 30.018 | 29.496 | 28.982–30.018 |
+| Real / 40 ms | 30.442 | 30.224 | 30.017–30.442 |
+| Bus-brake / 10 ms | 30.743 | 30.100 | 28.789–30.743 |
+| Bus-brake / 20 ms | 29.320 | 29.620 | 29.320–29.949 |
+| Bus-brake / 40 ms | 33.934 | 33.638 | 31.792–35.779 |
 
-`HandsOn06.CanStopTransient` is the finished 10 ms car, based on the expanded
-`HandsOn06.Step3CanStop`. `HandsOn06.Can20msStopTransient` and
-`HandsOn06.Can40msStopTransient` structurally extend that same car with
-20 ms and 40 ms chassis periods. `HandsOn06.Step4SlowCanStopTransient` remains
-the expanded 40 ms example, not the bitrate experiment. Wheel and pedal
-periods follow the chassis period; friction and motor requests remain 20 ms,
-dashboard 100 ms. All use library CAN nodes and the wheel-only estimator.
-The physical brake and tire laws are unchanged. Use `OptimizationLevel.None()`.
-Real brake ECUs send status and wheel-speed frames every 10–20 ms; 40 ms is
-the deliberately too-slow-bus case. `chassis_period` sets speed, steering,
-yaw, held ABS-active, all four wheel speeds and the pedal request. The brake
-node holds ABS control active across pressure cycles, clearing on brake release
-or estimated speed below 0.5 m/s; it does not change ABS tuning.
+The counterexample loses metres by transporting brake demand and friction over CAN; the real layout avoids that delay, though delayed regen still costs distance.
+Six onset offsets span 0–40 ms in `assets/data/lecture06/can_stop.csv`, generated
+by `scripts/lecture06_can_sweep.jl`; tests assert its input hash and these numbers.
+No real-layout lock was sampled; the counterexample briefly meets the rear-lock
+criterion at 10 ms / 30 ms offset, recorded rather than retuned.
 
-## 4 — bitrate / schedule experiment
+## 4 — bitrate schedule
 
-Keep the 10 ms model and compare the analytical schedules:
+Starter/reference: `CanStop(name=:exercise)`. In Julia call
+`Vehicle.Planar.can_schedule(car; bitrate=500_000)`, then `bitrate=250_000`.
+Loads are **0.1215 / 0.243**. Ordered response bounds at 500 kbit/s are
+`[0.30,0.45,0.60,0.75,0.90,1.05,1.20,1.35,1.35]` ms; at 250 they double.
+This analytical schedule does not alter the model's sampled transport delay.
 
-```julia
-P = VehicleSystemsComponents.Vehicle.Planar
-car = VehicleSystemsComponents.HandsOn06.CanStop(name=:exercise)
-fast = P.can_schedule(car; bitrate=500_000)
-slow = P.can_schedule(car; bitrate=250_000)
-fast.load, slow.load
-[f.response_time * 1000 for f in fast.frames]
-[f.response_time * 1000 for f in slow.frames]
-```
-
-Lower bitrate doubles serialization, blocking and response bounds at fixed
-message periods. It does not change the transport model's fixed sample delay;
-this is an analytical schedule experiment, not a bit-level arbitration,
-stuffing, collision or bus-off simulation.
-
-## Checkpoints
-
-Stop distances below are measured checkpoints asserted by `test/handson06.jl`.
-Distance is measured from brake onset at 0.5 s to the first speed below
-0.5 m/s on a 5 ms grid. Analyses use `dtmax=0.005`, `reltol=1e-7`.
-
-| Reference / setting | Checkpoint |
-|---|---:|
-| `HandsOn06.CanStopTransient`, 10 ms | 30.742977497 m |
-| `HandsOn06.Can20msStopTransient`, 20 ms | 29.320221625 m |
-| `HandsOn06.Can40msStopTransient`, 40 ms | 33.933638581 m |
-| 10 ms schedule, 500 kbit/s | load 0.1495 |
-| 10 ms schedule, 250 kbit/s | load 0.299 |
-| Step 1 direct / ideal stop | 28.184673 / 28.184676 m |
-| Step 1b finished manual pedal stop | 28.184674 m |
-
-At 500 kbit/s the ordered response bounds are
-`[0.28, 0.43, 0.58, 0.73, 0.88, 1.03, 1.18, 1.33, 1.48, 1.63, 1.78, 1.78]` ms;
-at 250 kbit/s they double. Longer chassis periods do not imply monotonically
-longer stop distances for this sampled ABS controller.
-
-Run the registered `handson06` test group after source compilation. Tests
-assert the known distance/schedule pins, direct-versus-ideal equivalence,
-missing/duplicate diagnostics and ideal manual-receiver tracking. The direct/ideal distance match uses 1e-5 m and speed uses 5e-5 m/s;
-absolute stopping checkpoints use 1 mm. Their ideal analyses use 1e-9 solver
-tolerances. Canvas wires are orthogonal; the direct-wired diagram is denser
-than the bus diagram.
-
-Wire-count convention: count each top-level `connect` signal net once, including
-the monitoring/measurement bus, excluding six mechanical connections. The
-expanded dual-mode starter/reference have 23 / 17 signal nets. The library
-point-to-point estimator car has 28 versus 17 in the library CAN car; its
-estimator and hold are expanded rather than enclosed in the brake node.
+Run `handson06` after compilation. Default stops use onset 0.5 s to first speed
+below 0.5 m/s on a 5 ms grid; absolute pins are asserted within 1 mm.
+Wire convention: each top-level signal `connect` net counts once, including buses,
+excluding six mechanical nets. Expanded direct/bus: **22/19**; library estimated
+point-to-point/bus: **31/19** (the former expands estimator/blend internals).
+Studio rendering of inherited metadata still needs a visual check.

@@ -37,19 +37,17 @@ component PlanarBEVCanDrive
   "Initial wheel surface speed above the body's, keeps the start off zero slip (assumed)"
   parameter dv_wheel::Velocity = 0.01
   parameter v0::Velocity = 0
-  "Machine-shaft torque the pedals ask for: throttle drives, brake brakes"
-  pedals = BlockComponents.Math.Add(k1 = tau_max, k2 = -4.0 * T_full / ratio) {^pedals}
-  "Machine torque actuator response; prevents algebraic converter torque jumps"
+  accelerator = BlockComponents.Math.Gain(k = tau_max) {^accelerator}
+  brake_scale = BlockComponents.Math.Gain(k = -4.0 * T_full / ratio) {^brake_scale}
+  accelerator_response = BlockComponents.Continuous.FirstOrder(T = T_actuator) {^accelerator_response}
   torque_response = BlockComponents.Continuous.FirstOrder(T = T_actuator) {^torque_response}
   "Steering actuator response"
   steering_response = BlockComponents.Continuous.FirstOrder(T = T_actuator) {^steering_response}
   robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot() {^robot}
-  pedal = CanPedalNode(ideal = ideal, pedal_period = pedal_period) {^pedal}
-  blend = CanBlendNode(ideal = ideal, friction_period = friction_period, torque_period = torque_period, ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade) {^blend}
-  drive = CanDriveNode(ideal = ideal, ratio = ratio, P_aux = P_aux) {^drive}
+  drive = CanVcuNode(ideal = ideal, ratio = ratio, P_aux = P_aux) {^drive}
   differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
   mount = RotationalComponents.Components.Fixed() {^mount}
-  ecu = CanBrakeNode(ideal = ideal, speed_period = speed_period, abs_period = abs_period, wheel_period = wheel_period, esp_on = esp_on, abs_on = abs_on, radius = radius, T_full = T_full) {^ecu}
+  ecu = CanBrakeNode(ratio = ratio, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade, regen_period = chassis_period, ideal = ideal, speed_period = speed_period, wheel_period = wheel_period, esp_on = esp_on, abs_on = abs_on, radius = radius, T_full = T_full) {^ecu}
   car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(mu_scale_fl = mu, mu_scale_fr = mu, mu_scale_rl = mu, mu_scale_rr = mu, m = m, radius = radius, tau_max = T_full) {^car}
   roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
   flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
@@ -61,19 +59,15 @@ component PlanarBEVCanDrive
   structural parameter speed_period::Real = chassis_period
   structural parameter steering_period::Real = chassis_period
   structural parameter yaw_period::Real = chassis_period
-  structural parameter abs_period::Real = chassis_period
   structural parameter wheel_period::Real = chassis_period
-  structural parameter pedal_period::Real = chassis_period
-  structural parameter friction_period::Real = 0.02
-  structural parameter torque_period::Real = 0.02
   structural parameter dashboard_period::Real = 0.1
 relations
-  connect(motion.bus, blend.bus, ecu.bus, drive.bus, cluster.bus, pedal.bus) {^network}
+  connect(motion.bus, ecu.bus, drive.bus, cluster.bus) {^network}
   connect(car.bus, motion.measurements, wheel_speeds.bus) {^wbus}
-  connect(throttle, pedals.u1) {^w1}
-  connect(brake, pedals.u2) {^w2}
-  connect(pedals.y, torque_response.u) {^w3}
-  connect(torque_response.y, pedal.tau_ref) {^w4}
+  connect(throttle, accelerator.u) {^w1}
+  connect(brake, brake_scale.u) {^w2}
+  connect(brake_scale.y, torque_response.u) {^w3}
+  connect(torque_response.y, ecu.brake_request) {^w4}
   connect(steer, steering_response.u) {^w5}
   connect(steering_response.y, robot.delta_sw_ref) {^w6}
   connect(robot.steering, car.steering) {^w7}
@@ -108,6 +102,9 @@ relations
   initial car.rl.brake.tau_actual = 0.0
   initial car.rr.brake.tau_actual = 0.0
   initial drive.drive.converter.i_out = 0.0
+  connect(accelerator.y, accelerator_response.u) {^accel_scale}
+  connect(accelerator_response.y, drive.accelerator_request) {^accel_request}
+  initial accelerator_response.x = 0.0
   initial torque_response.x = 0.0
   initial steering_response.x = 0.0
 metadata {
@@ -128,28 +125,15 @@ metadata {
     ]
   },
   "_links": {
-    "blend": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 180.0,
-            "x2": 240.0,
-            "y1": 200,
-            "y2": 100
-          }
-        }
-      }
-    },
     "brake": {
       "Dyad": {
         "placement": {
           "diagram": {
             "rot": 0,
-            "x1": -9.0,
-            "x2": 9.0,
-            "y1": 249,
-            "y2": 279
+            "x1": -9,
+            "x2": 9,
+            "y1": 185,
+            "y2": 215
           },
           "icon": {
             "x1": -50,
@@ -275,7 +259,7 @@ metadata {
                 "y": 60
               },
               {
-                "x": 210,
+                "x": 360,
                 "y": 60
               }
             ],
@@ -289,7 +273,7 @@ metadata {
                 "y": 60
               },
               {
-                "x": 360,
+                "x": 540,
                 "y": 60
               }
             ],
@@ -303,66 +287,13 @@ metadata {
                 "y": 60
               },
               {
-                "x": 540,
-                "y": 60
-              }
-            ],
-            "S": 1
-          },
-          {
-            "E": 5,
-            "M": [
-              {
-                "x": 780,
-                "y": 60
-              },
-              {
                 "x": 900,
-                "y": 60
-              }
-            ],
-            "S": 1
-          },
-          {
-            "E": 6,
-            "M": [
-              {
-                "x": 780,
-                "y": 60
-              },
-              {
-                "x": 90,
                 "y": 60
               }
             ],
             "S": 1
           }
         ]
-      }
-    },
-    "pedal": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "x1": 60,
-            "x2": 120,
-            "y1": 310,
-            "y2": 370
-          }
-        }
-      }
-    },
-    "pedals": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "rot": 0,
-            "x1": 60.0,
-            "x2": 108.0,
-            "y1": 200,
-            "y2": 280
-          }
-        }
       }
     },
     "roadload": {
@@ -428,10 +359,10 @@ metadata {
         "placement": {
           "diagram": {
             "rot": 0,
-            "x1": -9.0,
-            "x2": 9.0,
-            "y1": 201,
-            "y2": 231
+            "x1": 711,
+            "x2": 729,
+            "y1": 135,
+            "y2": 165
           },
           "icon": {
             "x1": -50,
@@ -447,10 +378,10 @@ metadata {
         "placement": {
           "diagram": {
             "rot": 0,
-            "x1": 120.0,
-            "x2": 168.0,
-            "y1": 200,
-            "y2": 280
+            "x1": 120,
+            "x2": 168,
+            "y1": 184,
+            "y2": 216
           }
         }
       }
@@ -738,20 +669,12 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 177,
-                "y": 240
+                "x": 240,
+                "y": 200
               },
               {
-                "x": 177,
-                "y": 360
-              },
-              {
-                "x": 40,
-                "y": 360
-              },
-              {
-                "x": 40,
-                "y": 340
+                "x": 240,
+                "y": 160
               }
             ],
             "S": 1
@@ -862,6 +785,67 @@ metadata {
             "y2": 700
           }
         }
+      }
+    },
+    "accelerator": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 180,
+            "x1": 680,
+            "x2": 704,
+            "y1": 130,
+            "y2": 170
+          }
+        }
+      }
+    },
+    "accelerator_response": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 180,
+            "x1": 620,
+            "x2": 668,
+            "y1": 130,
+            "y2": 170
+          }
+        }
+      }
+    },
+    "brake_scale": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 60,
+            "x2": 108,
+            "y1": 184,
+            "y2": 216
+          }
+        }
+      }
+    },
+    "accel_scale": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "accel_request": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
       }
     }
   }

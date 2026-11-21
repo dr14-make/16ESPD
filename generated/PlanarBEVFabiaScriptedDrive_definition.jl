@@ -133,6 +133,7 @@ Fabia demonstration: acceleration, indicated left lane change, cruise and emerge
   push!(__eqs, connect(driver.steer_signal, vehicle.steer))
   push!(__eqs, connect(adapter.bus, vehicle.bus, cluster.bus))
   push!(__eqs, connect(vehicle.motor_speed, cluster.motor_speed))
+  push!(__eqs, connect(vehicle.abs_signal, cluster.abs_signal))
   push!(__eqs, connect(indicate_start.y, indicate_left.u1))
   push!(__eqs, connect(indicate_end.y, indicate_left.u2))
   push!(__eqs, connect(indicate_left.y, cluster.left))

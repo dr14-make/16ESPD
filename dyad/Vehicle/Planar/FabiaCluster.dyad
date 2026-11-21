@@ -267,6 +267,8 @@ end
 component FabiaClusterNode
   bus = CanNet() {^bus}
   motor_speed = RealInput() {^motor_speed}
+  "Wired ABS status; no ABS frame is carried on the CAN bus"
+  abs_signal = RealInput() {^abs_signal}
   left = BooleanInput() {^left}
   right = BooleanInput() {^right}
   parameter tachometer_scale::Real = 0.5
@@ -277,12 +279,11 @@ component FabiaClusterNode
   parameter hazard_charge_time::Time = 0.05
   parameter hazard_decay_time::Time = 3.0
   speed_rx = FabiaCanRx(slot = 1, id = 128) {^speed_rx}
-  abs_rx = FabiaCanRx(slot = 5, id = 112) {^abs_rx}
   dashboard = FabiaDisplayChain(tachometer_scale = tachometer_scale, dimming = dimming, speed_filter_time = speed_filter_time, emergency_deceleration = emergency_deceleration, emergency_min_speed = emergency_min_speed, hazard_charge_time = hazard_charge_time, hazard_decay_time = hazard_decay_time) {^dashboard}
 relations
-  connect(bus, speed_rx.bus, abs_rx.bus) {^w1}
+  connect(bus, speed_rx.bus) {^w1}
   connect(speed_rx.y, dashboard.speed) {^speed_wire}
-  connect(abs_rx.y, dashboard.abs_signal) {^abs_wire}
+  connect(abs_signal, dashboard.abs_signal) {^abs_wire}
   connect(motor_speed, dashboard.motor_speed) {^motor_wire}
   connect(left, dashboard.left) {^left_wire}
   connect(right, dashboard.right) {^right_wire}
@@ -293,15 +294,22 @@ metadata {
     }
   },
   "_links": {
-    "abs_rx": {
+    "abs_signal": {
       "Dyad": {
         "placement": {
           "diagram": {
             "rot": 0,
-            "x1": 120,
-            "x2": 205,
-            "y1": 430,
-            "y2": 500
+            "x1": 35,
+            "x2": 65,
+            "y1": 450,
+            "y2": 480
+          },
+          "icon": {
+            "rot": 0,
+            "x1": -15,
+            "x2": 15,
+            "y1": 285,
+            "y2": 315
           }
         }
       }
@@ -500,24 +508,6 @@ metadata {
               {
                 "x": 162.5,
                 "y": 30.0
-              }
-            ],
-            "S": 1
-          },
-          {
-            "E": 3,
-            "M": [
-              {
-                "x": 112.0,
-                "y": 30.0
-              },
-              {
-                "x": 112.0,
-                "y": 173.0
-              },
-              {
-                "x": 162.5,
-                "y": 173.0
               }
             ],
             "S": 1

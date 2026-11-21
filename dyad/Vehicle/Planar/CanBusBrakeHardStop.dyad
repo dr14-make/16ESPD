@@ -1,0 +1,138 @@
+component CanBusBrakeHardStop
+  structural parameter ideal::Boolean = false
+  structural parameter period::Real = 0.01
+  parameter v0::Velocity = 22.22222222222222
+  vehicle = PlanarBEVCanBusBrake(v0 = v0, ideal = ideal, chassis_period = period) {^vehicle}
+  zero = BlockComponents.Sources.Constant(k = 0) {^zero}
+  pedal = BlockComponents.Sources.Ramp(height = 1, duration = 0.1, start_time = 0.5) {^pedal}
+relations
+  connect(zero.y, vehicle.throttle, vehicle.steer) {^zero_wire}
+  connect(pedal.y, vehicle.brake) {^pedal_wire}
+metadata {
+  "Dyad": {
+    "icons": {
+      "default": "dyad://VehicleSystemsComponents/Vehicle/Planar/PlanarCar.svg"
+    }
+  },
+  "_links": {
+    "pedal": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 100,
+            "x2": 200,
+            "y1": 450,
+            "y2": 550
+          }
+        }
+      }
+    },
+    "pedal_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 450,
+                "y": 500
+              },
+              {
+                "x": 450,
+                "y": 450
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "vehicle": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 600,
+            "x2": 850,
+            "y1": 300,
+            "y2": 600
+          }
+        }
+      }
+    },
+    "zero": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 100,
+            "x2": 200,
+            "y1": 200,
+            "y2": 300
+          }
+        }
+      }
+    },
+    "zero_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 400,
+                "y": 250
+              },
+              {
+                "x": 400,
+                "y": 375
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 350,
+                "y": 250
+              },
+              {
+                "x": 350,
+                "y": 525
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    }
+  }
+}
+end
+
+
+component CanBusBrake10msStopBench
+  extends CanBusBrakeHardStop(period = 0.01)
+end
+
+analysis CanBusBrake10msStop
+  extends TransientAnalysis(stop = 6, alg = ODEAlg.Rodas5P(), dtmax = 0.005, tstops = [0.5, 0.6], optimize = OptimizationLevel.None(), abstol = 1e-7, reltol = 1e-7)
+  model = CanBusBrake10msStopBench()
+end
+
+component CanBusBrake20msStopBench
+  extends CanBusBrakeHardStop(period = 0.02)
+end
+
+analysis CanBusBrake20msStop
+  extends TransientAnalysis(stop = 6, alg = ODEAlg.Rodas5P(), dtmax = 0.005, tstops = [0.5, 0.6], optimize = OptimizationLevel.None(), abstol = 1e-7, reltol = 1e-7)
+  model = CanBusBrake20msStopBench()
+end
+
+component CanBusBrake40msStopBench
+  extends CanBusBrakeHardStop(period = 0.04)
+end
+
+analysis CanBusBrake40msStop
+  extends TransientAnalysis(stop = 6, alg = ODEAlg.Rodas5P(), dtmax = 0.005, tstops = [0.5, 0.6], optimize = OptimizationLevel.None(), abstol = 1e-7, reltol = 1e-7)
+  model = CanBusBrake40msStopBench()
+end

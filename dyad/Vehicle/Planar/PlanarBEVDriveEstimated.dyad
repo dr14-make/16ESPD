@@ -37,10 +37,11 @@ component PlanarBEVDriveEstimated
   "Initial wheel surface speed above the body's, keeps the start off zero slip (assumed)"
   parameter dv_wheel::Velocity = 0.01
   parameter v0::Velocity = 0
-  "Machine-shaft torque the pedals ask for: throttle drives, brake brakes"
-  pedals = BlockComponents.Math.Add(k1 = tau_max, k2 = -4.0 * T_full / ratio) {^pedals}
-  "Machine torque actuator response; prevents algebraic converter torque jumps"
+  accelerator = BlockComponents.Math.Gain(k = tau_max) {^accelerator}
+  brake_scale = BlockComponents.Math.Gain(k = -4.0 * T_full / ratio) {^brake_scale}
+  accelerator_response = BlockComponents.Continuous.FirstOrder(T = T_actuator) {^accelerator_response}
   torque_response = BlockComponents.Continuous.FirstOrder(T = T_actuator) {^torque_response}
+  request_sum = BlockComponents.Math.Add() {^request_sum}
   "Steering actuator response"
   steering_response = BlockComponents.Continuous.FirstOrder(T = T_actuator) {^steering_response}
   robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot() {^robot}
@@ -63,16 +64,16 @@ relations
   connect(wheel_speeds.omega_rl, estimator.omega_rl) {^omega_rl}
   connect(wheel_speeds.omega_rr, estimator.omega_rr) {^omega_rr}
   connect(car.bus, motion.bus, wheel_speeds.bus) {^wbus}
-  connect(throttle, pedals.u1) {^w1}
-  connect(brake, pedals.u2) {^w2}
-  connect(pedals.y, torque_response.u) {^w3}
+  connect(throttle, accelerator.u) {^w1}
+  connect(brake, brake_scale.u) {^w2}
+  connect(brake_scale.y, torque_response.u) {^w3}
   connect(torque_response.y, blend.tau_ref) {^w4}
   connect(steer, steering_response.u) {^w5}
   connect(steering_response.y, robot.delta_sw_ref) {^w6}
   connect(robot.steering, car.steering) {^w7}
   connect(estimator.vx, kmh.u, ecu.vx, abs_hold.vx) {^w8}
   connect(kmh.y, blend.v) {^w9}
-  connect(blend.tau_motor, drive.tau_ref) {^w10}
+  connect(blend.tau_motor, request_sum.u2) {^w10}
   connect(blend.tau_brake, ecu.demand, abs_hold.demand) {^w11}
   connect(ecu.front_active, abs_hold.active) {^w28}
   connect(abs_hold.y, blend.abs_active) {^abs_held}
@@ -109,6 +110,10 @@ relations
   initial car.rl.brake.tau_actual = 0.0
   initial car.rr.brake.tau_actual = 0.0
   initial drive.converter.i_out = 0.0
+  connect(accelerator.y, accelerator_response.u) {^accel_scale}
+  connect(accelerator_response.y, request_sum.u1) {^accel_request}
+  connect(request_sum.y, drive.tau_ref) {^motor_request}
+  initial accelerator_response.x = 0.0
   initial torque_response.x = 0.0
   initial steering_response.x = 0.0
 metadata {
@@ -117,10 +122,11 @@ metadata {
       "Dyad": {
         "placement": {
           "diagram": {
+            "rot": 0,
             "x1": 820,
             "x2": 920,
-            "y1": 870,
-            "y2": 930
+            "y1": 920,
+            "y2": 970
           }
         }
       }
@@ -133,27 +139,43 @@ metadata {
             "M": [
               {
                 "x": 920.0,
-                "y": 841.0
+                "y": 879.0
               },
               {
-                "x": 763.0,
-                "y": 841.0
+                "x": 765.0,
+                "y": 879.0
               },
               {
-                "x": 763.0,
-                "y": 597.0
+                "x": 765.0,
+                "y": 583.0
               },
               {
-                "x": 688.0,
-                "y": 597.0
+                "x": 750.0,
+                "y": 583.0
               },
               {
-                "x": 688.0,
-                "y": 213.0
+                "x": 750.0,
+                "y": 490.0
               },
               {
-                "x": 410.0,
-                "y": 213.0
+                "x": 690.0,
+                "y": 490.0
+              },
+              {
+                "x": 690.0,
+                "y": 390.0
+              },
+              {
+                "x": 660.0,
+                "y": 390.0
+              },
+              {
+                "x": 660.0,
+                "y": 358.0
+              },
+              {
+                "x": 440.0,
+                "y": 358.0
               }
             ],
             "S": 1
@@ -259,26 +281,15 @@ metadata {
         ]
       }
     },
-    "pedals": {
-      "Dyad": {
-        "placement": {
-          "diagram": {
-            "x1": 155,
-            "x2": 235,
-            "y1": 95,
-            "y2": 175
-          }
-        }
-      }
-    },
     "torque_response": {
       "Dyad": {
         "placement": {
           "diagram": {
-            "x1": 275,
-            "x2": 355,
-            "y1": 95,
-            "y2": 175
+            "rot": 0,
+            "x1": 260,
+            "x2": 330,
+            "y1": 180,
+            "y2": 230
           }
         }
       }
@@ -287,11 +298,11 @@ metadata {
       "Dyad": {
         "placement": {
           "diagram": {
+            "rot": 0,
             "x1": 410,
             "x2": 510,
-            "y1": 105,
-            "y2": 205,
-            "rot": 90
+            "y1": 190,
+            "y2": 290
           }
         }
       }
@@ -448,10 +459,11 @@ metadata {
       "Dyad": {
         "placement": {
           "diagram": {
+            "rot": 0,
             "x1": 520,
             "x2": 560,
-            "y1": 870,
-            "y2": 910
+            "y1": 930,
+            "y2": 960
           }
         }
       }
@@ -463,8 +475,12 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 775.0,
+                "x": 750.0,
                 "y": 820.0
+              },
+              {
+                "x": 750.0,
+                "y": 710.0
               }
             ],
             "S": 1
@@ -473,16 +489,24 @@ metadata {
             "E": 3,
             "M": [
               {
-                "x": 207.0,
+                "x": 430.0,
                 "y": 820.0
               },
               {
-                "x": 207.0,
-                "y": 832.0
+                "x": 430.0,
+                "y": 843.0
+              },
+              {
+                "x": 205.0,
+                "y": 843.0
+              },
+              {
+                "x": 205.0,
+                "y": 870.0
               },
               {
                 "x": 40.0,
-                "y": 832.0
+                "y": 870.0
               }
             ],
             "S": 1
@@ -497,8 +521,12 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 151.0,
+                "x": 125.0,
                 "y": 70.0
+              },
+              {
+                "x": 125.0,
+                "y": 75.0
               }
             ],
             "S": 1
@@ -513,7 +541,7 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 151.0,
+                "x": 136.5,
                 "y": 200.0
               }
             ],
@@ -540,12 +568,20 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 398.0,
-                "y": 135.0
+                "x": 390.0,
+                "y": 205.0
               },
               {
-                "x": 398.0,
-                "y": 105.0
+                "x": 390.0,
+                "y": 215.0
+              },
+              {
+                "x": 400.0,
+                "y": 215.0
+              },
+              {
+                "x": 400.0,
+                "y": 220.0
               }
             ],
             "S": 1
@@ -587,8 +623,24 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 740.0,
+                "x": 670.0,
                 "y": 450.0
+              },
+              {
+                "x": 670.0,
+                "y": 486.0
+              },
+              {
+                "x": 690.0,
+                "y": 486.0
+              },
+              {
+                "x": 690.0,
+                "y": 590.0
+              },
+              {
+                "x": 740.0,
+                "y": 590.0
               }
             ],
             "S": 1
@@ -603,12 +655,32 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 398.0,
-                "y": 535.0
+                "x": 113.5,
+                "y": 486.0
               },
               {
-                "x": 398.0,
-                "y": 105.0
+                "x": 120.0,
+                "y": 486.0
+              },
+              {
+                "x": 120.0,
+                "y": 337.36
+              },
+              {
+                "x": 250.0,
+                "y": 337.36
+              },
+              {
+                "x": 250.0,
+                "y": 330.0
+              },
+              {
+                "x": 390.0,
+                "y": 330.0
+              },
+              {
+                "x": 390.0,
+                "y": 260.0
               }
             ],
             "S": 1
@@ -623,12 +695,12 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 538.0,
-                "y": 205.0
+                "x": 510.0,
+                "y": 157.0
               },
               {
-                "x": 538.0,
-                "y": 85.0
+                "x": 417.5,
+                "y": 157.0
               }
             ],
             "S": 1
@@ -643,7 +715,31 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 440.0,
+                "x": 510.0,
+                "y": 486.0
+              },
+              {
+                "x": 480.0,
+                "y": 486.0
+              },
+              {
+                "x": 480.0,
+                "y": 568.0
+              },
+              {
+                "x": 430.0,
+                "y": 568.0
+              },
+              {
+                "x": 430.0,
+                "y": 583.0
+              },
+              {
+                "x": 410.0,
+                "y": 583.0
+              },
+              {
+                "x": 410.0,
                 "y": 593.0
               }
             ],
@@ -653,20 +749,36 @@ metadata {
             "E": 3,
             "M": [
               {
-                "x": 440.0,
-                "y": 844.0
+                "x": 510.0,
+                "y": 745.0
               },
               {
-                "x": 692.0,
-                "y": 844.0
+                "x": 520.0,
+                "y": 745.0
               },
               {
-                "x": 692.0,
-                "y": 858.0
+                "x": 520.0,
+                "y": 860.0
+              },
+              {
+                "x": 660.0,
+                "y": 860.0
+              },
+              {
+                "x": 660.0,
+                "y": 870.0
+              },
+              {
+                "x": 750.0,
+                "y": 870.0
+              },
+              {
+                "x": 750.0,
+                "y": 907.5
               },
               {
                 "x": 820.0,
-                "y": 858.0
+                "y": 907.5
               }
             ],
             "S": 1
@@ -681,20 +793,32 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 420.0,
-                "y": 844.0
+                "x": 510.0,
+                "y": 693.0
               },
               {
-                "x": 692.0,
-                "y": 844.0
+                "x": 510.0,
+                "y": 860.0
               },
               {
-                "x": 692.0,
-                "y": 858.0
+                "x": 765.0,
+                "y": 860.0
+              },
+              {
+                "x": 765.0,
+                "y": 888.0
+              },
+              {
+                "x": 790.0,
+                "y": 888.0
+              },
+              {
+                "x": 790.0,
+                "y": 910.0
               },
               {
                 "x": 820.0,
-                "y": 858.0
+                "y": 910.0
               }
             ],
             "S": 1
@@ -709,8 +833,20 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 696.0,
+                "x": 670.0,
                 "y": 185.0
+              },
+              {
+                "x": 670.0,
+                "y": 215.0
+              },
+              {
+                "x": 690.0,
+                "y": 215.0
+              },
+              {
+                "x": 690.0,
+                "y": 300.0
               }
             ],
             "S": 1
@@ -725,8 +861,12 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 685.0,
+                "x": 690.0,
                 "y": 256.0
+              },
+              {
+                "x": 690.0,
+                "y": 600.0
               }
             ],
             "S": 1
@@ -758,11 +898,7 @@ metadata {
             "M": [
               {
                 "x": 550.0,
-                "y": 197.0
-              },
-              {
-                "x": 650.0,
-                "y": 197.0
+                "y": 225.0
               }
             ],
             "S": 1
@@ -778,14 +914,14 @@ metadata {
             "M": [
               {
                 "x": 975.0,
-                "y": 598.0
+                "y": 600.0
               },
               {
-                "x": 432.0,
-                "y": 598.0
+                "x": 510.0,
+                "y": 600.0
               },
               {
-                "x": 432.0,
+                "x": 510.0,
                 "y": 593.0
               }
             ],
@@ -802,14 +938,14 @@ metadata {
             "M": [
               {
                 "x": 975.0,
-                "y": 598.0
+                "y": 600.0
               },
               {
-                "x": 432.0,
-                "y": 598.0
+                "x": 430.0,
+                "y": 600.0
               },
               {
-                "x": 432.0,
+                "x": 430.0,
                 "y": 593.0
               }
             ],
@@ -825,11 +961,19 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 208.0,
+                "x": 205.0,
                 "y": 767.0
               },
               {
-                "x": 208.0,
+                "x": 205.0,
+                "y": 635.0
+              },
+              {
+                "x": 210.0,
+                "y": 635.0
+              },
+              {
+                "x": 210.0,
                 "y": 593.0
               }
             ],
@@ -845,11 +989,19 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 208.0,
+                "x": 205.0,
                 "y": 779.0
               },
               {
-                "x": 208.0,
+                "x": 205.0,
+                "y": 635.0
+              },
+              {
+                "x": 210.0,
+                "y": 635.0
+              },
+              {
+                "x": 210.0,
                 "y": 593.0
               }
             ],
@@ -865,8 +1017,20 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 220.0,
+                "x": 205.0,
                 "y": 791.0
+              },
+              {
+                "x": 205.0,
+                "y": 635.0
+              },
+              {
+                "x": 210.0,
+                "y": 635.0
+              },
+              {
+                "x": 210.0,
+                "y": 633.0
               }
             ],
             "S": 1
@@ -897,11 +1061,11 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 508.0,
+                "x": 510.0,
                 "y": 793.0
               },
               {
-                "x": 508.0,
+                "x": 510.0,
                 "y": 600.0
               }
             ],
@@ -917,11 +1081,11 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 508.0,
+                "x": 510.0,
                 "y": 793.0
               },
               {
-                "x": 508.0,
+                "x": 510.0,
                 "y": 820.0
               }
             ],
@@ -937,11 +1101,19 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 508.0,
+                "x": 430.0,
                 "y": 793.0
               },
               {
-                "x": 508.0,
+                "x": 430.0,
+                "y": 635.0
+              },
+              {
+                "x": 520.0,
+                "y": 635.0
+              },
+              {
+                "x": 520.0,
                 "y": 600.0
               }
             ],
@@ -957,11 +1129,11 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 508.0,
+                "x": 520.0,
                 "y": 793.0
               },
               {
-                "x": 508.0,
+                "x": 520.0,
                 "y": 820.0
               }
             ],
@@ -975,7 +1147,12 @@ metadata {
         "edges": [
           {
             "E": 2,
-            "M": [],
+            "M": [
+              {
+                "x": 680.0,
+                "y": 945.0
+              }
+            ],
             "S": 1
           }
         ]
@@ -989,11 +1166,11 @@ metadata {
             "M": [
               {
                 "x": 520.0,
-                "y": 832.0
+                "y": 860.0
               },
               {
                 "x": 720.0,
-                "y": 832.0
+                "y": 860.0
               }
             ],
             "S": 1
@@ -1008,16 +1185,8 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 122.0,
-                "y": 755.0
-              },
-              {
-                "x": 122.0,
-                "y": 588.0
-              },
-              {
                 "x": 36.5,
-                "y": 588.0
+                "y": 755.0
               }
             ],
             "S": 1
@@ -1027,14 +1196,14 @@ metadata {
             "M": [
               {
                 "x": 165.0,
-                "y": 597.0
+                "y": 600.0
               },
               {
-                "x": 208.0,
-                "y": 597.0
+                "x": 205.0,
+                "y": 600.0
               },
               {
-                "x": 208.0,
+                "x": 205.0,
                 "y": 593.0
               }
             ],
@@ -1044,24 +1213,151 @@ metadata {
             "E": 4,
             "M": [
               {
-                "x": 208.0,
+                "x": 205.0,
                 "y": 755.0
               },
               {
-                "x": 208.0,
-                "y": 844.0
+                "x": 205.0,
+                "y": 843.0
               },
               {
-                "x": 692.0,
-                "y": 844.0
+                "x": 510.0,
+                "y": 843.0
               },
               {
-                "x": 692.0,
-                "y": 858.0
+                "x": 510.0,
+                "y": 860.0
+              },
+              {
+                "x": 660.0,
+                "y": 860.0
+              },
+              {
+                "x": 660.0,
+                "y": 870.0
+              },
+              {
+                "x": 730.0,
+                "y": 870.0
+              },
+              {
+                "x": 730.0,
+                "y": 879.0
+              },
+              {
+                "x": 750.0,
+                "y": 879.0
+              },
+              {
+                "x": 750.0,
+                "y": 888.0
+              },
+              {
+                "x": 765.0,
+                "y": 888.0
+              },
+              {
+                "x": 765.0,
+                "y": 910.0
               },
               {
                 "x": 820.0,
-                "y": 858.0
+                "y": 910.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "accelerator": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 140,
+            "x2": 210,
+            "y1": 50,
+            "y2": 100
+          }
+        }
+      }
+    },
+    "accelerator_response": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 260,
+            "x2": 330,
+            "y1": 50,
+            "y2": 100
+          }
+        }
+      }
+    },
+    "brake_scale": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 140,
+            "x2": 210,
+            "y1": 180,
+            "y2": 230
+          }
+        }
+      }
+    },
+    "request_sum": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 420,
+            "x2": 470,
+            "y1": 50,
+            "y2": 100
+          }
+        }
+      }
+    },
+    "accel_scale": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "accel_request": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 417.5,
+                "y": 75.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "motor_request": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 600.0,
+                "y": 75.0
               }
             ],
             "S": 1

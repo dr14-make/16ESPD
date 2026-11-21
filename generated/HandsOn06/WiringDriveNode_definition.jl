@@ -5,24 +5,28 @@
 
 
 @doc Markdown.doc"""
-   WiringDriveNode(; name, ideal, networked, ratio, P_aux, T_receive, __overrides)
+   WiringDriveNode(; name, networked, receive_regen, ideal, ratio, P_aux, T_receive, __overrides)
+
+VCU: accelerator stays local; only the ECU's negative regen request travels on CAN.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `ideal`         |                          | --  |   false |
 | `networked`         |                          | --  |   false |
+| `receive_regen`         |                          | --  |   true |
+| `ideal`         |                          | --  |   true |
 | `ratio`         |                          | --  |   8.193 |
 | `P_aux`         |                          | W  |   300 |
-| `T_receive`         | Receiver conditioning keeps the inverter request continuous above base speed                         | s  |   0.01 |
+| `T_receive`         |                          | s  |   0.01 |
 
 ## Connectors
 
  * `bus` - ([`CanNet`](@ref))
+ * `accelerator_request` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `regen` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `spline` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `support` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
- * `torque` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 
 ## Variables
 
@@ -30,7 +34,7 @@
 | ------------ | ----------------------------------- | ------ |
 | `selected`         |                          | --  |
 """
-@component function WiringDriveNode(; name = nothing, var"ideal"=false, var"networked"=false, var"ratio"=8.193, var"P_aux"=Float64(300), var"T_receive"=0.01, __overrides = Dict{String, Any}())
+@component function WiringDriveNode(; name = nothing, var"networked"=false, var"receive_regen"=true, var"ideal"=true, var"ratio"=8.193, var"P_aux"=Float64(300), var"T_receive"=0.01, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -49,8 +53,9 @@
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
-  haskey(__overrides, "ideal") && (ideal = pop!(__overrides, "ideal"))
   haskey(__overrides, "networked") && (networked = pop!(__overrides, "networked"))
+  haskey(__overrides, "receive_regen") && (receive_regen = pop!(__overrides, "receive_regen"))
+  haskey(__overrides, "ideal") && (ideal = pop!(__overrides, "ideal"))
   haskey(__overrides, "ratio") && (ratio = pop!(__overrides, "ratio"))
   haskey(__overrides, "P_aux") && (P_aux = pop!(__overrides, "P_aux"))
   haskey(__overrides, "T_receive") && (T_receive = pop!(__overrides, "T_receive"))
@@ -75,13 +80,14 @@
   append!(__params, @parameters (P_aux::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, P_aux, __local__P_aux)
   __local__T_receive = T_receive
-  append!(__params, @parameters (T_receive::Real), [description = "Receiver conditioning keeps the inverter request continuous above base speed"])
+  append!(__params, @parameters (T_receive::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, T_receive, __local__T_receive)
 
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
-  append!(__vars, @variables (torque(t)::Real), [input = true])
+  append!(__vars, @variables (accelerator_request(t)::Real), [input = true])
+  append!(__vars, @variables (regen(t)::Real), [input = true])
 
   ### Variables (declarations)
   append!(__vars, @variables (selected(t)::Real))
@@ -106,9 +112,11 @@
   if !ideal
     push!(__systems, @named response = BlockComponents.Continuous.FirstOrder(; T=T_receive, __overrides = response_overrides))
   end
-  # Subcomponent motor_request_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
-  motor_request_rx_overrides = __pop_subcomponent_overrides!(__overrides, "motor_request_rx")
-  push!(__systems, @named motor_request_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=6, id=272, __overrides = motor_request_rx_overrides))
+  # Subcomponent regen_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
+  regen_rx_overrides = __pop_subcomponent_overrides!(__overrides, "regen_rx")
+  if receive_regen
+    push!(__systems, @named regen_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=6, id=272, __overrides = regen_rx_overrides))
+  end
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -122,23 +130,26 @@
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(bus, motor_request_rx.bus))
   push!(__eqs, connect(drive.spline, spline))
   push!(__eqs, connect(drive.support, support))
 
   ### Control Structures
-  if ideal
-    push!(__eqs, drive.tau_ref ~ selected)
+  if receive_regen
+    push!(__eqs, connect(regen_rx.bus, bus))
   else
-    push!(__eqs, response.u ~ selected)
-    push!(__eqs, drive.tau_ref ~ response.y)
-    push!(__initialization_eqs, response.x ~ 0)
   end
   if networked
-    push!(__eqs, selected ~ motor_request_rx.y)
-    push!(__eqs, torque ~ 0)
+    push!(__eqs, selected ~ regen_rx.y)
+    push!(__eqs, regen ~ 0)
   else
-    push!(__eqs, selected ~ torque)
+    push!(__eqs, selected ~ regen)
+  end
+  if ideal
+    push!(__eqs, drive.tau_ref ~ accelerator_request + selected)
+  else
+    push!(__eqs, response.u ~ selected)
+    push!(__eqs, drive.tau_ref ~ accelerator_request + response.y)
+    push!(__initialization_eqs, response.x ~ 0)
   end
 
   # Return completely constructed System

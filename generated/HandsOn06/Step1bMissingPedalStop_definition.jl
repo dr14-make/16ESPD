@@ -5,37 +5,38 @@
 
 
 @doc Markdown.doc"""
-   Step1bMissingPedalStop(; name, ideal, chassis_period, speed_period, steering_period, yaw_period, abs_period, friction_period, torque_period, dashboard_period, esp_on, abs_on, mu, T_actuator, m, radius, T_full, tau_max, P_charge, v_fade, P_aux, ratio, dv_wheel, v0, __overrides)
+   Step1bMissingPedalStop(; name, networked, drive_networked, transmit_regen, receive_regen, ideal, chassis_period, regen_period, dashboard_period, T_actuator, esp_on, abs_on, mu, m, radius, T_full, tau_max, ratio, P_charge, v_fade, P_aux, v0, dv_wheel, __overrides)
+
+Historical exercise name retained: the missing message is now ECU-to-VCU regen, not a pedal.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `networked`         |                          | --  |   true |
+| `drive_networked`         |                          | --  |   false |
+| `transmit_regen`         |                          | --  |   false |
+| `receive_regen`         |                          | --  |   true |
 | `ideal`         |                          | --  |   true |
 | `chassis_period`         |                          | --  |   0.01 |
-| `speed_period`         |                          | --  |   chassis_period |
-| `steering_period`         |                          | --  |   chassis_period |
-| `yaw_period`         |                          | --  |   chassis_period |
-| `abs_period`         |                          | --  |   chassis_period |
-| `friction_period`         |                          | --  |   0.02 |
-| `torque_period`         |                          | --  |   0.02 |
+| `regen_period`         |                          | --  |   chassis_period |
 | `dashboard_period`         |                          | --  |   0.1 |
-| `esp_on`         | ESP enable, fixed for the run                         | --  |   1.0 |
-| `abs_on`         | ABS enable, fixed for the run                         | --  |   1.0 |
-| `mu`         | Road-grip multiplier applied to every wheel                         | --  |   1.0 |
-| `T_actuator`         | Actuator response time constant (assumed)                         | s  |   0.05 |
-| `m`         | Vehicle mass (probe)                         | kg  |   1500.0 |
-| `radius`         | Wheel radius (repository default)                         | m  |   0.31 |
-| `T_full`         | Brake demand at each wheel with the pedal floored (Lecture 3)                         | N.m  |   2500.0 |
-| `tau_max`         | Machine torque limit (Nissan)                         | N.m  |   320.0 |
-| `P_charge`         | Battery charge-power limit (INL)                         | W  |   80.5e3 |
-| `v_fade`         | Speed below which the machine's braking ceiling fades to zero, km/h (assumed)                         | --  |   10.0 |
-| `P_aux`         | Power drawn by the 12 V network (assumed)                         | W  |   300.0 |
-| `ratio`         | Single-speed reduction (Nissan)                         | --  |   8.193 |
-| `dv_wheel`         | Initial wheel surface speed above the body's, keeps the start off zero slip (assumed)                         | m/s  |   0.01 |
+| `T_actuator`         |                          | s  |   0.05 |
+| `esp_on`         |                          | --  |   1 |
+| `abs_on`         |                          | --  |   1 |
+| `mu`         |                          | --  |   1 |
+| `m`         |                          | kg  |   1500 |
+| `radius`         |                          | m  |   0.31 |
+| `T_full`         |                          | N.m  |   2500 |
+| `tau_max`         |                          | N.m  |   320 |
+| `ratio`         |                          | --  |   8.193 |
+| `P_charge`         |                          | W  |   80.5e3 |
+| `v_fade`         |                          | --  |   10 |
+| `P_aux`         |                          | W  |   300 |
 | `v0`         |                          | m/s  |   22.22222222222222 |
+| `dv_wheel`         |                          | m/s  |   0.01 |
 """
-@component function Step1bMissingPedalStop(; name = nothing, var"ideal"=true, var"chassis_period"=0.01, var"friction_period"=0.02, var"torque_period"=0.02, var"dashboard_period"=0.1, var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"mu"=Float64(1.0), var"T_actuator"=0.05, var"m"=Float64(1500.0), var"radius"=0.31, var"T_full"=Float64(2500.0), var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"dv_wheel"=0.01, var"v0"=22.22222222222222, var"speed_period"=nothing, var"steering_period"=nothing, var"yaw_period"=nothing, var"abs_period"=nothing, __overrides = Dict{String, Any}())
+@component function Step1bMissingPedalStop(; name = nothing, var"networked"=true, var"drive_networked"=false, var"transmit_regen"=false, var"receive_regen"=true, var"ideal"=true, var"chassis_period"=0.01, var"dashboard_period"=0.1, var"T_actuator"=0.05, var"esp_on"=Float64(1), var"abs_on"=Float64(1), var"mu"=Float64(1), var"m"=Float64(1500), var"radius"=0.31, var"T_full"=Float64(2500), var"tau_max"=Float64(320), var"ratio"=8.193, var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10), var"P_aux"=Float64(300), var"v0"=22.22222222222222, var"dv_wheel"=0.01, var"regen_period"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -54,35 +55,31 @@
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "networked") && (networked = pop!(__overrides, "networked"))
+  haskey(__overrides, "drive_networked") && (drive_networked = pop!(__overrides, "drive_networked"))
+  haskey(__overrides, "transmit_regen") && (transmit_regen = pop!(__overrides, "transmit_regen"))
+  haskey(__overrides, "receive_regen") && (receive_regen = pop!(__overrides, "receive_regen"))
   haskey(__overrides, "ideal") && (ideal = pop!(__overrides, "ideal"))
   haskey(__overrides, "chassis_period") && (chassis_period = pop!(__overrides, "chassis_period"))
-  haskey(__overrides, "friction_period") && (friction_period = pop!(__overrides, "friction_period"))
-  haskey(__overrides, "torque_period") && (torque_period = pop!(__overrides, "torque_period"))
   haskey(__overrides, "dashboard_period") && (dashboard_period = pop!(__overrides, "dashboard_period"))
+  haskey(__overrides, "T_actuator") && (T_actuator = pop!(__overrides, "T_actuator"))
   haskey(__overrides, "esp_on") && (esp_on = pop!(__overrides, "esp_on"))
   haskey(__overrides, "abs_on") && (abs_on = pop!(__overrides, "abs_on"))
   haskey(__overrides, "mu") && (mu = pop!(__overrides, "mu"))
-  haskey(__overrides, "T_actuator") && (T_actuator = pop!(__overrides, "T_actuator"))
   haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
   haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
   haskey(__overrides, "T_full") && (T_full = pop!(__overrides, "T_full"))
   haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
+  haskey(__overrides, "ratio") && (ratio = pop!(__overrides, "ratio"))
   haskey(__overrides, "P_charge") && (P_charge = pop!(__overrides, "P_charge"))
   haskey(__overrides, "v_fade") && (v_fade = pop!(__overrides, "v_fade"))
   haskey(__overrides, "P_aux") && (P_aux = pop!(__overrides, "P_aux"))
-  haskey(__overrides, "ratio") && (ratio = pop!(__overrides, "ratio"))
-  haskey(__overrides, "dv_wheel") && (dv_wheel = pop!(__overrides, "dv_wheel"))
   haskey(__overrides, "v0") && (v0 = pop!(__overrides, "v0"))
-  haskey(__overrides, "speed_period") && (speed_period = pop!(__overrides, "speed_period"))
-  haskey(__overrides, "steering_period") && (steering_period = pop!(__overrides, "steering_period"))
-  haskey(__overrides, "yaw_period") && (yaw_period = pop!(__overrides, "yaw_period"))
-  haskey(__overrides, "abs_period") && (abs_period = pop!(__overrides, "abs_period"))
+  haskey(__overrides, "dv_wheel") && (dv_wheel = pop!(__overrides, "dv_wheel"))
+  haskey(__overrides, "regen_period") && (regen_period = pop!(__overrides, "regen_period"))
 
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
-  isnothing(speed_period) && (speed_period = chassis_period)
-  isnothing(steering_period) && (steering_period = chassis_period)
-  isnothing(yaw_period) && (yaw_period = chassis_period)
-  isnothing(abs_period) && (abs_period = chassis_period)
+  isnothing(regen_period) && (regen_period = chassis_period)
 
   ### Structural Parameters (functions)
 
@@ -97,48 +94,48 @@
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
+  __local__T_actuator = T_actuator
+  append!(__params, @parameters (T_actuator::Real))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_actuator, __local__T_actuator)
   __local__esp_on = esp_on
-  append!(__params, @parameters (esp_on::Real), [description = "ESP enable, fixed for the run"])
+  append!(__params, @parameters (esp_on::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, esp_on, __local__esp_on)
   __local__abs_on = abs_on
-  append!(__params, @parameters (abs_on::Real), [description = "ABS enable, fixed for the run"])
+  append!(__params, @parameters (abs_on::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, abs_on, __local__abs_on)
   __local__mu = mu
-  append!(__params, @parameters (mu::Real), [description = "Road-grip multiplier applied to every wheel"])
+  append!(__params, @parameters (mu::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, mu, __local__mu)
-  __local__T_actuator = T_actuator
-  append!(__params, @parameters (T_actuator::Real), [description = "Actuator response time constant (assumed)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, T_actuator, __local__T_actuator)
   __local__m = m
-  append!(__params, @parameters (m::Real), [description = "Vehicle mass (probe)", bounds = (0, Inf)])
+  append!(__params, @parameters (m::Real), [bounds = (0, Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
   __local__radius = radius
-  append!(__params, @parameters (radius::Real), [description = "Wheel radius (repository default)"])
+  append!(__params, @parameters (radius::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__T_full = T_full
-  append!(__params, @parameters (T_full::Real), [description = "Brake demand at each wheel with the pedal floored (Lecture 3)"])
+  append!(__params, @parameters (T_full::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, T_full, __local__T_full)
   __local__tau_max = tau_max
-  append!(__params, @parameters (tau_max::Real), [description = "Machine torque limit (Nissan)"])
+  append!(__params, @parameters (tau_max::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, tau_max, __local__tau_max)
+  __local__ratio = ratio
+  append!(__params, @parameters (ratio::Real))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, ratio, __local__ratio)
   __local__P_charge = P_charge
-  append!(__params, @parameters (P_charge::Real), [description = "Battery charge-power limit (INL)"])
+  append!(__params, @parameters (P_charge::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, P_charge, __local__P_charge)
   __local__v_fade = v_fade
-  append!(__params, @parameters (v_fade::Real), [description = "Speed below which the machine's braking ceiling fades to zero, km/h (assumed)"])
+  append!(__params, @parameters (v_fade::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, v_fade, __local__v_fade)
   __local__P_aux = P_aux
-  append!(__params, @parameters (P_aux::Real), [description = "Power drawn by the 12 V network (assumed)"])
+  append!(__params, @parameters (P_aux::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, P_aux, __local__P_aux)
-  __local__ratio = ratio
-  append!(__params, @parameters (ratio::Real), [description = "Single-speed reduction (Nissan)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, ratio, __local__ratio)
-  __local__dv_wheel = dv_wheel
-  append!(__params, @parameters (dv_wheel::Real), [description = "Initial wheel surface speed above the body's, keeps the start off zero slip (assumed)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, dv_wheel, __local__dv_wheel)
   __local__v0 = v0
   append!(__params, @parameters (v0::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, v0, __local__v0)
+  __local__dv_wheel = dv_wheel
+  append!(__params, @parameters (dv_wheel::Real))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, dv_wheel, __local__dv_wheel)
 
   ### Final Parameters (assignments)
 
@@ -161,36 +158,36 @@
   # Subcomponent steer of type BlockComponents.Sources.Constant
   steer_overrides = __pop_subcomponent_overrides!(__overrides, "steer")
   push!(__systems, @named steer = BlockComponents.Sources.Constant(; k=Float64(0), __overrides = steer_overrides))
-  # Subcomponent pedals of type BlockComponents.Math.Add
-  pedals_overrides = __pop_subcomponent_overrides!(__overrides, "pedals")
-  push!(__systems, @named pedals = BlockComponents.Math.Add(; k1=tau_max, k2=-4.0 * T_full / ratio, __overrides = pedals_overrides))
-  # Subcomponent torque_response of type BlockComponents.Continuous.FirstOrder
-  torque_response_overrides = __pop_subcomponent_overrides!(__overrides, "torque_response")
-  push!(__systems, @named torque_response = BlockComponents.Continuous.FirstOrder(; T=T_actuator, __overrides = torque_response_overrides))
+  # Subcomponent accelerator_gain of type BlockComponents.Math.Gain
+  accelerator_gain_overrides = __pop_subcomponent_overrides!(__overrides, "accelerator_gain")
+  push!(__systems, @named accelerator_gain = BlockComponents.Math.Gain(; k=tau_max, __overrides = accelerator_gain_overrides))
+  # Subcomponent brake_gain of type BlockComponents.Math.Gain
+  brake_gain_overrides = __pop_subcomponent_overrides!(__overrides, "brake_gain")
+  push!(__systems, @named brake_gain = BlockComponents.Math.Gain(; k=-4.0 * T_full / ratio, __overrides = brake_gain_overrides))
+  # Subcomponent accelerator_response of type BlockComponents.Continuous.FirstOrder
+  accelerator_response_overrides = __pop_subcomponent_overrides!(__overrides, "accelerator_response")
+  push!(__systems, @named accelerator_response = BlockComponents.Continuous.FirstOrder(; T=T_actuator, __overrides = accelerator_response_overrides))
+  # Subcomponent brake_response of type BlockComponents.Continuous.FirstOrder
+  brake_response_overrides = __pop_subcomponent_overrides!(__overrides, "brake_response")
+  push!(__systems, @named brake_response = BlockComponents.Continuous.FirstOrder(; T=T_actuator, __overrides = brake_response_overrides))
   # Subcomponent steering_response of type BlockComponents.Continuous.FirstOrder
   steering_response_overrides = __pop_subcomponent_overrides!(__overrides, "steering_response")
   push!(__systems, @named steering_response = BlockComponents.Continuous.FirstOrder(; T=T_actuator, __overrides = steering_response_overrides))
   # Subcomponent robot of type VehicleSystemsComponents.Vehicle.Planar.SteeringRobot
   robot_overrides = __pop_subcomponent_overrides!(__overrides, "robot")
   push!(__systems, @named robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot(; __overrides = robot_overrides))
-  # Subcomponent pedal_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
-  pedal_rx_overrides = __pop_subcomponent_overrides!(__overrides, "pedal_rx")
-  push!(__systems, @named pedal_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=12, id=192, __overrides = pedal_rx_overrides))
-  # Subcomponent blend of type VehicleSystemsComponents.HandsOn06.ManualBlendNode
-  blend_overrides = __pop_subcomponent_overrides!(__overrides, "blend")
-  push!(__systems, @named blend = VehicleSystemsComponents.HandsOn06.ManualBlendNode(; ideal=ideal, friction_period=friction_period, torque_period=torque_period, ratio=ratio, radius=radius, tau_max=tau_max, P_charge=P_charge, v_fade=v_fade, __overrides = blend_overrides))
-  # Subcomponent drive of type VehicleSystemsComponents.Vehicle.Planar.CanDriveNode
+  # Subcomponent ecu of type VehicleSystemsComponents.HandsOn06.WiringBrakeNode
+  ecu_overrides = __pop_subcomponent_overrides!(__overrides, "ecu")
+  push!(__systems, @named ecu = VehicleSystemsComponents.HandsOn06.WiringBrakeNode(; networked=networked, transmit_regen=transmit_regen, ideal=ideal, wheel_period=chassis_period, speed_period=chassis_period, regen_period=regen_period, esp_on=esp_on, abs_on=abs_on, radius=radius, T_full=T_full, ratio=ratio, tau_max=tau_max, P_charge=P_charge, v_fade=v_fade, __overrides = ecu_overrides))
+  # Subcomponent drive of type VehicleSystemsComponents.HandsOn06.WiringDriveNode
   drive_overrides = __pop_subcomponent_overrides!(__overrides, "drive")
-  push!(__systems, @named drive = VehicleSystemsComponents.Vehicle.Planar.CanDriveNode(; ideal=ideal, ratio=ratio, P_aux=P_aux, __overrides = drive_overrides))
+  push!(__systems, @named drive = VehicleSystemsComponents.HandsOn06.WiringDriveNode(; networked=drive_networked, receive_regen=receive_regen, ideal=ideal, ratio=ratio, P_aux=P_aux, __overrides = drive_overrides))
   # Subcomponent differential of type MultibodyComponents.PlanarMechanics.DifferentialGear
   differential_overrides = __pop_subcomponent_overrides!(__overrides, "differential")
   push!(__systems, @named differential = MultibodyComponents.PlanarMechanics.DifferentialGear(; __overrides = differential_overrides))
   # Subcomponent mount of type RotationalComponents.Components.Fixed
   mount_overrides = __pop_subcomponent_overrides!(__overrides, "mount")
   push!(__systems, @named mount = RotationalComponents.Components.Fixed(; __overrides = mount_overrides))
-  # Subcomponent ecu of type VehicleSystemsComponents.Vehicle.Planar.CanBrakeNode
-  ecu_overrides = __pop_subcomponent_overrides!(__overrides, "ecu")
-  push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.CanBrakeNode(; ideal=ideal, wheel_period=chassis_period, speed_period=speed_period, abs_period=abs_period, esp_on=esp_on, abs_on=abs_on, radius=radius, T_full=T_full, __overrides = ecu_overrides))
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
   push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; mu_scale_fl=mu, mu_scale_fr=mu, mu_scale_rl=mu, mu_scale_rr=mu, m=m, radius=radius, tau_max=T_full, __overrides = car_overrides))
@@ -199,10 +196,10 @@
   push!(__systems, @named roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(; m=m, __overrides = roadload_overrides))
   # Subcomponent flat of type BlockComponents.Sources.Constant
   flat_overrides = __pop_subcomponent_overrides!(__overrides, "flat")
-  push!(__systems, @named flat = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = flat_overrides))
-  # Subcomponent motion of type VehicleSystemsComponents.Vehicle.Planar.CanSensorNode
+  push!(__systems, @named flat = BlockComponents.Sources.Constant(; k=Float64(0), __overrides = flat_overrides))
+  # Subcomponent motion of type VehicleSystemsComponents.HandsOn06.WiringSensorNode
   motion_overrides = __pop_subcomponent_overrides!(__overrides, "motion")
-  push!(__systems, @named motion = VehicleSystemsComponents.Vehicle.Planar.CanSensorNode(; ideal=ideal, steering_period=steering_period, yaw_period=yaw_period, dashboard_period=dashboard_period, __overrides = motion_overrides))
+  push!(__systems, @named motion = VehicleSystemsComponents.HandsOn06.WiringSensorNode(; ideal=ideal, steering_period=chassis_period, yaw_period=chassis_period, dashboard_period=dashboard_period, __overrides = motion_overrides))
   # Subcomponent cluster of type VehicleSystemsComponents.Vehicle.Planar.CanClusterNode
   cluster_overrides = __pop_subcomponent_overrides!(__overrides, "cluster")
   push!(__systems, @named cluster = VehicleSystemsComponents.Vehicle.Planar.CanClusterNode(; __overrides = cluster_overrides))
@@ -218,34 +215,37 @@
   ### Initialization Equations
   push!(__initialization_eqs, car.body.r ~ [0, 0])
   push!(__initialization_eqs, car.body.v ~ [v0, 0])
-  push!(__initialization_eqs, car.body.phi ~ 0.0)
-  push!(__initialization_eqs, car.body.w ~ 0.0)
+  push!(__initialization_eqs, car.body.phi ~ 0)
+  push!(__initialization_eqs, car.body.w ~ 0)
   push!(__initialization_eqs, car.fl.inertia.w ~ (v0 + dv_wheel) / radius)
   push!(__initialization_eqs, car.fr.inertia.w ~ (v0 + dv_wheel) / radius)
   push!(__initialization_eqs, car.rl.inertia.w ~ (v0 + dv_wheel) / radius)
   push!(__initialization_eqs, car.rr.inertia.w ~ (v0 + dv_wheel) / radius)
-  push!(__initialization_eqs, car.fl.inertia.phi ~ 0.0)
-  push!(__initialization_eqs, car.fr.inertia.phi ~ 0.0)
-  push!(__initialization_eqs, car.rl.inertia.phi ~ 0.0)
-  push!(__initialization_eqs, car.rr.inertia.phi ~ 0.0)
-  push!(__initialization_eqs, car.fl.brake.tau_actual ~ 0.0)
-  push!(__initialization_eqs, car.fr.brake.tau_actual ~ 0.0)
-  push!(__initialization_eqs, car.rl.brake.tau_actual ~ 0.0)
-  push!(__initialization_eqs, car.rr.brake.tau_actual ~ 0.0)
-  push!(__initialization_eqs, drive.drive.converter.i_out ~ 0.0)
-  push!(__initialization_eqs, torque_response.x ~ 0.0)
-  push!(__initialization_eqs, steering_response.x ~ 0.0)
+  push!(__initialization_eqs, car.fl.inertia.phi ~ 0)
+  push!(__initialization_eqs, car.fr.inertia.phi ~ 0)
+  push!(__initialization_eqs, car.rl.inertia.phi ~ 0)
+  push!(__initialization_eqs, car.rr.inertia.phi ~ 0)
+  push!(__initialization_eqs, car.fl.brake.tau_actual ~ 0)
+  push!(__initialization_eqs, car.fr.brake.tau_actual ~ 0)
+  push!(__initialization_eqs, car.rl.brake.tau_actual ~ 0)
+  push!(__initialization_eqs, car.rr.brake.tau_actual ~ 0)
+  push!(__initialization_eqs, drive.drive.converter.i_out ~ 0)
+  push!(__initialization_eqs, accelerator_response.x ~ 0)
+  push!(__initialization_eqs, brake_response.x ~ 0)
+  push!(__initialization_eqs, steering_response.x ~ 0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(motion.bus, blend.bus, ecu.bus, drive.bus, cluster.bus, pedal_rx.bus))
+  push!(__eqs, connect(motion.bus, ecu.bus, drive.bus, cluster.bus))
   push!(__eqs, connect(car.bus, motion.measurements, wheel_speeds.bus))
-  push!(__eqs, connect(throttle.y, pedals.u1))
-  push!(__eqs, connect(brake.y, pedals.u2))
-  push!(__eqs, connect(pedals.y, torque_response.u))
-  push!(__eqs, connect(torque_response.y, blend.tau_ref))
+  push!(__eqs, connect(throttle.y, accelerator_gain.u))
+  push!(__eqs, connect(accelerator_gain.y, accelerator_response.u))
+  push!(__eqs, connect(accelerator_response.y, drive.accelerator_request))
+  push!(__eqs, connect(brake.y, brake_gain.u))
+  push!(__eqs, connect(brake_gain.y, brake_response.u))
+  push!(__eqs, connect(brake_response.y, ecu.brake_request))
   push!(__eqs, connect(steer.y, steering_response.u))
   push!(__eqs, connect(steering_response.y, robot.delta_sw_ref))
   push!(__eqs, connect(robot.steering, car.steering))
@@ -263,6 +263,7 @@
   push!(__eqs, connect(ecu.tau_rr, car.tau_rr))
   push!(__eqs, connect(flat.y, roadload.grade))
   push!(__eqs, connect(car.chassis, roadload.chassis))
+  push!(__eqs, connect(ecu.regen, drive.regen))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

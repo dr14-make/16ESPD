@@ -6,7 +6,7 @@
 
 using DyadInterface
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@component function Step4SlowCanStopTransient__System(; name = nothing, var"alg"=ODEAlg.Rodas5P(), var"start"=0, var"stop"=6, var"abstol"=1e-7, var"reltol"=1e-7, var"saveat"=0, var"dtmax"=0.005, var"tstops"=[0.5, 0.6], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.None(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", __overrides = Dict{String, Any}())
+@component function Step4SlowCanStopTransient__System(; name = nothing, var"alg"=ODEAlg.Rodas5P(), var"start"=0, var"stop"=6, var"abstol"=1e-9, var"reltol"=1e-9, var"saveat"=0, var"dtmax"=0.005, var"tstops"=[0.5, 0.6], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.None(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -139,8 +139,8 @@ export Step4SlowCanStopTransient__System
   var"alg"::ODEAlg.Type = ODEAlg.Rodas5P()
   var"start"::Float64 = 0
   var"stop"::Float64 = 6
-  var"abstol"::Float64 = 1e-7
-  var"reltol"::Float64 = 1e-7
+  var"abstol"::Float64 = 1e-9
+  var"reltol"::Float64 = 1e-9
   var"saveat"::Float64 = 0
   var"dtmax"::Float64 = 0.005
   var"tstops"::Array{Float64, 1} = [0.5, 0.6]
@@ -151,6 +151,7 @@ export Step4SlowCanStopTransient__System
   var"specialization"::SpecializationLevel.Type = SpecializationLevel.Despecialize()
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
+  # 40 ms period comparison, not a bitrate simulation; use can_schedule for Step 4.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn06.Step4SlowCanStop(; name=:Step4SlowCanStop)
   __system::System = Step4SlowCanStopTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file")
 end

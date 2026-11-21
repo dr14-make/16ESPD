@@ -20,7 +20,8 @@ const FP = CanV.FabiaProtocol
     sys = DyadInterface.symbolic_container(result)
     @test recording.closed
     @test fabia_frame_fingerprint(recording.frames) ==
-        "fec7172fa2a0a831ac29656d0f4bd5db8d6d0288bcc2336a30197127c4d9b516"
+        "c831e387ca745d91e566a1f9b9e8d02354d0ec2149104a78715f67922fe925d2"
+    println("Fabia scripted stream bytes: ", Dict(id => sum(length(b) for (key, b) in recording.frames if key == id) for id in unique(first.(recording.frames))))
     payloads(id) = [b for (key, b) in recording.frames if key == id]
     for (id, period, _) in FP.frame_schedule
         @test length(payloads(id)) == round(Int, spec.duration / period)
@@ -91,7 +92,7 @@ end
         spec = CanV.RealtimeDriveSpec(; model, duration = 36., can_interface = "vcan0")
         DyadInterface.run_analysis(spec; run_drive = measure_drive)
         m = metrics[]
-        @test m.sent == 59760
+        @test m.sent == 52560
         @test .85 < m.simulated / m.wall < 1.05
         for (id, period, _) in FP.frame_schedule
             @test m.counts[id] == round(Int, 36 / period)
@@ -134,14 +135,18 @@ end
     model = CanV.PlanarBEVFabiaScriptedDrive(name = :model)
     layout = P.can_layout(model)
     schedule = P.can_schedule(model)
-    @test length(layout.frames) == 23
-    @test schedule.load ≈ .3186
+    @test length(layout.frames) == 20
+    @test schedule.load ≈ .2906
     @test P.check_can(model) === model
     mktempdir() do directory
         dbc = P.can_dbc(model, joinpath(directory, "lecture06-car.dbc"))
         text = read(dbc, String)
         teaching = filter(f -> !hasproperty(f, :cluster_path), layout.frames)
-        @test length(teaching) == 12
+        @test [frame.id for frame in teaching] == [128, 144, 160, 176, 177, 178, 179, 272, 768]
+        regen = only(filter(frame -> frame.id == 272, teaching))
+        @test regen.period == .01
+        @test only(regen.signals).slot == 6
+        @test endswith(only(regen.signals).name, "ecu.regen_tx")
         for frame in teaching
             @test occursin("BO_ $(frame.id) Frame_$(frame.id): $(frame.bytes) Dyad", text)
             @test occursin("BA_ \"GenMsgCycleTime\" BO_ $(frame.id) $(round(Int, 1000frame.period));", text)
