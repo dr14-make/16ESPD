@@ -1,0 +1,2459 @@
+component WiringSensorNode
+  bus = VehicleSystemsComponents.Vehicle.Planar.CanNet() {^bus}
+  measurements = VehicleSystemsComponents.Vehicle.Planar.CarBusIn() {^measurements}
+  structural parameter ideal::Boolean = false
+  structural parameter steering_period::Real = 0.01
+  structural parameter yaw_period::Real = 0.01
+  structural parameter dashboard_period::Real = 0.1
+  motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
+  steering_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(slot = 2, id = 144, ideal = ideal, period = steering_period, scale = 0.001, raw_min = -32768, raw_max = 32767) {^steering_tx}
+  yaw_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(slot = 3, id = 160, ideal = ideal, period = yaw_period, scale = 0.001, raw_min = -32768, raw_max = 32767) {^yaw_tx}
+  dashboard_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(slot = 7, id = 768, ideal = ideal, period = dashboard_period, scale = 0.01, raw_min = -32768, raw_max = 32767) {^dashboard_tx}
+  structural parameter networked::Boolean = false
+  steering = RealOutput() {^steering}
+  yaw = RealOutput() {^yaw}
+relations
+  connect(measurements, motion.bus) {^measure}
+  connect(motion.vx, dashboard_tx.u) {^dashboard}
+  connect(motion.delta_sw, steering_tx.u) {^wire_steering}
+  connect(motion.r, yaw_tx.u) {^wire_yaw}
+  connect(bus, steering_tx.bus, yaw_tx.bus, dashboard_tx.bus) {^network}
+  connect(motion.delta_sw, steering) {^direct_steering}
+  connect(motion.r, yaw) {^direct_yaw}
+metadata {
+  "_links": {
+    "bus": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": 470,
+            "x2": 530,
+            "y1": -15,
+            "y2": 15
+          },
+          "diagram": {
+            "x1": 485,
+            "x2": 515,
+            "y1": 65,
+            "y2": 95
+          }
+        }
+      }
+    },
+    "measurements": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 470,
+            "y2": 530
+          },
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 485,
+            "y2": 515
+          }
+        }
+      }
+    },
+    "yaw_tx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 650,
+            "x2": 790,
+            "y1": 500,
+            "y2": 600
+          }
+        }
+      }
+    },
+    "dashboard_tx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 650,
+            "x2": 790,
+            "y1": 700,
+            "y2": 800
+          }
+        }
+      }
+    },
+    "steering_tx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 650,
+            "x2": 790,
+            "y1": 300,
+            "y2": 400
+          }
+        }
+      }
+    },
+    "motion": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 180,
+            "x2": 340,
+            "y1": 300,
+            "y2": 700
+          }
+        }
+      }
+    },
+    "measure": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 120.0,
+                "y": 500.0
+              },
+              {
+                "x": 120.0,
+                "y": 500.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "steering": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 965,
+            "x2": 995,
+            "y1": 635,
+            "y2": 665
+          },
+          "icon": {
+            "x1": 985,
+            "x2": 1015,
+            "y1": 635,
+            "y2": 665
+          }
+        }
+      }
+    },
+    "yaw": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 965,
+            "x2": 995,
+            "y1": 685,
+            "y2": 715
+          },
+          "icon": {
+            "x1": 985,
+            "x2": 1015,
+            "y1": 685,
+            "y2": 715
+          }
+        }
+      }
+    },
+    "dashboard": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 495.0,
+                "y": 404.0
+              },
+              {
+                "x": 495.0,
+                "y": 750.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "network": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 610.0,
+                "y": 80.0
+              },
+              {
+                "x": 610.0,
+                "y": 300.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 610.0,
+                "y": 80.0
+              },
+              {
+                "x": 610.0,
+                "y": 500.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 4,
+            "M": [
+              {
+                "x": 610.0,
+                "y": 80.0
+              },
+              {
+                "x": 610.0,
+                "y": 700.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "direct_steering": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 660.0,
+                "y": 340.0
+              },
+              {
+                "x": 660.0,
+                "y": 650.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "direct_yaw": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 660.0,
+                "y": 372.0
+              },
+              {
+                "x": 660.0,
+                "y": 700.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "wire_steering": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 495.0,
+                "y": 340.0
+              },
+              {
+                "x": 495.0,
+                "y": 350.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "wire_yaw": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 495.0,
+                "y": 372.0
+              },
+              {
+                "x": 495.0,
+                "y": 550.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    }
+  },
+  "Dyad": {
+    "icons": {
+      "default": "dyad://MultibodyComponents/CascadeServoController.svg"
+    },
+    "labels": [
+      {
+        "attrs": {
+          "font-size": "24"
+        },
+        "label": "$(instance)",
+        "layer": "diagram",
+        "x": 500,
+        "y": 20
+      }
+    ]
+  }
+}
+end
+
+
+component WiringBlendNode
+  bus = VehicleSystemsComponents.Vehicle.Planar.CanNet() {^bus}
+  structural parameter ideal::Boolean = false
+  structural parameter friction_period::Real = 0.02
+  structural parameter torque_period::Real = 0.02
+  parameter ratio::Real = 8.193
+  parameter radius::Length = 0.31
+  parameter tau_max::Torque = 320
+  parameter P_charge::Power = 80.5e3
+  parameter v_fade::Real = 10
+  blend = VehicleSystemsComponents.Vehicle.Electric.RegenBlend(abs_rule = true, ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade) {^blend}
+  kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
+  friction_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(slot = 4, id = 256, ideal = ideal, period = friction_period, scale = 0.1, raw_min = 0, raw_max = 65535) {^friction_tx}
+  torque_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(slot = 6, id = 272, ideal = ideal, period = torque_period, scale = 0.1, raw_min = -32768, raw_max = 32767) {^torque_tx}
+  pedal_request_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(slot = 12, id = 192) {^pedal_request_rx}
+  vehicle_speed_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(slot = 1, id = 128) {^vehicle_speed_rx}
+  front_abs_active_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(slot = 5, id = 112) {^front_abs_active_rx}
+  structural parameter networked::Boolean = false
+  request = RealInput() {^request}
+  speed = RealInput() {^speed}
+  abs_state = RealInput() {^abs_state}
+  friction = RealOutput() {^friction}
+  torque = RealOutput() {^torque}
+relations
+  connect(bus, vehicle_speed_rx.bus, front_abs_active_rx.bus, pedal_request_rx.bus) {^network}
+  if networked
+    blend.tau_ref = pedal_request_rx.y
+    request = 0
+  else
+    blend.tau_ref = request
+  end
+  if networked
+    kmh.u = vehicle_speed_rx.y
+    speed = 0
+  else
+    kmh.u = speed
+  end
+  connect(kmh.y, blend.v) {^kmh_speed}
+  if networked
+    blend.abs_active = front_abs_active_rx.y
+    abs_state = 0
+  else
+    blend.abs_active = abs_state
+  end
+  connect(blend.tau_brake, friction_tx.u) {^wire_friction}
+  connect(blend.tau_motor, torque_tx.u) {^wire_torque}
+  connect(bus, friction_tx.bus) {^friction_bus}
+  connect(bus, torque_tx.bus) {^torque_bus}
+  connect(blend.tau_brake, friction) {^direct_friction}
+  connect(blend.tau_motor, torque) {^direct_torque}
+metadata {
+  "_links": {
+    "bus": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": 470,
+            "x2": 530,
+            "y1": 985,
+            "y2": 1015
+          },
+          "diagram": {
+            "x1": 485,
+            "x2": 515,
+            "y1": 915,
+            "y2": 945
+          }
+        }
+      }
+    },
+    "kmh": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 340,
+            "x2": 420,
+            "y1": 400,
+            "y2": 480
+          }
+        }
+      }
+    },
+    "pedal_request_rx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 160,
+            "x2": 280,
+            "y1": 200,
+            "y2": 280
+          }
+        }
+      }
+    },
+    "friction_tx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 790,
+            "x2": 910,
+            "y1": 300,
+            "y2": 400
+          }
+        }
+      }
+    },
+    "vehicle_speed_rx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 160,
+            "x2": 280,
+            "y1": 400,
+            "y2": 480
+          }
+        }
+      }
+    },
+    "torque_tx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 790,
+            "x2": 910,
+            "y1": 560,
+            "y2": 660
+          }
+        }
+      }
+    },
+    "blend": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 480,
+            "x2": 640,
+            "y1": 220,
+            "y2": 700
+          }
+        }
+      }
+    },
+    "front_abs_active_rx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 160,
+            "x2": 280,
+            "y1": 650,
+            "y2": 730
+          }
+        }
+      }
+    },
+    "kmh_speed": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 452.0,
+                "y": 440.0
+              },
+              {
+                "x": 452.0,
+                "y": 556.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "request": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 5,
+            "x2": 35,
+            "y1": 635,
+            "y2": 665
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 635,
+            "y2": 665
+          }
+        }
+      }
+    },
+    "speed": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 5,
+            "x2": 35,
+            "y1": 685,
+            "y2": 715
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 685,
+            "y2": 715
+          }
+        }
+      }
+    },
+    "friction": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 965,
+            "x2": 995,
+            "y1": 785,
+            "y2": 815
+          },
+          "icon": {
+            "x1": 985,
+            "x2": 1015,
+            "y1": 785,
+            "y2": 815
+          }
+        }
+      }
+    },
+    "friction_bus": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 675.0,
+                "y": 930.0
+              },
+              {
+                "x": 675.0,
+                "y": 300.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "abs_state": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 5,
+            "x2": 35,
+            "y1": 735,
+            "y2": 765
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 735,
+            "y2": 765
+          }
+        }
+      }
+    },
+    "torque_bus": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 675.0,
+                "y": 930.0
+              },
+              {
+                "x": 675.0,
+                "y": 560.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "torque": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 965,
+            "x2": 995,
+            "y1": 835,
+            "y2": 865
+          },
+          "icon": {
+            "x1": 985,
+            "x2": 1015,
+            "y1": 835,
+            "y2": 865
+          }
+        }
+      }
+    },
+    "network": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 360.0,
+                "y": 930.0
+              },
+              {
+                "x": 360.0,
+                "y": 400.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 360.0,
+                "y": 930.0
+              },
+              {
+                "x": 360.0,
+                "y": 650.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 4,
+            "M": [
+              {
+                "x": 360.0,
+                "y": 930.0
+              },
+              {
+                "x": 360.0,
+                "y": 200.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "direct_friction": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 810.0,
+                "y": 556.0
+              },
+              {
+                "x": 810.0,
+                "y": 800.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "direct_torque": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 810.0,
+                "y": 364.0
+              },
+              {
+                "x": 810.0,
+                "y": 850.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "wire_friction": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 715.0,
+                "y": 556.0
+              },
+              {
+                "x": 715.0,
+                "y": 350.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "wire_torque": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 715.0,
+                "y": 364.0
+              },
+              {
+                "x": 715.0,
+                "y": 610.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    }
+  },
+  "Dyad": {
+    "icons": {
+      "default": "dyad://MultibodyComponents/CascadeServoController.svg"
+    },
+    "labels": [
+      {
+        "attrs": {
+          "font-size": "24"
+        },
+        "label": "$(instance)",
+        "layer": "diagram",
+        "x": 500,
+        "y": 20
+      }
+    ]
+  }
+}
+end
+
+
+component WiringBrakeNode
+  bus = VehicleSystemsComponents.Vehicle.Planar.CanNet() {^bus}
+  omega_fl = RealInput(units = "rad/s") {^omega_fl}
+  omega_fr = RealInput(units = "rad/s") {^omega_fr}
+  omega_rl = RealInput(units = "rad/s") {^omega_rl}
+  omega_rr = RealInput(units = "rad/s") {^omega_rr}
+  tau_fl = RealOutput() {^tau_fl}
+  tau_fr = RealOutput() {^tau_fr}
+  tau_rl = RealOutput() {^tau_rl}
+  tau_rr = RealOutput() {^tau_rr}
+  structural parameter ideal::Boolean = false
+  structural parameter speed_period::Real = 0.01
+  structural parameter abs_period::Real = 0.01
+  structural parameter wheel_period::Real = 0.01
+  parameter esp_on::Real = 1
+  parameter abs_on::Real = 1
+  parameter radius::Length = 0.31
+  parameter T_full::Torque = 2500
+  ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(report_front = true, esp_on = esp_on, abs_on = abs_on, radius = radius, T_max = T_full) {^ecu}
+  abs_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(slot = 5, id = 112, ideal = ideal, period = abs_period, scale = 1, raw_min = 0, raw_max = 1) {^abs_tx}
+  estimator = VehicleSystemsComponents.Vehicle.Planar.BrakeWheelEstimator(radius = radius) {^estimator}
+  abs_hold = VehicleSystemsComponents.Vehicle.Planar.AbsControlHold() {^abs_hold}
+  speed_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(slot = 1, id = 128, ideal = ideal, period = speed_period, scale = 0.01, raw_min = -32768, raw_max = 32767) {^speed_tx}
+  wheel_fl_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(slot = 8, id = 176, ideal = ideal, period = wheel_period, scale = 0.01, raw_min = -32768, raw_max = 32767) {^wheel_fl_tx}
+  wheel_fr_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(slot = 9, id = 177, ideal = ideal, period = wheel_period, scale = 0.01, raw_min = -32768, raw_max = 32767) {^wheel_fr_tx}
+  wheel_rl_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(slot = 10, id = 178, ideal = ideal, period = wheel_period, scale = 0.01, raw_min = -32768, raw_max = 32767) {^wheel_rl_tx}
+  wheel_rr_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(slot = 11, id = 179, ideal = ideal, period = wheel_period, scale = 0.01, raw_min = -32768, raw_max = 32767) {^wheel_rr_tx}
+  steering_angle_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(slot = 2, id = 144) {^steering_angle_rx}
+  yaw_rate_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(slot = 3, id = 160) {^yaw_rate_rx}
+  friction_demand_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(slot = 4, id = 256) {^friction_demand_rx}
+  structural parameter networked::Boolean = false
+  demand = RealInput() {^demand}
+  demand_route = BlockComponents.Math.Gain(k = 1.0) {^demand_route}
+  steering = RealInput() {^steering}
+  yaw = RealInput() {^yaw}
+  speed = RealOutput() {^speed}
+  active = RealOutput() {^active}
+relations
+  connect(bus, steering_angle_rx.bus, yaw_rate_rx.bus, friction_demand_rx.bus, speed_tx.bus, wheel_fl_tx.bus, wheel_fr_tx.bus, wheel_rl_tx.bus, wheel_rr_tx.bus) {^network}
+  if networked
+    demand_route.u = friction_demand_rx.y
+    demand = 0
+  else
+    demand_route.u = demand
+  end
+  connect(demand_route.y, ecu.demand, abs_hold.demand) {^hold_demand}
+  connect(estimator.vx, ecu.vx, speed_tx.u, abs_hold.vx) {^wire_speed}
+  if networked
+    ecu.delta_sw = steering_angle_rx.y
+    steering = 0
+  else
+    ecu.delta_sw = steering
+  end
+  if networked
+    ecu.r = yaw_rate_rx.y
+    yaw = 0
+  else
+    ecu.r = yaw
+  end
+  connect(estimator.kappa_fl, ecu.kappa_fl) {^slip_fl}
+  connect(omega_fl, estimator.omega_fl, wheel_fl_tx.u) {^wheel_fl}
+  connect(estimator.kappa_fr, ecu.kappa_fr) {^slip_fr}
+  connect(omega_fr, estimator.omega_fr, wheel_fr_tx.u) {^wheel_fr}
+  connect(estimator.kappa_rl, ecu.kappa_rl) {^slip_rl}
+  connect(omega_rl, estimator.omega_rl, wheel_rl_tx.u) {^wheel_rl}
+  connect(estimator.kappa_rr, ecu.kappa_rr) {^slip_rr}
+  connect(omega_rr, estimator.omega_rr, wheel_rr_tx.u) {^wheel_rr}
+  connect(ecu.tau_fl, tau_fl) {^torque_fl}
+  connect(ecu.tau_fr, tau_fr) {^torque_fr}
+  connect(ecu.tau_rl, tau_rl) {^torque_rl}
+  connect(ecu.tau_rr, tau_rr) {^torque_rr}
+  connect(ecu.front_active, abs_hold.active) {^abs_state}
+  connect(abs_hold.y, abs_tx.u) {^abs_held}
+  connect(bus, abs_tx.bus) {^abs_bus}
+  connect(estimator.vx, speed) {^direct_speed}
+  connect(abs_hold.y, active) {^direct_active}
+metadata {
+  "_links": {
+    "abs_hold": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 470,
+            "x2": 570,
+            "y1": 820,
+            "y2": 900
+          }
+        }
+      }
+    },
+    "abs_held": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 705.0,
+                "y": 860.0
+              },
+              {
+                "x": 705.0,
+                "y": 930.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "bus": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": 470,
+            "x2": 530,
+            "y1": -15,
+            "y2": 15
+          },
+          "diagram": {
+            "x1": 485,
+            "x2": 515,
+            "y1": 45,
+            "y2": 75
+          }
+        }
+      }
+    },
+    "tau_fl": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 965,
+            "x2": 995,
+            "y1": 635,
+            "y2": 665
+          },
+          "icon": {
+            "x1": 985,
+            "x2": 1015,
+            "y1": 635,
+            "y2": 665
+          }
+        }
+      }
+    },
+    "tau_fr": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 965,
+            "x2": 995,
+            "y1": 685,
+            "y2": 715
+          },
+          "icon": {
+            "x1": 985,
+            "x2": 1015,
+            "y1": 685,
+            "y2": 715
+          }
+        }
+      }
+    },
+    "tau_rl": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 965,
+            "x2": 995,
+            "y1": 735,
+            "y2": 765
+          },
+          "icon": {
+            "x1": 985,
+            "x2": 1015,
+            "y1": 735,
+            "y2": 765
+          }
+        }
+      }
+    },
+    "tau_rr": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 965,
+            "x2": 995,
+            "y1": 785,
+            "y2": 815
+          },
+          "icon": {
+            "x1": 985,
+            "x2": 1015,
+            "y1": 785,
+            "y2": 815
+          }
+        }
+      }
+    },
+    "omega_fl": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 170,
+            "y2": 230
+          },
+          "diagram": {
+            "x1": 15,
+            "x2": 45,
+            "y1": 305,
+            "y2": 335
+          }
+        }
+      }
+    },
+    "omega_fr": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 370,
+            "y2": 430
+          },
+          "diagram": {
+            "x1": 15,
+            "x2": 45,
+            "y1": 415,
+            "y2": 445
+          }
+        }
+      }
+    },
+    "omega_rl": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 570,
+            "y2": 630
+          },
+          "diagram": {
+            "x1": 15,
+            "x2": 45,
+            "y1": 525,
+            "y2": 555
+          }
+        }
+      }
+    },
+    "omega_rr": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 770,
+            "y2": 830
+          },
+          "diagram": {
+            "x1": 15,
+            "x2": 45,
+            "y1": 635,
+            "y2": 665
+          }
+        }
+      }
+    },
+    "wheel_rl_tx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 80,
+            "x2": 180,
+            "y1": 560,
+            "y2": 620
+          }
+        }
+      }
+    },
+    "ecu": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 600,
+            "x2": 760,
+            "y1": 300,
+            "y2": 700
+          }
+        }
+      }
+    },
+    "abs_tx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 840,
+            "x2": 940,
+            "y1": 900,
+            "y2": 960
+          }
+        }
+      }
+    },
+    "estimator": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 250,
+            "x2": 410,
+            "y1": 300,
+            "y2": 700
+          }
+        }
+      }
+    },
+    "wheel_fl_tx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 80,
+            "x2": 180,
+            "y1": 340,
+            "y2": 400
+          }
+        }
+      }
+    },
+    "yaw_rate_rx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 570,
+            "x2": 670,
+            "y1": 90,
+            "y2": 150
+          }
+        }
+      }
+    },
+    "friction_demand_rx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 710,
+            "x2": 810,
+            "y1": 90,
+            "y2": 150
+          }
+        }
+      }
+    },
+    "wheel_rr_tx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 80,
+            "x2": 180,
+            "y1": 670,
+            "y2": 730
+          }
+        }
+      }
+    },
+    "wheel_fr_tx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 80,
+            "x2": 180,
+            "y1": 450,
+            "y2": 510
+          }
+        }
+      }
+    },
+    "steering_angle_rx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 430,
+            "x2": 530,
+            "y1": 90,
+            "y2": 150
+          }
+        }
+      }
+    },
+    "speed_tx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 840,
+            "x2": 940,
+            "y1": 790,
+            "y2": 850
+          }
+        }
+      }
+    },
+    "wheel_fr": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 140.0,
+                "y": 430.0
+              },
+              {
+                "x": 140.0,
+                "y": 460.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 55.0,
+                "y": 430.0
+              },
+              {
+                "x": 55.0,
+                "y": 480.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "slip_fr": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 505.0,
+                "y": 460.0
+              },
+              {
+                "x": 505.0,
+                "y": 640.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "slip_rl": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 521.0,
+                "y": 540.0
+              },
+              {
+                "x": 521.0,
+                "y": 700.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "torque_rl": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 870.0,
+                "y": 540.0
+              },
+              {
+                "x": 870.0,
+                "y": 750.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "speed": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 965,
+            "x2": 995,
+            "y1": 815,
+            "y2": 845
+          },
+          "icon": {
+            "x1": 985,
+            "x2": 1015,
+            "y1": 815,
+            "y2": 845
+          }
+        }
+      }
+    },
+    "slip_rr": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 533.0,
+                "y": 620.0
+              },
+              {
+                "x": 533.0,
+                "y": 700.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "wheel_rr": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 140.0,
+                "y": 650.0
+              },
+              {
+                "x": 140.0,
+                "y": 620.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 55.0,
+                "y": 650.0
+              },
+              {
+                "x": 55.0,
+                "y": 700.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "yaw": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 5,
+            "x2": 35,
+            "y1": 745,
+            "y2": 775
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 745,
+            "y2": 775
+          }
+        }
+      }
+    },
+    "wheel_rl": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 140.0,
+                "y": 540.0
+              },
+              {
+                "x": 140.0,
+                "y": 540.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 55.0,
+                "y": 540.0
+              },
+              {
+                "x": 55.0,
+                "y": 590.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "abs_state": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 575.0,
+                "y": 300.0
+              },
+              {
+                "x": 575.0,
+                "y": 840.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "steering": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 5,
+            "x2": 35,
+            "y1": 675,
+            "y2": 705
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 675,
+            "y2": 705
+          }
+        }
+      }
+    },
+    "slip_fl": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 505.0,
+                "y": 380.0
+              },
+              {
+                "x": 505.0,
+                "y": 580.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "abs_bus": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 695.0,
+                "y": 60.0
+              },
+              {
+                "x": 695.0,
+                "y": 900.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "wheel_fl": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 140.0,
+                "y": 320.0
+              },
+              {
+                "x": 140.0,
+                "y": 380.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 55.0,
+                "y": 320.0
+              },
+              {
+                "x": 55.0,
+                "y": 370.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "network": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 490.0,
+                "y": 60.0
+              },
+              {
+                "x": 490.0,
+                "y": 90.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 560.0,
+                "y": 60.0
+              },
+              {
+                "x": 560.0,
+                "y": 90.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 4,
+            "M": [
+              {
+                "x": 630.0,
+                "y": 60.0
+              },
+              {
+                "x": 630.0,
+                "y": 90.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 5,
+            "M": [
+              {
+                "x": 695.0,
+                "y": 60.0
+              },
+              {
+                "x": 695.0,
+                "y": 790.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 6,
+            "M": [
+              {
+                "x": 315.0,
+                "y": 60.0
+              },
+              {
+                "x": 315.0,
+                "y": 340.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 7,
+            "M": [
+              {
+                "x": 315.0,
+                "y": 60.0
+              },
+              {
+                "x": 315.0,
+                "y": 450.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 8,
+            "M": [
+              {
+                "x": 315.0,
+                "y": 60.0
+              },
+              {
+                "x": 315.0,
+                "y": 560.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 9,
+            "M": [
+              {
+                "x": 315.0,
+                "y": 60.0
+              },
+              {
+                "x": 315.0,
+                "y": 670.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "demand": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 5,
+            "x2": 35,
+            "y1": 605,
+            "y2": 635
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 605,
+            "y2": 635
+          }
+        }
+      }
+    },
+    "torque_fr": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 870.0,
+                "y": 460.0
+              },
+              {
+                "x": 870.0,
+                "y": 700.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "torque_fl": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 870.0,
+                "y": 380.0
+              },
+              {
+                "x": 870.0,
+                "y": 650.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "torque_rr": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 870.0,
+                "y": 620.0
+              },
+              {
+                "x": 870.0,
+                "y": 800.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "active": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 965,
+            "x2": 995,
+            "y1": 885,
+            "y2": 915
+          },
+          "icon": {
+            "x1": 985,
+            "x2": 1015,
+            "y1": 885,
+            "y2": 915
+          }
+        }
+      }
+    },
+    "hold_demand": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 550,
+                "y": 225
+              },
+              {
+                "x": 550,
+                "y": 340
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 550,
+                "y": 225
+              },
+              {
+                "x": 550,
+                "y": 780
+              },
+              {
+                "x": 430,
+                "y": 780
+              },
+              {
+                "x": 430,
+                "y": 880
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "direct_speed": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 655.0,
+                "y": 300.0
+              },
+              {
+                "x": 655.0,
+                "y": 830.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "direct_active": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 775.0,
+                "y": 860.0
+              },
+              {
+                "x": 775.0,
+                "y": 900.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "wire_speed": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 465.0,
+                "y": 300.0
+              },
+              {
+                "x": 465.0,
+                "y": 520.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 585.0,
+                "y": 300.0
+              },
+              {
+                "x": 585.0,
+                "y": 820.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 4,
+            "M": [
+              {
+                "x": 400.0,
+                "y": 300.0
+              },
+              {
+                "x": 400.0,
+                "y": 860.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "demand_route": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 450,
+            "x2": 510,
+            "y1": 200,
+            "y2": 250
+          }
+        }
+      }
+    }
+  },
+  "Dyad": {
+    "icons": {
+      "default": "dyad://MultibodyComponents/CascadeServoController.svg"
+    },
+    "labels": [
+      {
+        "attrs": {
+          "font-size": "24"
+        },
+        "label": "$(instance)",
+        "layer": "diagram",
+        "x": 500,
+        "y": 20
+      }
+    ]
+  }
+}
+end
+
+
+component WiringDriveNode
+  bus = VehicleSystemsComponents.Vehicle.Planar.CanNet() {^bus}
+  spline = Spline() {^spline}
+  support = Spline() {^support}
+  structural parameter ideal::Boolean = false
+  parameter ratio::Real = 8.193
+  parameter P_aux::Power = 300
+  "Receiver conditioning keeps the inverter request continuous above base speed"
+  parameter T_receive::Time = 0.01
+  drive = VehicleSystemsComponents.Vehicle.Electric.ElectricDrive(ratio = ratio, P_aux = P_aux) {^drive}
+  response = BlockComponents.Continuous.FirstOrder(T = T_receive) if !ideal {^response}
+  motor_request_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(slot = 6, id = 272) {^motor_request_rx}
+  structural parameter networked::Boolean = false
+  variable selected::Real
+  torque = RealInput() {^torque}
+relations
+  connect(bus, motor_request_rx.bus) {^drive_wire_1}
+  if ideal
+    drive.tau_ref = selected
+  else
+    response.u = selected
+    drive.tau_ref = response.y
+    initial response.x = 0
+  end
+  connect(drive.spline, spline) {^drive_wire_2}
+  connect(drive.support, support) {^drive_wire_3}
+  if networked
+    selected = motor_request_rx.y
+    torque = 0
+  else
+    selected = torque
+  end
+metadata {
+  "_links": {
+    "bus": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 30,
+            "x2": 60,
+            "y1": 385,
+            "y2": 415
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 470,
+            "y2": 530
+          }
+        }
+      }
+    },
+    "spline": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 930,
+            "x2": 960,
+            "y1": 435,
+            "y2": 465
+          },
+          "icon": {
+            "x1": 985,
+            "x2": 1015,
+            "y1": 470,
+            "y2": 530
+          }
+        }
+      }
+    },
+    "support": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 850,
+            "x2": 880,
+            "y1": 850,
+            "y2": 880
+          },
+          "icon": {
+            "x1": 820,
+            "x2": 880,
+            "y1": 985,
+            "y2": 1015
+          }
+        }
+      }
+    },
+    "torque": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 5,
+            "x2": 35,
+            "y1": 635,
+            "y2": 665
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 635,
+            "y2": 665
+          }
+        }
+      }
+    },
+    "drive": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 600,
+            "x2": 720,
+            "y1": 350,
+            "y2": 550
+          }
+        }
+      }
+    },
+    "response": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 350,
+            "x2": 450,
+            "y1": 350,
+            "y2": 450
+          }
+        }
+      }
+    },
+    "motor_request_rx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 130,
+            "x2": 250,
+            "y1": 350,
+            "y2": 450
+          }
+        }
+      }
+    },
+    "drive_wire_1": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 117.5,
+                "y": 400.0
+              },
+              {
+                "x": 117.5,
+                "y": 350.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "drive_wire_2": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 832.5,
+                "y": 450.0
+              },
+              {
+                "x": 832.5,
+                "y": 450.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "drive_wire_3": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 762.5,
+                "y": 550.0
+              },
+              {
+                "x": 762.5,
+                "y": 865.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    }
+  },
+  "Dyad": {
+    "icons": {
+      "default": "dyad://VehicleSystemsComponents/Vehicle/Planar/PlanarCar.svg"
+    }
+  }
+}
+end
+
+
+component ManualBlendNode
+  bus = VehicleSystemsComponents.Vehicle.Planar.CanNet() {^bus}
+  structural parameter ideal::Boolean = false
+  structural parameter friction_period::Real = 0.02
+  structural parameter torque_period::Real = 0.02
+  parameter ratio::Real = 8.193
+  parameter radius::Length = 0.31
+  parameter tau_max::Torque = 320
+  parameter P_charge::Power = 80.5e3
+  parameter v_fade::Real = 10
+  blend = VehicleSystemsComponents.Vehicle.Electric.RegenBlend(abs_rule = true, ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade) {^blend}
+  kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
+  friction_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(slot = 4, id = 256, ideal = ideal, period = friction_period, scale = 0.1, raw_min = 0, raw_max = 65535) {^friction_tx}
+  torque_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(slot = 6, id = 272, ideal = ideal, period = torque_period, scale = 0.1, raw_min = -32768, raw_max = 32767) {^torque_tx}
+  tau_ref = RealInput() {^tau_ref}
+  vehicle_speed_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(slot = 1, id = 128) {^vehicle_speed_rx}
+  front_abs_active_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(slot = 5, id = 112) {^front_abs_active_rx}
+relations
+  connect(bus, vehicle_speed_rx.bus, front_abs_active_rx.bus) {^network}
+  connect(tau_ref, blend.tau_ref) {^request}
+  connect(vehicle_speed_rx.y, kmh.u) {^speed}
+  connect(kmh.y, blend.v) {^kmh_speed}
+  connect(front_abs_active_rx.y, blend.abs_active) {^abs_state}
+  connect(blend.tau_brake, friction_tx.u) {^friction}
+  connect(blend.tau_motor, torque_tx.u) {^torque}
+  connect(bus, friction_tx.bus) {^friction_bus}
+  connect(bus, torque_tx.bus) {^torque_bus}
+metadata {
+  "_links": {
+    "bus": {
+      "Dyad": {
+        "placement": {
+          "icon": {
+            "x1": 470,
+            "x2": 530,
+            "y1": 970,
+            "y2": 1000
+          },
+          "diagram": {
+            "x1": 485,
+            "x2": 515,
+            "y1": 915,
+            "y2": 945
+          }
+        }
+      }
+    },
+    "kmh": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 340,
+            "x2": 420,
+            "y1": 400,
+            "y2": 480
+          }
+        }
+      }
+    },
+    "tau_ref": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 5,
+            "x2": 35,
+            "y1": 635,
+            "y2": 665
+          },
+          "icon": {
+            "x1": 5,
+            "x2": 35,
+            "y1": 635,
+            "y2": 665
+          }
+        }
+      }
+    },
+    "friction_tx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 790,
+            "x2": 910,
+            "y1": 300,
+            "y2": 400
+          }
+        }
+      }
+    },
+    "vehicle_speed_rx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 160,
+            "x2": 280,
+            "y1": 400,
+            "y2": 480
+          }
+        }
+      }
+    },
+    "torque_tx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 790,
+            "x2": 910,
+            "y1": 560,
+            "y2": 660
+          }
+        }
+      }
+    },
+    "blend": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 480,
+            "x2": 640,
+            "y1": 220,
+            "y2": 700
+          }
+        }
+      }
+    },
+    "front_abs_active_rx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 160,
+            "x2": 280,
+            "y1": 650,
+            "y2": 730
+          }
+        }
+      }
+    },
+    "kmh_speed": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 452.0,
+                "y": 440.0
+              },
+              {
+                "x": 452.0,
+                "y": 556.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "request": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 250.0,
+                "y": 650.0
+              },
+              {
+                "x": 250.0,
+                "y": 364.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "speed": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 308.0,
+                "y": 440.0
+              },
+              {
+                "x": 308.0,
+                "y": 440.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "friction": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 715.0,
+                "y": 556.0
+              },
+              {
+                "x": 715.0,
+                "y": 350.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "friction_bus": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 675.0,
+                "y": 930.0
+              },
+              {
+                "x": 675.0,
+                "y": 300.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "abs_state": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 404.0,
+                "y": 690.0
+              },
+              {
+                "x": 404.0,
+                "y": 700.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "torque_bus": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 675.0,
+                "y": 930.0
+              },
+              {
+                "x": 675.0,
+                "y": 560.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "torque": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 715.0,
+                "y": 364.0
+              },
+              {
+                "x": 715.0,
+                "y": 610.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "network": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 360.0,
+                "y": 930.0
+              },
+              {
+                "x": 360.0,
+                "y": 400.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 360.0,
+                "y": 930.0
+              },
+              {
+                "x": 360.0,
+                "y": 650.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    }
+  },
+  "Dyad": {
+    "icons": {
+      "default": "dyad://MultibodyComponents/CascadeServoController.svg"
+    },
+    "labels": [
+      {
+        "attrs": {
+          "font-size": "24"
+        },
+        "label": "$(instance)",
+        "layer": "diagram",
+        "x": 500,
+        "y": 20
+      }
+    ]
+  }
+}
+end
