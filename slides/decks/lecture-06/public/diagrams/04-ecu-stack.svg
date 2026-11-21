@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 480" width="880" height="480">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .ecu { fill: #f6f8fa; stroke: #9aa7b4; stroke-width: 1.5; stroke-dasharray: 6 4; }
+    .mcu { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .ctl { fill: #d6e4f5; stroke: #16202c; stroke-width: 2; }
+    .trx { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .canh { stroke: #1f5fa8; stroke-width: 3.5; fill: none; }
+    .canl { stroke: #d55e00; stroke-width: 3.5; fill: none; }
+    .wire { stroke: #16202c; stroke-width: 2; fill: none; }
+    .dot { fill: #16202c; }
+    .t { font-size: 19px; font-weight: 600; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+    .tag { font-size: 15px; font-weight: 600; fill: #1f5fa8; }
+    .v { font-size: 17px; font-weight: 600; }
+    .h { fill: #1f5fa8; }
+    .l { fill: #d55e00; }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/>
+    </marker>
+  </defs>
+
+  <!-- one ECU -->
+  <rect class="ecu" x="20" y="14" width="590" height="356" rx="8"/>
+  <text x="40" y="40" class="t">one ECU</text>
+
+  <rect class="mcu" x="50" y="54" width="360" height="70" rx="6"/>
+  <text x="230" y="84" text-anchor="middle" class="t">microcontroller</text>
+  <text x="230" y="107" text-anchor="middle" class="lbl">runs the software; packs signals into messages</text>
+  <text x="430" y="95" class="tag">OSI layer 7</text>
+
+  <path class="wire" d="M200 126 V168" marker-start="url(#a)" marker-end="url(#a)"/>
+  <text x="215" y="152" class="lbl">messages: identifier + data bytes</text>
+
+  <rect class="ctl" x="50" y="170" width="360" height="70" rx="6"/>
+  <text x="230" y="200" text-anchor="middle" class="t">CAN controller</text>
+  <text x="230" y="223" text-anchor="middle" class="lbl">frames, arbitration, CRC, ACK, error counters</text>
+  <text x="430" y="211" class="tag">OSI layer 2</text>
+
+  <path class="wire" d="M160 242 V284" marker-end="url(#a)"/>
+  <text x="150" y="268" text-anchor="end" class="lbl">TXD: bits to send</text>
+  <path class="wire" d="M300 284 V242" marker-end="url(#a)"/>
+  <text x="315" y="268" class="lbl">RXD: what the bus carries</text>
+
+  <rect class="trx" x="50" y="286" width="360" height="70" rx="6"/>
+  <text x="230" y="316" text-anchor="middle" class="t">CAN transceiver</text>
+  <text x="230" y="339" text-anchor="middle" class="lbl">bits ↔ voltages on CAN_H and CAN_L</text>
+  <text x="430" y="327" class="tag">OSI layer 1</text>
+
+  <!-- the bus -->
+  <path class="canh" d="M20 410 H870"/>
+  <path class="canl" d="M20 450 H870"/>
+  <text x="30" y="400" class="v h">CAN_H</text>
+  <text x="30" y="474" class="v l">CAN_L</text>
+  <circle class="dot" cx="200" cy="410" r="5"/>
+  <circle class="dot" cx="260" cy="450" r="5"/>
+  <path class="canh" d="M200 356 V410"/>
+  <path class="canl" d="M260 356 V450"/>
+
+  <!-- other nodes -->
+  <rect class="box" x="640" y="290" width="100" height="60" rx="6"/>
+  <text x="690" y="326" text-anchor="middle" class="t">ECU</text>
+  <circle class="dot" cx="675" cy="410" r="5"/>
+  <circle class="dot" cx="705" cy="450" r="5"/>
+  <path class="canh" d="M675 350 V410"/>
+  <path class="canl" d="M705 350 V450"/>
+  <rect class="box" x="760" y="290" width="100" height="60" rx="6"/>
+  <text x="810" y="326" text-anchor="middle" class="t">ECU</text>
+  <circle class="dot" cx="795" cy="410" r="5"/>
+  <circle class="dot" cx="825" cy="450" r="5"/>
+  <path class="canh" d="M795 350 V410"/>
+  <path class="canl" d="M825 350 V450"/>
+  <text x="750" y="252" text-anchor="middle" class="lbl">every other node has</text>
+  <text x="750" y="272" text-anchor="middle" class="lbl">the same three parts</text>
+</svg>

@@ -23,7 +23,7 @@ routeAlias: broken-wire
 
 <img src="/diagrams/09-broken-wire.svg" class="w-full" style="max-height: 28rem" alt="Left: a CAN network. AT, engine, USM and ABS on one line; from the USM the bus runs through the BCM to the tester socket, the climate unit and the airbag. A branch from the tester's junction to the EPS, with the dashboard behind it, is cut. Right: a table, one row per ECU the tester asks, one column per sender, saying whose messages it still receives. Every row that answers marks the dashboard and the EPS NOK and the others OK; blank cells are senders that ECU does not listen to. The dashboard and EPS rows are hatched: they cannot answer. The result row: OK for all but the dashboard and the EPS."/>
 
-<div class="caption">Redrawn from the source deck, slide 34</div>
+<div class="caption">AT: automatic transmission control unit</div>
 
 <div class="grid grid-cols-2 gap-8">
 <div>
@@ -43,7 +43,9 @@ routeAlias: broken-wire
 
 <!--
 The first question: is the network healthy? The picture on the left shows a CAN network with a
-fault. One branch is cut. Behind the cut are the electric power steering, EPS, and the dashboard.
+fault. The legends name the boxes: AT is the control unit of the automatic transmission, USM the
+smart service module, the box of fuses and relays in the engine bay, and BCM the body control
+module, which runs lights, locks and wipers. One branch is cut. Behind the cut are the electric power steering, EPS, and the dashboard.
 
 The bullets say how the workshop finds it. Every ECU watches the messages it expects. When one stops
 arriving, the ECU stores a timeout fault. The tester, the workshop's diagnostic device, is plugged
@@ -70,24 +72,65 @@ routeAlias: obd-ii
 
 ## OBD-II: the socket every car has
 
-<div class="grid grid-cols-2 gap-8">
+<div class="grid grid-cols-[1.2fr_1fr] gap-8 items-center">
 <div>
 
-- A 16-pin socket under the dashboard (SAE J1962); **CAN_H on pin 6, CAN_L on pin 14**.
-- Required for emissions checks: USA from 1996, EU from 2001 (petrol) and 2004 (diesel); on CAN
-  (ISO 15765-4) in the USA since 2008.
-- The same few services in every car: live data, stored fault codes, clear codes, the VIN.
-- The tester asks on **7DFh**, to every emissions ECU; the engine ECU answers on **7E8h**.
+<img src="/diagrams/09-obd-pinout.svg" alt="The car's 16-pin OBD-II socket seen from the front, a trapezoid with pins 1 to 8 in the wider top row and 9 to 16 below. Highlighted: pins 4 and 5, ground; pin 6, CAN_H; pin 7, the K-line of older cars; pin 14, CAN_L; pin 16, battery plus 12 V. The other pins carry other buses or are maker-specific."/>
+
+<div class="caption">SAE J1962 · CAN pins per ISO 15765-4</div>
 
 </div>
 <div>
 
-### Asking for vehicle speed
+- A 16-pin socket under the dashboard; **CAN_H on pin 6, CAN_L on pin 14**, ground and battery so
+  the tester needs no other power.
+- Required for emissions checks: USA from 1996, EU from 2001 (petrol) and 2004 (diesel); on CAN
+  (ISO 15765-4) in the USA since 2008.
+- The same few services in every car: live data, stored fault codes (**DTCs**, diagnostic trouble
+  codes), clear codes, the VIN.
+
+</div>
+</div>
+
+<!--
+The second question: what do the ECUs report? Every car has a socket for this, the OBD-II socket.
+OBD stands for on-board diagnostics.
+
+The picture shows the socket as you see it when you crouch under the dashboard and look into it. It
+has 16 pins in two rows, and the standard, SAE J1962, fixes what each one does. Pins 4 and 5 are
+ground. Pin 16 is the battery, 12 volts. So a tester plugged in here gets its power from the car.
+Pin 6 is CAN high and pin 14 is CAN low: the two wires of the bus from section 04. Pin 7 is the
+K-line, a slower single-wire link that cars used before CAN. The pins without a label carry other
+buses, or the car maker may use them as it likes.
+
+The bullets on the right give the facts. The law requires this socket, so that emissions can be
+checked: in the USA since 1996, in the EU since 2001 for petrol cars and 2004 for diesel cars. Since
+2008, every new car in the USA must offer these services over CAN.
+
+Every car offers the same few services: live data, stored fault codes, clearing the codes, and the
+VIN, the vehicle identification number. A stored fault code is called a DTC, a diagnostic trouble
+code. It is the code a workshop reads out when the engine warning lamp is on.
+-->
+
+---
+routeAlias: obd-request
+---
+
+## OBD-II: asking for vehicle speed
+
+<div class="grid grid-cols-2 gap-8">
+<div>
+
+- The tester asks on **7DFh**, to every emissions ECU; the engine ECU answers on **7E8h**.
+- Each service and each value has a number, the same in every car.
 
 | | ID | Data bytes |
 |---|---|---|
 | request | 7DF | `02` `01` `0D` |
 | answer | 7E8 | `03` `41` `0D` `57` |
+
+</div>
+<div>
 
 - `02`, `03`: how many bytes follow
 - `01` show live data; `0D` vehicle speed
@@ -101,23 +144,17 @@ routeAlias: obd-ii
 answers: the identifiers 7DFh and 7E0–7EFh are reserved for these conversations</div>
 
 <!--
-The second question: what do the ECUs report? Every car has a socket for this, the OBD-II socket.
-OBD stands for on-board diagnostics.
+Now one exchange over this socket: the tester asks for the vehicle speed. All numbers are
+hexadecimal.
 
-The bullets on the left give the facts. The socket has 16 pins and sits under the dashboard. CAN
-high is on pin 6 and CAN low on pin 14. The law requires it, so that emissions can be checked: in
-the USA since 1996, in the EU since 2001 for petrol cars and 2004 for diesel cars. Every car offers
-the same few services: live data, stored fault codes, clearing the codes, and the VIN, the vehicle
-identification number.
+The tester sends a frame with identifier 7DF. All ECUs that deal with emissions listen to it. The
+data bytes are 02, 01, 0D, shown in the table on the left. 02 means two bytes follow. 01 means "show
+live data". 0D is the number for vehicle speed. These numbers are the same in every car.
 
-The table on the right shows one exchange: the tester asks for the vehicle speed. All numbers are
-hexadecimal. The tester sends a frame with identifier 7DF. All ECUs that deal with emissions listen
-to it. The data bytes are 02, 01, 0D. 02 means two bytes follow. 01 means "show live data". 0D is
-the number for vehicle speed.
-
-The engine ECU answers with identifier 7E8. The data bytes are 03, 41, 0D, 57. 03 means three bytes
-follow. 41 is the request 01 plus 40, which marks a positive answer. 0D repeats the question. And 57
-is the value. Hexadecimal 57 is 87 in decimal. The car drives at 87 kilometers per hour.
+The engine ECU answers with identifier 7E8. The data bytes are 03, 41, 0D, 57. The list on the right
+decodes them. 03 means three bytes follow. 41 is the request 01 plus 40, which marks a positive
+answer. 0D repeats the question. And 57 is the value. Hexadecimal 57 is 87 in decimal. The car
+drives at 87 kilometers per hour.
 
 The caption points out what is different here. Normal CAN traffic is announcements to the whole
 room. Diagnostics is a question and an answer. A block of identifiers is reserved for these
@@ -137,7 +174,7 @@ routeAlias: uds
 |---|---|---|
 | 10h | Diagnostic session control | switch to an extended or programming **session** (layer 5) |
 | 22h / 2Eh | Read / write data by identifier | read a value, write a setting (coding) |
-| 19h / 14h | Read / clear fault information | stored codes with their freeze-frame data |
+| 19h / 14h | Read / clear fault information | stored DTCs with their freeze-frame data |
 | 27h | Security access | unlock protected services with a seed and key |
 | 31h | Routine control | run a test: bleed the ABS, calibrate the steering angle |
 | 34h, 36h, 37h | Download | **flash new software** into the ECU |
@@ -165,7 +202,7 @@ model, the private consultation from section 02.
 
 Services 22 and 2E read and write a value by its number. Writing a setting is called coding.
 
-Services 19 and 14 read and clear the stored faults. Each fault comes with the conditions at the
+Services 19 and 14 read and clear the stored faults, the DTCs. Each fault comes with the conditions at the
 moment it occurred, called freeze-frame data.
 
 Service 27 unlocks protected functions. The ECU sends a random number, the seed. The tester must

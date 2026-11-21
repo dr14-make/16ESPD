@@ -85,11 +85,11 @@ the #262–#265 stack, not as a second car, and it is work for the Dyad agent (�
 | # | OSI layer | Classic CAN | Meeting room |
 |---|---|---|---|
 | 7 | Application | ID and signal meaning: DBC, J1939, CANopen, OBD-II/UDS | the agenda: topic 0x1A0 is vehicle speed |
-| 6 | Presentation | not defined; the DBC's factor, offset and byte order | agreed units: "87" means km/h with one decimal |
+| 6 | Presentation | not defined; the DBC's factor, offset and byte order | agreed units: "87.00" means km/h, to the hundredth (the real signal's factor is 0.01 km/h) |
 | 5 | Session | empty; UDS session control in diagnostics | empty; a private consultation with the chair |
 | 4 | Transport | empty; ISO-TP for long diagnostic messages | empty; a long report in numbered installments |
 | 3 | Network | empty: no addresses, no routing; a gateway works at layer 7 | one room; an interpreter in the doorway |
-| 2 | Data link | SOF, arbitration, stuffing, CRC, ACK, error frames, fault confinement, filtering | one clap to start, clap the topic number, never five same beats in a row, check number, any listener nods, "STOP!", strikes → whisper → leave the room, ignore topics you do not need |
+| 2 | Data link | SOF, arbitration, stuffing, CRC, ACK, error frames, fault confinement, filtering | one clap to start, clap the topic number, after five same beats, one opposite beat (so never six), check number, any listener nods, "STOP!", strikes → whisper → leave the room, ignore topics you do not need |
 | 1 | Physical | CAN_H/CAN_L, dominant/recessive, bit rate, 120 Ω | clap and silence, speaking pace; the analogy stops here |
 
 ## Reality anchors

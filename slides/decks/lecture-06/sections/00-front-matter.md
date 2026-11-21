@@ -53,7 +53,7 @@ The small line at the bottom is for browsing the slides on your own.
 | <Link to="physical-layer">04</Link> | Physical layer | CAN_H and CAN_L, termination, topology, bit timing | |
 | <Link to="frame-and-arbitration">05</Link> | Frame and arbitration | the fields, bit stuffing, who wins, acknowledgement | |
 | <Link to="signals">06</Link> | Signals | DBC files, scaling, byte order, counters and checksums | 01 put the car's signals on the bus |
-| <Link to="errors">07</Link> | Errors | error frames, error counters, bus-off | 02 a broken bus, and `check_can` |
+| <Link to="errors">07</Link> | Errors | error frames, error counters, bus-off | 02 a bus wired wrongly in the model, and `check_can` |
 | <Link to="timing">08</Link> | Timing | message periods, latency, bus load, response time | 03 period against stopping distance · 04 bus load |
 | <Link to="diagnostics">09</Link> | Diagnostics | finding a broken wire; OBD-II, UDS, ISO-TP | |
 | <Link to="wrap-up">10</Link> | Wrap-up | a real Škoda Fabia cluster on the simulated bus | |
@@ -70,7 +70,7 @@ Sections 04 and 05 show how CAN works on the wire: the electrical signal, the me
 that decides who may send.
 
 In sections 06 to 08 you build. In section 06 you put the car's signals on the bus. In section 07
-you find a mistake in a bus that is wired wrongly. In section 08 you measure the price: how the bus
+you use a check called check_can to find a wiring mistake in the bus model. In section 08 you measure the price: how the bus
 changes the ABS stopping distance, and how full the bus is.
 
 Section 09 shows how a workshop talks to the car. In the wrap-up, the simulated car drives a real

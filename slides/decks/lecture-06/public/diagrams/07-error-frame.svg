@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1078 280" width="1078" height="280">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .wave { stroke: #16202c; stroke-width: 3.5; fill: none; stroke-linejoin: round; }
+    .slot { stroke: #d0d7de; stroke-width: 1; }
+    .bgf { fill: #f2f4f6; }
+    .bge { fill: #fbe3d4; }
+    .bgd { fill: #eaf1fa; }
+    .bgr { fill: #d6e4f5; }
+    .flag { fill: #fbe3d4; stroke: #d55e00; stroke-width: 2; }
+    .flag2 { fill: #fff; stroke: #d55e00; stroke-width: 2; stroke-dasharray: 6 4; }
+    .cut { stroke: #d55e00; stroke-width: 2.5; stroke-dasharray: 5 4; }
+    .br { stroke: #4a5a6b; stroke-width: 1.5; fill: none; }
+    .t { font-size: 19px; font-weight: 600; }
+    .n { font-size: 15px; font-weight: 600; }
+    .ne { font-size: 15px; font-weight: 600; fill: #d55e00; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+    .acc { font-size: 15px; font-weight: 600; fill: #1f5fa8; }
+  </style>
+  <rect class="bgf" x="160" y="110" width="192" height="70"/>
+  <rect class="bge" x="352" y="110" width="288" height="70"/>
+  <rect class="bgd" x="640" y="110" width="264" height="70"/>
+  <rect class="bgr" x="904" y="110" width="144" height="70"/>
+  <line class="slot" x1="160" y1="110" x2="160" y2="180"/>
+  <line class="slot" x1="184" y1="110" x2="184" y2="180"/>
+  <line class="slot" x1="208" y1="110" x2="208" y2="180"/>
+  <line class="slot" x1="232" y1="110" x2="232" y2="180"/>
+  <line class="slot" x1="256" y1="110" x2="256" y2="180"/>
+  <line class="slot" x1="280" y1="110" x2="280" y2="180"/>
+  <line class="slot" x1="304" y1="110" x2="304" y2="180"/>
+  <line class="slot" x1="328" y1="110" x2="328" y2="180"/>
+  <line class="slot" x1="352" y1="110" x2="352" y2="180"/>
+  <line class="slot" x1="376" y1="110" x2="376" y2="180"/>
+  <line class="slot" x1="400" y1="110" x2="400" y2="180"/>
+  <line class="slot" x1="424" y1="110" x2="424" y2="180"/>
+  <line class="slot" x1="448" y1="110" x2="448" y2="180"/>
+  <line class="slot" x1="472" y1="110" x2="472" y2="180"/>
+  <line class="slot" x1="496" y1="110" x2="496" y2="180"/>
+  <line class="slot" x1="520" y1="110" x2="520" y2="180"/>
+  <line class="slot" x1="544" y1="110" x2="544" y2="180"/>
+  <line class="slot" x1="568" y1="110" x2="568" y2="180"/>
+  <line class="slot" x1="592" y1="110" x2="592" y2="180"/>
+  <line class="slot" x1="616" y1="110" x2="616" y2="180"/>
+  <line class="slot" x1="640" y1="110" x2="640" y2="180"/>
+  <line class="slot" x1="664" y1="110" x2="664" y2="180"/>
+  <line class="slot" x1="688" y1="110" x2="688" y2="180"/>
+  <line class="slot" x1="712" y1="110" x2="712" y2="180"/>
+  <line class="slot" x1="736" y1="110" x2="736" y2="180"/>
+  <line class="slot" x1="760" y1="110" x2="760" y2="180"/>
+  <line class="slot" x1="784" y1="110" x2="784" y2="180"/>
+  <line class="slot" x1="808" y1="110" x2="808" y2="180"/>
+  <line class="slot" x1="832" y1="110" x2="832" y2="180"/>
+  <line class="slot" x1="856" y1="110" x2="856" y2="180"/>
+  <line class="slot" x1="880" y1="110" x2="880" y2="180"/>
+  <line class="slot" x1="904" y1="110" x2="904" y2="180"/>
+  <line class="slot" x1="928" y1="110" x2="928" y2="180"/>
+  <line class="slot" x1="952" y1="110" x2="952" y2="180"/>
+  <line class="slot" x1="976" y1="110" x2="976" y2="180"/>
+  <line class="slot" x1="1000" y1="110" x2="1000" y2="180"/>
+  <line class="slot" x1="1024" y1="110" x2="1024" y2="180"/>
+  <line class="slot" x1="1048" y1="110" x2="1048" y2="180"/>
+  <rect class="flag" x="352" y="22" width="144" height="30" rx="3"/>
+  <text x="424" y="43" text-anchor="middle" class="n">first node: 6 D</text>
+  <text x="344" y="43" text-anchor="end" class="ne">error detected</text>
+  <rect class="flag2" x="496" y="62" width="144" height="30" rx="3"/>
+  <text x="568" y="83" text-anchor="middle" class="n">others: up to 6 D</text>
+  <text x="648" y="83" class="lbl">they see six equal bits: a stuff error</text>
+  <line class="cut" x1="352" y1="18" x2="352" y2="186"/>
+  <text x="20" y="152" class="t">bus</text>
+  <path class="wave" d="M160 126 H184 V166 H208 V126 H232 H256 V166 H280 V126 H304 V166 H328 H352 H376 H400 H424 H448 H472 H496 H520 H544 H568 H592 H616 H640 V126 H664 H688 H712 H736 H760 H784 H808 H832 H856 H880 H904 V166 H928 H952 V126 H976 H1000 V166 H1024 V126 H1048"/>
+  <text x="256" y="204" text-anchor="middle" class="n">frame, cut off</text>
+  <text x="256" y="224" text-anchor="middle" class="lbl"></text>
+  <text x="496" y="204" text-anchor="middle" class="n">error flags</text>
+  <text x="496" y="224" text-anchor="middle" class="lbl">6 to 12 dominant</text>
+  <text x="736" y="204" text-anchor="middle" class="n">error delimiter</text>
+  <text x="736" y="224" text-anchor="middle" class="lbl">8 recessive</text>
+  <text x="868" y="204" text-anchor="middle" class="n">intermission</text>
+  <text x="868" y="224" text-anchor="middle" class="lbl">3 recessive</text>
+  <text x="976" y="204" text-anchor="middle" class="n">sent again</text>
+  <text x="976" y="224" text-anchor="middle" class="lbl">start of frame …</text>
+  <path class="br" d="M352 238 V246 H904 V238"/>
+  <text x="628" y="268" text-anchor="middle" class="acc">error frame and intermission: 17 to 23 bit times</text>
+</svg>

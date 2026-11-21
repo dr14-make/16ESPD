@@ -16,6 +16,39 @@ And what does a delay do to a controller like the ABS?
 -->
 
 ---
+routeAlias: what-a-receiver-sees
+layout: default
+class: big-figure
+---
+
+## What a receiver sees
+
+<img src="/figures/08-sample-hold.svg" alt="Vehicle speed during a braking as a smooth falling curve, and below or over it what a receiver holds when the speed is sent every 10, 20 and 40 ms: three staircases that follow the curve, each one late by up to its period, with longer and coarser steps the longer the period."/>
+
+<div class="caption">Vehicle speed during a braking, and what a receiver holds when it is sent every 10, 20
+and 40 ms</div>
+
+> Over the bus a signal arrives **late**, **in steps**, and only **once per period**. The longer the
+> period, the worse all three.
+
+<!--
+Before any formula, one picture of what this section is about. The smooth curve is the vehicle
+speed while the car brakes. That is what the brake ECU measures.
+
+The staircases are what a receiver, for example the dashboard or the engine ECU, holds. The brake ECU
+sends the speed once per period. Between two frames the receiver has nothing new, so it holds the
+last value. That makes the steps.
+
+There are three staircases, for periods of 10, 20 and 40 milliseconds. Compare them with the curve.
+Each one is late: a step starts only when a new frame comes in. Each one moves in steps, not
+smoothly. And each one changes only once per period. The longer the period, the later and the
+coarser the staircase.
+
+That is the box: late, in steps, once per period. The rest of this section puts numbers on the
+delay, and then asks what it costs a controller.
+-->
+
+---
 routeAlias: where-delay-comes-from
 ---
 
@@ -92,7 +125,7 @@ for new messages.
 | Frame | ID | *T* | *C* | *C/T* |
 |---|---|---:|---:|---:|
 | ABS active | 070h | 10 ms | 0.27 ms | 2.7 % |
-| vehicle speed | 080h | 10 ms | 0.27 ms | 2.7 % |
+| vehicle speed | 1A0h | 10 ms | 0.27 ms | 2.7 % |
 | dashboard | 300h | 100 ms | 0.27 ms | 0.27 % |
 | **bus load** | | | | **5.67 %** |
 
@@ -130,12 +163,13 @@ routeAlias: response-time
 
 $$R_i = C_i + w_i$$
 
-$$w_i = B_i + \sum_{j \in hp(i)} \left\lceil \frac{w_i + \tau}{T_j} \right\rceil C_j$$
+$$w_i = B_i + \sum_{j \in hp(i)} \left\lceil \frac{w_i + t_\text{bit}}{T_j} \right\rceil C_j$$
 
 - *B*<sub>i</sub>: the longest **lower**-priority frame, which may just have started
 - *hp(i)*: the frames with a **lower identifier**
-- *τ*: one bit time
-- Iterate from *w* = *B*; if *R* > *T*, the frame can miss its own period
+- *t*<sub>bit</sub>: one bit time
+- Iterate from *w* = *B*; if *R* > *T*, the frame can miss its own period, and this formula no
+  longer holds
 
 </div>
 <div>
@@ -145,16 +179,17 @@ $$w_i = B_i + \sum_{j \in hp(i)} \left\lceil \frac{w_i + \tau}{T_j} \right\rceil
 | Frame | *B* | *w* | *R* |
 |---|---:|---:|---:|
 | 070h ABS active | 0.27 | 0.27 | **0.54 ms** |
-| 080h vehicle speed | 0.27 | 0.54 | **0.81 ms** |
+| 1A0h vehicle speed | 0.27 | 0.54 | **0.81 ms** |
 | 300h dashboard | 0 | 0.54 | **0.81 ms** |
 
-Even the lowest priority is delivered in under a millisecond, a tenth of its period.
+Even the lowest priority is delivered in under a millisecond, far inside every period.
 
 </div>
 </div>
 
-<div class="caption text-left">Tindell, Burns and Wellings (1995), corrected by Davis, Burns, Bril
-and Lukkien (2007) · <code>can_schedule(model)</code> computes this for the model's bus</div>
+<div class="caption text-left">Tindell, Burns and Wellings (1995) · valid while <i>R</i> ≤ <i>T</i>; Davis,
+Burns, Bril and Lukkien (2007) give the general form · <code>can_schedule(model)</code> computes this
+simple form for the model's bus</div>
 
 <!--
 A brake engineer does not ask about the average. The question is: how long can my frame take in the
@@ -167,7 +202,7 @@ The second formula gives the waiting time. It has two parts. The first part is B
 A frame of lower priority may have started just before ours, and a frame in progress is never
 interrupted. So we wait for the longest such frame. The second part is the sum. Every frame with a
 lower identifier has a higher priority and goes before us, once for each time it is sent while we
-wait. The small tau is one bit time. Because w is on both sides, you calculate in rounds: start with
+wait. The small t with "bit" is one bit time. Because w is on both sides, you calculate in rounds: start with
 w equal to B, and repeat until w stops changing.
 
 The table on the right does this for the three frames from the last slide. All times are in
@@ -176,9 +211,88 @@ milliseconds. The ABS frame has the highest priority. Only one lower frame can b
 the ABS frame once. It waits 0.54, and R is 0.81. The dashboard frame has no frame below it, so B is
 zero. It can lose to both others. It waits 0.54, and R is 0.81.
 
-So even the frame with the lowest priority arrives in under a millisecond.
+So even the frame with the lowest priority arrives in under a millisecond, far inside its period of
+100 milliseconds, and the others far inside their 10.
 
-You do not calculate this by hand. The function can_schedule does it for your model.
+One warning about the formula, in the caption. It is the original analysis from 1995. It looks only
+at the first frame after the worst moment. That is safe as long as every frame is finished before its
+next copy is queued, so as long as R stays below T. In 2007 Davis and colleagues showed that it can
+be too optimistic when a frame is still waiting when its next copy arrives, and gave a longer,
+general form. Our frames finish in under a millisecond with periods of 10 milliseconds or more, so
+the simple form is fine.
+
+You do not calculate this by hand. The function can_schedule does it for your model. It uses
+exactly this simple form. If a frame's response time would exceed its period, it does not try the
+general form; it reports infinity, so you know that frame can miss its period.
+-->
+
+---
+routeAlias: worst-case-drawn
+layout: default
+class: big-figure
+---
+
+## The worst case, drawn
+
+<img src="/figures/08-worst-case.svg" alt="Timeline at 500 kbit/s of the worst case for each of the three frames 070h, 1A0h and 300h, with a lower-priority blocker frame already on the wire. Bars show when each frame waits and when it is on the wire; brackets mark the blocking time B, the waiting time w and the response time R: 0.54 ms for 070h, 0.81 ms for 1A0h and 0.81 ms for 300h."/>
+
+<div class="caption">The three frames of the table at 500 kbit/s · B blocking, w waiting, R response time
+· R = 0.54 ms (070h), 0.81 ms (1A0h), 0.81 ms (300h)</div>
+
+> A frame waits for **one** lower frame already on the wire, then for **every** higher frame queued
+> with it.
+
+<!--
+This is the table from the last slide as a timeline. Time runs to the right. Each bar is a frame on
+the wire, and the brackets mark the three quantities: B, the blocking; w, the whole waiting time; and
+R, the response time.
+
+Start with the ABS frame, 070. At the worst moment, a frame of lower priority has just started.
+Nobody can interrupt it, so 070 waits for it: that is B. Then 070 wins the next arbitration and goes
+onto the wire. Its response time is 0.54 milliseconds.
+
+The vehicle speed frame, 1A0, is queued at the same worst moment. It waits for the same blocker, then
+loses the arbitration to 070, then goes. Its response time is 0.81 milliseconds.
+
+The dashboard frame, 300, has no frame below it, so nothing blocks it. But it loses to both 070 and
+1A0. It also ends at 0.81 milliseconds.
+
+The box sums up the rule that the formula writes in symbols: wait for one lower frame that is already
+on the wire, then for every higher frame queued with you. In the room: you wait for the current
+speaker to finish, and then for everybody who outranks you.
+-->
+
+---
+routeAlias: load-vs-bitrate
+layout: default
+class: big-figure
+---
+
+## Bus load and bit rate
+
+<img src="/figures/08-load-vs-bitrate.svg" alt="Bus load and worst-case response time of the three frames 070h, 1A0h and 300h plotted against the bit rate, 125, 250, 500 and 1000 kbit/s. Both fall as the bit rate rises: every frame takes half as long when the bit rate doubles."/>
+
+<div class="caption">The same three frames at 125, 250, 500 and 1000 kbit/s, computed with the
+<code>can_schedule</code> formula</div>
+
+> Halve the bit rate and every frame takes twice as long: the load **and** the response times double.
+> A slower bus allows a longer cable, and it fills up sooner.
+
+<!--
+How does all this depend on the bit rate? This plot takes the same three frames and computes them
+at four bit rates: 125, 250, 500 and 1000 kilobits per second. It uses the same formulas as
+can_schedule.
+
+Read it from right to left. At each step down, the bit rate halves. Every bit then takes twice as
+long, so every frame takes twice as long on the wire. The bus load is frame time divided by period,
+so it doubles too. And the worst-case response time is made of frame times, so it doubles as well.
+
+Why would anyone pick a slow bus, then? Section 04 gave the main reason: a slower bus allows a
+longer cable. Comfort buses for doors and seats often run at 125 kilobits per second or less. The price is that the bus fills up sooner, and the reserve for retransmissions
+and new messages shrinks.
+
+For our three frames every bit rate is fine. For a real bus with dozens of frames, this is the
+first number a network designer checks.
 -->
 
 ---
@@ -198,10 +312,12 @@ routeAlias: delay-in-a-loop
 A pure delay *τ* does not change a signal's size, only **when** it arrives. At frequency *f* it costs
 $\varphi = 360° \cdot f \cdot \tau$ of phase.
 
-- A feedback loop has a **phase margin**; every degree of delay is taken from it.
-- Fast loops suffer most: a **wheel locks in tens of milliseconds**, so the ABS reacts at several
-  hertz.
-- Slow loops barely notice: the dashboard, the climate control, the cruise control.
+- **Phase margin** (Lecture 1): the extra lag a loop can take before it starts to oscillate. Every
+  degree of delay comes out of it.
+- Fast loops suffer most: the ABS of Lecture 3 decides every **5 ms** and cycles the brake several
+  times per second. Slow loops, such as the dashboard, barely notice.
+- The delay is not the period: in the model a message arrives **1 to 2 periods** late, **1.5 on
+  average**. A 20 ms period costs ≈ 30 ms: **108°** at 10 Hz, not 72°.
 
 > This is why the wheel-speed sensors are wired straight into the ABS ECU, and the dashboard gets its
 > speed from the bus.
@@ -216,18 +332,29 @@ act, measure again. That is a control loop.
 The text on the right starts with the basic fact. A pure delay does not change the size of a signal.
 It changes only when the signal arrives. For a signal that swings back and forth, we express the
 delay as a part of one full swing. One full swing is 360 degrees. This is called phase lag. The
-formula says: phase lag is 360 degrees times the frequency times the delay.
+formula says: phase lag is 360 degrees times the frequency times the delay, tau. Here tau is a
+delay, not the bit time of the last slides.
 
 The plot on the left draws this: phase lag against frequency, one line per delay. Read the right
 edge, at 10 hertz, ten swings per second. A delay of 5 milliseconds costs 18 degrees. 10
 milliseconds cost 36. 20 milliseconds cost 72. And 40 milliseconds cost 144 degrees, four tenths of
 a full swing. With that much lag, a controller still pushes when it should already let go.
 
-The bullets draw the conclusion. Every control loop tolerates only a limited phase lag before it
-starts to swing by itself. That reserve is the phase margin, and every degree of delay comes out of
-it. Fast loops suffer most. A wheel locks within tens of milliseconds, so the ABS must react at
-several hertz. Slow loops hardly notice a delay: the dashboard, the climate control, the cruise
-control.
+The first bullet recalls a word from Lecture 1. Every control loop tolerates only a limited extra
+phase lag before it starts to swing by itself. That reserve is the phase margin, and every degree of
+delay comes out of it.
+
+The second bullet: fast loops suffer most. Remember the ABS controller from Lecture 3. It makes a
+decision every 5 milliseconds, and it releases and reapplies the brake several times per second
+while the wheel is close to locking. A delay of tens of milliseconds is a large part of one such cycle.
+Slow loops hardly notice a delay: the dashboard, the climate control, the cruise control.
+
+The third bullet is a trap to avoid. The delay is not the same as the message period. A value can
+change just after a frame left, so it waits almost a whole period for the next one, and then the
+receiver picks it up one period later. In our model a message arrives between one and two periods
+late, one and a half periods on average. So a message sent every 20 milliseconds is about 30
+milliseconds late on average. At 10 hertz that costs 108 degrees, not the 72 you would read for 20
+milliseconds in the plot.
 
 The box gives a design rule that you can now explain. The wheel-speed sensors are wired directly
 into the ABS ECU, with no bus in between. The dashboard gets its speed from the bus.

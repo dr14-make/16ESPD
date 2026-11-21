@@ -24,22 +24,26 @@ routeAlias: three-ways-to-share
 | Sharing by | Each sender gets | Example | In a car |
 |---|---|---|---|
 | **Frequency** | its own frequency band | FM radio | the radio, not the ECU network |
-| **Code** | its own spreading code | GPS, 3G phones | navigation |
+| **Code** | its own spreading code, a fast pattern of + and − | GPS, 3G phones | navigation |
 | **Time** | the whole medium, one at a time | CAN, LIN, FlexRay, Ethernet | **every ECU network** |
 
 CAN shares by time **with no master**: whoever wants to talk waits for the bus to be quiet and
 starts; if two start together, a rule settles who goes on without losing the message
 (section 05).
 
-<div class="caption text-left">The network name: carrier sense, multiple access, collision
-resolution (CSMA/CR) — listen first, anyone may talk, clashes are resolved, not destroyed</div>
+<div class="caption text-left">ECU: electronic control unit, a small computer running one car
+function · CSMA/CR: carrier sense, multiple access, collision resolution — listen first, anyone may
+talk, clashes are resolved, not destroyed</div>
 
 <!--
 The table shows three ways to share one medium.
 
+First, one word from the last column. An ECU, an electronic control unit, is a small computer
+that runs one function of the car. The caption repeats it.
+
 First row, by frequency. Every sender gets its own frequency band, the way each FM radio station has
 its own place on the dial. Second row, by code. All senders send at once, and each marks its signal
-with its own code. GPS satellites do this. Third row, by time. One sender at a time gets the whole
+with its own code, a fast pattern of plus and minus. GPS satellites do this. Third row, by time. One sender at a time gets the whole
 medium. Look at the last column: every network between the ECUs of a car shares by time.
 
 Sharing by time raises one question: who decides whose turn it is? In some networks one device, the
@@ -47,7 +51,7 @@ master, hands out the turns. CAN has no master. An ECU that wants to send waits 
 quiet, and then starts. If two start at the same moment, a rule decides which one goes on, and its
 message is not damaged. Section 05 shows that rule on the wire.
 
-The caption gives the engineering name: carrier sense, multiple access, collision resolution. In
+The caption also gives the engineering name: carrier sense, multiple access, collision resolution. In
 plain words: listen first, anyone may send, and a clash is resolved without losing the message.
 
 On the next three slides, each kind of sharing runs as a small model.
@@ -61,10 +65,15 @@ class: big-figure
 
 ## Frequency: each sender its own band
 
-<img src="/figures/01-fdm.svg" alt="Frequency-division bench. Top: the shared wire over 100 ms, the sum of a 100 Hz and a 300 Hz carrier whose amplitudes follow two slow signals. Middle: the wire's spectrum, two narrow lines at 100 Hz and 300 Hz. Bottom: vehicle speed and engine speed as sent, dashed, and as recovered by multiplying with each carrier and low-pass filtering, solid, about 22 ms late."/>
+<img src="/figures/01-fdm.svg" style="max-height: 30rem" alt="Frequency-division bench. Top: the shared wire over 100 ms, the sum of a 100 Hz and a 300 Hz carrier whose amplitudes follow two slow signals. Middle: the wire's spectrum, two narrow lines at 100 Hz and 300 Hz. Bottom: vehicle speed and engine speed as sent, dashed, and as recovered by multiplying with each carrier and low-pass filtering, solid, about 22 ms late."/>
 
 <div class="caption"><code>dyad/Lecture6/FrequencyDivisionBench</code> · carriers 100 and 300 Hz · receiver: multiply by its
 own carrier, 10 Hz low-pass filter</div>
+
+Each signal rides on a **carrier**, a steady fast wave. The **spectrum** (middle) sorts the wire by
+frequency. A **low-pass filter** keeps only the slow part.
+
+> Every signal needs its own carrier and its own filter, and the filter makes it late.
 
 <!--
 This is sharing by frequency. Two slow signals stand for vehicle speed and engine speed. Each one
@@ -81,8 +90,9 @@ everything fast. That smoothing is called a low-pass filter. The bottom plot sho
 sent, dashed, and as recovered, solid. They match, but the recovered ones are about 22 milliseconds
 late. The filter causes that delay.
 
-Radio stations share the air this way. Car networks do not, because every signal would need its own
-wave generator and its own filter.
+The box gives the lesson. Every signal needs its own carrier and its own filter, and the filter
+makes it late. Radio stations share the air this way. Car networks do not, because every signal
+would need its own wave generator and its own filter.
 -->
 
 ---
@@ -93,10 +103,13 @@ class: big-figure
 
 ## Time: each sender its own slot
 
-<img src="/figures/01-tdm.svg" alt="Time-division bench. Top: the shared wire over one second, alternating 50 ms slots colored by sender. Middle: each receiver samples in the middle of its own slot and rebuilds its signal as a staircase that follows the original. Bottom: the same receiver with its clock 2.5 percent fast: its samples drift into the other sender's slot, and the two signals come out mixed and then swapped."/>
+<img src="/figures/01-tdm.svg" style="max-height: 31rem" alt="Time-division bench. Top: the shared wire over one second, alternating 50 ms slots colored by sender. Middle: each receiver samples in the middle of its own slot and rebuilds its signal as a staircase that follows the original. Bottom: the same receiver with its clock 2.5 percent fast: its samples drift into the other sender's slot, and the two signals come out mixed and then swapped."/>
 
-<div class="caption"><code>dyad/Lecture6/TimeDivisionBench</code> · two 50 ms slots per 100 ms frame · bottom: receiver
+<div class="caption"><code>dyad/Lecture6/TimeDivisionBench</code> · two 50 ms slots per 100 ms round · bottom: receiver
 clock 2.5 % fast</div>
+
+> Sharing by time works only while every node agrees on the clock, and each value arrives late and
+> once per round.
 
 <!--
 This is sharing by time. A switch gives the wire to each sender in turn: 50 milliseconds for vehicle
@@ -112,7 +125,8 @@ The bottom plot is a warning. It is the same receiver, but its clock runs 2.5 pe
 reading moments slide out of its own slot and into the other sender's slot. The two signals come out
 mixed, and then swapped.
 
-So sharing by time works only if everyone agrees on the time. CAN solves this: every ECU keeps
+The box sums it up. Sharing by time works only if everyone agrees on the clock, and each value
+arrives late and once per round. CAN solves the clock problem: every ECU keeps
 correcting its clock while it listens. Section 04 shows how.
 -->
 
@@ -124,10 +138,15 @@ class: big-figure
 
 ## Code: each sender its own key
 
-<img src="/figures/01-cdm.svg" alt="Code-division bench over eight bit periods. Two senders each multiply their bits by their own four-chip code; the codes are orthogonal. The summed wire takes only the values minus 2, 0 and plus 2 and looks like noise. Each receiver multiplies the wire by its own code and averages over one bit: A and B recover their bits at plus or minus one; a receiver using a third code that nobody sent reads almost zero."/>
+<img src="/figures/01-cdm.svg" style="max-height: 30rem" alt="Code-division bench over eight bit periods. Two senders each multiply their bits by their own four-chip code; the codes are orthogonal. The summed wire takes only the values minus 2, 0 and plus 2 and looks like noise. Each receiver multiplies the wire by its own code and averages over one bit: A and B recover their bits at plus or minus one; a receiver using a third code that nobody sent reads almost zero."/>
 
 <div class="caption"><code>dyad/Lecture6/CodeDivisionBench</code> · orthogonal 4-chip codes A = + − + −, B = + + − −; a
 receiver on C = + − − + reads ≈ 0</div>
+
+A **chip** is one step of a code. Two codes are **orthogonal** when, multiplied step by step and
+added up, they give zero.
+
+> Everyone sends at once, and arithmetic separates them. CAN does the opposite: one sender at a time.
 
 <!--
 This is sharing by code. First one word. A bit is the smallest piece of data: a one or a zero. Here
@@ -144,7 +163,7 @@ it looks like noise. Each receiver multiplies the wire by its own code and avera
 Its own bits come back as plus one or minus one. The other sender's part averages to zero. The last
 trace is a receiver that uses a third code, C, which nobody sent. It reads almost zero.
 
-GPS satellites share one frequency this way. CAN is the opposite. Here everyone sends at once, and
+The box gives the lesson. GPS satellites share one frequency this way. CAN is the opposite. Here everyone sends at once, and
 arithmetic separates them. On CAN only one ECU sends at a time, and rules decide which one. The next
 slide gives those rules as a picture.
 -->
@@ -165,7 +184,7 @@ routeAlias: rules-of-the-room
 
 | In the room | On CAN |
 |---|---|
-| everyone hears every word | every ECU receives every frame |
+| everyone hears every sentence | every ECU receives every **frame**: one message on the wire |
 | a speaker announces a **topic**, never a name | the **identifier** names the content, not a receiver |
 | each listener keeps what concerns them | each ECU **filters** by identifier |
 | speak only when the room is quiet | send only when the bus is idle |
@@ -181,8 +200,8 @@ routeAlias: rules-of-the-room
 This is the picture for the rest of the lecture: a meeting with strict speaking rules. The people at
 the table are the ECUs. The table on the right pairs each rule in the room with its name on CAN.
 
-Everyone hears every word. On CAN, every ECU receives every frame. A frame is one complete message
-on the bus.
+Everyone hears every sentence. On CAN, every ECU receives every frame. A frame is one message on
+the wire, the CAN word for one sentence.
 
 The second row is the most important one. Look at the speech bubble: "Vehicle speed: 87". The
 speaker names a topic, never a person. On CAN, every frame starts with a number, the identifier, ID
@@ -230,8 +249,7 @@ Whoever stayed silent and heard a clap stops.
 </div>
 </div>
 
-<div class="caption text-left">The identifiers are the source deck's worked example ·
-h: hexadecimal · 0 is called dominant, 1 recessive</div>
+<div class="caption text-left">h: hexadecimal · 0 is called dominant, 1 recessive</div>
 
 <!--
 What happens when two speakers start together? The room has a rule. Each speaker claps out their
@@ -396,14 +414,14 @@ resolution and is refreshed only as often as the message is sent.
 </div>
 </div>
 
-<div class="caption text-left">ECU: electronic control unit, a small computer running one car
-function · twisted pair: two wires twisted together, so interference hits both alike</div>
+<div class="caption text-left">Twisted pair: two wires twisted together, so interference hits both
+alike</div>
 
 <!--
 The picture on the left shows six ECUs wired point to point: every ECU has a link to every other
 one. That takes fifteen links. The table below shows how fast this grows. Five ECUs need 10 links.
-Ten need 45. Thirty need 435, and seventy need 2415. A current car has around seventy ECUs. Not
-every ECU talks to every other one, but the table shows where this kind of wiring leads. And one
+Ten need 45. Thirty need 435, and seventy need 2415. A modern car has dozens of ECUs, often 50 to
+100. Not every ECU talks to every other one, but the table shows where this kind of wiring leads. And one
 link is often several wires, each with two connector pins.
 
 The picture on the right shows the same six ECUs on one bus. The bus is a twisted pair: two wires

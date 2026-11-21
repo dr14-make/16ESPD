@@ -41,7 +41,7 @@ $$\text{value} = \text{raw} \times \text{factor} + \text{offset}$$
 
 ### Three real signals (VW PQ24 drivetrain CAN)
 
-| Signal | Frame | Bits | Factor | Offset | Range |
+| Signal | Frame | Bits | Factor | Offset | Bit range |
 |---|---|---:|---:|---:|---|
 | engine speed | 280h | 16 | 0.25 rpm | 0 | 0–16 383 rpm |
 | vehicle speed | 1A0h | 15 | 0.01 km/h | 0 | 0–327 km/h |
@@ -66,16 +66,55 @@ temperature can go below zero. And the length in bits sets how far the range rea
 The box is what you need for the build. Every signal is rounded to its factor and clamped, that is
 limited, to its range. The bus cannot carry anything finer or larger than the database planned.
 
-On the right are three real signals from the Fabia's platform. Engine speed uses 16 bits with a
-factor of 0.25 revolutions per minute. It reaches 16,383. Vehicle speed uses 15 bits with a factor
-of 0.01 kilometers per hour. It reaches 327. Coolant temperature uses only 8 bits, with a factor of
+On the right are three real signals from the Fabia's platform. The last column is the bit range:
+everything the bits can hold. Engine speed uses 16 bits with a factor of 0.25 revolutions per
+minute. Its bits reach 16,383. Vehicle speed uses 15 bits with a factor of 0.01 kilometers per hour.
+Its bits reach 327. Coolant temperature uses only 8 bits, with a factor of
 0.75 degrees and an offset of minus 48 degrees. It covers minus 48 to 143 degrees.
 
 The last line works one example backward. For 90 degrees, add 48 and divide by 0.75. The raw number
 is 184. In hexadecimal that is B8.
 
 The car maker picks these numbers for each signal: fine enough, wide enough, and as few bits as
-possible. The next slide shows where they are written down.
+possible. The next slide shows what happens when a value does not fit.
+-->
+
+---
+routeAlias: rounded-and-clamped
+layout: default
+class: big-figure
+---
+
+## Rounded and clamped
+
+<img src="/figures/06-quantization.svg" alt="A ramp signal as the sender sees it and as a receiver decodes it, sent in 8 bits. Sent with factor 1, the received value is a coarse staircase around the ramp that keeps up with it. Sent with factor 0.1, a fine staircase that nearly covers the ramp until it reaches the largest value its 8 bits can hold; from there the received value stays flat while the ramp keeps rising."/>
+
+<div class="caption">A ramp sent in 8 bits with factor 1 and with factor 0.1: true value against received
+value · the finer factor is clamped at its raw range</div>
+
+> The factor sets the **smallest step** a receiver can see; the length in bits sets the **largest
+> value**. Beyond it, the receiver reads a flat line and cannot tell.
+
+<!--
+This picture shows the two limits from the last slide at work. A value rises steadily, a ramp. It is
+sent twice, both times in 8 bits but with two different factors, and we compare what a receiver
+decodes with the true value.
+
+With a factor of 1, the received value moves in whole steps. It is a staircase. Each step is one raw
+count. With a factor of 0.1, the steps are ten times smaller, and the staircase hugs the ramp. That
+is rounding, also called quantization: the bus carries only whole raw numbers.
+
+Now look at the end of the ramp. The fine line stops rising and goes flat. With the same 8 bits, its
+ten times smaller steps reach only a tenth as far. Its raw number has reached the largest value the
+bits can hold, and the sender clamps it there. The true value keeps climbing, but the receiver sees a
+flat line. Nothing tells it that the value is cut off. The coarse line, with factor 1, still has room
+and keeps up.
+
+So the box is the rule for choosing a signal's layout. The factor sets the smallest step you can
+see. The number of bits sets the largest value. A finer factor needs more bits for the same range,
+and the frame has only 64 bits.
+
+The next slide shows where these choices are written down.
 -->
 
 ---
@@ -103,8 +142,11 @@ BO_ 416 Bremse_1: 8 Bremse
 | `SG_ Motordrehzahl` | a signal in it: engine speed |
 | `16\|16@1+` | starts at bit 16, 16 bits long, `@1` Intel byte order, `+` unsigned |
 | `(0.25,0)` | factor and offset |
-| `[0\|16256]` | the allowed physical range |
+| `[0\|16256]` | the declared valid range, inside what the 16 bits hold (0–16 383 rpm) |
 | `"U/min" Kombi` | the unit, and the ECUs that receive it: the cluster |
+
+**Multiplexed** signals: one field, the multiplexer, says which set of signals the rest of the frame
+carries this time, so one identifier can take turns.
 
 <div class="caption text-left">DBC: Vector's database format, the de facto standard for CAN signal
 definitions · lines written for this slide from the PQ24 layout, names shortened, in German as in
@@ -125,12 +167,23 @@ A line that starts with SG declares a signal in that frame. Motordrehzahl is the
 Then the layout. 16, bar, 16 means the signal starts at bit 16 and is 16 bits long. The "at 1" is
 the byte order, called Intel; the next slide explains it. The plus means the number has no sign.
 
-In parentheses are the factor and the offset: 0.25 and 0. In square brackets is the allowed range.
-Last come the unit and the receivers. Here the only receiver is Kombi, the instrument cluster.
+In parentheses are the factor and the offset: 0.25 and 0. In square brackets is the range the car
+maker declares as valid: 0 to 16,256. That is a little less than the 16 bits could hold, 16,383 from
+two slides back. Both are true. The bits set what can be sent; the DBC says which values a
+receiver should accept. Raw numbers above the valid range are left unused, or a maker uses them to
+mark a signal as invalid. The same holds for the vehicle speed: its bits reach 327, and the DBC
+declares 0 to 326. Last come the unit and the receivers. Here the only receiver is Kombi, the
+instrument cluster.
 
 The second frame, Bremse_1, comes from the brake ECU. It carries the vehicle speed, received by the
 cluster and by the engine ECU. One sender, several receivers: that is the meeting room. It also
 carries a 4-bit counter, Zaehler. We come back to it in two slides.
+
+The bold line under the table names one more trick, multiplexed signals. One field in the frame, the
+multiplexer, is a number that says which set of signals the other bytes carry this time. Value 0
+might mean one group of signals, value 1 another. So one identifier can carry more than 8 bytes of
+signals, taking turns. The DBC marks the multiplexer with a capital M and each switched signal with a
+small m and its number.
 
 Software tools read this file to translate the raw frames on a bus into values with units.
 -->
@@ -141,23 +194,21 @@ routeAlias: byte-order
 
 ## Byte order: Intel and Motorola
 
-<div class="grid grid-cols-2 gap-8">
+<div class="grid grid-cols-[1.3fr_1fr] gap-8 items-start">
 <div>
 
-Engine speed **2000 rpm** → raw 2000 / 0.25 = 8000 = **1F40h**, starting at byte 2:
+Engine speed **2000 rpm** → raw 2000 / 0.25 = 8000 = **1F40h**, in bytes 2 and 3 of frame 280h:
 
-| Byte | 0 | 1 | 2 | 3 | 4 | … |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|
-| **Intel** (little-endian) | 00 | 00 | **40** | **1F** | 00 | … |
-| **Motorola** (big-endian) | 00 | 00 | **1F** | **40** | 00 | … |
+<img src="/diagrams/06-byte-order.svg" alt="Two 8 by 8 grids, one row per data byte 0 to 7, bit 7 on the left. Left, Intel, DBC 16|16@1+: byte 2 holds 40h, the low byte, 0100 0000; byte 3 holds 1Fh, the high byte, 0001 1111; the start bit 16, byte 2 bit 0, is framed as the lowest bit. Right, Motorola, DBC 23|16@0+: byte 2 holds 1Fh, the high byte; byte 3 holds 40h, the low byte; the start bit 23, byte 2 bit 7, is framed as the highest bit."/>
 
 </div>
 <div>
 
-- **Intel**: the **low** byte first. VW's PQ24 matrix, and our model, use it.
-- **Motorola**: the **high** byte first. Other car makers' matrices use it, often in the same car on
-  another bus.
-- The DBC marks each signal: `@1` Intel, `@0` Motorola.
+- **Intel**: the **low** byte first (little-endian). VW's PQ24 matrix, and our model, use it.
+- **Motorola**: the **high** byte first (big-endian). Other car makers' matrices use it, often in the
+  same car on another bus.
+- The DBC marks each signal: `@1` Intel, `@0` Motorola. Its start bit is the lowest bit for Intel,
+  the highest for Motorola.
 
 > Decode Intel bytes as Motorola and 2000 rpm reads as 401Fh × 0.25 = **4104 rpm**.
 
@@ -170,14 +221,20 @@ shows both.
 
 Take an engine speed of 2000 revolutions per minute. Divide by the factor 0.25: the raw number is
 8000. In hexadecimal that is 1F40. So the two bytes are 1F, the high byte, and 40, the low byte. The
-signal starts at byte 2.
+signal sits in bytes 2 and 3 of frame 280.
 
-Look at the table. In the Intel row, the low byte comes first: byte 2 holds 40 and byte 3 holds 1F.
-This order is also called little-endian. The Fabia's platform uses it, and so does our model. In the
-Motorola row, the high byte comes first: 1F, then 40. This order is called big-endian. Other car
-makers use it, sometimes on another bus of the same car.
+The picture shows the frame's 8 data bytes as a grid: one row per byte, eight bits per row, bit 7 on
+the left. The blue cells are the low byte, the orange cells the high byte.
 
-The DBC file marks each signal, as you saw: at 1 for Intel, at 0 for Motorola.
+On the left, Intel. The low byte comes first: byte 2 holds 40 and byte 3 holds 1F. This order is
+also called little-endian. The Fabia's platform uses it, and so does our model.
+
+On the right, Motorola. The high byte comes first: byte 2 holds 1F, byte 3 holds 40. This order is
+called big-endian. Other car makers use it, sometimes on another bus of the same car.
+
+The DBC file marks each signal: at 1 for Intel, at 0 for Motorola. The framed cell is the signal's
+start bit, the number before the bar in the DBC. For Intel it is the lowest bit of the value, bit 16.
+For Motorola it is the highest bit, bit 23. So the same two bytes get two different start bits.
 
 The box shows what happens if you mix them up. Read the Intel bytes as if they were Motorola, and
 you get 401F in hexadecimal. Times 0.25, that is 4104 revolutions per minute instead of 2000.
@@ -212,8 +269,8 @@ The receiver checks both, and on a failure uses the last good value or a safe de
   value, or a value corrupted **inside** an ECU or a gateway.
 - A counter that stops counting: the sender's software has hung.
 - A checksum computed by the **application**: the data is what the sending software meant.
-- Today: **AUTOSAR E2E** (CRC + counter + data ID) for safety; **SecOC** adds a cryptographic code
-  against forged frames.
+- Today: **AUTOSAR E2E** (CRC + counter + data ID) for safety; **SecOC** (Secure Onboard
+  Communication, also AUTOSAR) adds a cryptographic code against forged frames.
 
 </div>
 </div>
@@ -235,8 +292,8 @@ counts, and the receiver notices. Two: the value was damaged inside an ECU or a 
 CRC was calculated. A checksum calculated by the application itself reveals that.
 
 The last bullet names today's standards. AUTOSAR E2E, end-to-end protection, puts a CRC, a counter
-and a data identifier into the data of safety-related frames. And SecOC, from section 02, adds a
-code that only ECUs with the secret key can produce. It protects against forged frames.
+and a data identifier into the data of safety-related frames. And SecOC, Secure Onboard Communication, also
+from AUTOSAR and named in section 02, adds a code that only ECUs with the secret key can produce. It protects against forged frames.
 -->
 
 ---

@@ -147,7 +147,7 @@ Elsewhere: an Ethernet frame with the receiver's hardware (MAC) address.
 
 ### In CAN — the heart of it
 
-- The **frame**: identifier, length, data, CRC, ACK
+- The **frame**: identifier, length, data, CRC (cyclic redundancy check, a check number), ACK
 - **Arbitration**: lowest identifier wins
 - **Bit stuffing**, **error frames**, error counters
 - **Filtering** by identifier, not by address
@@ -163,7 +163,7 @@ Elsewhere: an Ethernet frame with the receiver's hardware (MAC) address.
 The **speaking rules**:
 
 - one clap to start; clap the topic number to decide who speaks
-- never five equal beats in a row
+- after five equal beats, one opposite beat
 - end with a check number; any listener **nods**
 - garbled: shout **"STOP!"**; troublemakers collect **strikes**
 - ignore topics you do not need
@@ -179,13 +179,16 @@ hardware address of the receiver, called a MAC address.
 The middle column says that this layer is the heart of CAN. It holds five things, and each has a
 partner in the room on the right.
 
-First, the frame: the identifier, the length, the data, a check number called the CRC, and the ACK.
+First, the frame: the identifier, the length, the data, a check number, and the ACK. The check
+number is called the CRC, short for cyclic redundancy check. The sender computes it from the bits of
+the frame, and every receiver computes it again and compares.
 In the room: one clap to start, a check number at the end, and the nod.
 
 Second, arbitration, where the lowest identifier wins. In the room: clapping the topic number.
 
 Third, bit stuffing. It keeps long runs of equal bits off the wire. In the room: after five equal
-beats in a row, the speaker adds one opposite beat, so that everyone keeps the beat. Section 05
+beats in a row, the speaker adds one opposite beat, so that everyone keeps the beat. Five equal
+beats are allowed; six never happen. Section 05
 explains it.
 
 Fourth, error frames and error counters. In the room: "STOP!" and the strikes.
@@ -325,7 +328,7 @@ routeAlias: osi-5-session
 
 Open, keep and close a **dialogue**, which can outlive a single connection.
 
-The source deck's example, by phone: open the session *"work on subject X"*; call, hang up to
+An example, by phone: open the session *"work on subject X"*; call, hang up to
 search, call back; the session closes only when the problem is solved.
 
 </div>
@@ -393,7 +396,8 @@ Elsewhere: JPEG for pictures, UTF-8 for text, TLS encryption.
 ### In CAN — not in the standard
 
 - The **DBC file** does the job: length, **factor**, **offset**, **byte order** of each signal
-- **SecOC** adds a cryptographic code to frames that matter
+- **SecOC** (Secure Onboard Communication, from AUTOSAR) adds a cryptographic code to frames that
+  matter
 
 → section 06
 
@@ -402,7 +406,7 @@ Elsewhere: JPEG for pictures, UTF-8 for text, TLS encryption.
 
 ### In the room
 
-- The **agreed units**: "87" means km/h, with no decimals
+- The **agreed units**: "87.00" means km/h, to the hundredth
 - Everyone counts **in the same language**
 
 </div>
@@ -418,11 +422,14 @@ signal database of a bus. For each signal it lists the length in bits and three 
 factor and the offset turn the number in the frame into a physical value. The byte order says in
 which order the bytes are sent. Section 06 explains each of them.
 
-The second bullet is SecOC, Secure Onboard Communication. It adds a short code, made with a secret
+The second bullet is SecOC, Secure Onboard Communication. It is part of AUTOSAR, the software
+standard that most car makers share for their ECUs. SecOC adds a short code, made with a secret
 key, to important frames. A receiver can then tell that the frame is genuine.
 
-In the room, this layer is the agreed units. When someone says "vehicle speed: 87", everyone knows
-that it means kilometers per hour, with no decimals. And everyone counts in the same language.
+In the room, this layer is the agreed units. When someone says "vehicle speed: 87.00", everyone
+knows that it means kilometers per hour, to the hundredth. The real vehicle-speed signal works the
+same way: it counts in steps of 0.01 kilometers per hour, as section 06 shows. And everyone counts
+in the same language.
 -->
 
 ---
@@ -485,7 +492,7 @@ routeAlias: seven-layers
 | # | Layer | Its job | Classic CAN | Meeting room |
 |---|---|---|---|---|
 | 7 | Application | what the data means | signal definitions (DBC), J1939, CANopen, OBD-II, UDS | the **agenda**: topic 1A0h is vehicle speed |
-| 6 | Presentation | how values are encoded | not defined; the DBC's factor, offset and byte order | the **agreed units**: "87" is km/h |
+| 6 | Presentation | how values are encoded | not defined; the DBC's factor, offset and byte order | the **agreed units**: "87.00" is km/h |
 | 5 | Session | open and close a conversation | — (UDS sessions in diagnostics) | — (a private consultation) |
 | 4 | Transport | split long data, confirm delivery | — (ISO-TP in diagnostics) | — (a long report in installments) |
 | 3 | Network | addresses and routes | **— no addresses, no routes** | one room: no directions needed |
