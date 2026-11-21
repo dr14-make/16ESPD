@@ -23,7 +23,7 @@ description = "Run the Lecture 4 notebooks and write their figures into the theo
 run = "julia +dyad-3.5.0 --project=. scripts/export_lecture04_figures.jl"
 
 [tasks."figures:lecture-06-theory"]
-description = "Compute the Lecture 6 theory figures (bus length, frame time, phase lag) into the deck's public/figures/"
+description = "Compute the Lecture 6 theory figures (bus length, frame time, frame bits, quantization, TEC, sample-and-hold, worst case, load vs bit rate, phase lag) into the deck's public/figures/"
 run = "julia +dyad-3.5.0 --project=. scripts/export_lecture06_theory_figures.jl"
 
 [tasks."figures:lecture-03-build"]
