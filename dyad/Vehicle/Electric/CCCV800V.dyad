@@ -1,0 +1,33 @@
+"""
+800 V-class, 200 kW exercise [CCCV-BENCH] (assumed): 192 series cells,
+R0 = 0.2 ohm and R1 = 0; 250 A gives 0.2604 V/cell IR rise and a
+3.9396 V/cell OCV at the CC/CV switch (derived).
+Capacity is retained from the Leaf (assumed) to isolate series count and resistance;
+this is not a model of a particular production 800 V pack.
+"""
+component CCCV800V
+  charger = VehicleSystemsComponents.Vehicle.Electric.CCCVCharger(I_cc = 250.0, V_max = 192.0 * 4.20) {^charger}
+  battery = VehicleSystemsComponents.Vehicle.Electric.TheveninCell(Ns = 192.0, R0 = 0.2, R1 = 0.0, SoC0 = 0.1) {^battery}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  zero_power = BlockComponents.Sources.Constant(k = 0.0) {^zero_power}
+relations
+  connect(zero_power.y, charger.P_max) {^power_wire}
+  connect(charger.p, battery.p) {^positive}
+  connect(charger.n, battery.n, ground.g) {^negative}
+metadata {
+  "_links": {
+    "charger": {"Dyad": {"placement": {"diagram": {"x1": 380, "y1": 280, "x2": 180, "y2": 480}}}},
+    "battery": {"Dyad": {"placement": {"diagram": {"x1": 560, "y1": 280, "x2": 760, "y2": 480}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 430, "y1": 640, "x2": 510, "y2": 720}}}},
+    "zero_power": {"Dyad": {"placement": {"diagram": {"x1": 240, "y1": 100, "x2": 320, "y2": 180}}}},
+    "power_wire": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 280.0, "y": 268.0}, {"x": 336.0, "y": 268.0}, {"x": 336.0, "y": 140}], "E": 1}]}},
+    "positive": {"Dyad": {"edges": [{"S": 2, "M": [], "E": 1}]}},
+    "negative": {"Dyad": {"junctions": [{"x": 470, "y": 520}], "edges": [{"S": 3, "M": [], "E": -1}, {"S": -1, "M": [{"x": 168.0, "y": 520}, {"x": 168.0, "y": 380}], "E": 1}, {"S": 2, "M": [{"x": 772.0, "y": 380.0}, {"x": 772.0, "y": 520}], "E": -1}]}}
+  }
+}
+end
+
+analysis CCCV800VTransient
+  extends TransientAnalysis(stop = 8000.0, alg = ODEAlg.Rodas5P(), reltol = 1e-8, abstol = 1e-10)
+  model = VehicleSystemsComponents.Vehicle.Electric.CCCV800V()
+end

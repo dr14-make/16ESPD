@@ -1,0 +1,14 @@
+# Renewable electricity to wheel, step efficiencies printed on Agora Verkehrswende / Agora
+# Energiewende 2018 webinar slide 7 (after acatech 2017a Fig. 5), ±0.5 % rounding; printed
+# totals BEV 69 %, FCEV 26 % (hydrogen.md §5).
+chain,step,efficiency_pct
+BEV,transmission,95
+BEV,battery charge/discharge,90
+BEV,electric motor,85
+BEV,mechanical drivetrain,95
+FCEV,transmission,95
+FCEV,electrolysis,70
+FCEV,compression/transport,80
+FCEV,fuel cell,60
+FCEV,electric motor,85
+FCEV,mechanical drivetrain,95

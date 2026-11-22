@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" width="900" height="430">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .wrap { fill: url(#tk-fiber); stroke: #16202c; stroke-width: 2; fill-rule: evenodd; }
+    .liner { fill: #f5a25d; stroke: #a75d00; stroke-width: 1.5; fill-rule: evenodd; }
+    .gas { fill: #eaf1fa; }
+    .metal { fill: #dde3ea; stroke: #4a5a6b; stroke-width: 2; }
+    .lead { stroke: #4a5a6b; stroke-width: 1.5; fill: none; }
+    .t { font-size: 18px; font-weight: 600; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+    .blue { font-size: 17px; font-weight: 600; fill: #1f5fa8; }
+    .bluel { font-size: 15px; fill: #1f5fa8; }
+  </style>
+  <defs>
+    <pattern id="tk-fiber" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+      <rect width="10" height="10" fill="#2b3440"/>
+      <path d="M0 5 H10" stroke="#5d6b7a" stroke-width="2"/>
+    </pattern>
+  </defs>
+
+  <!-- section through the tank: wrap (outer ring), liner (thin ring), gas -->
+  <path class="wrap" d="M250 90 H590 A110 110 0 0 1 590 310 H250 A110 110 0 0 1 250 90 Z
+                        M250 116 H590 A84 84 0 0 1 590 284 H250 A84 84 0 0 1 250 116 Z"/>
+  <path class="liner" d="M250 116 H590 A84 84 0 0 1 590 284 H250 A84 84 0 0 1 250 116 Z
+                         M250 124 H590 A76 76 0 0 1 590 276 H250 A76 76 0 0 1 250 124 Z"/>
+  <path class="gas" d="M250 124 H590 A76 76 0 0 1 590 276 H250 A76 76 0 0 1 250 124 Z"/>
+  <text x="420" y="196" text-anchor="middle" class="blue">H₂ at 700 bar</text>
+  <text x="420" y="220" text-anchor="middle" class="bluel">≈ 40 kg/m³ at 15 °C</text>
+
+  <!-- valve on the axis, through the dome -->
+  <rect class="metal" x="660" y="186" width="60" height="28"/>
+  <rect class="metal" x="720" y="172" width="44" height="56" rx="4"/>
+  <text x="742" y="256" text-anchor="middle" class="t">valve</text>
+
+  <!-- labels -->
+  <path class="lead" d="M420 60 V100"/>
+  <text x="420" y="32" text-anchor="middle" class="t">carbon-fiber wrap</text>
+  <text x="420" y="52" text-anchor="middle" class="lbl">carries the pressure</text>
+  <path class="lead" d="M300 338 V272"/>
+  <text x="300" y="360" text-anchor="middle" class="t">plastic liner</text>
+  <text x="300" y="380" text-anchor="middle" class="lbl">keeps the gas in; insulates, so a fill</text>
+  <text x="300" y="399" text-anchor="middle" class="lbl">needs more precooling</text>
+
+  <text x="640" y="350" class="t">Mirai gen 2</text>
+  <text x="640" y="372" class="lbl">three tanks: 5.6 kg H₂</text>
+  <text x="640" y="392" class="lbl">in 142.2 L</text>
+</svg>

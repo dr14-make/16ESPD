@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .mod { fill: #fff; stroke: #4a5a6b; stroke-width: 2; }
+    .cell { fill: #cfe3d6; stroke: #2e8b57; stroke-width: 1.5; }
+    .afe { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .box-e { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .box-f { fill: #fdf3e6; stroke: #a75d00; stroke-width: 2; }
+    .daisy { stroke: #1f5fa8; stroke-width: 2.5; stroke-dasharray: 7 5; fill: none; }
+    .hv { stroke: #a75d00; stroke-width: 4; fill: none; }
+    .ctl { stroke: #16202c; stroke-width: 2; fill: none; }
+    .b { font-size: 16px; font-weight: 600; }
+    .t { font-size: 17px; font-weight: 600; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+    .sm { font-size: 13px; fill: #4a5a6b; }
+    .blue { font-size: 14px; font-weight: 600; fill: #1f5fa8; }
+  </style>
+  <defs>
+    <marker id="bm-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+    <marker id="bm-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+  </defs>
+
+  <rect class="mod" x="40" y="60" width="330" height="72" rx="6"/>
+  <rect class="cell" x="56" y="78" width="16" height="36" rx="2"/>
+  <rect class="cell" x="78" y="78" width="16" height="36" rx="2"/>
+  <rect class="cell" x="100" y="78" width="16" height="36" rx="2"/>
+  <rect class="cell" x="122" y="78" width="16" height="36" rx="2"/>
+  <rect class="cell" x="144" y="78" width="16" height="36" rx="2"/>
+  <rect class="cell" x="166" y="78" width="16" height="36" rx="2"/>
+  <rect class="cell" x="188" y="78" width="16" height="36" rx="2"/>
+  <text x="214" y="102" class="lbl">…</text>
+  <text x="56" y="128" class="sm">module 1: 14–16 cells in series</text>
+  <rect class="afe" x="254" y="72" width="104" height="48" rx="4"/>
+  <text x="306" y="94" text-anchor="middle" class="b">AFE</text>
+  <text x="306" y="112" text-anchor="middle" class="sm">V, T, balance</text>
+  <path class="daisy" d="M358 96 H400"/>
+
+  <rect class="mod" x="40" y="160" width="330" height="72" rx="6"/>
+  <rect class="cell" x="56" y="178" width="16" height="36" rx="2"/>
+  <rect class="cell" x="78" y="178" width="16" height="36" rx="2"/>
+  <rect class="cell" x="100" y="178" width="16" height="36" rx="2"/>
+  <rect class="cell" x="122" y="178" width="16" height="36" rx="2"/>
+  <rect class="cell" x="144" y="178" width="16" height="36" rx="2"/>
+  <rect class="cell" x="166" y="178" width="16" height="36" rx="2"/>
+  <rect class="cell" x="188" y="178" width="16" height="36" rx="2"/>
+  <text x="214" y="202" class="lbl">…</text>
+  <text x="56" y="228" class="sm">module 2: 14–16 cells in series</text>
+  <rect class="afe" x="254" y="172" width="104" height="48" rx="4"/>
+  <text x="306" y="194" text-anchor="middle" class="b">AFE</text>
+  <text x="306" y="212" text-anchor="middle" class="sm">V, T, balance</text>
+  <path class="daisy" d="M358 196 H400"/>
+
+  <rect class="mod" x="40" y="290" width="330" height="72" rx="6"/>
+  <rect class="cell" x="56" y="308" width="16" height="36" rx="2"/>
+  <rect class="cell" x="78" y="308" width="16" height="36" rx="2"/>
+  <rect class="cell" x="100" y="308" width="16" height="36" rx="2"/>
+  <rect class="cell" x="122" y="308" width="16" height="36" rx="2"/>
+  <rect class="cell" x="144" y="308" width="16" height="36" rx="2"/>
+  <rect class="cell" x="166" y="308" width="16" height="36" rx="2"/>
+  <rect class="cell" x="188" y="308" width="16" height="36" rx="2"/>
+  <text x="214" y="332" class="lbl">…</text>
+  <text x="56" y="358" class="sm">module n: 14–16 cells in series</text>
+  <rect class="afe" x="254" y="302" width="104" height="48" rx="4"/>
+  <text x="306" y="324" text-anchor="middle" class="b">AFE</text>
+  <text x="306" y="342" text-anchor="middle" class="sm">V, T, balance</text>
+  <path class="daisy" d="M358 326 H400"/>
+  <text x="205" y="262" text-anchor="middle" class="t">⋮</text>
+
+  <!-- isolated daisy chain to the pack controller -->
+  <path class="daisy" d="M400 96 V326 M400 210 H486"/>
+  <text x="412" y="150" class="blue">isolated</text>
+  <text x="412" y="168" class="blue">daisy chain</text>
+  <rect class="box-e" x="490" y="170" width="200" height="80" rx="6"/>
+  <text x="590" y="198" text-anchor="middle" class="b">pack controller</text>
+  <text x="590" y="218" text-anchor="middle" class="sm">SoC, limits, safety</text>
+  <text x="590" y="236" text-anchor="middle" class="sm">ASIL D, safe state ≤ 800 ms</text>
+
+  <!-- HV path: modules in series to the contactors -->
+  <path class="hv" d="M40 96 H20 V420 H486" marker-end="url(#bm-orange)"/>
+  <rect class="box-f" x="490" y="392" width="200" height="56" rx="6"/>
+  <text x="590" y="416" text-anchor="middle" class="b">contactors (BDU)</text>
+  <text x="590" y="436" text-anchor="middle" class="sm">open on OV, UV, OC, OT</text>
+  <path class="ctl" d="M590 250 V388" marker-end="url(#bm-ink)"/>
+  <path class="hv" d="M690 410 H730 V372 H776" marker-end="url(#bm-orange)"/>
+  <path class="hv" d="M730 410 V432 H776" marker-end="url(#bm-orange)"/>
+  <rect class="box" x="780" y="352" width="130" height="40" rx="6"/>
+  <text x="845" y="378" text-anchor="middle" class="b">inverter</text>
+  <rect class="box" x="780" y="414" width="130" height="40" rx="6"/>
+  <text x="845" y="440" text-anchor="middle" class="b">charger</text>
+
+  <!-- AFE parts -->
+  <text x="730" y="90" class="t">AFE examples</text>
+  <text x="730" y="114" class="lbl">TI BQ79616: up to 16 cells,</text>
+  <text x="730" y="134" class="lbl">±1.5 mV, balancing 240 mA</text>
+  <text x="730" y="162" class="lbl">NXP MC33771C: 14 cells,</text>
+  <text x="730" y="182" class="lbl">0.8 mV, balancing 300 mA</text>
+</svg>

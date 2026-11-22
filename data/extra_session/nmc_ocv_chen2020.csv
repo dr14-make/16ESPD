@@ -1,0 +1,14 @@
+# OCV of the LG M50 (NMC 811 / graphite-SiOx) at 10 % SoC steps, computed from the PyBaMM
+# Chen2020 electrode OCPs over the 2.5-4.2 V window: derived model values (teaching_materials.md §3.4).
+soc_pct,ocv_v
+0,2.500
+10,3.296
+20,3.485
+30,3.581
+40,3.667
+50,3.751
+60,3.841
+70,3.948
+80,4.042
+90,4.097
+100,4.200
