@@ -5,7 +5,7 @@ component FabiaCanVehicle
   bus = CanNet() {^bus}
 relations
   motor_speed = drive.drive.machine.w
-  connect(bus, motion.bus)
+  connect(bus, motion.bus) {^fabia_bus}
 metadata {
   "Dyad": {
     "icons": {
@@ -18,10 +18,10 @@ metadata {
         "placement": {
           "diagram": {
             "rot": 0,
-            "x1": 45,
-            "x2": 75,
-            "y1": 485,
-            "y2": 515
+            "x1": -15,
+            "x2": 15,
+            "y1": 390,
+            "y2": 420
           },
           "icon": {
             "rot": 0,
@@ -38,10 +38,10 @@ metadata {
         "placement": {
           "diagram": {
             "rot": 0,
-            "x1": 925,
-            "x2": 955,
-            "y1": 735,
-            "y2": 765
+            "x1": 985,
+            "x2": 1015,
+            "y1": 920,
+            "y2": 950
           },
           "icon": {
             "rot": 0,
@@ -58,10 +58,10 @@ metadata {
         "placement": {
           "diagram": {
             "rot": 0,
-            "x1": 925,
-            "x2": 955,
-            "y1": 235,
-            "y2": 265
+            "x1": -15,
+            "x2": 15,
+            "y1": 665,
+            "y2": 695
           },
           "icon": {
             "rot": 0,
@@ -78,10 +78,10 @@ metadata {
         "placement": {
           "diagram": {
             "rot": 0,
-            "x1": 45,
-            "x2": 75,
-            "y1": 785,
-            "y2": 815
+            "x1": -15,
+            "x2": 15,
+            "y1": 285,
+            "y2": 315
           },
           "icon": {
             "rot": 0,
@@ -98,10 +98,10 @@ metadata {
         "placement": {
           "diagram": {
             "rot": 0,
-            "x1": 45,
-            "x2": 75,
-            "y1": 185,
-            "y2": 215
+            "x1": -15,
+            "x2": 15,
+            "y1": 125,
+            "y2": 155
           },
           "icon": {
             "rot": 0,
@@ -111,6 +111,23 @@ metadata {
             "y2": 215
           }
         }
+      }
+    },
+    "fabia_bus": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": [
+              {
+                "x": 875,
+                "y": 935
+              }
+            ]
+          }
+        ],
+        "renderStyle": "standard"
       }
     }
   }

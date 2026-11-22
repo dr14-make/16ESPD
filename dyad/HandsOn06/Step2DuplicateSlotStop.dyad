@@ -6,9 +6,73 @@ relations
   connect(duplicate.bus, ecu.bus) {^duplicate_bus}
 metadata {
   "_links": {
-    "duplicate": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 50, "y2": 100}}}},
-    "duplicate_input": {"Dyad": {"edges": [{"S": 1, "E": 2, "M": [{"x": 880, "y": 400}, {"x": 880, "y": 120}, {"x": 280, "y": 120}, {"x": 280, "y": 75}]}]}},
-    "duplicate_bus": {"Dyad": {"edges": [{"S": 1, "E": 2, "M": [{"x": 350, "y": 30}, {"x": 750, "y": 30}]}]}}
+    "duplicate": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 470,
+            "x2": 530,
+            "y1": 700,
+            "y2": 760
+          }
+        }
+      }
+    },
+    "duplicate_input": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": [
+              {
+                "x": 515.0,
+                "y": 360
+              },
+              {
+                "x": 600,
+                "y": 360
+              },
+              {
+                "x": 600,
+                "y": 640
+              },
+              {
+                "x": 440,
+                "y": 640
+              },
+              {
+                "x": 440,
+                "y": 730
+              }
+            ]
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    },
+    "duplicate_bus": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": [
+              {
+                "x": 500,
+                "y": 665
+              },
+              {
+                "x": 540,
+                "y": 665
+              }
+            ]
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    }
   }
 }
 end

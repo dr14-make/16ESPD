@@ -5,7 +5,27 @@ relations
   connect(ecu.regen, drive.regen) {^bypass}
 metadata {
   "_links": {
-    "bypass": {"Dyad": {"edges": [{"S": 1, "E": 2, "M": [{"x": 880, "y": 400}, {"x": 880, "y": 320}, {"x": 580, "y": 320}, {"x": 580, "y": 240}]}]}}
+    "bypass": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": [
+              {
+                "x": 515.0,
+                "y": 320
+              },
+              {
+                "x": 424.0,
+                "y": 320
+              }
+            ]
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    }
   }
 }
 end

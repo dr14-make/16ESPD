@@ -39,15 +39,114 @@ relations
   connect(demand.y, hold.demand) {^demand_wire}
   connect(speed.y, hold.vx) {^speed_wire}
 metadata {
-  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/HysteresisLatch.svg"}},
+  "Dyad": {
+    "icons": {
+      "default": "dyad://VehicleSystemsComponents/Vehicle/Engine/HysteresisLatch.svg"
+    }
+  },
   "_links": {
-    "pulse": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 200, "y2": 280}}}},
-    "speed": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 460, "y2": 540}}}},
-    "demand": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 720, "y2": 800}}}},
-    "hold": {"Dyad": {"placement": {"diagram": {"x1": 600, "x2": 800, "y1": 400, "y2": 600}}}},
-    "active_wire": {"Dyad": {"edges": [{"S": 1, "E": 2, "M": [{"x": 400, "y": 240}, {"x": 400, "y": 450}]}]}},
-    "speed_wire": {"Dyad": {"edges": [{"S": 1, "E": 2, "M": []}]}},
-    "demand_wire": {"Dyad": {"edges": [{"S": 1, "E": 2, "M": [{"x": 400, "y": 760}, {"x": 400, "y": 550}]}]}}
+    "pulse": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 120,
+            "x2": 200,
+            "y1": 200,
+            "y2": 280,
+            "rot": 0
+          }
+        }
+      }
+    },
+    "speed": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 120,
+            "x2": 200,
+            "y1": 460,
+            "y2": 540,
+            "rot": 0
+          }
+        }
+      }
+    },
+    "demand": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 120,
+            "x2": 200,
+            "y1": 720,
+            "y2": 800,
+            "rot": 0
+          }
+        }
+      }
+    },
+    "hold": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 600,
+            "x2": 800,
+            "y1": 400,
+            "y2": 600
+          }
+        }
+      }
+    },
+    "active_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": [
+              {
+                "x": 400,
+                "y": 240
+              },
+              {
+                "x": 400,
+                "y": 450
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "speed_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": []
+          }
+        ]
+      }
+    },
+    "demand_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": [
+              {
+                "x": 400,
+                "y": 760
+              },
+              {
+                "x": 400,
+                "y": 550
+              }
+            ]
+          }
+        ]
+      }
+    }
   }
 }
 end
