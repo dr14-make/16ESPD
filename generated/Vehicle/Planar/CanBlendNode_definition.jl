@@ -22,7 +22,7 @@
 
 ## Connectors
 
- * `bus` - ([`CanBus`](@ref))
+ * `bus` - ([`CanNet`](@ref))
  * `tau_ref` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
 @component function CanBlendNode(; name = nothing, var"ideal"=false, var"friction_period"=0.02, var"torque_period"=0.02, var"ratio"=8.193, var"radius"=0.31, var"tau_max"=Float64(320), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10), __overrides = Dict{String, Any}())
@@ -95,19 +95,25 @@
   __constants = Any[]
 
   ### Components
-  push!(__systems, @named bus = VehicleSystemsComponents.Vehicle.Planar.CanBus())
+  push!(__systems, @named bus = VehicleSystemsComponents.Vehicle.Planar.CanNet())
   # Subcomponent blend of type VehicleSystemsComponents.Vehicle.Electric.RegenBlend
   blend_overrides = __pop_subcomponent_overrides!(__overrides, "blend")
   push!(__systems, @named blend = VehicleSystemsComponents.Vehicle.Electric.RegenBlend(; abs_rule=true, ratio=ratio, radius=radius, tau_max=tau_max, P_charge=P_charge, v_fade=v_fade, __overrides = blend_overrides))
   # Subcomponent kmh of type VehicleSystemsComponents.Vehicle.ToKmPerHour
   kmh_overrides = __pop_subcomponent_overrides!(__overrides, "kmh")
   push!(__systems, @named kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour(; __overrides = kmh_overrides))
-  # Subcomponent friction_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTx
+  # Subcomponent friction_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
   friction_tx_overrides = __pop_subcomponent_overrides!(__overrides, "friction_tx")
-  push!(__systems, @named friction_tx = VehicleSystemsComponents.Vehicle.Planar.CanTx(; ideal=ideal, period=friction_period, scale=0.1, raw_min=Float64(0), raw_max=Float64(65535), __overrides = friction_tx_overrides))
-  # Subcomponent torque_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTx
+  push!(__systems, @named friction_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=4, id=256, ideal=ideal, period=friction_period, scale=0.1, raw_min=Float64(0), raw_max=Float64(65535), __overrides = friction_tx_overrides))
+  # Subcomponent torque_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
   torque_tx_overrides = __pop_subcomponent_overrides!(__overrides, "torque_tx")
-  push!(__systems, @named torque_tx = VehicleSystemsComponents.Vehicle.Planar.CanTx(; ideal=ideal, period=torque_period, scale=0.1, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = torque_tx_overrides))
+  push!(__systems, @named torque_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=6, id=272, ideal=ideal, period=torque_period, scale=0.1, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = torque_tx_overrides))
+  # Subcomponent vehicle_speed_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
+  vehicle_speed_rx_overrides = __pop_subcomponent_overrides!(__overrides, "vehicle_speed_rx")
+  push!(__systems, @named vehicle_speed_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=1, id=128, __overrides = vehicle_speed_rx_overrides))
+  # Subcomponent front_abs_active_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
+  front_abs_active_rx_overrides = __pop_subcomponent_overrides!(__overrides, "front_abs_active_rx")
+  push!(__systems, @named front_abs_active_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=5, id=112, __overrides = front_abs_active_rx_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -120,14 +126,15 @@
   __assertions = []
 
   ### Equations
-  push!(__eqs, kmh.u ~ bus.vehicle_speed)
-  push!(__eqs, blend.abs_active ~ bus.front_abs_active)
-  push!(__eqs, bus.friction_demand ~ friction_tx.y)
-  push!(__eqs, bus.motor_request ~ torque_tx.y)
+  push!(__eqs, kmh.u ~ vehicle_speed_rx.y)
+  push!(__eqs, blend.abs_active ~ front_abs_active_rx.y)
+  push!(__eqs, connect(bus, vehicle_speed_rx.bus, front_abs_active_rx.bus))
   push!(__eqs, connect(tau_ref, blend.tau_ref))
   push!(__eqs, connect(kmh.y, blend.v))
   push!(__eqs, connect(blend.tau_brake, friction_tx.u))
   push!(__eqs, connect(blend.tau_motor, torque_tx.u))
+  push!(__eqs, connect(bus, friction_tx.bus))
+  push!(__eqs, connect(bus, torque_tx.bus))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

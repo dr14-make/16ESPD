@@ -30,10 +30,12 @@ ThermalComponents = "084a29d9-4f48-4925-95b4-b7d4c79725f4"
 TranslationalComponents = "42acc370-819b-4877-bdd6-eb3294461f5d"
 
 [weakdeps]
+CANBus = "bffc1db9-6142-4b2c-b5cf-b017e7edc3de"
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 SimpleDirectMediaLayer = "98e33af6-2ee5-5afd-9e75-cbc738b767c4"
 
 [extensions]
+VehicleSystemsComponentsCANBusExt = "CANBus"
 VehicleSystemsComponentsGLMakieExt = "GLMakie"
 VehicleSystemsComponentsPadExt = ["GLMakie", "SimpleDirectMediaLayer"]
 

@@ -20,7 +20,7 @@
 
 ## Connectors
 
- * `bus` - ([`CanBus`](@ref))
+ * `bus` - ([`CanNet`](@ref))
  * `kappa_fl` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `kappa_fr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `kappa_rl` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
@@ -102,13 +102,25 @@
   __constants = Any[]
 
   ### Components
-  push!(__systems, @named bus = VehicleSystemsComponents.Vehicle.Planar.CanBus())
+  push!(__systems, @named bus = VehicleSystemsComponents.Vehicle.Planar.CanNet())
   # Subcomponent ecu of type VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit
   ecu_overrides = __pop_subcomponent_overrides!(__overrides, "ecu")
   push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(; report_front=true, esp_on=esp_on, abs_on=abs_on, radius=radius, T_max=T_full, __overrides = ecu_overrides))
-  # Subcomponent abs_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTx
+  # Subcomponent abs_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
   abs_tx_overrides = __pop_subcomponent_overrides!(__overrides, "abs_tx")
-  push!(__systems, @named abs_tx = VehicleSystemsComponents.Vehicle.Planar.CanTx(; ideal=ideal, period=abs_period, scale=Float64(1), raw_min=Float64(0), raw_max=Float64(1), __overrides = abs_tx_overrides))
+  push!(__systems, @named abs_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=5, id=112, ideal=ideal, period=abs_period, scale=Float64(1), raw_min=Float64(0), raw_max=Float64(1), __overrides = abs_tx_overrides))
+  # Subcomponent vehicle_speed_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
+  vehicle_speed_rx_overrides = __pop_subcomponent_overrides!(__overrides, "vehicle_speed_rx")
+  push!(__systems, @named vehicle_speed_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=1, id=128, __overrides = vehicle_speed_rx_overrides))
+  # Subcomponent steering_angle_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
+  steering_angle_rx_overrides = __pop_subcomponent_overrides!(__overrides, "steering_angle_rx")
+  push!(__systems, @named steering_angle_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=2, id=144, __overrides = steering_angle_rx_overrides))
+  # Subcomponent yaw_rate_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
+  yaw_rate_rx_overrides = __pop_subcomponent_overrides!(__overrides, "yaw_rate_rx")
+  push!(__systems, @named yaw_rate_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=3, id=160, __overrides = yaw_rate_rx_overrides))
+  # Subcomponent friction_demand_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
+  friction_demand_rx_overrides = __pop_subcomponent_overrides!(__overrides, "friction_demand_rx")
+  push!(__systems, @named friction_demand_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=4, id=256, __overrides = friction_demand_rx_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -121,11 +133,11 @@
   __assertions = []
 
   ### Equations
-  push!(__eqs, ecu.demand ~ bus.friction_demand)
-  push!(__eqs, ecu.vx ~ bus.vehicle_speed)
-  push!(__eqs, ecu.delta_sw ~ bus.steering_angle)
-  push!(__eqs, ecu.r ~ bus.yaw_rate)
-  push!(__eqs, bus.front_abs_active ~ abs_tx.y)
+  push!(__eqs, ecu.demand ~ friction_demand_rx.y)
+  push!(__eqs, ecu.vx ~ vehicle_speed_rx.y)
+  push!(__eqs, ecu.delta_sw ~ steering_angle_rx.y)
+  push!(__eqs, ecu.r ~ yaw_rate_rx.y)
+  push!(__eqs, connect(bus, vehicle_speed_rx.bus, steering_angle_rx.bus, yaw_rate_rx.bus, friction_demand_rx.bus))
   push!(__eqs, connect(kappa_fl, ecu.kappa_fl))
   push!(__eqs, connect(kappa_fr, ecu.kappa_fr))
   push!(__eqs, connect(kappa_rl, ecu.kappa_rl))
@@ -135,6 +147,7 @@
   push!(__eqs, connect(ecu.tau_rl, tau_rl))
   push!(__eqs, connect(ecu.tau_rr, tau_rr))
   push!(__eqs, connect(ecu.front_active, abs_tx.u))
+  push!(__eqs, connect(bus, abs_tx.bus))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

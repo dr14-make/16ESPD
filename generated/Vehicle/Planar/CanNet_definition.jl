@@ -4,25 +4,22 @@
 ### Instead, update the Dyad source code and regenerate this file
 
 
-@connector function CanBus(; name=nothing)
+@connector function CanNet(; name=nothing, n=16)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
   
-    @named model = CanBus()
+    @named model = CanNet()
   """))
   __params = Symbolics.SymbolicT[]
   __vars = @variables begin
-    (vehicle_speed(t)::Real), []
-    (steering_angle(t)::Real), []
-    (yaw_rate(t)::Real), []
-    (friction_demand(t)::Real), []
-    (front_abs_active(t)::Real), []
-    (motor_request(t)::Real), []
-    (dashboard_speed(t)::Real), []
+    (v(t)[1:n]::Real), []
+    (i(t)[1:n]::Real), [connect = Flow]
+    (c(t)[1:n]::Real), []
+    (j(t)[1:n]::Real), [connect = Flow]
   end
   __metadata = Dict{DataType, Any}(
   )
   return System(Equation[], t, __vars, __params; name, metadata = __metadata)
 end
-export CanBus
+export CanNet

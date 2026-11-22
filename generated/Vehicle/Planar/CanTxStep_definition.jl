@@ -63,9 +63,15 @@
   # Subcomponent source of type BlockComponents.Sources.Step
   source_overrides = __pop_subcomponent_overrides!(__overrides, "source")
   push!(__systems, @named source = BlockComponents.Sources.Step(; height=3.33, start_time=5 * period, __overrides = source_overrides))
-  # Subcomponent tx of type VehicleSystemsComponents.Vehicle.Planar.CanTx
+  # Subcomponent tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
   tx_overrides = __pop_subcomponent_overrides!(__overrides, "tx")
-  push!(__systems, @named tx = VehicleSystemsComponents.Vehicle.Planar.CanTx(; period=period, scale=0.1, __overrides = tx_overrides))
+  push!(__systems, @named tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; period=period, scale=0.1, __overrides = tx_overrides))
+  # Subcomponent rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
+  rx_overrides = __pop_subcomponent_overrides!(__overrides, "rx")
+  push!(__systems, @named rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; __overrides = rx_overrides))
+  # Subcomponent term of type VehicleSystemsComponents.Vehicle.Planar.CanTermination
+  term_overrides = __pop_subcomponent_overrides!(__overrides, "term")
+  push!(__systems, @named term = VehicleSystemsComponents.Vehicle.Planar.CanTermination(; __overrides = term_overrides))
   # Subcomponent response of type BlockComponents.Continuous.FirstOrder
   response_overrides = __pop_subcomponent_overrides!(__overrides, "response")
   push!(__systems, @named response = BlockComponents.Continuous.FirstOrder(; T=0.01, __overrides = response_overrides))
@@ -83,7 +89,8 @@
 
   ### Equations
   push!(__eqs, connect(source.y, tx.u))
-  push!(__eqs, connect(tx.y, response.u))
+  push!(__eqs, connect(tx.bus, rx.bus, term.bus))
+  push!(__eqs, connect(rx.y, response.u))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

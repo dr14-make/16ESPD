@@ -52,3 +52,12 @@ arg "[height]" default="" help="Height file: hill, hill_across, ramp, ramp_hold,
 '''
 depends = ["drive:setup"]
 run = "julia +dyad-3.5.0 --project=. sim/drive.jl '{{ usage.road }}' '{{ usage.height }}'"
+
+[tasks.can]
+description = "Stream the CAN car or cruise demo to SocketCAN, e.g. `mise run can car vcan0`"
+usage = '''
+arg "[model]" default="car" help="car or cruise"
+arg "[interface]" default="vcan0" help="SocketCAN interface, e.g. vcan0 or can0"
+'''
+depends = ["drive:setup"]
+run = "julia +dyad-3.5.0 --project=. sim/can_stream.jl '{{ usage.model }}' '{{ usage.interface }}'"

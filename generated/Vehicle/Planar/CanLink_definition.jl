@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   CanTx(; name, ideal, period, scale, offset, raw_min, raw_max, __overrides)
+   CanLink(; name, ideal, period, scale, offset, raw_min, raw_max, __overrides)
 
 ## Parameters:
 
@@ -23,12 +23,12 @@
  * `u` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `y` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function CanTx(; name = nothing, var"ideal"=false, var"period"=0.01, var"scale"=Float64(1), var"offset"=Float64(0), var"raw_min"=Float64(0), var"raw_max"=Float64(65535), __overrides = Dict{String, Any}())
+@component function CanLink(; name = nothing, var"ideal"=false, var"period"=0.01, var"scale"=Float64(1), var"offset"=Float64(0), var"raw_min"=Float64(0), var"raw_max"=Float64(65535), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
   
-    @named model = CanTx()
+    @named model = CanLink()
   """))
 
   __overrides = Dict{String, Any}(__overrides)
@@ -141,4 +141,4 @@
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
-export CanTx
+export CanLink

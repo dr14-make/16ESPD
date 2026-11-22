@@ -19,7 +19,7 @@
 
 ## Connectors
 
- * `bus` - ([`CanBus`](@ref))
+ * `bus` - ([`CanNet`](@ref))
  * `measurements` - The receiving end of `CarBus`: the same signals, as inputs. A control unit or an unpack block
 (`BusMotion`, `BusSlip`, `BusSlipAngle`, `BusWheelSpeed`) listens on one of these. ([`CarBusIn`](@ref))
 """
@@ -74,23 +74,23 @@
   __constants = Any[]
 
   ### Components
-  push!(__systems, @named bus = VehicleSystemsComponents.Vehicle.Planar.CanBus())
+  push!(__systems, @named bus = VehicleSystemsComponents.Vehicle.Planar.CanNet())
   push!(__systems, @named measurements = VehicleSystemsComponents.Vehicle.Planar.CarBusIn())
   # Subcomponent motion of type VehicleSystemsComponents.Vehicle.Planar.BusMotion
   motion_overrides = __pop_subcomponent_overrides!(__overrides, "motion")
   push!(__systems, @named motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion(; __overrides = motion_overrides))
-  # Subcomponent speed_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTx
+  # Subcomponent speed_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
   speed_tx_overrides = __pop_subcomponent_overrides!(__overrides, "speed_tx")
-  push!(__systems, @named speed_tx = VehicleSystemsComponents.Vehicle.Planar.CanTx(; ideal=ideal, period=speed_period, scale=0.01, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = speed_tx_overrides))
-  # Subcomponent steering_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTx
+  push!(__systems, @named speed_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=1, id=128, ideal=ideal, period=speed_period, scale=0.01, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = speed_tx_overrides))
+  # Subcomponent steering_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
   steering_tx_overrides = __pop_subcomponent_overrides!(__overrides, "steering_tx")
-  push!(__systems, @named steering_tx = VehicleSystemsComponents.Vehicle.Planar.CanTx(; ideal=ideal, period=steering_period, scale=0.001, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = steering_tx_overrides))
-  # Subcomponent yaw_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTx
+  push!(__systems, @named steering_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=2, id=144, ideal=ideal, period=steering_period, scale=0.001, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = steering_tx_overrides))
+  # Subcomponent yaw_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
   yaw_tx_overrides = __pop_subcomponent_overrides!(__overrides, "yaw_tx")
-  push!(__systems, @named yaw_tx = VehicleSystemsComponents.Vehicle.Planar.CanTx(; ideal=ideal, period=yaw_period, scale=0.001, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = yaw_tx_overrides))
-  # Subcomponent dashboard_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTx
+  push!(__systems, @named yaw_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=3, id=160, ideal=ideal, period=yaw_period, scale=0.001, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = yaw_tx_overrides))
+  # Subcomponent dashboard_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
   dashboard_tx_overrides = __pop_subcomponent_overrides!(__overrides, "dashboard_tx")
-  push!(__systems, @named dashboard_tx = VehicleSystemsComponents.Vehicle.Planar.CanTx(; ideal=ideal, period=dashboard_period, scale=0.01, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = dashboard_tx_overrides))
+  push!(__systems, @named dashboard_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=7, id=768, ideal=ideal, period=dashboard_period, scale=0.01, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = dashboard_tx_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -103,14 +103,14 @@
   __assertions = []
 
   ### Equations
-  push!(__eqs, bus.vehicle_speed ~ speed_tx.y)
-  push!(__eqs, bus.steering_angle ~ steering_tx.y)
-  push!(__eqs, bus.yaw_rate ~ yaw_tx.y)
-  push!(__eqs, bus.dashboard_speed ~ dashboard_tx.y)
   push!(__eqs, connect(measurements, motion.bus))
   push!(__eqs, connect(motion.vx, speed_tx.u, dashboard_tx.u))
   push!(__eqs, connect(motion.delta_sw, steering_tx.u))
   push!(__eqs, connect(motion.r, yaw_tx.u))
+  push!(__eqs, connect(bus, speed_tx.bus))
+  push!(__eqs, connect(bus, steering_tx.bus))
+  push!(__eqs, connect(bus, yaw_tx.bus))
+  push!(__eqs, connect(bus, dashboard_tx.bus))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

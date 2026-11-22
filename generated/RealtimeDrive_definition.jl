@@ -17,6 +17,8 @@ using VehicleSystemsComponents: AbstractRealtimeDriveSpec, RealtimeDriveSpec
   var"dtmax"::Float64 = 0.005
   # Show a window and pace the simulation to wall clock
   var"window"::Bool = false
+  # SocketCAN interface for a listen-only CanAdapter; empty disables external CAN output
+  var"can_interface"::String = ""
   # ESP enable for the run
   var"esp_on"::Float64 = 1.0
   # ABS enable for the run
