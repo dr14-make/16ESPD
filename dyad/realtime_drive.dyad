@@ -52,5 +52,5 @@ end
 "Minimal cruise example streamed through SocketCAN without a window."
 analysis CanCruiseRealtimeDrive
   extends RealtimeDrive(can_interface = "vcan0", window = false, duration = 30)
-  model = Vehicle.Planar.CanCruise()
+  model = VehicleSystemsComponents.Vehicle.Planar.CanCruise()
 end
