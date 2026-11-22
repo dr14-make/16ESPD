@@ -15,6 +15,9 @@ const H06CAN = VehicleSystemsComponents.Vehicle.Planar
     # Count visible inherited top-level signal nets, excluding six mechanical nets.
     canvas = split(source, "partial component WiringStop"; limit = 2)[2]
     @test length(collect(eachmatch(r"connect\(", canvas))) - 6 == 19
+    # Students edit the starters in place, so a reference that extends one inherits their edits.
+    references = read(joinpath(@__DIR__, "..", "dyad", "HandsOn06", "StopReferences.dyad"), String)
+    @test !occursin(r"extends Step(1PointToPoint|1bMissingRegen|2DuplicateSlot|3Can)Stop\b", references)
     direct = read(joinpath(@__DIR__, "..", "dyad", "HandsOn06", "Step1PointToPointStop.dyad"), String)
     @test length(collect(eachmatch(r"connect\(", direct))) == 3
 end

@@ -77,16 +77,16 @@ using DyadInterface: symbolic_container
 using VehicleSystemsComponents
 const Planar = VehicleSystemsComponents.Vehicle.Planar
 const H06 = VehicleSystemsComponents.HandsOn06
-function stop_distance(r)
-    m, s = symbolic_container(r), r.sol
-    ts = 0.5:0.005:6.0
-    k = findfirst(<(0.5), s(ts, idxs=m.car.bus.vx).u)
-    s(ts[k], idxs=m.car.bus.x) - s(0.5, idxs=m.car.bus.x)
+function stop_distance(r; car = symbolic_container(r).car)
+    s, ts = r.sol, 0.5:0.005:6.0
+    k = findfirst(<(0.5), s(ts, idxs=car.bus.vx).u)
+    s(ts[k], idxs=car.bus.x) - s(0.5, idxs=car.bus.x)
 end
 ```
 
 Paste code blocks rather than typing them: the REPL closes brackets for you, and a typed line
-break submits half a call. The tests check every stop distance below to within 1 mm.
+break submits half a call. Each run first prints a screenful of `WARNING: import of … conflicts
+with an existing identifier; ignored.` lines; they are harmless. The tests check every stop distance below to within 1 mm.
 
 ## 0 · Setup — 10 min {#step-0}
 
@@ -301,8 +301,10 @@ arrives between one and two periods late.
    without editing.
 3. Compare with the counterexample, where the brake request crosses the bus twice: from the pedal
    to a separate blend ECU, then as a friction request to the brake ECU. Its numbers are in the
-   table below. If you have time, start a fresh REPL and run one of them from the library:
-   `Vehicle › Planar › CanBusBrake10msStop`, `CanBusBrake20msStop` or `CanBusBrake40msStop`.
+   table below. If you have time, start a fresh REPL and run one from the library: open
+   `Vehicle › Planar › CanBusBrake10msStopBench` (or the 20 or 40 ms bench), press ▷ and click
+   `CanBusBrake10msStop`. Its car sits one level deeper, so read the distance with
+   `stop_distance(solution; car = symbolic_container(solution).vehicle.car)`.
 
 One stop depends on where the pedal press falls between frames. So
 `assets/data/lecture06/can_stop.csv` repeats every case for six pedal-onset offsets from 0 to
@@ -350,8 +352,8 @@ Calculate how busy the bus is and how long each frame can wait for the wire, at 
 car = H06.CanStop(name = :exercise)
 fast = Planar.can_schedule(car; bitrate = 500_000)
 slow = Planar.can_schedule(car; bitrate = 250_000)
-fast.load, slow.load
-[f.response_time for f in fast.frames] .* 1000    # ms, by priority
+round.(100 .* (fast.load, slow.load); digits = 2)                 # load in %
+round.([f.response_time for f in fast.frames] .* 1000; digits = 2)  # ms, by priority
 ```
 
 ::: tip Checkpoint 4
