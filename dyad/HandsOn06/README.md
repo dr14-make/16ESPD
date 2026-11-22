@@ -24,7 +24,8 @@ a 5 ms grid. The tests check every number below to within 1 mm.
 
 Starter: `Step1PointToPointStop`, analysis `Step1PointToPointStopTransient`.
 
-1. Delete the direct wires `direct_regen`, `direct_steering` and `direct_yaw`.
+1. Delete the direct wires `ecu.regen`–`drive.regen`, `motion.steering`–`ecu.steering` and
+   `motion.yaw`–`ecu.yaw` (tags `direct_regen`, `direct_steering`, `direct_yaw`).
 2. Set `networked = true`.
 3. Keep the pedal, wheel-speed and caliper wires: those loops stay local.
 
@@ -36,9 +37,11 @@ stop in **28.185 m**: an ideal bus behaves exactly like wires.
 ## 1b: build the regen message by hand
 
 Starter: `Step1bMissingRegenStop`, analysis `Step1bMissingRegenStopTransient`. The brake ECU does
-not send the regen request yet, and a direct wire, `bypass`, stands in for it.
+not send the regen request yet, and a direct wire from `ecu.regen` to `drive.regen` (tag `bypass`)
+stands in for it.
 
-1. Run `Vehicle.Planar.check_can` on the starter. It reports that nobody transmits slot 6.
+1. Run `Vehicle.Planar.check_can` on the starter. It raises
+   `CAN: drive.regen_rx receives slot 6, but nobody transmits on it.`
 2. Open `WiringBrakeNode` and find the regen transmitter `regen_tx`: **slot 6, ID 272 (110h),
    period `regen_period` (= `chassis_period`), 0.1 N·m per bit, raw −32768…32767**. It reads
    `blend.tau_motor` and connects to `bus`, but exists only when `transmit_regen` is set.
@@ -56,9 +59,10 @@ the same as before.
 Starter: `Step2DuplicateSlotStop`, analysis `Step2DuplicateSlotStopTransient`. Its analysis fails
 until you repair it.
 
-1. Run `check_can` before solving. IDs **272 and 273** both own slot **6**.
+1. Run `check_can` before solving. It raises `CAN: duplicate and ecu.regen_tx both transmit on
+   slot 6.`: IDs 273 and 272 share slot **6**.
 2. Changing only the ID does not fix it: the slot still has two owners.
-3. Delete `duplicate`, `duplicate_input` and `duplicate_bus`.
+3. Delete the block `duplicate`; its two wires go with it.
 
 Reference: `CanStop`, **29.056 m**.
 

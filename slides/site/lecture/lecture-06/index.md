@@ -49,15 +49,24 @@ starter.
 **Working in Studio.**
 
 - Open a model: in COMPONENTS, double-click it (or click it once and press Enter).
-- Most edits today are flags on the starter's `extends WiringStop(…)` line. Open code view (⇄),
-  change the flag, save, then close the diagram and reopen it before you touch the canvas again;
-  otherwise later canvas edits draw but are not saved.
-- Delete a wire: click it on the canvas and press Delete. In code view each wire is one
-  `connect(…)` line, and its name is the tag at the end, such as `{^direct_regen}`: delete the
-  whole line.
+- Most edits today are flags of the starter, such as `networked` or `chassis_period`. Click an
+  empty spot on the canvas so nothing is selected, open **Edit Parameters**, and tick the flag or
+  type the value. Studio writes it into the starter's `extends WiringStop(…)` line and redraws
+  the canvas at once.
+- Delete a wire: hover over it to see its tooltip, `connect(a, b)`, then click it and press
+  Delete. This guide names each wire by its two ends. Its tag in code view, such as
+  `{^direct_regen}`, does not last: after any canvas edit Studio renames the remaining tags to
+  `id1`, `id2`, ….
+- Code view (⇄) works for every edit too. After a code-view edit, close the diagram and reopen
+  it before you touch the canvas again; otherwise later canvas edits draw but are not saved.
 - Save (Ctrl+S) and wait for compilation to finish before you run.
 - Run: with the starter's diagram focused, press ▷ (Run Analysis) and click the step's analysis,
   the second row. Enter on the highlighted first row creates a new analysis instead.
+- The REPL grows with every run, and a laptop runs out of memory after five or six. Start each
+  step with a fresh REPL: F1 › **Dyad: Open Julia REPL**, then paste the `stop_distance` block
+  below again. If the REPL tab disappears, it ran out of memory; open a new one the same way.
+- `check_can` raises an error that names the mistake. When the bus is right it returns the whole
+  model, which fills the terminal, so the snippets below end in `; "ok"`.
 
 **Reading the stop distance.** `solution` always holds the most recent run. The stop distance is
 measured from the pedal press at 0.5 s until the speed first falls below 0.5 m/s, on a 5 ms grid.
@@ -127,18 +136,19 @@ behaves exactly like wires. Count the wires before and after.
 #### Given
 
 `HandsOn06 › Step1PointToPointStop` is the car with the bus off (`networked = false`). Three
-signals run on direct wires on the canvas: `direct_regen` (brake ECU → VCU), `direct_steering` and
-`direct_yaw` (sensors → brake ECU). The bus backbone is already connected, so the CAN ports stay
+signals run on direct wires on the canvas: the regen request from `ecu.regen` to `drive.regen`
+(brake ECU → VCU), and the steering angle and yaw rate from `motion.steering` and `motion.yaw` to
+`ecu.steering` and `ecu.yaw` (sensors → brake ECU). The bus backbone is already connected, so the CAN ports stay
 balanced while you rewire.
 
 #### Do this
 
 1. Run `Step1PointToPointStopTransient` once as it ships and note `stop_distance(solution)`.
-2. Delete the three direct wires `direct_regen`, `direct_steering` and `direct_yaw`.
-3. In code view, change `networked = false` to `networked = true` on the `extends` line.
+2. Delete the three direct wires: `ecu.regen`–`drive.regen`, `motion.steering`–`ecu.steering`
+   and `motion.yaw`–`ecu.yaw`.
+3. In Edit Parameters, tick `networked`.
 4. Keep the pedal, wheel-speed and caliper wires: those loops stay local.
-5. Save, close and reopen the diagram, run `Step1PointToPointStopTransient` again and read
-   `stop_distance(solution)`.
+5. Save, run `Step1PointToPointStopTransient` again and read `stop_distance(solution)`.
 
 ::: tip Checkpoint 1a
 
@@ -178,8 +188,8 @@ transmitter. Learn what `check_can` tells you when a message is missing.
 #### Given
 
 `HandsOn06 › Step1bMissingRegenStop` is on the bus, but the brake ECU does not send the regen
-request yet (`transmit_regen = false`), and the VCU still reads it from a direct wire, `bypass`
-(`drive_networked = false`). The VCU's receiver, `CanRxReal(slot = 6, id = 272)` in
+request yet (`transmit_regen = false`), and the VCU still reads it from a direct wire from
+`ecu.regen` to `drive.regen` (`drive_networked = false`). The VCU's receiver, `CanRxReal(slot = 6, id = 272)` in
 `WiringDriveNode`, is already on the bus, waiting for a transmitter.
 
 #### Do this
@@ -187,10 +197,11 @@ request yet (`transmit_regen = false`), and the VCU still reads it from a direct
 1. Ask `check_can` what is wrong:
 
    ```julia
-   Planar.check_can(H06.Step1bMissingRegenStop(name = :exercise))
+   Planar.check_can(H06.Step1bMissingRegenStop(name = :exercise)); "ok"
    ```
 
-   It reports that nobody transmits slot 6: a receiver listens for a message no ECU sends.
+   It raises `CAN: drive.regen_rx receives slot 6, but nobody transmits on it.`: a receiver listens
+   for a message no ECU sends.
 2. Open `WiringBrakeNode` and find the regen transmitter `regen_tx`. These are its fields:
 
    | Field | Value |
@@ -202,12 +213,14 @@ request yet (`transmit_regen = false`), and the VCU still reads it from a direct
    | raw range | −32768…32767 |
 
    It reads `blend.tau_motor`, the motor's share of the brake demand, and connects to `bus`. It
-   exists only while `transmit_regen` is true.
-3. In the starter's code view, set `transmit_regen = true` on the `extends` line.
-4. Delete `bypass`, and set `drive_networked = true`, so the VCU takes the regen request from the
-   bus.
-5. Save, close and reopen the diagram, and run `Step1bMissingRegenStopTransient`. The run reloads
-   the library in the REPL, so `check_can` on the starter now returns without an error.
+   exists only while `transmit_regen` is true. Its two wires sit inside an `if` block, and Studio
+   does not draw those: the block appears with the flag, its wires never do. `check_can` is how
+   you see that they are there.
+3. Back in the starter, tick `transmit_regen` and `drive_networked` in Edit Parameters, so the
+   brake ECU sends the regen request and the VCU takes it from the bus.
+4. Delete the direct wire from `ecu.regen` to `drive.regen`.
+5. Save and run `Step1bMissingRegenStopTransient`. The run reloads the library in the REPL, so
+   the `check_can` line now prints `"ok"`.
 
 ::: tip Checkpoint 1b
 
@@ -232,7 +245,7 @@ have only one owner.
 #### Given
 
 `HandsOn06 › Step2DuplicateSlotStop` is the car on a real bus (`ideal = false`) with one mistake in
-it: a second regen transmitter, `duplicate`, wired by `duplicate_input` and `duplicate_bus`. Its
+it: a second regen transmitter, the block `duplicate`, wired from `ecu.regen` and to `ecu.bus`. Its
 analysis fails until you repair it.
 
 #### Do this
@@ -240,14 +253,15 @@ analysis fails until you repair it.
 1. Run `check_can` before you solve:
 
    ```julia
-   Planar.check_can(H06.Step2DuplicateSlotStop(name = :exercise))
+   Planar.check_can(H06.Step2DuplicateSlotStop(name = :exercise)); "ok"
    ```
 
-   It reports that IDs **272 and 273** both transmit on slot **6**.
+   It raises `CAN: duplicate and ecu.regen_tx both transmit on slot 6.` The two have different
+   identifiers, 273 and 272, but share slot **6**.
 2. Changing only the ID does not fix it: the slot still has two owners. In the model, the slot is
    the place on the bus that carries the signal, and one transmitter owns it.
-3. Delete `duplicate`, `duplicate_input` and `duplicate_bus`.
-4. Save, close and reopen the diagram, and run `Step2DuplicateSlotStopTransient`.
+3. Delete the block `duplicate`; Studio deletes its two wires with it.
+4. Save and run `Step2DuplicateSlotStopTransient`.
 
 ::: tip Checkpoint 2
 
@@ -281,14 +295,14 @@ arrives between one and two periods late.
 #### Do this
 
 1. Run `Step3CanStopTransient` (10 ms) and read `stop_distance(solution)`.
-2. In code view, add `chassis_period = 0.02` to the `extends` line, save, close and reopen the
-   diagram, and run again. Then `chassis_period = 0.04`. The period is in seconds.
-   `HandsOn06.Step4SlowCanStop` is the 40 ms car, and the references `CanStopTransient`,
-   `Can20msStopTransient` and `Can40msStopTransient` run the three periods without editing.
-3. Run the counterexample from the library, where the brake request crosses the bus twice: from
-   the pedal to a separate blend ECU, then as a friction request to the brake ECU.
-   They are `Vehicle › Planar › CanBusBrake10msStop`, `CanBusBrake20msStop` and
-   `CanBusBrake40msStop`.
+2. In Edit Parameters, set `chassis_period` to `0.02`, save, and run again. Then `0.04`. The
+   period is in seconds. `HandsOn06.Step4SlowCanStop` is the 40 ms car, and the references
+   `CanStopTransient`, `Can20msStopTransient` and `Can40msStopTransient` run the three periods
+   without editing.
+3. Compare with the counterexample, where the brake request crosses the bus twice: from the pedal
+   to a separate blend ECU, then as a friction request to the brake ECU. Its numbers are in the
+   table below. If you have time, start a fresh REPL and run one of them from the library:
+   `Vehicle › Planar › CanBusBrake10msStop`, `CanBusBrake20msStop` or `CanBusBrake40msStop`.
 
 One stop depends on where the pedal press falls between frames. So
 `assets/data/lecture06/can_stop.csv` repeats every case for six pedal-onset offsets from 0 to
