@@ -1,0 +1,7 @@
+# Cell specific energy, "up to" best values: IEA Global EV Outlook 2026 p. 101 (verified; the IEA
+# does not say "cell" for LFP and NMC explicitly). Pack price, all segments, 2025: BNEF Dec 2025
+# release (verified); no sodium-ion price in the source, left empty (teaching_materials.md §6.2).
+chemistry,cell_wh_per_kg,pack_usd_per_kwh
+NMC,265,128
+LFP,205,81
+sodium-ion,175,

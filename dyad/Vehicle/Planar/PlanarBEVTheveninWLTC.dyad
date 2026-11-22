@@ -1,0 +1,203 @@
+"""
+The battery-electric planar car on WLTC: `Vehicle.Electric.TheveninElectricDrive` turns the front axle
+through the planar `DifferentialGear`, and the bench meters every link of the energy chain.
+
+The PI driver tracks the trace in km/h and asks for a machine torque, and
+`Vehicle.Electric.TorqueSplit` hands it on: positive, all of it to the machine; negative, the machine brakes the
+car and charges the battery, with its share faded linearly from all of it at `v_fade` to none at
+standstill, and the planar car's front friction brakes take the rest at the same wheel torque.
+The machine therefore never pushes the car backwards at a stop, which `RoadLoad` could not
+survive below -0.71 m/s, and at every stop the friction brakes hold the car, as on
+`PlanarWLTC`. WLTC never brakes harder than the machine can, so above `v_fade` all braking is
+regenerative. Start and standstill are those of
+`PlanarWLTC` (wheels `dv_wheel` ahead of the body).
+
+The energy states integrate each link's power from t = 0, in joules:
+
+| state | power |
+|---|---|
+| `E_cells` | out of the cells, `E(SoC) i` |
+| `E_dc`, `E_dc_out`, `E_dc_in` | at the battery terminals `v i`: net, discharged, charged back |
+| `E_R0` | battery resistance, `R0 i^2` |
+| `E_RC` | polarization work, `v1 i`: RC dissipation plus stored-energy change |
+| `E_aux` | the 12 V auxiliaries |
+| `E_conv` | converter conduction and switching |
+| `E_motor` | machine copper, friction, iron, windage and constant losses |
+| `E_shaft_out`, `E_shaft_in` | at the reduction output: traction, and braking the machine took back |
+| `E_road` | drag and rolling resistance, `F vx` |
+| `E_brake` | the four friction brakes |
+| `E_tire` | tire slip, `f_long v_slip_long + f_lat v_slip_lat` at each wheel |
+
+and `E_kin` is the kinetic and magnetic energy stored at each instant: body, wheels, rotor and
+armature inductance. The reduction and the differential are ideal. Every link is measured on its
+own, so the balance `E_cells = E_road + E_brake + E_tire + E_motor + E_conv + E_R0 + E_RC + E_aux +
+ΔE_kin` is a check of the model, not a definition.
+"""
+test component PlanarBEVTheveninWLTC
+  "Vehicle mass, shared by the car and its road load (probe)"
+  parameter m::Mass = 1500.0
+  "Wheel radius (repository default)"
+  parameter radius::Length = 0.31
+  "Driver gain, machine torque per km/h of speed error (assumed)"
+  parameter k::Real = 50.0
+  "Driver integral time (assumed)"
+  parameter Ti::Time = 2.0
+  "Driver torque limit, the machine's peak torque (Nissan)"
+  parameter tau_max::Torque = 320.0
+  "Speed below which the machine's braking share fades to zero, km/h (assumed)"
+  parameter v_fade::Real = 10.0
+  "Power drawn by the 12 V network (assumed)"
+  parameter P_aux::Power = 300.0
+  "Single-speed reduction (Nissan)"
+  parameter ratio::Real = 8.193
+  "Initial wheel surface speed above the body's, keeps the start off zero slip (assumed)"
+  parameter dv_wheel::Velocity = 0.01
+  trace = VehicleSystemsComponents.Vehicle.DriveCycle() {^trace}
+  driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_max) {^driver}
+  no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
+  kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
+  drive = VehicleSystemsComponents.Vehicle.Electric.TheveninElectricDrive(ratio = ratio, P_aux = P_aux) {^drive}
+  differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
+  mount = RotationalComponents.Components.Fixed() {^mount}
+  straight = RotationalComponents.Components.Fixed() {^straight}
+  flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius) {^car}
+  motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
+  roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
+  split = VehicleSystemsComponents.Vehicle.Electric.TorqueSplit(ratio = ratio, v_fade = v_fade) {^split}
+  rear_brake_zero = BlockComponents.Sources.Constant(k = 0.0) {^rear_brake_zero}
+  "Power at the battery terminals, positive discharging"
+  variable P_dc::Power
+  "Power at the reduction output, positive driving the wheels"
+  variable P_shaft::Power
+  variable E_cells::Energy
+  variable E_dc::Energy
+  variable E_dc_out::Energy
+  variable E_dc_in::Energy
+  variable E_RC::Energy
+  variable E_R0::Energy
+  variable E_aux::Energy
+  variable E_conv::Energy
+  variable E_motor::Energy
+  variable E_shaft_out::Energy
+  variable E_shaft_in::Energy
+  variable E_road::Energy
+  variable E_brake::Energy
+  variable E_tire::Energy
+  "Kinetic energy of body, wheels and rotor, and the armature's magnetic energy"
+  variable E_kin::Energy
+relations
+  connect(car.bus, motion.bus) {^wbus}
+  connect(trace.y, driver.u_s) {^w1}
+  connect(motion.vx, kmh.u) {^w2}
+  connect(kmh.y, driver.u_m, split.v) {^w3}
+  connect(no_ff.y, driver.u_ff) {^w4}
+  connect(drive.spline, differential.flange_b) {^w5}
+  connect(differential.flange_left, car.spin_fl) {^w6}
+  connect(differential.flange_right, car.spin_fr) {^w7}
+  connect(drive.support, mount.spline) {^w8}
+  connect(car.steering, straight.spline) {^w9}
+  connect(flat.y, roadload.grade) {^w10}
+  connect(car.chassis, roadload.chassis) {^w11}
+  connect(driver.y, split.tau_ref) {^w21}
+  connect(split.tau_motor, drive.tau_ref) {^w23}
+  connect(split.tau_brake, car.tau_fl, car.tau_fr) {^w24}
+  connect(rear_brake_zero.y, car.tau_rl, car.tau_rr) {^w25}
+  # Deliberately open: drive.SoC and motion.{delta_sw,r,vy,beta,ax,ay,psi,x,y}
+  # are telemetry outputs, not plant inputs. car.wheel_{fl,fr,rl,rr} and
+  # car.spin_{rl,rr} are unused external attachment ports (free rear axle).
+  # The following equations are diagnostic power/energy accounting, not signal wiring.
+  # Keep their public names and original state/initialization equations for regression checks.
+  P_dc = drive.battery.v * drive.battery.i
+  P_shaft = drive.machine.P_mech
+  der(E_cells) = drive.battery.E * drive.battery.i
+  der(E_dc) = P_dc
+  der(E_dc_out) = max(P_dc, 0.0)
+  der(E_dc_in) = max(-P_dc, 0.0)
+  der(E_RC) = drive.battery.v1 * drive.battery.i
+  der(E_R0) = drive.battery.R0 * drive.battery.i ^ 2
+  der(E_aux) = drive.aux.v * drive.aux.i
+  der(E_conv) = drive.converter.P_loss
+  der(E_motor) = drive.machine.P_loss
+  der(E_shaft_out) = max(P_shaft, 0.0)
+  der(E_shaft_in) = max(-P_shaft, 0.0)
+  der(E_road) = roadload.F * car.bus.vx
+  der(E_brake) = car.fl.brake.tau_friction * car.fl.brake.w + car.fr.brake.tau_friction * car.fr.brake.w + car.rl.brake.tau_friction * car.rl.brake.w + car.rr.brake.tau_friction * car.rr.brake.w
+  der(E_tire) = car.fl.joint.f_long * car.fl.joint.v_slip_long + car.fl.joint.f_lat * car.fl.joint.v_slip_lat + car.fr.joint.f_long * car.fr.joint.v_slip_long + car.fr.joint.f_lat * car.fr.joint.v_slip_lat + car.rl.joint.f_long * car.rl.joint.v_slip_long + car.rl.joint.f_lat * car.rl.joint.v_slip_lat + car.rr.joint.f_long * car.rr.joint.v_slip_long + car.rr.joint.f_lat * car.rr.joint.v_slip_lat
+  E_kin = 0.5 * m * (car.body.v[1] ^ 2 + car.body.v[2] ^ 2) + 0.5 * car.Iz * car.body.w ^ 2 + 0.5 * car.J * (car.fl.inertia.w ^ 2 + car.fr.inertia.w ^ 2 + car.rl.inertia.w ^ 2 + car.rr.inertia.w ^ 2) + 0.5 * drive.machine.J * drive.machine.rotor.w ^ 2 + 0.5 * drive.machine.L * drive.machine.inductor.i ^ 2
+  initial car.body.r = [0, 0]
+  initial car.body.v = [0, 0]
+  initial car.body.phi = 0.0
+  initial car.body.w = 0.0
+  initial car.fl.inertia.w = dv_wheel / radius
+  initial car.fr.inertia.w = dv_wheel / radius
+  initial car.rl.inertia.w = dv_wheel / radius
+  initial car.rr.inertia.w = dv_wheel / radius
+  initial car.fl.inertia.phi = 0.0
+  initial car.fr.inertia.phi = 0.0
+  initial car.rl.inertia.phi = 0.0
+  initial car.rr.inertia.phi = 0.0
+  initial car.fl.brake.tau_actual = 0.0
+  initial car.fr.brake.tau_actual = 0.0
+  initial car.rl.brake.tau_actual = 0.0
+  initial car.rr.brake.tau_actual = 0.0
+  initial drive.converter.i_out = 0.0
+  initial E_cells = 0.0
+  initial E_dc = 0.0
+  initial E_dc_out = 0.0
+  initial E_dc_in = 0.0
+  initial E_RC = 0.0
+  initial E_R0 = 0.0
+  initial E_aux = 0.0
+  initial E_conv = 0.0
+  initial E_motor = 0.0
+  initial E_shaft_out = 0.0
+  initial E_shaft_in = 0.0
+  initial E_road = 0.0
+  initial E_brake = 0.0
+  initial E_tire = 0.0
+metadata {
+  "_links": {
+    "car": {"Dyad":{"placement":{"diagram":{"x1":520,"x2":740,"y1":660,"y2":840}}}},
+    "differential": {"Dyad":{"placement":{"diagram":{"x1":560,"x2":640,"y1":460,"y2":540}}}},
+    "drive": {"Dyad":{"placement":{"diagram":{"x1":530,"x2":650,"y1":140,"y2":260}}}},
+    "driver": {"Dyad":{"placement":{"diagram":{"x1":170,"x2":270,"y1":140,"y2":240}}}},
+    "flat": {"Dyad":{"placement":{"diagram":{"x1":340,"x2":380,"y1":900,"y2":940}}}},
+    "kmh": {"Dyad":{"placement":{"diagram":{"x1":50,"x2":130,"y1":330,"y2":410}}}},
+    "motion": {"Dyad":{"placement":{"diagram":{"x1":820,"x2":960,"y1":660,"y2":800}}}},
+    "mount": {"Dyad":{"placement":{"diagram":{"x1":590,"x2":650,"y1":340,"y2":400}}}},
+    "no_ff": {"Dyad":{"placement":{"diagram":{"x1":120,"x2":160,"y1":20,"y2":60}}}},
+    "rear_brake_zero": {"Dyad":{"placement":{"diagram":{"x1":280,"x2":340,"y1":720,"y2":780}}}},
+    "roadload": {"Dyad":{"placement":{"diagram":{"x1":500,"x2":580,"y1":900,"y2":960}}}},
+    "split": {"Dyad":{"placement":{"diagram":{"x1":330,"x2":430,"y1":140,"y2":240}}}},
+    "straight": {"Dyad":{"placement":{"diagram":{"rot":180,"x1":850,"x2":910,"y1":450,"y2":510}}}},
+    "trace": {"Dyad":{"placement":{"diagram":{"x1":30,"x2":110,"y1":140,"y2":220}}}},
+    "w1": {"Dyad":{"edges":[{"E":2,"M":[{"x":140,"y":180},{"x":140,"y":167}],"S":1}]}},
+    "w10": {"Dyad":{"edges":[{"E":2,"M":[{"x":460,"y":920},{"x":460,"y":930}],"S":1}]}},
+    "w11": {"Dyad":{"edges":[{"E":2,"M":[{"x":660,"y":840},{"x":660,"y":930}],"S":1}]}},
+    "w2": {"Dyad":{"edges":[{"E":2,"M":[{"x":980,"y":696.4},{"x":980,"y":990},{"x":20,"y":990},{"x":20,"y":370}],"S":1}]}},
+    "w21": {"Dyad":{"edges":[{"E":2,"M":[{"x":300,"y":190},{"x":300,"y":170}],"S":1}]}},
+    "w23": {"Dyad":{"edges":[{"E":2,"M":[{"x":480,"y":170},{"x":480,"y":200}],"S":1}]}},
+    "w24": {"Dyad":{"edges":[{"E":-1,"M":[{"x":450,"y":210},{"x":450,"y":620}],"S":1},{"E":2,"M":[{"x":450,"y":687}],"S":-1},{"E":3,"M":[{"x":760,"y":620},{"x":760,"y":687}],"S":-1}],"junctions":[{"x":450,"y":620}]}},
+    "w25": {"Dyad":{"edges":[{"E":-1,"M":[],"S":1},{"E":2,"M":[{"x":450,"y":750},{"x":450,"y":777}],"S":-1},{"E":3,"M":[{"x":400,"y":885},{"x":800,"y":885},{"x":800,"y":777}],"S":-1}],"junctions":[{"x":400,"y":750}]}},
+    "w3": {"Dyad":{"edges":[{"E":-1,"M":[],"S":1},{"E":2,"M":[{"x":150,"y":213}],"S":-1},{"E":3,"M":[{"x":300,"y":370},{"x":300,"y":210}],"S":-1}],"junctions":[{"x":150,"y":370}]}},
+    "w4": {"Dyad":{"edges":[{"E":2,"M":[{"x":220,"y":40}],"S":1}]}},
+    "w5": {"Dyad":{"edges":[{"E":2,"M":[{"x":680,"y":200},{"x":680,"y":544}],"S":1}]}},
+    "w6": {"Dyad":{"edges":[{"E":2,"M":[{"x":480,"y":500},{"x":480,"y":705}],"S":1}]}},
+    "w7": {"Dyad":{"edges":[{"E":2,"M":[{"x":790,"y":500},{"x":790,"y":705}],"S":1}]}},
+    "w8": {"Dyad":{"edges":[{"E":2,"M":[{"x":620,"y":260}],"S":1}]}},
+    "w9": {"Dyad":{"edges":[{"E":2,"M":[{"x":630,"y":600},{"x":880,"y":600}],"S":1}]}},
+    "wbus": {"Dyad":{"edges":[{"E":2,"M":[{"x":780,"y":750},{"x":780,"y":730}],"S":1}]}}
+  }
+}
+end
+
+analysis PlanarBEVTheveninWLTCTransient
+  extends TransientAnalysis(stop = 1800.0, alg = ODEAlg.Rodas5P(), dtmax = 1.0, optimize = OptimizationLevel.None())
+  parameter k::Real = 50.0
+  parameter Ti::Time = 2.0
+  parameter v_fade::Real = 10.0
+  parameter P_aux::Power = 300.0
+  model = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVTheveninWLTC(k = k, Ti = Ti, v_fade = v_fade, P_aux = P_aux)
+relations
+end

@@ -1,0 +1,14 @@
+"""
+10–80 % charge, 20 kW terminal-power drive to 10 %, second 10–80 % charge.
+Absolute coulomb throughput selects the three legs without events or a latch;
+0.7 SoC per leg [THERMAL-BENCH] (assumed). Polarization and temperature remain
+continuous across all legs. The final stage rests after the second charge.
+"""
+component RapidgateTwoCharges
+  extends VehicleSystemsComponents.Vehicle.Electric.ThermalCharge(cycling = true)
+end
+
+analysis RapidgateTwoChargesTransient
+  extends TransientAnalysis(stop = 16000.0, alg = ODEAlg.Rodas5P(), reltol = 1e-9, abstol = 1e-10, dtmax = 5.0)
+  model = VehicleSystemsComponents.Vehicle.Electric.RapidgateTwoCharges()
+end

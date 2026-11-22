@@ -1,0 +1,23 @@
+"""
+Independent charges from 10 % SoC and 25 C. Compare at each pack's 80 % crossing,
+not at the same elapsed time. Adiabatic variants retain the same temperature-based
+power ceiling; G_air = 0 removes cooling only. AC rating is terminal power, with
+no unmodeled onboard-charger heat injected into the pack.
+"""
+component ThermalACvsDC
+  "Passive conductance [INL-DCFC-2015] (derived), 10 W/K; zero for adiabatic check"
+  parameter G_air::ThermalConductance = 10.0
+  dc = VehicleSystemsComponents.Vehicle.Electric.ThermalCharge(G_air = G_air) {^dc}
+  ac = VehicleSystemsComponents.Vehicle.Electric.ThermalCharge(G_air = G_air, P_full = 3300.0) {^ac}
+metadata {
+  "_links": {
+    "ac": {"Dyad":{"placement":{"diagram":{"x1":620,"x2":820,"y1":260,"y2":460}}}},
+    "dc": {"Dyad":{"placement":{"diagram":{"x1":180,"x2":380,"y1":260,"y2":460}}}}
+  }
+}
+end
+
+analysis ThermalACvsDCTransient
+  extends TransientAnalysis(stop = 34000.0, alg = ODEAlg.Rodas5P(), reltol = 1e-9, abstol = 1e-10, dtmax = 10.0)
+  model = VehicleSystemsComponents.Vehicle.Electric.ThermalACvsDC()
+end
