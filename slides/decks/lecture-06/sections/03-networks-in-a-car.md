@@ -53,7 +53,7 @@ routeAlias: can-in-brief
 
 <div class="caption text-left">Bit rates in cars: 500 kbit/s for powertrain and chassis, 125 to
 250 kbit/s for body and comfort · the number of nodes per bus is a car maker's design rule; the
-high-speed standard requires at least 30</div>
+high-speed standard is commonly quoted for 30; high-input-resistance transceivers allow more</div>
 
 <!--
 First, CAN in brief. On the left is its history. Bosch started developing CAN in 1983 and presented
@@ -74,7 +74,8 @@ Section 04 shows how.
 
 The caption gives typical bit rates. Powertrain and chassis, which means drive, brakes and steering,
 run at 500 kilobits per second. Body and comfort functions run at 125 to 250. How many nodes go on
-one bus is the car maker's own rule. The standard requires that at least 30 are possible.
+one bus is the car maker's own rule. The high-speed standard is commonly quoted for 30 nodes, and
+transceivers with a high input resistance allow more.
 -->
 
 ---
@@ -88,7 +89,7 @@ routeAlias: two-kinds-of-can
 | Standard | ISO 11898-2 | ISO 11898-3 | ISO 17987 |
 | Bit rate | up to 1 Mbit/s; 500 kbit/s typical | up to 125 kbit/s | up to 20 kbit/s |
 | Wires | twisted pair | twisted pair | **one wire** |
-| Nodes per bus | car maker's rule; ≥ 30 possible | **up to 32** | 1 master, up to 15 slaves |
+| Nodes per bus | car maker's rule; commonly 30, more with high-resistance transceivers | **up to 32** | 1 master, up to 15 slaves |
 | Access | multi-master, arbitration | multi-master, arbitration | **one master** polls its slaves |
 | One wire broken or shorted | the bus stops | **keeps working** on the other wire | the bus stops |
 | Used for | engine, gearbox, ABS/ESP, steering | doors, seats, lights, climate | window motors, mirrors, rain sensor, seat switches |

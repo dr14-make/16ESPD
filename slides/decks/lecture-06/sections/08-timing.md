@@ -168,8 +168,8 @@ $$w_i = B_i + \sum_{j \in hp(i)} \left\lceil \frac{w_i + t_\text{bit}}{T_j} \rig
 - *B*<sub>i</sub>: the longest **lower**-priority frame, which may just have started
 - *hp(i)*: the frames with a **lower identifier**
 - *t*<sub>bit</sub>: one bit time
-- Iterate from *w* = *B*; if *R* > *T*, the frame can miss its own period, and this formula no
-  longer holds
+- Iterate from *w* = *B*; the simple form holds only while the bus clears this frame and every
+  higher-priority one within its period
 
 </div>
 <div>
@@ -187,8 +187,9 @@ Even the lowest priority is delivered in under a millisecond, far inside every p
 </div>
 </div>
 
-<div class="caption text-left">Tindell, Burns and Wellings (1995) · valid while <i>R</i> ≤ <i>T</i>; Davis,
-Burns, Bril and Lukkien (2007) give the general form · <code>can_schedule(model)</code> computes this
+<div class="caption text-left">Tindell et al. (1994, 1995) · valid while the frame's busy period ends
+within its period <i>T</i>; near full load even <i>R</i> ≤ <i>T</i> is not enough, and Davis, Burns, Bril and
+Lukkien (2007) give the general form · <code>can_schedule(model)</code> computes this
 simple form for the model's bus</div>
 
 <!--
@@ -214,12 +215,13 @@ zero. It can lose to both others. It waits 0.54, and R is 0.81.
 So even the frame with the lowest priority arrives in under a millisecond, far inside its period of
 100 milliseconds, and the others far inside their 10.
 
-One warning about the formula, in the caption. It is the original analysis from 1995. It looks only
-at the first frame after the worst moment. That is safe as long as every frame is finished before its
-next copy is queued, so as long as R stays below T. In 2007 Davis and colleagues showed that it can
-be too optimistic when a frame is still waiting when its next copy arrives, and gave a longer,
-general form. Our frames finish in under a millisecond with periods of 10 milliseconds or more, so
-the simple form is fine.
+One warning about the formula, in the caption. It is the original analysis, first published in 1994.
+It looks only at the first frame after the worst moment. That is safe only if the bus is done with
+this frame and all frames of higher priority before the next copy of it is queued. That stretch of
+busy bus is called the busy period. In 2007 Davis and colleagues showed that the simple form can be
+too optimistic near full load, even when every response time is shorter than the period, and gave a
+longer, general form. Our busy period is under a millisecond and our periods are 10 milliseconds or
+more, so the simple form is fine.
 
 You do not calculate this by hand. The function can_schedule does it for your model. It uses
 exactly this simple form. If a frame's response time would exceed its period, it does not try the

@@ -140,7 +140,7 @@ routeAlias: obd-request
 </div>
 </div>
 
-<div class="caption text-left">Diagnostics is the one place where CAN works with requests and
+<div class="caption text-left">Diagnostics is the main place where CAN works with requests and
 answers: the identifiers 7DFh and 7E0–7EFh are reserved for these conversations</div>
 
 <!--
@@ -239,7 +239,7 @@ Reading the VIN: request `22 F1 90`, answer `62 F1 90` + 17 characters = **20 by
 <div>
 
 - **Single frame**: up to 7 bytes fit in one frame, no flow control.
-- The **first frame** announces the length (up to 4095 bytes).
+- The **first frame** announces the length (up to 4095 bytes; the 2016 edition adds a form for up to 4 GB).
 - **Flow control** sets how many frames before the next pause, and the minimum gap between them.
 - **Consecutive frames** carry a sequence number 1, 2, … F, 0, 1, … so a lost frame is noticed.
 
@@ -274,7 +274,7 @@ Last two arrows. The ECU sends two consecutive frames. They start with 21 and 22
 sequence numbers 1 and 2. Each carries seven characters. Three plus seven plus seven is seventeen.
 
 The bullets on the right give the general rules. Up to 7 bytes fit in a single frame. The first
-frame can announce up to 4095 bytes. With flow control, the receiver sets the pace. And the sequence
+frame can announce up to 4095 bytes, and since 2016 a longer form allows up to 4 gigabytes. With flow control, the receiver sets the pace. And the sequence
 number lets the receiver notice a lost frame.
 
 That is the theory. In the wrap-up we connect the simulated car to real hardware.

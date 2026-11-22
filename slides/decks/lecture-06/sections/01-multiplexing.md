@@ -435,6 +435,59 @@ new value only as often as the message is sent. Remember these three words: late
 -->
 
 ---
+routeAlias: harness-today
+---
+
+## The harness in numbers
+
+<div class="grid grid-cols-2 gap-8">
+<div>
+
+### A premium car today
+
+| | |
+|---|---:|
+| wire | **> 4 km** |
+| wires | > 3000 |
+| connectors | ≈ 700 |
+| mass | **≈ 60 kg** |
+
+An average car: about 25–45 kg. In the mid-1950s: about 75 m of wire.
+
+</div>
+<div>
+
+### What a bus saved
+
+Peugeot 306 → 307, with two CAN buses: **635 → 370 wires**, 40 % fewer.
+
+> Reducing the harness was "just a by-product" of CAN, says CiA. The aim was shared data: every
+> ECU can read every signal.
+
+</div>
+</div>
+
+<div class="caption text-left">Scott and Hoff, SAE Mobility Engineering (2020); Holt, SAE
+Automotive Engineering (2000); Navet et al., Proc. IEEE 93(6), 2005, p. 1207; CAN in Automation</div>
+
+<!--
+How big is the problem in a real car? The table on the left is a premium car today: more than 4
+kilometers of wire, more than 3000 single wires, about 700 connectors, and about 60 kilograms. An
+average car carries about 25 to 45 kilograms of harness. In the mid-1950s, a car had about 75 meters
+of wire.
+
+On the right: what a bus saves. When Peugeot went from the 306 to the 307, the 307 got two CAN buses.
+The number of wires fell from 635 to 370, 40 percent fewer.
+
+The quote below says something you might not expect. CAN in Automation, the association of CAN
+users and makers, says the smaller harness was just a by-product. The main aim was shared data: on
+a bus, every ECU can read every signal, so a new function needs no new wires. That is what the bus
+buys. What it costs is time, and that is the rest of today.
+
+The caption names the sources, so you can check the numbers.
+-->
+
+---
 routeAlias: our-car-wired
 ---
 

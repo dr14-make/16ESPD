@@ -104,7 +104,7 @@ brake release or standstill, as real units report it.
 | car's bus load at 500 / 250 kbit/s | 13.45 % / 26.9 % | `can_schedule`, #269 |
 | worst-case response times at 500 kbit/s | 0.28 ms (ABS status) – 1.48 ms (regen request, dashboard) | `can_schedule`, #269 |
 | top-level signal nets, point-to-point → bus | 31 → 19 (library car); 22 → 19 (hands-on starter) | #269 |
-| harness mass and wire length, current car | to verify | Bosch Automotive Handbook; Navet & Simonot-Lion |
+| harness, premium car | > 4 km, > 3000 wires, ≈ 700 connectors, ≈ 60 kg (average car 25–45 kg); Peugeot 306 → 307: 635 → 370 wires | `research_notes/CAN bus/harness-figures.md` |
 
 Each sweep cell is six stops with the pedal press shifted over 0–40 ms
 (`assets/data/lecture06/can_stop.csv`). With the brake request on the bus a single stop is phase

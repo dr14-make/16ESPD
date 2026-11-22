@@ -31,7 +31,7 @@ $$\text{value} = \text{raw} \times \text{factor} + \text{offset}$$
 - **raw**: the unsigned or signed integer in the frame
 - **factor**: the resolution, one raw step
 - **offset**: shifts the range, e.g. to allow negative temperatures
-- **length** in bits sets the range: factor × 2<sup>length</sup>
+- **length** in bits sets the range: factor × (2<sup>length</sup> − 1)
 
 > Every signal is **rounded** to its factor and **clamped** to its range. The bus cannot carry what
 > the database did not plan for.
@@ -210,7 +210,7 @@ Engine speed **2000 rpm** → raw 2000 / 0.25 = 8000 = **1F40h**, in bytes 2 and
 - The DBC marks each signal: `@1` Intel, `@0` Motorola. Its start bit is the lowest bit for Intel,
   the highest for Motorola.
 
-> Decode Intel bytes as Motorola and 2000 rpm reads as 401Fh × 0.25 = **4104 rpm**.
+> Decode Intel bytes as Motorola and 2000 rpm reads as 401Fh × 0.25 ≈ **4104 rpm**.
 
 </div>
 </div>
@@ -237,7 +237,7 @@ start bit, the number before the bar in the DBC. For Intel it is the lowest bit 
 For Motorola it is the highest bit, bit 23. So the same two bytes get two different start bits.
 
 The box shows what happens if you mix them up. Read the Intel bytes as if they were Motorola, and
-you get 401F in hexadecimal. Times 0.25, that is 4104 revolutions per minute instead of 2000.
+you get 401F in hexadecimal. Times 0.25, that is about 4104 revolutions per minute instead of 2000.
 Nothing on the bus warns you. The number is simply wrong.
 -->
 

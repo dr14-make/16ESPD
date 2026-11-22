@@ -129,7 +129,7 @@ routeAlias: low-speed-levels
 <div class="grid grid-cols-[1.3fr_1fr] gap-8 items-center">
 <div>
 
-<img src="/diagrams/04-ls-levels.svg" alt="Low-speed fault-tolerant CAN levels over three bits, recessive, dominant, recessive. Top: recessive has CAN_L near 5 V and CAN_H near 0 V; in the dominant bit the lines swap sides, CAN_H to 3.6 to 4 V and CAN_L to 1 to 1.4 V. Bottom: the difference CAN_H minus CAN_L is minus 5 V recessive and plus 2.2 to plus 3 V dominant."/>
+<img src="/diagrams/04-ls-levels.svg" alt="Low-speed fault-tolerant CAN levels over three bits, recessive, dominant, recessive. Top: recessive has CAN_L near 5 V and CAN_H near 0 V; in the dominant bit the lines swap sides, CAN_H to at least 3.6 V and CAN_L to at most 1.4 V. Bottom: the difference CAN_H minus CAN_L is minus 5 V recessive and at least plus 2.2 V, typically about plus 3 V, dominant."/>
 
 <div class="caption">ISO 11898-3 levels</div>
 
@@ -137,7 +137,7 @@ routeAlias: low-speed-levels
 <div>
 
 - Recessive: CAN_H low, CAN_L high, **−5 V** apart.
-- Dominant: they swap sides, **+2.2 to +3 V** apart.
+- Dominant: they swap sides, **at least +2.2 V** apart, typically about +3 V.
 - The transceiver **detects** a broken or shorted wire and switches to **single-wire mode**: it
   carries on on the remaining wire alone, against ground.
 - The price: at most **125 kbit/s**.
@@ -149,9 +149,9 @@ routeAlias: low-speed-levels
 For comparison, this is low-speed fault-tolerant CAN, the kind used in doors and seats.
 
 In a recessive bit, CAN high is near 0 volts and CAN low is near 5 volts. The bottom plot shows the
-difference: minus 5 volts. In a dominant bit the two wires swap sides. CAN high rises to between 3.6
-and 4 volts, and CAN low falls to between 1 and 1.4 volts. The difference is plus 2.2 to plus 3
-volts.
+difference: minus 5 volts. In a dominant bit the two wires swap sides. CAN high rises to at least 3.6
+volts, and CAN low falls to at most 1.4 volts. The difference is at least plus 2.2 volts, typically
+about plus 3 volts.
 
 The strength of this bus is in its transceiver. A wire can break. It can also touch the car body or
 the battery voltage by mistake, which is called a short. The transceiver watches both wires and
@@ -269,8 +269,9 @@ routeAlias: bus-length
 <div>
 
 During arbitration a dominant bit from one end must reach the far end, and the far node's own bit
-must come back, **before the sample point**: the moment each node reads the bit, 75–87.5 % into
-the bit time $T_\text{bit}$.
+must come back within the propagation segment, **before the sample point**: the moment each node
+reads the bit, 75–87.5 % into the bit time $T_\text{bit}$. Using the whole span up to the sample
+point gives an upper bound.
 
 $$2 L \cdot 5\,\tfrac{\text{ns}}{\text{m}} + 350\ \text{ns} \le \text{sample point} \times T_\text{bit}$$
 
@@ -285,7 +286,8 @@ A longer bus needs a longer bit.
 
 <div class="caption text-left">Assumed: 5 ns/m in the cable; per node a transceiver loop delay of
 150 ns (typical datasheet value) and 25 ns in the controller; the band spans sample points of 75 to
-87.5 % · the rule of thumb keeps a margin for clock tolerance, stubs and synchronization</div>
+87.5 %, an upper bound, since phase segment 1 is kept for clock errors · the rule of thumb keeps a
+margin for clock tolerance, stubs and synchronization</div>
 
 <!--
 How long may the bus be? The answer depends on the bit rate, and the reason is arbitration.
@@ -293,7 +295,8 @@ How long may the bus be? The answer depends on the bit rate, and the reason is a
 During arbitration, two nodes at opposite ends of the bus compare their bits. A node reads each bit
 at one fixed moment inside the bit, called the sample point. A dominant bit from one end must reach
 the far end, and the far node's own bit must travel back, before that moment. Otherwise both nodes
-could believe they won.
+could believe they won. Strictly, the round trip must fit in the part of the bit before the
+sample point that is not kept for clock errors, so the band we compute is an upper bound.
 
 The formula on the right says this. On the left of the inequality is the round trip: twice the
 length L, at 5 nanoseconds per meter, plus 350 nanoseconds for the electronics of the two nodes. On
@@ -345,7 +348,7 @@ routeAlias: bit-timing
 </div>
 
 <div class="caption text-left">tq: time quantum · at 500 kbit/s a bit lasts 2 µs · SJW: typically
-1 to 4 tq, never more than Phase 2</div>
+1 to 4 tq, never more than the shorter phase segment</div>
 
 <!--
 In section 01 we said that people cannot clap in time, but CAN nodes can. This slide shows how.

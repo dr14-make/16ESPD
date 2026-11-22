@@ -95,7 +95,7 @@ routeAlias: frame-variants
 | **Data** | the owner of the signal | periodically or on change |
 | **Remote** | a node that wants data | rarely used in cars |
 | **Error** | any node | it detected an error (section 07) |
-| **Overload** | a receiver | asks for a delay before the next frame; modern controllers almost never send it |
+| **Overload** | any node | asks for a delay before the next frame; modern controllers almost never send it |
 
 </div>
 </div>
@@ -114,7 +114,7 @@ recessive.
 On the right, the four kinds of frame. A data frame carries signals. Its sender is the ECU that owns
 the signal, and it sends periodically or when the value changes. Almost all traffic consists of data
 frames. A remote frame asks another node to send its data. Cars rarely use it. An error frame is the
-"STOP!" shout; section 07 covers it. An overload frame lets a receiver ask for a short delay before
+"STOP!" shout; section 07 covers it. An overload frame lets any node ask for a short delay before
 the next frame. Modern controllers almost never send one.
 -->
 

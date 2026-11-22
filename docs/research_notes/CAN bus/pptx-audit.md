@@ -193,4 +193,4 @@ CAN_H/CAN_L for the physical layer and stuffing.
 | OBD-II and UDS on CAN, ISO-TP | ISO 15765-2 (ISO-TP), ISO 15765-4 (OBD on CAN), ISO 14229-1/-3 (UDS), SAE J1979 (OBD PIDs) |
 | Security | AUTOSAR SecOC specification; Miller & Valasek, "Remote Exploitation of an Unaltered Passenger Vehicle" (2015); UNECE R155 |
 | History (to keep, verified) | Bosch CAN history page; CiA "History of CAN technology" |
-| Wire-harness numbers for the multiplexing motivation | Bosch *Automotive Handbook* (networking chapter); a current OEM harness figure (e.g. harness mass ≈ 50 kg / ≈ 5 km wire in a premium car, as cited in Navet & Simonot-Lion) — verify before use |
+| Wire-harness numbers for the multiplexing motivation | Bosch *Automotive Handbook* (networking chapter); a current OEM harness figure — done in `harness-figures.md` (premium car > 4 km, ≈ 60 kg, Scott & Hoff 2020; Navet & Simonot-Lion contain no mass or length figure) |

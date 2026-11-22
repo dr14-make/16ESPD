@@ -281,7 +281,7 @@ Elsewhere: TCP, which confirms delivery; UDP, which does not. For a letter: the 
 
 - A signal fits in **8 bytes**: nothing to split
 - Delivery is not confirmed to a receiver: the ACK says only that *someone* got it
-- **Except diagnostics**: ISO-TP splits up to 4095 bytes into numbered frames, with flow control
+- **Except diagnostics**: ISO-TP splits up to 4095 bytes (4 GB since 2016) into numbered frames, with flow control
 
 → section 09
 
@@ -308,7 +308,7 @@ split. And delivery is not confirmed to a particular receiver. The ACK only says
 received the frame.
 
 There is one exception: diagnostics, when a workshop reads data out of the car. Those messages can
-be long. A protocol called ISO-TP splits up to 4095 bytes into numbered frames, and the receiver
+be long. A protocol called ISO-TP splits up to 4095 bytes, or up to 4 gigabytes since 2016, into numbered frames, and the receiver
 controls the pace. Section 09 shows it.
 
 In the room: a normal topic is one sentence, so there is nothing to split. A long report is told in
