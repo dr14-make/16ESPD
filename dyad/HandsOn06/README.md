@@ -1,79 +1,113 @@
-# Hands-on 06 — messages coordinate; local loops brake
+# Hands-on 06: the bus carries coordination, the loops stay local
 
-Open `VehicleSystemsComponents.HandsOn06`; save an exercise copy. The inherited
-`WiringStop` canvas exposes the brake ECU, VCU, local pedals, wheels and calipers.
-Both pedal gains retain the 50 ms response. The brake ECU owns the wheel-only
-estimator, `RegenBlend(abs_rule=true)` and held ABS control; friction is local.
-The VCU adds its wired accelerator to the received nonpositive regen request.
-No actual-motor-torque feedback is modeled.
+Open `VehicleSystemsComponents.HandsOn06` and save an exercise copy of each starter before you
+edit it.
 
-## 1a — wires to ideal bus
+Every exercise builds on `WiringStop`: a hard ABS stop from 80 km/h, with the pedal pressed at
+0.5 s. Its canvas shows the car as a real EV is split:
 
-Starter: `Step1PointToPointStop` / `Step1PointToPointStopTransient`.
-Delete `direct_regen`, `direct_steering`, `direct_yaw`; set `networked=true`.
-Keep the pedal, wheel-speed and caliper wires. Reference: `Step1IdealBusStop`,
-alias `IdealBusStop`, analysis `IdealBusStopTransient`. Both stop at **28.185 m**;
-the distance match is 1e-5 m and speed match 5e-5 m/s at 1e-9 solve tolerances.
-The preconnected monitoring backbone keeps acausal CAN ports balanced; this is
-not an initially disconnected-bus starter. Unused direct inputs are zero-bound.
+- The **brake ECU** (`WiringBrakeNode`) reads its brake pedal and its four wheel-speed sensors on
+  its own wires, and drives the calipers on its own wires. Inside it, the wheel-only estimator
+  computes speed and slip, `RegenBlend` splits the brake demand between motor and discs, and
+  `AbsControlHold` holds the ABS status.
+- The **VCU** (`WiringDriveNode`) reads the accelerator on its own wire and adds the regen
+  request from the brake ECU.
+- Only **coordination** crosses the bus: vehicle speed, the four wheel speeds, steering angle, yaw
+  rate, the regen request and the held ABS status.
 
-## 1b — hand-built regen message, inside the nodes
+The model does not report the motor's actual torque back to the brake ECU.
 
-Starter: `Step1bMissingPedalStop` (historical name; no pedal message exists),
-with its same-named `Transient` analysis. `ecu.regen_tx` is absent;
-`drive.regen_rx` is present inside the VCU but bypassed by the top-level `bypass`.
-`Vehicle.Planar.check_can` reports the missing sender. Open `WiringBrakeNode`:
-add the supplied conditional `CanTxReal` and its two connections by enabling
-`transmit_regen=true` in the exercise copy. Its fields are **slot 6, ID 272,
-period `regen_period=chassis_period`, scale 0.1 N.m, raw -32768..32767**.
-Wire `blend.tau_motor` to `regen_tx.u`, and `regen_tx.bus` to `bus`.
-Inside `WiringDriveNode`, `CanRxReal(slot=6,id=272)` already joins the bus.
-Delete `bypass` and set `drive_networked=true` to select its output.
-Reference: `PedalMessageStop` / `PedalMessageStopTransient`, **28.185 m**.
+Each stop distance is measured from the pedal press until the speed first falls below 0.5 m/s, on
+a 5 ms grid. The tests check every number below to within 1 mm.
 
-## 2 — ownership is not arbitration
+## 1a: from wires to an ideal bus
 
-Starter: `Step2DuplicateSlotStop` / `Step2DuplicateSlotStopTransient`.
-Run `check_can` before solving: IDs **272/273** both own slot **6**.
-Changing only the ID does not repair ownership. Delete `duplicate`,
-`duplicate_input`, `duplicate_bus`. Reference: `CanStop`, **29.056 m**.
-The supplied starter analysis is intentionally invalid until repaired.
+Starter: `Step1PointToPointStop`, analysis `Step1PointToPointStopTransient`.
 
-## 3 — architecture and period
+1. Delete the direct wires `direct_regen`, `direct_steering` and `direct_yaw`.
+2. Set `networked = true`.
+3. Keep the pedal, wheel-speed and caliper wires: those loops stay local.
 
-Starter/reference: `Step3CanStop` / `CanStopTransient`; change `chassis_period`
-to 10/20/40 ms (`Can20msStopTransient`, `Can40msStopTransient`).
-`Step4SlowCanStop` is also the 40 ms example. Speed, wheels, steering, yaw and
-regen follow this period; dashboard is 100 ms. ABS-active and friction are
-internal wires. Compare library `Vehicle.Planar.CanBusBrake10msStop`,
-`CanBusBrake20msStop`, `CanBusBrake40msStop`.
+The bus backbone is already connected, so the CAN ports stay balanced while you rewire.
 
-| Layout / period | Default [m] | Sweep mean [m] | Min–max [m] |
+Reference: `Step1IdealBusStop` (also `IdealBusStop`, analysis `IdealBusStopTransient`). Both cars
+stop in **28.185 m**: an ideal bus behaves exactly like wires.
+
+## 1b: build the regen message by hand
+
+Starter: `Step1bMissingRegenStop`, analysis `Step1bMissingRegenStopTransient`. The brake ECU does
+not send the regen request yet, and a direct wire, `bypass`, stands in for it.
+
+1. Run `Vehicle.Planar.check_can` on the starter. It reports that nobody transmits slot 6.
+2. Open `WiringBrakeNode` and find the regen transmitter `regen_tx`: **slot 6, ID 272 (110h),
+   period `regen_period` (= `chassis_period`), 0.1 N·m per bit, raw −32768…32767**. It reads
+   `blend.tau_motor` and connects to `bus`, but exists only when `transmit_regen` is set.
+3. The VCU's receiver, `CanRxReal(slot = 6, id = 272)` in `WiringDriveNode`, is already on the
+   bus.
+4. In the starter, on its `extends WiringStop(…)` line, set `transmit_regen = true` and
+   `drive_networked = true`, so the VCU takes the regen request from the bus. Then delete
+   `bypass`.
+
+Reference: `RegenMessageStop`, analysis `RegenMessageStopTransient`. It stops in **28.185 m**,
+the same as before.
+
+## 2: two transmitters on one slot
+
+Starter: `Step2DuplicateSlotStop`, analysis `Step2DuplicateSlotStopTransient`. Its analysis fails
+until you repair it.
+
+1. Run `check_can` before solving. IDs **272 and 273** both own slot **6**.
+2. Changing only the ID does not fix it: the slot still has two owners.
+3. Delete `duplicate`, `duplicate_input` and `duplicate_bus`.
+
+Reference: `CanStop`, **29.056 m**.
+
+## 3: architecture against period
+
+Starter and reference: `Step3CanStop`, analysis `CanStopTransient`. Set `chassis_period` to 10,
+20 and 40 ms (`Can20msStopTransient`, `Can40msStopTransient`). `Step4SlowCanStop` is the 40 ms
+car. Speed, wheel speeds, steering, yaw, regen and ABS status follow this period; the dashboard
+frames use 100 ms.
+
+Compare the counterexample in the library, where the brake request crosses the bus twice:
+`Vehicle.Planar.CanBusBrake10msStop`, `CanBusBrake20msStop` and `CanBusBrake40msStop`.
+
+One stop depends on where the pedal press falls between frames. So
+`assets/data/lecture06/can_stop.csv` repeats every case for six pedal-onset offsets from 0 to
+40 ms; `scripts/lecture06_can_sweep.jl` writes it.
+
+| Layout, period | Default onset [m] | Sweep mean [m] | Min–max [m] |
 |---|---:|---:|---:|
-| Real / 10 ms | 29.056 | 28.902 | 28.617–29.056 |
-| Real / 20 ms | 30.018 | 29.496 | 28.982–30.018 |
-| Real / 40 ms | 30.442 | 30.224 | 30.017–30.442 |
-| Bus-brake / 10 ms | 30.743 | 30.100 | 28.789–30.743 |
-| Bus-brake / 20 ms | 29.320 | 29.620 | 29.320–29.949 |
-| Bus-brake / 40 ms | 33.934 | 33.638 | 31.792–35.779 |
+| Real, 10 ms | 29.056 | 28.902 | 28.617–29.056 |
+| Real, 20 ms | 30.018 | 29.496 | 28.982–30.018 |
+| Real, 40 ms | 30.442 | 30.224 | 30.017–30.442 |
+| Brake request on the bus, 10 ms | 30.743 | 30.100 | 28.789–30.743 |
+| Brake request on the bus, 20 ms | 29.320 | 29.620 | 29.320–29.949 |
+| Brake request on the bus, 40 ms | 33.934 | 33.638 | 31.792–35.779 |
 
-The counterexample loses metres by transporting brake demand and friction over CAN; the real layout avoids that delay, though delayed regen still costs distance.
-Six onset offsets span 0–40 ms in `assets/data/lecture06/can_stop.csv`, generated
-by `scripts/lecture06_can_sweep.jl`; tests assert its input hash and these numbers.
-The real layout never locks a wheel. The counterexample briefly locks a rear wheel at 10 ms
-with a 30 ms onset offset: another cost of sending the brake demand over the bus.
+The real layout costs 0.8–2.1 m against the ideal bus, because the regen request still waits for
+its frame. The counterexample also waits for the brake request and the friction request; at 40 ms
+it stops about 5.5 m later than the ideal bus on average. The real layout never locks a wheel; the counterexample briefly
+locks a rear wheel at 10 ms with a 30 ms onset offset.
 
-## 4 — bitrate schedule
+## 4: bus load at two bitrates
 
-Starter/reference: `CanStop(name=:exercise)`. In Julia call
-`Vehicle.Planar.can_schedule(car; bitrate=500_000)`, then `bitrate=250_000`.
-Loads are **0.1345 / 0.269**. Ordered response bounds at 500 kbit/s are
-`[0.28,0.43,0.58,0.73,0.88,1.03,1.18,1.33,1.48,1.48]` ms; at 250 they double.
-This analytical schedule does not alter the model's sampled transport delay.
+Use `CanStop(name = :exercise)`. In Julia, call `Vehicle.Planar.can_schedule(car; bitrate =
+500_000)`, then `bitrate = 250_000`.
 
-Run `handson06` after compilation. Default stops use onset 0.5 s to first speed
-below 0.5 m/s on a 5 ms grid; absolute pins are asserted within 1 mm.
-Wire convention: each top-level signal `connect` net counts once, including buses,
-excluding six mechanical nets. Expanded direct/bus: **22/19**; library estimated
-point-to-point/bus: **31/19** (the former expands estimator/blend internals).
-Studio rendering of inherited metadata still needs a visual check.
+- Load: **13.45 %** at 500 kbit/s, **26.9 %** at 250 kbit/s.
+- Worst-case response times at 500 kbit/s, by priority: 0.28, 0.43, 0.58, 0.73, 0.88, 1.03, 1.18,
+  1.33, 1.48, 1.48 ms. At 250 kbit/s they double.
+
+The schedule is calculated, not simulated: it does not change the delay in the model, which comes
+from the periods.
+
+## Wire count
+
+Each top-level signal net counts once, the bus included; the six mechanical nets don't count.
+
+- Hands-on starter: **22** nets point to point, **19** on the bus.
+- Library car: **31** point to point (`PlanarBEVDriveEstimated` draws the estimator and blend at
+  the top level), **19** on the bus (`PlanarBEVCanDrive`).
+
+Run the `handson06` test group after compiling to check every number above.

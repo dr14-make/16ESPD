@@ -6,12 +6,12 @@
 
 using DyadInterface
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@component function PedalMessageStopTransient__System(; name = nothing, var"alg"=ODEAlg.Rodas5P(), var"start"=0, var"stop"=6, var"abstol"=1e-9, var"reltol"=1e-9, var"saveat"=0, var"dtmax"=0.005, var"tstops"=[0.5, 0.6], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.None(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", __overrides = Dict{String, Any}())
+@component function Step1bMissingRegenStopTransient__System(; name = nothing, var"alg"=ODEAlg.Rodas5P(), var"start"=0, var"stop"=6, var"abstol"=1e-9, var"reltol"=1e-9, var"saveat"=0, var"dtmax"=0.005, var"tstops"=[0.5, 0.6], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.None(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
   
-    @named model = PedalMessageStopTransient__System()
+    @named model = Step1bMissingRegenStopTransient__System()
   """))
 
   __overrides = Dict{String, Any}(__overrides)
@@ -112,9 +112,9 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   __constants = Any[]
 
   ### Components
-  # Subcomponent model of type VehicleSystemsComponents.HandsOn06.PedalMessageStop
+  # Subcomponent model of type VehicleSystemsComponents.HandsOn06.Step1bMissingRegenStop
   model_overrides = __pop_subcomponent_overrides!(__overrides, "model")
-  push!(__systems, @named model = VehicleSystemsComponents.HandsOn06.PedalMessageStop(; __overrides = model_overrides))
+  push!(__systems, @named model = VehicleSystemsComponents.HandsOn06.Step1bMissingRegenStop(; __overrides = model_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -131,10 +131,10 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
-export PedalMessageStopTransient__System
+export Step1bMissingRegenStopTransient__System
 
-@kwdef struct PedalMessageStopTransient__Spec <: AbstractTransientAnalysisSpec
-  name::Symbol = :PedalMessageStopTransient
+@kwdef struct Step1bMissingRegenStopTransient__Spec <: AbstractTransientAnalysisSpec
+  name::Symbol = :Step1bMissingRegenStopTransient
   __overrides::Dict{SymbolicT, SymbolicT} = Dict{SymbolicT, SymbolicT}()
   var"alg"::ODEAlg.Type = ODEAlg.Rodas5P()
   var"start"::Float64 = 0
@@ -151,12 +151,12 @@ export PedalMessageStopTransient__System
   var"specialization"::SpecializationLevel.Type = SpecializationLevel.Despecialize()
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
-  # Finished manual regen sender/receiver repair; historical exercise name retained.
-  var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn06.PedalMessageStop(; name=:PedalMessageStop)
-  __system::System = PedalMessageStopTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file")
+  # Step 1b starter: the brake ECU does not send the regen request yet; a direct wire stands in.
+  var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn06.Step1bMissingRegenStop(; name=:Step1bMissingRegenStop)
+  __system::System = Step1bMissingRegenStopTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file")
 end
 
-function __dyad_base_analysis_spec(spec::PedalMessageStopTransient__Spec)
+function __dyad_base_analysis_spec(spec::Step1bMissingRegenStopTransient__Spec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
   
@@ -166,13 +166,13 @@ function __dyad_base_analysis_spec(spec::PedalMessageStopTransient__Spec)
   )
 end
 
-function DyadInterface.run_analysis(spec::PedalMessageStopTransient__Spec)
+function DyadInterface.run_analysis(spec::Step1bMissingRegenStopTransient__Spec)
   run_analysis(__dyad_base_analysis_spec(spec))
 end
 
-function DyadInterface.setup_analysis(spec::PedalMessageStopTransient__Spec; kwargs...)
+function DyadInterface.setup_analysis(spec::Step1bMissingRegenStopTransient__Spec; kwargs...)
   DyadInterface.setup_analysis(__dyad_base_analysis_spec(spec); kwargs...)
 end
 
-PedalMessageStopTransient(;kwargs...) = run_analysis(PedalMessageStopTransient__Spec(;kwargs...))
-export PedalMessageStopTransient, PedalMessageStopTransient__Spec
+Step1bMissingRegenStopTransient(;kwargs...) = run_analysis(Step1bMissingRegenStopTransient__Spec(;kwargs...))
+export Step1bMissingRegenStopTransient, Step1bMissingRegenStopTransient__Spec

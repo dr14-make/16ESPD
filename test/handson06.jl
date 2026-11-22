@@ -21,13 +21,13 @@ end
 
 @testset "HandsOn06 topology exercises" begin
     for constructor in (H06.Step1PointToPointStop, H06.Step1IdealBusStop,
-                        H06.IdealBusStop, H06.PedalMessageStop, H06.Step3CanStop,
+                        H06.IdealBusStop, H06.RegenMessageStop, H06.Step3CanStop,
                         H06.CanStop, H06.Can20msStop, H06.Can40msStop,
                         H06.Step4SlowCanStop)
         @test H06CAN.check_can(constructor(name = :exercise)) isa ModelingToolkit.System
     end
     for (constructor, fragment) in (
-        (H06.Step1bMissingPedalStop, "nobody transmits"),
+        (H06.Step1bMissingRegenStop, "nobody transmits"),
         (H06.Step2DuplicateSlotStop, "both transmit on slot 6"),
     )
         err = try
@@ -89,7 +89,7 @@ end
     ts = collect(0.01:0.005:6.0)
     @test maximum(abs.(direct.sol(ts; idxs = md.car.bus.vx).u .-
                        ideal.sol(ts; idxs = mi.car.bus.vx).u)) < 5e-5
-    repaired = H06.PedalMessageStopTransient()
+    repaired = H06.RegenMessageStopTransient()
     mr = symbolic_container(repaired)
     @test h06_stop_distance(repaired) ≈ 28.185 atol = 1e-3
     @test isapprox(h06_stop_distance(repaired), di; atol = 1e-5, rtol = 0)

@@ -5,17 +5,17 @@
 
 
 @doc Markdown.doc"""
-   Step1bMissingPedalStop(; name, networked, drive_networked, transmit_regen, receive_regen, ideal, chassis_period, regen_period, dashboard_period, T_actuator, esp_on, abs_on, mu, m, radius, T_full, tau_max, ratio, P_charge, v_fade, P_aux, v0, dv_wheel, __overrides)
+   RegenMessageStop(; name, networked, drive_networked, transmit_regen, receive_regen, ideal, chassis_period, regen_period, dashboard_period, T_actuator, esp_on, abs_on, mu, m, radius, T_full, tau_max, ratio, P_charge, v_fade, P_aux, v0, dv_wheel, __overrides)
 
-Historical exercise name retained: the missing message is now ECU-to-VCU regen, not a pedal.
+Step 1b reference: the brake ECU sends the regen request to the VCU in frame 110h.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `networked`         |                          | --  |   true |
-| `drive_networked`         |                          | --  |   false |
-| `transmit_regen`         |                          | --  |   false |
+| `drive_networked`         |                          | --  |   true |
+| `transmit_regen`         |                          | --  |   true |
 | `receive_regen`         |                          | --  |   true |
 | `ideal`         |                          | --  |   true |
 | `chassis_period`         |                          | --  |   0.01 |
@@ -36,12 +36,12 @@ Historical exercise name retained: the missing message is now ECU-to-VCU regen, 
 | `v0`         |                          | m/s  |   22.22222222222222 |
 | `dv_wheel`         |                          | m/s  |   0.01 |
 """
-@component function Step1bMissingPedalStop(; name = nothing, var"networked"=true, var"drive_networked"=false, var"transmit_regen"=false, var"receive_regen"=true, var"ideal"=true, var"chassis_period"=0.01, var"dashboard_period"=0.1, var"T_actuator"=0.05, var"esp_on"=Float64(1), var"abs_on"=Float64(1), var"mu"=Float64(1), var"m"=Float64(1500), var"radius"=0.31, var"T_full"=Float64(2500), var"tau_max"=Float64(320), var"ratio"=8.193, var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10), var"P_aux"=Float64(300), var"v0"=22.22222222222222, var"dv_wheel"=0.01, var"regen_period"=nothing, __overrides = Dict{String, Any}())
+@component function RegenMessageStop(; name = nothing, var"networked"=true, var"drive_networked"=true, var"transmit_regen"=true, var"receive_regen"=true, var"ideal"=true, var"chassis_period"=0.01, var"dashboard_period"=0.1, var"T_actuator"=0.05, var"esp_on"=Float64(1), var"abs_on"=Float64(1), var"mu"=Float64(1), var"m"=Float64(1500), var"radius"=0.31, var"T_full"=Float64(2500), var"tau_max"=Float64(320), var"ratio"=8.193, var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10), var"P_aux"=Float64(300), var"v0"=22.22222222222222, var"dv_wheel"=0.01, var"regen_period"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
   
-    @named model = Step1bMissingPedalStop()
+    @named model = RegenMessageStop()
   """))
 
   __overrides = Dict{String, Any}(__overrides)
@@ -263,9 +263,8 @@ Historical exercise name retained: the missing message is now ECU-to-VCU regen, 
   push!(__eqs, connect(ecu.tau_rr, car.tau_rr))
   push!(__eqs, connect(flat.y, roadload.grade))
   push!(__eqs, connect(car.chassis, roadload.chassis))
-  push!(__eqs, connect(ecu.regen, drive.regen))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
-export Step1bMissingPedalStop
+export RegenMessageStop
