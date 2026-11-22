@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 50 560 370" width="560" height="370">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box-e { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .box-f { fill: #fdf3e6; stroke: #a75d00; stroke-width: 2; }
+    .shaft { stroke: #16202c; stroke-width: 6; fill: none; }
+    .dc { stroke: #a75d00; stroke-width: 3; fill: none; }
+    .dc-d { stroke: #a75d00; stroke-width: 3; fill: none; stroke-dasharray: 6 4; }
+    .wheel { fill: #2b3440; stroke: #16202c; stroke-width: 2; }
+    .b { font-size: 15px; font-weight: 600; }
+    .lbl { font-size: 13px; fill: #4a5a6b; }
+  </style>
+
+
+  <rect class="box-f" x="20" y="70" width="110" height="60" rx="6"/>
+  <text x="75" y="105" text-anchor="middle" class="b">engine</text>
+  <path class="shaft" d="M130 100 H170"/>
+  <rect class="box-e" x="170" y="70" width="120" height="60" rx="6"/>
+  <text x="230" y="105" text-anchor="middle" class="b">generator</text>
+  <text x="230" y="150" text-anchor="middle" class="lbl">mechanical → electrical</text>
+  <path class="dc" d="M290 100 H350 V190"/>
+
+  <rect class="box-e" x="20" y="230" width="110" height="60" rx="6"/>
+  <text x="75" y="265" text-anchor="middle" class="b">battery</text>
+  <path class="dc" d="M130 260 H350 V190"/>
+  <circle cx="350" cy="190" r="6" fill="#a75d00"/>
+  <text x="340" y="215" text-anchor="end" class="lbl">DC link</text>
+  <rect class="box-e" x="20" y="330" width="110" height="36" rx="6" stroke-dasharray="6 4"/>
+  <text x="75" y="353" text-anchor="middle" class="lbl">grid, plug-in</text>
+  <path class="dc-d" d="M75 330 V290"/>
+
+  <path class="dc" d="M350 190 H390"/>
+  <rect class="box-e" x="390" y="160" width="110" height="60" rx="6"/>
+  <text x="445" y="195" text-anchor="middle" class="b">motor</text>
+  <text x="445" y="150" text-anchor="middle" class="lbl">electrical → mechanical</text>
+  <path class="shaft" d="M445 220 V280"/>
+  <rect class="wheel" x="410" y="280" width="70" height="30" rx="6"/>
+  <text x="445" y="335" text-anchor="middle" class="lbl">wheels; regen back</text>
+  <text x="445" y="352" text-anchor="middle" class="lbl">to the battery</text>
+
+  <text x="280" y="405" text-anchor="middle" class="lbl">no shaft from the engine to the wheels: every joule from the engine is converted twice</text>
+</svg>

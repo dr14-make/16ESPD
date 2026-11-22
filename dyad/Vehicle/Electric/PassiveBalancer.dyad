@@ -1,0 +1,133 @@
+"""
+One channel of a minimum-referenced passive balancer; instantiate once per cell.
+Only enabled near top of charge. A smooth regenerative latch retains its fraction
+inside the voltage deadband. Its output is a duty-averaged shunt command; finite
+voltage resolution and measurement dynamics avoid sliding on a hard threshold.
+The top gate resets at V_active - delta_on, below its turn-on voltage, so the
+shunt's own terminal-voltage sag cannot toggle the gate.
+"""
+component PassiveBalancer
+  voltage = RealInput() {^voltage}
+  minimum_voltage = RealInput() {^minimum_voltage}
+  active = RealInput() {^active}
+  bleed = RealOutput() {^bleed}
+  "Set threshold [BALANCING-BENCH] (assumed), 10 mV above minimum"
+  parameter delta_on::Voltage = 0.010
+  "Reset threshold [BALANCING-BENCH] (assumed), 5 mV above minimum"
+  parameter delta_off::Voltage = 0.005
+  "Top-of-charge gate [BALANCING-BENCH] (assumed), NMC stand-in"
+  parameter V_active::Voltage = 4.05
+  "Duty-command transition time [BALANCING-BENCH] (assumed)"
+  parameter latch_time::Time = 0.1
+  "Voltage measurement filter [BALANCING-BENCH] (assumed), slower than shunt actuation"
+  parameter measurement_time::Time = 1.0
+  variable measured_voltage::Voltage
+  variable measured_delta::Voltage
+  "Smooth threshold width [BALANCING-BENCH] (assumed), below hysteresis band"
+  parameter voltage_width::Voltage = 0.0002
+  variable fraction::Real
+  variable request::Real
+  variable delta_threshold::Voltage
+  variable top_threshold::Voltage
+  delta = BlockComponents.Math.Feedback() {^delta}
+  voltage_filter = BlockComponents.Continuous.FirstOrder(T = measurement_time) {^voltage_filter}
+  delta_filter = BlockComponents.Continuous.FirstOrder(T = measurement_time) {^delta_filter}
+  latch = BlockComponents.Continuous.FirstOrder(T = latch_time) {^latch}
+  enabled = BlockComponents.Nonlinear.Limiter(y_min = 0.0, y_max = 1.0) {^enabled}
+  delta_set = BlockComponents.Sources.Constant(k = delta_on) {^delta_set}
+  top_set = BlockComponents.Sources.Constant(k = V_active) {^top_set}
+  delta_level = BlockComponents.Math.Add(k2 = -(delta_on - delta_off)) {^delta_level}
+  top_level = BlockComponents.Math.Add(k2 = -delta_on) {^top_level}
+  demand = VehicleSystemsComponents.Vehicle.Blocks.BalancerRequestEquation(voltage_width = voltage_width) {^demand}
+  command = BlockComponents.Math.Product() {^command}
+relations
+  initial voltage_filter.y = voltage
+  initial delta_filter.y = voltage - minimum_voltage
+  initial latch.y = 0.0
+  measured_voltage = voltage_filter.y
+  measured_delta = delta_filter.y
+  fraction = latch.y
+  delta_threshold = delta_level.y
+  top_threshold = top_level.y
+  request = demand.y
+  connect(voltage, delta.u1) {^signal1}
+  connect(minimum_voltage, delta.u2) {^signal2}
+  connect(voltage, voltage_filter.u) {^signal3}
+  connect(delta.y, delta_filter.u) {^signal4}
+  connect(active, enabled.u) {^signal5}
+  connect(delta_set.y, delta_level.u1) {^signal6}
+  connect(top_set.y, top_level.u1) {^signal7}
+  connect(latch.y, delta_level.u2, top_level.u2, command.u2) {^signal8}
+  connect(enabled.y, demand.u1, command.u1) {^signal9}
+  connect(delta_filter.y, demand.u2) {^signal10}
+  connect(delta_level.y, demand.u3) {^signal11}
+  connect(voltage_filter.y, demand.u4) {^signal12}
+  connect(top_level.y, demand.u5) {^signal13}
+  connect(demand.y, latch.u) {^signal14}
+  connect(command.y, bleed) {^signal15}
+metadata {
+  "_links": {
+    "enabled": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 110, "x2": 460, "y2": 170}}}},
+    "delta": {"Dyad": {"placement": {"diagram": {"x1": 240, "y1": 230, "x2": 300, "y2": 290}}}},
+    "delta_filter": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 230, "x2": 460, "y2": 290}}}},
+    "delta_set": {"Dyad": {"placement": {"diagram": {"x1": 260, "y1": 350, "x2": 320, "y2": 410}}}},
+    "delta_level": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 350, "x2": 460, "y2": 410}}}},
+    "voltage_filter": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 470, "x2": 460, "y2": 530}}}},
+    "top_set": {"Dyad": {"placement": {"diagram": {"x1": 260, "y1": 590, "x2": 320, "y2": 650}}}},
+    "top_level": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 590, "x2": 460, "y2": 650}}}},
+    "demand": {"Dyad": {"placement": {"diagram": {"x1": 560, "y1": 250, "x2": 820, "y2": 510}}}},
+    "latch": {"Dyad": {"placement": {"diagram": {"x1": 860, "y1": 350, "x2": 920, "y2": 410}}}},
+    "command": {"Dyad": {"placement": {"diagram": {"x1": 860, "y1": 110, "x2": 920, "y2": 170}}}},
+    "signal1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "signal2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 270, "y": 320}], "E": 2}]}},
+    "signal3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 260}, {"x": 200, "y": 500}], "E": 2}]}},
+    "signal4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "signal5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "signal6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 345, "y": 380}, {"x": 345, "y": 362}], "E": 2}]}},
+    "signal7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 345, "y": 620}, {"x": 345, "y": 602}], "E": 2}]}},
+    "signal8": {"Dyad": {"junctions": [{"x": 940, "y": 380}, {"x": 368, "y": 638}], "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 940, "y": 200}, {"x": 840, "y": 200}, {"x": 840, "y": 158}], "E": 4}, {"S": -1, "M": [{"x": 940, "y": 700}, {"x": 368, "y": 700}], "E": -2}, {"S": -2, "M": [], "E": 3}, {"S": -2, "M": [{"x": 368, "y": 398}], "E": 2}]}},
+    "signal9": {"Dyad": {"junctions": [{"x": 540, "y": 140}], "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 540, "y": 293.3}], "E": 2}, {"S": -1, "M": [{"x": 820, "y": 140}, {"x": 820, "y": 122}], "E": 3}]}},
+    "signal10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 260}, {"x": 500, "y": 336.7}], "E": 2}]}},
+    "signal11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "signal12": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 500}, {"x": 500, "y": 423.3}], "E": 2}]}},
+    "signal13": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 520, "y": 620}, {"x": 520, "y": 466.7}], "E": 2}]}},
+    "signal14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "signal15": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "active": {"Dyad": {"placement": {"diagram": {"x1": 60, "y1": 130, "x2": 80, "y2": 150}, "icon": {"x1": 0, "y1": 680, "x2": 40, "y2": 720}}}},
+    "voltage": {"Dyad": {"placement": {"diagram": {"x1": 60, "y1": 250, "x2": 80, "y2": 270}, "icon": {"x1": 730, "y1": 980, "x2": 770, "y2": 1020, "rot": 270}}}},
+    "minimum_voltage": {"Dyad": {"placement": {"diagram": {"x1": 60, "y1": 310, "x2": 80, "y2": 330}, "icon": {"x1": 0, "y1": 280, "x2": 40, "y2": 320}}}},
+    "bleed": {"Dyad": {"placement": {"diagram": {"x1": 955, "y1": 130, "x2": 975, "y2": 150}, "icon": {"x1": 80, "y1": 980, "x2": 120, "y2": 1020, "rot": 90}}}}
+  }
+}
+end
+
+test component TestPassiveBalancer
+  "Test voltage [BALANCING-BENCH] (assumed), above turn-on threshold"
+  parameter voltage::Voltage = 4.12
+  "String minimum [BALANCING-BENCH] (assumed)"
+  parameter minimum_voltage::Voltage = 4.10
+  channel = VehicleSystemsComponents.Vehicle.Electric.PassiveBalancer() {^channel}
+  active = BlockComponents.Sources.Step(height = -1.0, offset = 1.0, start_time = 100.0) {^active}
+  cell_voltage = BlockComponents.Sources.Constant(k = voltage) {^cell_voltage}
+  min_voltage = BlockComponents.Sources.Constant(k = minimum_voltage) {^min_voltage}
+relations
+  connect(cell_voltage.y, channel.voltage) {^cell_wire}
+  connect(min_voltage.y, channel.minimum_voltage) {^minimum_wire}
+  connect(active.y, channel.active) {^command}
+metadata {
+  "_links": {
+    "channel": {"Dyad": {"placement": {"diagram": {"x1": 560, "y1": 150, "x2": 960, "y2": 550}}}},
+    "min_voltage": {"Dyad": {"placement": {"diagram": {"x1": 160, "y1": 220, "x2": 260, "y2": 320}}}},
+    "active": {"Dyad": {"placement": {"diagram": {"x1": 160, "y1": 380, "x2": 260, "y2": 480}}}},
+    "cell_voltage": {"Dyad": {"placement": {"diagram": {"x1": 160, "y1": 600, "x2": 260, "y2": 700}}}},
+    "minimum_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "command": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "cell_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 860, "y": 650}], "E": 2}]}}
+  }
+}
+end
+
+analysis BalancerTransient
+  extends TransientAnalysis(stop = 150.0, tstops = [100.0], reltol = 1e-8, abstol = 1e-10)
+  model = VehicleSystemsComponents.Vehicle.Electric.TestPassiveBalancer()
+end

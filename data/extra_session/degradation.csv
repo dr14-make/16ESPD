@@ -1,0 +1,9 @@
+# Battery capacity fade and fast charging (charging.md §7). Geotab 2026-01-13, 22,700 EVs,
+# verified: annual degradation by charging habit. INL 2015 (four 2012 Leafs, Phoenix), Fig. 14
+# read from figure ±2 %: capacity lost at 50,000 mi.
+study,group,value
+geotab,mostly AC or low power,1.5
+geotab,fleet average,2.3
+geotab,heavy DC above 100 kW,3.0
+inl,Level 2 (3.3 kW),24
+inl,50 kW DC,27
