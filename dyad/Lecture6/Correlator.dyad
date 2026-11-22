@@ -1,0 +1,37 @@
+"""
+Code-division receiver: multiplies the wire by its own spreading code and averages the product
+over each bit (integrate-and-dump).
+
+`correlation` is the running integral of `wire * code` divided by `bit_time`. It is dumped to
+zero during a short window at the start of each bit, so it ramps through the bit and ends at the
+bit's average. `bit` samples that value in a window at the end of each bit and holds it through
+the next bit, so it shows each received bit one bit time late. Codes orthogonal to this
+receiver's code integrate to zero over a bit and drop out.
+"""
+component Correlator
+  "Shared wire"
+  wire = RealInput() {^wire}
+  "This receiver's spreading code, +1 or -1 per chip"
+  code = RealInput() {^code}
+  "Running average of wire times code over the current bit"
+  correlation = RealOutput() {^correlation}
+  "Last completed bit's average, held for one bit"
+  bit = RealOutput() {^bit}
+  "Duration of one bit"
+  parameter bit_time::Time = 1.0
+  "Dump and sample windows as a fraction of the bit"
+  parameter window::Real = 0.02
+  "Dump and sample time constant, much shorter than a window"
+  parameter tau::Time = window * bit_time / 10
+  "Integral of wire times code since the last dump"
+  variable integral::Real
+  "Position within the current bit, 0 to 1"
+  variable phase::Real
+relations
+  initial integral = 0.0
+  initial bit = 0.0
+  phase = time / bit_time - floor(time / bit_time)
+  der(integral) = wire * code - ifelse(phase < window, integral / tau, 0.0)
+  correlation = integral / bit_time
+  der(bit) = ifelse(phase > 1 - window, (correlation - bit) / tau, 0.0)
+end

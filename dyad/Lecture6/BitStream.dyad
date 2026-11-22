@@ -1,0 +1,13 @@
+"""
+Eight data bits sent one after the other as levels of +1 and -1, each lasting `bit_time`. After
+the eighth bit the output is 0.
+"""
+component BitStream
+  extends BlockComponents.Interfaces.SO
+  "Bit levels, +1 or -1"
+  parameter bits::Real[8] = [1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, -1.0]
+  "Duration of one bit"
+  parameter bit_time::Time = 1.0
+relations
+  y = ifelse(time < bit_time, bits[1], ifelse(time < 2 * bit_time, bits[2], ifelse(time < 3 * bit_time, bits[3], ifelse(time < 4 * bit_time, bits[4], ifelse(time < 5 * bit_time, bits[5], ifelse(time < 6 * bit_time, bits[6], ifelse(time < 7 * bit_time, bits[7], ifelse(time < 8 * bit_time, bits[8], 0.0))))))))
+end

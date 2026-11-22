@@ -1,0 +1,55 @@
+"""
+Time-division multiplexing: two slow sensor signals take turns on one wire.
+
+A commutator switch driven by the transmitter clock puts the vehicle-speed message on the wire in
+the first half of every frame and the engine-speed message in the second half, `f_frame` frames
+per second. The receiver runs its own clock at `f_rx`. Each receiver samples the wire in a short
+window at the middle of its slot (where the clock sine passes +0.95 or -0.95, a tenth of the
+frame) and holds the sample until the next frame, rebuilding its message as a staircase.
+
+With `f_rx = f_frame` both clocks agree and each receiver always samples its own slot. With a
+mistuned receiver clock the sampling instants slide through the frame: the receivers sample the
+slot boundary and then the other sender's slot, so the messages come out mixed and then swapped,
+until the clocks line up again. A bus therefore has to keep every node's timing in step.
+"""
+component TimeDivisionBench
+  "Transmitter frame rate, one slot per message per frame"
+  parameter f_frame::Frequency = 10.0
+  "Receiver clock rate"
+  parameter f_rx::Frequency = f_frame
+  "Vehicle-speed message, scaled"
+  speed = BlockComponents.Sources.Sine(amplitude = 0.3, frequency = 0.25, offset = 0.6) {^speed}
+  "Engine-speed message, scaled"
+  engine = BlockComponents.Sources.Sine(amplitude = 0.3, frequency = 1.0, offset = 0.4) {^engine}
+  "Transmitter clock: positive in the vehicle-speed slot"
+  tx_clock = BlockComponents.Sources.Sine(amplitude = 1.0, frequency = f_frame) {^tx_clock}
+  tx_slot = BlockComponents.Logical.GreaterThreshold(threshold = 0.0) {^tx_slot}
+  "Commutator: the wire carries the vehicle-speed message in its slot, else the engine speed"
+  wire = BlockComponents.Logical.Switch() {^wire}
+  "Receiver clock: +1 at the middle of the vehicle-speed slot, -1 at the middle of the engine-speed slot"
+  rx_clock = BlockComponents.Sources.Sine(amplitude = 1.0, frequency = f_rx) {^rx_clock}
+  sample_speed = BlockComponents.Logical.GreaterThreshold(threshold = 0.95) {^sample_speed}
+  sample_engine = BlockComponents.Logical.LessThreshold(threshold = -0.95) {^sample_engine}
+  hold_speed = SampleHold(tau = 5.0e-4, y0 = 0.6) {^hold_speed}
+  hold_engine = SampleHold(tau = 5.0e-4, y0 = 0.4) {^hold_engine}
+relations
+  connect(tx_clock.y, tx_slot.u) {^tx_clock_wire}
+  connect(speed.y, wire.u1) {^speed_message}
+  connect(tx_slot.y, wire.u2) {^commutator}
+  connect(engine.y, wire.u3) {^engine_message}
+  connect(rx_clock.y, sample_speed.u, sample_engine.u) {^rx_clock_wire}
+  connect(wire.y, hold_speed.u, hold_engine.u) {^wire_to_receivers}
+  connect(sample_speed.y, hold_speed.sample) {^speed_sample}
+  connect(sample_engine.y, hold_engine.sample) {^engine_sample}
+end
+
+analysis TimeDivisionBenchTransient
+  extends TransientAnalysis(stop = 4.0, dtmax = 5.0e-4, alg = ODEAlg.Tsit5())
+  model = TimeDivisionBench()
+end
+
+"The time-division bench with the receiver clock 2.5 % fast: the sampling instants drift half a frame in 2 s."
+analysis TimeDivisionDriftTransient
+  extends TransientAnalysis(stop = 4.0, dtmax = 5.0e-4, alg = ODEAlg.Tsit5())
+  model = TimeDivisionBench(f_rx = 10.25)
+end

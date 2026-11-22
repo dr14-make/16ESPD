@@ -1,0 +1,21 @@
+"""
+Sample-and-hold: while `sample` is true the output tracks the input with time constant `tau`,
+otherwise it holds its last value. With a sampling window much longer than `tau` the output is
+the input at the end of the window, held until the next window: a zero-order hold in continuous
+time.
+"""
+component SampleHold
+  "Signal to sample"
+  u = RealInput() {^u}
+  "True while the input is being sampled"
+  sample = BooleanInput() {^sample}
+  "Held sample"
+  y = RealOutput() {^y}
+  "Tracking time constant, much shorter than the sampling window"
+  parameter tau::Time = 1.0e-4
+  "Held value at the start"
+  parameter y0::Real = 0.0
+relations
+  initial y = y0
+  der(y) = ifelse(sample, (u - y) / tau, 0.0)
+end
