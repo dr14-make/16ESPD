@@ -1,0 +1,16 @@
+# Volume-weighted average Li-ion pack price, all segments, real 2025 $/kWh, split into cell and
+# rest of pack: the printed bar labels of BloombergNEF's December 2025 chart (teaching_materials.md §6.2).
+year,pack,cell,rest
+2013,827,568,259
+2014,734,498,236
+2015,475,318,157
+2016,365,266,99
+2017,273,192,81
+2018,224,161,63
+2019,194,136,58
+2020,169,126,43
+2021,159,122,37
+2022,170,136,34
+2023,148,114,34
+2024,118,78,40
+2025,108,74,34

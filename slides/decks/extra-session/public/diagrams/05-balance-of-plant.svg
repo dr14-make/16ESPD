@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .box-e { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .box-f { fill: #fdf3e6; stroke: #a75d00; stroke-width: 2; }
+    .stack { fill: #cfe3d6; stroke: #2e8b57; stroke-width: 2.5; }
+    .split { stroke: #2e8b57; stroke-width: 1.5; stroke-dasharray: 6 4; fill: none; }
+    .gas { stroke: #16202c; stroke-width: 3; fill: none; }
+    .cool { stroke: #1f5fa8; stroke-width: 3; fill: none; }
+    .dc { stroke: #a75d00; stroke-width: 3; fill: none; }
+    .b { font-size: 16px; font-weight: 600; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+    .blue { font-size: 14px; font-weight: 600; fill: #1f5fa8; }
+  </style>
+  <defs>
+    <marker id="bp-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+    <marker id="bp-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+    <marker id="bp-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+  </defs>
+
+  <!-- stack -->
+  <rect class="stack" x="320" y="170" width="160" height="130" rx="6"/>
+  <path class="split" d="M400 176 V294"/>
+  <text x="360" y="196" text-anchor="middle" class="lbl">anode</text>
+  <text x="440" y="196" text-anchor="middle" class="lbl">cathode</text>
+  <text x="400" y="250" text-anchor="middle" class="b" style="paint-order: stroke; stroke: #cfe3d6; stroke-width: 6">stack</text>
+
+  <!-- hydrogen: tank, regulator, recirculation, purge -->
+  <rect class="box-f" x="20" y="180" width="100" height="44" rx="6"/>
+  <text x="70" y="207" text-anchor="middle" class="b">H₂ tank</text>
+  <path class="gas" d="M120 202 H156" marker-end="url(#bp-ink)"/>
+  <rect class="box" x="160" y="180" width="100" height="44" rx="6"/>
+  <text x="210" y="207" text-anchor="middle" class="b">regulator</text>
+  <path class="gas" d="M260 202 H316" marker-end="url(#bp-ink)"/>
+  <circle cx="290" cy="202" r="5" fill="#16202c"/>
+  <path class="gas" d="M320 272 H290 V210" marker-end="url(#bp-ink)"/>
+  <text x="282" y="243" text-anchor="end" class="lbl">recirculation</text>
+  <circle cx="290" cy="272" r="5" fill="#16202c"/>
+  <path class="gas" d="M290 272 H264" marker-end="url(#bp-ink)"/>
+  <rect class="box" x="160" y="252" width="100" height="40" rx="6"/>
+  <text x="210" y="277" text-anchor="middle" class="b">purge valve</text>
+  <path class="gas" d="M160 272 H104" marker-end="url(#bp-ink)"/>
+  <text x="62" y="268" text-anchor="middle" class="lbl">vent:</text>
+  <text x="62" y="286" text-anchor="middle" class="lbl">N₂, water</text>
+
+  <!-- air: filter, compressor, humidifier, cathode, exhaust back through the humidifier -->
+  <text x="790" y="52" text-anchor="end" class="lbl">air</text>
+  <path class="gas" d="M790 70 H764" marker-end="url(#bp-ink)"/>
+  <rect class="box" x="664" y="50" width="96" height="40" rx="6"/>
+  <text x="712" y="75" text-anchor="middle" class="b">filter</text>
+  <path class="gas" d="M664 70 H634" marker-end="url(#bp-ink)"/>
+  <rect class="box-e" x="530" y="50" width="100" height="40" rx="6"/>
+  <text x="580" y="75" text-anchor="middle" class="b">compressor</text>
+  <path class="gas" d="M530 70 H504" marker-end="url(#bp-ink)"/>
+  <rect class="box" x="400" y="40" width="100" height="60" rx="6"/>
+  <text x="450" y="75" text-anchor="middle" class="b">humidifier</text>
+  <path class="gas" d="M425 100 V166" marker-end="url(#bp-ink)"/>
+  <path class="gas" d="M465 170 V104" marker-end="url(#bp-ink)"/>
+  <path class="gas" d="M465 40 V12" marker-end="url(#bp-ink)"/>
+  <text x="476" y="24" class="lbl">exhaust: air, water</text>
+
+  <!-- coolant loop -->
+  <path class="cool" d="M440 300 V356" marker-end="url(#bp-blue)"/>
+  <rect class="box-e" x="390" y="360" width="110" height="40" rx="6"/>
+  <text x="445" y="385" text-anchor="middle" class="b">radiator</text>
+  <path class="cool" d="M390 380 H334" marker-end="url(#bp-blue)"/>
+  <rect class="box-e" x="250" y="360" width="80" height="40" rx="6"/>
+  <text x="290" y="385" text-anchor="middle" class="b">pump</text>
+  <path class="cool" d="M290 360 V340 H360 V304" marker-end="url(#bp-blue)"/>
+  <text x="375" y="432" text-anchor="middle" class="blue">coolant, stack near 80 °C (model)</text>
+
+  <!-- power out -->
+  <path class="dc" d="M480 245 H566" marker-end="url(#bp-orange)"/>
+  <rect class="box-f" x="570" y="222" width="110" height="46" rx="6"/>
+  <text x="625" y="243" text-anchor="middle" class="b">boost</text>
+  <text x="625" y="261" text-anchor="middle" class="lbl">DC-DC</text>
+  <path class="dc" d="M680 245 H736" marker-end="url(#bp-orange)"/>
+  <text x="742" y="250" class="lbl">bus</text>
+</svg>

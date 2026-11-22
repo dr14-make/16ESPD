@@ -1,0 +1,15 @@
+"""
+y = min(I_cc, max(0.0, (V_max - u1) / R_reg))
+
+CC-CV current ceiling [A] from terminal voltage u1 [V].
+"""
+component CCCVVoltageCurrentEquation
+  parameter I_cc::Current = 143.0
+  parameter V_max::Voltage = 403.2
+  parameter R_reg::Resistance = 1e-5
+  u1 = RealInput() {^u1}
+  y = RealOutput() {^y}
+relations
+  y = min(I_cc, max(0.0, (V_max - u1) / R_reg))
+metadata {"Dyad":{"icons":{"default":"dyad://VehicleSystemsComponents/Vehicle/Blocks/Equation.svg"}},"_links":{"u1":{"Dyad":{"placement":{"diagram":{"x1":0,"x2":40,"y1":480,"y2":520},"icon":{"x1":0,"x2":40,"y1":480,"y2":520}}}},"y":{"Dyad":{"placement":{"diagram":{"x1":960,"x2":1000,"y1":480,"y2":520},"icon":{"x1":960,"x2":1000,"y1":480,"y2":520}}}}}}
+end

@@ -1,0 +1,11 @@
+# NMC 18650 ageing (battery-terms.md). Preger et al. 2020 Fig. 2a, read from figure ±10 %:
+# equivalent full cycles to 80 % capacity at 25 °C by SoC window. Keil et al. 2016 Fig. 2b, read
+# from figure ±1 point: capacity lost after 10 months of storage by storage SoC and temperature.
+study,group,condition,value
+preger,0–100 %,25 °C,450
+preger,20–80 %,25 °C,1650
+preger,40–60 %,25 °C,2150
+keil,50 % SoC,25 °C,2.5
+keil,100 % SoC,25 °C,6.5
+keil,50 % SoC,50 °C,12
+keil,100 % SoC,50 °C,23

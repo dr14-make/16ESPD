@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 380" width="1100" height="380">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .wire { stroke: #16202c; stroke-width: 2.5; fill: none; }
+    .res { fill: #fff; stroke: #16202c; stroke-width: 2.5; }
+    .src { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2.5; }
+    .cur { stroke: #a75d00; stroke-width: 2.5; fill: none; }
+    .bat { fill: none; stroke: #4a5a6b; stroke-width: 1.5; stroke-dasharray: 6 4; }
+    .load { fill: #fdf3e6; stroke: #a75d00; stroke-width: 2; }
+    .sep { stroke: #c9d1da; stroke-width: 1.5; fill: none; }
+    .h { font-size: 19px; font-weight: 600; }
+    .t { font-size: 18px; font-weight: 600; }
+    .pm { font-size: 20px; font-weight: 600; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+    .eq { font-size: 17px; }
+    .orange { font-size: 18px; font-weight: 600; fill: #a75d00; }
+  </style>
+  <defs>
+    <marker id="ba-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+  </defs>
+
+  <!-- before: Lecture 4, after Larminie and Lowry -->
+  <text x="220" y="32" text-anchor="middle" class="h">Lecture 4</text>
+  <rect class="bat" x="30" y="56" width="250" height="250" rx="6"/>
+  <text x="40" y="296" class="lbl">battery</text>
+  <path class="wire" d="M80 120 V90 H140 M200 90 H300 M80 201 V270 H300"/>
+  <path class="wire" d="M62 120 H98" style="stroke-width: 2.5"/>
+  <path class="wire" d="M72 129 H88" style="stroke-width: 5"/>
+  <path class="wire" d="M62 144 H98" style="stroke-width: 2.5"/>
+  <path class="wire" d="M72 153 H88" style="stroke-width: 5"/>
+  <path class="wire" d="M62 168 H98" style="stroke-width: 2.5"/>
+  <path class="wire" d="M72 177 H88" style="stroke-width: 5"/>
+  <path class="wire" d="M62 192 H98" style="stroke-width: 2.5"/>
+  <path class="wire" d="M72 201 H88" style="stroke-width: 5"/>
+  <text x="112" y="170" class="t">E</text>
+  <rect class="res" x="140" y="79" width="60" height="22"/>
+  <text x="170" y="70" text-anchor="middle" class="t">R</text>
+  <circle cx="300" cy="90" r="6" fill="#fff" stroke="#16202c" stroke-width="2.5"/>
+  <circle cx="300" cy="270" r="6" fill="#fff" stroke="#16202c" stroke-width="2.5"/>
+  <text x="300" y="186" text-anchor="middle" class="t">v</text>
+  <path class="wire" d="M306 90 H370 V150 M370 210 V270 H306"/>
+  <rect class="load" x="335" y="150" width="70" height="60" rx="5"/>
+  <text x="370" y="186" text-anchor="middle" class="t">load</text>
+  <path class="cur" d="M318 74 H356" marker-end="url(#ba-orange)"/>
+  <text x="337" y="64" text-anchor="middle" class="orange">i</text>
+  <text x="220" y="356" text-anchor="middle" class="eq">v = E − R i, E and R fixed</text>
+
+  <path class="sep" d="M470 20 V360"/>
+
+  <!-- after: the Thevenin cell of this session -->
+  <text x="790" y="32" text-anchor="middle" class="h">this session</text>
+  <g transform="translate(500 12)">
+
+
+  <path class="wire" d="M130 110 V170 M130 230 V290 H520"/>
+  <circle class="src" cx="130" cy="200" r="30"/>
+  <text x="130" y="192" text-anchor="middle" class="pm">+</text>
+  <text x="130" y="220" text-anchor="middle" class="pm">−</text>
+  <text x="88" y="196" text-anchor="end" class="t">OCV</text>
+  <text x="88" y="217" text-anchor="end" class="lbl">(SoC)</text>
+
+  <path class="wire" d="M130 110 H180 M240 110 H300 M420 110 H520"/>
+  <rect class="res" x="180" y="99" width="60" height="22"/>
+  <text x="210" y="88" text-anchor="middle" class="t">R₀</text>
+
+  <circle cx="300" cy="110" r="4.5" fill="#16202c"/>
+  <circle cx="420" cy="110" r="4.5" fill="#16202c"/>
+  <path class="wire" d="M300 110 V60 H330 M390 60 H420 V110"/>
+  <rect class="res" x="330" y="49" width="60" height="22"/>
+  <text x="360" y="38" text-anchor="middle" class="t">R₁</text>
+  <path class="wire" d="M300 110 V160 H353 M367 160 H420 V110"/>
+  <path class="wire" d="M353 142 V178 M367 142 V178" style="stroke-width: 3.5"/>
+  <text x="380" y="198" class="t">C₁</text>
+  <text x="300" y="232" text-anchor="middle" class="pm">+</text>
+  <text x="360" y="232" text-anchor="middle" class="t">v₁</text>
+  <text x="420" y="232" text-anchor="middle" class="pm">−</text>
+
+  <path class="cur" d="M445 94 H492" marker-end="url(#ba-orange)"/>
+  <text x="468" y="84" text-anchor="middle" class="orange">i</text>
+
+  <circle cx="520" cy="110" r="6" fill="#fff" stroke="#16202c" stroke-width="2.5"/>
+  <circle cx="520" cy="290" r="6" fill="#fff" stroke="#16202c" stroke-width="2.5"/>
+  <text x="545" y="117" text-anchor="middle" class="pm">+</text>
+  <text x="545" y="207" text-anchor="middle" class="t">v</text>
+  <text x="545" y="297" text-anchor="middle" class="pm">−</text>
+
+  </g>
+  <text x="790" y="356" text-anchor="middle" class="eq">v = OCV(SoC) − R₀ i − v₁</text>
+</svg>
