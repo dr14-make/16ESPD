@@ -1,0 +1,13 @@
+# 2013 Nissan Leaf pack (96 series elements) at a C/3 discharge, 22.1 A: INL-5045 Fig. 1 read by
+# eye, ±3 V pack. SoC = 1 - Ah/56.9; per element = pack / 96. Loaded voltage, not OCV
+# (teaching_materials.md §3.2).
+ah_discharged,soc_pct,pack_v,v_per_element
+0,100,400,4.17
+10,82,383,3.99
+20,65,377,3.93
+30,47,372,3.88
+40,30,362,3.77
+48,16,354,3.69
+50,12,347,3.61
+55,3,296,3.08
+57,0,239,2.49

@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 470" width="1240" height="470">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .plate { fill: #dde3ea; stroke: #4a5a6b; stroke-width: 2; }
+    .chh { fill: #9dbbe0; stroke: #1f5fa8; stroke-width: 1.2; }
+    .cha { fill: #fff; stroke: #4a5a6b; stroke-width: 1.2; }
+    .cat { fill: #2b3440; stroke: #16202c; stroke-width: 1.5; }
+    .mem { fill: #cfe3d6; stroke: #2e8b57; stroke-width: 1.5; }
+    .elec { fill: #8a96a3; stroke: #16202c; stroke-width: 1.5; }
+    .gask { fill: #7f8a96; stroke: #16202c; stroke-width: 1.5; fill-rule: evenodd; }
+    .load { fill: #fdf3e6; stroke: #a75d00; stroke-width: 2; }
+    .dc { stroke: #a75d00; stroke-width: 3; fill: none; }
+    .ring { stroke: #c0392b; stroke-width: 2; stroke-dasharray: 5 4; fill: none; }
+    .lead { stroke: #4a5a6b; stroke-width: 1.5; fill: none; }
+    .sep { stroke: #c9d1da; stroke-width: 1.5; fill: none; }
+    .t { font-size: 18px; font-weight: 600; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+    .pm { font-size: 22px; font-weight: 600; }
+    .orange { font-size: 16px; font-weight: 600; fill: #a75d00; }
+    .blue { font-size: 15px; font-weight: 600; fill: #1f5fa8; }
+  </style>
+  <defs>
+    <marker id="sk-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+  </defs>
+
+  <path class="sep" d="M410 30 V440 M790 30 V440"/>
+
+  <!-- A: cells joined at the edge -->
+  <text x="205" y="30" text-anchor="middle" class="t">cells joined at the edge</text>
+  <rect class="load" x="170" y="50" width="70" height="32" rx="5"/>
+  <text x="205" y="72" text-anchor="middle" class="t">load</text>
+  <path class="dc" d="M57 140 V66 H170 M240 66 H343 V140"/>
+  <path class="dc" d="M123 140 C 123 104, 167 104, 167 140"/>
+  <path class="dc" d="M233 140 C 233 104, 277 104, 277 140"/>
+  <rect class="elec" x="50" y="140" width="14" height="200"/>
+  <rect class="mem" x="64" y="140" width="12" height="200"/>
+  <rect class="cat" x="76" y="140" width="14" height="200"/>
+  <rect class="elec" x="160" y="140" width="14" height="200"/>
+  <rect class="mem" x="174" y="140" width="12" height="200"/>
+  <rect class="cat" x="186" y="140" width="14" height="200"/>
+  <rect class="elec" x="270" y="140" width="14" height="200"/>
+  <rect class="mem" x="284" y="140" width="12" height="200"/>
+  <rect class="cat" x="296" y="140" width="14" height="200"/>
+  <path class="dc" d="M83 140 V128 H123 M193 140 V128 H233 M303 140 V128 H343" style="stroke-width: 2"/>
+  <circle class="ring" cx="193" cy="314" r="30"/>
+  <path class="dc" d="M212 320 V152" marker-end="url(#sk-orange)"/>
+  <text x="222" y="240" class="orange">e⁻</text>
+  <text x="57" y="362" text-anchor="middle" class="lbl">cathode</text>
+  <text x="70" y="384" text-anchor="middle" class="lbl">electrolyte</text>
+  <text x="83" y="406" text-anchor="middle" class="lbl">anode</text>
+  <text x="205" y="436" text-anchor="middle" class="lbl">current from the bottom of each</text>
+  <text x="205" y="456" text-anchor="middle" class="lbl">electrode runs its whole face to the edge</text>
+
+  <!-- B: bipolar plates -->
+  <text x="607" y="30" text-anchor="middle" class="t">bipolar plates: joined through the face</text>
+  <rect class="plate" x="470" y="120" width="46" height="220"/>
+  <rect class="chh" x="504" y="140" width="12" height="20"/>
+  <rect class="chh" x="504" y="182" width="12" height="20"/>
+  <rect class="chh" x="504" y="224" width="12" height="20"/>
+  <rect class="chh" x="504" y="266" width="12" height="20"/>
+  <rect class="chh" x="504" y="308" width="12" height="20"/>
+  <rect class="mem" x="516" y="120" width="30" height="220"/>
+  <rect class="cat" x="516" y="120" width="5" height="220"/>
+  <rect class="cat" x="541" y="120" width="5" height="220"/>
+  <rect class="plate" x="546" y="120" width="46" height="220"/>
+  <rect class="cha" x="546" y="140" width="12" height="20"/>
+  <rect class="chh" x="580" y="140" width="12" height="20"/>
+  <rect class="cha" x="546" y="182" width="12" height="20"/>
+  <rect class="chh" x="580" y="182" width="12" height="20"/>
+  <rect class="cha" x="546" y="224" width="12" height="20"/>
+  <rect class="chh" x="580" y="224" width="12" height="20"/>
+  <rect class="cha" x="546" y="266" width="12" height="20"/>
+  <rect class="chh" x="580" y="266" width="12" height="20"/>
+  <rect class="cha" x="546" y="308" width="12" height="20"/>
+  <rect class="chh" x="580" y="308" width="12" height="20"/>
+  <rect class="mem" x="592" y="120" width="30" height="220"/>
+  <rect class="cat" x="592" y="120" width="5" height="220"/>
+  <rect class="cat" x="617" y="120" width="5" height="220"/>
+  <rect class="plate" x="622" y="120" width="46" height="220"/>
+  <rect class="cha" x="622" y="140" width="12" height="20"/>
+  <rect class="chh" x="656" y="140" width="12" height="20"/>
+  <rect class="cha" x="622" y="182" width="12" height="20"/>
+  <rect class="chh" x="656" y="182" width="12" height="20"/>
+  <rect class="cha" x="622" y="224" width="12" height="20"/>
+  <rect class="chh" x="656" y="224" width="12" height="20"/>
+  <rect class="cha" x="622" y="266" width="12" height="20"/>
+  <rect class="chh" x="656" y="266" width="12" height="20"/>
+  <rect class="cha" x="622" y="308" width="12" height="20"/>
+  <rect class="chh" x="656" y="308" width="12" height="20"/>
+  <rect class="mem" x="668" y="120" width="30" height="220"/>
+  <rect class="cat" x="668" y="120" width="5" height="220"/>
+  <rect class="cat" x="693" y="120" width="5" height="220"/>
+  <rect class="plate" x="698" y="120" width="46" height="220"/>
+  <rect class="cha" x="698" y="140" width="12" height="20"/>
+  <rect class="cha" x="698" y="182" width="12" height="20"/>
+  <rect class="cha" x="698" y="224" width="12" height="20"/>
+  <rect class="cha" x="698" y="266" width="12" height="20"/>
+  <rect class="cha" x="698" y="308" width="12" height="20"/>
+  <path class="lead" d="M569 98 V118"/>
+  <text x="569" y="90" text-anchor="middle" class="lbl">bipolar plate</text>
+  <path class="lead" d="M683 98 V118"/>
+  <text x="683" y="70" text-anchor="middle" class="lbl">membrane</text>
+  <text x="683" y="90" text-anchor="middle" class="lbl">electrode assembly</text>
+  <text x="458" y="236" text-anchor="end" class="pm">−</text>
+  <text x="756" y="236" class="pm">+</text>
+  <path class="dc" d="M735 372 H480" marker-end="url(#sk-orange)"/>
+  <text x="607" y="362" text-anchor="middle" class="orange">e⁻ straight through, cell to cell</text>
+  <rect class="chh" x="470" y="392" width="14" height="14"/>
+  <text x="490" y="405" class="blue">H₂ channels</text>
+  <rect class="cha" x="600" y="392" width="14" height="14"/>
+  <text x="620" y="405" class="lbl">air channels</text>
+  <text x="607" y="436" text-anchor="middle" class="lbl">Mirai gen 2: 330 cells in series,</text>
+  <text x="607" y="456" text-anchor="middle" class="lbl">128 kW</text>
+
+  <!-- C: membrane electrode assembly, exploded -->
+  <text x="1015" y="30" text-anchor="middle" class="t">one cell's layers, with edge seals</text>
+  <path class="gask" d="M830 150 L874 110 L874 290 L830 330 Z M839 161.8 L865 138.2 L865 278.2 L839 301.8 Z"/>
+  <text x="852" y="372" text-anchor="middle" class="lbl">gasket</text>
+  <path class="cat" d="M902 150 L946 110 L946 290 L902 330 Z"/>
+  <text x="924" y="394" text-anchor="middle" class="lbl">anode</text>
+  <path class="mem" d="M974 150 L1018 110 L1018 290 L974 330 Z"/>
+  <text x="996" y="372" text-anchor="middle" class="lbl">membrane</text>
+  <path class="cat" d="M1046 150 L1090 110 L1090 290 L1046 330 Z"/>
+  <text x="1068" y="394" text-anchor="middle" class="lbl">cathode</text>
+  <path class="gask" d="M1118 150 L1162 110 L1162 290 L1118 330 Z M1127 161.8 L1153 138.2 L1153 278.2 L1127 301.8 Z"/>
+  <text x="1140" y="372" text-anchor="middle" class="lbl">gasket</text>
+  <text x="1015" y="436" text-anchor="middle" class="lbl">the gaskets seal the gas at the edge</text>
+</svg>

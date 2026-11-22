@@ -1,0 +1,31 @@
+# Charging losses, ADAC 2026-08-06 "Elektroauto Ladeverluste" (charging.md §4), verified. AC:
+# grid to battery at a 2.3 kW household socket, 4.1 kW (PV surplus) and an 11 kW wallbox. DC: losses
+# inside the vehicle only, at 23 °C preconditioned, 0 °C preconditioned, 0 °C not preconditioned.
+kind,car,condition,loss_pct
+AC,Mercedes CLA 350 EQ,2.3 kW,24.2
+AC,Mercedes CLA 350 EQ,4.1 kW,12.8
+AC,Mercedes CLA 350 EQ,11 kW,6.9
+AC,Renault R5 E-Tech,2.3 kW,13.7
+AC,Renault R5 E-Tech,4.1 kW,8.0
+AC,Renault R5 E-Tech,11 kW,5.1
+AC,Tesla Model Y,2.3 kW,12.7
+AC,Tesla Model Y,4.1 kW,9.4
+AC,Tesla Model Y,11 kW,6.1
+AC,Volvo EX30,2.3 kW,14.2
+AC,Volvo EX30,4.1 kW,9.1
+AC,Volvo EX30,11 kW,7.0
+AC,VW ID.7,2.3 kW,15.3
+AC,VW ID.7,4.1 kW,10.6
+AC,VW ID.7,11 kW,6.9
+DC,Hyundai Ioniq 6 (800 V),23 °C precond.,1
+DC,Hyundai Ioniq 6 (800 V),0 °C precond.,1
+DC,Hyundai Ioniq 6 (800 V),0 °C not precond.,6
+DC,Renault Mégane E-Tech,23 °C precond.,4
+DC,Renault Mégane E-Tech,0 °C precond.,6
+DC,Renault Mégane E-Tech,0 °C not precond.,8
+DC,Tesla Model Y,23 °C precond.,3
+DC,Tesla Model Y,0 °C precond.,4
+DC,Tesla Model Y,0 °C not precond.,10
+DC,VW ID.3,23 °C precond.,3
+DC,VW ID.3,0 °C precond.,5
+DC,VW ID.3,0 °C not precond.,7
