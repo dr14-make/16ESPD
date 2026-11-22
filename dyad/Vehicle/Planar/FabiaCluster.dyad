@@ -1,0 +1,530 @@
+"Signal-only Fabia instrument cluster; physical CAN encoding belongs to the realtime transport."
+component FabiaCluster
+  "Road speed in m/s"
+  speed = RealInput() {^speed}
+  "Displayed engine-equivalent speed in rpm"
+  rpm = RealInput() {^rpm}
+  "Coolant indication in degrees Celsius, not kelvin"
+  coolant = RealInput() {^coolant}
+  left = BooleanInput() {^left}
+  right = BooleanInput() {^right}
+  hazard = BooleanInput() {^hazard}
+  abs_lamp = BooleanInput() {^abs_lamp}
+  asr_lamp = BooleanInput() {^asr_lamp}
+  brake_lamp = BooleanInput() {^brake_lamp}
+  mil = BooleanInput() {^mil}
+  epc = BooleanInput() {^epc}
+  charging = BooleanInput() {^charging}
+  airbag_lamp = BooleanInput() {^airbag_lamp}
+  "Cluster illumination fraction"
+  parameter dimming::Real = 1.0
+metadata {
+  "Dyad": {
+    "icons": {
+      "default": "dyad://VehicleSystemsComponents/fabia-cluster.svg"
+    }
+  },
+  "_links": {
+    "abs_lamp": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 455,
+            "y2": 485
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 455,
+            "y2": 485
+          }
+        }
+      }
+    },
+    "airbag_lamp": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 875,
+            "y2": 905
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 875,
+            "y2": 905
+          }
+        }
+      }
+    },
+    "asr_lamp": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 525,
+            "y2": 555
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 525,
+            "y2": 555
+          }
+        }
+      }
+    },
+    "brake_lamp": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 595,
+            "y2": 625
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 595,
+            "y2": 625
+          }
+        }
+      }
+    },
+    "charging": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 805,
+            "y2": 835
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 805,
+            "y2": 835
+          }
+        }
+      }
+    },
+    "coolant": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 175,
+            "y2": 205
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 175,
+            "y2": 205
+          }
+        }
+      }
+    },
+    "epc": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 735,
+            "y2": 765
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 735,
+            "y2": 765
+          }
+        }
+      }
+    },
+    "hazard": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 385,
+            "y2": 415
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 385,
+            "y2": 415
+          }
+        }
+      }
+    },
+    "left": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 245,
+            "y2": 275
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 245,
+            "y2": 275
+          }
+        }
+      }
+    },
+    "mil": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 665,
+            "y2": 695
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 665,
+            "y2": 695
+          }
+        }
+      }
+    },
+    "right": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 315,
+            "y2": 345
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 315,
+            "y2": 345
+          }
+        }
+      }
+    },
+    "rpm": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 105,
+            "y2": 135
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 105,
+            "y2": 135
+          }
+        }
+      }
+    },
+    "speed": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 45,
+            "x2": 75,
+            "y1": 35,
+            "y2": 65
+          },
+          "icon": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 35,
+            "y2": 65
+          }
+        }
+      }
+    }
+  }
+}
+end
+
+"Listen-only CAN receiver and signal conditioning for the Fabia dashboard."
+component FabiaClusterNode
+  bus = CanNet() {^bus}
+  motor_speed = RealInput() {^motor_speed}
+  left = BooleanInput() {^left}
+  right = BooleanInput() {^right}
+  parameter tachometer_scale::Real = 0.5
+  parameter dimming::Real = 1.0
+  parameter speed_filter_time::Time = 0.15
+  parameter emergency_deceleration::Real = 6.0
+  parameter emergency_min_speed::Real = 5.0
+  parameter hazard_charge_time::Time = 0.05
+  parameter hazard_decay_time::Time = 3.0
+  speed_rx = FabiaCanRx(slot = 1, id = 128) {^speed_rx}
+  abs_rx = FabiaCanRx(slot = 5, id = 112) {^abs_rx}
+  dashboard = FabiaDisplayChain(tachometer_scale = tachometer_scale, dimming = dimming, speed_filter_time = speed_filter_time, emergency_deceleration = emergency_deceleration, emergency_min_speed = emergency_min_speed, hazard_charge_time = hazard_charge_time, hazard_decay_time = hazard_decay_time) {^dashboard}
+relations
+  connect(bus, speed_rx.bus, abs_rx.bus) {^w1}
+  connect(speed_rx.y, dashboard.speed) {^speed_wire}
+  connect(abs_rx.y, dashboard.abs_signal) {^abs_wire}
+  connect(motor_speed, dashboard.motor_speed) {^motor_wire}
+  connect(left, dashboard.left) {^left_wire}
+  connect(right, dashboard.right) {^right_wire}
+metadata {
+  "Dyad": {
+    "icons": {
+      "default": "dyad://VehicleSystemsComponents/fabia-node.svg"
+    }
+  },
+  "_links": {
+    "abs_rx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 120,
+            "x2": 205,
+            "y1": 430,
+            "y2": 500
+          }
+        }
+      }
+    },
+    "abs_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 650.0,
+                "y": 465.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "bus": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 35,
+            "x2": 65,
+            "y1": 15,
+            "y2": 45
+          },
+          "icon": {
+            "rot": 0,
+            "x1": 485,
+            "x2": 515,
+            "y1": -15,
+            "y2": 15
+          }
+        }
+      }
+    },
+    "dashboard": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 650,
+            "x2": 900,
+            "y1": 130,
+            "y2": 780
+          }
+        }
+      }
+    },
+    "left": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 35,
+            "x2": 65,
+            "y1": 915,
+            "y2": 945
+          },
+          "icon": {
+            "rot": 0,
+            "x1": -15,
+            "x2": 15,
+            "y1": 385,
+            "y2": 415
+          }
+        }
+      }
+    },
+    "left_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 650.0,
+                "y": 930.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "motor_speed": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 35,
+            "x2": 65,
+            "y1": 265,
+            "y2": 295
+          },
+          "icon": {
+            "rot": 0,
+            "x1": -15,
+            "x2": 15,
+            "y1": 185,
+            "y2": 215
+          }
+        }
+      }
+    },
+    "motor_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 650.0,
+                "y": 280.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "right": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 35,
+            "x2": 65,
+            "y1": 965,
+            "y2": 995
+          },
+          "icon": {
+            "rot": 0,
+            "x1": -15,
+            "x2": 15,
+            "y1": 585,
+            "y2": 615
+          }
+        }
+      }
+    },
+    "right_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 650.0,
+                "y": 980.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "speed_rx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 120,
+            "x2": 205,
+            "y1": 80,
+            "y2": 150
+          }
+        }
+      }
+    },
+    "speed_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 650.0,
+                "y": 115.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w1": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 162.5,
+                "y": 30.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 112.0,
+                "y": 30.0
+              },
+              {
+                "x": 112.0,
+                "y": 173.0
+              },
+              {
+                "x": 162.5,
+                "y": 173.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    }
+  }
+}
+end

@@ -1,0 +1,210 @@
+"By-hand planar BEV whose speed, motor speed and ABS activity drive a Fabia cluster over SocketCAN."
+component PlanarBEVByHandFabia
+  parameter m::Mass = 1500.0
+  parameter esp_on::Real = 1.0
+  parameter abs_on::Real = 1.0
+  parameter mu::Real = 1.0
+  "Displayed rpm divided by machine rpm"
+  parameter tachometer_scale::Real = 0.5
+  parameter dimming::Real = 1.0
+  "Speed conditioning for the deceleration estimate"
+  parameter speed_filter_time::Time = 0.15
+  parameter emergency_deceleration::Real = 6.0
+  parameter emergency_min_speed::Real = 5.0
+  parameter hazard_charge_time::Time = 0.05
+  "Decay from a fully charged hold to 0.1 takes about 6.9 seconds"
+  parameter hazard_decay_time::Time = 3.0
+  structural parameter road_file::String = "dyad://VehicleSystemsComponents/roads/uniform_mu.crg"
+  structural parameter height_file::String = "dyad://VehicleSystemsComponents/roads/flat_z.crg"
+  structural parameter default_grip::Real = 1.0
+  structural parameter default_height::Length = 0.0
+  structural parameter blend_width::Length = 2.0
+  driver = VehicleSystemsComponents.Vehicle.Planar.FabiaHumanDriver() {^driver}
+  vehicle = VehicleSystemsComponents.Vehicle.Planar.FabiaRoadVehicle(road_file = road_file, height_file = height_file, default_grip = default_grip, default_height = default_height, blend_width = blend_width, m = m, esp_on = esp_on, abs_on = abs_on, mu = mu) {^vehicle}
+  dashboard = VehicleSystemsComponents.Vehicle.Planar.FabiaDisplayChain(tachometer_scale = tachometer_scale, dimming = dimming, speed_filter_time = speed_filter_time, emergency_deceleration = emergency_deceleration, emergency_min_speed = emergency_min_speed, hazard_charge_time = hazard_charge_time, hazard_decay_time = hazard_decay_time) {^dashboard}
+  off = BlockComponents.Sources.BooleanConstant(k = false) {^off}
+relations
+  connect(driver.throttle_signal, vehicle.throttle) {^w1}
+  connect(driver.brake_signal, vehicle.brake) {^w2}
+  connect(driver.steer_signal, vehicle.steer) {^w3}
+  connect(vehicle.speed, dashboard.speed) {^speed_wire}
+  connect(vehicle.motor_speed, dashboard.motor_speed) {^motor_wire}
+  connect(vehicle.abs_active, dashboard.abs_signal) {^abs_wire}
+  connect(off.y, dashboard.left, dashboard.right) {^off_wire}
+metadata {
+  "_links": {
+    "abs_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 730.0,
+                "y": 225.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "dashboard": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 730,
+            "x2": 910,
+            "y1": 220,
+            "y2": 720
+          }
+        }
+      }
+    },
+    "driver": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 40,
+            "x2": 120,
+            "y1": 90,
+            "y2": 190
+          }
+        }
+      }
+    },
+    "motor_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 730.0,
+                "y": 135.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "off": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 460,
+            "x2": 540,
+            "y1": 800,
+            "y2": 860
+          }
+        }
+      }
+    },
+    "off_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 730.0,
+                "y": 830.0
+              }
+            ],
+            "S": 1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 730.0,
+                "y": 830.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "speed_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 730.0,
+                "y": 180.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "vehicle": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 240,
+            "x2": 350,
+            "y1": 90,
+            "y2": 270
+          }
+        }
+      }
+    },
+    "w1": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 240.0,
+                "y": 110.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w2": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 240.0,
+                "y": 140.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "w3": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [
+              {
+                "x": 240.0,
+                "y": 170.0
+              }
+            ],
+            "S": 1
+          }
+        ]
+      }
+    }
+  }
+}
+end

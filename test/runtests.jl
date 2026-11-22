@@ -32,7 +32,7 @@ const GROUPS = [
     "hills" => ["hills_plausibility.jl"],
     "bev" => ["bev_plausibility.jl"],
     "regen" => ["regen_plausibility.jl"],
-    "can" => ["can_plausibility.jl", "can_encoding.jl", "can_streaming.jl"],
+    "can" => ["can_plausibility.jl", "can_encoding.jl", "fabia_protocol.jl", "can_streaming.jl", "fabia_streaming.jl"],
     "generated" => ["../generated/tests.jl"],
 ]
 

@@ -3,6 +3,35 @@
 Realtime drive is a library analysis with optional UI extensions. Read this, then
 `sim/regen-braking-observations.md`.
 
+## Fabia cluster demonstration
+
+`mise run fabia [interface]` defaults to `can0` and runs `PlanarBEVFabiaScriptedDrive`
+for 36 seconds without a window. Bring up the physical bus at 500 kbit/s first.
+The separate `fabia_drive.csv` preserves existing CAN-drive defaults: left request
+12–18 s, gentle lane-change steering 14–17 s, full brake from 24 s.
+The cluster signal path is `model.cluster.display`: `speed` (m/s), `rpm`,
+`coolant` (degrees C), `left`, `right`, `hazard`, `abs_lamp`, `asr_lamp`,
+`brake_lamp`, `mil`, `epc`, `charging`, `airbag_lamp`; `dimming` is a parameter.
+`FabiaClusterNode` receives teaching-CAN speed/ABS slots 1/5 and hardwired motor
+speed (rad/s) and indicators. Tachometer scaling defaults to half motor
+rpm, clamped to 0–6000. ASR flashes at 2.5 Hz during ABS; ABS fault stays off.
+Emergency hazards use filtered deceleration above 6 m/s² while above 5 m/s, with
+50 ms charging and 3 s exponential hold decay (about 6.9 s to the off threshold).
+These are demonstration assumptions, not a validated OEM emergency-stop strategy.
+Physical Fabia encoding/scheduling belongs to the realtime transport, not Dyad;
+the stream reads the display inputs, not the teaching-CAN DBC. Dimming is a fraction
+converted to the bench protocol's 0–100 percent. The default tachometer peaks near
+3878 rpm over this drive. Encoders live in `dyad/fabia_protocol.jl`.
+`mise run fabia:hand [interface]` opens the by-hand window drive `PlanarBEVByHandFabia`:
+the road car wired directly to a `FabiaCluster` (no teaching CAN network inside), with
+the same tachometer, ESP-flash and hazard mapping; it has no indicator keys yet.
+Both drives were confirmed on the bench cluster. Observe with `candump can0`.
+After a stall longer than 50 ms the stream moves its clock forward instead of sending
+the missed frames back to back; a full transmit buffer drops frames (reported at the
+end), and a send failure lasting 1 s stops the run.
+The interface may carry a CanAdapter, a FabiaCluster, or both; overlapping IDs are rejected.
+
+
 ## Extension integration contract
 
 - `VehicleSystemsComponents.drive_window(integ, sys, spec)` is implemented by

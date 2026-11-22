@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <path d="M30 850V360Q50 150 500 150Q950 150 970 360V850Z" fill="#202b35" stroke="#111" stroke-width="20"/>
+  <g fill="#fafafa" stroke="#78909c" stroke-width="14">
+    <circle cx="270" cy="500" r="205"/><circle cx="730" cy="500" r="205"/>
+  </g>
+  <g stroke="#263238" stroke-width="16" fill="none">
+    <path d="M110 500H145M150 390L177 415M265 335V370M380 390L355 415M430 500H395M570 500H605M610 390L637 415M725 335V370M840 390L815 415M890 500H855"/>
+  </g>
+  <g stroke="#d32f2f" stroke-width="18"><path d="M270 500L365 390M730 500L660 380"/></g>
+  <g fill="#263238" font-family="sans-serif" font-size="42" text-anchor="middle"><text x="270" y="610">km/h</text><text x="730" y="610">rpm</text></g>
+  <rect x="370" y="745" width="260" height="60" rx="10" fill="#7aa594"/>
+</svg>

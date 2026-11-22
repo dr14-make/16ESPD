@@ -1,0 +1,140 @@
+"Fabia-only signal exports; the shared vehicle equations remain unchanged."
+component FabiaRoadVehicle
+  extends RoadBEVDrive
+  motor_speed = RealOutput() {^motor_speed}
+  speed = RealOutput() {^speed}
+  abs_active = RealOutput() {^abs_active}
+relations
+  motor_speed = drive.machine.w
+  connect(motion.vx, speed)
+  connect(ecu.front_active, abs_active)
+metadata {
+  "Dyad": {
+    "icons": {
+      "default": "dyad://VehicleSystemsComponents/fabia-vehicle.svg"
+    }
+  },
+  "_links": {
+    "abs_active": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 925,
+            "x2": 955,
+            "y1": 735,
+            "y2": 765
+          },
+          "icon": {
+            "rot": 0,
+            "x1": 985,
+            "x2": 1015,
+            "y1": 735,
+            "y2": 765
+          }
+        }
+      }
+    },
+    "brake": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 45,
+            "x2": 75,
+            "y1": 485,
+            "y2": 515
+          },
+          "icon": {
+            "rot": 0,
+            "x1": -15,
+            "x2": 15,
+            "y1": 485,
+            "y2": 515
+          }
+        }
+      }
+    },
+    "motor_speed": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 925,
+            "x2": 955,
+            "y1": 235,
+            "y2": 265
+          },
+          "icon": {
+            "rot": 0,
+            "x1": 985,
+            "x2": 1015,
+            "y1": 235,
+            "y2": 265
+          }
+        }
+      }
+    },
+    "speed": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 925,
+            "x2": 955,
+            "y1": 485,
+            "y2": 515
+          },
+          "icon": {
+            "rot": 0,
+            "x1": 985,
+            "x2": 1015,
+            "y1": 485,
+            "y2": 515
+          }
+        }
+      }
+    },
+    "steer": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 45,
+            "x2": 75,
+            "y1": 785,
+            "y2": 815
+          },
+          "icon": {
+            "rot": 0,
+            "x1": -15,
+            "x2": 15,
+            "y1": 785,
+            "y2": 815
+          }
+        }
+      }
+    },
+    "throttle": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "rot": 0,
+            "x1": 45,
+            "x2": 75,
+            "y1": 185,
+            "y2": 215
+          },
+          "icon": {
+            "rot": 0,
+            "x1": -15,
+            "x2": 15,
+            "y1": 185,
+            "y2": 215
+          }
+        }
+      }
+    }
+  }
+}
+end
