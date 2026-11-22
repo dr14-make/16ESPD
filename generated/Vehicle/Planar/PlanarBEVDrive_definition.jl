@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   PlanarBEVDrive(; name, esp_on, abs_on, mu, T_actuator, m, radius, T_full, tau_max, P_charge, v_fade, P_aux, ratio, dv_wheel, __overrides)
+   PlanarBEVDrive(; name, esp_on, abs_on, mu, T_actuator, m, radius, T_full, tau_max, P_charge, v_fade, P_aux, ratio, dv_wheel, v0, __overrides)
 
 Planar battery-electric car with causal driver inputs and first-order actuator response.
 Regen withdraws while the ECU acts on either front brake, returning the demand to friction
@@ -28,6 +28,7 @@ under ABS control.
 | `P_aux`         | Power drawn by the 12 V network (assumed)                         | W  |   300.0 |
 | `ratio`         | Single-speed reduction (Nissan)                         | --  |   8.193 |
 | `dv_wheel`         | Initial wheel surface speed above the body's, keeps the start off zero slip (assumed)                         | m/s  |   0.01 |
+| `v0`         |                          | m/s  |   0 |
 
 ## Connectors
 
@@ -35,7 +36,7 @@ under ABS control.
  * `brake` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `steer` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function PlanarBEVDrive(; name = nothing, var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"mu"=Float64(1.0), var"T_actuator"=0.05, var"m"=Float64(1500.0), var"radius"=0.31, var"T_full"=Float64(2500.0), var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"dv_wheel"=0.01, __overrides = Dict{String, Any}())
+@component function PlanarBEVDrive(; name = nothing, var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"mu"=Float64(1.0), var"T_actuator"=0.05, var"m"=Float64(1500.0), var"radius"=0.31, var"T_full"=Float64(2500.0), var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"dv_wheel"=0.01, var"v0"=Float64(0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -67,6 +68,7 @@ under ABS control.
   haskey(__overrides, "P_aux") && (P_aux = pop!(__overrides, "P_aux"))
   haskey(__overrides, "ratio") && (ratio = pop!(__overrides, "ratio"))
   haskey(__overrides, "dv_wheel") && (dv_wheel = pop!(__overrides, "dv_wheel"))
+  haskey(__overrides, "v0") && (v0 = pop!(__overrides, "v0"))
 
   ### Structural Parameters (functions)
 
@@ -120,6 +122,9 @@ under ABS control.
   __local__dv_wheel = dv_wheel
   append!(__params, @parameters (dv_wheel::Real), [description = "Initial wheel surface speed above the body's, keeps the start off zero slip (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, dv_wheel, __local__dv_wheel)
+  __local__v0 = v0
+  append!(__params, @parameters (v0::Real))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v0, __local__v0)
 
   ### Final Parameters (assignments)
 
@@ -189,13 +194,13 @@ under ABS control.
 
   ### Initialization Equations
   push!(__initialization_eqs, car.body.r ~ [0, 0])
-  push!(__initialization_eqs, car.body.v ~ [0, 0])
+  push!(__initialization_eqs, car.body.v ~ [v0, 0])
   push!(__initialization_eqs, car.body.phi ~ 0.0)
   push!(__initialization_eqs, car.body.w ~ 0.0)
-  push!(__initialization_eqs, car.fl.inertia.w ~ dv_wheel / radius)
-  push!(__initialization_eqs, car.fr.inertia.w ~ dv_wheel / radius)
-  push!(__initialization_eqs, car.rl.inertia.w ~ dv_wheel / radius)
-  push!(__initialization_eqs, car.rr.inertia.w ~ dv_wheel / radius)
+  push!(__initialization_eqs, car.fl.inertia.w ~ (v0 + dv_wheel) / radius)
+  push!(__initialization_eqs, car.fr.inertia.w ~ (v0 + dv_wheel) / radius)
+  push!(__initialization_eqs, car.rl.inertia.w ~ (v0 + dv_wheel) / radius)
+  push!(__initialization_eqs, car.rr.inertia.w ~ (v0 + dv_wheel) / radius)
   push!(__initialization_eqs, car.fl.inertia.phi ~ 0.0)
   push!(__initialization_eqs, car.fr.inertia.phi ~ 0.0)
   push!(__initialization_eqs, car.rl.inertia.phi ~ 0.0)

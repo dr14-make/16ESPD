@@ -1,0 +1,23 @@
+component CanDriveStep
+  source = BlockComponents.Sources.Step(height = 100, start_time = 0.1)
+  tx = CanTx(period = 0.02, scale = 0.1, raw_min = -32768, raw_max = 32767)
+  response = BlockComponents.Continuous.FirstOrder(T = 0.01)
+  drive = VehicleSystemsComponents.Vehicle.Electric.ElectricDrive()
+  load = RotationalComponents.Components.Inertia(J = 1500 * 0.31 ^ 2)
+  mount = RotationalComponents.Components.Fixed()
+relations
+  connect(source.y, tx.u)
+  connect(tx.y, response.u)
+  connect(response.y, drive.tau_ref)
+  initial response.x = 0
+  connect(drive.spline, load.spline_a)
+  connect(drive.support, mount.spline)
+  initial load.phi = 0
+  initial load.w = 20 / 0.31
+  initial drive.converter.i_out = 0
+end
+
+analysis CanDriveStepTransient
+  extends TransientAnalysis(stop = 0.3, dtmax = 0.001)
+  model = CanDriveStep()
+end

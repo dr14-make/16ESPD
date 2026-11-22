@@ -36,6 +36,7 @@ component PlanarBEVDrive
   parameter ratio::Real = 8.193
   "Initial wheel surface speed above the body's, keeps the start off zero slip (assumed)"
   parameter dv_wheel::Velocity = 0.01
+  parameter v0::Velocity = 0
   "Machine-shaft torque the pedals ask for: throttle drives, brake brakes"
   pedals = BlockComponents.Math.Add(k1 = tau_max, k2 = -4.0 * T_full / ratio) {^pedals}
   "Machine torque actuator response; prevents algebraic converter torque jumps"
@@ -85,13 +86,13 @@ relations
   connect(flat.y, roadload.grade) {^w26}
   connect(car.chassis, roadload.chassis) {^w27}
   initial car.body.r = [0, 0]
-  initial car.body.v = [0, 0]
+  initial car.body.v = [v0, 0]
   initial car.body.phi = 0.0
   initial car.body.w = 0.0
-  initial car.fl.inertia.w = dv_wheel / radius
-  initial car.fr.inertia.w = dv_wheel / radius
-  initial car.rl.inertia.w = dv_wheel / radius
-  initial car.rr.inertia.w = dv_wheel / radius
+  initial car.fl.inertia.w = (v0 + dv_wheel) / radius
+  initial car.fr.inertia.w = (v0 + dv_wheel) / radius
+  initial car.rl.inertia.w = (v0 + dv_wheel) / radius
+  initial car.rr.inertia.w = (v0 + dv_wheel) / radius
   initial car.fl.inertia.phi = 0.0
   initial car.fr.inertia.phi = 0.0
   initial car.rl.inertia.phi = 0.0
