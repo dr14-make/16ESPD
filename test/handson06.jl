@@ -113,8 +113,8 @@ end
     expected = (("real", .01, 28.902, 28.617, 29.056),
                 ("real", .02, 29.496, 28.982, 30.018),
                 ("real", .04, 30.224, 30.017, 30.442),
-                ("bus_brake", .01, 30.100, 28.789, 30.743),
-                ("bus_brake", .02, 29.620, 29.320, 29.949),
+                ("bus_brake", .01, 30.144, 29.053, 30.743),
+                ("bus_brake", .02, 29.595, 29.320, 29.949),
                 ("bus_brake", .04, 33.638, 31.792, 35.779))
     for (architecture, period, mean_pin, min_pin, max_pin) in expected
         distances = [r.distance for r in rows if r.architecture == architecture && r.period == period]

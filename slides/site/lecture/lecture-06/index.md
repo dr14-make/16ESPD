@@ -301,8 +301,8 @@ One stop depends on where the pedal press falls between frames. So
 | Real, 10 ms | 29.056 | 28.902 | 28.617–29.056 |
 | Real, 20 ms | 30.018 | 29.496 | 28.982–30.018 |
 | Real, 40 ms | 30.442 | 30.224 | 30.017–30.442 |
-| Brake request on the bus, 10 ms | 30.743 | 30.100 | 28.789–30.743 |
-| Brake request on the bus, 20 ms | 29.320 | 29.620 | 29.320–29.949 |
+| Brake request on the bus, 10 ms | 30.743 | 30.144 | 29.053–30.743 |
+| Brake request on the bus, 20 ms | 29.320 | 29.595 | 29.320–29.949 |
 | Brake request on the bus, 40 ms | 33.934 | 33.638 | 31.792–35.779 |
 
 The ideal bus stops in 28.185 m at every period. The real layout costs 0.8–2.1 m against it,

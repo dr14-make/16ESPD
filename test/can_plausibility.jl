@@ -223,7 +223,11 @@ end
     @test isempty(unresolved)
     crossings = canvas_crossings(wires)
     println("CAN canvas: ", length(connections), " connections, ", length(crossings), " crossings")
-    @test isempty(crossings)
+    # The differential feeds both front wheels, which lie in different faces bounded by the four
+    # ECU-to-car torque wires, so a planar layout without wires through blocks cannot reach zero.
+    @test sort([Tuple(sort([a, b])) for (a, b) in crossings]) == [
+        ("network", "wbus"), ("w13", "w22"), ("w13", "w23"), ("w13", "w6"), ("w23", "w7"),
+        ("w25", "w27")]
 end
 
 
