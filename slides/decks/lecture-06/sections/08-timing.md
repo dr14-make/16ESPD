@@ -451,7 +451,7 @@ Hard ABS stop from 80 km/h. Mean over six pedal timings, range in brackets.
 |---|---:|---:|---:|
 | ideal bus = point to point | 28.1 m | 28.1 m | 28.1 m |
 | real EV layout | 28.9 m (28.6–29.1) | 29.5 m (29.0–30.0) | 30.2 m (30.0–30.4) |
-| brake request on the bus | 30.1 m (28.8–30.7) | 29.6 m (29.3–29.9) | 33.6 m (31.8–35.8) |
+| brake request on the bus | 30.1 m (29.1–30.7) | 29.6 m (29.3–29.9) | 33.6 m (31.8–35.8) |
 
 - Latency costs meters: about 2 m at 40 ms even in the real layout.
 - With the brake request on the bus, **where the press falls between frames** decides the stop: up to

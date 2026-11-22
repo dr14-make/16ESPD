@@ -100,7 +100,7 @@ brake release or standstill, as real units report it.
 |---|---|---|
 | ABS stop from 80 km/h, ideal bus = point-to-point | 28.11 m mean (28.02–28.25) | sweep, #269 |
 | real layout, 10 / 20 / 40 ms, mean (range) | 28.90 (28.62–29.06) / 29.50 (28.98–30.02) / 30.22 (30.02–30.44) m | sweep, #269 |
-| brake request on the bus, 10 / 20 / 40 ms | 30.10 (28.79–30.74) / 29.62 (29.32–29.95) / 33.64 (31.79–35.78) m | sweep, #269 |
+| brake request on the bus, 10 / 20 / 40 ms | 30.14 (29.05–30.74) / 29.60 (29.32–29.95) / 33.64 (31.79–35.78) m | sweep, #269 |
 | car's bus load at 500 / 250 kbit/s | 13.45 % / 26.9 % | `can_schedule`, #269 |
 | worst-case response times at 500 kbit/s | 0.28 ms (ABS status) – 1.48 ms (regen request, dashboard) | `can_schedule`, #269 |
 | top-level signal nets, point-to-point → bus | 31 → 19 (library car); 22 → 19 (hands-on starter) | #269 |
