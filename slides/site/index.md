@@ -50,6 +50,13 @@ features:
   - title: "Lecture 5 homework: a series hybrid"
     details: "After the lecture<br>Wire a series hybrid on prepared ground: the library's engine-generator and traction drive on one battery bus, the engine on its best-BSFC line, and an SoC thermostat of your own. Charge-sustaining on WLTC, against the conventional car in L/100 km."
     link: /lecture/lecture-05/homework
+  - title: "CAN bus: one pair of wires, every ECU"
+    details: "180 min, built along in Dyad Studio<br>A bus trades wires for time. Multiplexing, the OSI layers CAN fills, the networks in a car, the physical layer, the frame and arbitration, signals and the DBC file, errors and bus-off, timing and what it costs the ABS, and diagnostics. Ends with a real Škoda Fabia instrument cluster driven from the simulation."
+    link: /lecture-06/index.html
+    target: _self
+  - title: "Lecture 6 build guide: the electric car on one CAN bus"
+    details: "Alongside the lecture<br>The Lecture 4 car's ECUs moved from wires onto one CAN bus, with the pedal, wheel-speed and caliper loops kept local. Build the regen message by hand, repair two transmitters on one slot, then measure what the message period costs the ABS stopping distance and how full the bus is at two bitrates."
+    link: /lecture/lecture-06/
 ---
 
 ## Lecture 1, in two sessions
@@ -144,6 +151,23 @@ powertrain, the operating line, the energy manager and the charge-sustaining WLT
 [build guide](./lecture/lecture-05/); each build slide links to its step. The
 [homework](./lecture/lecture-05/homework) is a series hybrid on prepared ground, with the targets
 it has to meet.
+
+## Lecture 6: CAN bus
+
+1. [**Multiplexing**](./lecture-06/index.html#/multiplexing){target="_self"} — three ways to share a medium, and what a shared one saves
+2. [**The OSI model**](./lecture-06/index.html#/osi-layers){target="_self"} — seven layers, of which CAN fills three
+3. [**Networks in a car**](./lecture-06/index.html#/networks-in-a-car){target="_self"} — high- and low-speed CAN, LIN, gateways, and what came after
+4. [**Physical layer**](./lecture-06/index.html#/physical-layer){target="_self"} — CAN_H and CAN_L, dominant and recessive, the 120 Ω ends
+5. [**Frame and arbitration**](./lecture-06/index.html#/frame-and-arbitration){target="_self"} — the fields, bit stuffing, the lowest ID wins
+6. [**Signals**](./lecture-06/index.html#/signals){target="_self"} — a physical value to bits: the DBC file, factor and offset, byte order
+7. [**Errors**](./lecture-06/index.html#/errors){target="_self"} — five checks, the error frame, the counters and bus-off
+8. [**Timing**](./lecture-06/index.html#/timing){target="_self"} — period, latency, bus load, and what a late frame costs the ABS
+9. [**Diagnostics**](./lecture-06/index.html#/diagnostics){target="_self"} — a broken wire, OBD-II, UDS and ISO-TP
+10. [**Wrap-up**](./lecture-06/index.html#/wrap-up){target="_self"} — a real Škoda Fabia cluster on the simulated bus
+
+The students move the battery-electric car's ECUs onto one CAN bus along with the lecture and
+measure what the bus costs the ABS in a hard stop. They follow the
+[build guide](./lecture/lecture-06/).
 
 ## For the lecturer
 
