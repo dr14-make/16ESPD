@@ -23,7 +23,6 @@
 ## Connectors
 
  * `bus` - ([`CanNet`](@ref))
- * `tau_ref` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
 @component function CanBlendNode(; name = nothing, var"ideal"=false, var"friction_period"=0.02, var"torque_period"=0.02, var"ratio"=8.193, var"radius"=0.31, var"tau_max"=Float64(320), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -85,7 +84,6 @@
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
-  append!(__vars, @variables (tau_ref(t)::Real), [input = true])
 
   ### Variables (declarations)
 
@@ -108,6 +106,9 @@
   # Subcomponent torque_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
   torque_tx_overrides = __pop_subcomponent_overrides!(__overrides, "torque_tx")
   push!(__systems, @named torque_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=6, id=272, ideal=ideal, period=torque_period, scale=0.1, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = torque_tx_overrides))
+  # Subcomponent pedal_request_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
+  pedal_request_rx_overrides = __pop_subcomponent_overrides!(__overrides, "pedal_request_rx")
+  push!(__systems, @named pedal_request_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=12, id=192, __overrides = pedal_request_rx_overrides))
   # Subcomponent vehicle_speed_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
   vehicle_speed_rx_overrides = __pop_subcomponent_overrides!(__overrides, "vehicle_speed_rx")
   push!(__systems, @named vehicle_speed_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=1, id=128, __overrides = vehicle_speed_rx_overrides))
@@ -126,11 +127,11 @@
   __assertions = []
 
   ### Equations
-  push!(__eqs, kmh.u ~ vehicle_speed_rx.y)
-  push!(__eqs, blend.abs_active ~ front_abs_active_rx.y)
-  push!(__eqs, connect(bus, vehicle_speed_rx.bus, front_abs_active_rx.bus))
-  push!(__eqs, connect(tau_ref, blend.tau_ref))
+  push!(__eqs, connect(bus, vehicle_speed_rx.bus, front_abs_active_rx.bus, pedal_request_rx.bus))
+  push!(__eqs, connect(pedal_request_rx.y, blend.tau_ref))
+  push!(__eqs, connect(vehicle_speed_rx.y, kmh.u))
   push!(__eqs, connect(kmh.y, blend.v))
+  push!(__eqs, connect(front_abs_active_rx.y, blend.abs_active))
   push!(__eqs, connect(blend.tau_brake, friction_tx.u))
   push!(__eqs, connect(blend.tau_motor, torque_tx.u))
   push!(__eqs, connect(bus, friction_tx.bus))

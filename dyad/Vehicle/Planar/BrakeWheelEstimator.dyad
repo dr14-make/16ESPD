@@ -1,0 +1,775 @@
+"""
+Wheel-speed-only sampled brake estimator with independent wheel references.
+Zero initial references adopt measured rolling speed on the first tick; vx is the
+maximum held reference speed, while each slip uses its own wheel reference.
+"""
+component BrakeWheelEstimator
+  omega_fl = RealInput(units = "rad/s") {^omega_fl}
+  omega_fr = RealInput(units = "rad/s") {^omega_fr}
+  omega_rl = RealInput(units = "rad/s") {^omega_rl}
+  omega_rr = RealInput(units = "rad/s") {^omega_rr}
+  kappa_fl = RealOutput() {^kappa_fl}
+  kappa_fr = RealOutput() {^kappa_fr}
+  kappa_rl = RealOutput() {^kappa_rl}
+  kappa_rr = RealOutput() {^kappa_rr}
+  vx = RealOutput(units = "m/s") {^vx}
+  structural parameter dt::Time = 0.005
+  parameter radius::Length = 0.31
+  clock_fl = DiscreteComponents.PeriodicClock(dt = dt) {^clock_fl}
+  clock_fr = DiscreteComponents.PeriodicClock(dt = dt) {^clock_fr}
+  clock_rl = DiscreteComponents.PeriodicClock(dt = dt) {^clock_rl}
+  clock_rr = DiscreteComponents.PeriodicClock(dt = dt) {^clock_rr}
+  sample_fl = DiscreteComponents.Sampler() {^sample_fl}
+  estimator_fl = VehicleSystemsComponents.Vehicle.ABSWheelOnlyEstimatorDiscrete(dt = dt, radius = radius, v_ref0 = 0.0, omega0 = 0.0) {^estimator_fl}
+  hold_kappa_fl = DiscreteComponents.ZeroOrderHold() {^hold_kappa_fl}
+  hold_vref_fl = DiscreteComponents.ZeroOrderHold() {^hold_vref_fl}
+  sample_fr = DiscreteComponents.Sampler() {^sample_fr}
+  estimator_fr = VehicleSystemsComponents.Vehicle.ABSWheelOnlyEstimatorDiscrete(dt = dt, radius = radius, v_ref0 = 0.0, omega0 = 0.0) {^estimator_fr}
+  hold_kappa_fr = DiscreteComponents.ZeroOrderHold() {^hold_kappa_fr}
+  hold_vref_fr = DiscreteComponents.ZeroOrderHold() {^hold_vref_fr}
+  sample_rl = DiscreteComponents.Sampler() {^sample_rl}
+  estimator_rl = VehicleSystemsComponents.Vehicle.ABSWheelOnlyEstimatorDiscrete(dt = dt, radius = radius, v_ref0 = 0.0, omega0 = 0.0) {^estimator_rl}
+  hold_kappa_rl = DiscreteComponents.ZeroOrderHold() {^hold_kappa_rl}
+  hold_vref_rl = DiscreteComponents.ZeroOrderHold() {^hold_vref_rl}
+  sample_rr = DiscreteComponents.Sampler() {^sample_rr}
+  estimator_rr = VehicleSystemsComponents.Vehicle.ABSWheelOnlyEstimatorDiscrete(dt = dt, radius = radius, v_ref0 = 0.0, omega0 = 0.0) {^estimator_rr}
+  hold_kappa_rr = DiscreteComponents.ZeroOrderHold() {^hold_kappa_rr}
+  hold_vref_rr = DiscreteComponents.ZeroOrderHold() {^hold_vref_rr}
+relations
+  connect(omega_fl, sample_fl.u) {^input_fl}
+  connect(sample_fl.y, estimator_fl.omega, clock_fl.y) {^sampled_fl}
+  connect(estimator_fl.lambda, hold_kappa_fl.u) {^lambda_fl}
+  connect(estimator_fl.v_ref_out, hold_vref_fl.u) {^reference_fl}
+  connect(hold_kappa_fl.y, kappa_fl) {^output_fl}
+  connect(omega_fr, sample_fr.u) {^input_fr}
+  connect(sample_fr.y, estimator_fr.omega, clock_fr.y) {^sampled_fr}
+  connect(estimator_fr.lambda, hold_kappa_fr.u) {^lambda_fr}
+  connect(estimator_fr.v_ref_out, hold_vref_fr.u) {^reference_fr}
+  connect(hold_kappa_fr.y, kappa_fr) {^output_fr}
+  connect(omega_rl, sample_rl.u) {^input_rl}
+  connect(sample_rl.y, estimator_rl.omega, clock_rl.y) {^sampled_rl}
+  connect(estimator_rl.lambda, hold_kappa_rl.u) {^lambda_rl}
+  connect(estimator_rl.v_ref_out, hold_vref_rl.u) {^reference_rl}
+  connect(hold_kappa_rl.y, kappa_rl) {^output_rl}
+  connect(omega_rr, sample_rr.u) {^input_rr}
+  connect(sample_rr.y, estimator_rr.omega, clock_rr.y) {^sampled_rr}
+  connect(estimator_rr.lambda, hold_kappa_rr.u) {^lambda_rr}
+  connect(estimator_rr.v_ref_out, hold_vref_rr.u) {^reference_rr}
+  connect(hold_kappa_rr.y, kappa_rr) {^output_rr}
+  vx = max(max(hold_vref_fl.y, hold_vref_fr.y), max(hold_vref_rl.y, hold_vref_rr.y))
+metadata {
+  "Dyad": {
+    "icons": {
+      "default": "dyad://MultibodyComponents/CascadeServoController.svg"
+    }
+  },
+  "_links": {
+    "clock_fl": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 270,
+            "x2": 310,
+            "y1": 110,
+            "y2": 150
+          }
+        }
+      }
+    },
+    "clock_fr": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 270,
+            "x2": 310,
+            "y1": 310,
+            "y2": 350
+          }
+        }
+      }
+    },
+    "clock_rl": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 270,
+            "x2": 310,
+            "y1": 510,
+            "y2": 550
+          }
+        }
+      }
+    },
+    "clock_rr": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 270,
+            "x2": 310,
+            "y1": 710,
+            "y2": 750
+          }
+        }
+      }
+    },
+    "estimator_fl": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 360,
+            "x2": 480,
+            "y1": 140,
+            "y2": 260
+          }
+        }
+      }
+    },
+    "estimator_fr": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 360,
+            "x2": 480,
+            "y1": 340,
+            "y2": 460
+          }
+        }
+      }
+    },
+    "estimator_rl": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 360,
+            "x2": 480,
+            "y1": 540,
+            "y2": 660
+          }
+        }
+      }
+    },
+    "estimator_rr": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 360,
+            "x2": 480,
+            "y1": 740,
+            "y2": 860
+          }
+        }
+      }
+    },
+    "hold_kappa_fl": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 600,
+            "x2": 640,
+            "y1": 155,
+            "y2": 185
+          }
+        }
+      }
+    },
+    "hold_kappa_fr": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 600,
+            "x2": 640,
+            "y1": 355,
+            "y2": 385
+          }
+        }
+      }
+    },
+    "hold_kappa_rl": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 600,
+            "x2": 640,
+            "y1": 555,
+            "y2": 585
+          }
+        }
+      }
+    },
+    "hold_kappa_rr": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 600,
+            "x2": 640,
+            "y1": 755,
+            "y2": 785
+          }
+        }
+      }
+    },
+    "hold_vref_fl": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 760,
+            "x2": 800,
+            "y1": 180,
+            "y2": 220
+          }
+        }
+      }
+    },
+    "hold_vref_fr": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 760,
+            "x2": 800,
+            "y1": 380,
+            "y2": 420
+          }
+        }
+      }
+    },
+    "hold_vref_rl": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 760,
+            "x2": 800,
+            "y1": 580,
+            "y2": 620
+          }
+        }
+      }
+    },
+    "hold_vref_rr": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 760,
+            "x2": 800,
+            "y1": 780,
+            "y2": 820
+          }
+        }
+      }
+    },
+    "input_fl": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "input_fr": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "input_rl": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "input_rr": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "kappa_fl": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 915,
+            "x2": 945,
+            "y1": 155,
+            "y2": 185
+          },
+          "icon": {
+            "x1": 950,
+            "x2": 1050,
+            "y1": 150,
+            "y2": 250
+          }
+        }
+      }
+    },
+    "kappa_fr": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 915,
+            "x2": 945,
+            "y1": 355,
+            "y2": 385
+          },
+          "icon": {
+            "x1": 950,
+            "x2": 1050,
+            "y1": 350,
+            "y2": 450
+          }
+        }
+      }
+    },
+    "kappa_rl": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 915,
+            "x2": 945,
+            "y1": 555,
+            "y2": 585
+          },
+          "icon": {
+            "x1": 950,
+            "x2": 1050,
+            "y1": 550,
+            "y2": 650
+          }
+        }
+      }
+    },
+    "kappa_rr": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 915,
+            "x2": 945,
+            "y1": 755,
+            "y2": 785
+          },
+          "icon": {
+            "x1": 950,
+            "x2": 1050,
+            "y1": 750,
+            "y2": 850
+          }
+        }
+      }
+    },
+    "lambda_fl": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "lambda_fr": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "lambda_rl": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "lambda_rr": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "omega_fl": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 25,
+            "x2": 55,
+            "y1": 185,
+            "y2": 215
+          },
+          "icon": {
+            "x1": -50,
+            "x2": 50,
+            "y1": 150,
+            "y2": 250
+          }
+        }
+      }
+    },
+    "omega_fr": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 25,
+            "x2": 55,
+            "y1": 385,
+            "y2": 415
+          },
+          "icon": {
+            "x1": -50,
+            "x2": 50,
+            "y1": 350,
+            "y2": 450
+          }
+        }
+      }
+    },
+    "omega_rl": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 25,
+            "x2": 55,
+            "y1": 585,
+            "y2": 615
+          },
+          "icon": {
+            "x1": -50,
+            "x2": 50,
+            "y1": 550,
+            "y2": 650
+          }
+        }
+      }
+    },
+    "omega_rr": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 25,
+            "x2": 55,
+            "y1": 785,
+            "y2": 815
+          },
+          "icon": {
+            "x1": -50,
+            "x2": 50,
+            "y1": 750,
+            "y2": 850
+          }
+        }
+      }
+    },
+    "output_fl": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "output_fr": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "output_rl": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "output_rr": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "reference_fl": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "reference_fr": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "reference_rl": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "reference_rr": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": 2,
+            "M": [],
+            "S": 1
+          }
+        ]
+      }
+    },
+    "sample_fl": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 180,
+            "x2": 220,
+            "y1": 180,
+            "y2": 220
+          }
+        }
+      }
+    },
+    "sample_fr": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 180,
+            "x2": 220,
+            "y1": 380,
+            "y2": 420
+          }
+        }
+      }
+    },
+    "sample_rl": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 180,
+            "x2": 220,
+            "y1": 580,
+            "y2": 620
+          }
+        }
+      }
+    },
+    "sample_rr": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 180,
+            "x2": 220,
+            "y1": 780,
+            "y2": 820
+          }
+        }
+      }
+    },
+    "sampled_fl": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": -1,
+            "M": [],
+            "S": 1
+          },
+          {
+            "E": 2,
+            "M": [],
+            "S": -1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 250,
+                "y": 130
+              }
+            ],
+            "S": -1
+          }
+        ],
+        "junctions": [
+          {
+            "x": 250,
+            "y": 200
+          }
+        ]
+      }
+    },
+    "sampled_fr": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": -1,
+            "M": [],
+            "S": 1
+          },
+          {
+            "E": 2,
+            "M": [],
+            "S": -1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 250,
+                "y": 330
+              }
+            ],
+            "S": -1
+          }
+        ],
+        "junctions": [
+          {
+            "x": 250,
+            "y": 400
+          }
+        ]
+      }
+    },
+    "sampled_rl": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": -1,
+            "M": [],
+            "S": 1
+          },
+          {
+            "E": 2,
+            "M": [],
+            "S": -1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 250,
+                "y": 530
+              }
+            ],
+            "S": -1
+          }
+        ],
+        "junctions": [
+          {
+            "x": 250,
+            "y": 600
+          }
+        ]
+      }
+    },
+    "sampled_rr": {
+      "Dyad": {
+        "edges": [
+          {
+            "E": -1,
+            "M": [],
+            "S": 1
+          },
+          {
+            "E": 2,
+            "M": [],
+            "S": -1
+          },
+          {
+            "E": 3,
+            "M": [
+              {
+                "x": 250,
+                "y": 730
+              }
+            ],
+            "S": -1
+          }
+        ],
+        "junctions": [
+          {
+            "x": 250,
+            "y": 800
+          }
+        ]
+      }
+    },
+    "vx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 915,
+            "x2": 945,
+            "y1": 65,
+            "y2": 95
+          },
+          "icon": {
+            "x1": 450,
+            "x2": 550,
+            "y1": -50,
+            "y2": 50
+          }
+        }
+      }
+    }
+  }
+}
+end

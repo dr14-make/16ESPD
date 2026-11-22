@@ -1,0 +1,108 @@
+"Wheel-only estimator validation with the unchanged four-channel brake controller."
+component EstimatedHardStop
+  vehicle = PlanarBEVDriveEstimated(v0 = 22.22222222222222) {^vehicle}
+  zero = BlockComponents.Sources.Constant(k = 0) {^zero}
+  pedal = BlockComponents.Sources.Ramp(height = 1, duration = 0.1, start_time = 0.5) {^pedal}
+relations
+  connect(zero.y, vehicle.throttle, vehicle.steer) {^zero_wire}
+  connect(pedal.y, vehicle.brake) {^pedal_wire}
+metadata {
+  "_links": {
+    "vehicle": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 600,
+            "x2": 850,
+            "y1": 300,
+            "y2": 600
+          }
+        }
+      }
+    },
+    "zero": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 100,
+            "x2": 200,
+            "y1": 200,
+            "y2": 300
+          }
+        }
+      }
+    },
+    "pedal": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 100,
+            "x2": 200,
+            "y1": 450,
+            "y2": 550
+          }
+        }
+      }
+    },
+    "zero_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "M": [
+              {
+                "x": 400,
+                "y": 250
+              },
+              {
+                "x": 400,
+                "y": 375
+              }
+            ],
+            "E": 2
+          },
+          {
+            "S": 1,
+            "M": [
+              {
+                "x": 350,
+                "y": 250
+              },
+              {
+                "x": 350,
+                "y": 525
+              }
+            ],
+            "E": 3
+          }
+        ]
+      }
+    },
+    "pedal_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "M": [
+              {
+                "x": 450,
+                "y": 500
+              },
+              {
+                "x": 450,
+                "y": 450
+              }
+            ],
+            "E": 2
+          }
+        ]
+      }
+    }
+  }
+}
+end
+
+analysis EstimatedHardStopTransient
+  extends TransientAnalysis(stop = 6, alg = ODEAlg.Rodas5P(), dtmax = 0.005, tstops = [0.5, 0.6], optimize = OptimizationLevel.None(), abstol = 1e-7, reltol = 1e-7)
+  model = EstimatedHardStop()
+end

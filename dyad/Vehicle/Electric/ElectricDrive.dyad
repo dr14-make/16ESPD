@@ -31,6 +31,8 @@ component ElectricDrive
   support = Spline() {^support}
   "Battery state of charge"
   SoC = RealOutput() {^SoC}
+  "Machine shaft speed, before the reduction"
+  machine_speed = RealOutput() {^machine_speed}
   battery = VehicleSystemsComponents.Vehicle.Electric.Battery(SoC0 = SoC0) {^battery}
   aux = VehicleSystemsComponents.Vehicle.Electric.AuxLoad(P_aux = P_aux) {^aux}
   converter = VehicleSystemsComponents.Vehicle.Electric.Converter() {^converter}
@@ -53,12 +55,14 @@ relations
   connect(machine.support, reduction.support, support) {^w7}
   connect(battery.SoC, SoC) {^w8}
   converter.i_ref = tau_ref / (converter.field * machine.k)
+  machine_speed = machine.w
 metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/ElectricDrive.svg"}},
   "_links": {
     "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
     "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 400, "x2": 1050, "y2": 500}}}},
     "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 788, "y1": 950, "x2": 888, "y2": 1050}}}},
+    "machine_speed": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}, "diagram": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}}}},
     "SoC": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}, "diagram": {"x1": 135, "y1": -50, "x2": 235, "y2": 50, "rot": 270}}}},
     "battery": {"Dyad": {"placement": {"diagram": {"x1": 30, "y1": 390, "x2": 150, "y2": 510, "rot": 90}}}},
     "aux": {"Dyad": {"placement": {"diagram": {"x1": 230, "y1": 390, "x2": 350, "y2": 510, "rot": 90}}}},

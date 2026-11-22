@@ -1,0 +1,35 @@
+test component IdealBusStop
+  extends Step1IdealBusStop
+end
+
+analysis IdealBusStopTransient
+  extends TransientAnalysis(stop = 6, dtmax = 0.005, reltol = 1e-7, optimize = OptimizationLevel.None())
+  model = IdealBusStop()
+end
+
+test component CanStop
+  extends WiringStop(networked = true, ideal = false)
+end
+
+analysis CanStopTransient
+  extends TransientAnalysis(stop = 6, dtmax = 0.005, reltol = 1e-7, optimize = OptimizationLevel.None())
+  model = CanStop()
+end
+
+test component Can20msStop
+  extends WiringStop(networked = true, ideal = false, chassis_period = 0.02)
+end
+
+analysis Can20msStopTransient
+  extends TransientAnalysis(stop = 6, dtmax = 0.005, reltol = 1e-7, optimize = OptimizationLevel.None())
+  model = Can20msStop()
+end
+
+test component Can40msStop
+  extends WiringStop(networked = true, ideal = false, chassis_period = 0.04)
+end
+
+analysis Can40msStopTransient
+  extends TransientAnalysis(stop = 6, dtmax = 0.005, reltol = 1e-7, optimize = OptimizationLevel.None())
+  model = Can40msStop()
+end

@@ -8,7 +8,7 @@ end
 
 "Listen-only bus tap for an external CAN interface; neither transmits nor terminates the bus."
 component CanAdapter
-  bus = CanNet(n = n)
+  bus = CanNet(n = n) {^bus}
   structural parameter n::Integer = 16
   parameter slot_count::Integer = n
 relations
@@ -16,17 +16,29 @@ relations
     bus.i[k] = 0
     bus.j[k] = 0
   end
+metadata {
+  "Dyad": {"icons": {"default": "dyad://BlockComponents/RealPassThrough.svg"}},
+  "_links": {
+    "bus": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50}, "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50}}}}
+  }
+}
 end
 
 "Closes every slot of one bus. Exactly one per bus."
 component CanTermination
-  bus = CanNet(n = n)
+  bus = CanNet(n = n) {^bus}
   structural parameter n::Integer = 16
 relations
   for k in 1:n
     bus.v[k] = bus.i[k]
     bus.c[k] = bus.j[k]
   end
+metadata {
+  "Dyad": {"icons": {"default": "dyad://BlockComponents/Terminator.svg"}},
+  "_links": {
+    "bus": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50}, "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50}}}}
+  }
+}
 end
 
 component CanPack@[input clk extends Discrete]
@@ -67,7 +79,7 @@ relations
 end
 
 partial component CanTxBase
-  bus = CanNet(n = n)
+  bus = CanNet(n = n) {^bus}
   structural parameter n::Integer = 16
   structural parameter slot::Integer = 1
   "11-bit CAN identifier; lower wins arbitration"
@@ -90,19 +102,33 @@ relations
       bus.j[k] = 0
     end
   end
+metadata {
+  "Dyad": {"icons": {"default": "dyad://BlockComponents/RealPassThrough.svg"}},
+  "_links": {
+    "bus": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50}, "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50}}}}
+  }
+}
 end
 
 component CanTxReal
   extends CanTxBase
-  u = RealInput()
+  u = RealInput() {^u}
   parameter scale::Real = 1
   parameter offset::Real = 0
   parameter raw_min::Real = 0
   parameter raw_max::Real = 65535
-  link = CanLink(ideal = ideal, period = period, scale = scale, offset = offset, raw_min = raw_min, raw_max = raw_max)
+  link = CanLink(ideal = ideal, period = period, scale = scale, offset = offset, raw_min = raw_min, raw_max = raw_max) {^link}
 relations
-  connect(u, link.u)
+  connect(u, link.u) {^w1}
   wire = link.y
+metadata {
+  "Dyad": {"icons": {"default": "dyad://BlockComponents/RealPassThrough.svg"}},
+  "_links": {
+    "u": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "link": {"Dyad": {"icons": {"default": "dyad://BlockComponents/RealPassThrough.svg"}, "placement": {"diagram": {"x1": 400, "y1": 400, "x2": 600, "y2": 600}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "renderStyle": "standard"}}
+  }
+}
 end
 
 component CanTxInteger
@@ -129,7 +155,7 @@ end
 
 "Reads one slot; draws no flow on any slot."
 partial component CanRxBase
-  bus = CanNet(n = n)
+  bus = CanNet(n = n) {^bus}
   structural parameter n::Integer = 16
   structural parameter slot::Integer = 1
   parameter id::Integer = 256
@@ -144,13 +170,25 @@ relations
   if slot >= 1 and slot <= n
     wire = bus.v[slot]
   end
+metadata {
+  "Dyad": {"icons": {"default": "dyad://BlockComponents/RealPassThrough.svg"}},
+  "_links": {
+    "bus": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50}, "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50}}}}
+  }
+}
 end
 
 component CanRxReal
   extends CanRxBase
-  y = RealOutput()
+  y = RealOutput() {^y}
 relations
   y = wire
+metadata {
+  "Dyad": {"icons": {"default": "dyad://BlockComponents/RealPassThrough.svg"}},
+  "_links": {
+    "y": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  }
+}
 end
 
 component CanRxInteger

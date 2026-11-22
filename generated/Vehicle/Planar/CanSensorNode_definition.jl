@@ -5,14 +5,13 @@
 
 
 @doc Markdown.doc"""
-   CanSensorNode(; name, ideal, speed_period, steering_period, yaw_period, dashboard_period, __overrides)
+   CanSensorNode(; name, ideal, steering_period, yaw_period, dashboard_period, __overrides)
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `ideal`         |                          | --  |   false |
-| `speed_period`         |                          | --  |   0.01 |
 | `steering_period`         |                          | --  |   0.01 |
 | `yaw_period`         |                          | --  |   0.01 |
 | `dashboard_period`         |                          | --  |   0.1 |
@@ -23,7 +22,7 @@
  * `measurements` - The receiving end of `CarBus`: the same signals, as inputs. A control unit or an unpack block
 (`BusMotion`, `BusSlip`, `BusSlipAngle`, `BusWheelSpeed`) listens on one of these. ([`CarBusIn`](@ref))
 """
-@component function CanSensorNode(; name = nothing, var"ideal"=false, var"speed_period"=0.01, var"steering_period"=0.01, var"yaw_period"=0.01, var"dashboard_period"=0.1, __overrides = Dict{String, Any}())
+@component function CanSensorNode(; name = nothing, var"ideal"=false, var"steering_period"=0.01, var"yaw_period"=0.01, var"dashboard_period"=0.1, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -43,7 +42,6 @@
 
   ### Keyword argument overrides
   haskey(__overrides, "ideal") && (ideal = pop!(__overrides, "ideal"))
-  haskey(__overrides, "speed_period") && (speed_period = pop!(__overrides, "speed_period"))
   haskey(__overrides, "steering_period") && (steering_period = pop!(__overrides, "steering_period"))
   haskey(__overrides, "yaw_period") && (yaw_period = pop!(__overrides, "yaw_period"))
   haskey(__overrides, "dashboard_period") && (dashboard_period = pop!(__overrides, "dashboard_period"))
@@ -79,9 +77,6 @@
   # Subcomponent motion of type VehicleSystemsComponents.Vehicle.Planar.BusMotion
   motion_overrides = __pop_subcomponent_overrides!(__overrides, "motion")
   push!(__systems, @named motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion(; __overrides = motion_overrides))
-  # Subcomponent speed_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
-  speed_tx_overrides = __pop_subcomponent_overrides!(__overrides, "speed_tx")
-  push!(__systems, @named speed_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=1, id=128, ideal=ideal, period=speed_period, scale=0.01, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = speed_tx_overrides))
   # Subcomponent steering_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
   steering_tx_overrides = __pop_subcomponent_overrides!(__overrides, "steering_tx")
   push!(__systems, @named steering_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=2, id=144, ideal=ideal, period=steering_period, scale=0.001, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = steering_tx_overrides))
@@ -104,13 +99,10 @@
 
   ### Equations
   push!(__eqs, connect(measurements, motion.bus))
-  push!(__eqs, connect(motion.vx, speed_tx.u, dashboard_tx.u))
+  push!(__eqs, connect(motion.vx, dashboard_tx.u))
   push!(__eqs, connect(motion.delta_sw, steering_tx.u))
   push!(__eqs, connect(motion.r, yaw_tx.u))
-  push!(__eqs, connect(bus, speed_tx.bus))
-  push!(__eqs, connect(bus, steering_tx.bus))
-  push!(__eqs, connect(bus, yaw_tx.bus))
-  push!(__eqs, connect(bus, dashboard_tx.bus))
+  push!(__eqs, connect(bus, steering_tx.bus, yaw_tx.bus, dashboard_tx.bus))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

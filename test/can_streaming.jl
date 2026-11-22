@@ -81,10 +81,11 @@ end
         @test length(values) == round(Int, spec.duration / f.period)
         ranges[f.id] = extrema(values)
     end
-    @test ranges[112] == (0, 1)
+    @test sort!(collect(keys(ranges))) == [112, 128, 144, 160, 176, 177, 178, 179, 272, 768]
     @test ranges[128][2] > 20
     @test ranges[768][2] > 20
-    @test ranges[256][2] > 2000
-    @test ranges[272][1] < 0 < ranges[272][2]
+    # Accelerator demand is wired; this frame contains only regeneration.
+    @test ranges[272][1] < 0
+    @test ranges[272][2] == 0
     @test recording.closed
 end

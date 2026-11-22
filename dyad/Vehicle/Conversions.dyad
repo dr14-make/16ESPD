@@ -10,6 +10,9 @@ component ToKmPerHour
   extends BlockComponents.Interfaces.SISO
 relations
   y = 3.6 * u
+metadata {
+  "Dyad": {"icons": {"default": "dyad://BlockComponents/To_kmh.svg"}}
+}
 end
 
 test component TestToKmPerHour

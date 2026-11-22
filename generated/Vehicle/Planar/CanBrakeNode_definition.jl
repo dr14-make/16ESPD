@@ -5,32 +5,40 @@
 
 
 @doc Markdown.doc"""
-   CanBrakeNode(; name, ideal, abs_period, esp_on, abs_on, radius, T_full, __overrides)
+   CanBrakeNode(; name, ideal, speed_period, wheel_period, abs_period, regen_period, esp_on, abs_on, radius, T_full, ratio, tau_max, P_charge, v_fade, __overrides)
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `ideal`         |                          | --  |   false |
+| `speed_period`         |                          | --  |   0.01 |
+| `wheel_period`         |                          | --  |   0.01 |
 | `abs_period`         |                          | --  |   0.01 |
+| `regen_period`         |                          | --  |   0.01 |
 | `esp_on`         |                          | --  |   1 |
 | `abs_on`         |                          | --  |   1 |
 | `radius`         |                          | m  |   0.31 |
 | `T_full`         |                          | N.m  |   2500 |
+| `ratio`         |                          | --  |   8.193 |
+| `tau_max`         |                          | N.m  |   320 |
+| `P_charge`         |                          | W  |   80.5e3 |
+| `v_fade`         |                          | --  |   10 |
 
 ## Connectors
 
  * `bus` - ([`CanNet`](@ref))
- * `kappa_fl` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `kappa_fr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `kappa_rl` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `kappa_rr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `omega_fl` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `omega_fr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `omega_rl` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `omega_rr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `tau_fl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `tau_fr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `tau_rl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `tau_rr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `brake_request` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function CanBrakeNode(; name = nothing, var"ideal"=false, var"abs_period"=0.01, var"esp_on"=Float64(1), var"abs_on"=Float64(1), var"radius"=0.31, var"T_full"=Float64(2500), __overrides = Dict{String, Any}())
+@component function CanBrakeNode(; name = nothing, var"ideal"=false, var"speed_period"=0.01, var"wheel_period"=0.01, var"abs_period"=0.01, var"regen_period"=0.01, var"esp_on"=Float64(1), var"abs_on"=Float64(1), var"radius"=0.31, var"T_full"=Float64(2500), var"ratio"=8.193, var"tau_max"=Float64(320), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -50,11 +58,18 @@
 
   ### Keyword argument overrides
   haskey(__overrides, "ideal") && (ideal = pop!(__overrides, "ideal"))
+  haskey(__overrides, "speed_period") && (speed_period = pop!(__overrides, "speed_period"))
+  haskey(__overrides, "wheel_period") && (wheel_period = pop!(__overrides, "wheel_period"))
   haskey(__overrides, "abs_period") && (abs_period = pop!(__overrides, "abs_period"))
+  haskey(__overrides, "regen_period") && (regen_period = pop!(__overrides, "regen_period"))
   haskey(__overrides, "esp_on") && (esp_on = pop!(__overrides, "esp_on"))
   haskey(__overrides, "abs_on") && (abs_on = pop!(__overrides, "abs_on"))
   haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
   haskey(__overrides, "T_full") && (T_full = pop!(__overrides, "T_full"))
+  haskey(__overrides, "ratio") && (ratio = pop!(__overrides, "ratio"))
+  haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
+  haskey(__overrides, "P_charge") && (P_charge = pop!(__overrides, "P_charge"))
+  haskey(__overrides, "v_fade") && (v_fade = pop!(__overrides, "v_fade"))
 
   ### Structural Parameters (functions)
 
@@ -81,18 +96,31 @@
   __local__T_full = T_full
   append!(__params, @parameters (T_full::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, T_full, __local__T_full)
+  __local__ratio = ratio
+  append!(__params, @parameters (ratio::Real))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, ratio, __local__ratio)
+  __local__tau_max = tau_max
+  append!(__params, @parameters (tau_max::Real))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_max, __local__tau_max)
+  __local__P_charge = P_charge
+  append!(__params, @parameters (P_charge::Real))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, P_charge, __local__P_charge)
+  __local__v_fade = v_fade
+  append!(__params, @parameters (v_fade::Real))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_fade, __local__v_fade)
 
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
-  append!(__vars, @variables (kappa_fl(t)::Real), [input = true])
-  append!(__vars, @variables (kappa_fr(t)::Real), [input = true])
-  append!(__vars, @variables (kappa_rl(t)::Real), [input = true])
-  append!(__vars, @variables (kappa_rr(t)::Real), [input = true])
+  append!(__vars, @variables (omega_fl(t)::Real), [input = true])
+  append!(__vars, @variables (omega_fr(t)::Real), [input = true])
+  append!(__vars, @variables (omega_rl(t)::Real), [input = true])
+  append!(__vars, @variables (omega_rr(t)::Real), [input = true])
   append!(__vars, @variables (tau_fl(t)::Real), [output = true])
   append!(__vars, @variables (tau_fr(t)::Real), [output = true])
   append!(__vars, @variables (tau_rl(t)::Real), [output = true])
   append!(__vars, @variables (tau_rr(t)::Real), [output = true])
+  append!(__vars, @variables (brake_request(t)::Real), [input = true])
 
   ### Variables (declarations)
 
@@ -106,21 +134,45 @@
   # Subcomponent ecu of type VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit
   ecu_overrides = __pop_subcomponent_overrides!(__overrides, "ecu")
   push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(; report_front=true, esp_on=esp_on, abs_on=abs_on, radius=radius, T_max=T_full, __overrides = ecu_overrides))
-  # Subcomponent abs_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
-  abs_tx_overrides = __pop_subcomponent_overrides!(__overrides, "abs_tx")
-  push!(__systems, @named abs_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=5, id=112, ideal=ideal, period=abs_period, scale=Float64(1), raw_min=Float64(0), raw_max=Float64(1), __overrides = abs_tx_overrides))
-  # Subcomponent vehicle_speed_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
-  vehicle_speed_rx_overrides = __pop_subcomponent_overrides!(__overrides, "vehicle_speed_rx")
-  push!(__systems, @named vehicle_speed_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=1, id=128, __overrides = vehicle_speed_rx_overrides))
+  # Subcomponent estimator of type VehicleSystemsComponents.Vehicle.Planar.BrakeWheelEstimator
+  estimator_overrides = __pop_subcomponent_overrides!(__overrides, "estimator")
+  push!(__systems, @named estimator = VehicleSystemsComponents.Vehicle.Planar.BrakeWheelEstimator(; radius=radius, __overrides = estimator_overrides))
+  # Subcomponent abs_hold of type VehicleSystemsComponents.Vehicle.Planar.AbsControlHold
+  abs_hold_overrides = __pop_subcomponent_overrides!(__overrides, "abs_hold")
+  push!(__systems, @named abs_hold = VehicleSystemsComponents.Vehicle.Planar.AbsControlHold(; __overrides = abs_hold_overrides))
+  # Subcomponent speed_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
+  speed_tx_overrides = __pop_subcomponent_overrides!(__overrides, "speed_tx")
+  push!(__systems, @named speed_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=1, id=128, ideal=ideal, period=speed_period, scale=0.01, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = speed_tx_overrides))
+  # Subcomponent wheel_fl_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
+  wheel_fl_tx_overrides = __pop_subcomponent_overrides!(__overrides, "wheel_fl_tx")
+  push!(__systems, @named wheel_fl_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=8, id=176, ideal=ideal, period=wheel_period, scale=0.01, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = wheel_fl_tx_overrides))
+  # Subcomponent wheel_fr_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
+  wheel_fr_tx_overrides = __pop_subcomponent_overrides!(__overrides, "wheel_fr_tx")
+  push!(__systems, @named wheel_fr_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=9, id=177, ideal=ideal, period=wheel_period, scale=0.01, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = wheel_fr_tx_overrides))
+  # Subcomponent wheel_rl_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
+  wheel_rl_tx_overrides = __pop_subcomponent_overrides!(__overrides, "wheel_rl_tx")
+  push!(__systems, @named wheel_rl_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=10, id=178, ideal=ideal, period=wheel_period, scale=0.01, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = wheel_rl_tx_overrides))
+  # Subcomponent wheel_rr_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
+  wheel_rr_tx_overrides = __pop_subcomponent_overrides!(__overrides, "wheel_rr_tx")
+  push!(__systems, @named wheel_rr_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=11, id=179, ideal=ideal, period=wheel_period, scale=0.01, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = wheel_rr_tx_overrides))
   # Subcomponent steering_angle_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
   steering_angle_rx_overrides = __pop_subcomponent_overrides!(__overrides, "steering_angle_rx")
   push!(__systems, @named steering_angle_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=2, id=144, __overrides = steering_angle_rx_overrides))
   # Subcomponent yaw_rate_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
   yaw_rate_rx_overrides = __pop_subcomponent_overrides!(__overrides, "yaw_rate_rx")
   push!(__systems, @named yaw_rate_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=3, id=160, __overrides = yaw_rate_rx_overrides))
-  # Subcomponent friction_demand_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
-  friction_demand_rx_overrides = __pop_subcomponent_overrides!(__overrides, "friction_demand_rx")
-  push!(__systems, @named friction_demand_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=4, id=256, __overrides = friction_demand_rx_overrides))
+  # Subcomponent kmh of type VehicleSystemsComponents.Vehicle.ToKmPerHour
+  kmh_overrides = __pop_subcomponent_overrides!(__overrides, "kmh")
+  push!(__systems, @named kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour(; __overrides = kmh_overrides))
+  # Subcomponent blend of type VehicleSystemsComponents.Vehicle.Electric.RegenBlend
+  blend_overrides = __pop_subcomponent_overrides!(__overrides, "blend")
+  push!(__systems, @named blend = VehicleSystemsComponents.Vehicle.Electric.RegenBlend(; abs_rule=true, ratio=ratio, radius=radius, tau_max=tau_max, P_charge=P_charge, v_fade=v_fade, __overrides = blend_overrides))
+  # Subcomponent abs_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
+  abs_tx_overrides = __pop_subcomponent_overrides!(__overrides, "abs_tx")
+  push!(__systems, @named abs_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=5, id=112, ideal=ideal, period=abs_period, scale=Float64(1), raw_min=Float64(0), raw_max=Float64(1), __overrides = abs_tx_overrides))
+  # Subcomponent regen_tx of type VehicleSystemsComponents.Vehicle.Planar.CanTxReal
+  regen_tx_overrides = __pop_subcomponent_overrides!(__overrides, "regen_tx")
+  push!(__systems, @named regen_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=6, id=272, ideal=ideal, period=regen_period, scale=0.1, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = regen_tx_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -133,21 +185,29 @@
   __assertions = []
 
   ### Equations
-  push!(__eqs, ecu.demand ~ friction_demand_rx.y)
-  push!(__eqs, ecu.vx ~ vehicle_speed_rx.y)
-  push!(__eqs, ecu.delta_sw ~ steering_angle_rx.y)
-  push!(__eqs, ecu.r ~ yaw_rate_rx.y)
-  push!(__eqs, connect(bus, vehicle_speed_rx.bus, steering_angle_rx.bus, yaw_rate_rx.bus, friction_demand_rx.bus))
-  push!(__eqs, connect(kappa_fl, ecu.kappa_fl))
-  push!(__eqs, connect(kappa_fr, ecu.kappa_fr))
-  push!(__eqs, connect(kappa_rl, ecu.kappa_rl))
-  push!(__eqs, connect(kappa_rr, ecu.kappa_rr))
+  push!(__eqs, connect(bus, steering_angle_rx.bus, yaw_rate_rx.bus, regen_tx.bus, speed_tx.bus, wheel_fl_tx.bus, wheel_fr_tx.bus, wheel_rl_tx.bus, wheel_rr_tx.bus, abs_tx.bus))
+  push!(__eqs, connect(blend.tau_brake, ecu.demand, abs_hold.demand))
+  push!(__eqs, connect(estimator.vx, ecu.vx, speed_tx.u, abs_hold.vx))
+  push!(__eqs, connect(steering_angle_rx.y, ecu.delta_sw))
+  push!(__eqs, connect(yaw_rate_rx.y, ecu.r))
+  push!(__eqs, connect(estimator.kappa_fl, ecu.kappa_fl))
+  push!(__eqs, connect(omega_fl, estimator.omega_fl, wheel_fl_tx.u))
+  push!(__eqs, connect(estimator.kappa_fr, ecu.kappa_fr))
+  push!(__eqs, connect(omega_fr, estimator.omega_fr, wheel_fr_tx.u))
+  push!(__eqs, connect(estimator.kappa_rl, ecu.kappa_rl))
+  push!(__eqs, connect(omega_rl, estimator.omega_rl, wheel_rl_tx.u))
+  push!(__eqs, connect(estimator.kappa_rr, ecu.kappa_rr))
+  push!(__eqs, connect(omega_rr, estimator.omega_rr, wheel_rr_tx.u))
   push!(__eqs, connect(ecu.tau_fl, tau_fl))
   push!(__eqs, connect(ecu.tau_fr, tau_fr))
   push!(__eqs, connect(ecu.tau_rl, tau_rl))
   push!(__eqs, connect(ecu.tau_rr, tau_rr))
-  push!(__eqs, connect(ecu.front_active, abs_tx.u))
-  push!(__eqs, connect(bus, abs_tx.bus))
+  push!(__eqs, connect(ecu.front_active, abs_hold.active))
+  push!(__eqs, connect(abs_hold.y, blend.abs_active, abs_tx.u))
+  push!(__eqs, connect(brake_request, blend.tau_ref))
+  push!(__eqs, connect(estimator.vx, kmh.u))
+  push!(__eqs, connect(kmh.y, blend.v))
+  push!(__eqs, connect(blend.tau_motor, regen_tx.u))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

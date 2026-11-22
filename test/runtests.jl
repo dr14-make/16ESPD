@@ -25,6 +25,7 @@ const GROUPS = [
     "extra_canvas" => ["extra_canvas.jl"],
     "lecture05" => ["lecture05_plausibility.jl"],
     "lecture05_positions" => ["lecture05_positions.jl"],
+    "handson06" => ["handson06.jl"],
     "lecture06" => ["lecture06_plausibility.jl"],
     "switching" => ["switching_plausibility.jl"],
     "planar_wltc" => ["planar_wltc_plausibility.jl"],
