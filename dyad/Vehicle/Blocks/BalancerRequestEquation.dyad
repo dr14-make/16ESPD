@@ -1,0 +1,16 @@
+"""
+y = u1 * 0.25 * (1 + tanh((u2 - u3) / voltage_width)) * (1 + tanh((u4 - u5) / voltage_width))
+Smooth regenerative shunt request: u1 is limited enable, u2 measured delta, u3 delta threshold, u4 measured voltage, and u5 top threshold.
+"""
+component BalancerRequestEquation
+  u1 = RealInput() {^u1}
+  u2 = RealInput() {^u2}
+  u3 = RealInput() {^u3}
+  u4 = RealInput() {^u4}
+  u5 = RealInput() {^u5}
+  y = RealOutput() {^y}
+  parameter voltage_width::Real = 0.0002
+relations
+  y = u1 * 0.25 * (1 + tanh((u2 - u3) / voltage_width)) * (1 + tanh((u4 - u5) / voltage_width))
+metadata {"Dyad":{"icons":{"default":"dyad://VehicleSystemsComponents/Vehicle/Blocks/Equation.svg"}},"_links":{"u1":{"Dyad":{"placement":{"diagram":{"x1":0,"x2":40,"y1":146.66666666666666,"y2":186.66666666666666},"icon":{"x1":0,"x2":40,"y1":146.66666666666666,"y2":186.66666666666666}}}},"u2":{"Dyad":{"placement":{"diagram":{"x1":0,"x2":40,"y1":313.3333333333333,"y2":353.3333333333333},"icon":{"x1":0,"x2":40,"y1":313.3333333333333,"y2":353.3333333333333}}}},"u3":{"Dyad":{"placement":{"diagram":{"x1":0,"x2":40,"y1":480.0,"y2":520.0},"icon":{"x1":0,"x2":40,"y1":480.0,"y2":520.0}}}},"u4":{"Dyad":{"placement":{"diagram":{"x1":0,"x2":40,"y1":646.6666666666666,"y2":686.6666666666666},"icon":{"x1":0,"x2":40,"y1":646.6666666666666,"y2":686.6666666666666}}}},"u5":{"Dyad":{"placement":{"diagram":{"x1":0,"x2":40,"y1":813.3333333333334,"y2":853.3333333333334},"icon":{"x1":0,"x2":40,"y1":813.3333333333334,"y2":853.3333333333334}}}},"y":{"Dyad":{"placement":{"diagram":{"x1":960,"x2":1000,"y1":480,"y2":520},"icon":{"x1":960,"x2":1000,"y1":480,"y2":520}}}}}}
+end
