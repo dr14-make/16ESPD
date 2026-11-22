@@ -27,12 +27,6 @@ VCU: accelerator stays local; only the ECU's negative regen request travels on C
  * `regen` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `spline` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `support` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
-
-## Variables
-
-| Name         | Description                         | Units  | 
-| ------------ | ----------------------------------- | ------ |
-| `selected`         |                          | --  |
 """
 @component function WiringDriveNode(; name = nothing, var"networked"=false, var"receive_regen"=true, var"ideal"=true, var"ratio"=8.193, var"P_aux"=Float64(300), var"T_receive"=0.01, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -90,12 +84,8 @@ VCU: accelerator stays local; only the ECU's negative regen request travels on C
   append!(__vars, @variables (regen(t)::Real), [input = true])
 
   ### Variables (declarations)
-  append!(__vars, @variables (selected(t)::Real))
 
   ### Variables (assignments)
-  __ovr_selected = pop!(__overrides, "selected", nothing); isnothing(__ovr_selected) || push!(__eqs, selected ~ __ovr_selected)
-  __ovr_selected__initial = pop!(__overrides, "selected.initial", nothing); isnothing(__ovr_selected__initial) || (__initial_conditions[selected] = __ovr_selected__initial)
-  __ovr_selected__guess = pop!(__overrides, "selected.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -109,47 +99,53 @@ VCU: accelerator stays local; only the ECU's negative regen request travels on C
   push!(__systems, @named drive = VehicleSystemsComponents.Vehicle.Electric.ElectricDrive(; ratio=ratio, P_aux=P_aux, __overrides = drive_overrides))
   # Subcomponent response of type BlockComponents.Continuous.FirstOrder
   response_overrides = __pop_subcomponent_overrides!(__overrides, "response")
-  if !ideal
-    push!(__systems, @named response = BlockComponents.Continuous.FirstOrder(; T=T_receive, __overrides = response_overrides))
-  end
+  push!(__systems, @named response = BlockComponents.Continuous.FirstOrder(; T=T_receive, __overrides = response_overrides))
   # Subcomponent regen_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
   regen_rx_overrides = __pop_subcomponent_overrides!(__overrides, "regen_rx")
   if receive_regen
     push!(__systems, @named regen_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=6, id=272, __overrides = regen_rx_overrides))
   end
+  # Subcomponent network_select of type VehicleSystemsComponents.Vehicle.ParameterSwitch
+  network_select_overrides = __pop_subcomponent_overrides!(__overrides, "network_select")
+  push!(__systems, @named network_select = VehicleSystemsComponents.Vehicle.ParameterSwitch(; on=networked, __overrides = network_select_overrides))
+  # Subcomponent response_select of type VehicleSystemsComponents.Vehicle.ParameterSwitch
+  response_select_overrides = __pop_subcomponent_overrides!(__overrides, "response_select")
+  push!(__systems, @named response_select = VehicleSystemsComponents.Vehicle.ParameterSwitch(; on=ideal, __overrides = response_select_overrides))
+  # Subcomponent request_sum of type BlockComponents.Math.Add
+  request_sum_overrides = __pop_subcomponent_overrides!(__overrides, "request_sum")
+  push!(__systems, @named request_sum = BlockComponents.Math.Add(; __overrides = request_sum_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
-  isnothing(__ovr_selected__guess) || (__guesses[selected] = __ovr_selected__guess)
 
   ### Initialization Equations
+  push!(__initialization_eqs, response.x ~ 0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
+  push!(__eqs, connect(regen, network_select.u2))
+  push!(__eqs, connect(network_select.y, response.u, response_select.u1))
+  push!(__eqs, connect(response.y, response_select.u2))
+  push!(__eqs, connect(accelerator_request, request_sum.u1))
+  push!(__eqs, connect(response_select.y, request_sum.u2))
+  push!(__eqs, connect(request_sum.y, drive.tau_ref))
   push!(__eqs, connect(drive.spline, spline))
   push!(__eqs, connect(drive.support, support))
 
   ### Control Structures
   if receive_regen
     push!(__eqs, connect(regen_rx.bus, bus))
+    push!(__eqs, connect(regen_rx.y, network_select.u1))
   else
+    push!(__eqs, network_select.u1 ~ 0)
   end
   if networked
-    push!(__eqs, selected ~ regen_rx.y)
     push!(__eqs, regen ~ 0)
   else
-    push!(__eqs, selected ~ regen)
-  end
-  if ideal
-    push!(__eqs, drive.tau_ref ~ accelerator_request + selected)
-  else
-    push!(__eqs, response.u ~ selected)
-    push!(__eqs, drive.tau_ref ~ accelerator_request + response.y)
-    push!(__initialization_eqs, response.x ~ 0)
   end
 
   # Return completely constructed System

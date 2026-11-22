@@ -44,6 +44,7 @@ Defaults are the Nissan Leaf ZE1. Source tags: (Nissan) ZE1 specification sheet,
  * `spline` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `support` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `SoC` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `machine_speed` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
 @component function ElectricDrive(; name = nothing, var"ratio"=8.193, var"P_aux"=Float64(300.0), var"SoC0"=0.9, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -96,6 +97,7 @@ Defaults are the Nissan Leaf ZE1. Source tags: (Nissan) ZE1 specification sheet,
   ### Final Path Parameters
   append!(__vars, @variables (tau_ref(t)::Real), [input = true])
   append!(__vars, @variables (SoC(t)::Real), [output = true])
+  append!(__vars, @variables (machine_speed(t)::Real), [output = true])
 
   ### Variables (declarations)
 
@@ -138,6 +140,7 @@ Defaults are the Nissan Leaf ZE1. Source tags: (Nissan) ZE1 specification sheet,
 
   ### Equations
   push!(__eqs, converter.i_ref ~ tau_ref / (converter.field * machine.k))
+  push!(__eqs, machine_speed ~ machine.w)
   push!(__eqs, connect(battery.p, converter.p_in, aux.p))
   push!(__eqs, connect(battery.n, converter.n, aux.n, machine.n, ground.g))
   push!(__eqs, connect(converter.p_out, machine.p))

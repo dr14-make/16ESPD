@@ -4,7 +4,7 @@ component FabiaCanVehicle
   motor_speed = RealOutput() {^motor_speed}
   bus = CanNet() {^bus}
 relations
-  motor_speed = drive.drive.machine.w
+  connect(drive.motor_speed, motor_speed) {^motor_speed_wire}
   connect(bus, motion.bus) {^fabia_bus}
 metadata {
   "Dyad": {
@@ -58,10 +58,10 @@ metadata {
         "placement": {
           "diagram": {
             "rot": 0,
-            "x1": -15,
-            "x2": 15,
-            "y1": 665,
-            "y2": 695
+            "x1": 525,
+            "x2": 555,
+            "y1": -15,
+            "y2": 15
           },
           "icon": {
             "rot": 0,
@@ -123,6 +123,31 @@ metadata {
               {
                 "x": 875,
                 "y": 935
+              }
+            ]
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    },
+    "motor_speed_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": [
+              {
+                "x": 490,
+                "y": 110
+              },
+              {
+                "x": 490,
+                "y": 20
+              },
+              {
+                "x": 540,
+                "y": 20
               }
             ]
           }

@@ -1,0 +1,18 @@
+"Parameter-selected choice between two signals without events (derived; fixed configurations)."
+component ParameterSwitch
+  "Signal passed when on (derived; fixed-mode selection)"
+  u1 = RealInput() {^u1}
+  "Signal passed when off (derived; fixed-mode selection)"
+  u2 = RealInput() {^u2}
+  "Selected signal (derived; fixed-mode selection)"
+  y = RealOutput() {^y}
+  "Pass u1 rather than u2 (assumed; fixed configuration)"
+  structural parameter on::Boolean = true
+relations
+  if on
+    y = u1
+  else
+    y = u2
+  end
+metadata {"Dyad":{"labels":[{"label":"$(instance)","layer":"icon","x":500,"y":1100}],"icons":{"default":"dyad://BlockComponents/Switch.svg"}},"_links":{"u1":{"Dyad":{"placement":{"icon":{"x1":-100,"x2":0,"y1":130,"y2":230},"diagram":{"x1":-25,"x2":25,"y1":155,"y2":205}}}},"u2":{"Dyad":{"placement":{"icon":{"x1":-100,"x2":0,"y1":770,"y2":870},"diagram":{"x1":-25,"x2":25,"y1":795,"y2":845}}}},"y":{"Dyad":{"placement":{"icon":{"x1":1000,"x2":1100,"y1":450,"y2":550},"diagram":{"x1":975,"x2":1025,"y1":475,"y2":525}}}}}}
+end

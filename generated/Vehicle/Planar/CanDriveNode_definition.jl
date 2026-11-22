@@ -89,9 +89,10 @@
   push!(__systems, @named drive = VehicleSystemsComponents.Vehicle.Electric.ElectricDrive(; ratio=ratio, P_aux=P_aux, __overrides = drive_overrides))
   # Subcomponent response of type BlockComponents.Continuous.FirstOrder
   response_overrides = __pop_subcomponent_overrides!(__overrides, "response")
-  if !ideal
-    push!(__systems, @named response = BlockComponents.Continuous.FirstOrder(; T=T_receive, __overrides = response_overrides))
-  end
+  push!(__systems, @named response = BlockComponents.Continuous.FirstOrder(; T=T_receive, __overrides = response_overrides))
+  # Subcomponent receive of type VehicleSystemsComponents.Vehicle.ParameterSwitch
+  receive_overrides = __pop_subcomponent_overrides!(__overrides, "receive")
+  push!(__systems, @named receive = VehicleSystemsComponents.Vehicle.ParameterSwitch(; on=ideal, __overrides = receive_overrides))
   # Subcomponent motor_request_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
   motor_request_rx_overrides = __pop_subcomponent_overrides!(__overrides, "motor_request_rx")
   push!(__systems, @named motor_request_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=6, id=272, __overrides = motor_request_rx_overrides))
@@ -102,23 +103,18 @@
   ### Guesses
 
   ### Initialization Equations
+  push!(__initialization_eqs, response.x ~ 0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
   push!(__eqs, connect(bus, motor_request_rx.bus))
+  push!(__eqs, connect(motor_request_rx.y, response.u, receive.u1))
+  push!(__eqs, connect(response.y, receive.u2))
+  push!(__eqs, connect(receive.y, drive.tau_ref))
   push!(__eqs, connect(drive.spline, spline))
   push!(__eqs, connect(drive.support, support))
-
-  ### Control Structures
-  if ideal
-    push!(__eqs, drive.tau_ref ~ motor_request_rx.y)
-  else
-    push!(__eqs, response.u ~ motor_request_rx.y)
-    push!(__eqs, connect(response.y, drive.tau_ref))
-    push!(__initialization_eqs, response.x ~ 0)
-  end
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

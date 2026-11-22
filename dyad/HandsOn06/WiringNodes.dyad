@@ -356,16 +356,21 @@ component WiringBrakeNode
   "Held ABS status for the cluster lamp and other listeners"
   abs_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(slot = 5, id = 112, ideal = ideal, period = abs_period, scale = 1, raw_min = 0, raw_max = 1) {^abs_tx}
   regen_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(slot = 6, id = 272, ideal = ideal, period = regen_period, scale = 0.1, raw_min = -32768, raw_max = 32767) if transmit_regen {^regen_tx}
+  "Networked passes the CAN steering angle; otherwise the wired one"
+  steering_select = VehicleSystemsComponents.Vehicle.ParameterSwitch(on = networked) {^steering_select}
+  "Networked passes the CAN yaw rate; otherwise the wired one"
+  yaw_select = VehicleSystemsComponents.Vehicle.ParameterSwitch(on = networked) {^yaw_select}
 relations
   connect(bus, steering_angle_rx.bus, yaw_rate_rx.bus, speed_tx.bus, wheel_fl_tx.bus, wheel_fr_tx.bus, wheel_rl_tx.bus, wheel_rr_tx.bus, abs_tx.bus) {^network}
+  connect(steering_angle_rx.y, steering_select.u1) {^steering_can}
+  connect(steering, steering_select.u2) {^steering_wired}
+  connect(steering_select.y, ecu.delta_sw) {^steering_ecu}
+  connect(yaw_rate_rx.y, yaw_select.u1) {^yaw_can}
+  connect(yaw, yaw_select.u2) {^yaw_wired}
+  connect(yaw_select.y, ecu.r) {^yaw_ecu}
   if networked
-    ecu.delta_sw = steering_angle_rx.y
-    ecu.r = yaw_rate_rx.y
     steering = 0
     yaw = 0
-  else
-    ecu.delta_sw = steering
-    ecu.r = yaw
   end
   connect(brake_request, blend.tau_ref) {^request}
   connect(estimator.vx, ecu.vx, abs_hold.vx, kmh.u, speed_tx.u) {^speed}
@@ -396,11 +401,10 @@ metadata {
       "Dyad": {
         "placement": {
           "diagram": {
-            "rot": 0,
-            "x1": 880,
-            "x2": 940,
-            "y1": 140,
-            "y2": 200
+            "x1": 860,
+            "x2": 910,
+            "y1": 70,
+            "y2": 120
           }
         }
       }
@@ -411,8 +415,8 @@ metadata {
           "diagram": {
             "x1": -15,
             "x2": 15,
-            "y1": 50,
-            "y2": 80
+            "y1": 25,
+            "y2": 55
           },
           "icon": {
             "x1": 770,
@@ -429,8 +433,8 @@ metadata {
           "diagram": {
             "x1": -15,
             "x2": 15,
-            "y1": 170,
-            "y2": 200
+            "y1": 185,
+            "y2": 215
           },
           "icon": {
             "x1": -30,
@@ -447,8 +451,8 @@ metadata {
           "diagram": {
             "x1": -15,
             "x2": 15,
-            "y1": 805,
-            "y2": 835
+            "y1": 355,
+            "y2": 385
           },
           "icon": {
             "x1": 220,
@@ -465,8 +469,8 @@ metadata {
           "diagram": {
             "x1": -15,
             "x2": 15,
-            "y1": 905,
-            "y2": 935
+            "y1": 435,
+            "y2": 465
           },
           "icon": {
             "x1": 320,
@@ -483,8 +487,8 @@ metadata {
           "diagram": {
             "x1": -15,
             "x2": 15,
-            "y1": 245,
-            "y2": 275
+            "y1": 525,
+            "y2": 555
           },
           "icon": {
             "x1": -30,
@@ -501,8 +505,8 @@ metadata {
           "diagram": {
             "x1": -15,
             "x2": 15,
-            "y1": 385,
-            "y2": 415
+            "y1": 645,
+            "y2": 675
           },
           "icon": {
             "x1": -30,
@@ -519,8 +523,8 @@ metadata {
           "diagram": {
             "x1": -15,
             "x2": 15,
-            "y1": 525,
-            "y2": 555
+            "y1": 765,
+            "y2": 795
           },
           "icon": {
             "x1": -30,
@@ -537,8 +541,8 @@ metadata {
           "diagram": {
             "x1": -15,
             "x2": 15,
-            "y1": 665,
-            "y2": 695
+            "y1": 885,
+            "y2": 915
           },
           "icon": {
             "x1": -30,
@@ -555,8 +559,8 @@ metadata {
           "diagram": {
             "x1": 985,
             "x2": 1015,
-            "y1": 445,
-            "y2": 475
+            "y1": 360,
+            "y2": 390
           },
           "icon": {
             "x1": 970,
@@ -573,8 +577,8 @@ metadata {
           "diagram": {
             "x1": 985,
             "x2": 1015,
-            "y1": 520,
-            "y2": 550
+            "y1": 435,
+            "y2": 465
           },
           "icon": {
             "x1": 970,
@@ -591,8 +595,8 @@ metadata {
           "diagram": {
             "x1": 985,
             "x2": 1015,
-            "y1": 595,
-            "y2": 625
+            "y1": 510,
+            "y2": 540
           },
           "icon": {
             "x1": 970,
@@ -609,8 +613,8 @@ metadata {
           "diagram": {
             "x1": 985,
             "x2": 1015,
-            "y1": 670,
-            "y2": 700
+            "y1": 585,
+            "y2": 615
           },
           "icon": {
             "x1": 970,
@@ -627,8 +631,8 @@ metadata {
           "diagram": {
             "x1": 985,
             "x2": 1015,
-            "y1": 367,
-            "y2": 397
+            "y1": 185,
+            "y2": 215
           },
           "icon": {
             "x1": 670,
@@ -645,9 +649,8 @@ metadata {
           "diagram": {
             "x1": 630,
             "x2": 930,
-            "y1": 400,
-            "y2": 700,
-            "rot": 0
+            "y1": 330,
+            "y2": 630
           }
         }
       }
@@ -657,10 +660,9 @@ metadata {
         "placement": {
           "diagram": {
             "x1": 350,
-            "x2": 575,
-            "y1": 585,
-            "y2": 810,
-            "rot": 0
+            "x2": 530,
+            "y1": 700,
+            "y2": 880
           }
         }
       }
@@ -669,11 +671,10 @@ metadata {
       "Dyad": {
         "placement": {
           "diagram": {
-            "x1": 390,
-            "x2": 510,
-            "y1": 346,
-            "y2": 466,
-            "rot": 0
+            "x1": 380,
+            "x2": 500,
+            "y1": 164,
+            "y2": 284
           }
         }
       }
@@ -682,11 +683,10 @@ metadata {
       "Dyad": {
         "placement": {
           "diagram": {
-            "x1": 340,
-            "x2": 380,
-            "y1": 410,
-            "y2": 450,
-            "rot": 0
+            "x1": 300,
+            "x2": 340,
+            "y1": 228,
+            "y2": 268
           }
         }
       }
@@ -695,11 +695,10 @@ metadata {
       "Dyad": {
         "placement": {
           "diagram": {
-            "x1": 730,
-            "x2": 810,
-            "y1": 260,
-            "y2": 340,
-            "rot": 0
+            "x1": 740,
+            "x2": 800,
+            "y1": 220,
+            "y2": 280
           }
         }
       }
@@ -708,11 +707,10 @@ metadata {
       "Dyad": {
         "placement": {
           "diagram": {
-            "x1": 515,
-            "x2": 555,
-            "y1": 455,
-            "y2": 495,
-            "rot": 0
+            "x1": 360,
+            "x2": 400,
+            "y1": 290,
+            "y2": 330
           }
         }
       }
@@ -721,11 +719,10 @@ metadata {
       "Dyad": {
         "placement": {
           "diagram": {
-            "x1": 300,
-            "x2": 340,
-            "y1": 500,
-            "y2": 540,
-            "rot": 0
+            "x1": 230,
+            "x2": 270,
+            "y1": 290,
+            "y2": 330
           }
         }
       }
@@ -734,11 +731,10 @@ metadata {
       "Dyad": {
         "placement": {
           "diagram": {
-            "x1": 360,
-            "x2": 420,
-            "y1": 90,
-            "y2": 150,
-            "rot": 0
+            "x1": 300,
+            "x2": 350,
+            "y1": 70,
+            "y2": 120
           }
         }
       }
@@ -749,9 +745,8 @@ metadata {
           "diagram": {
             "x1": 80,
             "x2": 140,
-            "y1": 230,
-            "y2": 290,
-            "rot": 0
+            "y1": 510,
+            "y2": 570
           }
         }
       }
@@ -762,9 +757,8 @@ metadata {
           "diagram": {
             "x1": 80,
             "x2": 140,
-            "y1": 370,
-            "y2": 430,
-            "rot": 0
+            "y1": 630,
+            "y2": 690
           }
         }
       }
@@ -775,9 +769,8 @@ metadata {
           "diagram": {
             "x1": 80,
             "x2": 140,
-            "y1": 510,
-            "y2": 570,
-            "rot": 0
+            "y1": 750,
+            "y2": 810
           }
         }
       }
@@ -788,9 +781,8 @@ metadata {
           "diagram": {
             "x1": 80,
             "x2": 140,
-            "y1": 650,
-            "y2": 710,
-            "rot": 0
+            "y1": 870,
+            "y2": 930
           }
         }
       }
@@ -799,11 +791,10 @@ metadata {
       "Dyad": {
         "placement": {
           "diagram": {
-            "x1": 460,
-            "x2": 520,
-            "y1": 90,
-            "y2": 150,
-            "rot": 0
+            "x1": 560,
+            "x2": 610,
+            "y1": 70,
+            "y2": 120
           }
         }
       }
@@ -818,7 +809,7 @@ metadata {
           },
           {
             "S": -1,
-            "E": -2,
+            "E": -7,
             "M": []
           },
           {
@@ -837,7 +828,7 @@ metadata {
             "M": [
               {
                 "x": 110,
-                "y": 215
+                "y": 495
               }
             ]
           },
@@ -847,7 +838,7 @@ metadata {
             "M": [
               {
                 "x": 110,
-                "y": 355
+                "y": 615
               }
             ]
           },
@@ -857,7 +848,7 @@ metadata {
             "M": [
               {
                 "x": 110,
-                "y": 495
+                "y": 735
               }
             ]
           },
@@ -867,11 +858,11 @@ metadata {
             "M": [
               {
                 "x": 170,
-                "y": 635
+                "y": 855
               },
               {
                 "x": 110,
-                "y": 635
+                "y": 855
               }
             ]
           },
@@ -882,7 +873,7 @@ metadata {
           },
           {
             "S": -5,
-            "E": 3,
+            "E": 4,
             "M": []
           },
           {
@@ -892,26 +883,36 @@ metadata {
           },
           {
             "S": -6,
-            "E": 4,
+            "E": 9,
+            "M": [
+              {
+                "x": 885,
+                "y": 40
+              }
+            ]
+          },
+          {
+            "S": -7,
+            "E": -2,
             "M": []
           },
           {
-            "S": -6,
-            "E": -7,
-            "M": []
+            "S": -7,
+            "E": 3,
+            "M": [
+              {
+                "x": 250,
+                "y": 280
+              }
+            ]
           },
           {
             "S": -7,
             "E": 2,
-            "M": []
-          },
-          {
-            "S": -7,
-            "E": 9,
             "M": [
               {
-                "x": 910,
-                "y": 65
+                "x": 380,
+                "y": 280
               }
             ]
           }
@@ -920,31 +921,31 @@ metadata {
         "junctions": [
           {
             "x": 170,
-            "y": 65
-          },
-          {
-            "x": 170,
-            "y": 215
-          },
-          {
-            "x": 170,
-            "y": 355
+            "y": 40
           },
           {
             "x": 170,
             "y": 495
           },
           {
-            "x": 320,
-            "y": 65
+            "x": 170,
+            "y": 615
           },
           {
-            "x": 390,
-            "y": 65
+            "x": 170,
+            "y": 735
           },
           {
-            "x": 535,
-            "y": 65
+            "x": 325,
+            "y": 40
+          },
+          {
+            "x": 585,
+            "y": 40
+          },
+          {
+            "x": 170,
+            "y": 280
           }
         ]
       }
@@ -955,16 +956,7 @@ metadata {
           {
             "S": 1,
             "E": 2,
-            "M": [
-              {
-                "x": 370,
-                "y": 185
-              },
-              {
-                "x": 370,
-                "y": 382
-              }
-            ]
+            "M": []
           }
         ],
         "renderStyle": "standard"
@@ -978,16 +970,8 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 462.5,
-                "y": 560
-              },
-              {
-                "x": 610,
-                "y": 560
-              },
-              {
-                "x": 610,
-                "y": 565.0
+                "x": 440,
+                "y": 495.0
               }
             ]
           },
@@ -996,15 +980,15 @@ metadata {
             "M": [
               {
                 "x": 610,
-                "y": 450
+                "y": 370
               },
               {
-                "x": 600,
-                "y": 450
+                "x": 590,
+                "y": 370
               },
               {
-                "x": 600,
-                "y": 300
+                "x": 590,
+                "y": 250
               }
             ],
             "S": -1
@@ -1013,12 +997,24 @@ metadata {
             "E": 4,
             "M": [
               {
-                "x": 270,
-                "y": 560
+                "x": 630,
+                "y": 220
+              },
+              {
+                "x": 510,
+                "y": 220
+              },
+              {
+                "x": 510,
+                "y": 150
               },
               {
                 "x": 270,
-                "y": 430
+                "y": 150
+              },
+              {
+                "x": 270,
+                "y": 248.0
               }
             ],
             "S": -2
@@ -1027,16 +1023,8 @@ metadata {
             "E": 5,
             "M": [
               {
-                "x": 330,
-                "y": 400
-              },
-              {
-                "x": 340,
-                "y": 400
-              },
-              {
-                "x": 340,
-                "y": 120
+                "x": 280,
+                "y": 95.0
               }
             ],
             "S": -3
@@ -1046,15 +1034,15 @@ metadata {
         "junctions": [
           {
             "x": 610,
-            "y": 560
+            "y": 495.0
           },
           {
-            "x": 462.5,
-            "y": 560
+            "x": 630,
+            "y": 250
           },
           {
-            "x": 330,
-            "y": 430
+            "x": 280,
+            "y": 150
           }
         ]
       }
@@ -1077,24 +1065,28 @@ metadata {
           {
             "S": 1,
             "E": 2,
-            "M": []
+            "M": [
+              {
+                "x": 610,
+                "y": 248.0
+              },
+              {
+                "x": 610,
+                "y": 360
+              }
+            ]
           },
           {
             "E": 3,
-            "M": [
-              {
-                "x": 620,
-                "y": 320
-              }
-            ],
+            "M": [],
             "S": -1
           }
         ],
         "renderStyle": "standard",
         "junctions": [
           {
-            "x": 620,
-            "y": 430.0
+            "x": 610,
+            "y": 265.0
           }
         ]
       }
@@ -1108,23 +1100,15 @@ metadata {
             "M": [
               {
                 "x": 780,
-                "y": 360
+                "y": 300
               },
               {
-                "x": 820,
-                "y": 360
+                "x": 720,
+                "y": 300
               },
               {
-                "x": 820,
-                "y": 250
-              },
-              {
-                "x": 710,
-                "y": 250
-              },
-              {
-                "x": 710,
-                "y": 280
+                "x": 720,
+                "y": 235.0
               }
             ]
           }
@@ -1140,32 +1124,16 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 840,
-                "y": 300
+                "x": 820,
+                "y": 250.0
               },
               {
-                "x": 840,
-                "y": 230
+                "x": 820,
+                "y": 320
               },
               {
-                "x": 580,
-                "y": 230
-              },
-              {
-                "x": 580,
-                "y": 480
-              },
-              {
-                "x": 620,
-                "y": 480
-              },
-              {
-                "x": 620,
-                "y": 510
-              },
-              {
-                "x": 426.0,
-                "y": 510
+                "x": 416.0,
+                "y": 320
               }
             ]
           },
@@ -1173,8 +1141,8 @@ metadata {
             "E": 3,
             "M": [
               {
-                "x": 840,
-                "y": 170
+                "x": 820,
+                "y": 95.0
               }
             ],
             "S": -1
@@ -1183,8 +1151,8 @@ metadata {
         "renderStyle": "standard",
         "junctions": [
           {
-            "x": 840,
-            "y": 230
+            "x": 820,
+            "y": 250.0
           }
         ]
       }
@@ -1197,28 +1165,12 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 440,
-                "y": 120.0
-              },
-              {
-                "x": 440,
-                "y": 330
+                "x": 520,
+                "y": 95.0
               },
               {
                 "x": 520,
-                "y": 330
-              },
-              {
-                "x": 520,
-                "y": 380
-              },
-              {
-                "x": 530,
-                "y": 380
-              },
-              {
-                "x": 530,
-                "y": 382.0
+                "y": 200
               }
             ]
           }
@@ -1234,8 +1186,8 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 490,
-                "y": 65.0
+                "x": 585,
+                "y": 40
               }
             ]
           }
@@ -1269,15 +1221,15 @@ metadata {
             "M": [
               {
                 "x": 40,
-                "y": 325
+                "y": 605
               },
               {
                 "x": 262,
-                "y": 325
+                "y": 605
               },
               {
                 "x": 262,
-                "y": 630
+                "y": 736
               }
             ]
           }
@@ -1286,7 +1238,7 @@ metadata {
         "junctions": [
           {
             "x": 40,
-            "y": 260
+            "y": 540
           }
         ]
       }
@@ -1305,15 +1257,15 @@ metadata {
             "M": [
               {
                 "x": 40,
-                "y": 465
+                "y": 725
               },
               {
                 "x": 246,
-                "y": 465
+                "y": 725
               },
               {
                 "x": 246,
-                "y": 675
+                "y": 772
               }
             ]
           }
@@ -1322,7 +1274,7 @@ metadata {
         "junctions": [
           {
             "x": 40,
-            "y": 400
+            "y": 660
           }
         ]
       }
@@ -1341,15 +1293,15 @@ metadata {
             "M": [
               {
                 "x": 40,
-                "y": 605
+                "y": 845
               },
               {
                 "x": 230,
-                "y": 605
+                "y": 845
               },
               {
                 "x": 230,
-                "y": 720
+                "y": 808
               }
             ]
           }
@@ -1358,7 +1310,7 @@ metadata {
         "junctions": [
           {
             "x": 40,
-            "y": 540
+            "y": 780
           }
         ]
       }
@@ -1377,15 +1329,15 @@ metadata {
             "M": [
               {
                 "x": 40,
-                "y": 745
+                "y": 965
               },
               {
-                "x": 230,
-                "y": 745
+                "x": 214,
+                "y": 965
               },
               {
-                "x": 230,
-                "y": 765
+                "x": 214,
+                "y": 844
               }
             ]
           }
@@ -1394,7 +1346,7 @@ metadata {
         "junctions": [
           {
             "x": 40,
-            "y": 680
+            "y": 900
           }
         ]
       }
@@ -1408,11 +1360,11 @@ metadata {
             "M": [
               {
                 "x": 610,
-                "y": 630
+                "y": 736.0
               },
               {
                 "x": 610,
-                "y": 610
+                "y": 540
               }
             ]
           }
@@ -1428,12 +1380,12 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 610,
-                "y": 675.0
+                "x": 590,
+                "y": 772.0
               },
               {
-                "x": 610,
-                "y": 655.0
+                "x": 590,
+                "y": 585.0
               }
             ]
           }
@@ -1450,7 +1402,7 @@ metadata {
             "M": [
               {
                 "x": 690,
-                "y": 720
+                "y": 808.0
               }
             ]
           }
@@ -1467,7 +1419,7 @@ metadata {
             "M": [
               {
                 "x": 735.0,
-                "y": 765.0
+                "y": 844.0
               }
             ]
           }
@@ -1481,7 +1433,16 @@ metadata {
           {
             "S": 1,
             "E": 2,
-            "M": []
+            "M": [
+              {
+                "x": 980,
+                "y": 390
+              },
+              {
+                "x": 980,
+                "y": 375.0
+              }
+            ]
           }
         ],
         "renderStyle": "standard"
@@ -1493,16 +1454,7 @@ metadata {
           {
             "S": 1,
             "E": 2,
-            "M": [
-              {
-                "x": 980,
-                "y": 520
-              },
-              {
-                "x": 980,
-                "y": 535.0
-              }
-            ]
+            "M": []
           }
         ],
         "renderStyle": "standard"
@@ -1516,12 +1468,12 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 970,
-                "y": 580
+                "x": 980,
+                "y": 510
               },
               {
-                "x": 970,
-                "y": 610
+                "x": 980,
+                "y": 525.0
               }
             ]
           }
@@ -1538,11 +1490,167 @@ metadata {
             "M": [
               {
                 "x": 970,
-                "y": 640
+                "y": 570
               },
               {
                 "x": 970,
-                "y": 685.0
+                "y": 600
+              }
+            ]
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    },
+    "steering_select": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 440,
+            "x2": 480,
+            "y1": 385,
+            "y2": 425
+          }
+        }
+      }
+    },
+    "yaw_select": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 540,
+            "x2": 580,
+            "y1": 430,
+            "y2": 470
+          }
+        }
+      }
+    },
+    "steering_ecu": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": []
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    },
+    "yaw_ecu": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": []
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    },
+    "steering_can": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": [
+              {
+                "x": 460,
+                "y": 310
+              },
+              {
+                "x": 460,
+                "y": 375.0
+              },
+              {
+                "x": 410,
+                "y": 375.0
+              },
+              {
+                "x": 410,
+                "y": 392.2
+              }
+            ]
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    },
+    "steering_wired": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": [
+              {
+                "x": 390,
+                "y": 370
+              },
+              {
+                "x": 390,
+                "y": 417.8
+              }
+            ]
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    },
+    "yaw_wired": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": [
+              {
+                "x": 510,
+                "y": 450
+              },
+              {
+                "x": 510,
+                "y": 462.8
+              }
+            ]
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    },
+    "yaw_can": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": [
+              {
+                "x": 300,
+                "y": 310
+              },
+              {
+                "x": 300,
+                "y": 350
+              },
+              {
+                "x": 530,
+                "y": 350
+              },
+              {
+                "x": 530,
+                "y": 440
+              },
+              {
+                "x": 510,
+                "y": 440
+              },
+              {
+                "x": 510,
+                "y": 437.2
               }
             ]
           }
@@ -1572,27 +1680,31 @@ component WiringDriveNode
   parameter ratio::Real = 8.193
   parameter P_aux::Power = 300
   parameter T_receive::Time = 0.01
-  variable selected::Real
   drive = VehicleSystemsComponents.Vehicle.Electric.ElectricDrive(ratio = ratio, P_aux = P_aux) {^drive}
-  response = BlockComponents.Continuous.FirstOrder(T = T_receive) if !ideal {^response}
+  response = BlockComponents.Continuous.FirstOrder(T = T_receive) {^response}
   regen_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(slot = 6, id = 272) if receive_regen {^regen_rx}
+  "Networked passes the CAN regen request; otherwise the wired one"
+  network_select = VehicleSystemsComponents.Vehicle.ParameterSwitch(on = networked) {^network_select}
+  "Ideal passes the selected request; otherwise the conditioned one"
+  response_select = VehicleSystemsComponents.Vehicle.ParameterSwitch(on = ideal) {^response_select}
+  request_sum = BlockComponents.Math.Add() {^request_sum}
 relations
   if receive_regen
     connect(regen_rx.bus, bus) {^receive_bus}
+    connect(regen_rx.y, network_select.u1) {^regen_can}
+  else
+    network_select.u1 = 0
   end
   if networked
-    selected = regen_rx.y
     regen = 0
-  else
-    selected = regen
   end
-  if ideal
-    drive.tau_ref = accelerator_request + selected
-  else
-    response.u = selected
-    drive.tau_ref = accelerator_request + response.y
-    initial response.x = 0
-  end
+  connect(regen, network_select.u2) {^regen_wired}
+  connect(network_select.y, response.u, response_select.u1) {^selected}
+  connect(response.y, response_select.u2) {^conditioned}
+  connect(accelerator_request, request_sum.u1) {^accelerator}
+  connect(response_select.y, request_sum.u2) {^regen_request}
+  connect(request_sum.y, drive.tau_ref) {^request}
+  initial response.x = 0
   connect(drive.spline, spline) {^shaft}
   connect(drive.support, support) {^mount}
 metadata {
@@ -1603,8 +1715,8 @@ metadata {
           "diagram": {
             "x1": -15,
             "x2": 15,
-            "y1": 635,
-            "y2": 665
+            "y1": 545,
+            "y2": 575
           },
           "icon": {
             "x1": 120,
@@ -1621,8 +1733,8 @@ metadata {
           "diagram": {
             "x1": -15,
             "x2": 15,
-            "y1": 185,
-            "y2": 215
+            "y1": 397,
+            "y2": 427
           },
           "icon": {
             "x1": -30,
@@ -1639,8 +1751,8 @@ metadata {
           "diagram": {
             "x1": -15,
             "x2": 15,
-            "y1": 785,
-            "y2": 815
+            "y1": 679,
+            "y2": 709
           },
           "icon": {
             "x1": 170,
@@ -1657,8 +1769,8 @@ metadata {
           "diagram": {
             "x1": 985,
             "x2": 1015,
-            "y1": 485,
-            "y2": 515
+            "y1": 415,
+            "y2": 445
           },
           "icon": {
             "x1": 970,
@@ -1675,8 +1787,8 @@ metadata {
           "diagram": {
             "x1": 985,
             "x2": 1015,
-            "y1": 685,
-            "y2": 715
+            "y1": 585,
+            "y2": 615
           },
           "icon": {
             "x1": 820,
@@ -1691,11 +1803,10 @@ metadata {
       "Dyad": {
         "placement": {
           "diagram": {
-            "x1": 600,
-            "x2": 800,
-            "y1": 400,
-            "y2": 600,
-            "rot": 0
+            "x1": 780,
+            "x2": 900,
+            "y1": 370,
+            "y2": 490
           }
         }
       }
@@ -1704,11 +1815,10 @@ metadata {
       "Dyad": {
         "placement": {
           "diagram": {
-            "x1": 400,
-            "x2": 440,
-            "y1": 480,
-            "y2": 520,
-            "rot": 0
+            "x1": 390,
+            "x2": 450,
+            "y1": 532,
+            "y2": 592
           }
         }
       }
@@ -1717,11 +1827,10 @@ metadata {
       "Dyad": {
         "placement": {
           "diagram": {
-            "x1": 150,
-            "x2": 210,
-            "y1": 770,
-            "y2": 830,
-            "rot": 0
+            "x1": 100,
+            "x2": 160,
+            "y1": 600,
+            "y2": 660
           }
         }
       }
@@ -1734,16 +1843,8 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 180,
-                "y": 740
-              },
-              {
-                "x": 100,
-                "y": 740
-              },
-              {
-                "x": 100,
-                "y": 650
+                "x": 130,
+                "y": 560
               }
             ]
           }
@@ -1771,14 +1872,169 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 820,
-                "y": 600
+                "x": 930,
+                "y": 490
               },
               {
-                "x": 820,
-                "y": 700
+                "x": 930,
+                "y": 600
               }
             ]
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    },
+    "network_select": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 220,
+            "x2": 320,
+            "y1": 612,
+            "y2": 712
+          }
+        }
+      }
+    },
+    "response_select": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 500,
+            "x2": 600,
+            "y1": 480,
+            "y2": 580
+          }
+        }
+      }
+    },
+    "request_sum": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 660,
+            "x2": 720,
+            "y1": 400,
+            "y2": 460
+          }
+        }
+      }
+    },
+    "regen_can": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": []
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    },
+    "regen_wired": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": []
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    },
+    "selected": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": -1,
+            "M": [
+              {
+                "x": 360,
+                "y": 662
+              }
+            ]
+          },
+          {
+            "S": -1,
+            "E": 2,
+            "M": []
+          },
+          {
+            "S": -1,
+            "E": 3,
+            "M": [
+              {
+                "x": 360,
+                "y": 498
+              }
+            ]
+          }
+        ],
+        "renderStyle": "standard",
+        "junctions": [
+          {
+            "x": 360,
+            "y": 562
+          }
+        ]
+      }
+    },
+    "conditioned": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": []
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    },
+    "accelerator": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": []
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    },
+    "regen_request": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": [
+              {
+                "x": 630,
+                "y": 530
+              },
+              {
+                "x": 630,
+                "y": 448
+              }
+            ]
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    },
+    "request": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": []
           }
         ],
         "renderStyle": "standard"

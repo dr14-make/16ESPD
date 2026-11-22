@@ -24,6 +24,7 @@ VCU: wired accelerator plus brake ECU regeneration request; no actual-torque fee
  * `spline` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `support` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `accelerator_request` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `motor_speed` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
 @component function CanVcuNode(; name = nothing, var"ideal"=false, var"ratio"=8.193, var"P_aux"=Float64(300), var"T_receive"=0.01, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -76,6 +77,7 @@ VCU: wired accelerator plus brake ECU regeneration request; no actual-torque fee
 
   ### Final Path Parameters
   append!(__vars, @variables (accelerator_request(t)::Real), [input = true])
+  append!(__vars, @variables (motor_speed(t)::Real), [output = true])
 
   ### Variables (declarations)
 
@@ -96,9 +98,10 @@ VCU: wired accelerator plus brake ECU regeneration request; no actual-torque fee
   push!(__systems, @named drive = VehicleSystemsComponents.Vehicle.Electric.ElectricDrive(; ratio=ratio, P_aux=P_aux, __overrides = drive_overrides))
   # Subcomponent response of type BlockComponents.Continuous.FirstOrder
   response_overrides = __pop_subcomponent_overrides!(__overrides, "response")
-  if !ideal
-    push!(__systems, @named response = BlockComponents.Continuous.FirstOrder(; T=T_receive, __overrides = response_overrides))
-  end
+  push!(__systems, @named response = BlockComponents.Continuous.FirstOrder(; T=T_receive, __overrides = response_overrides))
+  # Subcomponent receive of type VehicleSystemsComponents.Vehicle.ParameterSwitch
+  receive_overrides = __pop_subcomponent_overrides!(__overrides, "receive")
+  push!(__systems, @named receive = VehicleSystemsComponents.Vehicle.ParameterSwitch(; on=ideal, __overrides = receive_overrides))
   # Subcomponent motor_request_rx of type VehicleSystemsComponents.Vehicle.Planar.CanRxReal
   motor_request_rx_overrides = __pop_subcomponent_overrides!(__overrides, "motor_request_rx")
   push!(__systems, @named motor_request_rx = VehicleSystemsComponents.Vehicle.Planar.CanRxReal(; slot=6, id=272, __overrides = motor_request_rx_overrides))
@@ -109,6 +112,7 @@ VCU: wired accelerator plus brake ECU regeneration request; no actual-torque fee
   ### Guesses
 
   ### Initialization Equations
+  push!(__initialization_eqs, response.x ~ 0)
 
   ### Assertions
   __assertions = []
@@ -117,17 +121,12 @@ VCU: wired accelerator plus brake ECU regeneration request; no actual-torque fee
   push!(__eqs, connect(accelerator_request, request_sum.u1))
   push!(__eqs, connect(request_sum.y, drive.tau_ref))
   push!(__eqs, connect(bus, motor_request_rx.bus))
+  push!(__eqs, connect(motor_request_rx.y, response.u, receive.u1))
+  push!(__eqs, connect(response.y, receive.u2))
+  push!(__eqs, connect(receive.y, request_sum.u2))
+  push!(__eqs, connect(drive.machine_speed, motor_speed))
   push!(__eqs, connect(drive.spline, spline))
   push!(__eqs, connect(drive.support, support))
-
-  ### Control Structures
-  if ideal
-    push!(__eqs, request_sum.u2 ~ motor_request_rx.y)
-  else
-    push!(__eqs, response.u ~ motor_request_rx.y)
-    push!(__eqs, connect(response.y, request_sum.u2))
-    push!(__initialization_eqs, response.x ~ 0)
-  end
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

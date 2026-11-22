@@ -246,7 +246,6 @@ Fabia-only signal exports; the shared vehicle equations remain unchanged.
   __assertions = []
 
   ### Equations
-  push!(__eqs, motor_speed ~ drive.drive.machine.w)
   push!(__eqs, connect(motion.bus, ecu.bus, drive.bus, cluster.bus))
   push!(__eqs, connect(car.bus, motion.measurements, wheel_speeds.bus))
   push!(__eqs, connect(throttle, accelerator.u))
@@ -272,6 +271,7 @@ Fabia-only signal exports; the shared vehicle equations remain unchanged.
   push!(__eqs, connect(car.chassis, roadload.chassis))
   push!(__eqs, connect(accelerator.y, accelerator_response.u))
   push!(__eqs, connect(accelerator_response.y, drive.accelerator_request))
+  push!(__eqs, connect(drive.motor_speed, motor_speed))
   push!(__eqs, connect(bus, motion.bus))
 
   # Return completely constructed System

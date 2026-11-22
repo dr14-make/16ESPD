@@ -187,6 +187,12 @@ Brake ECU: wheel-only estimator, local ABS/regen blend, hardwired calipers.
   if transmit_regen
     push!(__systems, @named regen_tx = VehicleSystemsComponents.Vehicle.Planar.CanTxReal(; slot=6, id=272, ideal=ideal, period=regen_period, scale=0.1, raw_min=Float64(-32768), raw_max=Float64(32767), __overrides = regen_tx_overrides))
   end
+  # Subcomponent steering_select of type VehicleSystemsComponents.Vehicle.ParameterSwitch
+  steering_select_overrides = __pop_subcomponent_overrides!(__overrides, "steering_select")
+  push!(__systems, @named steering_select = VehicleSystemsComponents.Vehicle.ParameterSwitch(; on=networked, __overrides = steering_select_overrides))
+  # Subcomponent yaw_select of type VehicleSystemsComponents.Vehicle.ParameterSwitch
+  yaw_select_overrides = __pop_subcomponent_overrides!(__overrides, "yaw_select")
+  push!(__systems, @named yaw_select = VehicleSystemsComponents.Vehicle.ParameterSwitch(; on=networked, __overrides = yaw_select_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -200,6 +206,12 @@ Brake ECU: wheel-only estimator, local ABS/regen blend, hardwired calipers.
 
   ### Equations
   push!(__eqs, connect(bus, steering_angle_rx.bus, yaw_rate_rx.bus, speed_tx.bus, wheel_fl_tx.bus, wheel_fr_tx.bus, wheel_rl_tx.bus, wheel_rr_tx.bus, abs_tx.bus))
+  push!(__eqs, connect(steering_angle_rx.y, steering_select.u1))
+  push!(__eqs, connect(steering, steering_select.u2))
+  push!(__eqs, connect(steering_select.y, ecu.delta_sw))
+  push!(__eqs, connect(yaw_rate_rx.y, yaw_select.u1))
+  push!(__eqs, connect(yaw, yaw_select.u2))
+  push!(__eqs, connect(yaw_select.y, ecu.r))
   push!(__eqs, connect(brake_request, blend.tau_ref))
   push!(__eqs, connect(estimator.vx, ecu.vx, abs_hold.vx, kmh.u, speed_tx.u))
   push!(__eqs, connect(kmh.y, blend.v))
@@ -222,13 +234,9 @@ Brake ECU: wheel-only estimator, local ABS/regen blend, hardwired calipers.
 
   ### Control Structures
   if networked
-    push!(__eqs, ecu.delta_sw ~ steering_angle_rx.y)
-    push!(__eqs, ecu.r ~ yaw_rate_rx.y)
     push!(__eqs, steering ~ 0)
     push!(__eqs, yaw ~ 0)
   else
-    push!(__eqs, ecu.delta_sw ~ steering)
-    push!(__eqs, ecu.r ~ yaw)
   end
   if transmit_regen
     push!(__eqs, connect(blend.tau_motor, regen_tx.u))

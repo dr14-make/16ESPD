@@ -3008,20 +3008,19 @@ component CanDriveNode
   parameter P_aux::Power = 300
   "Receiver conditioning keeps the inverter request continuous above base speed"
   parameter T_receive::Time = 0.01
-  drive = VehicleSystemsComponents.Vehicle.Electric.ElectricDrive(ratio = ratio, P_aux = P_aux)
-  response = BlockComponents.Continuous.FirstOrder(T = T_receive) if !ideal
-  motor_request_rx = CanRxReal(slot = 6, id = 272)
+  drive = VehicleSystemsComponents.Vehicle.Electric.ElectricDrive(ratio = ratio, P_aux = P_aux) {^drive}
+  response = BlockComponents.Continuous.FirstOrder(T = T_receive) {^response}
+  "Ideal passes the decoded request; otherwise the conditioned one"
+  receive = VehicleSystemsComponents.Vehicle.ParameterSwitch(on = ideal) {^receive}
+  motor_request_rx = CanRxReal(slot = 6, id = 272) {^motor_request_rx}
 relations
-  connect(bus, motor_request_rx.bus)
-  if ideal
-    drive.tau_ref = motor_request_rx.y
-  else
-    response.u = motor_request_rx.y
-    connect(response.y, drive.tau_ref)
-    initial response.x = 0
-  end
-  connect(drive.spline, spline)
-  connect(drive.support, support)
+  connect(bus, motor_request_rx.bus) {^network}
+  connect(motor_request_rx.y, response.u, receive.u1) {^decoded}
+  connect(response.y, receive.u2) {^conditioned}
+  connect(receive.y, drive.tau_ref) {^received}
+  initial response.x = 0
+  connect(drive.spline, spline) {^shaft}
+  connect(drive.support, support) {^mount}
 metadata {
   "_links": {
     "bus": {
@@ -3032,6 +3031,12 @@ metadata {
             "x2": 530,
             "y1": -30,
             "y2": 30
+          },
+          "diagram": {
+            "x1": -15,
+            "x2": 15,
+            "y1": 465,
+            "y2": 495
           }
         }
       }
@@ -3044,6 +3049,12 @@ metadata {
             "x2": 1030,
             "y1": 470,
             "y2": 530
+          },
+          "diagram": {
+            "x1": 985,
+            "x2": 1015,
+            "y1": 347,
+            "y2": 377
           }
         }
       }
@@ -3056,8 +3067,177 @@ metadata {
             "x2": 880,
             "y1": 970,
             "y2": 1030
+          },
+          "diagram": {
+            "x1": 985,
+            "x2": 1015,
+            "y1": 505,
+            "y2": 535
           }
         }
+      }
+    },
+    "motor_request_rx": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 100,
+            "x2": 160,
+            "y1": 300,
+            "y2": 360
+          }
+        }
+      }
+    },
+    "response": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 235,
+            "x2": 295,
+            "y1": 364,
+            "y2": 424
+          }
+        }
+      }
+    },
+    "receive": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 330,
+            "x2": 430,
+            "y1": 312,
+            "y2": 412
+          }
+        }
+      }
+    },
+    "drive": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 520,
+            "x2": 640,
+            "y1": 302,
+            "y2": 422
+          }
+        }
+      }
+    },
+    "decoded": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": -1,
+            "M": []
+          },
+          {
+            "S": -1,
+            "E": 3,
+            "M": []
+          },
+          {
+            "S": -1,
+            "E": 2,
+            "M": [
+              {
+                "x": 212,
+                "y": 394
+              }
+            ]
+          }
+        ],
+        "renderStyle": "standard",
+        "junctions": [
+          {
+            "x": 212,
+            "y": 330
+          }
+        ]
+      }
+    },
+    "mount": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": [
+              {
+                "x": 670,
+                "y": 422
+              },
+              {
+                "x": 670,
+                "y": 520
+              }
+            ]
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    },
+    "network": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": [
+              {
+                "x": 60,
+                "y": 480
+              },
+              {
+                "x": 60,
+                "y": 280
+              },
+              {
+                "x": 130,
+                "y": 280
+              }
+            ]
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    },
+    "conditioned": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": []
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    },
+    "received": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": []
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    },
+    "shaft": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": []
+          }
+        ],
+        "renderStyle": "standard"
       }
     }
   },
@@ -3124,21 +3304,23 @@ component CanVcuNode
   "Receiver conditioning keeps the inverter request continuous above base speed"
   parameter T_receive::Time = 0.01
   accelerator_request = RealInput() {^accelerator_request}
+  "Machine shaft speed"
+  motor_speed = RealOutput() {^motor_speed}
   request_sum = BlockComponents.Math.Add() {^request_sum}
   drive = VehicleSystemsComponents.Vehicle.Electric.ElectricDrive(ratio = ratio, P_aux = P_aux) {^drive}
-  response = BlockComponents.Continuous.FirstOrder(T = T_receive) if !ideal {^response}
+  response = BlockComponents.Continuous.FirstOrder(T = T_receive) {^response}
+  "Ideal passes the decoded request; otherwise the conditioned one"
+  receive = VehicleSystemsComponents.Vehicle.ParameterSwitch(on = ideal) {^receive}
   motor_request_rx = CanRxReal(slot = 6, id = 272) {^motor_request_rx}
 relations
   connect(accelerator_request, request_sum.u1) {^accelerator}
   connect(request_sum.y, drive.tau_ref) {^regen}
   connect(bus, motor_request_rx.bus) {^network}
-  if ideal
-    request_sum.u2 = motor_request_rx.y
-  else
-    response.u = motor_request_rx.y
-    connect(response.y, request_sum.u2) {^conditioned}
-    initial response.x = 0
-  end
+  connect(motor_request_rx.y, response.u, receive.u1) {^decoded}
+  connect(response.y, receive.u2) {^conditioned}
+  connect(receive.y, request_sum.u2) {^received}
+  connect(drive.machine_speed, motor_speed) {^speed_wire}
+  initial response.x = 0
   connect(drive.spline, spline) {^shaft}
   connect(drive.support, support) {^mount}
 metadata {
@@ -3155,8 +3337,8 @@ metadata {
           "diagram": {
             "x1": -15,
             "x2": 15,
-            "y1": 185,
-            "y2": 215
+            "y1": 465,
+            "y2": 495
           }
         }
       }
@@ -3173,8 +3355,8 @@ metadata {
           "diagram": {
             "x1": 985,
             "x2": 1015,
-            "y1": 395,
-            "y2": 425
+            "y1": 203,
+            "y2": 233
           }
         }
       }
@@ -3191,8 +3373,8 @@ metadata {
           "diagram": {
             "x1": 985,
             "x2": 1015,
-            "y1": 545,
-            "y2": 575
+            "y1": 325,
+            "y2": 355
           }
         }
       }
@@ -3203,8 +3385,8 @@ metadata {
           "diagram": {
             "x1": -15,
             "x2": 15,
-            "y1": 377,
-            "y2": 407
+            "y1": 185,
+            "y2": 215
           },
           "icon": {
             "x1": -30,
@@ -3219,11 +3401,10 @@ metadata {
       "Dyad": {
         "placement": {
           "diagram": {
-            "rot": 0,
-            "x1": 120,
-            "x2": 180,
-            "y1": 170,
-            "y2": 230
+            "x1": 100,
+            "x2": 160,
+            "y1": 300,
+            "y2": 360
           }
         }
       }
@@ -3232,11 +3413,10 @@ metadata {
       "Dyad": {
         "placement": {
           "diagram": {
-            "x1": 420,
-            "x2": 480,
-            "y1": 380,
-            "y2": 440,
-            "rot": 0
+            "x1": 490,
+            "x2": 550,
+            "y1": 188,
+            "y2": 248
           }
         }
       }
@@ -3245,11 +3425,10 @@ metadata {
       "Dyad": {
         "placement": {
           "diagram": {
-            "x1": 260,
-            "x2": 300,
-            "y1": 180,
-            "y2": 220,
-            "rot": 0
+            "x1": 235,
+            "x2": 295,
+            "y1": 364,
+            "y2": 424
           }
         }
       }
@@ -3258,11 +3437,10 @@ metadata {
       "Dyad": {
         "placement": {
           "diagram": {
-            "rot": 0,
-            "x1": 600,
-            "x2": 720,
-            "y1": 350,
-            "y2": 470
+            "x1": 630,
+            "x2": 750,
+            "y1": 158,
+            "y2": 278
           }
         }
       }
@@ -3299,16 +3477,16 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 100,
-                "y": 200
+                "x": 60,
+                "y": 480
               },
               {
-                "x": 100,
-                "y": 140
+                "x": 60,
+                "y": 280
               },
               {
-                "x": 150,
-                "y": 140
+                "x": 130,
+                "y": 280
               }
             ]
           }
@@ -3322,16 +3500,7 @@ metadata {
           {
             "S": 1,
             "E": 2,
-            "M": [
-              {
-                "x": 390,
-                "y": 200
-              },
-              {
-                "x": 390,
-                "y": 428.0
-              }
-            ]
+            "M": []
           }
         ],
         "renderStyle": "standard"
@@ -3357,12 +3526,117 @@ metadata {
             "E": 2,
             "M": [
               {
-                "x": 740,
-                "y": 470
+                "x": 780,
+                "y": 278
               },
               {
-                "x": 740,
-                "y": 560
+                "x": 780,
+                "y": 340
+              }
+            ]
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    },
+    "motor_speed": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 985,
+            "x2": 1015,
+            "y1": 105,
+            "y2": 135
+          },
+          "icon": {
+            "x1": 970,
+            "x2": 1030,
+            "y1": 220,
+            "y2": 280
+          }
+        }
+      }
+    },
+    "receive": {
+      "Dyad": {
+        "placement": {
+          "diagram": {
+            "x1": 330,
+            "y1": 312,
+            "x2": 430,
+            "y2": 412
+          }
+        }
+      }
+    },
+    "decoded": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": -1,
+            "M": []
+          },
+          {
+            "S": -1,
+            "E": 3,
+            "M": []
+          },
+          {
+            "S": -1,
+            "E": 2,
+            "M": [
+              {
+                "x": 212,
+                "y": 394
+              }
+            ]
+          }
+        ],
+        "renderStyle": "standard",
+        "junctions": [
+          {
+            "x": 212,
+            "y": 330
+          }
+        ]
+      }
+    },
+    "received": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": [
+              {
+                "x": 460,
+                "y": 362.0
+              },
+              {
+                "x": 460,
+                "y": 236.0
+              }
+            ]
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    },
+    "speed_wire": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "E": 2,
+            "M": [
+              {
+                "x": 950,
+                "y": 194.0
+              },
+              {
+                "x": 950,
+                "y": 120
               }
             ]
           }
