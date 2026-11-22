@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" width="900" height="430">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .panel { fill: #f6f8fa; stroke: #9aa7b4; stroke-width: 1.5; stroke-dasharray: 6 4; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .ecu { fill: #d6e4f5; stroke: #16202c; stroke-width: 2; }
+    .canh { stroke: #1f5fa8; stroke-width: 3.5; fill: none; }
+    .canl { stroke: #d55e00; stroke-width: 3.5; fill: none; }
+    .wire { stroke: #16202c; stroke-width: 2.5; fill: none; }
+    .tap { stroke: #1f5fa8; stroke-width: 2; fill: none; stroke-dasharray: 5 3; }
+    .t { font-size: 19px; font-weight: 600; }
+    .n { font-size: 16px; font-weight: 600; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+    .msg { font-size: 14px; font-weight: 600; fill: #1f5fa8; }
+    .bad { font-size: 15px; font-weight: 600; fill: #b3261e; }
+    .good { font-size: 15px; font-weight: 600; fill: #1b7f3b; }
+  </style>
+  <defs>
+    <marker id="k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/>
+    </marker>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/>
+    </marker>
+  </defs>
+
+  <!-- left: brake request on the bus -->
+  <rect class="panel" x="10" y="10" width="430" height="410" rx="8"/>
+  <text x="30" y="38" class="t">Brake request on the bus</text>
+
+  <rect class="box" x="30" y="60" width="100" height="56" rx="6"/>
+  <text x="80" y="85" text-anchor="middle" class="n">pedal</text>
+  <text x="80" y="105" text-anchor="middle" class="lbl">node</text>
+  <rect class="ecu" x="165" y="60" width="120" height="56" rx="6"/>
+  <text x="225" y="85" text-anchor="middle" class="n">blend ECU</text>
+  <text x="225" y="105" text-anchor="middle" class="lbl">motor or discs?</text>
+  <rect class="box" x="320" y="60" width="100" height="56" rx="6"/>
+  <text x="370" y="85" text-anchor="middle" class="n">VCU</text>
+  <text x="370" y="105" text-anchor="middle" class="lbl">motor</text>
+
+  <path class="canh" d="M25 196 H425"/>
+  <path class="canl" d="M25 206 H425"/>
+
+  <path class="tap" d="M80 118 V194" marker-end="url(#b)"/>
+  <text x="88" y="160" class="msg">① pedal</text>
+  <path class="tap" d="M205 194 V118" marker-end="url(#b)"/>
+  <path class="tap" d="M245 118 V194" marker-end="url(#b)"/>
+  <path class="tap" d="M370 194 V118" marker-end="url(#b)"/>
+  <text x="378" y="160" class="msg">regen</text>
+
+  <rect class="ecu" x="130" y="262" width="150" height="56" rx="6"/>
+  <text x="205" y="287" text-anchor="middle" class="n">brake ECU</text>
+  <text x="205" y="307" text-anchor="middle" class="lbl">ABS</text>
+  <path class="tap" d="M185 208 V260" marker-end="url(#b)"/>
+  <text x="38" y="240" class="msg">② friction request</text>
+  <path class="tap" d="M268 260 V208" marker-end="url(#b)"/>
+  <text x="276" y="240" class="msg">③ ABS active</text>
+
+  <rect class="box" x="130" y="350" width="150" height="44" rx="6"/>
+  <text x="205" y="378" text-anchor="middle" class="n">calipers</text>
+  <path class="wire" d="M205 320 V348" marker-end="url(#k)"/>
+  <text x="225" y="412" text-anchor="middle" class="bad">the brake request crosses twice, the ABS flag once</text>
+
+  <!-- right: real EV -->
+  <rect class="panel" x="460" y="10" width="430" height="410" rx="8"/>
+  <text x="480" y="38" class="t">Real EV: blending in the brake ECU</text>
+
+  <rect class="box" x="770" y="60" width="100" height="56" rx="6"/>
+  <text x="820" y="85" text-anchor="middle" class="n">VCU</text>
+  <text x="820" y="105" text-anchor="middle" class="lbl">motor</text>
+  <rect class="box" x="480" y="60" width="110" height="56" rx="6"/>
+  <text x="535" y="85" text-anchor="middle" class="n">accelerator</text>
+  <path class="wire" d="M592 88 H768" marker-end="url(#k)"/>
+  <text x="680" y="80" text-anchor="middle" class="lbl">wired</text>
+  <rect class="box" x="640" y="130" width="110" height="44" rx="6"/>
+  <text x="695" y="157" text-anchor="middle" class="n">cluster</text>
+
+  <path class="canh" d="M475 196 H875"/>
+  <path class="canl" d="M475 206 H875"/>
+
+  <path class="tap" d="M820 194 V118" marker-end="url(#b)"/>
+  <path class="tap" d="M695 194 V176" marker-end="url(#b)"/>
+
+  <rect class="box" x="480" y="262" width="100" height="56" rx="6"/>
+  <text x="530" y="287" text-anchor="middle" class="n">brake</text>
+  <text x="530" y="307" text-anchor="middle" class="lbl">pedal</text>
+  <rect class="ecu" x="625" y="262" width="170" height="56" rx="6"/>
+  <text x="710" y="287" text-anchor="middle" class="n">brake ECU</text>
+  <text x="710" y="307" text-anchor="middle" class="lbl">blend + ABS</text>
+  <path class="wire" d="M582 290 H623" marker-end="url(#k)"/>
+  <path class="tap" d="M760 260 V208" marker-end="url(#b)"/>
+  <text x="752" y="232" text-anchor="end" class="msg">regen request</text>
+  <text x="752" y="250" text-anchor="end" class="msg">speed, ABS status</text>
+
+  <rect class="box" x="625" y="350" width="170" height="44" rx="6"/>
+  <text x="710" y="378" text-anchor="middle" class="n">calipers</text>
+  <path class="wire" d="M710 320 V348" marker-end="url(#k)"/>
+  <text x="675" y="412" text-anchor="middle" class="good">only coordination crosses the bus</text>
+</svg>

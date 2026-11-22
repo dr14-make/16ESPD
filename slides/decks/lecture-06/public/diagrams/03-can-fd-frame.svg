@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1170 300" width="1170" height="300">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .f { stroke: #16202c; stroke-width: 1.8; }
+    .idle { fill: #f2f4f6; stroke: #9aa7b4; stroke-width: 1.5; stroke-dasharray: 5 4; }
+    .arb { fill: #d6e4f5; }
+    .ctl { fill: #eaf1fa; }
+    .data { fill: #ffffff; }
+    .crc { fill: #fbe9dc; }
+    .ack { fill: #e3f1e8; }
+    .eof { fill: #f2f4f6; }
+    .nom { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 1.5; }
+    .fast { fill: #fbe9dc; stroke: #d55e00; stroke-width: 1.5; }
+    .sw { stroke: #4a5a6b; stroke-width: 1.5; stroke-dasharray: 5 4; fill: none; }
+    .wave { stroke: #16202c; stroke-width: 2; fill: none; }
+    .n { font-size: 16px; font-weight: 600; }
+    .s { font-size: 13px; font-weight: 600; }
+    .g { font-size: 15px; fill: #4a5a6b; }
+    .b { font-size: 15px; }
+    .lv { font-size: 14px; fill: #4a5a6b; }
+    .h { font-size: 15px; font-weight: 600; fill: #1f5fa8; }
+    .o { font-size: 15px; font-weight: 600; fill: #d55e00; }
+  </style>
+
+  <!-- bit-rate phases -->
+  <rect class="nom" x="55" y="14" width="343" height="34" rx="4"/>
+  <text x="226" y="36" text-anchor="middle" class="h">nominal rate, e.g. 500 kbit/s</text>
+  <rect class="fast" x="398" y="14" width="550" height="34" rx="4"/>
+  <text x="673" y="36" text-anchor="middle" class="o">data rate, e.g. 2 Mbit/s</text>
+  <rect class="nom" x="948" y="14" width="162" height="34" rx="4"/>
+  <text x="1029" y="36" text-anchor="middle" class="h">nominal rate</text>
+
+  <!-- fields -->
+  <rect class="idle" x="10" y="64" width="45" height="60"/>
+  <text x="32.5" y="99" text-anchor="middle" class="s">idle</text>
+  <rect class="f arb" x="55" y="64" width="35" height="60"/>
+  <text x="72.5" y="99" text-anchor="middle" class="s">SOF</text>
+  <rect class="f arb" x="90" y="64" width="140" height="60"/>
+  <text x="160.0" y="99" text-anchor="middle" class="n">identifier</text>
+  <rect class="f arb" x="230" y="64" width="35" height="60"/>
+  <text x="247.5" y="99" text-anchor="middle" class="s">RRS</text>
+  <rect class="f ctl" x="265" y="64" width="35" height="60"/>
+  <text x="282.5" y="99" text-anchor="middle" class="s">IDE</text>
+  <rect class="f ctl" x="300" y="64" width="35" height="60"/>
+  <text x="317.5" y="99" text-anchor="middle" class="s">FDF</text>
+  <rect class="f ctl" x="335" y="64" width="35" height="60"/>
+  <text x="352.5" y="99" text-anchor="middle" class="s">res</text>
+  <rect class="f ctl" x="370" y="64" width="35" height="60"/>
+  <text x="387.5" y="99" text-anchor="middle" class="s">BRS</text>
+  <rect class="f ctl" x="405" y="64" width="35" height="60"/>
+  <text x="422.5" y="99" text-anchor="middle" class="s">ESI</text>
+  <rect class="f ctl" x="440" y="64" width="50" height="60"/>
+  <text x="465.0" y="99" text-anchor="middle" class="n">DLC</text>
+  <rect class="f data" x="490" y="64" width="255" height="60"/>
+  <text x="617.5" y="99" text-anchor="middle" class="n">data</text>
+  <rect class="f crc" x="745" y="64" width="65" height="60"/>
+  <text x="777.5" y="91" text-anchor="middle" class="s">stuff</text><text x="777.5" y="110" text-anchor="middle" class="s">count</text>
+  <rect class="f crc" x="810" y="64" width="110" height="60"/>
+  <text x="865.0" y="99" text-anchor="middle" class="n">CRC</text>
+  <rect class="f crc" x="920" y="64" width="35" height="60"/>
+  <text x="937.5" y="99" text-anchor="middle" class="s">del</text>
+  <rect class="f ack" x="955" y="64" width="35" height="60"/>
+  <text x="972.5" y="99" text-anchor="middle" class="s">slot</text>
+  <rect class="f ack" x="990" y="64" width="35" height="60"/>
+  <text x="1007.5" y="99" text-anchor="middle" class="s">del</text>
+  <rect class="f eof" x="1025" y="64" width="85" height="60"/>
+  <text x="1067.5" y="91" text-anchor="middle" class="n">end of</text><text x="1067.5" y="110" text-anchor="middle" class="n">frame</text>
+  <rect class="idle" x="1110" y="64" width="50" height="60"/>
+  <text x="1135.0" y="99" text-anchor="middle" class="s">idle</text>
+
+  <!-- bit counts -->
+  <text x="10" y="146" class="lv">bits</text>
+  <text x="72.5" y="146" text-anchor="middle" class="b">1</text>
+  <text x="160.0" y="146" text-anchor="middle" class="b">11</text>
+  <text x="247.5" y="146" text-anchor="middle" class="b">1</text>
+  <text x="282.5" y="146" text-anchor="middle" class="b">1</text>
+  <text x="317.5" y="146" text-anchor="middle" class="b">1</text>
+  <text x="352.5" y="146" text-anchor="middle" class="b">1</text>
+  <text x="387.5" y="146" text-anchor="middle" class="b">1</text>
+  <text x="422.5" y="146" text-anchor="middle" class="b">1</text>
+  <text x="465.0" y="146" text-anchor="middle" class="b">4</text>
+  <text x="617.5" y="146" text-anchor="middle" class="b">0–512 (0–64 bytes)</text>
+  <text x="777.5" y="146" text-anchor="middle" class="b">4</text>
+  <text x="865.0" y="146" text-anchor="middle" class="b">17 or 21</text>
+  <text x="937.5" y="146" text-anchor="middle" class="b">1</text>
+  <text x="972.5" y="146" text-anchor="middle" class="b">1</text>
+  <text x="1007.5" y="146" text-anchor="middle" class="b">1</text>
+  <text x="1067.5" y="146" text-anchor="middle" class="b">7</text>
+
+  <!-- bits on the wire, a sketch: wide bits at the nominal rate, narrow at the data rate -->
+  <text x="10" y="173" class="lv">r</text><text x="10" y="197" class="lv">D</text>
+  <path class="wave" d="M28 168 H55 V192 H90.0 H110.0 H130.0 V168 H150.0 H170.0 H190.0 V192 H210.0 V168 H230.0 V192 H250.0 V168 H270.0 V192 H290.0 V168 H310.0 V192 H330.0 H350.0 V168 H370.0 H398.0 H404.9 V192 H411.7 H418.6 V168 H425.5 V192 H432.3 H439.2 V168 H446.1 V192 H452.9 H459.8 H466.7 V168 H473.6 H480.4 V192 H487.3 H494.2 V168 H501.0 H507.9 H514.8 V192 H521.6 V168 H528.5 V192 H535.4 H542.2 V168 H549.1 V192 H556.0 V168 H562.8 V192 H569.7 H576.6 H583.4 H590.3 V168 H597.2 V192 H604.1 H610.9 V168 H617.8 H624.7 V192 H631.5 V168 H638.4 V192 H645.3 V168 H652.1 V192 H659.0 H665.9 V168 H672.7 V192 H679.6 V168 H686.5 H693.3 H700.2 H707.1 V192 H713.9 H720.8 H727.7 V168 H734.6 V192 H741.4 V168 H748.3 H755.2 V192 H762.0 H768.9 V168 H775.8 H782.6 H789.5 H796.4 V192 H803.2 V168 H810.1 H817.0 V192 H823.8 V168 H830.7 V192 H837.6 V168 H844.4 V192 H851.3 H858.2 H865.1 H871.9 V168 H878.8 V192 H885.7 H892.5 H899.4 V168 H906.3 V192 H913.1 V168 H920.0 H948.0 H955.0 V192 H990.0 V168 H1110.0 H1160"/>
+
+  <!-- the two switch points -->
+  <path class="sw" d="M398 8 V80 M398 114 V212"/>
+  <path class="sw" d="M948 8 V80 M948 114 V212"/>
+  <text x="398" y="232" text-anchor="middle" class="g">switch up at the sample point of BRS</text>
+  <text x="948" y="232" text-anchor="middle" class="g">switch back at the sample point of the CRC delimiter</text>
+  <text x="585" y="282" text-anchor="middle" class="g">11-bit identifier shown · D dominant, r recessive · field widths not to scale · the receivers turn the ACK slot dominant</text>
+</svg>

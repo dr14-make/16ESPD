@@ -1,0 +1,223 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 390" width="980" height="390">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .cell { fill: #fff; stroke: #d0d7de; stroke-width: 1; }
+    .lo { fill: #d6e4f5; stroke: #1f5fa8; stroke-width: 1.5; }
+    .hi { fill: #fbe3d4; stroke: #d55e00; stroke-width: 1.5; }
+    .start { fill: none; stroke: #16202c; stroke-width: 3.5; }
+    .t { font-size: 19px; font-weight: 700; }
+    .code { font-family: monospace; font-size: 15px; fill: #4a5a6b; }
+    .hd { font-size: 13px; fill: #4a5a6b; }
+    .bit { font-size: 15px; font-weight: 600; }
+    .bl { font-size: 15px; font-weight: 600; fill: #1f5fa8; }
+    .bh { font-size: 15px; font-weight: 600; fill: #d55e00; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+  </style>
+  <text x="214" y="26" text-anchor="middle" class="t">Intel, @1: low byte first</text>
+  <text x="214" y="48" text-anchor="middle" class="code">16|16@1+</text>
+  <text x="88" y="72" text-anchor="middle" class="hd">7</text>
+  <text x="124" y="72" text-anchor="middle" class="hd">6</text>
+  <text x="160" y="72" text-anchor="middle" class="hd">5</text>
+  <text x="196" y="72" text-anchor="middle" class="hd">4</text>
+  <text x="232" y="72" text-anchor="middle" class="hd">3</text>
+  <text x="268" y="72" text-anchor="middle" class="hd">2</text>
+  <text x="304" y="72" text-anchor="middle" class="hd">1</text>
+  <text x="340" y="72" text-anchor="middle" class="hd">0</text>
+  <text x="60" y="72" text-anchor="end" class="hd">bit</text>
+  <text x="60" y="99" text-anchor="end" class="hd">byte 0</text>
+  <rect class="cell" x="70" y="80" width="36" height="28"/>
+  <rect class="cell" x="106" y="80" width="36" height="28"/>
+  <rect class="cell" x="142" y="80" width="36" height="28"/>
+  <rect class="cell" x="178" y="80" width="36" height="28"/>
+  <rect class="cell" x="214" y="80" width="36" height="28"/>
+  <rect class="cell" x="250" y="80" width="36" height="28"/>
+  <rect class="cell" x="286" y="80" width="36" height="28"/>
+  <rect class="cell" x="322" y="80" width="36" height="28"/>
+  <text x="60" y="127" text-anchor="end" class="hd">byte 1</text>
+  <rect class="cell" x="70" y="108" width="36" height="28"/>
+  <rect class="cell" x="106" y="108" width="36" height="28"/>
+  <rect class="cell" x="142" y="108" width="36" height="28"/>
+  <rect class="cell" x="178" y="108" width="36" height="28"/>
+  <rect class="cell" x="214" y="108" width="36" height="28"/>
+  <rect class="cell" x="250" y="108" width="36" height="28"/>
+  <rect class="cell" x="286" y="108" width="36" height="28"/>
+  <rect class="cell" x="322" y="108" width="36" height="28"/>
+  <text x="60" y="155" text-anchor="end" class="hd">byte 2</text>
+  <rect class="lo" x="70" y="136" width="36" height="28"/>
+  <text x="88" y="155" text-anchor="middle" class="bit">0</text>
+  <rect class="lo" x="106" y="136" width="36" height="28"/>
+  <text x="124" y="155" text-anchor="middle" class="bit">1</text>
+  <rect class="lo" x="142" y="136" width="36" height="28"/>
+  <text x="160" y="155" text-anchor="middle" class="bit">0</text>
+  <rect class="lo" x="178" y="136" width="36" height="28"/>
+  <text x="196" y="155" text-anchor="middle" class="bit">0</text>
+  <rect class="lo" x="214" y="136" width="36" height="28"/>
+  <text x="232" y="155" text-anchor="middle" class="bit">0</text>
+  <rect class="lo" x="250" y="136" width="36" height="28"/>
+  <text x="268" y="155" text-anchor="middle" class="bit">0</text>
+  <rect class="lo" x="286" y="136" width="36" height="28"/>
+  <text x="304" y="155" text-anchor="middle" class="bit">0</text>
+  <rect class="lo" x="322" y="136" width="36" height="28"/>
+  <text x="340" y="155" text-anchor="middle" class="bit">0</text>
+  <text x="368" y="155" class="bl">40h low byte</text>
+  <text x="60" y="183" text-anchor="end" class="hd">byte 3</text>
+  <rect class="hi" x="70" y="164" width="36" height="28"/>
+  <text x="88" y="183" text-anchor="middle" class="bit">0</text>
+  <rect class="hi" x="106" y="164" width="36" height="28"/>
+  <text x="124" y="183" text-anchor="middle" class="bit">0</text>
+  <rect class="hi" x="142" y="164" width="36" height="28"/>
+  <text x="160" y="183" text-anchor="middle" class="bit">0</text>
+  <rect class="hi" x="178" y="164" width="36" height="28"/>
+  <text x="196" y="183" text-anchor="middle" class="bit">1</text>
+  <rect class="hi" x="214" y="164" width="36" height="28"/>
+  <text x="232" y="183" text-anchor="middle" class="bit">1</text>
+  <rect class="hi" x="250" y="164" width="36" height="28"/>
+  <text x="268" y="183" text-anchor="middle" class="bit">1</text>
+  <rect class="hi" x="286" y="164" width="36" height="28"/>
+  <text x="304" y="183" text-anchor="middle" class="bit">1</text>
+  <rect class="hi" x="322" y="164" width="36" height="28"/>
+  <text x="340" y="183" text-anchor="middle" class="bit">1</text>
+  <text x="368" y="183" class="bh">1Fh high byte</text>
+  <text x="60" y="211" text-anchor="end" class="hd">byte 4</text>
+  <rect class="cell" x="70" y="192" width="36" height="28"/>
+  <rect class="cell" x="106" y="192" width="36" height="28"/>
+  <rect class="cell" x="142" y="192" width="36" height="28"/>
+  <rect class="cell" x="178" y="192" width="36" height="28"/>
+  <rect class="cell" x="214" y="192" width="36" height="28"/>
+  <rect class="cell" x="250" y="192" width="36" height="28"/>
+  <rect class="cell" x="286" y="192" width="36" height="28"/>
+  <rect class="cell" x="322" y="192" width="36" height="28"/>
+  <text x="60" y="239" text-anchor="end" class="hd">byte 5</text>
+  <rect class="cell" x="70" y="220" width="36" height="28"/>
+  <rect class="cell" x="106" y="220" width="36" height="28"/>
+  <rect class="cell" x="142" y="220" width="36" height="28"/>
+  <rect class="cell" x="178" y="220" width="36" height="28"/>
+  <rect class="cell" x="214" y="220" width="36" height="28"/>
+  <rect class="cell" x="250" y="220" width="36" height="28"/>
+  <rect class="cell" x="286" y="220" width="36" height="28"/>
+  <rect class="cell" x="322" y="220" width="36" height="28"/>
+  <text x="60" y="267" text-anchor="end" class="hd">byte 6</text>
+  <rect class="cell" x="70" y="248" width="36" height="28"/>
+  <rect class="cell" x="106" y="248" width="36" height="28"/>
+  <rect class="cell" x="142" y="248" width="36" height="28"/>
+  <rect class="cell" x="178" y="248" width="36" height="28"/>
+  <rect class="cell" x="214" y="248" width="36" height="28"/>
+  <rect class="cell" x="250" y="248" width="36" height="28"/>
+  <rect class="cell" x="286" y="248" width="36" height="28"/>
+  <rect class="cell" x="322" y="248" width="36" height="28"/>
+  <text x="60" y="295" text-anchor="end" class="hd">byte 7</text>
+  <rect class="cell" x="70" y="276" width="36" height="28"/>
+  <rect class="cell" x="106" y="276" width="36" height="28"/>
+  <rect class="cell" x="142" y="276" width="36" height="28"/>
+  <rect class="cell" x="178" y="276" width="36" height="28"/>
+  <rect class="cell" x="214" y="276" width="36" height="28"/>
+  <rect class="cell" x="250" y="276" width="36" height="28"/>
+  <rect class="cell" x="286" y="276" width="36" height="28"/>
+  <rect class="cell" x="322" y="276" width="36" height="28"/>
+  <rect class="start" x="322" y="136" width="36" height="28"/>
+  <text x="214" y="334" text-anchor="middle" class="lbl">start bit 16 (framed): the lowest bit</text>
+  <text x="704" y="26" text-anchor="middle" class="t">Motorola, @0: high byte first</text>
+  <text x="704" y="48" text-anchor="middle" class="code">23|16@0+</text>
+  <text x="578" y="72" text-anchor="middle" class="hd">7</text>
+  <text x="614" y="72" text-anchor="middle" class="hd">6</text>
+  <text x="650" y="72" text-anchor="middle" class="hd">5</text>
+  <text x="686" y="72" text-anchor="middle" class="hd">4</text>
+  <text x="722" y="72" text-anchor="middle" class="hd">3</text>
+  <text x="758" y="72" text-anchor="middle" class="hd">2</text>
+  <text x="794" y="72" text-anchor="middle" class="hd">1</text>
+  <text x="830" y="72" text-anchor="middle" class="hd">0</text>
+  <text x="550" y="72" text-anchor="end" class="hd">bit</text>
+  <text x="550" y="99" text-anchor="end" class="hd">byte 0</text>
+  <rect class="cell" x="560" y="80" width="36" height="28"/>
+  <rect class="cell" x="596" y="80" width="36" height="28"/>
+  <rect class="cell" x="632" y="80" width="36" height="28"/>
+  <rect class="cell" x="668" y="80" width="36" height="28"/>
+  <rect class="cell" x="704" y="80" width="36" height="28"/>
+  <rect class="cell" x="740" y="80" width="36" height="28"/>
+  <rect class="cell" x="776" y="80" width="36" height="28"/>
+  <rect class="cell" x="812" y="80" width="36" height="28"/>
+  <text x="550" y="127" text-anchor="end" class="hd">byte 1</text>
+  <rect class="cell" x="560" y="108" width="36" height="28"/>
+  <rect class="cell" x="596" y="108" width="36" height="28"/>
+  <rect class="cell" x="632" y="108" width="36" height="28"/>
+  <rect class="cell" x="668" y="108" width="36" height="28"/>
+  <rect class="cell" x="704" y="108" width="36" height="28"/>
+  <rect class="cell" x="740" y="108" width="36" height="28"/>
+  <rect class="cell" x="776" y="108" width="36" height="28"/>
+  <rect class="cell" x="812" y="108" width="36" height="28"/>
+  <text x="550" y="155" text-anchor="end" class="hd">byte 2</text>
+  <rect class="hi" x="560" y="136" width="36" height="28"/>
+  <text x="578" y="155" text-anchor="middle" class="bit">0</text>
+  <rect class="hi" x="596" y="136" width="36" height="28"/>
+  <text x="614" y="155" text-anchor="middle" class="bit">0</text>
+  <rect class="hi" x="632" y="136" width="36" height="28"/>
+  <text x="650" y="155" text-anchor="middle" class="bit">0</text>
+  <rect class="hi" x="668" y="136" width="36" height="28"/>
+  <text x="686" y="155" text-anchor="middle" class="bit">1</text>
+  <rect class="hi" x="704" y="136" width="36" height="28"/>
+  <text x="722" y="155" text-anchor="middle" class="bit">1</text>
+  <rect class="hi" x="740" y="136" width="36" height="28"/>
+  <text x="758" y="155" text-anchor="middle" class="bit">1</text>
+  <rect class="hi" x="776" y="136" width="36" height="28"/>
+  <text x="794" y="155" text-anchor="middle" class="bit">1</text>
+  <rect class="hi" x="812" y="136" width="36" height="28"/>
+  <text x="830" y="155" text-anchor="middle" class="bit">1</text>
+  <text x="858" y="155" class="bh">1Fh high byte</text>
+  <text x="550" y="183" text-anchor="end" class="hd">byte 3</text>
+  <rect class="lo" x="560" y="164" width="36" height="28"/>
+  <text x="578" y="183" text-anchor="middle" class="bit">0</text>
+  <rect class="lo" x="596" y="164" width="36" height="28"/>
+  <text x="614" y="183" text-anchor="middle" class="bit">1</text>
+  <rect class="lo" x="632" y="164" width="36" height="28"/>
+  <text x="650" y="183" text-anchor="middle" class="bit">0</text>
+  <rect class="lo" x="668" y="164" width="36" height="28"/>
+  <text x="686" y="183" text-anchor="middle" class="bit">0</text>
+  <rect class="lo" x="704" y="164" width="36" height="28"/>
+  <text x="722" y="183" text-anchor="middle" class="bit">0</text>
+  <rect class="lo" x="740" y="164" width="36" height="28"/>
+  <text x="758" y="183" text-anchor="middle" class="bit">0</text>
+  <rect class="lo" x="776" y="164" width="36" height="28"/>
+  <text x="794" y="183" text-anchor="middle" class="bit">0</text>
+  <rect class="lo" x="812" y="164" width="36" height="28"/>
+  <text x="830" y="183" text-anchor="middle" class="bit">0</text>
+  <text x="858" y="183" class="bl">40h low byte</text>
+  <text x="550" y="211" text-anchor="end" class="hd">byte 4</text>
+  <rect class="cell" x="560" y="192" width="36" height="28"/>
+  <rect class="cell" x="596" y="192" width="36" height="28"/>
+  <rect class="cell" x="632" y="192" width="36" height="28"/>
+  <rect class="cell" x="668" y="192" width="36" height="28"/>
+  <rect class="cell" x="704" y="192" width="36" height="28"/>
+  <rect class="cell" x="740" y="192" width="36" height="28"/>
+  <rect class="cell" x="776" y="192" width="36" height="28"/>
+  <rect class="cell" x="812" y="192" width="36" height="28"/>
+  <text x="550" y="239" text-anchor="end" class="hd">byte 5</text>
+  <rect class="cell" x="560" y="220" width="36" height="28"/>
+  <rect class="cell" x="596" y="220" width="36" height="28"/>
+  <rect class="cell" x="632" y="220" width="36" height="28"/>
+  <rect class="cell" x="668" y="220" width="36" height="28"/>
+  <rect class="cell" x="704" y="220" width="36" height="28"/>
+  <rect class="cell" x="740" y="220" width="36" height="28"/>
+  <rect class="cell" x="776" y="220" width="36" height="28"/>
+  <rect class="cell" x="812" y="220" width="36" height="28"/>
+  <text x="550" y="267" text-anchor="end" class="hd">byte 6</text>
+  <rect class="cell" x="560" y="248" width="36" height="28"/>
+  <rect class="cell" x="596" y="248" width="36" height="28"/>
+  <rect class="cell" x="632" y="248" width="36" height="28"/>
+  <rect class="cell" x="668" y="248" width="36" height="28"/>
+  <rect class="cell" x="704" y="248" width="36" height="28"/>
+  <rect class="cell" x="740" y="248" width="36" height="28"/>
+  <rect class="cell" x="776" y="248" width="36" height="28"/>
+  <rect class="cell" x="812" y="248" width="36" height="28"/>
+  <text x="550" y="295" text-anchor="end" class="hd">byte 7</text>
+  <rect class="cell" x="560" y="276" width="36" height="28"/>
+  <rect class="cell" x="596" y="276" width="36" height="28"/>
+  <rect class="cell" x="632" y="276" width="36" height="28"/>
+  <rect class="cell" x="668" y="276" width="36" height="28"/>
+  <rect class="cell" x="704" y="276" width="36" height="28"/>
+  <rect class="cell" x="740" y="276" width="36" height="28"/>
+  <rect class="cell" x="776" y="276" width="36" height="28"/>
+  <rect class="cell" x="812" y="276" width="36" height="28"/>
+  <rect class="start" x="560" y="136" width="36" height="28"/>
+  <text x="704" y="334" text-anchor="middle" class="lbl">start bit 23 (framed): the highest bit</text>
+  <text x="490" y="378" text-anchor="middle" class="lbl">Engine speed 2000 rpm in frame 280h: raw 8000 = 1F40h · each row one byte, bit 7 on the left</text>
+</svg>

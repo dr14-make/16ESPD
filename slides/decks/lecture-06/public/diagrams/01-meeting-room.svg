@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 430" width="640" height="430">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .table { fill: #f2ede4; stroke: #8a7a62; stroke-width: 2; }
+    .p { fill: #fff; stroke: #16202c; stroke-width: 2.5; }
+    .speaker { fill: #1f5fa8; stroke: #1f5fa8; stroke-width: 2.5; }
+    .keep { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2.5; }
+    .bubble { fill: #fff; stroke: #1f5fa8; stroke-width: 2.5; }
+    .ok { stroke: #1f5fa8; stroke-width: 3.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .no { stroke: #9aa7b4; stroke-width: 3.5; stroke-linecap: round; }
+    .wave { stroke: #1f5fa8; stroke-width: 2.5; fill: none; stroke-linecap: round; }
+    .say { font-size: 22px; font-weight: 700; fill: #1f5fa8; }
+    .n { font-size: 17px; font-weight: 600; }
+    .dim { font-size: 17px; fill: #7a8794; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+  </style>
+
+  <path class="bubble" d="M28 20 H352 a12 12 0 0 1 12 12 V72 a12 12 0 0 1 -12 12 H126 L94 214 L100 84 H28 a12 12 0 0 1 -12 -12 V32 a12 12 0 0 1 12 -12 z"/>
+  <text x="190" y="51" text-anchor="middle" class="say">"Vehicle speed: 87"</text>
+  <text x="190" y="74" text-anchor="middle" class="lbl">a topic, never a name</text>
+
+  <ellipse class="table" cx="330" cy="255" rx="175" ry="88"/>
+
+  <!-- speaker -->
+  <circle class="speaker" cx="95" cy="250" r="26"/>
+  <path class="wave" d="M132 236 q8 14 0 28 M144 228 q12 22 0 44"/>
+  <text x="95" y="302" text-anchor="middle" class="n">speaker</text>
+
+  <!-- listeners who keep the topic -->
+  <circle class="keep" cx="245" cy="140" r="24"/>
+  <path class="ok" d="M234 140 l8 8 l14 -16"/>
+  <text x="245" y="104" text-anchor="middle" class="n">ABS</text>
+  <circle class="keep" cx="420" cy="140" r="24"/>
+  <path class="ok" d="M409 140 l8 8 l14 -16"/>
+  <text x="420" y="104" text-anchor="middle" class="n">dashboard</text>
+  <text x="470" y="128" class="lbl">nods:</text>
+  <text x="470" y="146" class="lbl">"heard it"</text>
+  <circle class="keep" cx="555" cy="250" r="24"/>
+  <path class="ok" d="M544 250 l8 8 l14 -16"/>
+  <text x="555" y="300" text-anchor="middle" class="n">motor</text>
+
+  <!-- listeners who ignore it -->
+  <circle class="p" cx="440" cy="368" r="24"/>
+  <line class="no" x1="430" y1="368" x2="450" y2="368"/>
+  <text x="440" y="416" text-anchor="middle" class="dim">radio</text>
+  <circle class="p" cx="245" cy="368" r="24"/>
+  <line class="no" x1="235" y1="368" x2="255" y2="368"/>
+  <text x="245" y="416" text-anchor="middle" class="dim">seats</text>
+
+  <text x="330" y="250" text-anchor="middle" class="lbl">everyone hears every word;</text>
+  <text x="330" y="270" text-anchor="middle" class="lbl">each keeps only what it needs</text>
+</svg>

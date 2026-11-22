@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1170 305" width="1170" height="305">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .f { stroke: #16202c; stroke-width: 1.8; }
+    .idle { fill: #f2f4f6; stroke: #9aa7b4; stroke-width: 1.5; stroke-dasharray: 5 4; }
+    .arb { fill: #d6e4f5; }
+    .ctl { fill: #eaf1fa; }
+    .data { fill: #ffffff; }
+    .crc { fill: #fbe9dc; }
+    .ack { fill: #e3f1e8; }
+    .eof { fill: #f2f4f6; }
+    .br { stroke: #4a5a6b; stroke-width: 1.5; fill: none; }
+    .stuff { stroke: #1f5fa8; stroke-width: 3; fill: none; }
+    .fixed { stroke: #9aa7b4; stroke-width: 3; fill: none; }
+    .n { font-size: 16px; font-weight: 600; }
+    .s { font-size: 13px; font-weight: 600; }
+    .g { font-size: 15px; fill: #4a5a6b; }
+    .b { font-size: 15px; }
+    .lv { font-size: 14px; fill: #4a5a6b; }
+    .acc { font-size: 15px; font-weight: 600; fill: #1f5fa8; }
+  </style>
+
+  <!-- field groups -->
+  <path class="br" d="M107 58 V50 H293 V58"/><text x="200" y="40" text-anchor="middle" class="g">arbitration</text>
+  <path class="br" d="M297 58 V50 H443 V58"/><text x="370" y="40" text-anchor="middle" class="g">control</text>
+  <path class="br" d="M447 58 V50 H643 V58"/><text x="545" y="40" text-anchor="middle" class="g">data</text>
+  <path class="br" d="M647 58 V50 H833 V58"/><text x="740" y="40" text-anchor="middle" class="g">CRC</text>
+  <path class="br" d="M837 58 V50 H913 V58"/><text x="875" y="40" text-anchor="middle" class="g">ACK</text>
+  <path class="br" d="M917 58 V50 H1093 V58"/><text x="1005" y="40" text-anchor="middle" class="g">end</text>
+
+  <!-- fields -->
+  <rect class="idle" x="10" y="70" width="55" height="60"/><text x="37" y="105" text-anchor="middle" class="s">idle</text>
+  <rect class="f arb" x="65" y="70" width="40" height="60"/><text x="85" y="105" text-anchor="middle" class="s">SOF</text>
+  <rect class="f arb" x="105" y="70" width="150" height="60"/><text x="180" y="105" text-anchor="middle" class="n">identifier</text>
+  <rect class="f arb" x="255" y="70" width="40" height="60"/><text x="275" y="105" text-anchor="middle" class="s">RTR</text>
+  <rect class="f ctl" x="295" y="70" width="40" height="60"/><text x="315" y="105" text-anchor="middle" class="s">IDE</text>
+  <rect class="f ctl" x="335" y="70" width="40" height="60"/><text x="355" y="105" text-anchor="middle" class="s">r0</text>
+  <rect class="f ctl" x="375" y="70" width="70" height="60"/><text x="410" y="105" text-anchor="middle" class="n">DLC</text>
+  <rect class="f data" x="445" y="70" width="200" height="60"/><text x="545" y="105" text-anchor="middle" class="n">data</text>
+  <rect class="f crc" x="645" y="70" width="150" height="60"/><text x="720" y="105" text-anchor="middle" class="n">CRC</text>
+  <rect class="f crc" x="795" y="70" width="40" height="60"/><text x="815" y="105" text-anchor="middle" class="s">del</text>
+  <rect class="f ack" x="835" y="70" width="40" height="60"/><text x="855" y="105" text-anchor="middle" class="s">slot</text>
+  <rect class="f ack" x="875" y="70" width="40" height="60"/><text x="895" y="105" text-anchor="middle" class="s">del</text>
+  <rect class="f eof" x="915" y="70" width="110" height="60"/><text x="970" y="98" text-anchor="middle" class="n">end of</text><text x="970" y="118" text-anchor="middle" class="n">frame</text>
+  <rect class="f eof" x="1025" y="70" width="70" height="60"/><text x="1060" y="98" text-anchor="middle" class="s">inter-</text><text x="1060" y="116" text-anchor="middle" class="s">mission</text>
+  <rect class="idle" x="1095" y="70" width="65" height="60"/><text x="1127" y="105" text-anchor="middle" class="s">idle</text>
+
+  <!-- bits -->
+  <text x="85" y="152" text-anchor="middle" class="b">1</text>
+  <text x="180" y="152" text-anchor="middle" class="b">11</text>
+  <text x="275" y="152" text-anchor="middle" class="b">1</text>
+  <text x="315" y="152" text-anchor="middle" class="b">1</text>
+  <text x="355" y="152" text-anchor="middle" class="b">1</text>
+  <text x="410" y="152" text-anchor="middle" class="b">4</text>
+  <text x="545" y="152" text-anchor="middle" class="b">0–64 (0–8 bytes)</text>
+  <text x="720" y="152" text-anchor="middle" class="b">15</text>
+  <text x="815" y="152" text-anchor="middle" class="b">1</text>
+  <text x="855" y="152" text-anchor="middle" class="b">1</text>
+  <text x="895" y="152" text-anchor="middle" class="b">1</text>
+  <text x="970" y="152" text-anchor="middle" class="b">7</text>
+  <text x="1060" y="152" text-anchor="middle" class="b">3</text>
+  <text x="10" y="152" class="lv">bits</text>
+
+  <!-- levels -->
+  <text x="10" y="174" class="lv">level</text>
+  <text x="85" y="174" text-anchor="middle" class="lv">D</text>
+  <text x="275" y="174" text-anchor="middle" class="lv">D</text>
+  <text x="315" y="174" text-anchor="middle" class="lv">D</text>
+  <text x="355" y="174" text-anchor="middle" class="lv">D</text>
+  <text x="815" y="174" text-anchor="middle" class="lv">r</text>
+  <text x="855" y="174" text-anchor="middle" class="lv">r → D</text>
+  <text x="895" y="174" text-anchor="middle" class="lv">r</text>
+  <text x="970" y="174" text-anchor="middle" class="lv">7 r</text>
+  <text x="1060" y="174" text-anchor="middle" class="lv">3 r</text>
+
+  <!-- stuffing span -->
+  <path class="stuff" d="M65 192 H795"/>
+  <path class="stuff" d="M65 186 V198 M795 186 V198"/>
+  <text x="430" y="216" text-anchor="middle" class="acc">bit stuffing applies: start of frame to the end of the CRC (34 + 8n bits)</text>
+  <path class="fixed" d="M795 192 H1095"/>
+  <path class="fixed" d="M1095 186 V198"/>
+  <text x="945" y="216" text-anchor="middle" class="g">fixed form, never stuffed</text>
+  <text x="585" y="246" text-anchor="middle" class="g">47 + 8n bits for n data bytes before stuffing · D dominant, r recessive · the receivers turn the ACK slot dominant</text>
+  <text x="585" y="276" text-anchor="middle" class="lv">SOF start of frame · RTR remote transmission request · IDE identifier extension · r0 reserved</text>
+  <text x="585" y="296" text-anchor="middle" class="lv">DLC data length code · CRC cyclic redundancy check · del delimiter · ACK acknowledgement</text>
+</svg>

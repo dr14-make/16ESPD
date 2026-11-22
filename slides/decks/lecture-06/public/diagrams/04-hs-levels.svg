@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" width="900" height="470">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .axis { stroke: #16202c; stroke-width: 1.5; fill: none; }
+    .grid { stroke: #9aa7b4; stroke-width: 1; stroke-dasharray: 4 4; fill: none; }
+    .bitline { stroke: #4a5a6b; stroke-width: 1.2; stroke-dasharray: 6 5; }
+    .canh { stroke: #1f5fa8; stroke-width: 4; fill: none; stroke-linejoin: round; }
+    .canl { stroke: #d55e00; stroke-width: 4; fill: none; stroke-linejoin: round; }
+    .diff { stroke: #16202c; stroke-width: 4; fill: none; stroke-linejoin: round; }
+    .band { fill: #e3e8ee; }
+    .t { font-size: 20px; font-weight: 600; }
+    .lbl { font-size: 17px; fill: #4a5a6b; }
+    .tick { font-size: 16px; fill: #4a5a6b; }
+    .v { font-size: 18px; font-weight: 600; }
+    .h { fill: #1f5fa8; }
+    .l { fill: #d55e00; }
+  </style>
+
+  <text x="240" y="24" text-anchor="middle" class="t">recessive (1)</text>
+  <text x="490" y="24" text-anchor="middle" class="t">dominant (0)</text>
+  <text x="740" y="24" text-anchor="middle" class="t">recessive (1)</text>
+  <line class="bitline" x1="372" y1="34" x2="372" y2="440"/>
+  <line class="bitline" x1="612" y1="34" x2="612" y2="440"/>
+
+  <!-- bus wires: y = 214 - 45 V -->
+  <path class="axis" d="M120 40 V214 H870"/>
+  <line class="grid" x1="120" y1="56.5" x2="870" y2="56.5"/>
+  <line class="grid" x1="120" y1="101.5" x2="870" y2="101.5"/>
+  <line class="grid" x1="120" y1="146.5" x2="870" y2="146.5"/>
+  <text x="112" y="62" text-anchor="end" class="tick">3.5 V</text>
+  <text x="112" y="107" text-anchor="end" class="tick">2.5 V</text>
+  <text x="112" y="152" text-anchor="end" class="tick">1.5 V</text>
+  <text x="112" y="219" text-anchor="end" class="tick">0 V</text>
+  <path class="canh" d="M120 99.5 H360 L385 56.5 H600 L625 99.5 H870"/>
+  <path class="canl" d="M120 103.5 H360 L385 146.5 H600 L625 103.5 H870"/>
+  <text x="240" y="88" text-anchor="middle" class="v">both 2.5 V</text>
+  <text x="492" y="46" text-anchor="middle" class="v h">CAN_H 3.5 V</text>
+  <text x="492" y="174" text-anchor="middle" class="v l">CAN_L 1.5 V</text>
+  <text x="740" y="88" text-anchor="middle" class="v">both 2.5 V</text>
+
+  <!-- differential: y = 430 - 60 V -->
+  <text x="20" y="268" class="t">difference CAN_H − CAN_L</text>
+  <rect class="band" x="120" y="376" width="750" height="24"/>
+  <path class="axis" d="M120 280 V430 H870"/>
+  <line class="grid" x1="120" y1="310" x2="870" y2="310"/>
+  <text x="112" y="316" text-anchor="end" class="tick">2 V</text>
+  <text x="112" y="381" text-anchor="end" class="tick">0.9 V</text>
+  <text x="112" y="405" text-anchor="end" class="tick">0.5 V</text>
+  <text x="112" y="435" text-anchor="end" class="tick">0 V</text>
+  <path class="diff" d="M120 430 H360 L385 310 H600 L625 430 H870"/>
+  <text x="240" y="420" text-anchor="middle" class="v">0 V</text>
+  <text x="492" y="300" text-anchor="middle" class="v">2 V</text>
+  <text x="740" y="420" text-anchor="middle" class="v">0 V</text>
+  <text x="740" y="393" text-anchor="middle" class="lbl">undefined between 0.5 and 0.9 V</text>
+  <text x="495" y="462" text-anchor="middle" class="lbl">a receiver reads only the difference: above 0.9 V dominant, below 0.5 V recessive</text>
+</svg>

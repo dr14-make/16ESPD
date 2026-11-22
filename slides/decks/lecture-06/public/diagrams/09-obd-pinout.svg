@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 340" width="760" height="340">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .body { fill: #f2f4f6; stroke: #16202c; stroke-width: 2.5; stroke-linejoin: round; }
+    .pin { fill: #fff; stroke: #9aa7b4; stroke-width: 1.5; }
+    .gnd { fill: #16202c; stroke: #16202c; stroke-width: 1.5; }
+    .canh { fill: #1f5fa8; stroke: #1f5fa8; stroke-width: 1.5; }
+    .canl { fill: #d55e00; stroke: #d55e00; stroke-width: 1.5; }
+    .bat { fill: #e69f00; stroke: #e69f00; stroke-width: 1.5; }
+    .k { fill: #fff; stroke: #4a5a6b; stroke-width: 2; stroke-dasharray: 4 3; }
+    .lead { stroke: #4a5a6b; stroke-width: 1.5; fill: none; }
+    .pn { font-size: 14px; font-weight: 600; fill: #4a5a6b; }
+    .pw { font-size: 14px; font-weight: 700; fill: #fff; }
+    .n { font-size: 16px; font-weight: 600; }
+    .nh { font-size: 16px; font-weight: 700; fill: #1f5fa8; }
+    .nl { font-size: 16px; font-weight: 700; fill: #d55e00; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+  </style>
+  <path class="body" d="M150 96 H610 Q622 96 619 108 L591 222 Q588 234 576 234 H184 Q172 234 169 222 L141 108 Q138 96 150 96 Z"/>
+  <rect class="pin" x="181" y="110" width="30" height="24" rx="3"/>
+  <text x="196" y="127" text-anchor="middle" class="pn">1</text>
+  <rect class="pin" x="233" y="110" width="30" height="24" rx="3"/>
+  <text x="248" y="127" text-anchor="middle" class="pn">2</text>
+  <rect class="pin" x="285" y="110" width="30" height="24" rx="3"/>
+  <text x="300" y="127" text-anchor="middle" class="pn">3</text>
+  <rect class="gnd" x="337" y="110" width="30" height="24" rx="3"/>
+  <text x="352" y="127" text-anchor="middle" class="pw">4</text>
+  <rect class="gnd" x="389" y="110" width="30" height="24" rx="3"/>
+  <text x="404" y="127" text-anchor="middle" class="pw">5</text>
+  <rect class="canh" x="441" y="110" width="30" height="24" rx="3"/>
+  <text x="456" y="127" text-anchor="middle" class="pw">6</text>
+  <rect class="k" x="493" y="110" width="30" height="24" rx="3"/>
+  <text x="508" y="127" text-anchor="middle" class="pn">7</text>
+  <rect class="pin" x="545" y="110" width="30" height="24" rx="3"/>
+  <text x="560" y="127" text-anchor="middle" class="pn">8</text>
+  <rect class="pin" x="197" y="174" width="30" height="24" rx="3"/>
+  <text x="212" y="191" text-anchor="middle" class="pn">9</text>
+  <rect class="pin" x="245" y="174" width="30" height="24" rx="3"/>
+  <text x="260" y="191" text-anchor="middle" class="pn">10</text>
+  <rect class="pin" x="293" y="174" width="30" height="24" rx="3"/>
+  <text x="308" y="191" text-anchor="middle" class="pn">11</text>
+  <rect class="pin" x="341" y="174" width="30" height="24" rx="3"/>
+  <text x="356" y="191" text-anchor="middle" class="pn">12</text>
+  <rect class="pin" x="389" y="174" width="30" height="24" rx="3"/>
+  <text x="404" y="191" text-anchor="middle" class="pn">13</text>
+  <rect class="canl" x="437" y="174" width="30" height="24" rx="3"/>
+  <text x="452" y="191" text-anchor="middle" class="pw">14</text>
+  <rect class="pin" x="485" y="174" width="30" height="24" rx="3"/>
+  <text x="500" y="191" text-anchor="middle" class="pn">15</text>
+  <rect class="bat" x="533" y="174" width="30" height="24" rx="3"/>
+  <text x="548" y="191" text-anchor="middle" class="pw">16</text>
+  <path class="lead" d="M352 110 V82 H404 V110 M378 82 V68"/>
+  <text x="378" y="60" text-anchor="middle" class="n">4, 5 · ground</text>
+  <path class="lead" d="M456 110 V40"/>
+  <text x="464" y="36" class="nh">6 · CAN_H</text>
+  <path class="lead" d="M508 110 V80 H568"/>
+  <text x="574" y="85" class="lbl">7 · K-line, older cars</text>
+  <path class="lead" d="M452 198 V272"/>
+  <text x="452" y="290" text-anchor="middle" class="nl">14 · CAN_L</text>
+  <path class="lead" d="M548 198 V250 H588"/>
+  <text x="594" y="255" class="n">16 · battery +12 V</text>
+  <text x="380" y="326" text-anchor="middle" class="lbl">the car's socket, seen from the front · unmarked pins: other buses or maker-specific</text>
+</svg>

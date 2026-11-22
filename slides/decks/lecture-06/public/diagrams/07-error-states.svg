@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 410" width="760" height="410">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .active { fill: #e3f1e8; stroke: #009e73; stroke-width: 2.5; }
+    .passive { fill: #fff4dc; stroke: #e69f00; stroke-width: 2.5; }
+    .off { fill: #f2f4f6; stroke: #16202c; stroke-width: 2.5; }
+    .arrow { stroke: #16202c; stroke-width: 2.5; fill: none; }
+    .back { stroke: #1f5fa8; stroke-width: 2.5; fill: none; stroke-dasharray: 7 5; }
+    .t { font-size: 20px; font-weight: 700; }
+    .d { font-size: 15px; fill: #4a5a6b; }
+    .c { font-size: 16px; font-weight: 600; }
+    .cb { font-size: 16px; font-weight: 600; fill: #1f5fa8; }
+    .w { font-size: 15px; font-weight: 600; fill: #b06f00; }
+  </style>
+  <defs>
+    <marker id="es-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+    <marker id="es-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+  </defs>
+
+  <rect class="active" x="10" y="110" width="210" height="140" rx="16"/>
+  <text x="115" y="145" text-anchor="middle" class="t">error active</text>
+  <text x="115" y="172" text-anchor="middle" class="d">normal; error flag</text>
+  <text x="115" y="192" text-anchor="middle" class="d">6 dominant bits</text>
+  <text x="115" y="220" text-anchor="middle" class="w">TEC or REC ≥ 96:</text>
+  <text x="115" y="238" text-anchor="middle" class="w">warns the ECU software</text>
+
+  <rect class="passive" x="275" y="110" width="210" height="140" rx="16"/>
+  <text x="380" y="145" text-anchor="middle" class="t">error passive</text>
+  <text x="380" y="172" text-anchor="middle" class="d">error flag 6 recessive bits;</text>
+  <text x="380" y="192" text-anchor="middle" class="d">waits 8 extra bits to send</text>
+
+  <rect class="off" x="540" y="110" width="210" height="140" rx="16"/>
+  <text x="645" y="145" text-anchor="middle" class="t">bus off</text>
+  <text x="645" y="172" text-anchor="middle" class="d">sends nothing,</text>
+  <text x="645" y="192" text-anchor="middle" class="d">acknowledges nothing</text>
+
+  <path class="arrow" d="M150 106 C190 50 300 50 340 106" marker-end="url(#es-ink)"/>
+  <text x="245" y="40" text-anchor="middle" class="c">TEC or REC ≥ 128</text>
+
+  <path class="back" d="M330 254 C290 310 190 310 150 254" marker-end="url(#es-acc)"/>
+  <text x="240" y="330" text-anchor="middle" class="cb">TEC and REC &lt; 128</text>
+
+  <path class="arrow" d="M420 106 C460 50 560 50 600 106" marker-end="url(#es-ink)"/>
+  <text x="510" y="40" text-anchor="middle" class="c">TEC ≥ 256</text>
+
+  <path class="back" d="M645 254 V370 H70 V258" marker-end="url(#es-acc)"/>
+  <text x="440" y="394" text-anchor="middle" class="cb">after 128 × 11 recessive bits; both counters back to 0</text>
+</svg>
