@@ -80,7 +80,7 @@
   <path class="fixed" d="M795 192 H1095"/>
   <path class="fixed" d="M1095 186 V198"/>
   <text x="945" y="216" text-anchor="middle" class="g">fixed form, never stuffed</text>
-  <text x="585" y="246" text-anchor="middle" class="g">47 + 8n bits for n data bytes before stuffing · D dominant, r recessive · the receivers turn the ACK slot dominant</text>
+  <text x="585" y="246" text-anchor="middle" class="g">47 + 8n bits for n data bytes before stuffing · D dominant (0), r recessive (1) · the receivers turn the ACK slot dominant</text>
   <text x="585" y="276" text-anchor="middle" class="lv">SOF start of frame · RTR remote transmission request · IDE identifier extension · r0 reserved</text>
   <text x="585" y="296" text-anchor="middle" class="lv">DLC data length code · CRC cyclic redundancy check · del delimiter · ACK acknowledgement</text>
 </svg>

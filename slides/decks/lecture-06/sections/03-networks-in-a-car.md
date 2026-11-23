@@ -45,7 +45,7 @@ routeAlias: can-in-brief
 - **Multi-master**: any node may send when the bus is idle
 - **Non-destructive arbitration** by identifier priority
 - Classic CAN: up to **1 Mbit/s**, **0–8 bytes** per frame
-- Error detection, automatic retransmission, and a faulty node switches itself off
+- Error detection, automatic retransmission, and a faulty node switches itself off (section 07)
 - Every node **resynchronizes** on the edges of the signal, bit by bit
 
 </div>
@@ -68,7 +68,7 @@ means it needs no master: any node may send when the bus is idle. Arbitration is
 the frame with the highest priority gets through undamaged. The original version, called classic
 CAN, sends at most 1 megabit per second, a million bits each second, and one frame carries 0 to 8
 bytes of data. Errors are detected, the frame is sent again automatically, and a faulty node
-switches itself off. That is the strike rule from the room. The last bullet uses the word edge. An
+switches itself off. That is the strike rule from the room, and section 07 covers it. The last bullet uses the word edge. An
 edge is a change of level on the wire, and every node uses the edges to keep its timing in step.
 Section 04 shows how.
 
@@ -176,26 +176,38 @@ routeAlias: after-classic-can
 | | Classic CAN | CAN FD | CAN XL | FlexRay | Automotive Ethernet |
 |---|---|---|---|---|---|
 | Since | 1991 | 2012 (ISO 2015) | CiA 610 (ISO 2024) | 2006 | ≈ 2013 |
-| Bit rate | ≤ 1 Mbit/s | 0.5–1 arbitration, **2–8 data** | **≤ 20 data** | 10 Mbit/s, two channels | 10 / 100 / 1000 Mbit/s |
+| Bit rate¹ | ≤ 1 Mbit/s | arb. ≤ 1 Mbit/s · **data ≤ 8 Mbit/s** (2–5 typical) | arb. ≤ 1 Mbit/s · **data ≤ 20 Mbit/s** | 10 Mbit/s, two channels | 10 / 100 / 1000 Mbit/s |
 | Payload | 8 bytes | **64 bytes** | **2048 bytes** | 254 bytes | ≈ 1500 bytes |
 | Access | arbitration | arbitration | arbitration | **fixed time slots** | switched, point to point (10BASE-T1S: shared) |
 | Used for | most ECUs | ECUs that outgrew 8 bytes, flashing software | zonal links | chassis, X-by-wire (fading) | cameras, infotainment, the backbone |
 
+<div class="caption text-left">¹ Arbitration rate: while the nodes compete for the bus, every node
+must see every bit, so it stays at classic speed; data rate: after one node has won, only it sends
+(next slide) · 8 Mbit/s needs SIC transceivers (ISO 11898-2:2024)</div>
+
 <div class="caption text-left">Flashing: loading new software into an ECU · zonal: ECUs grouped by
 where they sit in the car (two slides on) · X-by-wire: steering or braking by electric signal only,
-no mechanical link · 10BASE-T1S: 10 Mbit/s Ethernet that many nodes share on one pair · Ethernet
-standards: IEEE 802.3bw (100BASE-T1), 802.3bp (1000BASE-T1), 802.3cg (10BASE-T1S)</div>
+no mechanical link · 10BASE-T1S: 10 Mbit/s Ethernet that many nodes share on one pair</div>
 
 <!--
 Classic CAN has two limits: 1 megabit per second, and 8 bytes per frame. The table shows what came
 after it, one network per column. One word in the row labels is new: the payload is the useful data
 that one frame carries.
 
-CAN FD means flexible data rate. It sends the data faster, 2 to 8 megabits per second, and the
-payload grows from 8 to 64 bytes. The next slide shows how. It is used where 8 bytes became too
-small, and for flashing. Flashing means loading new software into an ECU, which is a lot of data.
-CAN XL goes further: up to 20 megabits per second and 2048 bytes. It is meant for the links to zone
-controllers. Zonal means that ECUs are grouped by where they sit in the car, not by function. We see
+Look first at the bit-rate row. CAN FD and CAN XL each have two rates, and the footnote explains
+why. A frame starts with arbitration, where the nodes compete for the bus. During arbitration every
+node must see every bit, from the far end of the bus, within one bit time. The signal needs time to
+cross the cable and come back, so the arbitration rate stays where classic CAN is: at most 1 megabit
+per second, in cars usually 500 kilobits. Once one node has won, only that node sends, and the data
+part of the frame can go much faster. That is the data rate.
+
+CAN FD means flexible data rate. Its data rate goes up to 8 megabits per second. Cars typically use
+2 or 5, because the transceivers in most cars are specified for those. 8 needs a newer transceiver
+type, called SIC, signal improvement capability, which damps the ringing on the wires. The payload
+grows from 8 to 64 bytes. The next slide shows how. CAN FD is used where 8 bytes became too small,
+and for flashing. Flashing means loading new software into an ECU, which is a lot of data. CAN XL
+goes further: the same slow arbitration, then data at up to 20 megabits per second, and 2048 bytes
+per frame. It is meant for the links to zone controllers. Zonal means that ECUs are grouped by where they sit in the car, not by function. We see
 that two slides on.
 
 FlexRay works differently. It has no arbitration. Every message has its own fixed time slot in a
@@ -208,7 +220,8 @@ Automotive Ethernet is the car version of the office network. It runs at 10, 100
 per second, with a payload of about 1500 bytes. In most versions, each cable joins only two devices,
 and boxes called switches pass the frames on. One version, 10BASE-T1S, runs at 10 megabits per
 second on one pair that many nodes share, like a bus. It carries the large data: cameras, infotainment, and
-the main links of the car's network, called the backbone.
+the main links of the car's network, called the backbone. For reference, the Ethernet versions are
+the IEEE standards 802.3bw for 100BASE-T1, 802.3bp for 1000BASE-T1, and 802.3cg for 10BASE-T1S.
 
 Look at the bottom row. Classic CAN is still used for most ECUs.
 -->
@@ -234,14 +247,14 @@ routeAlias: can-fd-frame
 </div>
 <div>
 
-- **BRS** (bit rate switch) recessive: switch up at its sample point.
+- **BRS** (bit rate switch) recessive (1): switch up at its sample point.
 - At the **CRC delimiter**: back to the classic rate, because every receiver answers in the ACK slot.
 
 </div>
 </div>
 
-<div class="caption text-left">FDF: FD format, recessive marks a CAN FD frame · ESI: error state of
-the sender · RRS: always dominant · CRC: 17 bits up to 16 data bytes, 21 bits above</div>
+<div class="caption text-left">FDF: FD format, recessive (1) marks a CAN FD frame · ESI: error state
+of the sender (section 07) · RRS: always dominant (0) · CRC: 17 bits up to 16 data bytes, 21 above</div>
 
 <!--
 This slide shows how CAN FD gets faster. The picture is one CAN FD frame, drawn as fields at the top
@@ -252,13 +265,13 @@ These bits are slow, at the classic rate, for example 500 kilobits per second. T
 because this is where arbitration happens. Every node must hear every bit from the far end of the
 bus before it reads the bit. That is the round trip from section 04.
 
-Then come a few control bits. FDF, FD format, is recessive and tells every node that this is a CAN
-FD frame. The next important bit is BRS, bit rate switch. If it is recessive, the sender switches to
+Then come a few control bits. FDF, FD format, is recessive, a one, and tells every node that this is a CAN
+FD frame. The next important bit is BRS, bit rate switch. If it is recessive, a one, the sender switches to
 the fast rate in the middle of that bit, at the moment the bit is read, the sample point. From now
 on only one node sends. No round trip has to fit into a bit, so the bits can be much shorter. In the
 sketch the bits become narrow: for example 2 megabits per second, four times faster.
 
-At the fast rate come ESI, which reports the error state of the sender, the length code, up to 64
+At the fast rate come ESI, which reports the error state of the sender, from section 07, the length code, up to 64
 data bytes, a count of the stuff bits, and the check number, the CRC. The CRC is longer than in
 classic CAN, 17 or 21 bits, because there is more data to protect.
 

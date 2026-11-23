@@ -20,7 +20,7 @@
   </defs>
 
   <path class="wave" d="M20 30 H62 L66 70 H940"/>
-  <text x="78" y="26" class="lbl">a recessive-to-dominant edge is expected inside Sync</text>
+  <text x="78" y="26" class="lbl">a recessive-to-dominant (1 → 0) edge is expected inside Sync</text>
 
   <rect class="seg sync" x="60" y="90" width="55" height="60"/>
   <rect class="seg prop" x="115" y="90" width="385" height="60"/>

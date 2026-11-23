@@ -231,3 +231,139 @@ Six: the workshop reads the same bus, through OBD-II and UDS.
 
 That is the lecture. Thank you.
 -->
+
+---
+routeAlias: fabia-sim
+---
+
+## Demo: the simulated car drives the cluster
+
+<div class="grid grid-cols-[0.85fr_1.15fr] gap-8 items-start text-sm">
+<div>
+
+### Bring up the bus, then start the car
+
+```sh
+sudo ip link set can0 type can bitrate 500000
+sudo ip link set can0 up
+candump can0          # cluster talks: 320h 420h 520h
+
+mise run fabia        # scripted 36 s drive
+mise run fabia:hand   # drive it yourself in a window
+```
+
+The model runs in real time; at each period the Fabia encoder turns the car's signals into the
+frames a real Fabia II sends to its cluster. Add `vcan0` to stream to a virtual bus instead.
+
+</div>
+<div>
+
+### What we send, and why
+
+| ID | Frame | Every | Carries |
+|---|---|---:|---|
+| 280h | Motor_1 | 10 ms | engine speed → rev counter |
+| 288h | Motor_2 | 10 ms | coolant temperature (multiplexed) |
+| 480h | Motor_5 | 20 ms | MIL, EPC, glow lamps + XOR checksum |
+| 1A0h | Bremse_1 | 10 ms | vehicle speed, ABS/ASR/brake lamps + counter |
+| 4A0h, 5A0h | Bremse_3, _2 | 10 ms | wheel speeds, odometer pulses |
+| 470h | BSG_Kombi | 50 ms | turn signals, hazard, charging, dimming |
+| 570h | BSG_Last | 100 ms | battery voltage 13.8 V |
+| 050h | Airbag_1 | 20 ms | airbag lamp + counter + checksum |
+| 5D8h, 5D0h | Verbauliste, Systeminfo | 100 ms | which modules are fitted |
+
+> The cluster watches every frame: a missing one raises a lamp. Without the fitted-modules list it
+> ignores the ABS, brake and airbag lamps.
+
+</div>
+</div>
+
+<!--
+Before the lecture: plug the PCAN-USB into the cluster, bring the interface up at 500 kilobits
+per second and check with candump that the cluster is alive. It sends its own frames, 320, 420 and
+520 hex, even with nothing else on the bus.
+
+mise run fabia plays a 36-second scripted drive: the needle climbs, the turn signals blink, the
+lamps come on. mise run fabia:hand opens the window and lets you drive with the keyboard or the
+pad.
+
+The table is the whole car as the cluster sees it. Engine and brake frames go every 10
+milliseconds, because the needles must move smoothly. Lamps and the turn signals can wait 50 or
+100 milliseconds. Some frames carry a message counter and an XOR checksum: the cluster checks them,
+and a frame that repeats or is corrupted counts as missing. The last two frames tell the cluster
+which control units the car has; without them it does not trust the ABS, brake and airbag lamps.
+This is the timeout and plausibility monitoring from the errors section, in a real control unit.
+-->
+
+---
+routeAlias: savvycan
+---
+
+## Demo: watch the bus and send a frame by hand
+
+<div class="grid grid-cols-2 gap-8 items-start text-sm">
+<div>
+
+### Open SavvyCAN on `can0`
+
+1. `./SavvyCAN-*.AppImage`
+2. **Connection → Open Connection Window → Add New Device**
+3. **QT SerialBus Devices** · type `socketcan` · port `can0` · **Create New Connection**
+4. Untick **Listen Only**, or nothing is sent
+5. **RE Tools → Sniffer**: one row per ID, changing bytes highlighted
+
+### Turn signals: BSG_Kombi, 470h, 5 bytes
+
+| Byte 0 | Lamp |
+|---|---|
+| `01` | left |
+| `02` | right |
+| `0B` | hazard: both + hazard bit 3 |
+
+Bytes 1–4: `00 00 00 FF`
+
+</div>
+<div>
+
+### Send it: Send Frames → Custom
+
+| Bus | ID | Len | Data | Trigger | Modifications |
+|---|---|---|---|---|---|
+| 0 | `0x470` | 5 | `01 00 00 00 FF` | `50ms` | |
+| 0 | `0x470` | 5 | `01 00 00 00 FF` | `330ms` | `D0 = D0 ^ 1` |
+
+Tick **En** on one row: the first holds the lamp on, the second blinks it.
+
+### Or from a terminal
+
+```sh
+cansend can0 470#01000000FF   # left on
+cansend can0 470#00000000FF   # off
+while true; do
+  for i in {1..7}; do cansend can0 470#01000000FF; sleep 0.05; done
+  for i in {1..7}; do cansend can0 470#00000000FF; sleep 0.05; done
+done
+```
+
+> The cluster does not blink by itself: the sender toggles the bit every 0.33 s.
+
+</div>
+</div>
+
+<!--
+SavvyCAN is a free sniffer and sender; the AppImage runs without installing. Connect through Qt
+SerialBus with the socketcan plugin on can0, not the peakcan plugin: the PEAK adapter already runs
+as can0 through the kernel driver. Untick Listen Only, or SavvyCAN only watches.
+
+In the sniffer, show the room the cluster's own frames, then start mise run fabia and watch the
+engine and brake rows change while the needles move.
+
+Stop the simulation, then send the turn-signal frame by hand. 470 hex is BSG_Kombi, five bytes;
+bit 0 of the first byte is the left lamp, bit 1 the right, bit 3 says hazard. The cluster has no
+flasher of its own: whoever sends the frame switches the bit on and off every third of a second.
+The second row in the sender does that by flipping bit 0 at every send. If the arrow drops out,
+the cluster wants the frame more often: use the 50 millisecond row or the shell loop, which keeps
+the 50 millisecond period and toggles every seven frames.
+
+Never do this on a real car: a wrong frame on a live bus can raise faults in other control units.
+-->

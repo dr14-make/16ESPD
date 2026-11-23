@@ -23,26 +23,45 @@ class: big-figure
 
 ## What a receiver sees
 
-<img src="/figures/08-sample-hold.svg" alt="Vehicle speed during a braking as a smooth falling curve, and below or over it what a receiver holds when the speed is sent every 10, 20 and 40 ms: three staircases that follow the curve, each one late by up to its period, with longer and coarser steps the longer the period."/>
+<img src="/figures/08-sample-hold.svg" alt="Vehicle speed during a braking, as the brake ECU measures it, as a smooth falling curve, and above it what a receiver holds when the speed is sent every 10, 20 and 40 ms: three staircases that never touch the curve, each one 1 to 2 periods late, with longer and coarser steps the longer the period. On the 40 ms staircase, dots mark each sample on the curve and arrows carry it one period to the right, to where the receiver gets it."/>
 
-<div class="caption">Vehicle speed during a braking, and what a receiver holds when it is sent every 10, 20
-and 40 ms</div>
+<div class="caption">Vehicle speed during a braking, as the brake ECU measures it, and what a receiver
+holds when it is sent every 10, 20 and 40 ms · the model delivers each sample one period later, so
+the steps never touch the curve: 1 to 2 periods late · a real frame arrives within its response time
+(≤ 1.48 ms on our car at 500 kbit/s); the model rounds that up to the next tick, an upper bound that
+does not depend on bus traffic</div>
 
 > Over the bus a signal arrives **late**, **in steps**, and only **once per period**. The longer the
 > period, the worse all three.
 
 <!--
 Before any formula, one picture of what this section is about. The smooth curve is the vehicle
-speed while the car brakes. That is what the brake ECU measures.
+speed while the car brakes, as the brake ECU measures it. The brake ECU is the sender.
 
-The staircases are what a receiver, for example the dashboard or the engine ECU, holds. The brake ECU
-sends the speed once per period. Between two frames the receiver has nothing new, so it holds the
-last value. That makes the steps.
+The staircases are what a receiver, for example the dashboard, holds. The
+brake ECU sends the speed once per period. Between two frames the receiver has nothing new, so it
+holds the last value. That makes the steps.
 
-There are three staircases, for periods of 10, 20 and 40 milliseconds. Compare them with the curve.
-Each one is late: a step starts only when a new frame comes in. Each one moves in steps, not
-smoothly. And each one changes only once per period. The longer the period, the later and the
-coarser the staircase.
+Look at the 40 millisecond staircase. Each dot is a moment when the sender takes a sample of the
+speed. The arrow carries that value one full period to the right: that is when our model hands it
+to the receiver, and the receiver holds it for one more period. So the steps never touch the curve.
+At every moment, the receiver holds a value that is between one and two periods old.
+
+There are three staircases, for periods of 10, 20 and 40 milliseconds. Each one is late, each one
+moves in steps, and each one changes only once per period. The longer the period, the later and
+the coarser the staircase.
+
+Why exactly one period later? On a real bus, a frame arrives within its worst-case response time,
+which we compute later in this section. For our car at 500 kilobits per second that is at most 1.48
+milliseconds, and it lands somewhere inside the period, depending on what else is on the bus. The
+model does not simulate the bus traffic. It rounds the arrival up to the next tick of the clock, one
+whole period. That is an upper bound on the bus delay. It does not depend on the other traffic, so
+every run of the model gives the same result.
+
+A fair question: why not take the sample right before the frame is sent? Real ECUs try to, and it
+helps: the value is fresher. But three delays remain. The receiver still holds each value for a
+whole period. The frame may still wait in the queue for the bus. And the receiving software picks it
+up only at its next task cycle. The next slide lists all these stages.
 
 That is the box: late, in steps, once per period. The rest of this section puts numbers on the
 delay, and then asks what it costs a controller.
@@ -74,6 +93,11 @@ routeAlias: where-delay-comes-from
 > Stages 1 and 4 are milliseconds; stages 2 and 3 are fractions of a millisecond. **The period
 > dominates.**
 
+<div class="caption text-left">In the model: stage 1 is the sampling; stages 2 to 4 together become
+one whole period. For stages 2 and 3 that is a generous upper bound (≤ 1.48 ms on our car at 500
+kbit/s, from <code>can_schedule</code>); it also covers stage 4 as long as the bus time plus the
+receiving task's period fit in one message period.</div>
+
 <!--
 The delay from the moment a value changes to the moment the receiver uses it is called the latency.
 The picture shows it as a timeline with three lanes: the sender ECU, the bus and the receiver ECU.
@@ -95,6 +119,14 @@ called its task. It picks up the new value at its next cycle.
 
 The box is the key fact. Stages 1 and 4 take milliseconds. Stages 2 and 3, the bus itself, take
 fractions of a millisecond. So the period dominates. And the period is a choice of the car maker.
+
+The caption ties this table to the staircases of the last slide. In the model, stage 1 is the
+sampling: the sender reads the value once per period. Stages 2, 3 and 4 are not modeled one by one.
+Together they become one whole period of delay. For the bus part, stages 2 and 3, that is far more
+than the real time: on our car every frame is on the wire within 1.48 milliseconds, and the
+shortest period is 10 milliseconds. So the model's delay is a conservative bound, on the safe side.
+It also covers stage 4, as long as the bus time plus the receiving task's period fit inside one
+message period, for example 1.48 plus 5 milliseconds inside 10.
 
 The next two slides look closer at stages 2 and 3.
 -->
@@ -371,7 +403,7 @@ routeAlias: timing-in-the-model
 | Real bus | Model |
 |---|---|
 | a value waits up to one period for its frame | sampled every `period` |
-| queuing + transmission + receiver task | **one fixed period** of delay |
+| queuing + transmission + receiver task | **one fixed period** of delay: an upper bound, independent of traffic |
 | arbitration, queuing | calculated by `can_schedule`, not simulated |
 | unsynchronized ECUs | one grid per run; shifting the pedal press over a period stands in for it |
 
@@ -389,7 +421,10 @@ Row one. On a real bus, a value waits up to one period for its frame. In the mod
 reads its input once per period.
 
 Row two. On a real bus, the frame then queues, travels, and waits for the receiver's task. The model
-replaces all three with one fixed delay of one period.
+replaces all three with one fixed delay of one period. A real frame would arrive within its response
+time, at most 1.48 milliseconds on our car, somewhere inside the period. The model rounds that up
+to the next tick of the clock. That is an upper bound, and it does not depend on the other traffic
+on the bus, so every run gives the same result.
 
 Row three. Arbitration and queuing are not simulated. The function can_schedule calculates them.
 

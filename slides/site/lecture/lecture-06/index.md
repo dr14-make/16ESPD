@@ -63,8 +63,10 @@ starter.
 - Run: with the starter's diagram focused, press ▷ (Run Analysis) and click the step's analysis,
   the second row. Enter on the highlighted first row creates a new analysis instead.
 - The REPL grows with every run, and a laptop runs out of memory after five or six. Start each
-  step with a fresh REPL: F1 › **Dyad: Open Julia REPL**, then paste the `stop_distance` block
-  below again. If the REPL tab disappears, it ran out of memory; open a new one the same way.
+  step with a fresh REPL: close the REPL's terminal tab (its trash icon), then F1 › **Dyad: Open
+  Julia REPL**, and paste the `stop_distance` block below again. With a REPL already open, the
+  command only brings it back into view. If the REPL tab disappears, it ran out of memory; open a
+  new one the same way.
 - `check_can` raises an error that names the mistake. When the bus is right it returns the whole
   model, which fills the terminal, so the snippets below end in `; "ok"`.
 
@@ -116,6 +118,36 @@ Today you edit the starters inside the course repository itself, at the tag
 To put one starter back as shipped, discard your changes to that file: **Source Control** ›
 right-click it › **Discard Changes**, or from a terminal
 `git restore dyad/HandsOn06/Step1PointToPointStop.dyad`.
+
+::: details Working in your own MyCar instead? Copy each starter into it.
+
+The steps work the same in your `MyCar`, with the course library as a dependency. Its starters are
+package code there, so you work on your own copy of each one.
+
+1. Point `MyCar` at this lecture's library. In its Julia REPL:
+
+   ```julia
+   using Pkg
+   Pkg.add(url = "https://github.com/dr14-make/16ESPD", rev = "lecture-06-dyad-3.5-r1")
+   ```
+
+   Then F1 › **Dyad: Compile**.
+2. For each step, open the starter from COMPONENTS (`VehicleSystemsComponents › HandsOn06`),
+   switch to code view (⇄), select all and copy. In `MyCar`, add a new component with the same
+   name and paste over its contents. Paste the text; do not copy the file out of
+   `~/.julia/packages`: that copy stays read-only, and Studio then saves no canvas edit
+   (`WriteBackFailure - EACCES`) while still drawing it.
+3. In your copy, change `extends WiringStop(` to
+   `extends VehicleSystemsComponents.HandsOn06.WiringStop(`. Nothing else needs to change. Save,
+   compile, and make the step's edits on your copy.
+4. In the REPL snippets, check your own model rather than the library's: run `using MyCar` once,
+   then write `MyCar.Step1bMissingRegenStop(name = :exercise)` where the guide writes
+   `H06.Step1bMissingRegenStop(name = :exercise)`, and likewise for step 2. Step 4 uses the
+   library's `H06.CanStop` as printed.
+
+Your edits stay in `MyCar`, so the references in `HandsOn06` always run as shipped.
+
+:::
 
 ::: tip Checkpoint 0
 
@@ -303,7 +335,9 @@ arrives between one and two periods late.
    to a separate blend ECU, then as a friction request to the brake ECU. Its numbers are in the
    table below. If you have time, start a fresh REPL and run one from the library: open
    `Vehicle › Planar › CanBusBrake10msStopBench` (or the 20 or 40 ms bench), press ▷ and click
-   `CanBusBrake10msStop`. Its car sits one level deeper, so read the distance with
+   `CanBusBrake10msStop`. If ▷ does nothing, as in `MyCar`, run
+   `solution = Planar.CanBusBrake10msStop()` in the REPL instead. Its car sits one level deeper,
+   so read the distance with
    `stop_distance(solution; car = symbolic_container(solution).vehicle.car)`.
 
 One stop depends on where the pedal press falls between frames. So

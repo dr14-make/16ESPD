@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 190" width="1180" height="190">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .f { stroke: #16202c; stroke-width: 1.8; }
+    .hdr { fill: #eaf1fa; }
+    .sig { fill: #ffffff; }
+    .cnt { fill: #e3f1e8; }
+    .chk { fill: #f3e3ef; }
+    .crc { fill: #fbe9dc; }
+    .eof { fill: #f2f4f6; }
+    .br { stroke: #4a5a6b; stroke-width: 1.5; fill: none; }
+    .sw { stroke: #a1487f; stroke-width: 2.5; fill: none; }
+    .hw { stroke: #b8571a; stroke-width: 2.5; fill: none; }
+    .n { font-size: 16px; font-weight: 600; }
+    .s { font-size: 13px; fill: #4a5a6b; }
+    .g { font-size: 15px; fill: #4a5a6b; }
+    .swt { font-size: 15px; font-weight: 600; fill: #a1487f; }
+    .hwt { font-size: 15px; font-weight: 600; fill: #b8571a; }
+  </style>
+  <rect class="f hdr" x="20" y="62" width="120" height="62"/>
+  <text x="80.0" y="99" text-anchor="middle" class="n">ID, DLC</text>
+  <rect class="f sig" x="140" y="62" width="100" height="62"/>
+  <text x="190.0" y="93" text-anchor="middle" class="n">byte 0</text>
+  <text x="190.0" y="113" text-anchor="middle" class="s">signals</text>
+  <rect class="f sig" x="240" y="62" width="100" height="62"/>
+  <text x="290.0" y="93" text-anchor="middle" class="n">byte 1</text>
+  <text x="290.0" y="113" text-anchor="middle" class="s">signals</text>
+  <rect class="f sig" x="340" y="62" width="100" height="62"/>
+  <text x="390.0" y="93" text-anchor="middle" class="n">byte 2</text>
+  <text x="390.0" y="113" text-anchor="middle" class="s">signals</text>
+  <rect class="f sig" x="440" y="62" width="100" height="62"/>
+  <text x="490.0" y="93" text-anchor="middle" class="n">byte 3</text>
+  <text x="490.0" y="113" text-anchor="middle" class="s">signals</text>
+  <rect class="f sig" x="540" y="62" width="100" height="62"/>
+  <text x="590.0" y="93" text-anchor="middle" class="n">byte 4</text>
+  <text x="590.0" y="113" text-anchor="middle" class="s">signals</text>
+  <rect class="f sig" x="640" y="62" width="100" height="62"/>
+  <text x="690.0" y="93" text-anchor="middle" class="n">byte 5</text>
+  <text x="690.0" y="113" text-anchor="middle" class="s">signals</text>
+  <rect class="f sig" x="740" y="62" width="100" height="62"/>
+  <rect class="f cnt" x="790.0" y="97.0" width="50.0" height="27.0"/>
+  <text x="790.0" y="93.0" text-anchor="middle" class="n">byte 6</text>
+  <text x="765.0" y="113.0" text-anchor="middle" class="s">signal</text>
+  <text x="815.0" y="113.0" text-anchor="middle" class="s">counter</text>
+  <rect class="f chk" x="840" y="62" width="100" height="62"/>
+  <text x="890.0" y="93" text-anchor="middle" class="n">byte 7</text>
+  <text x="890.0" y="113" text-anchor="middle" class="s">checksum</text>
+  <rect class="f crc" x="940" y="62" width="120" height="62"/>
+  <text x="1000.0" y="93" text-anchor="middle" class="n">CRC</text>
+  <text x="1000.0" y="113" text-anchor="middle" class="s">15 bits</text>
+  <rect class="f eof" x="1060" y="62" width="100" height="62"/>
+  <text x="1110.0" y="99" text-anchor="middle" class="n">ACK, EOF</text>
+  <path class="sw" d="M144 56 V48 H832 V56"/>
+  <path class="sw" d="M490.0 48 V36 H890.0 V58"/>
+  <path class="sw" d="M884.0 50 L890.0 59 L896.0 50"/>
+  <text x="490" y="28" text-anchor="middle" class="swt">checksum = byte 0 ⊕ byte 1 ⊕ … ⊕ byte 6: computed by the sender's software</text>
+  <path class="hw" d="M944 56 V48 H1056 V56"/>
+  <text x="1000" y="28" text-anchor="middle" class="hwt">added by the CAN controller</text>
+  <path class="br" d="M144 132 V140 H936 V132"/>
+  <text x="540" y="160" text-anchor="middle" class="g">the 8 data bytes: what the application writes · the receiver XORs bytes 0–7 and must get 00h</text>
+  <text x="1000" y="160" text-anchor="middle" class="g">outside the data</text>
+  <text x="20" y="182" class="s">Example layout of a protected 8-byte frame · ⊕ exclusive or (XOR), bit by bit</text>
+</svg>

@@ -138,30 +138,45 @@ class: big-figure
 
 ## Code: each sender its own key
 
-<img src="/figures/01-cdm.svg" style="max-height: 30rem" alt="Code-division bench over eight bit periods. Two senders each multiply their bits by their own four-chip code; the codes are orthogonal. The summed wire takes only the values minus 2, 0 and plus 2 and looks like noise. Each receiver multiplies the wire by its own code and averages over one bit: A and B recover their bits at plus or minus one; a receiver using a third code that nobody sent reads almost zero."/>
+<img src="/figures/01-cdm.svg" style="max-height: 29rem" alt="Code-division bench over eight bit periods, with lines at the bit edges. Two senders each multiply their bits, labeled 1 or 0, by their own four-chip code; the codes are orthogonal. The summed wire takes only the values minus 2, 0 and plus 2 and looks like noise. Each receiver keeps a running sum of the wire times its own code, divided by 4 and restarted every bit; its value at the end of the bit, a dot, is the decoded bit: A and B recover their bits at plus or minus one; a receiver using a third code that nobody sent reads almost zero."/>
 
 <div class="caption"><code>dyad/Lecture6/CodeDivisionBench</code> · orthogonal 4-chip codes A = + − + −, B = + + − −; a
 receiver on C = + − − + reads ≈ 0</div>
 
-A **chip** is one step of a code. Two codes are **orthogonal** when, multiplied step by step and
-added up, they give zero.
+A **chip** is one step of a code: one bit spans 4 chips, each chip = bit × code step (a 0 bit
+sends the code flipped). Two codes are **orthogonal** when, multiplied step by step and added up,
+they give zero.
 
 > Everyone sends at once, and arithmetic separates them. CAN does the opposite: one sender at a time.
 
 <!--
 This is sharing by code. First one word. A bit is the smallest piece of data: a one or a zero. Here
-a one is sent as plus one and a zero as minus one.
+a one is sent as plus one and a zero as minus one. The figure writes each bit, 1 or 0, above the
+dashed line in the top two plots, and the thin vertical lines mark where one bit ends and the next
+begins.
 
-Both senders send at the same time on the same wire. Each sender multiplies every bit by its own
-code. A code is a fast pattern of four plus and minus ones. Each step of the pattern is called a
-chip. The caption shows the codes: A is plus, minus, plus, minus. B is plus, plus, minus, minus.
-They are chosen so that they cancel each other: multiply A by B step by step, add up the results,
-and you get zero. Codes like that are called orthogonal.
+Both senders send at the same time on the same wire. Each sender has its own code. A code is a fast
+pattern of four plus and minus ones. Each step of the pattern is called a chip, and one bit lasts
+exactly four chips. Each chip on the wire is the bit times that step of the code. So a one bit sends
+the code as it is, and a zero bit sends the code flipped, every plus turned into a minus. The caption
+shows the codes: A is plus, minus, plus, minus. B is plus, plus, minus, minus. They are chosen so
+that they cancel each other: multiply A by B step by step, add up the results, and you get zero.
+Codes like that are called orthogonal.
 
-The wire carries the sum of both senders. It takes only the values minus two, zero and plus two, and
-it looks like noise. Each receiver multiplies the wire by its own code and averages over one bit.
-Its own bits come back as plus one or minus one. The other sender's part averages to zero. The last
-trace is a receiver that uses a third code, C, which nobody sent. It reads almost zero.
+The wire carries the sum of both senders. Take the first bit as a worked example. A sends a one, so
+it sends its code as it is: plus, minus, plus, minus. B sends a zero, so it sends its code flipped:
+minus, minus, plus, plus. Add them chip by chip, and the wire carries zero, minus two, plus two,
+zero. That is why the wire only ever takes the values minus two, zero and plus two, and why it looks
+like noise.
+
+Each receiver multiplies the wire by its own code, chip by chip, and keeps a running sum, divided
+by four. The sum restarts at every bit. Its value at the end of the bit, the dot in the bottom plot,
+is the decoded bit. For the first bit, receiver A computes zero times plus, minus two times minus,
+plus two times plus, zero times minus: zero plus two plus two plus zero is four, divided by four
+is plus one. A one, correct. Receiver B gets minus two minus two, so minus four, divided by four is
+minus one. A zero, correct. The other sender's part always cancels out. The green trace is a
+receiver that uses a third code, C, plus, minus, minus, plus, which nobody sent. For the first bit
+it gets plus two minus two, which is zero, and it reads almost zero all the time.
 
 The box gives the lesson. GPS satellites share one frequency this way. CAN is the opposite. Here everyone sends at once, and
 arithmetic separates them. On CAN only one ECU sends at a time, and rules decide which one. The next
@@ -190,7 +205,7 @@ routeAlias: rules-of-the-room
 | speak only when the room is quiet | send only when the bus is idle |
 | two start together: the **lower topic number** goes on | **arbitration**: the lower identifier wins |
 | any one listener **nods** | any receiver sends the **acknowledgement** |
-| garbled: anyone shouts **"STOP!"**, the speaker repeats | **error frame**, then retransmission |
+| garbled: anyone shouts **"STOP!"**, the speaker repeats | **error frame** (section 07), then retransmission |
 | some report on a fixed beat | **periodic** messages |
 
 </div>
@@ -218,7 +233,7 @@ When a sentence ends, any one listener nods. The nod says "somebody heard you". 
 acknowledgement, ACK for short.
 
 If a listener hears a garbled sentence, they shout "STOP!", and the speaker repeats it. On CAN the
-shout is called an error frame.
+shout is called an error frame. Section 07 shows what it looks like on the wire.
 
 Last row. Some people report on a fixed beat, for example the speed every 10 milliseconds. Those are
 periodic messages, and that beat is where the price of the bus comes from.
@@ -233,10 +248,11 @@ routeAlias: clapping-the-topic
 <div class="grid grid-cols-[1.2fr_1fr] gap-8 items-start">
 <div>
 
-Speakers clap their topic number in binary, highest bit first: **clap = 0**, **silence = 1**.
-Whoever stayed silent and heard a clap stops.
+Speakers clap their topic number in binary, highest bit first. A clap always beats silence, and
+the lowest number should win, so **clap = 0**, **silence = 1**. Whoever stayed silent and heard a
+clap stops.
 
-<img src="/diagrams/01-clapping.svg" alt="Three speakers clap identifiers 711h, 2A0h and 265h beat by beat, bits 10 to 6. A clap, drawn as a star, is 0; silence, an empty circle, is 1. At bit 10, 711h is silent while the others clap: it stops. At bit 7, 2A0h is silent while 265h claps: it stops. 265h goes on and wins. The bottom row, what the room hears, is exactly 265h's beats: 0, 1, 0, 0, 1."/>
+<img src="/diagrams/01-clapping.svg" alt="Three speakers clap identifiers 711h, 2A0h and 265h beat by beat, bits 10 to 6. Each identifier is also written as 11 binary digits, grouped 3-4-4: 711h = 111 0001 0001, 2A0h = 010 1010 0000, 265h = 010 0110 0101, with the bit that knocks a speaker out marked in orange. A clap, drawn as a star, is 0; silence, an empty circle, is 1. At bit 10, 711h is silent while the others clap: it stops. At bit 7, 2A0h is silent while 265h claps: it stops. 265h goes on and wins. The bottom row, what the room hears, is exactly 265h's beats: 0, 1, 0, 0, 1."/>
 
 </div>
 <div>
@@ -249,7 +265,8 @@ Whoever stayed silent and heard a clap stops.
 </div>
 </div>
 
-<div class="caption text-left">h: hexadecimal · 0 is called dominant, 1 recessive</div>
+<div class="caption text-left">h: hexadecimal · clap = dominant = 0, driven · silence = recessive = 1,
+left alone</div>
 
 <!--
 What happens when two speakers start together? The room has a rule. Each speaker claps out their
@@ -257,22 +274,31 @@ topic number in binary. Binary means the number is written with only ones and ze
 is one beat per bit, and the highest bit comes first. For a zero you clap. For a one you stay
 silent. A clap drowns out silence, so if anyone claps, the whole room hears a clap.
 
+Why is a clap a zero, and not a one? Because a clap always beats silence, and we want the lowest
+number to win. The lowest number is the one whose first zero comes earliest. So the sound that wins
+must mean zero: a clap means 0.
+
 Every speaker listens while clapping. If you stay silent and still hear a clap, somebody else has a
 zero where you have a one. Their number is lower. You stop at once.
 
 Follow the picture. Three speakers start with the topics 711, 2A0 and 265. These numbers are written
-in hexadecimal, a short way to write binary numbers. The small h marks it. A star is a clap, and an
-empty circle is silence. At bit 10, the first beat, 711 is silent, but the other two clap. 711
-stops. At bits 9 and 8 the two remaining speakers do the same thing. At bit 7, 2A0 is silent and 265
-claps. 2A0 stops. 265 goes on alone. The bottom row is what the room hears: exactly the beats of
-265.
+in hexadecimal, a short way to write binary numbers. The small h marks it. Under each one is the same
+number as 11 bits, in groups of three, four and four: 711 is 111 0001 0001, 2A0 is 010 1010 0000,
+and 265 is 010 0110 0101. A star is a clap, and an empty circle is silence. At bit 10, the first
+beat, 711 is silent, but the other two clap. 711 stops: that is its first digit, marked in orange.
+At bits 9 and 8 the two remaining speakers do the same thing. At bit 7, 2A0 is silent and 265 claps.
+2A0 stops: that is the first digit of its second group, also in orange. 265 goes on alone. The
+bottom row is what the room hears: exactly the beats of 265.
 
 The bullets say what follows. The lowest number wins. The winner's sentence is not damaged, so no
 time is lost. The losers try again when the room is quiet. And the topic number is also a priority:
 brake messages get low numbers.
 
 The caption gives two words you will hear all day. On CAN a zero is called dominant, because it
-wins. A one is called recessive, because it gives way.
+wins, like the clap. A one is called recessive, because it gives way, like the silence. Dominant is
+driven, recessive is left alone: a sender actively pushes the bus to send a zero, and does nothing at
+all to send a one. So whenever anyone drives a zero, the bus shows a zero. Section 04 shows the
+voltages behind this.
 -->
 
 ---
@@ -286,7 +312,8 @@ routeAlias: strikes
 
 ### Every sentence is all or nothing
 
-Anyone who hears a garbled sentence shouts **"STOP!"**. **Everyone** throws the sentence away,
+Anyone who hears a garbled sentence shouts **"STOP!"**: an **error frame** (section 07).
+**Everyone** throws the sentence away,
 even those who heard it fine, and the speaker repeats it.
 
 So every listener always holds **the same** information.
@@ -308,8 +335,8 @@ A broken ECU silences itself instead of jamming the bus.
 </div>
 
 <!--
-Now the errors. On the left: anyone who hears a garbled sentence shouts "STOP!". Then everyone
-throws the sentence away, even the people who heard it correctly, and the speaker repeats it.
+Now the errors. On the left: anyone who hears a garbled sentence shouts "STOP!". On CAN that shout
+is the error frame, and section 07 shows it bit by bit. Then everyone throws the sentence away, even the people who heard it correctly, and the speaker repeats it.
 
 In a real meeting, those who heard it correctly would keep it. CAN does not allow that, for a good
 reason. All ECUs must work with the same data. If the ABS kept a speed value and the motor
