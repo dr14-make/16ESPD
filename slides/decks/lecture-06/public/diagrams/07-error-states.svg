@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 410" width="760" height="410">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 430" width="760" height="430">
   <style>
     text { font-family: sans-serif; fill: #16202c; }
     .active { fill: #e3f1e8; stroke: #009e73; stroke-width: 2.5; }
@@ -22,14 +22,15 @@
   <rect class="active" x="10" y="110" width="210" height="140" rx="16"/>
   <text x="115" y="145" text-anchor="middle" class="t">error active</text>
   <text x="115" y="172" text-anchor="middle" class="d">normal; error flag</text>
-  <text x="115" y="192" text-anchor="middle" class="d">6 dominant bits</text>
+  <text x="115" y="192" text-anchor="middle" class="d">6 dominant bits (0)</text>
   <text x="115" y="220" text-anchor="middle" class="w">TEC or REC ≥ 96:</text>
   <text x="115" y="238" text-anchor="middle" class="w">warns the ECU software</text>
 
   <rect class="passive" x="275" y="110" width="210" height="140" rx="16"/>
   <text x="380" y="145" text-anchor="middle" class="t">error passive</text>
-  <text x="380" y="172" text-anchor="middle" class="d">error flag 6 recessive bits;</text>
-  <text x="380" y="192" text-anchor="middle" class="d">waits 8 extra bits to send</text>
+  <text x="380" y="172" text-anchor="middle" class="d">error flag 6 recessive</text>
+  <text x="380" y="192" text-anchor="middle" class="d">bits (1); waits 8 extra</text>
+  <text x="380" y="212" text-anchor="middle" class="d">bits before it sends</text>
 
   <rect class="off" x="540" y="110" width="210" height="140" rx="16"/>
   <text x="645" y="145" text-anchor="middle" class="t">bus off</text>
@@ -40,11 +41,12 @@
   <text x="245" y="40" text-anchor="middle" class="c">TEC or REC ≥ 128</text>
 
   <path class="back" d="M330 254 C290 310 190 310 150 254" marker-end="url(#es-acc)"/>
-  <text x="240" y="330" text-anchor="middle" class="cb">TEC and REC &lt; 128</text>
+  <text x="240" y="330" text-anchor="middle" class="cb">TEC and REC &lt; 128 (−1 per good frame)</text>
 
   <path class="arrow" d="M420 106 C460 50 560 50 600 106" marker-end="url(#es-ink)"/>
   <text x="510" y="40" text-anchor="middle" class="c">TEC ≥ 256</text>
 
   <path class="back" d="M645 254 V370 H70 V258" marker-end="url(#es-acc)"/>
-  <text x="440" y="394" text-anchor="middle" class="cb">after 128 × 11 recessive bits; both counters back to 0</text>
+  <text x="400" y="394" text-anchor="middle" class="cb">listened to 128 frame ends → counters reset to 0</text>
+  <text x="400" y="416" text-anchor="middle" class="d">128 × 11 consecutive recessive bits</text>
 </svg>

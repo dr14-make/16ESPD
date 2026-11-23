@@ -73,24 +73,28 @@ routeAlias: dominant-and-recessive
 
 ## Dominant and recessive on high-speed CAN
 
-<div class="grid grid-cols-[1.3fr_1fr] gap-8 items-center">
+<div class="grid grid-cols-[1.2fr_1fr] gap-8 items-center">
 <div>
 
-<img src="/diagrams/04-hs-levels.svg" alt="High-speed CAN levels over three bits, recessive, dominant, recessive. Top: in the recessive bits CAN_H and CAN_L both sit at 2.5 V; in the dominant bit CAN_H rises to 3.5 V and CAN_L falls to 1.5 V. Bottom: their difference is 0 V recessive and 2 V dominant, with the band between 0.5 and 0.9 V marked undefined: a receiver reads above 0.9 V as dominant and below 0.5 V as recessive."/>
+<img src="/diagrams/04-hs-levels.svg" alt="High-speed CAN levels over three bits: recessive = 1, left alone; dominant = 0, driven; recessive = 1. Top, on a 0 to 5 V scale: in the recessive bits CAN_H and CAN_L both sit at 2.5 V; in the dominant bit CAN_H rises to 3.5 V and CAN_L falls to 1.5 V. Bottom, on a scale from minus 5 to plus 3 V: their difference is 0 V recessive and 2 V dominant, with the band between 0.5 and 0.9 V marked undefined: a receiver reads above 0.9 V as dominant and below 0.5 V as recessive. Typical values."/>
 
-<div class="caption">ISO 11898-2 levels, with the receiver's thresholds</div>
+<div class="caption">ISO 11898-2 levels, typical values, with the receiver's thresholds</div>
 
 </div>
 <div>
 
-- **Recessive (1)**: nobody drives; the terminations pull the lines together, and the transceivers
-  hold them near 2.5 V. Difference **0 V**.
-- **Dominant (0)**: a transceiver drives CAN_H up and CAN_L down. Difference **2 V**.
-- A receiver reads only the **difference**: above 0.9 V is dominant, below 0.5 V recessive.
-- Noise hits both twisted wires alike and **cancels** in the difference.
+| typical | CAN_H | CAN_L | difference | bit |
+|---|---:|---:|---:|---:|
+| **dominant** | 3.5 V | 1.5 V | 2 V | **0** |
+| **recessive** | 2.5 V | 2.5 V | 0 V | **1** |
 
-> One node driving dominant beats any number of nodes leaving the bus recessive. That is the clap
-> drowning out silence, in hardware.
+- **Dominant = 0 is driven**: the sender pushes CAN_H up and CAN_L down.
+- **Recessive = 1 is left alone**: the terminations pull the lines together.
+- A receiver reads only the **difference**: above 0.9 V dominant, below 0.5 V recessive. Noise hits
+  both twisted wires alike and **cancels**.
+
+> One node driving dominant beats any number of nodes leaving the bus recessive: the clap drowning
+> out silence, in hardware.
 
 </div>
 </div>
@@ -99,14 +103,20 @@ routeAlias: dominant-and-recessive
 The picture shows three bits on high-speed CAN: recessive, dominant, recessive. The top plot shows
 the voltage on each wire. Remember, voltage is the electrical level of a wire, measured in volts.
 
+First the two names, because the whole lecture uses them. Dominant is the logic value zero.
+Recessive is the logic value one. And the one sentence to remember: dominant is driven, recessive is
+left alone. A dominant bit needs a node that actively pushes the wires. A recessive bit is what the
+bus does when no node pushes at all.
+
 In a recessive bit, a one, nobody drives the bus. The terminations, two resistors we meet in two
 slides, pull the wires together. The transceivers hold both near 2.5 volts, half of their 5-volt
-supply. So both wires rest at the same level. The
-bottom plot shows the difference between the two wires: 0 volts.
+supply. So both wires rest at the same level, and the bottom plot shows the difference between the
+two wires: 0 volts.
 
 In a dominant bit, a zero, the transceiver of the sending ECU pushes CAN high up to 3.5 volts and
 CAN low down to 1.5 volts. The transceiver is the chip between the ECU and the wires. The difference
-is now 2 volts.
+is now 2 volts. The table on the right lists the same numbers. They are typical values; the standard
+allows a range around them.
 
 A receiver looks only at the difference. Above 0.9 volts it reads dominant. Below 0.5 volts it reads
 recessive. The band in between is undefined.
@@ -115,52 +125,70 @@ This is the reason for twisting the wires. A disturbance from outside, for examp
 motor, hits both wires almost equally. Both voltages move together, so their difference does not
 change. The disturbance cancels.
 
-The box is the key fact of this slide. Recessive means nobody drives. Dominant means somebody
-drives. So one node that drives dominant beats any number of nodes that leave the bus recessive.
-That is the clap that drowns out silence, built in hardware.
+The box is the key fact of this slide. Because recessive means nobody drives and dominant means
+somebody drives, one node that drives dominant beats any number of nodes that leave the bus
+recessive. That is the clap that drowns out silence, built in hardware.
 -->
 
 ---
 routeAlias: low-speed-levels
 ---
 
-## Low-speed fault-tolerant CAN
+## High-speed and low-speed CAN side by side
 
-<div class="grid grid-cols-[1.3fr_1fr] gap-8 items-center">
+<div class="grid grid-cols-2 gap-6">
 <div>
 
-<img src="/diagrams/04-ls-levels.svg" alt="Low-speed fault-tolerant CAN levels over three bits, recessive, dominant, recessive. Top: recessive has CAN_L near 5 V and CAN_H near 0 V; in the dominant bit the lines swap sides, CAN_H to at least 3.6 V and CAN_L to at most 1.4 V. Bottom: the difference CAN_H minus CAN_L is minus 5 V recessive and at least plus 2.2 V, typically about plus 3 V, dominant."/>
+<img src="/diagrams/04-hs-levels.svg" style="max-height: 14rem" class="mx-auto" alt="High-speed CAN levels, the same plot as on the previous slide: recessive = 1 with both lines at 2.5 V and a difference of 0 V; dominant = 0 with CAN_H at 3.5 V, CAN_L at 1.5 V and a difference of 2 V."/>
 
-<div class="caption">ISO 11898-3 levels</div>
+<div class="caption">High-speed, ISO 11898-2: a small swing around 2.5 V</div>
 
 </div>
 <div>
 
-- Recessive: CAN_H low, CAN_L high, **−5 V** apart.
-- Dominant: they swap sides, **at least +2.2 V** apart, typically about +3 V.
-- The transceiver **detects** a broken or shorted wire and switches to **single-wire mode**: it
-  carries on on the remaining wire alone, against ground.
-- The price: at most **125 kbit/s**.
+<img src="/diagrams/04-ls-levels.svg" style="max-height: 14rem" class="mx-auto" alt="Low-speed fault-tolerant CAN levels on the same voltage scale, over three bits: recessive = 1, left alone; dominant = 0, driven; recessive = 1. Top: recessive has CAN_L near 5 V and CAN_H near 0 V; in the dominant bit the lines swap sides, CAN_H to at least 3.6 V and CAN_L to at most 1.4 V. Bottom: the difference CAN_H minus CAN_L is minus 5 V recessive and at least plus 2.2 V, typically about plus 3 V, dominant."/>
+
+<div class="caption">Low-speed fault-tolerant, ISO 11898-3: the lines swap sides</div>
 
 </div>
 </div>
+
+| | Speed | Termination | Voltage swing | One wire broken or shorted |
+|---|---|---|---|---|
+| **High-speed** | ≤ 1 Mbit/s | 120 Ω at each end, matched to the cable | 2 V, fast edges | the bus stops |
+| **Low-speed** | **≤ 125 kbit/s** | none matched: a resistor in every node | about 8 V, slow edges | **single-wire mode**, keeps working |
 
 <!--
-For comparison, this is low-speed fault-tolerant CAN, the kind used in doors and seats.
+This slide puts the two kinds of CAN from section 03 next to each other, on the same voltage scale.
+On the left is high-speed CAN from the last slide. On the right is low-speed fault-tolerant CAN, the
+kind used in doors and seats. The names are the same on both: dominant is zero and is driven,
+recessive is one and is left alone.
 
-In a recessive bit, CAN high is near 0 volts and CAN low is near 5 volts. The bottom plot shows the
-difference: minus 5 volts. In a dominant bit the two wires swap sides. CAN high rises to at least 3.6
-volts, and CAN low falls to at most 1.4 volts. The difference is at least plus 2.2 volts, typically
-about plus 3 volts.
+Look at the right plot. In a recessive bit, CAN high is near 0 volts and CAN low is near 5 volts. The
+difference is minus 5 volts. In a dominant bit the two wires swap sides. CAN high rises to at least
+3.6 volts, and CAN low falls to at most 1.4 volts. The difference is at least plus 2.2 volts,
+typically about plus 3 volts. Compare that with the left plot: the high-speed lines move only one
+volt each, around 2.5 volts.
 
-The strength of this bus is in its transceiver. A wire can break. It can also touch the car body or
-the battery voltage by mistake, which is called a short. The transceiver watches both wires and
-detects both cases. It then switches to single-wire mode: it carries on with the remaining wire
-alone and measures that wire against ground, the car body. The functions on
-that bus keep working.
+The strength of low-speed CAN is in its transceiver. A wire can break. It can also touch the car body
+or the battery voltage by mistake, which is called a short. The transceiver watches both wires and
+detects both cases. It then switches to single-wire mode: it carries on with the remaining wire alone
+and measures that wire against ground, the car body. The functions on that bus keep working. That is
+the last column of the table.
 
-The price is speed: at most 125 kilobits per second. For the rest of the lecture we stay with
-high-speed CAN.
+The price is the first column: at most 125 kilobits per second. There are three reasons, one per
+middle column and one from the last. First, termination. Low-speed CAN has no 120-ohm resistor
+matched to the cable at the ends. Instead every node carries its own resistors, which pull the
+lines to their recessive levels. Without matched ends, every edge reflects, and the reflections must
+die out before the bit is read, which needs long bits. Second, the voltage swing. The difference
+jumps by about 8 volts, from minus 5 to plus 3, and the transceiver makes these edges slow on
+purpose, so that the wires do not radiate interference. A slow edge needs a long bit. Third, in
+single-wire mode the bus is measured against ground. There is no second wire any more, so a
+disturbance no longer cancels in the difference. The bits must be long enough to survive the noise.
+
+High-speed CAN makes the opposite choice: matched ends, a small fast swing, and noise cancellation,
+which buys 1 megabit per second, but one broken wire stops it. For the rest of the lecture we stay
+with high-speed CAN.
 -->
 
 ---
@@ -178,7 +206,7 @@ routeAlias: termination
 
 - One **120 Ω** resistor across CAN_H and CAN_L at **each end**, matching the cable's impedance;
   without it, every edge **reflects** from the cable ends and blurs the next bits.
-- Together they pull the lines together when nobody drives: difference 0 V, recessive. The
+- Together they pull the lines together when nobody drives: difference 0 V, recessive (1). The
   transceivers keep both lines near 2.5 V.
 
 </div>
@@ -200,8 +228,8 @@ hangs on a short stub and has no resistor.
 The first bullet says why. An edge travels along the cable. At an open cable end it would bounce
 back, like a wave off a wall, and disturb the following bits. That is a reflection. A 120-ohm
 resistor matches the cable and absorbs the edge. The second bullet is the other job: the resistors
-pull the two wires to the same level when nobody drives. That gives the recessive level, a
-difference of zero. The transceivers set where that level sits, near 2.5 volts.
+pull the two wires to the same level when nobody drives. That gives the recessive level, the logic
+one, a difference of zero. The transceivers set where that level sits, near 2.5 volts.
 
 The box on the right is a check that every workshop uses. An ohmmeter measures resistance. Two
 120-ohm resistors side by side measure as 60 ohms. So with the ignition off, the meter between CAN
@@ -324,7 +352,7 @@ routeAlias: bit-timing
 
 <div class="diagram-wide">
 
-<img src="/diagrams/04-bit-timing.svg" alt="One bit cut into 16 time quanta: a one-quantum Sync segment, where a recessive-to-dominant edge is expected, a seven-quantum Propagation segment that covers the round trip on the bus, Phase 1 of five quanta, lengthened for a late edge, and Phase 2 of three quanta, shortened for an early one. The sample point sits between Phase 1 and Phase 2, at 75 to 87.5 percent of the bit."/>
+<img src="/diagrams/04-bit-timing.svg" alt="One bit cut into 16 time quanta: a one-quantum Sync segment, where a recessive-to-dominant (1 → 0) edge is expected, a seven-quantum Propagation segment that covers the round trip on the bus, Phase 1 of five quanta, lengthened for a late edge, and Phase 2 of three quanta, shortened for an early one. The sample point sits between Phase 1 and Phase 2, at 75 to 87.5 percent of the bit."/>
 
 </div>
 
@@ -334,7 +362,7 @@ routeAlias: bit-timing
 - **NRZ** (non-return-to-zero): a bit holds its level for its whole time; only edges carry timing.
 - **Hard synchronization** on the falling edge of the start-of-frame bit: every node restarts its bit
   clock together.
-- **Resynchronization** on every recessive-to-dominant edge: Phase 1 longer or Phase 2 shorter, by
+- **Resynchronization** on every recessive-to-dominant (1 → 0) edge: Phase 1 longer or Phase 2 shorter, by
   at most the **SJW** (synchronization jump width). **Bit stuffing** (section 05) guarantees an
   edge at least every 10 bits.
 
@@ -363,8 +391,8 @@ It covers the round trip on the bus from the last slide. Then come phase 1, five
 The bullets on the left say how the clocks stay together. The first is a name. CAN is NRZ, short
 for non-return-to-zero: each bit holds its level for the whole bit time. So a run of equal bits has
 no edges at all, and only the edges tell a node where a bit begins. Every frame starts with one dominant bit,
-the start of frame. On its edge, all nodes restart their bit clocks together. That is hard
-synchronization. After that, each node checks every edge from recessive to dominant. If the edge
+a zero, the start of frame. On its edge, all nodes restart their bit clocks together. That is hard
+synchronization. After that, each node checks every edge from recessive to dominant, from one to zero. If the edge
 comes late, the node lengthens phase 1. If it comes early, the node shortens phase 2. That is
 resynchronization. The correction per edge is limited to a few quanta, the synchronization jump
 width, SJW for short. The caption gives typical values. It needs edges often enough, and a rule called bit stuffing guarantees one at

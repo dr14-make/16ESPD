@@ -28,10 +28,12 @@ routeAlias: value-to-bits
 
 $$\text{value} = \text{raw} \times \text{factor} + \text{offset}$$
 
-- **raw**: the unsigned or signed integer in the frame
+$$\text{raw} = \operatorname{round}\!\left(\frac{\text{value} - \text{offset}}{\text{factor}}\right)$$
+
+- **raw**: the whole number in the frame, usually unsigned (a DBC `-` marks a signed one)
 - **factor**: the resolution, one raw step
 - **offset**: shifts the range, e.g. to allow negative temperatures
-- **length** in bits sets the range: factor × (2<sup>length</sup> − 1)
+- **n** bits set the range: offset … offset + factor × (2<sup>n</sup> − 1)
 
 > Every signal is **rounded** to its factor and **clamped** to its range. The bus cannot carry what
 > the database did not plan for.
@@ -45,9 +47,9 @@ $$\text{value} = \text{raw} \times \text{factor} + \text{offset}$$
 |---|---|---:|---:|---:|---|
 | engine speed | 280h | 16 | 0.25 rpm | 0 | 0–16 383 rpm |
 | vehicle speed | 1A0h | 15 | 0.01 km/h | 0 | 0–327 km/h |
-| coolant temperature | 288h | 8 | 0.75 °C | −48 °C | −48 to 143 °C |
+| coolant temperature | 288h | 8 | 0.75 °C | −48 °C | −48 to 143.25 °C |
 
-90 °C coolant: raw = (90 + 48) / 0.75 = **184** = B8h
+90 °C coolant: (90 − (−48)) / 0.75 = **184** = B8h; back: 184 × 0.75 − 48 = 90 ✓
 
 </div>
 </div>
@@ -56,12 +58,18 @@ $$\text{value} = \text{raw} \times \text{factor} + \text{offset}$$
 · values from the PQ24 drivetrain CAN matrix used on the bench in this course</div>
 
 <!--
-A frame carries only whole numbers. The formula at the top left turns such a number into a physical
-value: value equals raw times factor plus offset.
+A frame carries only whole numbers. The first formula at the top left turns such a number into a
+physical value: value equals raw times factor plus offset. Every receiver does this. The second
+formula is the same rule backward, and the sender uses it: subtract the offset, divide by the
+factor, and round to the nearest whole number. That whole number goes into the frame.
 
-The bullets explain the parts. Raw is the whole number that is in the frame. The factor is the step
-size: what one step of the raw number is worth. The offset shifts the range, for example so that a
-temperature can go below zero. And the length in bits sets how far the range reaches.
+The bullets explain the parts. Raw is the whole number that is in the frame. Usually it has no sign.
+A signal can also be signed, which lets the raw number itself go below zero; the DBC file marks such
+a signal with a minus sign. The factor is the step size: what one step of the raw number is worth.
+The offset shifts the range, for example so that a temperature can go below zero. And the number of
+bits, n, sets how far the range reaches. The smallest value is the offset, when the raw number is
+zero. The largest is the offset plus the factor times the largest raw number, which is 2 to the n,
+minus one.
 
 The box is what you need for the build. Every signal is rounded to its factor and clamped, that is
 limited, to its range. The bus cannot carry anything finer or larger than the database planned.
@@ -70,10 +78,14 @@ On the right are three real signals from the Fabia's platform. The last column i
 everything the bits can hold. Engine speed uses 16 bits with a factor of 0.25 revolutions per
 minute. Its bits reach 16,383. Vehicle speed uses 15 bits with a factor of 0.01 kilometers per hour.
 Its bits reach 327. Coolant temperature uses only 8 bits, with a factor of
-0.75 degrees and an offset of minus 48 degrees. It covers minus 48 to 143 degrees.
+0.75 degrees and an offset of minus 48 degrees. The largest raw number in 8 bits is 255. 255 times
+0.75 is 191.25, and adding the offset of minus 48 gives 143.25. So it covers minus 48 to 143.25
+degrees.
 
-The last line works one example backward. For 90 degrees, add 48 and divide by 0.75. The raw number
-is 184. In hexadecimal that is B8.
+The last line works one example in both directions. The sender has 90 degrees. Subtract the offset:
+90 minus minus 48 is 138. Divide by 0.75: the raw number is 184. In hexadecimal that is B8. The
+receiver goes back: 184 times 0.75 is 138, minus 48 is 90 degrees again. Here the division comes
+out exactly, so nothing is lost to rounding.
 
 The car maker picks these numbers for each signal: fine enough, wide enough, and as few bits as
 possible. The next slide shows what happens when a value does not fit.
@@ -247,10 +259,16 @@ routeAlias: counters-and-checksums
 
 ## Counters and checksums
 
+<div class="diagram-wide">
+
+<img src="/diagrams/06-byte-map.svg" style="max-height: 11rem" alt="A protected 8-byte frame as a row of fields: ID and DLC; data bytes 0 to 5 carrying signals; byte 6 with a signal in its upper half and a 4-bit counter in its lower half; byte 7, the checksum; then the CRC, 15 bits; then ACK and end of frame. A bracket over bytes 0 to 6 points into byte 7: checksum = byte 0 XOR byte 1 XOR ... XOR byte 6, computed by the sender's software. A bracket over the CRC: added by the CAN controller, outside the data. Under the 8 data bytes: what the application writes; the receiver XORs bytes 0 to 7 and must get 00h."/>
+
+</div>
+
 <div class="grid grid-cols-2 gap-8">
 <div>
 
-### In the frame
+### In the data bytes
 
 | Frame | Sender | Protection |
 |---|---|---|
@@ -258,19 +276,22 @@ routeAlias: counters-and-checksums
 | 050h Airbag_1 | airbag ECU | counter + **XOR checksum** of the other bytes |
 | 480h Motor_5 | engine ECU | **XOR checksum** in byte 7 |
 
-The receiver checks both, and on a failure uses the last good value or a safe default.
+**XOR checksum**, one running chain, e.g. over three bytes: 12h ⊕ 34h = 26h, 26h ⊕ 56h = **70h**.
+The receiver XORs all bytes with the checksum: 12h ⊕ 34h ⊕ 56h ⊕ 70h = **00h**, else it drops the
+value.
 
 </div>
 <div>
 
 ### Why, when CAN has a CRC?
 
-- The CRC protects the frame **on the wire**. It cannot see a sender that keeps repeating a **stale**
-  value, or a value corrupted **inside** an ECU or a gateway.
-- A counter that stops counting: the sender's software has hung.
-- A checksum computed by the **application**: the data is what the sending software meant.
-- Today: **AUTOSAR E2E** (CRC + counter + data ID) for safety; **SecOC** (Secure Onboard
-  Communication, also AUTOSAR) adds a cryptographic code against forged frames.
+- The CRC protects the frame **on the wire**. It cannot see a **stale** value from a hung sender, or
+  a value corrupted **inside** an ECU or a gateway.
+- A counter that stops counting: the sender's software has hung. A wrong checksum: the data is not
+  what the sending software meant.
+- XOR is weak: two flipped bits in the **same column** cancel, and **swapped bytes** go unseen. So
+  **AUTOSAR E2E** uses a CRC (+ counter + data ID); **SecOC** adds a cryptographic code against
+  forged frames.
 
 </div>
 </div>
@@ -278,12 +299,26 @@ The receiver checks both, and on a failure uses the last good value or a safe de
 <!--
 Some signals are so important that the frame protects them a second time.
 
+The picture at the top shows where this protection sits. It is an example layout of an 8-byte frame.
+Bytes 0 to 5 carry signals. Byte 6 carries one more signal and a 4-bit counter; 4 bits are half a
+byte, also called a nibble. Byte 7 is the checksum. The sender's software computes it from bytes 0 to
+6 and writes it into the data like any other signal. To the CAN controller it is just data. The CRC
+is something else. It is not in the data bytes at all. The CAN controller adds it after the data, in
+hardware, and checks it on the way in.
+
 The table on the left shows three frames from the Fabia's network. Bremse_1, from the brake ECU,
-carries a 4-bit counter. The sender adds one with every frame. Airbag_1 carries a counter and a
-checksum. A checksum is a check number that the sender calculates from the other bytes of the frame.
-Here it uses a simple bit operation called XOR. Motor_5, from the engine ECU, carries such a
-checksum in byte 7. The receiver checks both. If a check fails, it uses the last good value or a
-safe default.
+carries a 4-bit counter. The sender adds one with every frame, and after 15 it starts again at 0.
+Airbag_1 carries a counter and a checksum. Motor_5, from the engine ECU, carries a checksum in byte
+7.
+
+A checksum is not a copy of the data. It is one summary byte, like the check digit at the end of an
+ISBN, the number on a book. Here it is made with XOR, exclusive or. XOR compares two bits: equal bits
+give 0, different bits give 1. On whole bytes it does this for each of the eight bit positions. The
+checksum is one running chain: byte 0 XOR byte 1, then that result XOR byte 2, and so on up to byte
+6. The line under the table shows it with three bytes. 12 hexadecimal XOR 34 is 26. 26 XOR 56 is 70.
+So the checksum is 70. The receiver does the same chain over all the bytes, the checksum included.
+Any byte XOR itself is zero, so if nothing changed, the answer must be 00. If it is not, the receiver
+uses the last good value or a safe default.
 
 The right column answers the obvious question: CAN already has a CRC, so why add more? The CRC
 protects the frame only on the wire. Two faults pass it. One: the software in the sender has
@@ -291,9 +326,12 @@ stopped, and the ECU keeps repeating an old value. The frames are valid. But the
 counts, and the receiver notices. Two: the value was damaged inside an ECU or a gateway, before the
 CRC was calculated. A checksum calculated by the application itself reveals that.
 
-The last bullet names today's standards. AUTOSAR E2E, end-to-end protection, puts a CRC, a counter
-and a data identifier into the data of safety-related frames. And SecOC, Secure Onboard Communication, also
-from AUTOSAR and named in section 02, adds a code that only ECUs with the secret key can produce. It protects against forged frames.
+The last bullet names the weakness of XOR. If two bits flip in the same position, in two different
+bytes, the two changes cancel and the checksum still fits. And XOR does not care about order, so two
+swapped bytes give the same checksum. That is why today's standard, AUTOSAR E2E, end-to-end
+protection, puts a real CRC, a counter and a data identifier into the data of safety-related frames.
+And SecOC, Secure Onboard Communication, also from AUTOSAR and named in section 02, adds a code that
+only ECUs with the secret key can produce. It protects against forged frames.
 -->
 
 ---
@@ -313,6 +351,10 @@ routeAlias: fields-on-a-block
 
 Signals with the same `id` share a frame, packed in slot order, at most 8 bytes; `can_dbc` writes the
 DBC of the model's bus.
+
+`CanTxReal` carries **only the scaled value**: sample → scale and round to the raw integer →
+one-period delay → hold. **No counter, no checksum**; the Fabia demo's stream adds the ones the
+cluster expects (section 10).
 
 <div class="handson">Build 01 starts here: you put the car's signals onto the bus and choose these
 fields for each.</div>
@@ -335,6 +377,14 @@ raw_min and raw_max, and the value is clamped to it. The byte order is always In
 
 The line under the table adds two things. Signals with the same id share one frame, with at most 8
 bytes, as on a real bus. And the function can_dbc writes the DBC file of the model's bus.
+
+The next line says what the block leaves out. CanTxReal carries only the scaled value. Inside, it
+does four things in a row. It samples its input once per period. It scales the sample and rounds it
+to the raw whole number, and clamps it. It delays that number by one period. And it holds it until
+the next one arrives. It does not model the counters or the checksums from the last slide. When we
+drive the real Fabia cluster in section 10, a separate program, the demo's stream, builds the real
+frames and adds the counters and checksums the cluster expects. The cluster checks them, like the
+receivers on the last slide.
 
 The green box: build 01 starts here. You put the car's signals on the bus, and you choose these
 fields for each one.

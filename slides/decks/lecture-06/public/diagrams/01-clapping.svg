@@ -13,6 +13,8 @@
     .note { font-size: 16px; font-weight: 600; fill: #d55e00; }
     .win { font-size: 17px; font-weight: 700; fill: #1f5fa8; }
     .lbl { font-size: 15px; fill: #4a5a6b; }
+    .bin { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 14px; fill: #4a5a6b; }
+    .dec { fill: #d55e00; font-weight: 700; }
   </style>
   <line class="slot" x1="190" y1="36" x2="190" y2="320"/>
   <line class="slot" x1="270" y1="36" x2="270" y2="320"/>
@@ -65,8 +67,11 @@
   <circle class="sil" cx="550.0" cy="290" r="10"/>
   <text x="550.0" y="322" text-anchor="middle" class="bit">1</text>
   <text x="20" y="82" class="t">711h</text>
+  <text x="20" y="101" class="bin"><tspan class="dec">1</tspan>11 0001 0001</text>
   <text x="20" y="152" class="t">2A0h</text>
+  <text x="20" y="171" class="bin">010 <tspan class="dec">1</tspan>010 0000</text>
   <text x="20" y="222" class="t">265h</text>
+  <text x="20" y="241" class="bin">010 0110 0101</text>
   <text x="630.0" y="221" text-anchor="middle" class="win">wins</text>
   <text x="20" y="297" class="t">room hears</text>
   <line x1="20" y1="252" x2="670" y2="252" stroke="#16202c" stroke-width="1.5"/>

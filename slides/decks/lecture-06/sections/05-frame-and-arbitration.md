@@ -20,9 +20,10 @@ routeAlias: data-frame
 
 ## The data frame
 
-<img src="/diagrams/05-data-frame.svg" class="w-full" alt="Classic CAN base data frame as a row of fields, left to right, with each field's bits and level: bus idle; start of frame, 1 bit, dominant; identifier, 11 bits, and RTR, 1 bit, dominant, together the arbitration field; IDE and r0, 1 bit each, dominant, and DLC, 4 bits, the control field; data, 0 to 64 bits, 0 to 8 bytes; CRC, 15 bits, and its delimiter, 1 recessive bit; ACK slot, sent recessive and driven dominant by the receivers, and ACK delimiter, recessive; end of frame, 7 recessive bits; intermission, 3 recessive bits; bus idle. A bracket marks start of frame to the end of the CRC, 34 plus 8n bits, as stuffed; the rest is fixed form, never stuffed. In all, 47 plus 8n bits for n data bytes before stuffing."/>
+<img src="/diagrams/05-data-frame.svg" class="w-full" style="max-height: 17rem" alt="Classic CAN base data frame as a row of fields, left to right, with each field's bits and level: bus idle; start of frame, 1 bit, dominant; identifier, 11 bits, and RTR, 1 bit, dominant, together the arbitration field; IDE and r0, 1 bit each, dominant, and DLC, 4 bits, the control field; data, 0 to 64 bits, 0 to 8 bytes; CRC, 15 bits, and its delimiter, 1 recessive bit; ACK slot, sent recessive and driven dominant by the receivers, and ACK delimiter, recessive; end of frame, 7 recessive bits; intermission, 3 recessive bits; bus idle. A bracket marks start of frame to the end of the CRC, 34 plus 8n bits, as stuffed; the rest is fixed form, never stuffed. In all, 47 plus 8n bits for n data bytes before stuffing."/>
 
-<div class="caption">Classic CAN base frame, after ISO 11898-1</div>
+<div class="caption">Classic CAN base frame, after ISO 11898-1 · four kinds of frame: data (this one),
+remote, error (section 07) and overload</div>
 
 <div class="tight">
 
@@ -38,10 +39,16 @@ routeAlias: data-frame
 
 </div>
 
+**11-bit** identifiers here; trucks use **29-bit** extended ones (SAE J1939); on a tie the short
+frame wins.
+
 <!--
 This is a data frame of classic CAN, drawn from left to right in the order the bits are sent. The
 table below gives the job of each field, and the two lines at the bottom of the picture spell out
 every short name once.
+
+The level row in the picture uses two letters. A capital D is dominant, logic 0; a small r is
+recessive, logic 1. Section 04 showed what the two levels look like on the wires.
 
 It starts with the start of frame: one dominant bit. On its edge every node synchronizes.
 
@@ -67,55 +74,18 @@ intermission, must pass before the next frame may start.
 
 In total that is 47 bits plus the data. With 8 data bytes it is 111 bits, and only 64 of them are
 your data.
--->
 
----
-routeAlias: frame-variants
----
+The line under the table adds the long format. Our car uses 11-bit identifiers. Trucks use a
+standard called SAE J1939, and it needs more identifiers, so their frames carry 29 bits: the first
+11, then two recessive bits, then 18 more. The second of those two is IDE, now recessive, which tells
+every node that the long form follows. If a short frame and a long frame start with the same 11
+bits, the short one wins. Right after the 11 bits, the short frame sends dominant bits where the
+long frame sends recessive ones, and dominant wins.
 
-## Other formats and other frames
-
-<div class="grid grid-cols-2 gap-8">
-<div>
-
-### Extended format
-
-- **29-bit identifier**: the 11 base bits, then SRR (substitute remote request) and IDE (both
-  recessive), then 18 more bits.
-- Common in trucks (SAE J1939), rare in passenger-car powertrain buses.
-- An 11-bit frame beats a 29-bit frame with the same first 11 bits.
-
-</div>
-<div>
-
-### Four kinds of frame
-
-| Frame | Sent by | When |
-|---|---|---|
-| **Data** | the owner of the signal | periodically or on change |
-| **Remote** | a node that wants data | rarely used in cars |
-| **Error** | any node | it detected an error (section 07) |
-| **Overload** | any node | asks for a delay before the next frame; modern controllers almost never send it |
-
-</div>
-</div>
-
-<!--
-Two additions before we go on.
-
-On the left, the extended format. If 11 bits do not give enough identifiers, a frame can carry a
-29-bit identifier. It sends the first 11 bits, then two recessive bits, then 18 more identifier bits.
-The first of the two is SRR, the substitute remote request; it sits where the RTR bit sits in a short
-frame. The second is IDE, which is now recessive: it tells every node that the long form follows. Trucks use this format, in a standard called SAE J1939. Passenger cars rarely
-use it on powertrain buses. The last bullet follows from the clapping rule: an 11-bit frame beats a
-29-bit frame that starts with the same 11 bits, because it is dominant where the long frame is
-recessive.
-
-On the right, the four kinds of frame. A data frame carries signals. Its sender is the ECU that owns
-the signal, and it sends periodically or when the value changes. Almost all traffic consists of data
-frames. A remote frame asks another node to send its data. Cars rarely use it. An error frame is the
-"STOP!" shout; section 07 covers it. An overload frame lets any node ask for a short delay before
-the next frame. Modern controllers almost never send one.
+The caption under the picture names all four kinds of frame. This one is the data frame, and almost all traffic is
+data frames. A remote frame asks another node to send its data; cars rarely use it. An error frame
+is the "STOP!" shout; section 07 covers it. An overload frame lets any node ask for a short delay
+before the next frame; modern controllers almost never send one.
 -->
 
 ---
@@ -125,30 +95,26 @@ routeAlias: bit-stuffing
 ## Bit stuffing
 
 After **five equal bits** in a row, the sender inserts **one opposite bit**; the receivers remove it.
-From the start of frame to the end of the CRC only.
+From the start of frame to the end of the CRC, so the identifier and the CRC are stuffed too.
 
-<img class="w-full" style="max-height: 14rem" src="/diagrams/05-bit-stuffing.svg" alt="Two bit waveforms. Data: seven zeros, then six ones. On the wire: after the first five zeros a stuff bit 1 is inserted, then the remaining two zeros and five ones, then a stuff bit 0, then the last one. The two stuff bits are highlighted, and brackets mark each run of five equal bits that triggers one."/>
+<img class="w-full" style="max-height: 14rem" src="/diagrams/05-bit-stuffing.svg" alt="Two bit waveforms on the wire, 17 data bits each, stuff bits shaded. All zeros: after every five zeros a stuff bit 1 is inserted, one every 5 bits, 3 stuff bits in all, 20 bits on the wire. Worst case, data 11111 0000 1111 0000: after the first five ones a stuff bit 0; that stuff bit and the next four zeros make five equal bits, so another stuff bit 1 follows, and so on: one stuff bit every 4 data bits after the first, 4 stuff bits in all, 21 bits on the wire. Brackets mark the data bits of each run that triggers a stuff bit: 5, 5, 5 in the first row; 5, 4, 4, 4 in the second."/>
 
 <div class="grid grid-cols-[1fr_1.2fr] gap-8 items-center">
 <div>
 
 - It guarantees **edges**, so every node keeps resynchronizing (section 04).
 - **Six equal bits** inside a frame cannot be data: they are an error, which is why an error flag
-  is six dominant bits.
-- It adds up to **24 bits** to an 8-byte frame, and how many depends on the data.
+  (section 07) is six dominant bits.
+- Worst case, one stuff bit per **4** bits after the first: up to **24 bits** more on an 8-byte
+  frame, 135 bits in all.
 
 </div>
 <div>
 
-<img style="max-height: 22rem" src="/figures/05-frame-time.svg" alt="Worst-case frame time in microseconds against 0 to 8 data bytes, one line per bit rate. Each rises linearly; at 8 bytes the worst case is 1080 microseconds at 125 kbit/s, 540 at 250 kbit/s, 270 at 500 kbit/s and 135 at 1 Mbit/s."/>
+<img style="max-height: 22rem" src="/figures/05-frame-time.svg" alt="Worst-case frame time, with maximum stuffing, in microseconds against 0 to 8 data bytes, one line per bit rate. Each rises linearly; at 8 bytes the worst case is 1080 microseconds at 125 kbit/s, 540 at 250 kbit/s, 270 at 500 kbit/s and 135 at 1 Mbit/s."/>
 
 </div>
 </div>
-
-<div class="caption text-left">Worst-case length of a base frame with n data bytes:
-8n + 47 + ⌊(34 + 8n − 1)/4⌋ bits — 135 bits for 8 bytes, 270 µs at 500 kbit/s · divided by 4, not
-5: a stuff bit is itself the first bit of the next run, so after the first five bits every four more
-can force one</div>
 
 <!--
 Now the rule we promised: bit stuffing. CAN has no separate clock wire. The receivers keep time from
@@ -156,25 +122,33 @@ the edges in the signal, and a long run of equal bits has no edges. So the rule 
 slide is: after five equal bits in a row, the sender inserts one opposite bit. That extra bit is the
 stuff bit. The receivers know the rule and remove it again.
 
-Follow the two waveforms. The data is seven zeros, then six ones. On the wire, the sender inserts a
-one after the first five zeros. Then come the other two zeros and five ones, and now it inserts a
-zero. Then the last one. The two stuff bits are highlighted.
+Stuffing applies from the start of frame to the end of the CRC. That includes the identifier and the
+CRC itself, not only the data. The fixed bits after the CRC are never stuffed.
 
-Stuffing applies from the start of frame to the end of the CRC. The fixed bits after that are never
-stuffed.
+The picture shows two rows of bits on the wire. Low is dominant, logic 0; high is recessive, logic
+1. The shaded bits are stuff bits.
+
+The top row sends only zeros. After every five zeros the sender inserts a one. So there is one stuff
+bit every 5 data bits: 17 data bits become 20 on the wire.
+
+The bottom row is the worst case. The data is five ones, then four zeros, four ones, four zeros, and
+so on. After the first five ones the sender inserts a zero. That stuff bit is itself the first bit
+of the next run. Four more zeros from the data make five equal bits, so another stuff bit follows,
+a one. Then four ones, and again a stuff bit. So after the first five bits, every four data bits
+force a stuff bit: 17 data bits become 21 on the wire. This pattern gives the most stuff bits a
+frame can get.
 
 The bullets on the left give three consequences. First, edges are guaranteed, so every node can keep
 resynchronizing. Second, six equal bits in a row can never be data inside a frame. Six equal bits
-mean an error. That is why the "STOP!" shout on CAN begins with six dominant bits, called the error
-flag. Third, the frame gets longer. An 8-byte frame can gain up to 24 stuff bits. How many depends
-on the data.
+mean an error. That is why the "STOP!" shout on CAN, the error flag, is six dominant bits; section
+07 explains it. Third, the frame gets longer. In an 8-byte frame, 98 bits are stuffed: 34 bits of
+header and CRC plus 64 bits of data. With one stuff bit after the first five and then one per four,
+that is up to 24 stuff bits, and the frame grows from 111 to 135 bits.
 
-The plot on the right shows the longest possible frame time against the number of data bytes, one
-line per bit rate. Its worst case comes from the formula in the caption. Why divide by 4 and not by
-5? The stuff bit is the opposite of the run before it, so it already starts the next run. After the
-first five bits, every four more data bits can force another stuff bit. Read the right end. With 8 bytes, a frame takes at most 135 bits. At 500 kilobits
-per second that is 270 microseconds. At 125 kilobits per second it is 1080 microseconds, just over a
-millisecond. Remember the 270 microseconds; we use them in section 08.
+The plot on the right shows the longest possible frame time, with maximum stuffing, against the
+number of data bytes, one line per bit rate. Read the right end. With 8 bytes, a frame takes at most
+135 bits. At 500 kilobits per second that is 270 microseconds. At 125 kilobits per second it is 1080
+microseconds, just over a millisecond. Remember the 270 microseconds; we use them in section 08.
 -->
 
 ---
@@ -194,8 +168,9 @@ bytes · CRC-15 computed over the frame · stuff bits marked</div>
 > same frame gets longer or shorter as the speed changes.
 
 <!--
-Here are the last three slides put together: one whole frame, every bit as it goes onto the wire.
-Low is dominant, high is recessive, as before. The colors mark the fields from the frame slide.
+Here are the last two slides put together: one whole frame, every bit as it goes onto the wire.
+Low is dominant, logic 0; high is recessive, logic 1, as before. The colors mark the fields from
+the frame slide.
 
 The frame is a real one from our car. Its identifier is 1A0 in hexadecimal: the brake ECU's frame
 that carries the vehicle speed. The car drives at 87 kilometers per hour. The signal counts in steps
@@ -288,7 +263,9 @@ routeAlias: acknowledgement
 
 - The sender learns that **at least one** node got the frame, never **which**.
 - A frame is valid only if it is valid **everywhere**: one node that saw it corrupted destroys it for
-  all with an error frame.
+  all with an error frame (section 07).
+
+> ACK: **one yes** is enough. Error frame: **one no** cancels it for everyone.
 - Whether the right receiver is alive is the **application's** job: it watches for a message that
   stops arriving (a timeout).
 
@@ -299,7 +276,7 @@ routeAlias: acknowledgement
 The last field to explain is the acknowledgement, the nod.
 
 The picture shows the end of a frame as three waveforms: the sender, the receivers and the bus. Low
-is dominant, high is recessive.
+is dominant, logic 0; high is recessive, logic 1.
 
 The left column says how it works. The sender transmits the ACK slot as a recessive bit: the top
 line stays high. Every node that
@@ -313,7 +290,10 @@ The right column says what it means. The sender learns that at least one node go
 which one. That is the difference from the post office: there is no signed receipt.
 
 The second bullet repeats the rule from the room: a frame counts only if it is correct everywhere.
-One node that received it damaged destroys it for all with an error frame.
+One node that received it damaged destroys it for all with an error frame. Section 07 shows how.
+The box under the second bullet puts the two rules side by side. For the acknowledgement, one yes
+is enough: a single receiver that drives the slot dominant is all the sender needs. For the error
+frame, one no is enough: a single receiver that saw a damaged frame cancels it for everyone.
 
 So how does the brake ECU know that the motor controller is still alive? CAN does not tell it. The
 last bullet gives the answer. The software in each ECU, the application, watches the messages it

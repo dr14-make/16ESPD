@@ -111,5 +111,5 @@
   <text x="819.0" y="375" text-anchor="middle" class="bit" font-weight="700">0</text>
   <text x="877.0" y="375" text-anchor="middle" class="bit" font-weight="700">1</text>
   <text x="935.0" y="375" text-anchor="middle" class="bit" font-weight="700">0</text>
-  <text x="20" y="412" class="lbl">0 dominant, low · 1 recessive, high · the bus is 0 when any node sends 0</text>
+  <text x="20" y="412" class="lbl">dominant = 0, low · recessive = 1, high · the bus is 0 when any node sends 0</text>
 </svg>

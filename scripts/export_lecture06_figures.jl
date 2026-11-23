@@ -10,8 +10,8 @@ receivers separating them again:
   with one band per carrier, and both messages against the filtered receiver outputs;
 - `01-tdm`: `TimeDivisionBenchTransient` and `TimeDivisionDriftTransient`, the wire colored by
   slot, the rebuilt staircases with the receiver clock in step, and with it 2.5 % fast;
-- `01-cdm`: `CodeDivisionBenchTransient`, each sender's bits and spread signal, the summed wire,
-  and the three receivers' integrate-and-dump outputs against the bits sent.
+- `01-cdm`: `CodeDivisionBenchTransient`, each sender's labeled bits and spread signal, the
+  summed wire, and the three receivers' integrate-and-dump outputs, with lines at the bit edges.
 
 With no arguments it writes all three.
 """
@@ -123,26 +123,35 @@ function cdm()
     m = symbolic_container(run)
     ts = 0.0:0.002:8.0
     xlims = (0, 8.15)
+    centers = collect(1.0:8.0) .- 0.5
+    bit_lines!(p) = vline!(p, 1:7; color = GRAY, lw = 1, alpha = 0.35)
 
     function sender(bits, spread, color, name, code)
-        p = plot(; xlims, ylims = (-1.5, 1.5), yticks = [-1, 0, 1], ylabel = "$name [–]",
+        p = plot(; xlims, ylims = (-1.5, 1.6), yticks = [-1, 0, 1], ylabel = "$name [–]",
             title = "Sender $name: bits (dashed) × code $code = " * colored("spread signal", color))
+        bit_lines!(p)
         plot!(p, ts, at(run, spread, ts); color, lw = 1.5)
         plot!(p, ts, at(run, bits, ts); color = :black, lw = 2.5, ls = :dash)
+        for (x, bit) in zip(centers, at(run, bits, centers))
+            annotate!(p, x, 1.32, text(bit > 0 ? "1" : "0", 14, :black, :center))
+        end
         return p
     end
     a = sender(m.bits_a.y, m.spread_a.y, BLUE, "A", "+ − + −")
     b = sender(m.bits_b.y, m.spread_b.y, VERMILLION, "B", "+ + − −")
-    c = plot(ts, at(run, m.wire.y, ts); color = GRAY, lw = 1.5, xlims, ylims = (-2.5, 2.5),
-        yticks = [-2, 0, 2], ylabel = "wire [–]",
+    c = plot(; xlims, ylims = (-2.5, 2.5), yticks = [-2, 0, 2], ylabel = "wire [–]",
         title = "The wire: A + B, both at once, looks like noise")
+    bit_lines!(c)
+    plot!(c, ts, at(run, m.wire.y, ts); color = GRAY, lw = 1.5)
 
     # The integrate-and-dump output just before each bit's end is that bit's average.
     ends = collect(1.0:8.0) .- 0.011
     d = plot(; xlims, ylims = (-1.5, 1.5), yticks = [-1, 0, 1], xlabel = "time [bit periods]",
-        ylabel = "average [–]", title = "Average of wire × code over each bit, codes " *
+        ylabel = "sum ÷ 4 [–]",
+        title = "Running sum of wire × code ÷ 4, restarts each bit; dot = decoded bit: " *
             join((colored("● A", BLUE), colored("■ B", VERMILLION),
-                colored("◆ C = + − − +, which nobody sent", GREEN)), ", "))
+                colored("◆ C = + − − +, nobody sent it", GREEN)), ", "))
+    bit_lines!(d)
     # A and B often send the same bit; side by side, neither marker hides the other.
     for (rx, color, shape, dx) in ((m.receiver_a, BLUE, :circle, -0.08),
             (m.receiver_b, VERMILLION, :rect, 0.08), (m.receiver_c, GREEN, :diamond, 0.0))

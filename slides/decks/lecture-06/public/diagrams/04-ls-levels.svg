@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" width="900" height="500">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" width="900" height="520">
+  <!-- same geometry as 04-hs-levels.svg, so the two compare side by side -->
   <style>
     text { font-family: sans-serif; fill: #16202c; }
     .axis { stroke: #16202c; stroke-width: 1.5; fill: none; }
@@ -9,50 +10,55 @@
     .diff { stroke: #16202c; stroke-width: 4; fill: none; stroke-linejoin: round; }
     .band-h { fill: #1f5fa8; opacity: 0.15; }
     .band-l { fill: #d55e00; opacity: 0.15; }
-    .t { font-size: 20px; font-weight: 600; }
+    .t { font-size: 21px; font-weight: 600; }
     .lbl { font-size: 17px; fill: #4a5a6b; }
-    .tick { font-size: 16px; fill: #4a5a6b; }
-    .v { font-size: 18px; font-weight: 600; }
+    .tick { font-size: 17px; fill: #4a5a6b; }
+    .v { font-size: 19px; font-weight: 600; }
     .h { fill: #1f5fa8; }
     .l { fill: #d55e00; }
   </style>
 
-  <text x="240" y="24" text-anchor="middle" class="t">recessive (1)</text>
-  <text x="490" y="24" text-anchor="middle" class="t">dominant (0)</text>
-  <text x="740" y="24" text-anchor="middle" class="t">recessive (1)</text>
-  <line class="bitline" x1="372" y1="34" x2="372" y2="470"/>
-  <line class="bitline" x1="612" y1="34" x2="612" y2="470"/>
+  <text x="240" y="24" text-anchor="middle" class="t">recessive = 1</text>
+  <text x="492" y="24" text-anchor="middle" class="t">dominant = 0</text>
+  <text x="740" y="24" text-anchor="middle" class="t">recessive = 1</text>
+  <text x="240" y="45" text-anchor="middle" class="lbl">left alone</text>
+  <text x="492" y="45" text-anchor="middle" class="lbl">driven</text>
+  <text x="740" y="45" text-anchor="middle" class="lbl">left alone</text>
+  <line class="bitline" x1="372" y1="52" x2="372" y2="480"/>
+  <line class="bitline" x1="612" y1="52" x2="612" y2="480"/>
 
-  <!-- bus wires: y = 224 - 36 V -->
-  <path class="axis" d="M120 40 V224 H870"/>
-  <line class="grid" x1="120" y1="44" x2="870" y2="44"/>
-  <line class="grid" x1="120" y1="134" x2="870" y2="134"/>
-  <text x="112" y="50" text-anchor="end" class="tick">5 V</text>
-  <text x="112" y="139" text-anchor="end" class="tick">2.5 V</text>
-  <text x="112" y="229" text-anchor="end" class="tick">0 V</text>
-  <rect class="band-h" x="385" y="80" width="215" height="14.4"/>
-  <rect class="band-l" x="385" y="173.6" width="215" height="14.4"/>
-  <path class="canl" d="M120 44 H360 L385 188 H600 L625 44 H870"/>
-  <path class="canh" d="M120 222 H360 L385 80 H600 L625 222 H870"/>
-  <text x="240" y="68" text-anchor="middle" class="v l">CAN_L ≈ 5 V</text>
-  <text x="240" y="210" text-anchor="middle" class="v h">CAN_H ≈ 0 V</text>
-  <text x="492" y="70" text-anchor="middle" class="v h">CAN_H ≥ 3.6 V</text>
-  <text x="492" y="212" text-anchor="middle" class="v l">CAN_L ≤ 1.4 V</text>
-  <text x="740" y="68" text-anchor="middle" class="v l">CAN_L ≈ 5 V</text>
-  <text x="740" y="210" text-anchor="middle" class="v h">CAN_H ≈ 0 V</text>
+  <!-- bus wires: y = 240 - 36 V; dominant drawn at typical 4 V / 1 V, shaded down to the 3.6 V / 1.4 V bounds -->
+  <path class="axis" d="M120 56 V240 H870"/>
+  <line class="grid" x1="120" y1="60" x2="870" y2="60"/>
+  <line class="grid" x1="120" y1="110.4" x2="870" y2="110.4"/>
+  <line class="grid" x1="120" y1="189.6" x2="870" y2="189.6"/>
+  <text x="112" y="66" text-anchor="end" class="tick">5 V</text>
+  <text x="112" y="116" text-anchor="end" class="tick">3.6 V</text>
+  <text x="112" y="195" text-anchor="end" class="tick">1.4 V</text>
+  <text x="112" y="246" text-anchor="end" class="tick">0 V</text>
+  <rect class="band-h" x="385" y="96" width="215" height="14.4"/>
+  <rect class="band-l" x="385" y="189.6" width="215" height="14.4"/>
+  <path class="canl" d="M120 62 H360 L385 204 H600 L625 62 H870"/>
+  <path class="canh" d="M120 238 H360 L385 96 H600 L625 238 H870"/>
+  <text x="240" y="86" text-anchor="middle" class="v l">CAN_L ≈ 5 V</text>
+  <text x="240" y="226" text-anchor="middle" class="v h">CAN_H ≈ 0 V</text>
+  <text x="492" y="86" text-anchor="middle" class="v h">CAN_H ≥ 3.6 V</text>
+  <text x="492" y="228" text-anchor="middle" class="v l">CAN_L ≤ 1.4 V</text>
+  <text x="740" y="86" text-anchor="middle" class="v l">CAN_L ≈ 5 V</text>
+  <text x="740" y="226" text-anchor="middle" class="v h">CAN_H ≈ 0 V</text>
 
-  <!-- differential: y = 360 - 20 V -->
-  <text x="20" y="272" class="t">difference CAN_H − CAN_L</text>
-  <path class="axis" d="M120 286 V470"/>
-  <line class="axis" x1="120" y1="360" x2="870" y2="360"/>
+  <!-- difference: y = 366 - 22 V -->
+  <text x="20" y="280" class="t">difference CAN_H − CAN_L</text>
+  <path class="axis" d="M120 290 V480"/>
+  <line class="axis" x1="120" y1="366" x2="870" y2="366"/>
   <line class="grid" x1="120" y1="300" x2="870" y2="300"/>
-  <line class="grid" x1="120" y1="460" x2="870" y2="460"/>
+  <line class="grid" x1="120" y1="476" x2="870" y2="476"/>
   <text x="112" y="306" text-anchor="end" class="tick">+3 V</text>
-  <text x="112" y="366" text-anchor="end" class="tick">0 V</text>
-  <text x="112" y="466" text-anchor="end" class="tick">−5 V</text>
-  <path class="diff" d="M120 460 H360 L385 300 H600 L625 460 H870"/>
-  <text x="240" y="448" text-anchor="middle" class="v">−5 V</text>
-  <text x="492" y="290" text-anchor="middle" class="v">≥ +2.2 V, typ. +3 V</text>
-  <text x="740" y="448" text-anchor="middle" class="v">−5 V</text>
-  <text x="495" y="494" text-anchor="middle" class="lbl">the lines swap sides; the large swing survives one wire broken or shorted</text>
+  <text x="112" y="372" text-anchor="end" class="tick">0 V</text>
+  <text x="112" y="482" text-anchor="end" class="tick">−5 V</text>
+  <path class="diff" d="M120 476 H360 L385 300 H600 L625 476 H870"/>
+  <text x="240" y="464" text-anchor="middle" class="v">−5 V</text>
+  <text x="492" y="292" text-anchor="middle" class="v">≥ +2.2 V, typ. +3 V</text>
+  <text x="740" y="464" text-anchor="middle" class="v">−5 V</text>
+  <text x="495" y="510" text-anchor="middle" class="lbl">the lines swap sides; the large swing survives one wire broken or shorted</text>
 </svg>

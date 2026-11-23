@@ -96,5 +96,5 @@
   <path class="sw" d="M948 8 V80 M948 114 V212"/>
   <text x="398" y="232" text-anchor="middle" class="g">switch up at the sample point of BRS</text>
   <text x="948" y="232" text-anchor="middle" class="g">switch back at the sample point of the CRC delimiter</text>
-  <text x="585" y="282" text-anchor="middle" class="g">11-bit identifier shown · D dominant, r recessive · field widths not to scale · the receivers turn the ACK slot dominant</text>
+  <text x="585" y="282" text-anchor="middle" class="g">11-bit identifier shown · D dominant = 0, r recessive = 1 · field widths not to scale · the receivers turn the ACK slot dominant</text>
 </svg>

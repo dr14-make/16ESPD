@@ -67,6 +67,8 @@
   <text x="648" y="83" class="lbl">they see six equal bits: a stuff error</text>
   <line class="cut" x1="352" y1="18" x2="352" y2="186"/>
   <text x="20" y="152" class="t">bus</text>
+  <text x="150" y="131" text-anchor="end" class="lbl">1 recessive</text>
+  <text x="150" y="171" text-anchor="end" class="lbl">0 dominant (D)</text>
   <path class="wave" d="M160 126 H184 V166 H208 V126 H232 H256 V166 H280 V126 H304 V166 H328 H352 H376 H400 H424 H448 H472 H496 H520 H544 H568 H592 H616 H640 V126 H664 H688 H712 H736 H760 H784 H808 H832 H856 H880 H904 V166 H928 H952 V126 H976 H1000 V166 H1024 V126 H1048"/>
   <text x="256" y="204" text-anchor="middle" class="n">frame, cut off</text>
   <text x="256" y="224" text-anchor="middle" class="lbl"></text>

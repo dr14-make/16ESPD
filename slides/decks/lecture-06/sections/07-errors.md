@@ -40,12 +40,12 @@ detected.
 Two checks belong to the sender. The first row is the bit error. The sender reads back every bit. If
 it reads a different bit than it sent, that is an error. There are two exceptions: during
 arbitration and in the ACK slot, a difference is normal. The last row is the acknowledgement error:
-nobody made the ACK slot dominant.
+nobody made the ACK slot dominant, logic zero.
 
 Three checks belong to every receiver. The stuff error: six equal bits in a row in the stuffed part
 of the frame. The CRC error: the receiver calculates the check number, and it differs from the one
 in the frame. The form error: a bit that must always be recessive, such as a delimiter or the end of
-frame, is dominant.
+frame, is dominant, logic zero, instead of recessive, logic one.
 
 The caption says how good these checks are together. The chance that a damaged frame passes all five
 unnoticed is below 4.7 times ten to the minus eleven. That is about one in twenty billion damaged
@@ -62,14 +62,16 @@ routeAlias: error-frame
 
 <div class="diagram-wide">
 
-<img src="/diagrams/07-error-frame.svg" style="max-height: 14rem" alt="Timeline of the bus, low dominant. A frame runs, then is cut off where one node detects an error. That node sends 6 dominant bits, its error flag. The other nodes see six equal bits, a stuff error, and send their own flags, up to 6 more dominant bits, so the bus is dominant for 6 to 12 bits. Then 8 recessive bits, the error delimiter, and 3 recessive bits of intermission; then the sender starts the frame again with a start of frame. A bracket marks the error frame and intermission: 17 to 23 bit times."/>
+<img src="/diagrams/07-error-frame.svg" style="max-height: 14rem" alt="Timeline of the bus, low dominant, logic 0, high recessive, logic 1. A frame runs, then is cut off where one node detects an error. That node sends 6 dominant bits, its error flag. The other nodes see six equal bits, a stuff error, and send their own flags, up to 6 more dominant bits, so the bus is dominant for 6 to 12 bits. Then 8 recessive bits, the error delimiter, and 3 recessive bits of intermission; then the sender starts the frame again with a start of frame. A bracket marks the error frame and intermission: 17 to 23 bit times."/>
 
 </div>
 
 <div class="grid grid-cols-2 gap-8">
 <div>
 
-1. A node detects an error and sends an **error flag**: **six dominant bits**.
+1. A node detects an error and, **on the next bit**, wherever it is in the frame, sends an
+   **error flag**: **six dominant bits** (0). Only a **CRC error** waits until after the ACK
+   delimiter.
 2. Six equal bits break the stuffing rule, so **every other node** now detects an error too and
    sends its own flag: together 6 to 12 dominant bits.
 3. An **error delimiter** of 8 recessive bits, then the 3-bit intermission.
@@ -87,11 +89,16 @@ routeAlias: error-frame
 </div>
 
 <!--
-This is the "STOP!" shout on the wire. The picture shows the bus as a timeline, low is dominant.
-Follow the four steps on the left along it.
+This is the "STOP!" shout on the wire. The picture shows the bus as a timeline. Low is dominant,
+logic zero; high is recessive, logic one. Follow the four steps on the left along it.
 
-One. A node detects an error, at the dashed line. The frame is cut off there. The node sends an
-error flag: six dominant bits in a row.
+One. A node detects an error, at the dashed line. It does not wait for the frame to end. On the
+very next bit, wherever that is in the frame, it sends an error flag: six dominant bits in a row.
+The frame is cut off there. This holds for four of the five checks from the last slide: the bit,
+stuff, form and acknowledgement errors. The CRC error is the exception. A receiver knows that the
+check number is wrong only once the whole CRC has arrived. The standard then lets the
+acknowledgement field pass first: after a CRC error, the flag starts on the bit after the ACK
+delimiter.
 
 Two. Six equal bits break the stuffing rule. So every other node now detects an error as well and
 sends its own flag. The flags overlap. If all nodes notice at once, the bus is dominant for 6 bits.
@@ -123,51 +130,88 @@ routeAlias: fault-confinement
 
 ## Error counters and bus-off
 
-<div class="grid grid-cols-[1fr_1.6fr] gap-8 items-center">
-<div>
-
-Each node keeps two counters:
+<div class="grid grid-cols-[1.2fr_1fr] gap-8 items-center">
+<div class="tight">
 
 | Event | TEC | REC |
 |---|---:|---:|
 | error while **sending** | **+8** | |
-| error while **receiving** | | **+1**, +8 in a few cases |
-| frame sent correctly | −1 | |
-| frame received correctly | | −1 |
+| error while **receiving** | | **+1** |
+| a dominant bit right after the receiver's **own** flag | | **+8** more |
+| frame sent / received without error | −1 | −1 |
 
-<div class="caption text-left">TEC: transmit error counter · REC: receive error counter · +8 on
-receive: e.g. a receiver that finds a dominant bit right after its own error flag · ≥ 96: a warning
-only, the node keeps working</div>
+| Who saw the error | Flags (last slide's picture) | Counters |
+|---|---|---|
+| **every** receiver at once: noise all of them see | overlap: **6** dominant bits | sender +8, each receiver +1 |
+| **one** receiver alone: its own fault | staggered: up to **12** | that receiver **+1 +8**, the others +1, sender +8 |
 
 </div>
 <div>
 
-<img src="/diagrams/07-error-states.svg" alt="State diagram of a CAN node. Error active: normal, error flag of 6 dominant bits; when TEC or REC reaches 96 it warns the ECU's software but stays error active. When TEC or REC reaches 128 it moves to error passive: error flag of 6 recessive bits, waits 8 extra bits before sending. When both are back below 128 it returns to error active. When TEC reaches 256 it moves to bus off: sends nothing, acknowledges nothing. From bus off it returns to error active after 128 times 11 recessive bits, with both counters back at 0."/>
+<img src="/diagrams/07-error-states.svg" alt="State diagram of a CAN node. Error active: normal, error flag of 6 dominant bits, logic 0; when TEC or REC reaches 96 it warns the ECU's software but stays error active. When TEC or REC reaches 128 it moves to error passive: error flag of 6 recessive bits, logic 1, waits 8 extra bits before sending. When TEC and REC are both back below 128, falling by 1 per good frame, it returns to error active. When TEC reaches 256 it moves to bus off: sends nothing, acknowledges nothing. From bus off it returns to error active once it has listened to 128 frame ends, 128 times 11 consecutive recessive bits, with both counters reset to 0."/>
 
 </div>
 </div>
+
+<div class="caption text-left">TEC: transmit error counter · REC: receive error counter · ≥ 96: a
+warning only · 11 recessive bits = ACK delimiter 1 + end of frame 7 + intermission 3, the end of
+every frame; 128 × 11 = 1408 bit times, at least 2.8 ms at 500 kbit/s · many controllers start the
+recovery only when software asks; in AUTOSAR the CAN state manager (CanSM) does · Bosch CAN 2.0,
+Part A, ch. 7</div>
 
 <!--
 These are the strikes, with exact numbers. Each node keeps two counters. TEC is the transmit error
 counter. REC is the receive error counter.
 
-The table on the left gives the rules. An error while sending adds 8 to TEC. An error while
-receiving adds 1 to REC in most cases. In a few cases it adds 8 instead, for example when a receiver
-finds a dominant bit right after its own error flag; that receiver is then the likely culprit. Each
-frame sent correctly takes 1 off TEC, and each frame
-received correctly takes 1 off REC. So an error while sending counts eight times as much. That is
-fair: a node that fails while it is sending is the most likely cause of the fault.
+The first table gives the rules. An error while sending adds 8 to TEC. An error while receiving adds
+1 to REC. The third row is the special case: a receiver sends its error flag, and the very next bit
+is still dominant. Then it adds 8 more. Each frame sent without error takes 1 off TEC, and each
+frame received without error takes 1 off REC.
+
+Why the special case? The second table explains it, with the picture from the last slide, the 6 or
+12 dominant bits.
+
+Row one: noise that every receiver sees. All receivers detect the error at the same bit and send
+their flags together. The flags overlap, and the bus is dominant for only 6 bits. When a receiver's
+flag ends, the bus goes recessive at once. So each receiver adds 1, and the sender adds 8.
+
+Row two: one receiver sees an error that nobody else sees, for example because its own clock or its
+own transceiver is bad. It sends its flag alone. The others notice only the six equal bits of that
+flag, and answer with their own flags right after it. That is the staggered case, up to 12
+dominant bits. When the lonely receiver's flag ends, the bus is still dominant, because the others
+are still shouting. That dominant bit is the special case: the lonely receiver adds 1 and then 8
+more, 9 in all. The other receivers add only 1. The sender still adds 8, because it sent an error
+flag; the rules cannot tell that the fault was not its own.
+
+That is how CAN finds the troublemaker. The lonely receiver collects 9 per error, the sender 8, the
+others 1. If both start at zero, after 15 such errors the lonely receiver is at 135 and turns error
+passive, while the sender is at 120 at most and stays error active. From then on the troublemaker
+only whispers, and the frames get through again. And if the sender itself is the one with the fault,
+its own plus 8 per failed frame takes care of it.
 
 The diagram on the right shows the three states. A node starts as error active. It works normally,
-and its error flag is six dominant bits. When TEC or REC reaches 96, nothing changes on the bus yet.
-The CAN controller only raises a warning to the software of its ECU, the host. It is a yellow card:
-the software can log a fault before things get worse. When TEC or REC reaches 128, the node becomes
-error passive. Its error flag is now six recessive bits, and it waits 8 extra bits before it sends
-again. When both counters are back below 128, it returns to error active.
+and its error flag is six dominant bits, logic zero. When TEC or REC reaches 96, nothing changes on
+the bus yet. The CAN controller only raises a warning to the software of its ECU, the host. It is a
+yellow card: the software can log a fault before things get worse. When TEC or REC reaches 128, the
+node becomes error passive. Its error flag is now six recessive bits, logic one, and it waits 8
+extra bits before it sends again. The dashed arrow back: TEC and REC both fall by 1 per good frame,
+and when both are below 128, the node is error active again. One detail: a receive counter above
+127 drops straight back to between 119 and 127 after one good frame.
 
 When TEC reaches 256, the node goes bus off. It sends nothing and acknowledges nothing. This need
-not last forever. The arrow back says: after 128 times 11 recessive bits on the bus, the node may
-return to error active, with both counters at zero.
+not last forever. The long arrow back says: once the node has listened to 128 frame ends, its
+counters are reset to zero and it is error active again. The caption explains what a frame end
+means here. Every frame ends with 11 recessive bits in a row: the ACK delimiter, 1 bit, the end of
+frame, 7 bits, and the intermission, 3 bits. Nowhere else in a correct frame are there 11 recessive
+bits in a row, because of bit stuffing. So the node counts 128 times 11 recessive bits, 1408 bit
+times. At 500 kilobits per second a bit takes 2 microseconds, so that is 2.8 milliseconds if the bus
+is idle. With traffic it is 128 frames, which takes longer.
+
+The last part of the caption is how real ECUs do it. Many CAN controllers do not start this
+recovery on their own. They wait until the software tells them to. In AUTOSAR, the standard
+software architecture of most ECUs, a module called the CAN state manager handles this. It restarts
+the controller, keeps the node's own messages off the bus for a configured time, and if the node
+keeps going bus off, it switches to a longer wait.
 
 So a broken node takes itself off the bus, and the other nodes keep working. In the room: strikes,
 whisper, leave the room.

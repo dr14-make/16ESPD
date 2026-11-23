@@ -1,74 +1,129 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 950 270" width="950" height="270">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 987 318" width="987" height="318">
   <style>
     text { font-family: sans-serif; fill: #16202c; }
     .wave { stroke: #16202c; stroke-width: 3.5; fill: none; stroke-linejoin: round; }
-    .gap { stroke: #9aa7b4; stroke-width: 2; stroke-dasharray: 4 4; fill: none; }
     .slot { stroke: #d0d7de; stroke-width: 1; }
     .stuffbg { fill: #fbe3d4; }
     .run { stroke: #1f5fa8; stroke-width: 2; fill: none; }
     .t { font-size: 19px; font-weight: 600; }
+    .sub { font-size: 15px; fill: #1f5fa8; font-weight: 600; }
     .bit { font-size: 17px; }
     .sb { font-size: 17px; font-weight: 700; fill: #d55e00; }
     .lbl { font-size: 15px; fill: #4a5a6b; }
     .acc { font-size: 15px; fill: #1f5fa8; font-weight: 600; }
   </style>
-  <line class="slot" x1="150" y1="30" x2="150" y2="230"/>
-  <line class="slot" x1="202" y1="30" x2="202" y2="230"/>
-  <line class="slot" x1="254" y1="30" x2="254" y2="230"/>
-  <line class="slot" x1="306" y1="30" x2="306" y2="230"/>
-  <line class="slot" x1="358" y1="30" x2="358" y2="230"/>
-  <line class="slot" x1="410" y1="30" x2="410" y2="230"/>
-  <line class="slot" x1="462" y1="30" x2="462" y2="230"/>
-  <line class="slot" x1="514" y1="30" x2="514" y2="230"/>
-  <line class="slot" x1="566" y1="30" x2="566" y2="230"/>
-  <line class="slot" x1="618" y1="30" x2="618" y2="230"/>
-  <line class="slot" x1="670" y1="30" x2="670" y2="230"/>
-  <line class="slot" x1="722" y1="30" x2="722" y2="230"/>
-  <line class="slot" x1="774" y1="30" x2="774" y2="230"/>
-  <line class="slot" x1="826" y1="30" x2="826" y2="230"/>
-  <line class="slot" x1="878" y1="30" x2="878" y2="230"/>
-  <line class="slot" x1="930" y1="30" x2="930" y2="230"/>
-  <rect class="stuffbg" x="826" y="128" width="52" height="102"/>
-  <rect class="stuffbg" x="410" y="128" width="52" height="102"/>
-  <text x="20" y="72" class="t">data</text>
-  <path class="wave" d="M150 90 H202 H254 H306 H358 H410 M462 90 H514 H566 V40 H618 H670 H722 H774 H826 M878 40 H930"/>
-  <path class="gap" d="M826 40 H878"/>
-  <path class="gap" d="M410 90 H462"/>
-  <text x="176.0" y="118" text-anchor="middle" class="bit">0</text>
-  <text x="228.0" y="118" text-anchor="middle" class="bit">0</text>
-  <text x="280.0" y="118" text-anchor="middle" class="bit">0</text>
-  <text x="332.0" y="118" text-anchor="middle" class="bit">0</text>
-  <text x="384.0" y="118" text-anchor="middle" class="bit">0</text>
-  <text x="488.0" y="118" text-anchor="middle" class="bit">0</text>
-  <text x="540.0" y="118" text-anchor="middle" class="bit">0</text>
-  <text x="592.0" y="118" text-anchor="middle" class="bit">1</text>
-  <text x="644.0" y="118" text-anchor="middle" class="bit">1</text>
-  <text x="696.0" y="118" text-anchor="middle" class="bit">1</text>
-  <text x="748.0" y="118" text-anchor="middle" class="bit">1</text>
-  <text x="800.0" y="118" text-anchor="middle" class="bit">1</text>
-  <text x="904.0" y="118" text-anchor="middle" class="bit">1</text>
-  <text x="20" y="182" class="t">on the wire</text>
-  <path class="wave" d="M150 200 H202 H254 H306 H358 H410 V150 H462 V200 H514 H566 V150 H618 H670 H722 H774 H826 V200 H878 V150 H930"/>
-  <text x="176.0" y="224" text-anchor="middle" class="bit">0</text>
-  <text x="228.0" y="224" text-anchor="middle" class="bit">0</text>
-  <text x="280.0" y="224" text-anchor="middle" class="bit">0</text>
-  <text x="332.0" y="224" text-anchor="middle" class="bit">0</text>
-  <text x="384.0" y="224" text-anchor="middle" class="bit">0</text>
-  <text x="436.0" y="224" text-anchor="middle" class="sb">1</text>
-  <text x="488.0" y="224" text-anchor="middle" class="bit">0</text>
-  <text x="540.0" y="224" text-anchor="middle" class="bit">0</text>
-  <text x="592.0" y="224" text-anchor="middle" class="bit">1</text>
-  <text x="644.0" y="224" text-anchor="middle" class="bit">1</text>
-  <text x="696.0" y="224" text-anchor="middle" class="bit">1</text>
-  <text x="748.0" y="224" text-anchor="middle" class="bit">1</text>
-  <text x="800.0" y="224" text-anchor="middle" class="bit">1</text>
-  <text x="852.0" y="224" text-anchor="middle" class="sb">0</text>
-  <text x="904.0" y="224" text-anchor="middle" class="bit">1</text>
-  <path class="run" d="M154 140 V134 H406 V140"/>
-  <path class="run" d="M570 140 V134 H822 V140"/>
-  <text x="852.0" y="148" text-anchor="middle" class="sb" font-size="13">stuff</text>
-  <text x="436.0" y="148" text-anchor="middle" class="sb" font-size="13">stuff</text>
-  <text x="280.0" y="252" text-anchor="middle" class="acc">five equal bits</text>
-  <text x="696.0" y="252" text-anchor="middle" class="acc">five equal bits</text>
-  <text x="20" y="252" class="lbl">0 dominant, low</text>
+  <rect class="stuffbg" x="375" y="52" width="37" height="82"/>
+  <rect class="stuffbg" x="597" y="52" width="37" height="82"/>
+  <rect class="stuffbg" x="819" y="52" width="37" height="82"/>
+  <line class="slot" x1="190" y1="52" x2="190" y2="134"/>
+  <line class="slot" x1="227" y1="52" x2="227" y2="134"/>
+  <line class="slot" x1="264" y1="52" x2="264" y2="134"/>
+  <line class="slot" x1="301" y1="52" x2="301" y2="134"/>
+  <line class="slot" x1="338" y1="52" x2="338" y2="134"/>
+  <line class="slot" x1="375" y1="52" x2="375" y2="134"/>
+  <line class="slot" x1="412" y1="52" x2="412" y2="134"/>
+  <line class="slot" x1="449" y1="52" x2="449" y2="134"/>
+  <line class="slot" x1="486" y1="52" x2="486" y2="134"/>
+  <line class="slot" x1="523" y1="52" x2="523" y2="134"/>
+  <line class="slot" x1="560" y1="52" x2="560" y2="134"/>
+  <line class="slot" x1="597" y1="52" x2="597" y2="134"/>
+  <line class="slot" x1="634" y1="52" x2="634" y2="134"/>
+  <line class="slot" x1="671" y1="52" x2="671" y2="134"/>
+  <line class="slot" x1="708" y1="52" x2="708" y2="134"/>
+  <line class="slot" x1="745" y1="52" x2="745" y2="134"/>
+  <line class="slot" x1="782" y1="52" x2="782" y2="134"/>
+  <line class="slot" x1="819" y1="52" x2="819" y2="134"/>
+  <line class="slot" x1="856" y1="52" x2="856" y2="134"/>
+  <line class="slot" x1="893" y1="52" x2="893" y2="134"/>
+  <line class="slot" x1="930" y1="52" x2="930" y2="134"/>
+  <text x="20" y="80" class="t">all zeros</text>
+  <text x="20" y="102" class="sub">one every 5 bits</text>
+  <path class="wave" d="M190 100 H227 H264 H301 H338 H375 V60 H412 V100 H449 H486 H523 H560 H597 V60 H634 V100 H671 H708 H745 H782 H819 V60 H856 V100 H893 H930"/>
+  <text x="208.5" y="126" text-anchor="middle" class="bit">0</text>
+  <text x="245.5" y="126" text-anchor="middle" class="bit">0</text>
+  <text x="282.5" y="126" text-anchor="middle" class="bit">0</text>
+  <text x="319.5" y="126" text-anchor="middle" class="bit">0</text>
+  <text x="356.5" y="126" text-anchor="middle" class="bit">0</text>
+  <text x="393.5" y="126" text-anchor="middle" class="sb">1</text>
+  <text x="430.5" y="126" text-anchor="middle" class="bit">0</text>
+  <text x="467.5" y="126" text-anchor="middle" class="bit">0</text>
+  <text x="504.5" y="126" text-anchor="middle" class="bit">0</text>
+  <text x="541.5" y="126" text-anchor="middle" class="bit">0</text>
+  <text x="578.5" y="126" text-anchor="middle" class="bit">0</text>
+  <text x="615.5" y="126" text-anchor="middle" class="sb">1</text>
+  <text x="652.5" y="126" text-anchor="middle" class="bit">0</text>
+  <text x="689.5" y="126" text-anchor="middle" class="bit">0</text>
+  <text x="726.5" y="126" text-anchor="middle" class="bit">0</text>
+  <text x="763.5" y="126" text-anchor="middle" class="bit">0</text>
+  <text x="800.5" y="126" text-anchor="middle" class="bit">0</text>
+  <text x="837.5" y="126" text-anchor="middle" class="sb">1</text>
+  <text x="874.5" y="126" text-anchor="middle" class="bit">0</text>
+  <text x="911.5" y="126" text-anchor="middle" class="bit">0</text>
+  <path class="run" d="M194 44 V38 H371 V44"/>
+  <text x="282.5" y="32" text-anchor="middle" class="acc">5</text>
+  <path class="run" d="M416 44 V38 H593 V44"/>
+  <text x="504.5" y="32" text-anchor="middle" class="acc">5</text>
+  <path class="run" d="M638 44 V38 H815 V44"/>
+  <text x="726.5" y="32" text-anchor="middle" class="acc">5</text>
+  <text x="967" y="152" text-anchor="end" class="lbl">17 data bits + 3 stuff bits = 20 on the wire</text>
+  <rect class="stuffbg" x="375" y="187" width="37" height="82"/>
+  <rect class="stuffbg" x="560" y="187" width="37" height="82"/>
+  <rect class="stuffbg" x="745" y="187" width="37" height="82"/>
+  <rect class="stuffbg" x="930" y="187" width="37" height="82"/>
+  <line class="slot" x1="190" y1="187" x2="190" y2="269"/>
+  <line class="slot" x1="227" y1="187" x2="227" y2="269"/>
+  <line class="slot" x1="264" y1="187" x2="264" y2="269"/>
+  <line class="slot" x1="301" y1="187" x2="301" y2="269"/>
+  <line class="slot" x1="338" y1="187" x2="338" y2="269"/>
+  <line class="slot" x1="375" y1="187" x2="375" y2="269"/>
+  <line class="slot" x1="412" y1="187" x2="412" y2="269"/>
+  <line class="slot" x1="449" y1="187" x2="449" y2="269"/>
+  <line class="slot" x1="486" y1="187" x2="486" y2="269"/>
+  <line class="slot" x1="523" y1="187" x2="523" y2="269"/>
+  <line class="slot" x1="560" y1="187" x2="560" y2="269"/>
+  <line class="slot" x1="597" y1="187" x2="597" y2="269"/>
+  <line class="slot" x1="634" y1="187" x2="634" y2="269"/>
+  <line class="slot" x1="671" y1="187" x2="671" y2="269"/>
+  <line class="slot" x1="708" y1="187" x2="708" y2="269"/>
+  <line class="slot" x1="745" y1="187" x2="745" y2="269"/>
+  <line class="slot" x1="782" y1="187" x2="782" y2="269"/>
+  <line class="slot" x1="819" y1="187" x2="819" y2="269"/>
+  <line class="slot" x1="856" y1="187" x2="856" y2="269"/>
+  <line class="slot" x1="893" y1="187" x2="893" y2="269"/>
+  <line class="slot" x1="930" y1="187" x2="930" y2="269"/>
+  <line class="slot" x1="967" y1="187" x2="967" y2="269"/>
+  <text x="20" y="215" class="t">worst case</text>
+  <text x="20" y="237" class="sub">one every 4 after the first</text>
+  <path class="wave" d="M190 195 H227 H264 H301 H338 H375 V235 H412 H449 H486 H523 H560 V195 H597 H634 H671 H708 H745 V235 H782 H819 H856 H893 H930 V195 H967"/>
+  <text x="208.5" y="261" text-anchor="middle" class="bit">1</text>
+  <text x="245.5" y="261" text-anchor="middle" class="bit">1</text>
+  <text x="282.5" y="261" text-anchor="middle" class="bit">1</text>
+  <text x="319.5" y="261" text-anchor="middle" class="bit">1</text>
+  <text x="356.5" y="261" text-anchor="middle" class="bit">1</text>
+  <text x="393.5" y="261" text-anchor="middle" class="sb">0</text>
+  <text x="430.5" y="261" text-anchor="middle" class="bit">0</text>
+  <text x="467.5" y="261" text-anchor="middle" class="bit">0</text>
+  <text x="504.5" y="261" text-anchor="middle" class="bit">0</text>
+  <text x="541.5" y="261" text-anchor="middle" class="bit">0</text>
+  <text x="578.5" y="261" text-anchor="middle" class="sb">1</text>
+  <text x="615.5" y="261" text-anchor="middle" class="bit">1</text>
+  <text x="652.5" y="261" text-anchor="middle" class="bit">1</text>
+  <text x="689.5" y="261" text-anchor="middle" class="bit">1</text>
+  <text x="726.5" y="261" text-anchor="middle" class="bit">1</text>
+  <text x="763.5" y="261" text-anchor="middle" class="sb">0</text>
+  <text x="800.5" y="261" text-anchor="middle" class="bit">0</text>
+  <text x="837.5" y="261" text-anchor="middle" class="bit">0</text>
+  <text x="874.5" y="261" text-anchor="middle" class="bit">0</text>
+  <text x="911.5" y="261" text-anchor="middle" class="bit">0</text>
+  <text x="948.5" y="261" text-anchor="middle" class="sb">1</text>
+  <path class="run" d="M194 179 V173 H371 V179"/>
+  <text x="282.5" y="167" text-anchor="middle" class="acc">5</text>
+  <path class="run" d="M416 179 V173 H556 V179"/>
+  <text x="486.0" y="167" text-anchor="middle" class="acc">4</text>
+  <path class="run" d="M601 179 V173 H741 V179"/>
+  <text x="671.0" y="167" text-anchor="middle" class="acc">4</text>
+  <path class="run" d="M786 179 V173 H926 V179"/>
+  <text x="856.0" y="167" text-anchor="middle" class="acc">4</text>
+  <text x="967" y="287" text-anchor="end" class="lbl">17 data bits + 4 stuff bits = 21 on the wire</text>
+  <text x="20" y="310" class="lbl">dominant = 0, low · recessive = 1, high · shaded: stuff bits, which the receivers remove · the stuff bit starts the next run</text>
 </svg>

@@ -76,7 +76,8 @@ const BITRATES = [125e3 => "125 kbit/s", 250e3 => "250 kbit/s", 500e3 => "500 kb
 function frame_time_plot()
     n = 0:8
     p = plot(; size = (900, 620), xlabel = "data bytes", ylabel = "worst-case frame time [µs]",
-        legend = :topleft, xticks = 0:8, xlims = (-0.3, 8.6), ylims = (0, 1150))
+        legend = :topleft, legendtitle = "worst case (max stuffing)", legendtitlefontsize = 16,
+        xticks = 0:8, xlims = (-0.3, 8.6), ylims = (0, 1150))
     for (k, (rate, label)) in enumerate(BITRATES)
         t = worst_frame_bits.(n) ./ rate .* 1e6
         plot!(p, n, t; color = COLORS[k], lw = 3, marker = :circle, markersize = 6,
@@ -164,8 +165,9 @@ function frame_bits_plot()
     p = plot(; layout = (2, 1), size = (900, 620), legend = false)
     for (r, span) in enumerate(rows)
         x0, x1 = first(span), last(span) + 1
-        plot!(p[r]; xlims = (x0, x1), ylims = (-0.05, 1.45), yticks = ([lo, hi], ["dom", "rec"]),
-            xticks = x0:10:x1, grid = false, xlabel = r == 2 ? "bit on the wire" : "")
+        plot!(p[r]; xlims = (x0, x1), ylims = (-0.05, 1.45),
+            yticks = ([lo, hi], ["0 dom", "1 rec"]), xticks = x0:10:x1, grid = false,
+            xlabel = r == 2 ? "bit on the wire" : "")
         i = first(span)
         while i <= last(span)
             j = i
@@ -257,18 +259,30 @@ speed(t) = t <= 0 ? 80.0 : 80.0 - DECEL_KMH_S * (t - JERK_S * (1 - exp(-t / JERK
 
 const PERIODS_MS = [10, 20, 40]
 
-"What a receiver holds at `t` [s]: the value sampled at the previous period, as in the model."
+"""
+What a receiver holds at `t` [s], as `CanLink` models it: sampled on the clock tick, delivered
+one tick later (`UnitDelay`), then held, so the value is always 1 to 2 periods old.
+"""
 held(t, period) = round(speed(period * (fld(t, period) - 1)) / 0.01) * 0.01
 
 function sample_hold_plot()
     t = range(0, 0.3; length = 3001)
     p = plot(; size = (900, 620), xlabel = "time [ms]", ylabel = "vehicle speed [km/h]",
         legend = :bottomleft, xlims = (0, 300), ylims = (71, 80.5), xticks = 0:50:300)
-    plot!(p, 1e3 .* t, speed.(t); color = :black, lw = 3, label = "at the wheel")
+    plot!(p, 1e3 .* t, speed.(t); color = :black, lw = 3, label = "measured by the brake ECU")
     for (k, period) in enumerate(PERIODS_MS)
         plot!(p, 1e3 .* t, held.(t, period / 1e3); seriestype = :steppost, color = COLORS[k],
             lw = 3, label = "received, $period ms period")
     end
+    # On the slowest trace: each sample, and an arrow to the tick at which the receiver gets it.
+    slow, k = PERIODS_MS[end], length(PERIODS_MS)
+    ticks = 0:slow:(300 - slow)
+    for tk in ticks
+        v = speed(tk / 1e3)
+        plot!(p, [tk, tk + slow], [v, v]; color = COLORS[k], lw = 1.5, arrow = true, label = "")
+    end
+    scatter!(p, collect(ticks), speed.(ticks ./ 1e3); color = COLORS[k], markersize = 7,
+        markerstrokecolor = :black, label = "$slow ms: sampled, delivered one period later")
     return p
 end
 
