@@ -525,17 +525,20 @@ routeAlias: our-car-wired
 
 ### Point to point: `PlanarBEVDriveEstimated`
 
-The car from Lectures 3 and 4, split into ECUs as in a real EV. Steering angle, yaw rate, the regen
-request to the motor, vehicle speed, wheel speeds and the ABS status each run on their own wire.
+The Lecture 3 and 4 car: each signal on its own wire.
+
+<img src="/screenshots/06-car-wired.png" class="mx-auto" style="max-height: 28rem" alt="Dyad Studio diagram of PlanarBEVDriveEstimated. Wires run from the motion block, the blend block, the estimator and abs_hold into the brake ECU, and from the ECU to the car. Orange boxes marked stays wired surround the brake pedal row, the wheel_speeds block with its four wires, and the four caliper wires from the ECU to the car."/>
+<div class="caption">point to point: 31 signal nets</div>
 
 </div>
 <div>
 
 ### On the bus: `PlanarBEVCanDrive`
 
-The same car. Every ECU publishes its messages on one bus connection, and every ECU reads what it
-needs from it. The brake pedal, the wheel sensors and the calipers stay wired to the brake ECU. One
-switch, `ideal`, makes the bus perfect, so the two cars can be compared run for run.
+The same car on one bus; `ideal` makes the bus perfect.
+
+<img src="/screenshots/06-car-bused.png" class="mx-auto" style="max-height: 28rem" alt="Dyad Studio diagram of PlanarBEVCanDrive in the same framing. One dark line, traced in orange and labeled one bus, runs around the diagram and joins the drive, ECU, cluster and motion nodes. Orange boxes marked stays wired surround the brake pedal row, the wheel_speeds block with its four wires, and the four caliper inputs of the car. An inset of the Edit Parameters panel, labeled ideal switch, shows the ideal parameter as an unchecked box, false."/>
+<div class="caption">on the bus: 19 signal nets</div>
 
 </div>
 </div>
@@ -549,14 +552,17 @@ to point and split into ECUs the way a real electric car is. The brake ECU reads
 speeds and works out the car's speed itself. It also decides how much of the braking the motor does,
 by recovering energy, and how much the brake discs do. The signals between the ECUs each run on
 their own wire: the steering angle, the yaw rate, the regen request that tells the motor how hard
-to brake, the vehicle speed, the four wheel speeds, and the flag that says the ABS is active.
+to brake, the vehicle speed, the four wheel speeds, and the flag that says the ABS is active. Count
+them in the diagram and you get thirty-one signal nets.
 
-On the right is the same car on a bus. Every ECU puts its messages on one bus connection, and every
-ECU reads what it needs from that connection. Some things stay wired, as in a real car: the brake
-pedal, the wheel-speed sensors and the brake calipers are connected straight to the brake ECU. We
-will see in section 08 why that matters.
+On the right is the same car on a bus, drawn at the same size. Every ECU puts its messages on one
+bus connection, and every ECU reads what it needs from that connection. That connection is the long
+line traced in orange around the diagram. The car now has nineteen signal nets. Some things stay
+wired, as in a real car: the brake pedal, the wheel-speed sensors and the brake calipers are
+connected straight to the brake ECU. The orange boxes mark them on both cars. We will see in section
+08 why that matters.
 
-The bused model has one switch, called ideal. With ideal switched on, the bus is perfect: every
+The bused model has one switch, called ideal. You see it in the small panel at the bottom left. With ideal switched on, the bus is perfect: every
 value arrives at once and exactly. Then the bused car must drive exactly like the wired car. With
 ideal switched off, the bus behaves like a real one: late, rounded, periodic. So you can compare the
 two cars run for run.
